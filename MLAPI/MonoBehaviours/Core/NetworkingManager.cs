@@ -197,7 +197,7 @@ namespace MLAPI
             spawnedObjects = new Dictionary<uint, NetworkedObject>();
             spawnedObjectIds = new List<uint>();
             releasedNetworkObjectIds = new Stack<uint>();
-            if(NetworkConfig.HandleObjectSpawning)
+            if (NetworkConfig.HandleObjectSpawning)
             {
                 NetworkedObject[] sceneObjects = FindObjectsOfType<NetworkedObject>();
                 for (int i = 0; i < sceneObjects.Length; i++)
@@ -205,14 +205,6 @@ namespace MLAPI
                     uint networkId = GetNetworkObjectId();
                     spawnedObjects.Add(networkId, sceneObjects[i]);
                     spawnedObjectIds.Add(networkId);
-                }
-            }
-
-            if (NetworkConfig.ConnectionApproval)
-            {
-                if(NetworkConfig.ConnectionApprovalCallback == null)
-                {
-                    Debug.LogWarning("MLAPI: No ConnectionApproval callback defined. Connection approval will timeout");
                 }
             }
 
@@ -249,6 +241,14 @@ namespace MLAPI
 
         public void StartServer(NetworkingConfiguration netConfig)
         {
+            if (NetworkConfig.ConnectionApproval)
+            {
+                if (NetworkConfig.ConnectionApprovalCallback == null)
+                {
+                    Debug.LogWarning("MLAPI: No ConnectionApproval callback defined. Connection approval will timeout");
+                }
+            }
+
             SceneManager.LoadScene(PlaySceneIndex);
             ConnectionConfig cConfig = Init(netConfig);
             HostTopology hostTopology = new HostTopology(cConfig, NetworkConfig.MaxConnections);
@@ -273,6 +273,14 @@ namespace MLAPI
 
         public void StartHost(NetworkingConfiguration netConfig)
         {
+            if (NetworkConfig.ConnectionApproval)
+            {
+                if (NetworkConfig.ConnectionApprovalCallback == null)
+                {
+                    Debug.LogWarning("MLAPI: No ConnectionApproval callback defined. Connection approval will timeout");
+                }
+            }
+
             SceneManager.LoadScene(PlaySceneIndex);
             ConnectionConfig cConfig = Init(netConfig);
             HostTopology hostTopology = new HostTopology(cConfig, NetworkConfig.MaxConnections);
