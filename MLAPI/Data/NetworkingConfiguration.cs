@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
+using UnityEngine;
 using UnityEngine.Networking;
 
 namespace MLAPI
@@ -11,11 +13,11 @@ namespace MLAPI
         public ushort ProtocolVersion = 0;
         public Dictionary<string, QosType> Channels = new Dictionary<string, QosType>();
         public List<string> MessageTypes = new List<string>();
-        public int MessageBufferSize = 65536;
+        public int MessageBufferSize = 65535;
         public int MaxMessagesPerFrame = 150;
         public int MaxConnections = 100;
         public int Port = 7777;
-        public string Address;
+        public string Address = "127.0.0.1";
         public int ClientConnectionBufferTimeout = 10;
         public bool ConnectionApproval = false;
         public Action<byte[], int, Action<int, bool>> ConnectionApprovalCallback;
@@ -26,7 +28,6 @@ namespace MLAPI
         //Should only be used for dedicated servers and will require the servers RSA keypair being hard coded into clients in order to exchange a AES key
         //TODO
         public bool EncryptMessages = false;
-
 
         //Cached config hash
         private byte[] ConfigHash = null;
@@ -68,7 +69,7 @@ namespace MLAPI
 
         public bool CompareConfig(byte[] hash)
         {
-            return hash == GetConfig();
+            return hash.SequenceEqual(GetConfig());
         }
     }
 }

@@ -34,8 +34,8 @@ namespace MLAPI
         private Dictionary<ushort, int> messageHandlerCounter;
         private Dictionary<ushort, Stack<int>> releasedMessageHandlerCounters;
         private int localConnectionId;
-        public Scene PlayScene;
-        public Scene MenuScene;
+        public int PlaySceneIndex;
+        public int MenuSceneIndex;
         private Dictionary<uint, NetworkedObject> spawnedObjects;
         private List<uint> spawnedObjectIds;
         private Stack<uint> releasedNetworkObjectIds;
@@ -212,7 +212,7 @@ namespace MLAPI
             {
                 if(NetworkConfig.ConnectionApprovalCallback == null)
                 {
-                    Debug.LogWarning("MLAPI: No ConnectionApproval callback defined. Connection aproval will timeout");
+                    Debug.LogWarning("MLAPI: No ConnectionApproval callback defined. Connection approval will timeout");
                 }
             }
 
@@ -229,17 +229,14 @@ namespace MLAPI
             HashSet<string> channelNames = new HashSet<string>();
             foreach (KeyValuePair<string, QosType> pair in NetworkConfig.Channels)
             {
-                if(pair.Key.StartsWith("MLAPI_"))
-                {
-                    Debug.LogWarning("MLAPI: Channel names are not allowed to start with MLAPI_. This is to prevent name conflicts");
-                    continue;
-                }
-                else if(channelNames.Contains(pair.Key))
+                if(channelNames.Contains(pair.Key))
                 {
                     Debug.LogWarning("MLAPI: Duplicate channel name: " + pair.Key);
                     continue;
                 }
-                channels.Add(pair.Key, cConfig.AddChannel(pair.Value));
+                int channelId = cConfig.AddChannel(pair.Value);
+                channels.Add(pair.Key, channelId);
+                channelNames.Add(pair.Key);
             }
             //0-32 are reserved for MLAPI messages
             for (ushort i = 32; i < NetworkConfig.MessageTypes.Count; i++)
@@ -252,29 +249,31 @@ namespace MLAPI
 
         public void StartServer(NetworkingConfiguration netConfig)
         {
+            SceneManager.LoadScene(PlaySceneIndex);
             ConnectionConfig cConfig = Init(netConfig);
             HostTopology hostTopology = new HostTopology(cConfig, NetworkConfig.MaxConnections);
-            hostId = NetworkTransport.AddHost(hostTopology, NetworkConfig.Port, null);
+            hostId = NetworkTransport.AddHost(hostTopology, NetworkConfig.Port);
             isServer = true;
             isClient = false;
             isListening = true;
-            SceneManager.LoadScene(PlayScene.buildIndex);
         }
 
         public void StartClient(NetworkingConfiguration netConfig)
         {
             ConnectionConfig cConfig = Init(netConfig);
             HostTopology hostTopology = new HostTopology(cConfig, NetworkConfig.MaxConnections);
-            hostId =  NetworkTransport.AddHost(hostTopology, 0);
+            hostId =  NetworkTransport.AddHost(hostTopology, 0, null);
+            //NetworkTransport.AddSceneId(PlaySceneIndex);
 
-            localConnectionId = NetworkTransport.Connect(hostId, NetworkConfig.Address, NetworkConfig.Port, 0, out error);
             isServer = false;
             isClient = true;
             isListening = true;
+            localConnectionId = NetworkTransport.Connect(hostId, NetworkConfig.Address, NetworkConfig.Port, 0, out error);
         }
 
         public void StartHost(NetworkingConfiguration netConfig)
         {
+            SceneManager.LoadScene(PlaySceneIndex);
             ConnectionConfig cConfig = Init(netConfig);
             HostTopology hostTopology = new HostTopology(cConfig, NetworkConfig.MaxConnections);
             hostId = NetworkTransport.AddHost(hostTopology, NetworkConfig.Port, null);
@@ -282,7 +281,6 @@ namespace MLAPI
             isClient = true;
             isListening = true;
             connectedClients.Add(-1, new NetworkedClient() { ClientId = -1 });
-            SceneManager.LoadScene(PlayScene.buildIndex);
         }
 
         private void OnEnable()
@@ -316,12 +314,12 @@ namespace MLAPI
                 do
                 {
                     messagesProcessed++;
-                    eventType = NetworkTransport.Receive(out hostId, out connectionId, out channelId, messageBuffer, NetworkConfig.MessageBufferSize, out receivedSize, out error);
+                    eventType = NetworkTransport.Receive(out hostId, out connectionId, out channelId, messageBuffer, messageBuffer.Length, out receivedSize, out error);
                     NetworkError networkError = (NetworkError)error;
                     if (networkError != NetworkError.Ok)
                     {
                         Debug.LogWarning("MLAPI: NetworkTransport receive error: " + networkError.ToString());
-                        return;
+                        continue;
                     }
                     switch (eventType)
                     {
@@ -342,12 +340,13 @@ namespace MLAPI
                                         {
                                             writer.Write(NetworkConfig.ConnectionData);
                                         }
-                                        Send(connectionId, "MLAPI_CONNECTION_REQUEST", "MLAPI_RELIABLE_FRAGMENTED", writeStream.ToArray());
                                     }
+                                    Send(connectionId, "MLAPI_CONNECTION_REQUEST", "MLAPI_RELIABLE_FRAGMENTED", writeStream.ToArray());
                                 }
                             }
                             break;
                         case NetworkEventType.DataEvent:
+                            Debug.Log("RECIEVE");
                             HandleIncomingData(connectionId, ref messageBuffer);
                             break;
                     }
@@ -405,7 +404,7 @@ namespace MLAPI
                                         using (BinaryReader messageReader = new BinaryReader(messageReadStream))
                                         {
                                             byte[] configHash = messageReader.ReadBytes(32);
-                                            if (NetworkConfig.CompareConfig(configHash) == false)
+                                            if (!NetworkConfig.CompareConfig(configHash))
                                             {
                                                 Debug.LogWarning("MLAPI: NetworkConfiguration missmatch. The configuration between the server and client does not match.");
                                                 DisconnectClient(connectionId);
@@ -427,7 +426,7 @@ namespace MLAPI
                             case 1: //Server informs client it has been approved:
                                 if (isClient)
                                 {
-                                    SceneManager.LoadScene(PlayScene.buildIndex);
+                                    SceneManager.LoadScene(PlaySceneIndex);
                                     using (MemoryStream messageReadStream = new MemoryStream(reader.ReadBytes(int.MaxValue)))
                                     {
                                         using (BinaryReader messageReader = new BinaryReader(messageReadStream))
@@ -477,7 +476,9 @@ namespace MLAPI
                 {
                     writer.Write(messageTypes[messageType]);
                     writer.Write(data);
-                    NetworkTransport.Send(hostId, connectionId, channels[channelName], data, data.Length, out error);
+                    //2 bytes for message type
+                    int size = data.Length + 2;
+                    NetworkTransport.Send(hostId, connectionId, channels[channelName], stream.ToArray(), size, out error);
                 }
             }
         }
@@ -549,9 +550,8 @@ namespace MLAPI
                                 writer.Write(spawnedObjects[spawnedObjectIds[i]].SpawnablePrefabId);
                             }
                         }
-
-                        Send(connectionId, "MLAPI_CLIENT_LIST", "MLAPI_RELIABLE_FRAGMENTED", writeStream.ToArray());
                     }
+                    Send(connectionId, "MLAPI_CLIENT_LIST", "MLAPI_RELIABLE_FRAGMENTED", writeStream.ToArray());
                 }
             }
             else
