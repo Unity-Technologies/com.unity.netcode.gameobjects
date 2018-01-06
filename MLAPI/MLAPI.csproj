@@ -35,20 +35,18 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
-    <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
     <Reference Include="UnityEngine">
       <HintPath>..\..\..\..\..\..\Program Files\Unity\Editor\Data\Managed\UnityEngine.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="NetworkedBehaviour.cs" />
-    <Compile Include="NetworkedClient.cs" />
-    <Compile Include="NetworkedObject.cs" />
-    <Compile Include="NetworkingConfiguration.cs" />
-    <Compile Include="NetworkingManager.cs" />
+    <Compile Include="MonoBehaviours\Core\NetworkedBehaviour.cs" />
+    <Compile Include="Data\NetworkedClient.cs" />
+    <Compile Include="MonoBehaviours\Core\NetworkedObject.cs" />
+    <Compile Include="Data\NetworkingConfiguration.cs" />
+    <Compile Include="MonoBehaviours\Core\NetworkingManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
