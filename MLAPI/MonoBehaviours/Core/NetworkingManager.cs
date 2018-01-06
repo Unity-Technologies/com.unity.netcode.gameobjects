@@ -346,7 +346,6 @@ namespace MLAPI
                             }
                             break;
                         case NetworkEventType.DataEvent:
-                            Debug.Log("RECIEVE");
                             HandleIncomingData(connectionId, ref messageBuffer);
                             break;
                     }
