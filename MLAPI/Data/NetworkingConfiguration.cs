@@ -59,10 +59,10 @@ namespace MLAPI
                     //Returns a 256 bit / 32 byte long checksum of the config
                     if (cache)
                     {
-                        ConfigHash = sha256.ComputeHash(writeStream);
+                        ConfigHash = sha256.ComputeHash(writeStream.ToArray());
                         return ConfigHash;
                     }
-                    return sha256.ComputeHash(writeStream);
+                    return sha256.ComputeHash(writeStream.ToArray());
                 }
             }
         }
