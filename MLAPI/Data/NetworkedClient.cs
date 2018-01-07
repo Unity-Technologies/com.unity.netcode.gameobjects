@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 
 namespace MLAPI
 {
@@ -6,5 +7,6 @@ namespace MLAPI
     {
         public int ClientId;
         public GameObject PlayerObject;
+        public List<NetworkedObject> OwnedObjects;
     }
 }

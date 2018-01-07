@@ -11,13 +11,21 @@ namespace MLAPI
         [HideInInspector]
         public int SpawnablePrefabIndex;
         [HideInInspector]
-        public bool IsPlayerObject = false;
+        public bool isPlayerObject = false;
         public bool ServerOnly = false;
         public bool isLocalPlayer
         {
             get
             {
-                return IsPlayerObject && (OwnerClientId == NetworkingManager.singleton.MyClientId || (OwnerClientId == -1 && NetworkingManager.singleton.isHost));
+                return isPlayerObject && (OwnerClientId == NetworkingManager.singleton.MyClientId || (OwnerClientId == -1 && NetworkingManager.singleton.isHost));
+            }
+        }
+
+        public bool IsOwner
+        {
+            get
+            {
+                return !isPlayerObject && (OwnerClientId == NetworkingManager.singleton.MyClientId || (OwnerClientId == -1 && NetworkingManager.singleton.isHost));
             }
         }
 
@@ -27,9 +35,15 @@ namespace MLAPI
         }
 
         internal bool isSpawned = false;
+
         public void Spawn()
         {
             NetworkingManager.singleton.OnSpawnObject(this);
+        }
+
+        public void SpawnWithOwnership(int clientId)
+        {
+            NetworkingManager.singleton.OnSpawnObject(this, clientId);
         }
     }
 }

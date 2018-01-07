@@ -122,7 +122,7 @@ namespace MLAPI
             {
                 netObject.NetworkId = networkId;
             }
-            netObject.IsPlayerObject = true;
+            netObject.isPlayerObject = true;
             connectedClients[clientId].PlayerObject = go;
             singleton.spawnedObjects.Add(netObject.NetworkId, netObject);
             return go;
@@ -834,6 +834,10 @@ namespace MLAPI
                 if(NetworkConfig.HandleObjectSpawning)
                 {
                     Destroy(connectedClients[clientId].PlayerObject);
+                    for (int i = 0; i < connectedClients[clientId].OwnedObjects.Count; i++)
+                    {
+                        Destroy(connectedClients[clientId].OwnedObjects[i].gameObject);
+                    }
                 }
                 connectedClients.Remove(clientId);
             }
@@ -904,7 +908,7 @@ namespace MLAPI
 
                                 if (pair.Value.ServerOnly)
                                     continue;
-                                writer.Write(pair.Value.IsPlayerObject);
+                                writer.Write(pair.Value.isPlayerObject);
                                 writer.Write(pair.Value.NetworkId);
                                 writer.Write(pair.Value.OwnerClientId);
                                 writer.Write(pair.Value.SpawnablePrefabIndex);
