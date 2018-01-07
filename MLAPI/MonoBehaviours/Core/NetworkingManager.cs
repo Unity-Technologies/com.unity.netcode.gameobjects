@@ -744,9 +744,19 @@ namespace MLAPI
                         }
                         if (NetworkConfig.HandleObjectSpawning)
                         {
-                            writer.Write(spawnedObjectIds.Count);
+                            int amountOfObjectsToSend = 0;
                             for (int i = 0; i < spawnedObjectIds.Count; i++)
                             {
+                                if (spawnedObjects[spawnedObjectIds[i]].ServerOnly)
+                                    continue;
+                                else
+                                    amountOfObjectsToSend++;
+                            }
+                            writer.Write(amountOfObjectsToSend);
+                            for (int i = 0; i < spawnedObjectIds.Count; i++)
+                            {
+                                if (spawnedObjects[spawnedObjectIds[i]].ServerOnly)
+                                    continue;
                                 writer.Write(spawnedObjects[spawnedObjectIds[i]].IsPlayerObject);
                                 writer.Write(spawnedObjects[spawnedObjectIds[i]].NetworkId);
                                 writer.Write(spawnedObjects[spawnedObjectIds[i]].OwnerClientId);

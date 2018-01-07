@@ -6,10 +6,15 @@ namespace MLAPI
     //Will be used for objects which will be spawned automatically across clients
     public class NetworkedObject : MonoBehaviour
     {
+        [HideInInspector]
         public uint NetworkId;
+        [HideInInspector]
         public int OwnerClientId = -1;
+        [HideInInspector]
         public int SpawnablePrefabId;
-        internal bool IsPlayerObject = false;
+        [HideInInspector]
+        public bool IsPlayerObject = false;
+        public bool ServerOnly = false;
         public bool isLocalPlayer
         {
             get
