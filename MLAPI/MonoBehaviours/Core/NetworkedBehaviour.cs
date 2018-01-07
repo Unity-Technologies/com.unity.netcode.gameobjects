@@ -49,7 +49,7 @@ namespace MLAPI
             }
         }
 
-        public int ownerConnectionId
+        public int ownerClientId
         {
             get
             {
@@ -87,7 +87,7 @@ namespace MLAPI
                 Debug.LogWarning("MLAPI: Sending messages from server to server is not yet supported");
                 return;
             }
-            NetworkingManager.singleton.Send(NetworkingManager.singleton.localConnectionId, messageType, channelName, data);
+            NetworkingManager.singleton.Send(NetworkingManager.singleton.serverClientId, messageType, channelName, data);
         }
 
         public void SendToLocalClient(string messageType, string channelName, byte[] data)
@@ -97,7 +97,7 @@ namespace MLAPI
                 Debug.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported");
                 return;
             }
-            NetworkingManager.singleton.Send(ownerConnectionId, messageType, channelName, data);
+            NetworkingManager.singleton.Send(ownerClientId, messageType, channelName, data);
         }
 
         public void SendToNonLocalClients(string messageType, string channelName, byte[] data)
@@ -107,37 +107,37 @@ namespace MLAPI
                 Debug.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported");
                 return;
             }
-            NetworkingManager.singleton.Send(messageType, channelName, data, ownerConnectionId);
+            NetworkingManager.singleton.Send(messageType, channelName, data, ownerClientId);
         }
 
-        public void SendToClient(int connectionId, string messageType, string channelName, byte[] data)
+        public void SendToClient(int clientId, string messageType, string channelName, byte[] data)
         {
             if (!isServer)
             {
                 Debug.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported");
                 return;
             }
-            NetworkingManager.singleton.Send(connectionId, messageType, channelName, data);
+            NetworkingManager.singleton.Send(clientId, messageType, channelName, data);
         }
 
-        public void SendToClients(int[] connectionIds, string messageType, string channelName, byte[] data)
+        public void SendToClients(int[] clientIds, string messageType, string channelName, byte[] data)
         {
             if (!isServer)
             {
                 Debug.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported");
                 return;
             }
-            NetworkingManager.singleton.Send(connectionIds, messageType, channelName, data);
+            NetworkingManager.singleton.Send(clientIds, messageType, channelName, data);
         }
 
-        public void SendToClients(List<int> connectionIds, string messageType, string channelName, byte[] data)
+        public void SendToClients(List<int> clientIds, string messageType, string channelName, byte[] data)
         {
             if (!isServer)
             {
                 Debug.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported");
                 return;
             }
-            NetworkingManager.singleton.Send(connectionIds, messageType, channelName, data);
+            NetworkingManager.singleton.Send(clientIds, messageType, channelName, data);
         }
 
         public void SendToClients(string messageType, string channelName, byte[] data)

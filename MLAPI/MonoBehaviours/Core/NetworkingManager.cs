@@ -41,7 +41,7 @@ namespace MLAPI
         private Dictionary<ushort, Dictionary<int, Action<int, byte[]>>> messageCallbacks;
         private Dictionary<ushort, int> messageHandlerCounter;
         private Dictionary<ushort, Stack<int>> releasedMessageHandlerCounters;
-        public int localConnectionId;
+        internal int serverClientId;
         public int PlaySceneIndex;
         public int MenuSceneIndex;
         internal Dictionary<uint, NetworkedObject> spawnedObjects;
@@ -107,7 +107,7 @@ namespace MLAPI
             return go;
         }
 
-        internal GameObject SpawnPlayerObject(int connectionId, uint networkId)
+        internal GameObject SpawnPlayerObject(int clientId, uint networkId)
         {
             GameObject go = Instantiate(DefaultPlayerPrefab);
             NetworkedObject netObject = go.GetComponent<NetworkedObject>();
@@ -116,7 +116,7 @@ namespace MLAPI
                 Debug.LogWarning("MLAPI: Please add a NetworkedObject component to the root of the player prefab");
                 netObject = go.AddComponent<NetworkedObject>();
             }
-            netObject.OwnerClientId = connectionId;
+            netObject.OwnerClientId = clientId;
             if(isServer)
             {
                 netObject.NetworkId = singleton.GetNetworkObjectId();
@@ -126,7 +126,7 @@ namespace MLAPI
                 netObject.NetworkId = networkId;
             }
             netObject.IsPlayerObject = true;
-            connectedClients[connectionId].PlayerObject = go;
+            connectedClients[clientId].PlayerObject = go;
             singleton.spawnedObjectIds.Add(netObject.NetworkId);
             singleton.spawnedObjects.Add(netObject.NetworkId, netObject);
             return go;
@@ -288,7 +288,7 @@ namespace MLAPI
             isServer = false;
             isClient = true;
             isListening = true;
-            localConnectionId = NetworkTransport.Connect(hostId, NetworkConfig.Address, NetworkConfig.Port, 0, out error);
+            serverClientId = NetworkTransport.Connect(hostId, NetworkConfig.Address, NetworkConfig.Port, 0, out error);
         }
 
         public void StartHost(NetworkingConfiguration netConfig)
@@ -308,6 +308,10 @@ namespace MLAPI
             isClient = true;
             isListening = true;
             connectedClients.Add(-1, new NetworkedClient() { ClientId = -1 });
+            if(NetworkConfig.HandleObjectSpawning)
+            {
+                SpawnPlayerObject(-1, 0);
+            }
         }
 
         private void OnEnable()
@@ -329,7 +333,7 @@ namespace MLAPI
 
         //Receive stuff
         int hostId;
-        int connectionId;
+        int clientId;
         int channelId;
         int receivedSize;
         byte error;
@@ -342,14 +346,14 @@ namespace MLAPI
                 do
                 {
                     messagesProcessed++;
-                    eventType = NetworkTransport.Receive(out hostId, out connectionId, out channelId, messageBuffer, messageBuffer.Length, out receivedSize, out error);
+                    eventType = NetworkTransport.Receive(out hostId, out clientId, out channelId, messageBuffer, messageBuffer.Length, out receivedSize, out error);
                     NetworkError networkError = (NetworkError)error;
                     if(networkError == NetworkError.Timeout)
                     {
                         //Client timed out. 
                         if (isServer)
                         {
-                            OnClientDisconnect(connectionId);
+                            OnClientDisconnect(clientId);
                             continue;
                         }
                     }
@@ -363,8 +367,8 @@ namespace MLAPI
                         case NetworkEventType.ConnectEvent:
                             if (isServer)
                             {
-                                pendingClients.Add(connectionId);
-                                StartCoroutine(ApprovalTimeout(connectionId));
+                                pendingClients.Add(clientId);
+                                StartCoroutine(ApprovalTimeout(clientId));
                             }
                             else
                             {
@@ -379,17 +383,17 @@ namespace MLAPI
                                             writer.Write(NetworkConfig.ConnectionData);
                                         }
                                     }
-                                    Send(connectionId, "MLAPI_CONNECTION_REQUEST", "MLAPI_RELIABLE_FRAGMENTED", writeStream.ToArray());
+                                    Send(clientId, "MLAPI_CONNECTION_REQUEST", "MLAPI_RELIABLE_FRAGMENTED", writeStream.ToArray());
                                 }
                             }
                             break;
                         case NetworkEventType.DataEvent:
-                            HandleIncomingData(connectionId, messageBuffer);
+                            HandleIncomingData(clientId, messageBuffer);
                             break;
                         case NetworkEventType.DisconnectEvent:
                             if(isServer)
                             {
-                                OnClientDisconnect(connectionId);
+                                OnClientDisconnect(clientId);
                             }
                             break;
                     }
@@ -399,18 +403,18 @@ namespace MLAPI
             }
         }
 
-        IEnumerator ApprovalTimeout(int connectionId)
+        IEnumerator ApprovalTimeout(int clientId)
         {
             float timeStarted = Time.time;
             //We yield every frame incase a pending client disconnects and someone else gets its connection id
-            while (Time.time - timeStarted < NetworkConfig.ClientConnectionBufferTimeout && pendingClients.Contains(connectionId))
+            while (Time.time - timeStarted < NetworkConfig.ClientConnectionBufferTimeout && pendingClients.Contains(clientId))
             {
                 yield return null;
             }
-            if(pendingClients.Contains(connectionId) && !connectedClients.ContainsKey(connectionId))
+            if(pendingClients.Contains(clientId) && !connectedClients.ContainsKey(clientId))
             {
                 //Timeout
-                DisconnectClient(connectionId);
+                DisconnectClient(clientId);
             }
         }
 
@@ -423,9 +427,9 @@ namespace MLAPI
                     ushort messageType = reader.ReadUInt16();
 
                     //Client tried to send a network message that was not the connection request before he was accepted.
-                    if (isServer && pendingClients.Contains(connectionId) && messageType != 0)
+                    if (isServer && pendingClients.Contains(clientId) && messageType != 0)
                     {
-                        Debug.LogWarning("MLAPI: Message recieved from connectionId " + connectionId + " before it has been accepted");
+                        Debug.LogWarning("MLAPI: Message recieved from clientId " + clientId + " before it has been accepted");
                         return;
                     }
 
@@ -436,7 +440,7 @@ namespace MLAPI
                         //Custom message, invoke all message handlers
                         foreach (KeyValuePair<int, Action<int, byte[]>> pair in messageCallbacks[messageType])
                         {
-                            pair.Value(connectionId, incommingData);
+                            pair.Value(clientId, incommingData);
                         }  
                     }
                     else
@@ -455,18 +459,18 @@ namespace MLAPI
                                             if (!NetworkConfig.CompareConfig(configHash))
                                             {
                                                 Debug.LogWarning("MLAPI: NetworkConfiguration missmatch. The configuration between the server and client does not match.");
-                                                DisconnectClient(connectionId);
+                                                DisconnectClient(clientId);
                                                 return;
                                             }
                                             if (NetworkConfig.ConnectionApproval)
                                             {
                                                 ushort bufferSize = messageReader.ReadUInt16();
                                                 byte[] connectionBuffer = messageReader.ReadBytes(bufferSize);
-                                                NetworkConfig.ConnectionApprovalCallback(connectionBuffer, connectionId, HandleApproval);
+                                                NetworkConfig.ConnectionApprovalCallback(connectionBuffer, clientId, HandleApproval);
                                             }
                                             else
                                             {
-                                                HandleApproval(connectionId, true);
+                                                HandleApproval(clientId, true);
                                             }
                                         }
                                     }
@@ -566,7 +570,7 @@ namespace MLAPI
             }
         }
 
-        internal void Send(int connectionId, string messageType, string channelName, byte[] data)
+        internal void Send(int clientId, string messageType, string channelName, byte[] data)
         {
             using (MemoryStream stream = new MemoryStream())
             {
@@ -579,11 +583,11 @@ namespace MLAPI
                 //2 bytes for message type and 2 bytes for byte length
                 int size = data.Length + 4;
                 byte[] dataToSend = stream.ToArray();
-                NetworkTransport.Send(hostId, connectionId, channels[channelName], dataToSend, dataToSend.Length, out error);
+                NetworkTransport.Send(hostId, clientId, channels[channelName], dataToSend, dataToSend.Length, out error);
             }
         }
 
-        internal void Send(int[] connectionIds, string messageType, string channelName, byte[] data)
+        internal void Send(int[] clientIds, string messageType, string channelName, byte[] data)
         {
             using (MemoryStream stream = new MemoryStream())
             {
@@ -597,14 +601,14 @@ namespace MLAPI
                 int size = data.Length + 4;
                 byte[] dataToSend = stream.ToArray();
                 int channel = channels[channelName];
-                for (int i = 0; i < connectionIds.Length; i++)
+                for (int i = 0; i < clientIds.Length; i++)
                 {
-                    NetworkTransport.Send(hostId, connectionIds[i], channel, dataToSend, size, out error);
+                    NetworkTransport.Send(hostId, clientIds[i], channel, dataToSend, size, out error);
                 }
             }
         }
 
-        internal void Send(List<int> connectionIds, string messageType, string channelName, byte[] data)
+        internal void Send(List<int> clientIds, string messageType, string channelName, byte[] data)
         {
             using (MemoryStream stream = new MemoryStream())
             {
@@ -618,9 +622,9 @@ namespace MLAPI
                 int size = data.Length + 4;
                 byte[] dataToSend = stream.ToArray();
                 int channel = channels[channelName];
-                for (int i = 0; i < connectionIds.Count; i++)
+                for (int i = 0; i < clientIds.Count; i++)
                 {
-                    NetworkTransport.Send(hostId, connectionIds[i], channel, dataToSend, size, out error);
+                    NetworkTransport.Send(hostId, clientIds[i], channel, dataToSend, size, out error);
                 }
             }
         }
@@ -646,7 +650,7 @@ namespace MLAPI
             }
         }
 
-        internal void Send(string messageType, string channelName, byte[] data, int connectionIdToIgnore)
+        internal void Send(string messageType, string channelName, byte[] data, int clientIdToIgnore)
         {
             using (MemoryStream stream = new MemoryStream())
             {
@@ -662,35 +666,35 @@ namespace MLAPI
                 int channel = channels[channelName];
                 foreach (KeyValuePair<int, NetworkedClient> pair in connectedClients)
                 {
-                    if (pair.Key == connectionIdToIgnore)
+                    if (pair.Key == clientIdToIgnore)
                         continue;
                     NetworkTransport.Send(hostId, pair.Key, channel, dataToSend, size, out error);
                 }
             }
         }
 
-        internal void DisconnectClient(int connectionId)
+        internal void DisconnectClient(int clientId)
         {
             if (!isServer)
                 return;
-            if (pendingClients.Contains(connectionId))
-                pendingClients.Remove(connectionId);
-            if (connectedClients.ContainsKey(connectionId))
-                connectedClients.Remove(connectionId);
-            NetworkTransport.Disconnect(hostId, connectionId, out error);          
+            if (pendingClients.Contains(clientId))
+                pendingClients.Remove(clientId);
+            if (connectedClients.ContainsKey(clientId))
+                connectedClients.Remove(clientId);
+            NetworkTransport.Disconnect(hostId, clientId, out error);          
         }
 
-        private void OnClientDisconnect(int connectionId)
+        private void OnClientDisconnect(int clientId)
         {
-            if (pendingClients.Contains(connectionId))
-                pendingClients.Remove(connectionId);
-            if (connectedClients.ContainsKey(connectionId))
+            if (pendingClients.Contains(clientId))
+                pendingClients.Remove(clientId);
+            if (connectedClients.ContainsKey(clientId))
             {
                 if(NetworkConfig.HandleObjectSpawning)
                 {
-                    Destroy(connectedClients[connectionId].PlayerObject);
+                    Destroy(connectedClients[clientId].PlayerObject);
                 }
-                connectedClients.Remove(connectionId);
+                connectedClients.Remove(clientId);
             }
 
             if (isServer)
@@ -699,42 +703,42 @@ namespace MLAPI
                 {
                     using (BinaryWriter writer = new BinaryWriter(stream))
                     {
-                        writer.Write(connectionId);
+                        writer.Write(clientId);
                     }
-                    Send("MLAPI_CLIENT_DISCONNECT", "MLAPI_RELIABLE_FRAGMENTED", stream.ToArray(), connectionId);
+                    Send("MLAPI_CLIENT_DISCONNECT", "MLAPI_RELIABLE_FRAGMENTED", stream.ToArray(), clientId);
                 }   
             }
         }
 
-        private void HandleApproval(int connectionId, bool approved)
+        private void HandleApproval(int clientId, bool approved)
         {
             if(approved)
             {
                 //Inform new client it got approved
-                if (pendingClients.Contains(connectionId))
-                    pendingClients.Remove(connectionId);
+                if (pendingClients.Contains(clientId))
+                    pendingClients.Remove(clientId);
                 NetworkedClient client = new NetworkedClient()
                 {
-                    ClientId = connectionId
+                    ClientId = clientId
                 };
-                connectedClients.Add(connectionId, client);
+                connectedClients.Add(clientId, client);
                 
                 if(NetworkConfig.HandleObjectSpawning)
                 {
                     uint networkId = GetNetworkObjectId();
-                    GameObject go = SpawnPlayerObject(connectionId, networkId);
-                    connectedClients[connectionId].PlayerObject = go;
+                    GameObject go = SpawnPlayerObject(clientId, networkId);
+                    connectedClients[clientId].PlayerObject = go;
                 }
                 using (MemoryStream writeStream = new MemoryStream())
                 {
                     using (BinaryWriter writer = new BinaryWriter(writeStream))
                     {
-                        writer.Write(connectionId);
+                        writer.Write(clientId);
                         writer.Write(connectedClients.Count - 1);
                         foreach (KeyValuePair<int, NetworkedClient> item in connectedClients)
                         {
                             //Our own ID. Already added as the first one above
-                            if (item.Key == connectionId)
+                            if (item.Key == clientId)
                                 continue;
                             writer.Write(item.Key); //Connection id
                         }
@@ -750,7 +754,7 @@ namespace MLAPI
                             }
                         }
                     }
-                    Send(connectionId, "MLAPI_CONNECTION_APPROVED", "MLAPI_RELIABLE_FRAGMENTED", writeStream.ToArray());
+                    Send(clientId, "MLAPI_CONNECTION_APPROVED", "MLAPI_RELIABLE_FRAGMENTED", writeStream.ToArray());
                 }
 
                 //Inform old clients of the new player
@@ -761,23 +765,23 @@ namespace MLAPI
                         if (NetworkConfig.HandleObjectSpawning)
                         {
                             writer.Write(true);
-                            writer.Write(connectedClients[connectionId].PlayerObject.GetComponent<NetworkedObject>().NetworkId);
-                            writer.Write(connectionId);
+                            writer.Write(connectedClients[clientId].PlayerObject.GetComponent<NetworkedObject>().NetworkId);
+                            writer.Write(clientId);
                             writer.Write(-1);
                         }
                         else
                         {
-                            writer.Write(connectionId);
+                            writer.Write(clientId);
                         }
                     }
-                    Send("MLAPI_ADD_OBJECT", "MLAPI_RELIABLE_FRAGMENTED", stream.ToArray(), connectionId);
+                    Send("MLAPI_ADD_OBJECT", "MLAPI_RELIABLE_FRAGMENTED", stream.ToArray(), clientId);
                 }
             }
             else
             {
-                if (pendingClients.Contains(connectionId))
-                    pendingClients.Remove(connectionId);
-                NetworkTransport.Disconnect(hostId, connectionId, out error);
+                if (pendingClients.Contains(clientId))
+                    pendingClients.Remove(clientId);
+                NetworkTransport.Disconnect(hostId, clientId, out error);
             }
         }
     }
