@@ -34,3 +34,7 @@ That's all I can think of right now. But there is more to come, especially if pe
 
 ## Indepth
 The project is not yet very tested. Examples will be created when it's more functional.
+
+
+## Dependencies
+Open.NAT - https://github.com/lontivero/Open.NAT (MIT)
