@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MLAPI.Helper;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -344,6 +345,10 @@ namespace MLAPI
                     Debug.LogWarning("MLAPI: No ConnectionApproval callback defined. Connection approval will timeout");
                 }
             }
+            if (NetworkConfig.UseUPnP)
+            {
+                UPnPHelper.AttemptPortMap(NetworkConfig.Port, NetworkConfig.UPnPCompleteCallback);
+            }
             HostTopology hostTopology = new HostTopology(cConfig, NetworkConfig.MaxConnections);
             hostId = NetworkTransport.AddHost(hostTopology, NetworkConfig.Port);
             isServer = true;
@@ -372,6 +377,10 @@ namespace MLAPI
                 {
                     Debug.LogWarning("MLAPI: No ConnectionApproval callback defined. Connection approval will timeout");
                 }
+            }
+            if(NetworkConfig.UseUPnP)
+            {
+                UPnPHelper.AttemptPortMap(NetworkConfig.Port, NetworkConfig.UPnPCompleteCallback);
             }
             HostTopology hostTopology = new HostTopology(cConfig, NetworkConfig.MaxConnections);
             hostId = NetworkTransport.AddHost(hostTopology, NetworkConfig.Port, null);

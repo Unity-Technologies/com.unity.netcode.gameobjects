@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Security.Cryptography;
 using UnityEngine.Networking;
 
@@ -27,6 +28,8 @@ namespace MLAPI
         //Should only be used for dedicated servers and will require the servers RSA keypair being hard coded into clients in order to exchange a AES key
         //TODO
         public bool EncryptMessages = false;
+        public bool UseUPnP = true;
+        public Action<bool, IPAddress> UPnPCompleteCallback;
 
         //Cached config hash
         private byte[] ConfigHash = null;

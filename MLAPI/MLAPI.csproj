@@ -32,8 +32,14 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Open.Nat, Version=1.0.0.0, Culture=neutral, PublicKeyToken=f22a6a4582336c76, processorArchitecture=MSIL">
+      <HintPath>..\packages\Open.NAT.2.1.0.0\lib\net35\Open.Nat.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Threading, Version=1.0.2856.102, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Open.NAT.2.1.0.0\lib\net35\System.Threading.dll</HintPath>
+    </Reference>
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Data" />
@@ -44,12 +50,16 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Helper\UPnPHelper.cs" />
     <Compile Include="MonoBehaviours\Core\NetworkedBehaviour.cs" />
     <Compile Include="Data\NetworkedClient.cs" />
     <Compile Include="MonoBehaviours\Core\NetworkedObject.cs" />
     <Compile Include="Data\NetworkingConfiguration.cs" />
     <Compile Include="MonoBehaviours\Core\NetworkingManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
