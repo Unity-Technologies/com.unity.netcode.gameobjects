@@ -139,6 +139,17 @@ namespace MLAPI
             singleton.releasedNetworkObjectIds.Push(networkId);
         }
 
+        internal void InvokeMessageHandlers(string messageType, byte[] data, int clientId)
+        {
+            if(!messageTypes.ContainsKey(messageType) || !messageCallbacks.ContainsKey(messageTypes[messageType]))
+                return;
+
+            foreach (KeyValuePair<int, Action<int, byte[]>> pair in messageCallbacks[messageTypes[messageType]])
+            {
+                pair.Value(clientId, data);
+            }
+        }
+
         internal int AddIncomingMessageHandler(string name, Action<int, byte[]> action)
         {
             if(messageTypes.ContainsKey(name))
@@ -566,6 +577,17 @@ namespace MLAPI
 
         internal void Send(int clientId, string messageType, string channelName, byte[] data)
         {
+            if(isHost && clientId == -1)
+            {
+                //Host trying to send data to it's own client
+                InvokeMessageHandlers(messageType, data, clientId);
+                return;
+            }
+            else if(clientId == -1)
+            {
+                //Client trying to send data to host
+                clientId = serverClientId;
+            }
             using (MemoryStream stream = new MemoryStream())
             {
                 using (BinaryWriter writer = new BinaryWriter(stream))
@@ -597,7 +619,18 @@ namespace MLAPI
                 int channel = channels[channelName];
                 for (int i = 0; i < clientIds.Length; i++)
                 {
-                    NetworkTransport.Send(hostId, clientIds[i], channel, dataToSend, size, out error);
+                    int clientId = clientIds[i];
+                    if (isHost && clientId == -1)
+                    {
+                        InvokeMessageHandlers(messageType, data, clientId);
+                        continue;
+                    }
+                    else if (clientId == -1)
+                    {
+                        //Client trying to send data to host
+                        clientId = serverClientId;
+                    }
+                    NetworkTransport.Send(hostId, clientId, channel, dataToSend, size, out error);
                 }
             }
         }
@@ -618,7 +651,18 @@ namespace MLAPI
                 int channel = channels[channelName];
                 for (int i = 0; i < clientIds.Count; i++)
                 {
-                    NetworkTransport.Send(hostId, clientIds[i], channel, dataToSend, size, out error);
+                    int clientId = clientIds[i];
+                    if (isHost && clientId == -1)
+                    {
+                        InvokeMessageHandlers(messageType, data, clientId);
+                        continue;
+                    }
+                    else if (clientId == -1)
+                    {
+                        //Client trying to send data to host
+                        clientId = serverClientId;
+                    }
+                    NetworkTransport.Send(hostId, clientId, channel, dataToSend, size, out error);
                 }
             }
         }
@@ -639,7 +683,19 @@ namespace MLAPI
                 int channel = channels[channelName];
                 foreach (KeyValuePair<int, NetworkedClient> pair in connectedClients)
                 {
-                    NetworkTransport.Send(hostId, pair.Key, channel, dataToSend, size, out error);
+                    int clientId = pair.Key;
+                    if(isHost && pair.Key == -1)
+                    {
+                        InvokeMessageHandlers(messageType, data, pair.Key);
+                        continue;
+                    }
+                    else if (clientId == -1)
+                    {
+                        //Client trying to send data to host
+                        clientId = serverClientId;
+                    }
+                    NetworkTransport.Send(hostId, clientId, channel, dataToSend, size, out error);
+                    
                 }
             }
         }
@@ -662,7 +718,18 @@ namespace MLAPI
                 {
                     if (pair.Key == clientIdToIgnore)
                         continue;
-                    NetworkTransport.Send(hostId, pair.Key, channel, dataToSend, size, out error);
+                    int clientId = pair.Key;
+                    if (isHost && pair.Key == -1)
+                    {
+                        InvokeMessageHandlers(messageType, data, clientId);
+                        continue;
+                    }
+                    else if (clientId == -1)
+                    {
+                        //Client trying to send data to host
+                        clientId = serverClientId;
+                    }
+                    NetworkTransport.Send(hostId, clientId, channel, dataToSend, size, out error);
                 }
             }
         }

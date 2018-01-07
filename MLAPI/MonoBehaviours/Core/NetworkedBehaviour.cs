@@ -82,12 +82,14 @@ namespace MLAPI
 
         public void SendToServer(string messageType, string channelName, byte[] data)
         {
-            if(isServer)
+            if (isServer)
             {
-                Debug.LogWarning("MLAPI: Sending messages from server to server is not yet supported");
-                return;
+                NetworkingManager.singleton.InvokeMessageHandlers(messageType, data, -1);
             }
-            NetworkingManager.singleton.Send(NetworkingManager.singleton.serverClientId, messageType, channelName, data);
+            else
+            {
+                NetworkingManager.singleton.Send(NetworkingManager.singleton.serverClientId, messageType, channelName, data);
+            }
         }
 
         public void SendToLocalClient(string messageType, string channelName, byte[] data)

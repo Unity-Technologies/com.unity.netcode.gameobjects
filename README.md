@@ -20,6 +20,7 @@ It's licenced under the MIT licence :D
 * Serializer (both for the library to speed up and to allow structs to be sent easily)
 * SyncVars (allow variables to automatically be synced to new clients and current clients when it's changed)
 * Message compression
+* Host support (Client hosts the server) (done)
 
 That's all I can think of right now. But there is more to come, especially if people show intrest in the project.
 
