@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
-using UnityEngine;
 using UnityEngine.Networking;
 
 namespace MLAPI
@@ -69,7 +68,17 @@ namespace MLAPI
 
         public bool CompareConfig(byte[] hash)
         {
-            return hash.SequenceEqual(GetConfig());
+            byte[] localConfigHash = GetConfig();
+
+            if (hash.Length != localConfigHash.Length)
+                return false;
+
+            for (int i = 0; i < hash.Length; i++)
+            {
+                if (hash[i] != localConfigHash[i])
+                    return false;
+            }
+            return true;
         }
     }
 }

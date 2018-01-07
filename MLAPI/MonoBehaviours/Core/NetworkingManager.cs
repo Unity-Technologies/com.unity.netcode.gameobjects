@@ -2,10 +2,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using UnityEngine;
 using UnityEngine.Networking;
-using UnityEngine.SceneManagement;
 
 namespace MLAPI
 {
@@ -42,8 +40,6 @@ namespace MLAPI
         private Dictionary<ushort, int> messageHandlerCounter;
         private Dictionary<ushort, Stack<int>> releasedMessageHandlerCounters;
         internal int serverClientId;
-        public int PlaySceneIndex;
-        public int MenuSceneIndex;
         internal Dictionary<uint, NetworkedObject> spawnedObjects;
         public Dictionary<uint, NetworkedObject> SpawnedObjects
         {
@@ -263,7 +259,6 @@ namespace MLAPI
 
         public void StartServer(NetworkingConfiguration netConfig)
         {
-            SceneManager.LoadScene(PlaySceneIndex);
             ConnectionConfig cConfig = Init(netConfig);
             if (NetworkConfig.ConnectionApproval)
             {
@@ -293,7 +288,6 @@ namespace MLAPI
 
         public void StartHost(NetworkingConfiguration netConfig)
         {
-            SceneManager.LoadScene(PlaySceneIndex);
             ConnectionConfig cConfig = Init(netConfig);
             if (NetworkConfig.ConnectionApproval)
             {
