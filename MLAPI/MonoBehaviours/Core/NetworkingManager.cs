@@ -48,7 +48,6 @@ namespace MLAPI
                 return spawnedObjects;
             }
         }
-        public List<uint> spawnedObjectIds;
         private Stack<uint> releasedNetworkObjectIds;
         private uint networkObjectIdCounter;
         private uint GetNetworkObjectId()
@@ -98,7 +97,6 @@ namespace MLAPI
             }
             netObject.OwnerClientId = ownerId;
 
-            singleton.spawnedObjectIds.Add(netObject.NetworkId);
             singleton.spawnedObjects.Add(netObject.NetworkId, netObject);
             return go;
         }
@@ -123,7 +121,6 @@ namespace MLAPI
             }
             netObject.IsPlayerObject = true;
             connectedClients[clientId].PlayerObject = go;
-            singleton.spawnedObjectIds.Add(netObject.NetworkId);
             singleton.spawnedObjects.Add(netObject.NetworkId, netObject);
             return go;
         }
@@ -221,7 +218,6 @@ namespace MLAPI
             messageHandlerCounter = new Dictionary<ushort, int>();
             releasedMessageHandlerCounters = new Dictionary<ushort, Stack<int>>();
             spawnedObjects = new Dictionary<uint, NetworkedObject>();
-            spawnedObjectIds = new List<uint>();
             releasedNetworkObjectIds = new Stack<uint>();
             if (NetworkConfig.HandleObjectSpawning)
             {
@@ -230,7 +226,6 @@ namespace MLAPI
                 {
                     uint networkId = GetNetworkObjectId();
                     spawnedObjects.Add(networkId, sceneObjects[i]);
-                    spawnedObjectIds.Add(networkId);
                 }
             }
 
@@ -806,22 +801,28 @@ namespace MLAPI
                         if (NetworkConfig.HandleObjectSpawning)
                         {
                             int amountOfObjectsToSend = 0;
-                            for (int i = 0; i < spawnedObjectIds.Count; i++)
+                            foreach (KeyValuePair<uint, NetworkedObject> pair in spawnedObjects)
                             {
-                                if (spawnedObjects[spawnedObjectIds[i]].ServerOnly)
+                                if (pair.Value.ServerOnly)
                                     continue;
                                 else
                                     amountOfObjectsToSend++;
                             }
                             writer.Write(amountOfObjectsToSend);
-                            for (int i = 0; i < spawnedObjectIds.Count; i++)
+
+                            foreach (KeyValuePair<uint, NetworkedObject> pair in spawnedObjects)
                             {
-                                if (spawnedObjects[spawnedObjectIds[i]].ServerOnly)
+                                if (pair.Value.ServerOnly)
                                     continue;
-                                writer.Write(spawnedObjects[spawnedObjectIds[i]].IsPlayerObject);
-                                writer.Write(spawnedObjects[spawnedObjectIds[i]].NetworkId);
-                                writer.Write(spawnedObjects[spawnedObjectIds[i]].OwnerClientId);
-                                writer.Write(spawnedObjects[spawnedObjectIds[i]].SpawnablePrefabId);
+                                else
+                                    amountOfObjectsToSend++;
+
+                                if (pair.Value.ServerOnly)
+                                    continue;
+                                writer.Write(pair.Value.IsPlayerObject);
+                                writer.Write(pair.Value.NetworkId);
+                                writer.Write(pair.Value.OwnerClientId);
+                                writer.Write(pair.Value.SpawnablePrefabId);
                             }
                         }
                     }
