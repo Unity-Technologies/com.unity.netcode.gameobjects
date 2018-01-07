@@ -19,7 +19,7 @@ namespace MLAPI
         {
             get
             {
-                return OwnerClientId == NetworkingManager.singleton.MyClientId;
+                return IsPlayerObject && (OwnerClientId == NetworkingManager.singleton.MyClientId || (OwnerClientId == -1 && NetworkingManager.singleton.isHost));
             }
         }
 
