@@ -2,8 +2,6 @@
 
 namespace MLAPI
 {
-    //TODO
-    //Will be used for objects which will be spawned automatically across clients
     public class NetworkedObject : MonoBehaviour
     {
         [HideInInspector]
@@ -11,7 +9,7 @@ namespace MLAPI
         [HideInInspector]
         public int OwnerClientId = -1;
         [HideInInspector]
-        public int SpawnablePrefabId;
+        public int SpawnablePrefabIndex;
         [HideInInspector]
         public bool IsPlayerObject = false;
         public bool ServerOnly = false;
@@ -25,7 +23,13 @@ namespace MLAPI
 
         private void OnDestroy()
         {
-            NetworkingManager.OnDestroyObject(NetworkId);
+            NetworkingManager.singleton.OnDestroyObject(NetworkId, false);
+        }
+
+        internal bool isSpawned = false;
+        public void Spawn()
+        {
+            NetworkingManager.singleton.OnSpawnObject(this);
         }
     }
 }

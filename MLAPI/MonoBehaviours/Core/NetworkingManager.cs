@@ -70,10 +70,13 @@ namespace MLAPI
         {
             for (int i = 0; i < SpawnablePrefabs.Count; i++)
             {
-                if(SpawnablePrefabs[i].GetComponentInChildren<NetworkedObject>() == null)
+                NetworkedObject netObject = SpawnablePrefabs[i].GetComponentInChildren<NetworkedObject>();
+                if(netObject == null)
                 {
                     Debug.LogWarning("MLAPI: All SpawnablePrefabs need a NetworkedObject component. Please add one to the prefab " + SpawnablePrefabs[i].gameObject.name);
+                    continue;
                 }
+                netObject.SpawnablePrefabIndex = i;
             }
         }
 
@@ -86,7 +89,7 @@ namespace MLAPI
                 Debug.LogWarning("MLAPI: Please add a NetworkedObject component to the root of all spawnable objects");
                 netObject = go.AddComponent<NetworkedObject>();
             }
-            netObject.SpawnablePrefabId = spawnablePrefabIndex;
+            netObject.SpawnablePrefabIndex = spawnablePrefabIndex;
             if(singleton.isServer)
             {
                 netObject.NetworkId = singleton.GetNetworkObjectId();
@@ -125,15 +128,82 @@ namespace MLAPI
             return go;
         }
 
-        internal static void OnDestroyObject(uint networkId)
+        internal void OnDestroyObject(uint networkId, bool destroyGameObject)
         {
-            if (!singleton.isServer)
+            if (!spawnedObjects.ContainsKey(networkId) || !NetworkConfig.HandleObjectSpawning)
                 return;
+            GameObject go = spawnedObjects[networkId].gameObject;
+            if(isServer)
+            {
+                releasedNetworkObjectIds.Push(networkId);
+                if (!spawnedObjects[networkId].ServerOnly)
+                {
+                    using (MemoryStream stream = new MemoryStream())
+                    {
+                        using (BinaryWriter writer = new BinaryWriter(stream))
+                        {
+                            writer.Write(networkId);
+                        }
+                        //If we are host, send to everyone except ourselves. Otherwise, send to all
+                        if (isHost)
+                            Send("MLAPI_DESTROY_OBJECT", "MLAPI_RELIABLE_FRAGMENTED", stream.ToArray(), -1);
+                        else
+                            Send("MLAPI_DESTROY_OBJECT", "MLAPI_RELIABLE_FRAGMENTED", stream.ToArray());
+                    }
+                }
+            }
+            if(destroyGameObject)
+                Destroy(go);
+            spawnedObjects.Remove(networkId);
+        }
 
-            if (!singleton.spawnedObjects.ContainsKey(networkId))
+        internal void OnSpawnObject(NetworkedObject netObject, int? clientOwnerId = null)
+        {
+            if (netObject.isSpawned)
+            {
+                Debug.LogWarning("MLAPI: Object already spawned");
                 return;
-            NetworkedObject netObject = singleton.spawnedObjects[networkId];
-            singleton.releasedNetworkObjectIds.Push(networkId);
+            }
+            else if(!isServer)
+            {
+                Debug.LogWarning("MLAPI: Only server can spawn objects");
+                return;
+            }
+            else if(netObject.SpawnablePrefabIndex == -1)
+            {
+                Debug.LogWarning("MLAPI: Invalid prefab index");
+                return;
+            }
+            else if(netObject.ServerOnly)
+            {
+                Debug.LogWarning("MLAPI: Server only objects does not have to be spawned");
+                return;
+            }
+            else if(NetworkConfig.HandleObjectSpawning)
+            {
+                Debug.LogWarning("MLAPI: NetworkingConfiguration is set to not handle object spawning");
+                return;
+            }
+            uint netId = GetNetworkObjectId();
+            spawnedObjects.Add(netId, netObject);
+            netObject.isSpawned = true;
+            if (clientOwnerId != null)
+                netObject.OwnerClientId = (int)clientOwnerId;
+            using(MemoryStream stream = new MemoryStream())
+            {
+                using(BinaryWriter writer = new BinaryWriter(stream))
+                {
+                    writer.Write(false);
+                    writer.Write(netObject.NetworkId);
+                    writer.Write(netObject.OwnerClientId);
+                    writer.Write(netObject.SpawnablePrefabIndex);
+                }
+                //If we are host, send to everyone except ourselves. Otherwise, send to all
+                if (isHost)
+                    Send("MLAPI_ADD_OBJECT", "MLAPI_RELIABLE_FRAGMENTED", stream.ToArray(), -1);
+                else
+                    Send("MLAPI_ADD_OBJECT", "MLAPI_RELIABLE_FRAGMENTED", stream.ToArray());
+            }
         }
 
         internal void InvokeMessageHandlers(string messageType, byte[] data, int clientId)
@@ -238,6 +308,7 @@ namespace MLAPI
             messageTypes.Add("MLAPI_CONNECTION_APPROVED", 1);
             messageTypes.Add("MLAPI_ADD_OBJECT", 2);
             messageTypes.Add("MLAPI_CLIENT_DISCONNECT", 3);
+            messageTypes.Add("MLAPI_DESTROY_OBJECT", 4);
 
 
             HashSet<string> channelNames = new HashSet<string>();
@@ -564,6 +635,20 @@ namespace MLAPI
                                     }
                                 }
                                 break;
+                            case 4:
+                                //Server infroms clients to destroy an object
+                                if(isClient)
+                                {
+                                    using (MemoryStream messageReadStream = new MemoryStream(incommingData))
+                                    {
+                                        using (BinaryReader messageReader = new BinaryReader(messageReadStream))
+                                        {
+                                            uint netId = messageReader.ReadUInt32();
+                                            OnDestroyObject(netId, true);
+                                        }
+                                    }
+                                }
+                                break;
                         }
                     }
                 }
@@ -822,7 +907,7 @@ namespace MLAPI
                                 writer.Write(pair.Value.IsPlayerObject);
                                 writer.Write(pair.Value.NetworkId);
                                 writer.Write(pair.Value.OwnerClientId);
-                                writer.Write(pair.Value.SpawnablePrefabId);
+                                writer.Write(pair.Value.SpawnablePrefabIndex);
                             }
                         }
                     }
