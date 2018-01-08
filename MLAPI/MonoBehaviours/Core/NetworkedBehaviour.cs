@@ -47,7 +47,7 @@ namespace MLAPI
             }
         }
         private NetworkedObject _networkedObject = null;
-        public uint objectNetworkId
+        public uint networkId
         {
             get
             {
@@ -66,14 +66,14 @@ namespace MLAPI
         //Change data type
         private Dictionary<string, int> registeredMessageHandlers = new Dictionary<string, int>();
 
-        public int RegisterMessageHandler(string name, Action<int, byte[]> action)
+        protected int RegisterMessageHandler(string name, Action<int, byte[]> action)
         {
             int counter = MessageManager.AddIncomingMessageHandler(name, action);
             registeredMessageHandlers.Add(name, counter);
             return counter;
         }
 
-        public void DeregisterMessageHandler(string name, int counter)
+        protected void DeregisterMessageHandler(string name, int counter)
         {
             MessageManager.RemoveIncomingMessageHandler(name, counter);
         }
@@ -86,7 +86,7 @@ namespace MLAPI
             }
         }
 
-        public void SendToServer(string messageType, string channelName, byte[] data)
+        protected void SendToServer(string messageType, string channelName, byte[] data)
         {
             if (isServer)
             {
@@ -98,7 +98,7 @@ namespace MLAPI
             }
         }
 
-        public void SendToLocalClient(string messageType, string channelName, byte[] data)
+        protected void SendToLocalClient(string messageType, string channelName, byte[] data)
         {
             if (!isServer)
             {
@@ -108,7 +108,7 @@ namespace MLAPI
             NetworkingManager.singleton.Send(ownerClientId, messageType, channelName, data);
         }
 
-        public void SendToNonLocalClients(string messageType, string channelName, byte[] data)
+        protected void SendToNonLocalClients(string messageType, string channelName, byte[] data)
         {
             if (!isServer)
             {
@@ -118,7 +118,7 @@ namespace MLAPI
             NetworkingManager.singleton.Send(messageType, channelName, data, ownerClientId);
         }
 
-        public void SendToClient(int clientId, string messageType, string channelName, byte[] data)
+        protected void SendToClient(int clientId, string messageType, string channelName, byte[] data)
         {
             if (!isServer)
             {
@@ -128,7 +128,7 @@ namespace MLAPI
             NetworkingManager.singleton.Send(clientId, messageType, channelName, data);
         }
 
-        public void SendToClients(int[] clientIds, string messageType, string channelName, byte[] data)
+        protected void SendToClients(int[] clientIds, string messageType, string channelName, byte[] data)
         {
             if (!isServer)
             {
@@ -138,7 +138,7 @@ namespace MLAPI
             NetworkingManager.singleton.Send(clientIds, messageType, channelName, data);
         }
 
-        public void SendToClients(List<int> clientIds, string messageType, string channelName, byte[] data)
+        protected void SendToClients(List<int> clientIds, string messageType, string channelName, byte[] data)
         {
             if (!isServer)
             {
@@ -148,7 +148,7 @@ namespace MLAPI
             NetworkingManager.singleton.Send(clientIds, messageType, channelName, data);
         }
 
-        public void SendToClients(string messageType, string channelName, byte[] data)
+        protected void SendToClients(string messageType, string channelName, byte[] data)
         {
             if (!isServer)
             {
@@ -158,7 +158,7 @@ namespace MLAPI
             NetworkingManager.singleton.Send(messageType, channelName, data);
         }
 
-        public NetworkedObject GetNetworkedObject(uint networkId)
+        protected NetworkedObject GetNetworkedObject(uint networkId)
         {
             return SpawnManager.spawnedObjects[networkId];
         }

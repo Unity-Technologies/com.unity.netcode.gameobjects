@@ -147,6 +147,41 @@ namespace MLAPI
             serverClientId = NetworkTransport.Connect(hostId, NetworkConfig.Address, NetworkConfig.Port, 0, out error);
         }
 
+        public void StopServer()
+        {
+            HashSet<int> sentIds = new HashSet<int>();
+            //Don't know if I have to disconnect the clients. I'm assuming the NetworkTransport does all the cleaning on shtudown. But this way the clients get a disconnect message from server (so long it does't get lost)
+            foreach (KeyValuePair<int, NetworkedClient> pair in connectedClients)
+            {
+                if(!sentIds.Contains(pair.Key))
+                {
+                    sentIds.Add(pair.Key);
+                    NetworkTransport.Disconnect(hostId, pair.Key, out error);
+                }
+            }
+            foreach (int clientId in pendingClients)
+            {
+                if (!sentIds.Contains(clientId))
+                {
+                    sentIds.Add(clientId);
+                    NetworkTransport.Disconnect(hostId, clientId, out error);
+                }
+            }
+            Shutdown();
+        }
+
+        public void StopHost()
+        {
+            StopServer();
+            //We don't stop client since we dont actually have a transport connection to our own host. We just handle host messages directly in the MLAPI
+        }
+
+        public void StopClient()
+        {
+            NetworkTransport.Disconnect(hostId, serverClientId, out error);
+            Shutdown();
+        }
+
         public void StartHost(NetworkingConfiguration netConfig)
         {
             ConnectionConfig cConfig = Init(netConfig);
@@ -188,6 +223,15 @@ namespace MLAPI
         private void OnDestroy()
         {
             singleton = null;
+            Shutdown();
+        }
+
+        private void Shutdown()
+        {
+            isListening = false;
+            isClient = false;
+            isServer = false;
+            NetworkTransport.Shutdown();
         }
 
         //Receive stuff
@@ -602,7 +646,7 @@ namespace MLAPI
             }
         }
 
-        internal void DisconnectClient(int clientId)
+        private void DisconnectClient(int clientId)
         {
             if (!isServer)
                 return;
