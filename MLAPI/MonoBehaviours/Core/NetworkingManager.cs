@@ -1,4 +1,5 @@
 ﻿using MLAPI.Helper;
+using MLAPI.NetworkingManagerComponents;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -26,7 +27,7 @@ namespace MLAPI
         internal HashSet<int> pendingClients;
         internal bool isServer;
         internal bool isClient;
-        internal bool isHost
+        public bool isHost
         {
             get
             {
@@ -35,34 +36,7 @@ namespace MLAPI
         }
         private bool isListening;
         private byte[] messageBuffer;
-        private Dictionary<string, int> channels;
-        private Dictionary<string, ushort> messageTypes;
-        private Dictionary<ushort, Dictionary<int, Action<int, byte[]>>> messageCallbacks;
-        private Dictionary<ushort, int> messageHandlerCounter;
-        private Dictionary<ushort, Stack<int>> releasedMessageHandlerCounters;
         internal int serverClientId;
-        internal Dictionary<uint, NetworkedObject> spawnedObjects;
-        public Dictionary<uint, NetworkedObject> SpawnedObjects
-        {
-            get
-            {
-                return spawnedObjects;
-            }
-        }
-        private Stack<uint> releasedNetworkObjectIds;
-        private uint networkObjectIdCounter;
-        private uint GetNetworkObjectId()
-        {
-            if (releasedNetworkObjectIds.Count > 0)
-            {
-                return releasedNetworkObjectIds.Pop();
-            }
-            else
-            {
-                networkObjectIdCounter++;
-                return networkObjectIdCounter;
-            }
-        }
 
 
         public NetworkingConfiguration NetworkConfig;
@@ -72,207 +46,12 @@ namespace MLAPI
             for (int i = 0; i < SpawnablePrefabs.Count; i++)
             {
                 NetworkedObject netObject = SpawnablePrefabs[i].GetComponentInChildren<NetworkedObject>();
-                if(netObject == null)
+                if (netObject == null)
                 {
                     Debug.LogWarning("MLAPI: All SpawnablePrefabs need a NetworkedObject component. Please add one to the prefab " + SpawnablePrefabs[i].gameObject.name);
                     continue;
                 }
                 netObject.SpawnablePrefabIndex = i;
-            }
-        }
-
-        internal GameObject SpawnObject(int spawnablePrefabIndex, uint networkId, int ownerId)
-        {
-            GameObject go = Instantiate(singleton.SpawnablePrefabs[spawnablePrefabIndex]);
-            NetworkedObject netObject = go.GetComponent<NetworkedObject>();
-            if(netObject == null)
-            {
-                Debug.LogWarning("MLAPI: Please add a NetworkedObject component to the root of all spawnable objects");
-                netObject = go.AddComponent<NetworkedObject>();
-            }
-            netObject.SpawnablePrefabIndex = spawnablePrefabIndex;
-            if(singleton.isServer)
-            {
-                netObject.NetworkId = singleton.GetNetworkObjectId();
-            }
-            else
-            {
-                netObject.NetworkId = networkId;
-            }
-            netObject.OwnerClientId = ownerId;
-
-            singleton.spawnedObjects.Add(netObject.NetworkId, netObject);
-            return go;
-        }
-
-        internal GameObject SpawnPlayerObject(int clientId, uint networkId)
-        {
-            GameObject go = Instantiate(DefaultPlayerPrefab);
-            NetworkedObject netObject = go.GetComponent<NetworkedObject>();
-            if (netObject == null)
-            {
-                Debug.LogWarning("MLAPI: Please add a NetworkedObject component to the root of the player prefab");
-                netObject = go.AddComponent<NetworkedObject>();
-            }
-            netObject.OwnerClientId = clientId;
-            if(isServer)
-            {
-                netObject.NetworkId = singleton.GetNetworkObjectId();
-            }
-            else
-            {
-                netObject.NetworkId = networkId;
-            }
-            netObject.isPlayerObject = true;
-            connectedClients[clientId].PlayerObject = go;
-            singleton.spawnedObjects.Add(netObject.NetworkId, netObject);
-            return go;
-        }
-
-        internal void OnDestroyObject(uint networkId, bool destroyGameObject)
-        {
-            if (!spawnedObjects.ContainsKey(networkId) || !NetworkConfig.HandleObjectSpawning)
-                return;
-            GameObject go = spawnedObjects[networkId].gameObject;
-            if(isServer)
-            {
-                releasedNetworkObjectIds.Push(networkId);
-                if (!spawnedObjects[networkId].ServerOnly)
-                {
-                    using (MemoryStream stream = new MemoryStream())
-                    {
-                        using (BinaryWriter writer = new BinaryWriter(stream))
-                        {
-                            writer.Write(networkId);
-                        }
-                        //If we are host, send to everyone except ourselves. Otherwise, send to all
-                        if (isHost)
-                            Send("MLAPI_DESTROY_OBJECT", "MLAPI_RELIABLE_FRAGMENTED", stream.ToArray(), -1);
-                        else
-                            Send("MLAPI_DESTROY_OBJECT", "MLAPI_RELIABLE_FRAGMENTED", stream.ToArray());
-                    }
-                }
-            }
-            if(destroyGameObject)
-                Destroy(go);
-            spawnedObjects.Remove(networkId);
-        }
-
-        internal void OnSpawnObject(NetworkedObject netObject, int? clientOwnerId = null)
-        {
-            if (netObject.isSpawned)
-            {
-                Debug.LogWarning("MLAPI: Object already spawned");
-                return;
-            }
-            else if(!isServer)
-            {
-                Debug.LogWarning("MLAPI: Only server can spawn objects");
-                return;
-            }
-            else if(netObject.SpawnablePrefabIndex == -1)
-            {
-                Debug.LogWarning("MLAPI: Invalid prefab index");
-                return;
-            }
-            else if(netObject.ServerOnly)
-            {
-                Debug.LogWarning("MLAPI: Server only objects does not have to be spawned");
-                return;
-            }
-            else if(NetworkConfig.HandleObjectSpawning)
-            {
-                Debug.LogWarning("MLAPI: NetworkingConfiguration is set to not handle object spawning");
-                return;
-            }
-            uint netId = GetNetworkObjectId();
-            spawnedObjects.Add(netId, netObject);
-            netObject.isSpawned = true;
-            if (clientOwnerId != null)
-                netObject.OwnerClientId = (int)clientOwnerId;
-            using(MemoryStream stream = new MemoryStream())
-            {
-                using(BinaryWriter writer = new BinaryWriter(stream))
-                {
-                    writer.Write(false);
-                    writer.Write(netObject.NetworkId);
-                    writer.Write(netObject.OwnerClientId);
-                    writer.Write(netObject.SpawnablePrefabIndex);
-                }
-                //If we are host, send to everyone except ourselves. Otherwise, send to all
-                if (isHost)
-                    Send("MLAPI_ADD_OBJECT", "MLAPI_RELIABLE_FRAGMENTED", stream.ToArray(), -1);
-                else
-                    Send("MLAPI_ADD_OBJECT", "MLAPI_RELIABLE_FRAGMENTED", stream.ToArray());
-            }
-        }
-
-        internal void InvokeMessageHandlers(string messageType, byte[] data, int clientId)
-        {
-            if(!messageTypes.ContainsKey(messageType) || !messageCallbacks.ContainsKey(messageTypes[messageType]))
-                return;
-
-            foreach (KeyValuePair<int, Action<int, byte[]>> pair in messageCallbacks[messageTypes[messageType]])
-            {
-                pair.Value(clientId, data);
-            }
-        }
-
-        internal int AddIncomingMessageHandler(string name, Action<int, byte[]> action)
-        {
-            if(messageTypes.ContainsKey(name))
-            {
-                if(messageCallbacks.ContainsKey(messageTypes[name]))
-                {
-                    int handlerId = 0;
-                    if (messageHandlerCounter.ContainsKey(messageTypes[name]))
-                    {
-                        if (!releasedMessageHandlerCounters.ContainsKey(messageTypes[name]))
-                            releasedMessageHandlerCounters.Add(messageTypes[name], new Stack<int>());
-
-                        if(releasedMessageHandlerCounters[messageTypes[name]].Count == 0)
-                        {
-                            handlerId = messageHandlerCounter[messageTypes[name]];
-                            messageHandlerCounter[messageTypes[name]]++;
-                        }
-                        else
-                        {
-                            handlerId = releasedMessageHandlerCounters[messageTypes[name]].Pop();
-                        }
-                    }
-                    else
-                    {
-                        messageHandlerCounter.Add(messageTypes[name], handlerId + 1);
-                    }
-                    messageCallbacks[messageTypes[name]].Add(handlerId, action);
-                    return handlerId;
-                }
-                else
-                {
-                    messageCallbacks.Add(messageTypes[name], new Dictionary<int, Action<int, byte[]>>());
-                    messageHandlerCounter.Add(messageTypes[name], 1);
-                    messageCallbacks[messageTypes[name]].Add(0, action);
-                    return 0;
-                }
-            }
-            else
-            {
-                Debug.LogWarning("MLAPI: The message type " + name + " has not been registered. Please define it in the netConfig");
-                return -1;
-            }
-        }
-
-        internal void RemoveIncomingMessageHandler(string name, int counter)
-        {
-            if (counter == -1)
-                return;
-
-            if (messageTypes.ContainsKey(name) && messageCallbacks.ContainsKey(messageTypes[name]) && messageCallbacks[messageTypes[name]].ContainsKey(counter))
-            {
-                messageCallbacks[messageTypes[name]].Remove(counter);
-                if (!releasedMessageHandlerCounters.ContainsKey(messageTypes[name]))
-                    releasedMessageHandlerCounters.Add(messageTypes[name], new Stack<int>());
-                releasedMessageHandlerCounters[messageTypes[name]].Push(counter);
             }
         }
 
@@ -283,20 +62,20 @@ namespace MLAPI
             pendingClients = new HashSet<int>();
             connectedClients = new Dictionary<int, NetworkedClient>();
             messageBuffer = new byte[NetworkConfig.MessageBufferSize];
-            channels = new Dictionary<string, int>();
-            messageTypes = new Dictionary<string, ushort>();
-            messageCallbacks = new Dictionary<ushort, Dictionary<int, Action<int, byte[]>>>();
-            messageHandlerCounter = new Dictionary<ushort, int>();
-            releasedMessageHandlerCounters = new Dictionary<ushort, Stack<int>>();
-            spawnedObjects = new Dictionary<uint, NetworkedObject>();
-            releasedNetworkObjectIds = new Stack<uint>();
+            MessageManager.channels = new Dictionary<string, int>();
+            MessageManager.messageTypes = new Dictionary<string, ushort>();
+            MessageManager.messageCallbacks = new Dictionary<ushort, Dictionary<int, Action<int, byte[]>>>();
+            MessageManager.messageHandlerCounter = new Dictionary<ushort, int>();
+            MessageManager.releasedMessageHandlerCounters = new Dictionary<ushort, Stack<int>>();
+            SpawnManager.spawnedObjects = new Dictionary<uint, NetworkedObject>();
+            SpawnManager.releasedNetworkObjectIds = new Stack<uint>();
             if (NetworkConfig.HandleObjectSpawning)
             {
                 NetworkedObject[] sceneObjects = FindObjectsOfType<NetworkedObject>();
                 for (int i = 0; i < sceneObjects.Length; i++)
                 {
-                    uint networkId = GetNetworkObjectId();
-                    spawnedObjects.Add(networkId, sceneObjects[i]);
+                    uint networkId = SpawnManager.GetNetworkObjectId();
+                    SpawnManager.spawnedObjects.Add(networkId, sceneObjects[i]);
                 }
             }
 
@@ -305,11 +84,11 @@ namespace MLAPI
 
             //MLAPI channels and messageTypes
             NetworkConfig.Channels.Add("MLAPI_RELIABLE_FRAGMENTED", QosType.ReliableFragmented);
-            messageTypes.Add("MLAPI_CONNECTION_REQUEST", 0);
-            messageTypes.Add("MLAPI_CONNECTION_APPROVED", 1);
-            messageTypes.Add("MLAPI_ADD_OBJECT", 2);
-            messageTypes.Add("MLAPI_CLIENT_DISCONNECT", 3);
-            messageTypes.Add("MLAPI_DESTROY_OBJECT", 4);
+            MessageManager.messageTypes.Add("MLAPI_CONNECTION_REQUEST", 0);
+            MessageManager.messageTypes.Add("MLAPI_CONNECTION_APPROVED", 1);
+            MessageManager.messageTypes.Add("MLAPI_ADD_OBJECT", 2);
+            MessageManager.messageTypes.Add("MLAPI_CLIENT_DISCONNECT", 3);
+            MessageManager.messageTypes.Add("MLAPI_DESTROY_OBJECT", 4);
 
 
             HashSet<string> channelNames = new HashSet<string>();
@@ -321,14 +100,14 @@ namespace MLAPI
                     continue;
                 }
                 int channelId = cConfig.AddChannel(pair.Value);
-                channels.Add(pair.Key, channelId);
+                MessageManager.channels.Add(pair.Key, channelId);
                 channelNames.Add(pair.Key);
             }
             //0-32 are reserved for MLAPI messages
             ushort messageId = 32;
             for (ushort i = 0; i < NetworkConfig.MessageTypes.Count; i++)
             {
-                messageTypes.Add(NetworkConfig.MessageTypes[i], messageId);
+                MessageManager.messageTypes.Add(NetworkConfig.MessageTypes[i], messageId);
                 messageId++;
             }
             return cConfig;
@@ -390,7 +169,7 @@ namespace MLAPI
             connectedClients.Add(-1, new NetworkedClient() { ClientId = -1 });
             if(NetworkConfig.HandleObjectSpawning)
             {
-                SpawnPlayerObject(-1, 0);
+                SpawnManager.SpawnPlayerObject(-1, 0);
             }
         }
 
@@ -483,7 +262,7 @@ namespace MLAPI
             }
         }
 
-        IEnumerator ApprovalTimeout(int clientId)
+        private IEnumerator ApprovalTimeout(int clientId)
         {
             float timeStarted = Time.time;
             //We yield every frame incase a pending client disconnects and someone else gets its connection id
@@ -518,7 +297,7 @@ namespace MLAPI
                     if (messageType >= 32)
                     {
                         //Custom message, invoke all message handlers
-                        foreach (KeyValuePair<int, Action<int, byte[]>> pair in messageCallbacks[messageType])
+                        foreach (KeyValuePair<int, Action<int, byte[]>> pair in MessageManager.messageCallbacks[messageType])
                         {
                             pair.Value(clientId, incommingData);
                         }  
@@ -583,11 +362,11 @@ namespace MLAPI
                                                     int prefabId = messageReader.ReadInt32();
                                                     if(isPlayerObject)
                                                     {
-                                                        SpawnPlayerObject(ownerId, networkId);
+                                                        SpawnManager.SpawnPlayerObject(ownerId, networkId);
                                                     }
                                                     else
                                                     {
-                                                        SpawnObject(prefabId, networkId, ownerId);
+                                                        SpawnManager.SpawnObject(prefabId, networkId, ownerId);
                                                     }
                                                 }
                                             }
@@ -613,11 +392,11 @@ namespace MLAPI
                                                 if (isPlayerObject)
                                                 {
                                                     connectedClients.Add(ownerId, new NetworkedClient() { ClientId = ownerId });
-                                                    SpawnPlayerObject(ownerId, networkId);
+                                                    SpawnManager.SpawnPlayerObject(ownerId, networkId);
                                                 }
                                                 else
                                                 {
-                                                    SpawnObject(prefabId, networkId, ownerId);
+                                                    SpawnManager.SpawnObject(prefabId, networkId, ownerId);
                                                 }
                                             }
                                             else
@@ -653,7 +432,7 @@ namespace MLAPI
                                         using (BinaryReader messageReader = new BinaryReader(messageReadStream))
                                         {
                                             uint netId = messageReader.ReadUInt32();
-                                            OnDestroyObject(netId, true);
+                                            SpawnManager.OnDestroyObject(netId, true);
                                         }
                                     }
                                 }
@@ -669,7 +448,7 @@ namespace MLAPI
             if(isHost && clientId == -1)
             {
                 //Host trying to send data to it's own client
-                InvokeMessageHandlers(messageType, data, clientId);
+                MessageManager.InvokeMessageHandlers(messageType, data, clientId);
                 return;
             }
             else if(clientId == -1)
@@ -681,14 +460,14 @@ namespace MLAPI
             {
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
-                    writer.Write(messageTypes[messageType]);
+                    writer.Write(MessageManager.messageTypes[messageType]);
                     writer.Write((ushort)data.Length);
                     writer.Write(data);
                 }
                 //2 bytes for message type and 2 bytes for byte length
                 int size = data.Length + 4;
                 byte[] dataToSend = stream.ToArray();
-                NetworkTransport.Send(hostId, clientId, channels[channelName], dataToSend, dataToSend.Length, out error);
+                NetworkTransport.Send(hostId, clientId, MessageManager.channels[channelName], dataToSend, dataToSend.Length, out error);
             }
         }
 
@@ -698,20 +477,20 @@ namespace MLAPI
             {
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
-                    writer.Write(messageTypes[messageType]);
+                    writer.Write(MessageManager.messageTypes[messageType]);
                     writer.Write((ushort)data.Length);
                     writer.Write(data);
                 }
                 //2 bytes for message type and 2 bytes for byte length
                 int size = data.Length + 4;
                 byte[] dataToSend = stream.ToArray();
-                int channel = channels[channelName];
+                int channel = MessageManager.channels[channelName];
                 for (int i = 0; i < clientIds.Length; i++)
                 {
                     int clientId = clientIds[i];
                     if (isHost && clientId == -1)
                     {
-                        InvokeMessageHandlers(messageType, data, clientId);
+                        MessageManager.InvokeMessageHandlers(messageType, data, clientId);
                         continue;
                     }
                     else if (clientId == -1)
@@ -730,20 +509,20 @@ namespace MLAPI
             {
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
-                    writer.Write(messageTypes[messageType]);
+                    writer.Write(MessageManager.messageTypes[messageType]);
                     writer.Write((ushort)data.Length);
                     writer.Write(data);
                 }
                 //2 bytes for message type and 2 bytes for byte length
                 int size = data.Length + 4;
                 byte[] dataToSend = stream.ToArray();
-                int channel = channels[channelName];
+                int channel = MessageManager.channels[channelName];
                 for (int i = 0; i < clientIds.Count; i++)
                 {
                     int clientId = clientIds[i];
                     if (isHost && clientId == -1)
                     {
-                        InvokeMessageHandlers(messageType, data, clientId);
+                        MessageManager.InvokeMessageHandlers(messageType, data, clientId);
                         continue;
                     }
                     else if (clientId == -1)
@@ -762,20 +541,20 @@ namespace MLAPI
             {
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
-                    writer.Write(messageTypes[messageType]);
+                    writer.Write(MessageManager.messageTypes[messageType]);
                     writer.Write((ushort)data.Length);
                     writer.Write(data);
                 }
                 //2 bytes for message type and 2 bytes for byte length
                 int size = data.Length + 4;
                 byte[] dataToSend = stream.ToArray();
-                int channel = channels[channelName];
+                int channel = MessageManager.channels[channelName];
                 foreach (KeyValuePair<int, NetworkedClient> pair in connectedClients)
                 {
                     int clientId = pair.Key;
                     if(isHost && pair.Key == -1)
                     {
-                        InvokeMessageHandlers(messageType, data, pair.Key);
+                        MessageManager.InvokeMessageHandlers(messageType, data, pair.Key);
                         continue;
                     }
                     else if (clientId == -1)
@@ -795,14 +574,14 @@ namespace MLAPI
             {
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
-                    writer.Write(messageTypes[messageType]);
+                    writer.Write(MessageManager.messageTypes[messageType]);
                     writer.Write((ushort)data.Length);
                     writer.Write(data);
                 }
                 //2 bytes for message type and 2 bytes for byte length
                 int size = data.Length + 4;
                 byte[] dataToSend = stream.ToArray();
-                int channel = channels[channelName];
+                int channel = MessageManager.channels[channelName];
                 foreach (KeyValuePair<int, NetworkedClient> pair in connectedClients)
                 {
                     if (pair.Key == clientIdToIgnore)
@@ -810,7 +589,7 @@ namespace MLAPI
                     int clientId = pair.Key;
                     if (isHost && pair.Key == -1)
                     {
-                        InvokeMessageHandlers(messageType, data, clientId);
+                        MessageManager.InvokeMessageHandlers(messageType, data, clientId);
                         continue;
                     }
                     else if (clientId == -1)
@@ -879,8 +658,8 @@ namespace MLAPI
                 
                 if(NetworkConfig.HandleObjectSpawning)
                 {
-                    uint networkId = GetNetworkObjectId();
-                    GameObject go = SpawnPlayerObject(clientId, networkId);
+                    uint networkId = SpawnManager.GetNetworkObjectId();
+                    GameObject go = SpawnManager.SpawnPlayerObject(clientId, networkId);
                     connectedClients[clientId].PlayerObject = go;
                 }
                 using (MemoryStream writeStream = new MemoryStream())
@@ -899,7 +678,7 @@ namespace MLAPI
                         if (NetworkConfig.HandleObjectSpawning)
                         {
                             int amountOfObjectsToSend = 0;
-                            foreach (KeyValuePair<uint, NetworkedObject> pair in spawnedObjects)
+                            foreach (KeyValuePair<uint, NetworkedObject> pair in SpawnManager.spawnedObjects)
                             {
                                 if (pair.Value.ServerOnly)
                                     continue;
@@ -908,7 +687,7 @@ namespace MLAPI
                             }
                             writer.Write(amountOfObjectsToSend);
 
-                            foreach (KeyValuePair<uint, NetworkedObject> pair in spawnedObjects)
+                            foreach (KeyValuePair<uint, NetworkedObject> pair in SpawnManager.spawnedObjects)
                             {
                                 if (pair.Value.ServerOnly)
                                     continue;

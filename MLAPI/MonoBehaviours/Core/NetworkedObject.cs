@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using MLAPI.NetworkingManagerComponents;
+using UnityEngine;
 
 namespace MLAPI
 {
@@ -31,19 +32,19 @@ namespace MLAPI
 
         private void OnDestroy()
         {
-            NetworkingManager.singleton.OnDestroyObject(NetworkId, false);
+            SpawnManager.OnDestroyObject(NetworkId, false);
         }
 
         internal bool isSpawned = false;
 
         public void Spawn()
         {
-            NetworkingManager.singleton.OnSpawnObject(this);
+            SpawnManager.OnSpawnObject(this);
         }
 
         public void SpawnWithOwnership(int clientId)
         {
-            NetworkingManager.singleton.OnSpawnObject(this, clientId);
+            SpawnManager.OnSpawnObject(this, clientId);
         }
     }
 }

@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using UnityEngine;
-using System.Linq;
+using MLAPI.NetworkingManagerComponents;
 
 namespace MLAPI
 {
@@ -27,6 +26,13 @@ namespace MLAPI
             get
             {
                 return NetworkingManager.singleton.isClient;
+            }
+        }
+        protected bool isHost
+        {
+            get
+            {
+                return NetworkingManager.singleton.isHost;
             }
         }
         protected NetworkedObject networkedObject
@@ -62,14 +68,14 @@ namespace MLAPI
 
         public int RegisterMessageHandler(string name, Action<int, byte[]> action)
         {
-            int counter = NetworkingManager.singleton.AddIncomingMessageHandler(name, action);
+            int counter = MessageManager.AddIncomingMessageHandler(name, action);
             registeredMessageHandlers.Add(name, counter);
             return counter;
         }
 
         public void DeregisterMessageHandler(string name, int counter)
         {
-            NetworkingManager.singleton.RemoveIncomingMessageHandler(name, counter);
+            MessageManager.RemoveIncomingMessageHandler(name, counter);
         }
 
         private void OnDestroy()
@@ -84,7 +90,7 @@ namespace MLAPI
         {
             if (isServer)
             {
-                NetworkingManager.singleton.InvokeMessageHandlers(messageType, data, -1);
+                MessageManager.InvokeMessageHandlers(messageType, data, -1);
             }
             else
             {
@@ -154,7 +160,7 @@ namespace MLAPI
 
         public NetworkedObject GetNetworkedObject(uint networkId)
         {
-            return NetworkingManager.singleton.SpawnedObjects[networkId];
+            return SpawnManager.spawnedObjects[networkId];
         }
     }
 }
