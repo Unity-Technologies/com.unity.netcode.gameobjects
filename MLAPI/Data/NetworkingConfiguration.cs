@@ -27,8 +27,6 @@ namespace MLAPI
         //Should only be used for dedicated servers and will require the servers RSA keypair being hard coded into clients in order to exchange a AES key
         //TODO
         public bool EncryptMessages = false;
-        public bool UseUPnP = false;
-        public Action<bool, IPAddress> UPnPCompleteCallback = null;
 
         //Cached config hash
         private byte[] ConfigHash = null;
