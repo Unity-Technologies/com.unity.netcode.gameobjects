@@ -9,8 +9,9 @@ using UnityEngine;
 
 namespace MLAPI.Helper
 {
-    public class UPnPHelper
+    public static class UPnPHelper
     {
+        //Needs to be threaded, Currently freezes the game for up to 10 sec
         internal static void AttemptPortMap(int port, Action<bool, IPAddress> callback)
         {
             bool invoked = false;
@@ -49,7 +50,7 @@ namespace MLAPI.Helper
                         Mapping[] mappings = task.Result.ToArray();
                         if(mappings.Length == 0)
                         {
-                            if (!invoked)
+                            if (!invoked && callback != null)
                                 callback(false, publicIPAddress);
                             invoked = true;
                         }
@@ -59,7 +60,7 @@ namespace MLAPI.Helper
                             {
                                 if(mappings[i].PrivatePort == port)
                                 {
-                                    if (!invoked)
+                                    if (!invoked && callback != null)
                                         callback(true, publicIPAddress);
                                     invoked = true;
                                 }
@@ -76,7 +77,7 @@ namespace MLAPI.Helper
             {
                 if (e.InnerException is NatDeviceNotFoundException)
                 {
-                    if (!invoked)
+                    if (!invoked && callback != null)
                         callback(false, publicIPAddress);
                     invoked = true;
                 }

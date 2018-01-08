@@ -10,7 +10,7 @@ namespace MLAPI
     public class NetworkingConfiguration
     {
         public ushort ProtocolVersion = 0;
-        public Dictionary<string, QosType> Channels = new Dictionary<string, QosType>();
+        public SortedDictionary<string, QosType> Channels = new SortedDictionary<string, QosType>();
         public List<string> MessageTypes = new List<string>();
         public int MessageBufferSize = 65535;
         public int MaxMessagesPerFrame = 150;
@@ -19,16 +19,16 @@ namespace MLAPI
         public string Address = "127.0.0.1";
         public int ClientConnectionBufferTimeout = 10;
         public bool ConnectionApproval = false;
-        public Action<byte[], int, Action<int, bool>> ConnectionApprovalCallback;
-        public byte[] ConnectionData;
+        public Action<byte[], int, Action<int, bool>> ConnectionApprovalCallback = null;
+        public byte[] ConnectionData = new byte[0];
         public bool HandleObjectSpawning = true;
         //TODO
         public bool CompressMessages = false;
         //Should only be used for dedicated servers and will require the servers RSA keypair being hard coded into clients in order to exchange a AES key
         //TODO
         public bool EncryptMessages = false;
-        public bool UseUPnP = true;
-        public Action<bool, IPAddress> UPnPCompleteCallback;
+        public bool UseUPnP = false;
+        public Action<bool, IPAddress> UPnPCompleteCallback = null;
 
         //Cached config hash
         private byte[] ConfigHash = null;
