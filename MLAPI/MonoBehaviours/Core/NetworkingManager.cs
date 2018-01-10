@@ -71,13 +71,6 @@ namespace MLAPI
             MessageManager.reverseMessageTypes = new Dictionary<ushort, string>();
             SpawnManager.spawnedObjects = new Dictionary<uint, NetworkedObject>();
             SpawnManager.releasedNetworkObjectIds = new Stack<uint>();
-            if(NetworkConfig.AllowPassthroughMessages)
-            {
-                for (int i = 0; i < NetworkConfig.PassthroughMessageTypes.Count; i++)
-                {
-                    NetworkConfig.RegisteredPassthroughMessageTypes.Add(MessageManager.messageTypes[NetworkConfig.PassthroughMessageTypes[i]]);
-                }
-            }
             if (NetworkConfig.HandleObjectSpawning)
             {
                 NetworkedObject[] sceneObjects = FindObjectsOfType<NetworkedObject>();
@@ -119,10 +112,19 @@ namespace MLAPI
             ushort messageId = 32;
             for (ushort i = 0; i < NetworkConfig.MessageTypes.Count; i++)
             {
-                MessageManager.reverseMessageTypes.Add(messageId, NetworkConfig.MessageTypes[i]);
                 MessageManager.messageTypes.Add(NetworkConfig.MessageTypes[i], messageId);
+                MessageManager.reverseMessageTypes.Add(messageId, NetworkConfig.MessageTypes[i]);
                 messageId++;
             }
+
+            if (NetworkConfig.AllowPassthroughMessages)
+            {
+                for (int i = 0; i < NetworkConfig.PassthroughMessageTypes.Count; i++)
+                {
+                    NetworkConfig.RegisteredPassthroughMessageTypes.Add(MessageManager.messageTypes[NetworkConfig.PassthroughMessageTypes[i]]);
+                }
+            }
+
             return cConfig;
         }
 
@@ -373,12 +375,16 @@ namespace MLAPI
                         Debug.LogWarning("MLAPI: Server tried to send a passthrough message for a messageType not registered as passthrough");
                         return;
                     }
-                    else if(isServer && NetworkConfig.AllowPassthroughMessages && connectedClients.ContainsKey(passthroughTarget))
+                    else if(isServer && isPassthrough)
                     {
+                        if (!connectedClients.ContainsKey(passthroughTarget))
+                        {
+                            Debug.LogWarning("MLAPI: Passthrough message was sent with invalid target: " + passthroughTarget + " from client " + clientId);
+                            return;
+                        }
                         uint? netIdTarget = null;
                         if (targeted)
                             netIdTarget = targetNetworkId;
-
                         PassthroughSend(passthroughTarget, clientId, messageType, channelId, incommingData, netIdTarget);
                         return;
                     }

@@ -83,7 +83,7 @@ namespace MLAPI.NetworkingManagerComponents
 
         internal static void OnDestroyObject(uint networkId, bool destroyGameObject)
         {
-            if (!spawnedObjects.ContainsKey(networkId) || !netManager.NetworkConfig.HandleObjectSpawning)
+            if (!spawnedObjects.ContainsKey(networkId) || (netManager != null && !netManager.NetworkConfig.HandleObjectSpawning))
                 return;
             GameObject go = spawnedObjects[networkId].gameObject;
             if (netManager != null && netManager.isServer)
@@ -98,7 +98,7 @@ namespace MLAPI.NetworkingManagerComponents
                             writer.Write(networkId);
                         }
                         //If we are host, send to everyone except ourselves. Otherwise, send to all
-                        if (netManager.isHost)
+                        if (netManager != null && netManager.isHost)
                             netManager.Send("MLAPI_DESTROY_OBJECT", "MLAPI_RELIABLE_FRAGMENTED_SEQUENCED", stream.GetBuffer(), -1);
                         else
                             netManager.Send("MLAPI_DESTROY_OBJECT", "MLAPI_RELIABLE_FRAGMENTED_SEQUENCED", stream.GetBuffer());
