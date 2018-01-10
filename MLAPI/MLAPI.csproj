@@ -51,6 +51,7 @@
     <Compile Include="MonoBehaviours\Core\NetworkedObject.cs" />
     <Compile Include="Data\NetworkingConfiguration.cs" />
     <Compile Include="MonoBehaviours\Core\NetworkingManager.cs" />
+    <Compile Include="MonoBehaviours\Prototyping\NetworkedTransform.cs" />
     <Compile Include="NetworkingManagerComponents\MessageManager.cs" />
     <Compile Include="NetworkingManagerComponents\SpawnManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
