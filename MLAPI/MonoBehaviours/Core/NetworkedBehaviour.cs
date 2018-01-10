@@ -126,9 +126,9 @@ namespace MLAPI
 
         protected void SendToLocalClient(string messageType, string channelName, byte[] data)
         {
-            if (!isServer)
+            if (!isServer && (!NetworkingManager.singleton.NetworkConfig.AllowPassthroughMessages || !NetworkingManager.singleton.NetworkConfig.PassthroughMessageTypes.Contains(messageType)))
             {
-                Debug.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported");
+                Debug.LogWarning("MLAPI: Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
                 return;
             }
             NetworkingManager.singleton.Send(ownerClientId, messageType, channelName, data);
@@ -136,9 +136,9 @@ namespace MLAPI
 
         protected void SendToLocalClientTarget(string messageType, string channelName, byte[] data)
         {
-            if (!isServer)
+            if (!isServer && (!NetworkingManager.singleton.NetworkConfig.AllowPassthroughMessages || !NetworkingManager.singleton.NetworkConfig.PassthroughMessageTypes.Contains(messageType)))
             {
-                Debug.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported");
+                Debug.LogWarning("MLAPI: Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
                 return;
             }
             NetworkingManager.singleton.Send(ownerClientId, messageType, channelName, data, networkId);
@@ -166,9 +166,9 @@ namespace MLAPI
 
         protected void SendToClient(int clientId, string messageType, string channelName, byte[] data)
         {
-            if (!isServer)
+            if (!isServer && (!NetworkingManager.singleton.NetworkConfig.AllowPassthroughMessages || !NetworkingManager.singleton.NetworkConfig.PassthroughMessageTypes.Contains(messageType)))
             {
-                Debug.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported");
+                Debug.LogWarning("MLAPI: Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
                 return;
             }
             NetworkingManager.singleton.Send(clientId, messageType, channelName, data);
@@ -176,9 +176,9 @@ namespace MLAPI
 
         protected void SendToClientTarget(int clientId, string messageType, string channelName, byte[] data)
         {
-            if (!isServer)
+            if (!isServer && (!NetworkingManager.singleton.NetworkConfig.AllowPassthroughMessages || !NetworkingManager.singleton.NetworkConfig.PassthroughMessageTypes.Contains(messageType)))
             {
-                Debug.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported");
+                Debug.LogWarning("MLAPI: Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
                 return;
             }
             NetworkingManager.singleton.Send(clientId, messageType, channelName, data, networkId);

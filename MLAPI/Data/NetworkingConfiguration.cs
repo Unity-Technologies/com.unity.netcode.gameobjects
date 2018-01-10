@@ -11,6 +11,8 @@ namespace MLAPI
         public ushort ProtocolVersion = 0;
         public SortedDictionary<string, QosType> Channels = new SortedDictionary<string, QosType>();
         public List<string> MessageTypes = new List<string>();
+        public List<string> PassthroughMessageTypes = new List<string>();
+        internal HashSet<ushort> RegisteredPassthroughMessageTypes = new HashSet<ushort>();
         public int MessageBufferSize = 65535;
         public int MaxMessagesPerFrame = 150;
         public int MaxConnections = 100;
@@ -26,6 +28,7 @@ namespace MLAPI
         //Should only be used for dedicated servers and will require the servers RSA keypair being hard coded into clients in order to exchange a AES key
         //TODO
         public bool EncryptMessages = false;
+        public bool AllowPassthroughMessages = true;
 
         //Cached config hash
         private byte[] ConfigHash = null;
@@ -44,13 +47,20 @@ namespace MLAPI
                         writer.Write(pair.Key);
                         writer.Write((int)pair.Value);
                     }
+                    MessageTypes.Sort();
+                    PassthroughMessageTypes.Sort();
                     for (int i = 0; i < MessageTypes.Count; i++)
                     {
                         writer.Write(MessageTypes[i]);
                     }
+                    for (int i = 0; i < PassthroughMessageTypes.Count; i++)
+                    {
+                        writer.Write(PassthroughMessageTypes[i]);
+                    }
                     writer.Write(HandleObjectSpawning);
                     writer.Write(CompressMessages);
                     writer.Write(EncryptMessages);
+                    writer.Write(AllowPassthroughMessages);
                 }
                 using(SHA256Managed sha256 = new SHA256Managed())
                 {

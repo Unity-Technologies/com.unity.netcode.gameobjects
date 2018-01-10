@@ -7,7 +7,9 @@ namespace MLAPI.NetworkingManagerComponents
     internal static class MessageManager
     {
         internal static Dictionary<string, int> channels;
+        internal static Dictionary<int, string> reverseChannels;
         internal static Dictionary<string, ushort> messageTypes;
+        internal static Dictionary<ushort, string> reverseMessageTypes;
         internal static Dictionary<ushort, Dictionary<int, Action<int, byte[]>>> messageCallbacks;
         internal static Dictionary<ushort, int> messageHandlerCounter;
         internal static Dictionary<ushort, Stack<int>> releasedMessageHandlerCounters;

@@ -67,8 +67,17 @@ namespace MLAPI
             MessageManager.messageHandlerCounter = new Dictionary<ushort, int>();
             MessageManager.releasedMessageHandlerCounters = new Dictionary<ushort, Stack<int>>();
             MessageManager.targetedMessages = new Dictionary<ushort, Dictionary<uint, List<int>>>();
+            MessageManager.reverseChannels = new Dictionary<int, string>();
+            MessageManager.reverseMessageTypes = new Dictionary<ushort, string>();
             SpawnManager.spawnedObjects = new Dictionary<uint, NetworkedObject>();
             SpawnManager.releasedNetworkObjectIds = new Stack<uint>();
+            if(NetworkConfig.AllowPassthroughMessages)
+            {
+                for (int i = 0; i < NetworkConfig.PassthroughMessageTypes.Count; i++)
+                {
+                    NetworkConfig.RegisteredPassthroughMessageTypes.Add(MessageManager.messageTypes[NetworkConfig.PassthroughMessageTypes[i]]);
+                }
+            }
             if (NetworkConfig.HandleObjectSpawning)
             {
                 NetworkedObject[] sceneObjects = FindObjectsOfType<NetworkedObject>();
@@ -104,11 +113,13 @@ namespace MLAPI
                 int channelId = cConfig.AddChannel(pair.Value);
                 MessageManager.channels.Add(pair.Key, channelId);
                 channelNames.Add(pair.Key);
+                MessageManager.reverseChannels.Add(channelId, pair.Key);
             }
             //0-32 are reserved for MLAPI messages
             ushort messageId = 32;
             for (ushort i = 0; i < NetworkConfig.MessageTypes.Count; i++)
             {
+                MessageManager.reverseMessageTypes.Add(messageId, NetworkConfig.MessageTypes[i]);
                 MessageManager.messageTypes.Add(NetworkConfig.MessageTypes[i], messageId);
                 messageId++;
             }
@@ -289,7 +300,7 @@ namespace MLAPI
                             }
                             break;
                         case NetworkEventType.DataEvent:
-                            HandleIncomingData(clientId, messageBuffer);
+                            HandleIncomingData(clientId, messageBuffer, channelId);
                             break;
                         case NetworkEventType.DisconnectEvent:
                             if(isServer)
@@ -319,7 +330,7 @@ namespace MLAPI
             }
         }
 
-        private void HandleIncomingData(int connectonId, byte[] data)
+        private void HandleIncomingData(int clientId, byte[] data, int channelId)
         {
             using(MemoryStream readStream = new MemoryStream(data))
             {
@@ -330,6 +341,16 @@ namespace MLAPI
                     uint targetNetworkId = 0;
                     if(targeted)
                         targetNetworkId = reader.ReadUInt32();
+                    bool isPassthrough = reader.ReadBoolean();
+
+                    int passthroughOrigin = 0;
+                    int passthroughTarget = 0;
+
+                    if (isPassthrough && isServer)
+                        passthroughTarget = reader.ReadInt32();
+                    else if (isPassthrough && !isServer)
+                        passthroughOrigin = reader.ReadInt32();
+
 
                     //Client tried to send a network message that was not the connection request before he was accepted.
                     if (isServer && pendingClients.Contains(clientId) && messageType != 0)
@@ -338,8 +359,30 @@ namespace MLAPI
                         return;
                     }
 
+
                     ushort bytesToRead = reader.ReadUInt16();
                     byte[] incommingData = reader.ReadBytes(bytesToRead);
+
+                    if (isServer && isPassthrough && !NetworkConfig.RegisteredPassthroughMessageTypes.Contains(messageType))
+                    {
+                        Debug.LogWarning("MLAPI: Client " + clientId + " tried to send a passthrough message for a messageType not registered as passthrough");
+                        return;
+                    }
+                    else if(isClient && isPassthrough && !NetworkConfig.RegisteredPassthroughMessageTypes.Contains(messageType))
+                    {
+                        Debug.LogWarning("MLAPI: Server tried to send a passthrough message for a messageType not registered as passthrough");
+                        return;
+                    }
+                    else if(isServer && NetworkConfig.AllowPassthroughMessages && connectedClients.ContainsKey(passthroughTarget))
+                    {
+                        uint? netIdTarget = null;
+                        if (targeted)
+                            netIdTarget = targetNetworkId;
+
+                        PassthroughSend(passthroughTarget, clientId, messageType, channelId, incommingData, netIdTarget);
+                        return;
+                    }
+                       
                     if (messageType >= 32)
                     {
                         //Custom message, invoke all message handlers
@@ -348,14 +391,20 @@ namespace MLAPI
                             List<int> handlerIds = MessageManager.targetedMessages[messageType][targetNetworkId];
                             for (int i = 0; i < handlerIds.Count; i++)
                             {
-                                MessageManager.messageCallbacks[messageType][handlerIds[i]](clientId, incommingData);
+                                if (isPassthrough)
+                                    MessageManager.messageCallbacks[messageType][handlerIds[i]](passthroughOrigin, incommingData);
+                                else
+                                    MessageManager.messageCallbacks[messageType][handlerIds[i]](clientId, incommingData);
                             }
                         }
                         else
                         {
                             foreach (KeyValuePair<int, Action<int, byte[]>> pair in MessageManager.messageCallbacks[messageType])
                             {
-                                pair.Value(clientId, incommingData);
+                                if (isPassthrough)
+                                    pair.Value(passthroughOrigin, incommingData);
+                                else
+                                    pair.Value(clientId, incommingData);
                             }
                         }
                     }
@@ -500,6 +549,40 @@ namespace MLAPI
             }
         }
 
+        internal void PassthroughSend(int targetId, int sourceId, ushort messageType, int channelId, byte[] data, uint? networkId = null)
+        {
+            if (isHost && targetId == -1)
+            {
+                //Host trying to send data to it's own client
+                if (networkId == null)
+                    MessageManager.InvokeMessageHandlers(MessageManager.reverseMessageTypes[messageType], data, sourceId);
+                else
+                    MessageManager.InvokeTargetedMessageHandler(MessageManager.reverseMessageTypes[messageType], data, sourceId, networkId.Value);
+                return;
+            }
+
+            int sizeOfStream = 10;
+            if (networkId != null)
+                sizeOfStream += 4;
+            sizeOfStream += data.Length;
+
+            using (MemoryStream stream = new MemoryStream(sizeOfStream))
+            {
+                using (BinaryWriter writer = new BinaryWriter(stream))
+                {
+                    writer.Write(messageType);
+                    writer.Write(networkId != null);
+                    if (networkId != null)
+                        writer.Write(networkId.Value);
+                    writer.Write(true);
+                    writer.Write(sourceId);
+                    writer.Write((ushort)data.Length);
+                    writer.Write(data);
+                }
+                NetworkTransport.Send(hostId, targetId, channelId, stream.GetBuffer(), sizeOfStream, out error);
+            }
+        }
+
         internal void Send(int clientId, string messageType, string channelName, byte[] data, uint? networkId = null)
         {
             if(isHost && clientId == -1)
@@ -516,9 +599,18 @@ namespace MLAPI
                 //Client trying to send data to host
                 clientId = serverClientId;
             }
-            //2 bytes for messageType, 2 bytes for buffer length and one byte for target bool
-            int sizeOfStream = 5;
+
+            bool isPassthrough = (!isServer && clientId != serverClientId && NetworkConfig.AllowPassthroughMessages);
+            if (isPassthrough && !NetworkConfig.RegisteredPassthroughMessageTypes.Contains(MessageManager.messageTypes[messageType]))
+            {
+                Debug.LogWarning("MLAPI: The The MessageType " + messageType + " is not registered as an allowed passthrough message type.");
+                return;
+            }
+
+            int sizeOfStream = 6;
             if (networkId != null)
+                sizeOfStream += 4;
+            if (isPassthrough)
                 sizeOfStream += 4;
             sizeOfStream += data.Length;
 
@@ -530,17 +622,21 @@ namespace MLAPI
                     writer.Write(networkId != null);
                     if (networkId != null)
                         writer.Write(networkId.Value);
+                    writer.Write(isPassthrough);
+                    if (isPassthrough)
+                        writer.Write(clientId);
                     writer.Write((ushort)data.Length);
                     writer.Write(data);
                 }
+                if (isPassthrough)
+                    clientId = serverClientId;
                 NetworkTransport.Send(hostId, clientId, MessageManager.channels[channelName], stream.GetBuffer(), sizeOfStream, out error);
             }
         }
 
         internal void Send(int[] clientIds, string messageType, string channelName, byte[] data, uint? networkId = null)
         {
-            //2 bytes for messageType, 2 bytes for buffer length and one byte for target bool
-            int sizeOfStream = 5;
+            int sizeOfStream = 6;
             if (networkId != null)
                 sizeOfStream += 4;
             sizeOfStream += data.Length;
@@ -553,6 +649,7 @@ namespace MLAPI
                     writer.Write(networkId != null);
                     if (networkId != null)
                         writer.Write(networkId.Value);
+                    writer.Write(false);
                     writer.Write((ushort)data.Length);
                     writer.Write(data);
                 }
@@ -581,7 +678,7 @@ namespace MLAPI
         internal void Send(List<int> clientIds, string messageType, string channelName, byte[] data, uint? networkId = null)
         {
             //2 bytes for messageType, 2 bytes for buffer length and one byte for target bool
-            int sizeOfStream = 5;
+            int sizeOfStream = 6;
             if (networkId != null)
                 sizeOfStream += 4;
             sizeOfStream += data.Length;
@@ -594,6 +691,7 @@ namespace MLAPI
                     writer.Write(networkId != null);
                     if (networkId != null)
                         writer.Write(networkId.Value);
+                    writer.Write(false);
                     writer.Write((ushort)data.Length);
                     writer.Write(data);
                 }
@@ -622,7 +720,7 @@ namespace MLAPI
         internal void Send(string messageType, string channelName, byte[] data, uint? networkId = null)
         {
             //2 bytes for messageType, 2 bytes for buffer length and one byte for target bool
-            int sizeOfStream = 5;
+            int sizeOfStream = 6;
             if (networkId != null)
                 sizeOfStream += 4;
             sizeOfStream += data.Length;
@@ -635,6 +733,7 @@ namespace MLAPI
                     writer.Write(networkId != null);
                     if (networkId != null)
                         writer.Write(networkId.Value);
+                    writer.Write(false);
                     writer.Write((ushort)data.Length);
                     writer.Write(data);
                 }
@@ -677,6 +776,7 @@ namespace MLAPI
                     writer.Write(networkId != null);
                     if (networkId != null)
                         writer.Write(networkId.Value);
+                    writer.Write(false);
                     writer.Write((ushort)data.Length);
                     writer.Write(data);
                 }

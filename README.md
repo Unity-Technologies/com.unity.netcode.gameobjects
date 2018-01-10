@@ -25,6 +25,7 @@ It's licenced under the MIT licence :D
 * ProtocolVersion to allow making different versions not talk to each other. (done)
 * NetworkedBehaviours does not have to be on the root, it's simply just a class that implements the send methods etc. (done)
 * Multiple messages processed every frame with the ability to specify a maximum to prevent freezes in the normal game logic (done)
+* Passthrough messages (check the wiki for details)
 
 
 That's all I can think of right now. But there is more to come, especially if people show intrest in the project.
