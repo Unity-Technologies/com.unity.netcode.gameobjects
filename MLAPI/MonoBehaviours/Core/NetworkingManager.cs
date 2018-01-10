@@ -66,6 +66,7 @@ namespace MLAPI
             MessageManager.messageCallbacks = new Dictionary<ushort, Dictionary<int, Action<int, byte[]>>>();
             MessageManager.messageHandlerCounter = new Dictionary<ushort, int>();
             MessageManager.releasedMessageHandlerCounters = new Dictionary<ushort, Stack<int>>();
+            MessageManager.targetedMessages = new Dictionary<ushort, Dictionary<uint, List<int>>>();
             SpawnManager.spawnedObjects = new Dictionary<uint, NetworkedObject>();
             SpawnManager.releasedNetworkObjectIds = new Stack<uint>();
             if (NetworkConfig.HandleObjectSpawning)
@@ -319,6 +320,10 @@ namespace MLAPI
                 using (BinaryReader reader = new BinaryReader(readStream))
                 {
                     ushort messageType = reader.ReadUInt16();
+                    bool targeted = reader.ReadBoolean();
+                    uint targetNetworkId = 0;
+                    if(targeted)
+                        targetNetworkId = reader.ReadUInt32();
 
                     //Client tried to send a network message that was not the connection request before he was accepted.
                     if (isServer && pendingClients.Contains(clientId) && messageType != 0)
@@ -332,10 +337,22 @@ namespace MLAPI
                     if (messageType >= 32)
                     {
                         //Custom message, invoke all message handlers
-                        foreach (KeyValuePair<int, Action<int, byte[]>> pair in MessageManager.messageCallbacks[messageType])
+                        if(targeted)
                         {
-                            pair.Value(clientId, incommingData);
-                        }  
+                            List<int> handlerIds = MessageManager.targetedMessages[messageType][targetNetworkId];
+                            Debug.Log(handlerIds.Count);
+                            for (int i = 0; i < handlerIds.Count; i++)
+                            {
+                                MessageManager.messageCallbacks[messageType][handlerIds[i]](clientId, incommingData);
+                            }
+                        }
+                        else
+                        {
+                            foreach (KeyValuePair<int, Action<int, byte[]>> pair in MessageManager.messageCallbacks[messageType])
+                            {
+                                pair.Value(clientId, incommingData);
+                            }
+                        }
                     }
                     else
                     {
@@ -478,12 +495,15 @@ namespace MLAPI
             }
         }
 
-        internal void Send(int clientId, string messageType, string channelName, byte[] data)
+        internal void Send(int clientId, string messageType, string channelName, byte[] data, uint? networkId = null)
         {
             if(isHost && clientId == -1)
             {
                 //Host trying to send data to it's own client
-                MessageManager.InvokeMessageHandlers(messageType, data, clientId);
+                if (networkId == null)
+                    MessageManager.InvokeMessageHandlers(messageType, data, clientId);
+                else
+                    MessageManager.InvokeTargetedMessageHandler(messageType, data, clientId, networkId.Value);
                 return;
             }
             else if(clientId == -1)
@@ -496,28 +516,30 @@ namespace MLAPI
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
                     writer.Write(MessageManager.messageTypes[messageType]);
+                    writer.Write(networkId != null);
+                    if (networkId != null)
+                        writer.Write(networkId.Value);
                     writer.Write((ushort)data.Length);
                     writer.Write(data);
                 }
-                //2 bytes for message type and 2 bytes for byte length
-                int size = data.Length + 4;
                 byte[] dataToSend = stream.ToArray();
                 NetworkTransport.Send(hostId, clientId, MessageManager.channels[channelName], dataToSend, dataToSend.Length, out error);
             }
         }
 
-        internal void Send(int[] clientIds, string messageType, string channelName, byte[] data)
+        internal void Send(int[] clientIds, string messageType, string channelName, byte[] data, uint? networkId = null)
         {
             using (MemoryStream stream = new MemoryStream())
             {
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
                     writer.Write(MessageManager.messageTypes[messageType]);
+                    writer.Write(networkId != null);
+                    if (networkId != null)
+                        writer.Write(networkId.Value);
                     writer.Write((ushort)data.Length);
                     writer.Write(data);
                 }
-                //2 bytes for message type and 2 bytes for byte length
-                int size = data.Length + 4;
                 byte[] dataToSend = stream.ToArray();
                 int channel = MessageManager.channels[channelName];
                 for (int i = 0; i < clientIds.Length; i++)
@@ -525,7 +547,10 @@ namespace MLAPI
                     int clientId = clientIds[i];
                     if (isHost && clientId == -1)
                     {
-                        MessageManager.InvokeMessageHandlers(messageType, data, clientId);
+                        if (networkId == null)
+                            MessageManager.InvokeMessageHandlers(messageType, data, clientId);
+                        else
+                            MessageManager.InvokeTargetedMessageHandler(messageType, data, clientId, networkId.Value);
                         continue;
                     }
                     else if (clientId == -1)
@@ -533,23 +558,24 @@ namespace MLAPI
                         //Client trying to send data to host
                         clientId = serverClientId;
                     }
-                    NetworkTransport.Send(hostId, clientId, channel, dataToSend, size, out error);
+                    NetworkTransport.Send(hostId, clientId, channel, dataToSend, dataToSend.Length, out error);
                 }
             }
         }
 
-        internal void Send(List<int> clientIds, string messageType, string channelName, byte[] data)
+        internal void Send(List<int> clientIds, string messageType, string channelName, byte[] data, uint? networkId = null)
         {
             using (MemoryStream stream = new MemoryStream())
             {
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
                     writer.Write(MessageManager.messageTypes[messageType]);
+                    writer.Write(networkId != null);
+                    if (networkId != null)
+                        writer.Write(networkId.Value);
                     writer.Write((ushort)data.Length);
                     writer.Write(data);
                 }
-                //2 bytes for message type and 2 bytes for byte length
-                int size = data.Length + 4;
                 byte[] dataToSend = stream.ToArray();
                 int channel = MessageManager.channels[channelName];
                 for (int i = 0; i < clientIds.Count; i++)
@@ -557,7 +583,10 @@ namespace MLAPI
                     int clientId = clientIds[i];
                     if (isHost && clientId == -1)
                     {
-                        MessageManager.InvokeMessageHandlers(messageType, data, clientId);
+                        if (networkId == null)
+                            MessageManager.InvokeMessageHandlers(messageType, data, clientId);
+                        else
+                            MessageManager.InvokeTargetedMessageHandler(messageType, data, clientId, networkId.Value);
                         continue;
                     }
                     else if (clientId == -1)
@@ -565,23 +594,24 @@ namespace MLAPI
                         //Client trying to send data to host
                         clientId = serverClientId;
                     }
-                    NetworkTransport.Send(hostId, clientId, channel, dataToSend, size, out error);
+                    NetworkTransport.Send(hostId, clientId, channel, dataToSend, dataToSend.Length, out error);
                 }
             }
         }
 
-        internal void Send(string messageType, string channelName, byte[] data)
+        internal void Send(string messageType, string channelName, byte[] data, uint? networkId = null)
         {
             using (MemoryStream stream = new MemoryStream())
             {
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
                     writer.Write(MessageManager.messageTypes[messageType]);
+                    writer.Write(networkId != null);
+                    if (networkId != null)
+                        writer.Write(networkId.Value);
                     writer.Write((ushort)data.Length);
                     writer.Write(data);
                 }
-                //2 bytes for message type and 2 bytes for byte length
-                int size = data.Length + 4;
                 byte[] dataToSend = stream.ToArray();
                 int channel = MessageManager.channels[channelName];
                 foreach (KeyValuePair<int, NetworkedClient> pair in connectedClients)
@@ -589,7 +619,10 @@ namespace MLAPI
                     int clientId = pair.Key;
                     if(isHost && pair.Key == -1)
                     {
-                        MessageManager.InvokeMessageHandlers(messageType, data, pair.Key);
+                        if (networkId == null)
+                            MessageManager.InvokeMessageHandlers(messageType, data, clientId);
+                        else
+                            MessageManager.InvokeTargetedMessageHandler(messageType, data, clientId, networkId.Value);
                         continue;
                     }
                     else if (clientId == -1)
@@ -597,24 +630,25 @@ namespace MLAPI
                         //Client trying to send data to host
                         clientId = serverClientId;
                     }
-                    NetworkTransport.Send(hostId, clientId, channel, dataToSend, size, out error);
+                    NetworkTransport.Send(hostId, clientId, channel, dataToSend, dataToSend.Length, out error);
                     
                 }
             }
         }
 
-        internal void Send(string messageType, string channelName, byte[] data, int clientIdToIgnore)
+        internal void Send(string messageType, string channelName, byte[] data, int clientIdToIgnore, uint? networkId = null)
         {
             using (MemoryStream stream = new MemoryStream())
             {
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
                     writer.Write(MessageManager.messageTypes[messageType]);
+                    writer.Write(networkId != null);
+                    if (networkId != null)
+                        writer.Write(networkId.Value);
                     writer.Write((ushort)data.Length);
                     writer.Write(data);
                 }
-                //2 bytes for message type and 2 bytes for byte length
-                int size = data.Length + 4;
                 byte[] dataToSend = stream.ToArray();
                 int channel = MessageManager.channels[channelName];
                 foreach (KeyValuePair<int, NetworkedClient> pair in connectedClients)
@@ -624,7 +658,10 @@ namespace MLAPI
                     int clientId = pair.Key;
                     if (isHost && pair.Key == -1)
                     {
-                        MessageManager.InvokeMessageHandlers(messageType, data, clientId);
+                        if (networkId == null)
+                            MessageManager.InvokeMessageHandlers(messageType, data, clientId);
+                        else
+                            MessageManager.InvokeTargetedMessageHandler(messageType, data, clientId, networkId.Value);
                         continue;
                     }
                     else if (clientId == -1)
@@ -632,7 +669,7 @@ namespace MLAPI
                         //Client trying to send data to host
                         clientId = serverClientId;
                     }
-                    NetworkTransport.Send(hostId, clientId, channel, dataToSend, size, out error);
+                    NetworkTransport.Send(hostId, clientId, channel, dataToSend, dataToSend.Length, out error);
                 }
             }
         }
