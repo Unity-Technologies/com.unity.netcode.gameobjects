@@ -70,7 +70,7 @@ namespace MLAP
                     lastSendTime = Time.time;
                     lastSentPos = transform.position;
                     lastSentRot = transform.rotation;
-                    using (MemoryStream writeStream = new MemoryStream())
+                    using (MemoryStream writeStream = new MemoryStream(24))
                     {
                         using (BinaryWriter writer = new BinaryWriter(writeStream))
                         {
@@ -81,7 +81,7 @@ namespace MLAP
                             writer.Write(transform.rotation.y);
                             writer.Write(transform.rotation.z);
                         }
-                        SendToServerTarget("MLAPI_OnRecieveTransformFromClient", "MLAPI_POSITION_UPDATE", writeStream.ToArray());
+                        SendToServerTarget("MLAPI_OnRecieveTransformFromClient", "MLAPI_POSITION_UPDATE", writeStream.GetBuffer());
                     }
 
                 }
@@ -145,7 +145,7 @@ namespace MLAP
                         transform.position = new Vector3(xPos, yPos, zPos);
                         transform.rotation = Quaternion.Euler(new Vector3(xRot, yRot, zRot));
                     }
-                    using (MemoryStream writeStream = new MemoryStream())
+                    using (MemoryStream writeStream = new MemoryStream(24))
                     {
                         using(BinaryWriter writer = new BinaryWriter(writeStream))
                         {
@@ -156,7 +156,7 @@ namespace MLAP
                             writer.Write(yRot);
                             writer.Write(zRot);
                         }
-                        SendToNonLocalClientsTarget("MLAPI_OnRecieveTransformFromServer", "MLAPI_POSITION_UPDATE", writeStream.ToArray());
+                        SendToNonLocalClientsTarget("MLAPI_OnRecieveTransformFromServer", "MLAPI_POSITION_UPDATE", writeStream.GetBuffer());
                     }
                 }
             }

@@ -84,12 +84,12 @@ namespace MLAPI.NetworkingManagerComponents
             if (!spawnedObjects.ContainsKey(networkId) || !netManager.NetworkConfig.HandleObjectSpawning)
                 return;
             GameObject go = spawnedObjects[networkId].gameObject;
-            if (netManager.isServer)
+            if (netManager != null && netManager.isServer)
             {
                 releasedNetworkObjectIds.Push(networkId);
-                if (!spawnedObjects[networkId].ServerOnly)
+                if (spawnedObjects[networkId] != null && !spawnedObjects[networkId].ServerOnly)
                 {
-                    using (MemoryStream stream = new MemoryStream())
+                    using (MemoryStream stream = new MemoryStream(4))
                     {
                         using (BinaryWriter writer = new BinaryWriter(stream))
                         {
@@ -97,13 +97,13 @@ namespace MLAPI.NetworkingManagerComponents
                         }
                         //If we are host, send to everyone except ourselves. Otherwise, send to all
                         if (netManager.isHost)
-                            netManager.Send("MLAPI_DESTROY_OBJECT", "MLAPI_RELIABLE_FRAGMENTED", stream.ToArray(), -1);
+                            netManager.Send("MLAPI_DESTROY_OBJECT", "MLAPI_RELIABLE_FRAGMENTED", stream.GetBuffer(), -1);
                         else
-                            netManager.Send("MLAPI_DESTROY_OBJECT", "MLAPI_RELIABLE_FRAGMENTED", stream.ToArray());
+                            netManager.Send("MLAPI_DESTROY_OBJECT", "MLAPI_RELIABLE_FRAGMENTED", stream.GetBuffer());
                     }
                 }
             }
-            if (destroyGameObject)
+            if (destroyGameObject && go != null)
                 MonoBehaviour.Destroy(go);
             spawnedObjects.Remove(networkId);
         }
@@ -139,8 +139,8 @@ namespace MLAPI.NetworkingManagerComponents
             spawnedObjects.Add(netId, netObject);
             netObject.isSpawned = true;
             if (clientOwnerId != null)
-                netObject.OwnerClientId = (int)clientOwnerId;
-            using (MemoryStream stream = new MemoryStream())
+                netObject.OwnerClientId = clientOwnerId.Value;
+            using (MemoryStream stream = new MemoryStream(13))
             {
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
@@ -151,9 +151,9 @@ namespace MLAPI.NetworkingManagerComponents
                 }
                 //If we are host, send to everyone except ourselves. Otherwise, send to all
                 if (netManager.isHost)
-                    netManager.Send("MLAPI_ADD_OBJECT", "MLAPI_RELIABLE_FRAGMENTED", stream.ToArray(), -1);
+                    netManager.Send("MLAPI_ADD_OBJECT", "MLAPI_RELIABLE_FRAGMENTED", stream.GetBuffer(), -1);
                 else
-                    netManager.Send("MLAPI_ADD_OBJECT", "MLAPI_RELIABLE_FRAGMENTED", stream.ToArray());
+                    netManager.Send("MLAPI_ADD_OBJECT", "MLAPI_RELIABLE_FRAGMENTED", stream.GetBuffer());
             }
         }
     }

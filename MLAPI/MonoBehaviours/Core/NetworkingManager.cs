@@ -269,7 +269,11 @@ namespace MLAPI
                             }
                             else
                             {
-                                using (MemoryStream writeStream = new MemoryStream())
+                                int sizeOfStream = 32;
+                                if (NetworkConfig.ConnectionApproval)
+                                    sizeOfStream += 2 + NetworkConfig.ConnectionData.Length;
+
+                                using (MemoryStream writeStream = new MemoryStream(sizeOfStream))
                                 {
                                     using (BinaryWriter writer = new BinaryWriter(writeStream))
                                     {
@@ -280,7 +284,7 @@ namespace MLAPI
                                             writer.Write(NetworkConfig.ConnectionData);
                                         }
                                     }
-                                    Send(clientId, "MLAPI_CONNECTION_REQUEST", "MLAPI_RELIABLE_FRAGMENTED", writeStream.ToArray());
+                                    Send(clientId, "MLAPI_CONNECTION_REQUEST", "MLAPI_RELIABLE_FRAGMENTED", writeStream.GetBuffer());
                                 }
                             }
                             break;
@@ -342,7 +346,6 @@ namespace MLAPI
                         if(targeted)
                         {
                             List<int> handlerIds = MessageManager.targetedMessages[messageType][targetNetworkId];
-                            Debug.Log(handlerIds.Count);
                             for (int i = 0; i < handlerIds.Count; i++)
                             {
                                 MessageManager.messageCallbacks[messageType][handlerIds[i]](clientId, incommingData);
@@ -720,10 +723,12 @@ namespace MLAPI
             {
                 if(NetworkConfig.HandleObjectSpawning)
                 {
-                    Destroy(connectedClients[clientId].PlayerObject);
+                    if (connectedClients[clientId].PlayerObject != null)
+                        Destroy(connectedClients[clientId].PlayerObject);
                     for (int i = 0; i < connectedClients[clientId].OwnedObjects.Count; i++)
                     {
-                        Destroy(connectedClients[clientId].OwnedObjects[i].gameObject);
+                        if (connectedClients[clientId].OwnedObjects[i] != null)
+                            Destroy(connectedClients[clientId].OwnedObjects[i].gameObject);
                     }
                 }
                 connectedClients.Remove(clientId);
@@ -731,13 +736,13 @@ namespace MLAPI
 
             if (isServer)
             {
-                using (MemoryStream stream = new MemoryStream())
+                using (MemoryStream stream = new MemoryStream(4))
                 {
                     using (BinaryWriter writer = new BinaryWriter(stream))
                     {
                         writer.Write(clientId);
                     }
-                    Send("MLAPI_CLIENT_DISCONNECT", "MLAPI_RELIABLE_FRAGMENTED", stream.ToArray(), clientId);
+                    Send("MLAPI_CLIENT_DISCONNECT", "MLAPI_RELIABLE_FRAGMENTED", stream.GetBuffer(), clientId);
                 }   
             }
         }
@@ -761,7 +766,24 @@ namespace MLAPI
                     GameObject go = SpawnManager.SpawnPlayerObject(clientId, networkId);
                     connectedClients[clientId].PlayerObject = go;
                 }
-                using (MemoryStream writeStream = new MemoryStream())
+
+
+                int sizeOfStream = 4 + 4 + ((connectedClients.Count - 1) * 4);
+                int amountOfObjectsToSend = 0;
+                foreach (KeyValuePair<uint, NetworkedObject> pair in SpawnManager.spawnedObjects)
+                {
+                    if (pair.Value.ServerOnly)
+                        continue;
+                    else
+                        amountOfObjectsToSend++;
+                }
+                if(NetworkConfig.HandleObjectSpawning)
+                {
+                    sizeOfStream += 4;
+                    sizeOfStream += 13 * amountOfObjectsToSend;
+                }
+
+                using (MemoryStream writeStream = new MemoryStream(sizeOfStream))
                 {
                     using (BinaryWriter writer = new BinaryWriter(writeStream))
                     {
@@ -776,23 +798,10 @@ namespace MLAPI
                         }
                         if (NetworkConfig.HandleObjectSpawning)
                         {
-                            int amountOfObjectsToSend = 0;
-                            foreach (KeyValuePair<uint, NetworkedObject> pair in SpawnManager.spawnedObjects)
-                            {
-                                if (pair.Value.ServerOnly)
-                                    continue;
-                                else
-                                    amountOfObjectsToSend++;
-                            }
                             writer.Write(amountOfObjectsToSend);
 
                             foreach (KeyValuePair<uint, NetworkedObject> pair in SpawnManager.spawnedObjects)
                             {
-                                if (pair.Value.ServerOnly)
-                                    continue;
-                                else
-                                    amountOfObjectsToSend++;
-
                                 if (pair.Value.ServerOnly)
                                     continue;
                                 writer.Write(pair.Value.isPlayerObject);
@@ -802,11 +811,17 @@ namespace MLAPI
                             }
                         }
                     }
-                    Send(clientId, "MLAPI_CONNECTION_APPROVED", "MLAPI_RELIABLE_FRAGMENTED", writeStream.ToArray());
+                    Send(clientId, "MLAPI_CONNECTION_APPROVED", "MLAPI_RELIABLE_FRAGMENTED", writeStream.GetBuffer());
                 }
 
                 //Inform old clients of the new player
-                using (MemoryStream stream = new MemoryStream())
+
+                if(NetworkConfig.HandleObjectSpawning)
+                    sizeOfStream = 13;
+                else
+                    sizeOfStream = 4;
+
+                using (MemoryStream stream = new MemoryStream(sizeOfStream))
                 {
                     using (BinaryWriter writer = new BinaryWriter(stream))
                     {
@@ -822,7 +837,7 @@ namespace MLAPI
                             writer.Write(clientId);
                         }
                     }
-                    Send("MLAPI_ADD_OBJECT", "MLAPI_RELIABLE_FRAGMENTED", stream.ToArray(), clientId);
+                    Send("MLAPI_ADD_OBJECT", "MLAPI_RELIABLE_FRAGMENTED", stream.GetBuffer(), clientId);
                 }
             }
             else
