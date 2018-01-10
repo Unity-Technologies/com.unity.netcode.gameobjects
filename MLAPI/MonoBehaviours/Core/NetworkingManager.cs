@@ -513,7 +513,13 @@ namespace MLAPI
                 //Client trying to send data to host
                 clientId = serverClientId;
             }
-            using (MemoryStream stream = new MemoryStream())
+            //2 bytes for messageType, 2 bytes for buffer length and one byte for target bool
+            int sizeOfStream = 5;
+            if (networkId != null)
+                sizeOfStream += 4;
+            sizeOfStream += data.Length;
+
+            using (MemoryStream stream = new MemoryStream(sizeOfStream))
             {
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
@@ -524,14 +530,19 @@ namespace MLAPI
                     writer.Write((ushort)data.Length);
                     writer.Write(data);
                 }
-                byte[] dataToSend = stream.ToArray();
-                NetworkTransport.Send(hostId, clientId, MessageManager.channels[channelName], dataToSend, dataToSend.Length, out error);
+                NetworkTransport.Send(hostId, clientId, MessageManager.channels[channelName], stream.GetBuffer(), sizeOfStream, out error);
             }
         }
 
         internal void Send(int[] clientIds, string messageType, string channelName, byte[] data, uint? networkId = null)
         {
-            using (MemoryStream stream = new MemoryStream())
+            //2 bytes for messageType, 2 bytes for buffer length and one byte for target bool
+            int sizeOfStream = 5;
+            if (networkId != null)
+                sizeOfStream += 4;
+            sizeOfStream += data.Length;
+
+            using (MemoryStream stream = new MemoryStream(sizeOfStream))
             {
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
@@ -542,7 +553,6 @@ namespace MLAPI
                     writer.Write((ushort)data.Length);
                     writer.Write(data);
                 }
-                byte[] dataToSend = stream.ToArray();
                 int channel = MessageManager.channels[channelName];
                 for (int i = 0; i < clientIds.Length; i++)
                 {
@@ -560,14 +570,20 @@ namespace MLAPI
                         //Client trying to send data to host
                         clientId = serverClientId;
                     }
-                    NetworkTransport.Send(hostId, clientId, channel, dataToSend, dataToSend.Length, out error);
+                    NetworkTransport.Send(hostId, clientId, channel, stream.GetBuffer(), sizeOfStream, out error);
                 }
             }
         }
 
         internal void Send(List<int> clientIds, string messageType, string channelName, byte[] data, uint? networkId = null)
         {
-            using (MemoryStream stream = new MemoryStream())
+            //2 bytes for messageType, 2 bytes for buffer length and one byte for target bool
+            int sizeOfStream = 5;
+            if (networkId != null)
+                sizeOfStream += 4;
+            sizeOfStream += data.Length;
+
+            using (MemoryStream stream = new MemoryStream(sizeOfStream))
             {
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
@@ -578,7 +594,6 @@ namespace MLAPI
                     writer.Write((ushort)data.Length);
                     writer.Write(data);
                 }
-                byte[] dataToSend = stream.ToArray();
                 int channel = MessageManager.channels[channelName];
                 for (int i = 0; i < clientIds.Count; i++)
                 {
@@ -596,14 +611,20 @@ namespace MLAPI
                         //Client trying to send data to host
                         clientId = serverClientId;
                     }
-                    NetworkTransport.Send(hostId, clientId, channel, dataToSend, dataToSend.Length, out error);
+                    NetworkTransport.Send(hostId, clientId, channel, stream.GetBuffer(), sizeOfStream, out error);
                 }
             }
         }
 
         internal void Send(string messageType, string channelName, byte[] data, uint? networkId = null)
         {
-            using (MemoryStream stream = new MemoryStream())
+            //2 bytes for messageType, 2 bytes for buffer length and one byte for target bool
+            int sizeOfStream = 5;
+            if (networkId != null)
+                sizeOfStream += 4;
+            sizeOfStream += data.Length;
+
+            using (MemoryStream stream = new MemoryStream(sizeOfStream))
             {
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
@@ -614,7 +635,6 @@ namespace MLAPI
                     writer.Write((ushort)data.Length);
                     writer.Write(data);
                 }
-                byte[] dataToSend = stream.ToArray();
                 int channel = MessageManager.channels[channelName];
                 foreach (KeyValuePair<int, NetworkedClient> pair in connectedClients)
                 {
@@ -632,7 +652,7 @@ namespace MLAPI
                         //Client trying to send data to host
                         clientId = serverClientId;
                     }
-                    NetworkTransport.Send(hostId, clientId, channel, dataToSend, dataToSend.Length, out error);
+                    NetworkTransport.Send(hostId, clientId, channel, stream.GetBuffer(), sizeOfStream, out error);
                     
                 }
             }
@@ -640,7 +660,13 @@ namespace MLAPI
 
         internal void Send(string messageType, string channelName, byte[] data, int clientIdToIgnore, uint? networkId = null)
         {
-            using (MemoryStream stream = new MemoryStream())
+            //2 bytes for messageType, 2 bytes for buffer length and one byte for target bool
+            int sizeOfStream = 5;
+            if (networkId != null)
+                sizeOfStream += 4;
+            sizeOfStream += data.Length;
+
+            using (MemoryStream stream = new MemoryStream(sizeOfStream))
             {
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
@@ -651,7 +677,6 @@ namespace MLAPI
                     writer.Write((ushort)data.Length);
                     writer.Write(data);
                 }
-                byte[] dataToSend = stream.ToArray();
                 int channel = MessageManager.channels[channelName];
                 foreach (KeyValuePair<int, NetworkedClient> pair in connectedClients)
                 {
@@ -671,7 +696,7 @@ namespace MLAPI
                         //Client trying to send data to host
                         clientId = serverClientId;
                     }
-                    NetworkTransport.Send(hostId, clientId, channel, dataToSend, dataToSend.Length, out error);
+                    NetworkTransport.Send(hostId, clientId, channel, stream.GetBuffer(), sizeOfStream, out error);
                 }
             }
         }
