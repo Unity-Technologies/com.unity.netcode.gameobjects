@@ -46,5 +46,18 @@ namespace MLAPI
         {
             SpawnManager.OnSpawnObject(this, clientId);
         }
+
+        internal void InvokeBehaviourNetworkSpawn()
+        {
+            NetworkedBehaviour[] netBehaviours = GetComponentsInChildren<NetworkedBehaviour>();
+            for (int i = 0; i < netBehaviours.Length; i++)
+            {
+                //We check if we are it's networkedObject owner incase a networkedObject exists as a child of our networkedObject.
+                if(netBehaviours[i].networkedObject == this && !netBehaviours[i].networkedStartInvoked)
+                {
+                    netBehaviours[i].NetworkStart();
+                }
+            }
+        }
     }
 }

@@ -52,6 +52,7 @@ namespace MLAPI.NetworkingManagerComponents
             netObject.OwnerClientId = ownerId;
 
             spawnedObjects.Add(netObject.NetworkId, netObject);
+            netObject.InvokeBehaviourNetworkSpawn();
             return go;
         }
 
@@ -76,6 +77,7 @@ namespace MLAPI.NetworkingManagerComponents
             netObject.isPlayerObject = true;
             netManager.connectedClients[clientId].PlayerObject = go;
             spawnedObjects.Add(netObject.NetworkId, netObject);
+            netObject.InvokeBehaviourNetworkSpawn();
             return go;
         }
 
@@ -97,9 +99,9 @@ namespace MLAPI.NetworkingManagerComponents
                         }
                         //If we are host, send to everyone except ourselves. Otherwise, send to all
                         if (netManager.isHost)
-                            netManager.Send("MLAPI_DESTROY_OBJECT", "MLAPI_RELIABLE_FRAGMENTED", stream.GetBuffer(), -1);
+                            netManager.Send("MLAPI_DESTROY_OBJECT", "MLAPI_RELIABLE_FRAGMENTED_SEQUENCED", stream.GetBuffer(), -1);
                         else
-                            netManager.Send("MLAPI_DESTROY_OBJECT", "MLAPI_RELIABLE_FRAGMENTED", stream.GetBuffer());
+                            netManager.Send("MLAPI_DESTROY_OBJECT", "MLAPI_RELIABLE_FRAGMENTED_SEQUENCED", stream.GetBuffer());
                     }
                 }
             }
@@ -151,9 +153,9 @@ namespace MLAPI.NetworkingManagerComponents
                 }
                 //If we are host, send to everyone except ourselves. Otherwise, send to all
                 if (netManager.isHost)
-                    netManager.Send("MLAPI_ADD_OBJECT", "MLAPI_RELIABLE_FRAGMENTED", stream.GetBuffer(), -1);
+                    netManager.Send("MLAPI_ADD_OBJECT", "MLAPI_RELIABLE_FRAGMENTED_SEQUENCED", stream.GetBuffer(), -1);
                 else
-                    netManager.Send("MLAPI_ADD_OBJECT", "MLAPI_RELIABLE_FRAGMENTED", stream.GetBuffer());
+                    netManager.Send("MLAPI_ADD_OBJECT", "MLAPI_RELIABLE_FRAGMENTED_SEQUENCED", stream.GetBuffer());
             }
         }
     }

@@ -7,7 +7,7 @@ namespace MLAPI
 {
     public abstract class NetworkedBehaviour : MonoBehaviour
     {
-        protected bool isLocalPlayer
+        public bool isLocalPlayer
         {
             get
             {
@@ -35,7 +35,7 @@ namespace MLAPI
                 return NetworkingManager.singleton.isHost;
             }
         }
-        protected NetworkedObject networkedObject
+        public NetworkedObject networkedObject
         {
             get
             {
@@ -65,6 +65,20 @@ namespace MLAPI
 
         //Change data type
         private Dictionary<string, int> registeredMessageHandlers = new Dictionary<string, int>();
+
+        private void OnEnable()
+        {
+            if (_networkedObject == null)
+            {
+                _networkedObject = GetComponentInParent<NetworkedObject>();
+            }
+        }
+
+        internal bool networkedStartInvoked = false;
+        public virtual void NetworkStart()
+        {
+
+        }
 
         protected int RegisterMessageHandler(string name, Action<int, byte[]> action)
         {
