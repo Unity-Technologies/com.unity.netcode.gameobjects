@@ -27,7 +27,10 @@ namespace MLAP
         private Quaternion lerpStartRot;
         private Vector3 lerpEndPos;
         private Quaternion lerpEndRot;
+
         private float lastSendTime;
+        private Vector3 lastSentPos;
+        private Quaternion lastSentRot;
 
         private void OnValidate()
         {
@@ -35,10 +38,14 @@ namespace MLAP
                 InterpolatePosition = false;
             if (InterpolateServer && !InterpolatePosition)
                 InterpolateServer = false;
+            if (MinDegrees < 0)
+                MinDegrees = 0;
+            if (MinMeters < 0)
+                MinMeters = 0;
         }
 
 
-        void Awake()
+        void Start()
         {
             if (isServer)
             {
@@ -58,16 +65,35 @@ namespace MLAP
         {
             if(isLocalPlayer)
             {
-                if(Time.time - lastSendTime >= timeForLerp)
+                if(Time.time - lastSendTime >= timeForLerp && (Vector3.Distance(transform.position, lastSentPos) > MinMeters || Quaternion.Angle(transform.rotation, lastSentRot) > MinDegrees))
                 {
                     lastSendTime = Time.time;
+                    lastSentPos = transform.position;
+                    lastSentRot = transform.rotation;
+                    using (MemoryStream writeStream = new MemoryStream())
+                    {
+                        using (BinaryWriter writer = new BinaryWriter(writeStream))
+                        {
+                            writer.Write(transform.position.x);
+                            writer.Write(transform.position.y);
+                            writer.Write(transform.position.z);
+                            writer.Write(transform.rotation.x);
+                            writer.Write(transform.rotation.y);
+                            writer.Write(transform.rotation.z);
+                        }
+                        SendToServerTarget("MLAPI_OnRecieveTransformFromClient", "MLAPI_POSITION_UPDATE", writeStream.ToArray());
+                    }
+
                 }
             }
             else
             {
-                lerpT += Time.deltaTime / timeForLerp;
-                transform.position = Vector3.Lerp(lerpStartPos, lerpEndPos, lerpT);
-                transform.rotation = Quaternion.Slerp(lerpStartRot, lerpEndRot, lerpT);
+                if((isServer && InterpolateServer) || !isServer)
+                {
+                    lerpT += Time.deltaTime / timeForLerp;
+                    transform.position = Vector3.Lerp(lerpStartPos, lerpEndPos, lerpT);
+                    transform.rotation = Quaternion.Slerp(lerpStartRot, lerpEndRot, lerpT);
+                }
             }
         }
 
@@ -79,9 +105,6 @@ namespace MLAP
             {
                 using (BinaryReader reader = new BinaryReader(stream))
                 {
-                    uint netId = reader.ReadUInt32();
-                    if (networkId != netId)
-                        return;
                     float xPos = reader.ReadSingle();
                     float yPos = reader.ReadSingle();
                     float zPos = reader.ReadSingle();
@@ -126,7 +149,6 @@ namespace MLAP
                     {
                         using(BinaryWriter writer = new BinaryWriter(writeStream))
                         {
-                            writer.Write(networkId);
                             writer.Write(xPos);
                             writer.Write(yPos);
                             writer.Write(zPos);
@@ -134,7 +156,7 @@ namespace MLAP
                             writer.Write(yRot);
                             writer.Write(zRot);
                         }
-                        SendToNonLocalClients("MLAPI_OnRecieveTransformFromServer", "MLAPI_POSITION_UPDATE", writeStream.ToArray());
+                        SendToNonLocalClientsTarget("MLAPI_OnRecieveTransformFromServer", "MLAPI_POSITION_UPDATE", writeStream.ToArray());
                     }
                 }
             }
