@@ -10,8 +10,8 @@ namespace MLAP
 {
     public class NetworkedTransform : NetworkedBehaviour
     {
-        [Range(0, 120)]
-        public int SendsPerSecond = 20;
+        [Range(0f, 120f)]
+        public float SendsPerSecond = 20;
         [Tooltip("This assumes that the SendsPerSecond is synced across clients")]
         public bool AssumeSyncedSends = true;
         [Tooltip("This requires AssumeSyncedSends to be true")]
@@ -31,6 +31,10 @@ namespace MLAP
         private float lastSendTime;
         private Vector3 lastSentPos;
         private Quaternion lastSentRot;
+
+        public bool EnableProximity = false;
+        [Header("If enable proximity is turned on, on clients within this range will be recieving position updates from the server")]
+        public float ProximityRange = 50;
 
         private void OnValidate()
         {
@@ -161,7 +165,20 @@ namespace MLAP
                             writer.Write(yRot);
                             writer.Write(zRot);
                         }
-                        SendToNonLocalClientsTarget("MLAPI_OnRecieveTransformFromServer", "MLAPI_POSITION_UPDATE", writeStream.GetBuffer());
+                        if(EnableProximity)
+                        {
+                            for (int i = 0; i < NetworkingManager.singleton.connectedClients.Count; i++)
+                            {
+                                if (Vector3.Distance(NetworkingManager.singleton.connectedClients[i].PlayerObject.transform.position, transform.position) <= ProximityRange)
+                                {
+                                    SendToClientTarget(NetworkingManager.singleton.connectedClients[i].ClientId, "MLAPI_OnRecieveTransformFromServer", "MLAPI_POSITION_UPDATE", writeStream.GetBuffer());
+                                }
+                            }
+                        }
+                        else
+                        {
+                            SendToNonLocalClientsTarget("MLAPI_OnRecieveTransformFromServer", "MLAPI_POSITION_UPDATE", writeStream.GetBuffer());
+                        }
                     }
                 }
             }
