@@ -90,6 +90,11 @@ namespace MLAP
             {
                 if((isServer && InterpolateServer) || !isServer)
                 {
+                    if(Vector3.Distance(transform.position, lerpEndPos) > SnapDistance)
+                    {
+                        //Snap, set T to 1 (100% of the lerp)
+                        lerpT = 1;
+                    }
                     lerpT += Time.deltaTime / timeForLerp;
                     transform.position = Vector3.Lerp(lerpStartPos, lerpEndPos, lerpT);
                     transform.rotation = Quaternion.Slerp(lerpStartRot, lerpEndRot, lerpT);
