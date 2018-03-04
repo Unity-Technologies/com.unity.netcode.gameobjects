@@ -55,11 +55,14 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Data\TrackedPointData.cs" />
+    <Compile Include="MonoBehaviours\Core\LagCompensationManager.cs" />
     <Compile Include="MonoBehaviours\Core\NetworkedBehaviour.cs" />
     <Compile Include="Data\NetworkedClient.cs" />
     <Compile Include="MonoBehaviours\Core\NetworkedObject.cs" />
     <Compile Include="Data\NetworkingConfiguration.cs" />
     <Compile Include="MonoBehaviours\Core\NetworkingManager.cs" />
+    <Compile Include="MonoBehaviours\Core\TrackedObject.cs" />
     <Compile Include="MonoBehaviours\Prototyping\NetworkedTransform.cs" />
     <Compile Include="NetworkingManagerComponents\MessageManager.cs" />
     <Compile Include="NetworkingManagerComponents\NetworkSceneManager.cs" />
