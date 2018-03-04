@@ -4,16 +4,17 @@ MLAPI (Mid level API) is a framework that hopefully simplifies building networke
 ## Features
 * Host support (Client hosts the server)
 * Object and player spawning
-* Connection approval
+* Connection approval \[[Wiki page](https://github.com/TwoTenPvP/MLAPI/wiki/Connection-Approval)\]
 * Message names
 * Replace the integer QOS with names. When you setup the networking you specify names that are associated with a channel. This makes it easier to manage. You can thus specify that a message should be sent on the "damage" channel which handles all damage related logic and is running on the AllCostDelivery channel.
 * ProtocolVersion to allow making different versions not talk to each other.
 * NetworkedBehaviours does not have to be on the root, it's simply just a class that implements the send methods etc.
 * Multiple messages processed every frame with the ability to specify a maximum to prevent freezes in the normal game logic
-* Passthrough messages [Wiki page](https://github.com/TwoTenPvP/MLAPI/wiki/Passthrough-messages)
+* Passthrough messages \[[Wiki page](https://github.com/TwoTenPvP/MLAPI/wiki/Passthrough-messages)\]
 * Scene Management
 * Built in Lag compensation (Based on RTT which trades accuracy for modularity)
 * NetworkTransform replacement
+* Targeted messages \[[Wiki page](https://github.com/TwoTenPvP/MLAPI/wiki/Targeted-Messages)\]
 
 ## Planned features
 * Area of interest
