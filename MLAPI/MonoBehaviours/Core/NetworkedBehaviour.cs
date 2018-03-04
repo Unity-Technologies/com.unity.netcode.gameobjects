@@ -102,6 +102,11 @@ namespace MLAPI
 
         protected void SendToServer(string messageType, string channelName, byte[] data)
         {
+            if(MessageManager.messageTypes[messageType] < 32)
+            {
+                Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
+                return;
+            }
             if (isServer)
             {
                 MessageManager.InvokeMessageHandlers(messageType, data, -1);
@@ -114,6 +119,11 @@ namespace MLAPI
 
         protected void SendToServerTarget(string messageType, string channelName, byte[] data)
         {
+            if (MessageManager.messageTypes[messageType] < 32)
+            {
+                Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
+                return;
+            }
             if (isServer)
             {
                 MessageManager.InvokeTargetedMessageHandler(messageType, data, -1, networkId);
@@ -126,6 +136,11 @@ namespace MLAPI
 
         protected void SendToLocalClient(string messageType, string channelName, byte[] data)
         {
+            if (MessageManager.messageTypes[messageType] < 32)
+            {
+                Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
+                return;
+            }
             if (!isServer && (!NetworkingManager.singleton.NetworkConfig.AllowPassthroughMessages || !NetworkingManager.singleton.NetworkConfig.PassthroughMessageTypes.Contains(messageType)))
             {
                 Debug.LogWarning("MLAPI: Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
@@ -136,6 +151,11 @@ namespace MLAPI
 
         protected void SendToLocalClientTarget(string messageType, string channelName, byte[] data)
         {
+            if (MessageManager.messageTypes[messageType] < 32)
+            {
+                Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
+                return;
+            }
             if (!isServer && (!NetworkingManager.singleton.NetworkConfig.AllowPassthroughMessages || !NetworkingManager.singleton.NetworkConfig.PassthroughMessageTypes.Contains(messageType)))
             {
                 Debug.LogWarning("MLAPI: Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
@@ -146,6 +166,11 @@ namespace MLAPI
 
         protected void SendToNonLocalClients(string messageType, string channelName, byte[] data)
         {
+            if (MessageManager.messageTypes[messageType] < 32)
+            {
+                Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
+                return;
+            }
             if (!isServer)
             {
                 Debug.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported");
@@ -156,6 +181,11 @@ namespace MLAPI
 
         protected void SendToNonLocalClientsTarget(string messageType, string channelName, byte[] data)
         {
+            if (MessageManager.messageTypes[messageType] < 32)
+            {
+                Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
+                return;
+            }
             if (!isServer)
             {
                 Debug.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported");
@@ -166,6 +196,11 @@ namespace MLAPI
 
         protected void SendToClient(int clientId, string messageType, string channelName, byte[] data)
         {
+            if (MessageManager.messageTypes[messageType] < 32)
+            {
+                Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
+                return;
+            }
             if (!isServer && (!NetworkingManager.singleton.NetworkConfig.AllowPassthroughMessages || !NetworkingManager.singleton.NetworkConfig.PassthroughMessageTypes.Contains(messageType)))
             {
                 Debug.LogWarning("MLAPI: Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
@@ -176,6 +211,11 @@ namespace MLAPI
 
         protected void SendToClientTarget(int clientId, string messageType, string channelName, byte[] data)
         {
+            if (MessageManager.messageTypes[messageType] < 32)
+            {
+                Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
+                return;
+            }
             if (!isServer && (!NetworkingManager.singleton.NetworkConfig.AllowPassthroughMessages || !NetworkingManager.singleton.NetworkConfig.PassthroughMessageTypes.Contains(messageType)))
             {
                 Debug.LogWarning("MLAPI: Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
@@ -186,6 +226,11 @@ namespace MLAPI
 
         protected void SendToClients(int[] clientIds, string messageType, string channelName, byte[] data)
         {
+            if (MessageManager.messageTypes[messageType] < 32)
+            {
+                Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
+                return;
+            }
             if (!isServer)
             {
                 Debug.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported");
@@ -196,6 +241,11 @@ namespace MLAPI
 
         protected void SendToClientsTarget(int[] clientIds, string messageType, string channelName, byte[] data)
         {
+            if (MessageManager.messageTypes[messageType] < 32)
+            {
+                Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
+                return;
+            }
             if (!isServer)
             {
                 Debug.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported");
@@ -206,6 +256,11 @@ namespace MLAPI
 
         protected void SendToClients(List<int> clientIds, string messageType, string channelName, byte[] data)
         {
+            if (MessageManager.messageTypes[messageType] < 32)
+            {
+                Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
+                return;
+            }
             if (!isServer)
             {
                 Debug.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported");
@@ -216,6 +271,11 @@ namespace MLAPI
 
         protected void SendToClientsTarget(List<int> clientIds, string messageType, string channelName, byte[] data)
         {
+            if (MessageManager.messageTypes[messageType] < 32)
+            {
+                Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
+                return;
+            }
             if (!isServer)
             {
                 Debug.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported");
@@ -226,6 +286,11 @@ namespace MLAPI
 
         protected void SendToClients(string messageType, string channelName, byte[] data)
         {
+            if (MessageManager.messageTypes[messageType] < 32)
+            {
+                Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
+                return;
+            }
             if (!isServer)
             {
                 Debug.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported");
@@ -236,6 +301,11 @@ namespace MLAPI
 
         protected void SendToClientsTarget(string messageType, string channelName, byte[] data)
         {
+            if (MessageManager.messageTypes[messageType] < 32)
+            {
+                Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
+                return;
+            }
             if (!isServer)
             {
                 Debug.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported");
