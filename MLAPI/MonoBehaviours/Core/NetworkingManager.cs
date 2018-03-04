@@ -72,6 +72,7 @@ namespace MLAPI
             MessageManager.reverseMessageTypes = new Dictionary<ushort, string>();
             SpawnManager.spawnedObjects = new Dictionary<uint, NetworkedObject>();
             SpawnManager.releasedNetworkObjectIds = new Stack<uint>();
+            NetworkPoolManager.Pools = new Dictionary<string, Data.NetworkPool>();
             NetworkSceneManager.registeredSceneNames = new HashSet<string>();
             NetworkSceneManager.sceneIndexToString = new Dictionary<uint, string>();
             NetworkSceneManager.sceneNameToIndex = new Dictionary<string, uint>();
@@ -98,6 +99,7 @@ namespace MLAPI
             MessageManager.messageTypes.Add("MLAPI_CLIENT_DISCONNECT", 3);
             MessageManager.messageTypes.Add("MLAPI_DESTROY_OBJECT", 4);
             MessageManager.messageTypes.Add("MLAPI_SWITCH_SCENE", 5);
+            MessageManager.messageTypes.Add("MLAPI_SPAWN_POOL_OBJECT", 6);
             NetworkConfig.MessageTypes.Add("MLAPI_OnRecieveTransformFromClient");
             NetworkConfig.MessageTypes.Add("MLAPI_OnRecieveTransformFromServer");
 
@@ -577,6 +579,39 @@ namespace MLAPI
                                         }
                                     }
                                 }  
+                                break;
+                            case 6: //Spawn pool object
+                                if(isClient)
+                                {
+                                    using (MemoryStream messageReadStream = new MemoryStream(incommingData))
+                                    {
+                                        using (BinaryReader messageReader = new BinaryReader(messageReadStream))
+                                        {
+                                            ushort poolIndex = messageReader.ReadUInt16();
+                                            float xPos = messageReader.ReadSingle();
+                                            float yPos = messageReader.ReadSingle();
+                                            float zPos = messageReader.ReadSingle();
+                                            float xRot = messageReader.ReadSingle();
+                                            float yRot = messageReader.ReadSingle();
+                                            float zRot = messageReader.ReadSingle();
+                                            NetworkPoolManager.SpawnPoolObject(NetworkPoolManager.PoolIndexToPoolName[poolIndex], 
+                                                new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot));
+                                        }
+                                    }
+                                }
+                                break;
+                            case 7: //Destroy pool object
+                                if(isClient)
+                                {
+                                    using (MemoryStream messageReadStream = new MemoryStream(incommingData))
+                                    {
+                                        using (BinaryReader messageReader = new BinaryReader(messageReadStream))
+                                        {
+                                            uint netId = messageReader.ReadUInt32();
+                                            SpawnManager.spawnedObjects[netId].gameObject.SetActive(false);
+                                        }
+                                    }
+                                }
                                 break;
                         }
                     }
