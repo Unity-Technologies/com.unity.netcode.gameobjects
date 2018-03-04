@@ -1,9 +1,10 @@
-﻿using System;
+﻿using MLAPI.MonoBehaviours.Core;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
 
-namespace MLAPI.MonoBehaviours.Core
+namespace MLAPI.NetworkingManagerComponents
 {
     public static class LagCompensationManager
     {
