@@ -21,6 +21,8 @@ MLAPI (Mid level API) is a framework that hopefully simplifies building networke
 * Encrypted messages / full encryption for all messages. Diffie Hellman key exchange with the option to sign the transaction using RSA.
 * Serializer (both for the library to speed up and to allow structs to be sent easily)
 * SyncVars (allow variables to automatically be synced to new clients and current clients when it's changed)
+
+SyncVars will require code injection at compilation with some form of attribute, this is due to limitations of C#. There is no way to have a reference to a variable.
 * Message compression
 
 ## Example
