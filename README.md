@@ -1,41 +1,36 @@
 # MLAPI
-MLAPI (Mid level API) is a framework that hopefully simplifies building networked games in Unity. It is built on the LLAPI and is similar to the HLAPI in many ways. It does not however integrate into the compiler and it's meant to offer much greater flexibility than the HLAPI while keeping some of it's simplicity. 
+MLAPI (Mid level API) is a framework that hopefully simplifies building networked games in Unity. It is built on the LLAPI and is similar to the HLAPI in many ways. It does not however integrate into the compiler and it's meant to offer much greater flexibility than the HLAPI while keeping some of it's simplicity. It offers greater performance over the HLAPI.
 
-The project is WIP. 
-
-It's licenced under the MIT licence :D
-
+## Features
+* Host support (Client hosts the server)
+* Object and player spawning
+* Connection approval \[[Wiki page](https://github.com/TwoTenPvP/MLAPI/wiki/Connection-Approval)\]
+* Message names
+* Replace the integer QOS with names. When you setup the networking you specify names that are associated with a channel. This makes it easier to manage. You can thus specify that a message should be sent on the "damage" channel which handles all damage related logic and is running on the AllCostDelivery channel.
+* ProtocolVersion to allow making different versions not talk to each other.
+* NetworkedBehaviours does not have to be on the root, it's simply just a class that implements the send methods etc.
+* Multiple messages processed every frame with the ability to specify a maximum to prevent freezes in the normal game logic
+* Passthrough messages \[[Wiki page](https://github.com/TwoTenPvP/MLAPI/wiki/Passthrough-messages)\]
+* Scene Management
+* Built in Lag compensation (Based on RTT which trades accuracy for modularity)
+* NetworkTransform replacement
+* Targeted messages \[[Wiki page](https://github.com/TwoTenPvP/MLAPI/wiki/Targeted-Messages)\]
 
 ## Planned features
-* Built in lag compensation (going to be worked on when all base functionality is there)
-* Area of interest (not working on ATM but it's on the TODO)
-* Core gameplay components similar to what the HLAPI offers (but hopefully of better quality)
-* Encrypted messages / full encryption for all messages. This option will only be useful for dedicated servers. It will require all clients to have a hardcoded copy of the servers RSA keypair.
+* Area of interest
+* Core gameplay components similar to what the HLAPI offers
+* Encrypted messages / full encryption for all messages. Diffie Hellman key exchange with the option to sign the transaction using RSA.
 * Serializer (both for the library to speed up and to allow structs to be sent easily)
 * SyncVars (allow variables to automatically be synced to new clients and current clients when it's changed)
+
+_SyncVars will require code injection at compilation with some form of attribute, this is due to limitations of C#. There is no way to have a reference to a variable._
 * Message compression
 
+## Example
+[Example project](https://github.com/TwoTenPvP/MLAPI-Examples)
 
-## Done features
-* Host support (Client hosts the server) (done)
-* Object and player spawning (done)
-* Connection approval (done)
-* Message names (done)
-* Replace the integer QOS with names. When you setup the networking you specify names that are associated with a channel. This makes it easier to manage. You can thus specify that a message should be sent on the "damage" channel which handles all damage related logic and is running on the AllCostDelivery channel. (done)
-* ProtocolVersion to allow making different versions not talk to each other. (done)
-* NetworkedBehaviours does not have to be on the root, it's simply just a class that implements the send methods etc. (done)
-* Multiple messages processed every frame with the ability to specify a maximum to prevent freezes in the normal game logic (done)
-* Passthrough messages (check the wiki for details)
-* Scene Management
+The example project has a much lower priority compared to the library itself. If something doesn't exist in the example nor the wiki. Please open an issue on GitHub.
 
-
-That's all I can think of right now. But there is more to come, especially if people show intrest in the project.
-
-
-
-## Indepth
-The project is not yet very tested.
-https://github.com/TwoTenPvP/MLAPI-Examples
 
 
 ## Issues and missing features
