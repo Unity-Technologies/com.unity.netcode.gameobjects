@@ -31,6 +31,24 @@ namespace MLAPI.NetworkingManagerComponents
             Pools.Add(poolName, new NetworkPool(poolPrefab, size, poolName));
         }
 
+
+        public static void CreatePool(string poolName, GameObject[] poolPrefabs)
+        {
+            if (Pools.ContainsKey(poolName))
+            {
+                Debug.LogWarning("MLAPI: A pool with the name " + poolName + " already exists");
+                return;
+            }
+            else if (poolPrefabs == null)
+            {
+                Debug.LogWarning("MLAPI: A pool prefab array is required");
+            }
+            PoolIndexToPoolName.Add(PoolIndex, poolName);
+            PoolNamesToIndexes.Add(poolName, PoolIndex);
+            PoolIndex++;
+            Pools.Add(poolName, new NetworkPool(poolPrefabs, poolName));
+        }
+
         public static GameObject SpawnPoolObject(string poolName, Vector3 position, Quaternion rotation)
         {
             if(NetworkingManager.singleton.isServer)
