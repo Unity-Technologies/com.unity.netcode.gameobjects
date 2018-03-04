@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using UnityEngine;
 using UnityEngine.Networking;
 
 namespace MLAPI.MonoBehaviours.Core
@@ -10,6 +11,11 @@ namespace MLAPI.MonoBehaviours.Core
 
         public static void Simulate(float secondsAgo, Action action)
         {
+            if(!NetworkingManager.singleton.isServer)
+            {
+                Debug.LogWarning("MLAPI: Lag compensation simulations are only to be ran on the server.");
+                return;
+            }
             for (int i = 0; i < SimulationObjects.Count; i++)
             {
                 SimulationObjects[i].ReverseTransform(secondsAgo);
@@ -26,6 +32,11 @@ namespace MLAPI.MonoBehaviours.Core
         private static byte error = 0;
         public static void Simulate(int clientId, Action action)
         {
+            if (!NetworkingManager.singleton.isServer)
+            {
+                Debug.LogWarning("MLAPI: Lag compensation simulations are only to be ran on the server.");
+                return;
+            }
             float milisecondsDelay = NetworkTransport.GetCurrentRTT(NetworkingManager.singleton.hostId, clientId, out error) / 2f;
             Simulate(milisecondsDelay * 1000f, action);
         }

@@ -329,7 +329,8 @@ namespace MLAPI
                     (messagesProcessed < NetworkConfig.MaxMessagesPerFrame || NetworkConfig.MaxMessagesPerFrame < 0));
 
             }
-            LagCompensationManager.AddFrames();
+            if (isServer)
+                LagCompensationManager.AddFrames();
         }
 
         private IEnumerator ApprovalTimeout(int clientId)
