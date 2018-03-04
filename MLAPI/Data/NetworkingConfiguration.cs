@@ -13,6 +13,7 @@ namespace MLAPI
         public List<string> MessageTypes = new List<string>();
         public List<string> PassthroughMessageTypes = new List<string>();
         internal HashSet<ushort> RegisteredPassthroughMessageTypes = new HashSet<ushort>();
+        internal List<string> RegisteredScenes = new List<string>();
         public int MessageBufferSize = 65535;
         public int MaxMessagesPerFrame = 150;
         public int MaxConnections = 100;
@@ -29,6 +30,7 @@ namespace MLAPI
         //TODO
         public bool EncryptMessages = false;
         public bool AllowPassthroughMessages = true;
+        public bool EnableSceneSwitching = true;
 
         //Cached config hash
         private byte[] ConfigHash = null;
@@ -47,20 +49,29 @@ namespace MLAPI
                         writer.Write(pair.Key);
                         writer.Write((int)pair.Value);
                     }
-                    MessageTypes.Sort();
-                    PassthroughMessageTypes.Sort();
                     for (int i = 0; i < MessageTypes.Count; i++)
                     {
                         writer.Write(MessageTypes[i]);
                     }
-                    for (int i = 0; i < PassthroughMessageTypes.Count; i++)
+                    if(AllowPassthroughMessages)
                     {
-                        writer.Write(PassthroughMessageTypes[i]);
+                        for (int i = 0; i < PassthroughMessageTypes.Count; i++)
+                        {
+                            writer.Write(PassthroughMessageTypes[i]);
+                        }
+                    }
+                    if(EnableSceneSwitching)
+                    {
+                        for (int i = 0; i < RegisteredScenes.Count; i++)
+                        {
+                            writer.Write(RegisteredScenes[i]);
+                        }
                     }
                     writer.Write(HandleObjectSpawning);
                     writer.Write(CompressMessages);
                     writer.Write(EncryptMessages);
                     writer.Write(AllowPassthroughMessages);
+                    writer.Write(EnableSceneSwitching);
                 }
                 using(SHA256Managed sha256 = new SHA256Managed())
                 {

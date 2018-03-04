@@ -71,6 +71,9 @@ namespace MLAPI
             MessageManager.reverseMessageTypes = new Dictionary<ushort, string>();
             SpawnManager.spawnedObjects = new Dictionary<uint, NetworkedObject>();
             SpawnManager.releasedNetworkObjectIds = new Stack<uint>();
+            NetworkSceneManager.registeredSceneNames = new HashSet<string>();
+            NetworkSceneManager.sceneIndexToString = new Dictionary<uint, string>();
+            NetworkSceneManager.sceneNameToIndex = new Dictionary<string, uint>();
             if (NetworkConfig.HandleObjectSpawning)
             {
                 NetworkedObject[] sceneObjects = FindObjectsOfType<NetworkedObject>();
@@ -87,13 +90,23 @@ namespace MLAPI
             //MLAPI channels and messageTypes
             NetworkConfig.Channels.Add("MLAPI_RELIABLE_FRAGMENTED_SEQUENCED", QosType.ReliableFragmentedSequenced);
             NetworkConfig.Channels.Add("MLAPI_POSITION_UPDATE", QosType.StateUpdate);
+            NetworkConfig.Channels.Add("MLAPI_SCENE_SWTICH", QosType.AllCostDelivery);
             MessageManager.messageTypes.Add("MLAPI_CONNECTION_REQUEST", 0);
             MessageManager.messageTypes.Add("MLAPI_CONNECTION_APPROVED", 1);
             MessageManager.messageTypes.Add("MLAPI_ADD_OBJECT", 2);
             MessageManager.messageTypes.Add("MLAPI_CLIENT_DISCONNECT", 3);
             MessageManager.messageTypes.Add("MLAPI_DESTROY_OBJECT", 4);
+            MessageManager.messageTypes.Add("MLAPI_SWITCH_SCENE", 5);
             NetworkConfig.MessageTypes.Add("MLAPI_OnRecieveTransformFromClient");
             NetworkConfig.MessageTypes.Add("MLAPI_OnRecieveTransformFromServer");
+
+            for (int i = 0; i < NetworkConfig.RegisteredScenes.Count; i++)
+            {
+                NetworkSceneManager.registeredSceneNames.Add(NetworkConfig.RegisteredScenes[i]);
+                NetworkSceneManager.sceneIndexToString.Add((uint)i, NetworkConfig.RegisteredScenes[i]);
+                NetworkSceneManager.sceneNameToIndex.Add(NetworkConfig.RegisteredScenes[i], (uint)i);
+            }
+            
 
             HashSet<string> channelNames = new HashSet<string>();
             foreach (KeyValuePair<string, QosType> pair in NetworkConfig.Channels)
@@ -548,6 +561,19 @@ namespace MLAPI
                                         }
                                     }
                                 }
+                                break;
+                            case 5:
+                                //Scene switch
+                                if (isClient)
+                                {
+                                    using (MemoryStream messageReadStream = new MemoryStream(incommingData))
+                                    {
+                                        using (BinaryReader messageReader = new BinaryReader(messageReadStream))
+                                        {
+                                            NetworkSceneManager.OnSceneSwitch(messageReader.ReadUInt32());
+                                        }
+                                    }
+                                }  
                                 break;
                         }
                     }
