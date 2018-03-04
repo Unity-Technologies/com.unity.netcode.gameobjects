@@ -36,3 +36,7 @@ That's all I can think of right now. But there is more to come, especially if pe
 ## Indepth
 The project is not yet very tested.
 https://github.com/TwoTenPvP/MLAPI-Examples
+
+
+## Issues and missing features
+If there are any issues, bugs or features that are missing. Please open an issue on GitHub!

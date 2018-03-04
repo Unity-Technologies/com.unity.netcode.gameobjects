@@ -62,6 +62,7 @@
     <Compile Include="MonoBehaviours\Core\NetworkingManager.cs" />
     <Compile Include="MonoBehaviours\Prototyping\NetworkedTransform.cs" />
     <Compile Include="NetworkingManagerComponents\MessageManager.cs" />
+    <Compile Include="NetworkingManagerComponents\NetworkSceneManager.cs" />
     <Compile Include="NetworkingManagerComponents\SpawnManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
