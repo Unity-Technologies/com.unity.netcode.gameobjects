@@ -19,7 +19,12 @@ namespace MLAPI.NetworkingManagerComponents
 
         public static void SwitchScene(string sceneName)
         {
-            if (isSwitching)
+            if(!NetworkingManager.singleton.NetworkConfig.EnableSceneSwitching)
+            {
+                Debug.LogWarning("MLAPI: Scene switching is not enabled");
+                return;
+            }
+            else if (isSwitching)
             {
                 Debug.LogWarning("MLAPI: Scene switch already in progress");
                 return;
@@ -45,7 +50,12 @@ namespace MLAPI.NetworkingManagerComponents
 
         internal static void OnSceneSwitch(uint sceneIndex)
         {
-            if(!sceneIndexToString.ContainsKey(sceneIndex) ||registeredSceneNames.Contains(sceneIndexToString[sceneIndex]))
+            if (!NetworkingManager.singleton.NetworkConfig.EnableSceneSwitching)
+            {
+                Debug.LogWarning("MLAPI: Scene switching is not enabled but was requested by the server");
+                return;
+            }
+            else if (!sceneIndexToString.ContainsKey(sceneIndex) ||registeredSceneNames.Contains(sceneIndexToString[sceneIndex]))
             {
                 Debug.LogWarning("MLAPI: Server requested a scene switch to a non registered scene");
                 return;
