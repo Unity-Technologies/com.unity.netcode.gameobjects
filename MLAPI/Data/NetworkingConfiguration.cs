@@ -23,6 +23,7 @@ namespace MLAPI
         public bool ConnectionApproval = false;
         public Action<byte[], int, Action<int, bool>> ConnectionApprovalCallback = null;
         public byte[] ConnectionData = new byte[0];
+        public float SecondsHistory = 5;
         public bool HandleObjectSpawning = true;
         //TODO
         public bool CompressMessages = false;

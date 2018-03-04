@@ -1,4 +1,5 @@
-﻿using MLAPI.NetworkingManagerComponents;
+﻿using MLAPI.MonoBehaviours.Core;
+using MLAPI.NetworkingManagerComponents;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -255,7 +256,7 @@ namespace MLAPI
         }
 
         //Receive stuff
-        int hostId;
+        internal int hostId;
         int clientId;
         int channelId;
         int receivedSize;
@@ -328,6 +329,7 @@ namespace MLAPI
                     (messagesProcessed < NetworkConfig.MaxMessagesPerFrame || NetworkConfig.MaxMessagesPerFrame < 0));
 
             }
+            LagCompensationManager.AddFrames();
         }
 
         private IEnumerator ApprovalTimeout(int clientId)
