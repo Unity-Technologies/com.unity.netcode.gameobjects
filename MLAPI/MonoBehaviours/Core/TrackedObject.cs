@@ -18,17 +18,18 @@ namespace MLAPI.MonoBehaviours.Core
             savedPosition = transform.position;
             savedRotation = transform.rotation;
             float currentTime = Time.time;
-            float targetTime = Time.time - secondsAgo;
+            float targetTime = currentTime - secondsAgo;
             float previousTime = 0;
             float nextTime = 0;
-            for (int i = 1; i < Framekeys.Count - 1; i++)
+            for (int i = 1; i < Framekeys.Count; i++)
             {
-                if(Framekeys[i - 1] > targetTime && Framekeys[i] <= targetTime)
+                if (Framekeys[i - 1] <= targetTime && Framekeys[i] >= targetTime)
                 {
                     previousTime = Framekeys[i];
                     nextTime = Framekeys[i + 1];
                     break;
                 }
+                
             }
 
             float timeBetweenFrames = nextTime - previousTime;
@@ -59,7 +60,7 @@ namespace MLAPI.MonoBehaviours.Core
             float currentTime = Time.time;
             for (int i = 0; i < Framekeys.Count; i++)
             {
-                if (currentTime - Framekeys[i] <= NetworkingManager.singleton.NetworkConfig.SecondsHistory)
+                if (currentTime - Framekeys[i] >= NetworkingManager.singleton.NetworkConfig.SecondsHistory)
                 {
                     for (int j = 0; j < i; j++)
                     {
@@ -74,7 +75,7 @@ namespace MLAPI.MonoBehaviours.Core
                 position = transform.position,
                 rotation = transform.rotation
             });
-            Framekeys.Add(Time.frameCount);
+            Framekeys.Add(Time.time);
         }
     }
 }
