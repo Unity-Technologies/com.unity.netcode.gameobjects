@@ -33,7 +33,7 @@ namespace MLAP
         private Quaternion lastSentRot;
 
         public bool EnableProximity = false;
-        [Header("If enable proximity is turned on, on clients within this range will be recieving position updates from the server")]
+        [Tooltip("If enable proximity is turned on, on clients within this range will be recieving position updates from the server")]
         public float ProximityRange = 50;
 
         private void OnValidate()
