@@ -24,7 +24,9 @@ MLAPI (Mid level API) is a framework that hopefully simplifies building networke
 * Message compression
 
 ## Example
-https://github.com/TwoTenPvP/MLAPI-Examples
+[Example project](https://github.com/TwoTenPvP/MLAPI-Examples)
+The example project has a much lower priority compared to the library itself. If something doesn't exist in the example nor the wiki. Please open an issue on GitHub.
+
 
 
 ## Issues and missing features
