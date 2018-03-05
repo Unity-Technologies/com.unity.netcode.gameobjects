@@ -22,7 +22,6 @@ namespace MLAPI
             set
             {
                 m_Animator = value;
-                m_AnimatorParameters = m_Animator.parameters;
                 ResetParameterOptions();
             }
         }
@@ -75,6 +74,7 @@ namespace MLAPI
         {
             Debug.Log("ResetParameterOptions");
             m_ParameterSendBits = 0;
+            m_AnimatorParameters = null;
         }
 
         void FixedUpdate()
@@ -248,6 +248,7 @@ namespace MLAPI
 
         void WriteParameters(BinaryWriter writer, bool autoSend)
         {
+            if (m_AnimatorParameters == null) m_AnimatorParameters = m_Animator.parameters;
             for (int i = 0; i < m_AnimatorParameters.Length; i++)
             {
                 if (autoSend && !GetParameterAutoSend(i))
@@ -278,7 +279,8 @@ namespace MLAPI
         }
 
         void ReadParameters(BinaryReader reader, bool autoSend)
-        {     
+        {
+            if (m_AnimatorParameters == null) m_AnimatorParameters = m_Animator.parameters;
             for (int i = 0; i < m_AnimatorParameters.Length; i++)
             {
                 if (autoSend && !GetParameterAutoSend(i))
@@ -336,6 +338,16 @@ namespace MLAPI
                     }
                 }
             }
+        }
+
+        public override void OnGainedOwnership()
+        {
+            ResetParameterOptions();
+        }
+
+        public override void OnLostOwnership()
+        {
+            ResetParameterOptions();
         }
     }
 }
