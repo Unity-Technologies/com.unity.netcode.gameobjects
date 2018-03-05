@@ -1,27 +1,36 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using UnityEngine;
 
 namespace MLAPI
 {
-    [DisallowMultipleComponent]
-    [RequireComponent(typeof(Animator))]
     public class NetworkedAnimator : NetworkedBehaviour
     {
-        // configuration
-        [SerializeField] Animator   m_Animator;
-        [SerializeField] uint       m_ParameterSendBits;
-        [SerializeField] float m_SendRate = 0.1f;
+        [SerializeField]
+        private Animator _animator;
+        [SerializeField]
+        private uint parameterSendBits;
+        [SerializeField]
+        private float sendRate = 0.1f;
+        private AnimatorControllerParameter[] animatorParameters;
 
-        AnimatorControllerParameter[] m_AnimatorParameters;
+        private int animationHash;
+        private int transitionHash;
+        private float sendTimer;
 
-        // properties
+        // tracking - these should probably move to a Preview component. -- Comment from HLAPI. Needs clarification
+        public string param0;
+        public string param1;
+        public string param2;
+        public string param3;
+        public string param4;
+        public string param5;
+
         public Animator animator
         {
-            get { return m_Animator; }
+            get { return _animator; }
             set
             {
-                m_Animator = value;
+                _animator = value;
                 ResetParameterOptions();
             }
         }
@@ -30,32 +39,20 @@ namespace MLAPI
         {
             if (value)
             {
-                m_ParameterSendBits |=  (uint)(1 << index);
+                parameterSendBits |=  (uint)(1 << index);
             }
             else
             {
-                m_ParameterSendBits &= (uint)(~(1 << index));
+                parameterSendBits &= (uint)(~(1 << index));
             }
         }
 
         public bool GetParameterAutoSend(int index)
         {
-            return (m_ParameterSendBits & (uint)(1 << index)) != 0;
+            return (parameterSendBits & (uint)(1 << index)) != 0;
         }
 
-        int                     m_AnimationHash;
-        int                     m_TransitionHash;
-        float                   m_SendTimer;
-
-        // tracking - these should probably move to a Preview component.
-        public string   param0;
-        public string   param1;
-        public string   param2;
-        public string   param3;
-        public string   param4;
-        public string   param5;
-
-        bool sendMessagesAllowed
+        private bool sendMessagesAllowed
         {
             get
             {
@@ -73,23 +70,22 @@ namespace MLAPI
         public void ResetParameterOptions()
         {
             Debug.Log("ResetParameterOptions");
-            m_ParameterSendBits = 0;
-            m_AnimatorParameters = null;
+            parameterSendBits = 0;
+            animatorParameters = null;
         }
 
-        void FixedUpdate()
+        private void FixedUpdate()
         {
             if (!sendMessagesAllowed)
                 return;
 
             CheckSendRate();
 
-            int stateHash;
-            float normalizedTime;
-            if (!CheckAnimStateChanged(out stateHash, out normalizedTime))
+            if (!CheckAnimStateChanged(out int stateHash, out float normalizedTime))
             {
                 return;
             }
+
             using(MemoryStream stream = new MemoryStream())
             {
                 using (BinaryWriter writer = new BinaryWriter(stream))
@@ -109,46 +105,46 @@ namespace MLAPI
             }
         }
 
-        bool CheckAnimStateChanged(out int stateHash, out float normalizedTime)
+        private bool CheckAnimStateChanged(out int stateHash, out float normalizedTime)
         {
             stateHash = 0;
             normalizedTime = 0;
 
-            if (m_Animator.IsInTransition(0))
+            if (animator.IsInTransition(0))
             {
-                AnimatorTransitionInfo tt = m_Animator.GetAnimatorTransitionInfo(0);
-                if (tt.fullPathHash != m_TransitionHash)
+                AnimatorTransitionInfo animationTransitionInfo = animator.GetAnimatorTransitionInfo(0);
+                if (animationTransitionInfo.fullPathHash != transitionHash)
                 {
                     // first time in this transition
-                    m_TransitionHash = tt.fullPathHash;
-                    m_AnimationHash = 0;
+                    transitionHash = animationTransitionInfo.fullPathHash;
+                    animationHash = 0;
                     return true;
                 }
                 return false;
             }
 
-            AnimatorStateInfo st = m_Animator.GetCurrentAnimatorStateInfo(0);
-            if (st.fullPathHash != m_AnimationHash)
+            AnimatorStateInfo animationSateInfo = animator.GetCurrentAnimatorStateInfo(0);
+            if (animationSateInfo.fullPathHash != animationHash)
             {
                 // first time in this animation state
-                if (m_AnimationHash != 0)
+                if (animationHash != 0)
                 {
                     // came from another animation directly - from Play()
-                    stateHash = st.fullPathHash;
-                    normalizedTime = st.normalizedTime;
+                    stateHash = animationSateInfo.fullPathHash;
+                    normalizedTime = animationSateInfo.normalizedTime;
                 }
-                m_TransitionHash = 0;
-                m_AnimationHash = st.fullPathHash;
+                transitionHash = 0;
+                animationHash = animationSateInfo.fullPathHash;
                 return true;
             }
             return false;
         }
 
-        void CheckSendRate()
+        private void CheckSendRate()
         {
-            if (sendMessagesAllowed && m_SendRate != 0 && m_SendTimer < Time.time)
+            if (sendMessagesAllowed && sendRate != 0 && sendTimer < Time.time)
             {
-                m_SendTimer = Time.time + m_SendRate;
+                sendTimer = Time.time + sendRate;
 
                 using(MemoryStream stream = new MemoryStream())
                 {
@@ -168,7 +164,7 @@ namespace MLAPI
             }
         }
 
-        void SetSendTrackingParam(string p, int i)
+        private void SetSendTrackingParam(string p, int i)
         {
             p = "Sent Param: " + p;
             if (i == 0) param0 = p;
@@ -179,7 +175,7 @@ namespace MLAPI
             if (i == 5) param5 = p;
         }
 
-        void SetRecvTrackingParam(string p, int i)
+        private void SetRecvTrackingParam(string p, int i)
         {
             p = "Recv Param: " + p;
             if (i == 0) param0 = p;
@@ -190,13 +186,12 @@ namespace MLAPI
             if (i == 5) param5 = p;
         }
 
-        internal void HandleAnimMsg(int clientId, byte[] data)
+        private void HandleAnimMsg(int clientId, byte[] data)
         {
             // usually transitions will be triggered by parameters, if not, play anims directly.
             // NOTE: this plays "animations", not transitions, so any transitions will be skipped.
             // NOTE: there is no API to play a transition(?)
 
-            //isServer AND the message is not from ourselves. This prevents a stack overflow. Infinite call to itself.
             if(isServer)
             {
                 SendToNonLocalClientsTarget("MLAPI_HandleAnimationMessage", "MLAPI_ANIMATION_UPDATE", data, true);
@@ -209,14 +204,14 @@ namespace MLAPI
                     float normalizedTime = reader.ReadSingle();
                     if(stateHash != 0)
                     {
-                        m_Animator.Play(stateHash, 0, normalizedTime);
+                        animator.Play(stateHash, 0, normalizedTime);
                     }
                     ReadParameters(reader, false);
                 }
             }
         }
 
-        internal void HandleAnimParamsMsg(int clientId, byte[] data)
+        private void HandleAnimParamsMsg(int clientId, byte[] data)
         {
             if (isServer)
             {
@@ -231,7 +226,7 @@ namespace MLAPI
             }
         }
 
-        internal void HandleAnimTriggerMsg(int clientId, byte[] data)
+        private void HandleAnimTriggerMsg(int clientId, byte[] data)
         {
             if (isServer)
             {
@@ -241,56 +236,60 @@ namespace MLAPI
             {
                 using(BinaryReader reader = new BinaryReader(stream))
                 {
-                    m_Animator.SetTrigger(reader.ReadInt32());
+                    animator.SetTrigger(reader.ReadInt32());
                 }
             }
         }
 
-        void WriteParameters(BinaryWriter writer, bool autoSend)
+        private void WriteParameters(BinaryWriter writer, bool autoSend)
         {
-            if (m_AnimatorParameters == null) m_AnimatorParameters = m_Animator.parameters;
-            for (int i = 0; i < m_AnimatorParameters.Length; i++)
+            if (animatorParameters == null)       
+                animatorParameters = animator.parameters;
+
+            for (int i = 0; i < animatorParameters.Length; i++)
             {
                 if (autoSend && !GetParameterAutoSend(i))
                     continue;
 
-                AnimatorControllerParameter par = m_AnimatorParameters[i];
+                AnimatorControllerParameter par = animatorParameters[i];
                 if (par.type == AnimatorControllerParameterType.Int)
                 {
-                    writer.Write((uint)m_Animator.GetInteger(par.nameHash));
+                    writer.Write((uint)animator.GetInteger(par.nameHash));
 
-                    SetSendTrackingParam(par.name + ":" + m_Animator.GetInteger(par.nameHash), i);
+                    SetSendTrackingParam(par.name + ":" + animator.GetInteger(par.nameHash), i);
                 }
 
                 if (par.type == AnimatorControllerParameterType.Float)
                 {
-                    writer.Write(m_Animator.GetFloat(par.nameHash));
+                    writer.Write(animator.GetFloat(par.nameHash));
 
-                    SetSendTrackingParam(par.name + ":" + m_Animator.GetFloat(par.nameHash), i);
+                    SetSendTrackingParam(par.name + ":" + animator.GetFloat(par.nameHash), i);
                 }
 
                 if (par.type == AnimatorControllerParameterType.Bool)
                 {
-                    writer.Write(m_Animator.GetBool(par.nameHash));
+                    writer.Write(animator.GetBool(par.nameHash));
 
-                    SetSendTrackingParam(par.name + ":" + m_Animator.GetBool(par.nameHash), i);
+                    SetSendTrackingParam(par.name + ":" + animator.GetBool(par.nameHash), i);
                 }
             }
         }
 
-        void ReadParameters(BinaryReader reader, bool autoSend)
+        private void ReadParameters(BinaryReader reader, bool autoSend)
         {
-            if (m_AnimatorParameters == null) m_AnimatorParameters = m_Animator.parameters;
-            for (int i = 0; i < m_AnimatorParameters.Length; i++)
+            if (animatorParameters == null)
+                animatorParameters = animator.parameters;
+
+            for (int i = 0; i < animatorParameters.Length; i++)
             {
                 if (autoSend && !GetParameterAutoSend(i))
                     continue;
 
-                AnimatorControllerParameter par = m_AnimatorParameters[i];
+                AnimatorControllerParameter par = animatorParameters[i];
                 if (par.type == AnimatorControllerParameterType.Int)
                 {
                     int newValue = (int)reader.ReadUInt32();
-                    m_Animator.SetInteger(par.nameHash, newValue);
+                    animator.SetInteger(par.nameHash, newValue);
 
                     SetRecvTrackingParam(par.name + ":" + newValue, i);
                 }
@@ -298,7 +297,7 @@ namespace MLAPI
                 if (par.type == AnimatorControllerParameterType.Float)
                 {
                     float newFloatValue = reader.ReadSingle();
-                    m_Animator.SetFloat(par.nameHash, newFloatValue);
+                    animator.SetFloat(par.nameHash, newFloatValue);
 
                     SetRecvTrackingParam(par.name + ":" + newFloatValue, i);
                 }
@@ -306,7 +305,7 @@ namespace MLAPI
                 if (par.type == AnimatorControllerParameterType.Bool)
                 {
                     bool newBoolValue = reader.ReadBoolean();
-                    m_Animator.SetBool(par.nameHash, newBoolValue);
+                    animator.SetBool(par.nameHash, newBoolValue);
 
                     SetRecvTrackingParam(par.name + ":" + newBoolValue, i);
                 }
