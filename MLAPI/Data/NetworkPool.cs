@@ -4,7 +4,6 @@ namespace MLAPI.Data
 {
     internal class NetworkPool
     {
-        internal int spawnablePrefabIndex;
         internal GameObject[] objects;
         internal ushort poolId;
 
