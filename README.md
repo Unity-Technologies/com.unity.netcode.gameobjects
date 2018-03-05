@@ -12,7 +12,7 @@ MLAPI (Mid level API) is a framework that hopefully simplifies building networke
 * Multiple messages processed every frame with the ability to specify a maximum to prevent freezes in the normal game logic
 * Passthrough messages \[[Wiki page](https://github.com/TwoTenPvP/MLAPI/wiki/Passthrough-messages)\]
 * Scene Management
-* Built in Lag compensation (Based on RTT which trades accuracy for modularity)
+* Built in Lag compensation \[[Wiki page](https://github.com/TwoTenPvP/MLAPI/wiki/Lag-Compensation)\]
 * NetworkTransform replacement
 * Targeted messages \[[Wiki page](https://github.com/TwoTenPvP/MLAPI/wiki/Targeted-Messages)\]
 
