@@ -30,6 +30,35 @@ namespace MLAPI.NetworkingManagerComponents
             }
         }
 
+        internal static void RemoveOwnership(uint netId)
+        {
+            NetworkedObject netObject = SpawnManager.spawnedObjects[netId];
+            netObject.OwnerClientId = -2;
+            using (MemoryStream stream = new MemoryStream(8))
+            {
+                using (BinaryWriter writer = new BinaryWriter(stream))
+                {
+                    writer.Write(netId);
+                    writer.Write(-2);
+                }
+                netManager.Send("MLAPI_CHANGE_OWNER", "MLAPI_RELIABLE_FRAGMENTED_SEQUENCED", stream.GetBuffer());
+            }
+        }
+
+        internal static void ChangeOwnership(uint netId, int clientId)
+        {
+            NetworkedObject netObject = SpawnManager.spawnedObjects[netId];
+            netObject.OwnerClientId = clientId;
+            using (MemoryStream stream = new MemoryStream(8))
+            {
+                using (BinaryWriter writer = new BinaryWriter(stream))
+                {
+                    writer.Write(netId);
+                    writer.Write(clientId);
+                }
+                netManager.Send("MLAPI_CHANGE_OWNER", "MLAPI_RELIABLE_FRAGMENTED_SEQUENCED", stream.GetBuffer());
+            }
+        }
 
         internal static GameObject SpawnObject(int spawnablePrefabIndex, uint networkId, int ownerId)
         {

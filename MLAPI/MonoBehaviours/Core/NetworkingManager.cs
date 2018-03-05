@@ -102,6 +102,7 @@ namespace MLAPI
             MessageManager.messageTypes.Add("MLAPI_SWITCH_SCENE", 5);
             MessageManager.messageTypes.Add("MLAPI_SPAWN_POOL_OBJECT", 6);
             MessageManager.messageTypes.Add("MLAPI_DESTROY_POOL_OBJECT", 7);
+            MessageManager.messageTypes.Add("MLAPI_CHANGE_OWNER", 8);
             NetworkConfig.MessageTypes.Add("MLAPI_OnRecieveTransformFromClient");
             NetworkConfig.MessageTypes.Add("MLAPI_OnRecieveTransformFromServer");
 
@@ -624,6 +625,20 @@ namespace MLAPI
                                         {
                                             uint netId = messageReader.ReadUInt32();
                                             SpawnManager.spawnedObjects[netId].gameObject.SetActive(false);
+                                        }
+                                    }
+                                }
+                                break;
+                            case 8: //Change owner
+                                if(isClient)
+                                {
+                                    using (MemoryStream messageReadStream = new MemoryStream(incommingData))
+                                    {
+                                        using (BinaryReader messageReader = new BinaryReader(messageReadStream))
+                                        {
+                                            uint netId = messageReader.ReadUInt32();
+                                            int ownerClientId = messageReader.ReadInt32();
+                                            SpawnManager.spawnedObjects[netId].OwnerClientId = ownerClientId;
                                         }
                                     }
                                 }

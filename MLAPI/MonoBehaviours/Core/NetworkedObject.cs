@@ -8,7 +8,7 @@ namespace MLAPI
         [HideInInspector]
         public uint NetworkId;
         [HideInInspector]
-        public int OwnerClientId = -1;
+        public int OwnerClientId = -2;
         [HideInInspector]
         public int SpawnablePrefabIndex;
         [HideInInspector]
@@ -49,6 +49,16 @@ namespace MLAPI
         public void SpawnWithOwnership(int clientId)
         {
             SpawnManager.OnSpawnObject(this, clientId);
+        }
+
+        public void RemoveOwnership()
+        {
+            SpawnManager.RemoveOwnership(NetworkId);
+        }
+
+        public void ChangeOwnership(int newOwnerClientId)
+        {
+            SpawnManager.ChangeOwnership(NetworkId, newOwnerClientId);
         }
 
         internal void InvokeBehaviourNetworkSpawn()
