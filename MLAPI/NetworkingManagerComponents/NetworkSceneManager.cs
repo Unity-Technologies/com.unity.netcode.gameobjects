@@ -16,6 +16,12 @@ namespace MLAPI.NetworkingManagerComponents
         private static Scene lastScene;
         private static Scene nextScene;
         private static bool isSwitching = false;
+        internal static uint CurrentSceneIndex = 0;
+
+        internal static void SetCurrentSceneIndex ()
+        {
+            CurrentSceneIndex = sceneNameToIndex[SceneManager.GetActiveScene().name];
+        }
 
         public static void SwitchScene(string sceneName)
         {
@@ -34,6 +40,7 @@ namespace MLAPI.NetworkingManagerComponents
                 Debug.LogWarning("MLAPI: The scene " + sceneName + " is not registered as a switchable scene.");
                 return;
             }
+            CurrentSceneIndex = sceneNameToIndex[sceneName];
             isSwitching = true;
             lastScene = SceneManager.GetActiveScene();
             AsyncOperation sceneLoad = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);

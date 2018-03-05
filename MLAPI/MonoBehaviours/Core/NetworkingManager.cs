@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using UnityEngine.Networking;
+using UnityEngine.SceneManagement;
 
 namespace MLAPI
 {
@@ -110,6 +111,7 @@ namespace MLAPI
                 NetworkSceneManager.sceneIndexToString.Add((uint)i, NetworkConfig.RegisteredScenes[i]);
                 NetworkSceneManager.sceneNameToIndex.Add(NetworkConfig.RegisteredScenes[i], (uint)i);
             }
+            NetworkSceneManager.SetCurrentSceneIndex();
             
 
             HashSet<string> channelNames = new HashSet<string>();
@@ -475,6 +477,11 @@ namespace MLAPI
                                         using (BinaryReader messageReader = new BinaryReader(messageReadStream))
                                         {
                                             MyClientId = messageReader.ReadInt32();
+                                            uint sceneIndex = 0;
+                                            if(NetworkConfig.EnableSceneSwitching)
+                                            {
+                                                sceneIndex = messageReader.ReadUInt32();
+                                            }
                                             connectedClients.Add(MyClientId, new NetworkedClient() { ClientId = MyClientId });
                                             int clientCount = messageReader.ReadInt32();
                                             for (int i = 0; i < clientCount; i++)
@@ -502,6 +509,10 @@ namespace MLAPI
                                                         go.SetActive(isActive);
                                                     }
                                                 }
+                                            }
+                                            if(NetworkConfig.EnableSceneSwitching)
+                                            {
+                                                NetworkSceneManager.OnSceneSwitch(sceneIndex);
                                             }
                                         }
                                     }
@@ -955,6 +966,11 @@ namespace MLAPI
                 {
                     sizeOfStream += 4;
                     sizeOfStream += 13 * amountOfObjectsToSend;
+                    sizeOfStream += amountOfObjectsToSend; //Bool isActive
+                }
+                if(NetworkConfig.EnableSceneSwitching)
+                {
+                    sizeOfStream += 4;
                 }
 
                 using (MemoryStream writeStream = new MemoryStream(sizeOfStream))
@@ -962,6 +978,10 @@ namespace MLAPI
                     using (BinaryWriter writer = new BinaryWriter(writeStream))
                     {
                         writer.Write(clientId);
+                        if(NetworkConfig.EnableSceneSwitching)
+                        {
+                            writer.Write(NetworkSceneManager.CurrentSceneIndex);
+                        }
                         writer.Write(connectedClients.Count - 1);
                         foreach (KeyValuePair<int, NetworkedClient> item in connectedClients)
                         {
