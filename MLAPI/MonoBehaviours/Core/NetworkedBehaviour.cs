@@ -35,6 +35,13 @@ namespace MLAPI
                 return NetworkingManager.singleton.isHost;
             }
         }
+        protected bool isOwner
+        {
+            get
+            {
+                return networkedObject.isOwner;
+            }
+        }
         public NetworkedObject networkedObject
         {
             get

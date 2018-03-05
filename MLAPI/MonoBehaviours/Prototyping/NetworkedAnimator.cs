@@ -57,7 +57,7 @@ namespace MLAPI
         {
             get
             {
-                return networkedObject.IsOwner || isLocalPlayer;
+                return isOwner || isLocalPlayer;
             }
         }
 
@@ -315,7 +315,7 @@ namespace MLAPI
 
         public void SetTrigger(int hash)
         {
-            if (isLocalPlayer || networkedObject.IsOwner)
+            if (isLocalPlayer || isOwner)
             {
                 using (MemoryStream stream = new MemoryStream())
                 {

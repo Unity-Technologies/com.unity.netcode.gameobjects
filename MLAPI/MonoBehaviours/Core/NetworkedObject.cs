@@ -26,7 +26,7 @@ namespace MLAPI
             }
         }
 
-        public bool IsOwner
+        public bool isOwner
         {
             get
             {
