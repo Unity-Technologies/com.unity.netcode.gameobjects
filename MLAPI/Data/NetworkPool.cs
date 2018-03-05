@@ -21,6 +21,20 @@ namespace MLAPI.Data
             }
         }
 
+        internal NetworkPool(GameObject[] prefabs, string name)
+        {
+            objects = prefabs;
+            poolName = name;
+            int size = prefabs.Length;
+
+            for (int i = 0; i < size; i++)
+            {
+                prefabs[i].name = "Pool " + poolName + " #" + i;
+                prefabs[i].SetActive(false);
+            }
+
+        }
+
         internal GameObject SpawnObject(Vector3 position, Quaternion rotation)
         {
             for (int i = 0; i < objects.Length; i++)
