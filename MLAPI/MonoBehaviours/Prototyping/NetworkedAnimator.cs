@@ -245,12 +245,13 @@ namespace MLAPI
 
         void WriteParameters(BinaryWriter writer, bool autoSend)
         {
-            for (int i = 0; i < m_Animator.parameters.Length; i++)
+            AnimatorControllerParameter[] parameters = m_Animator.parameters;
+            for (int i = 0; i < parameters.Length; i++)
             {
                 if (autoSend && !GetParameterAutoSend(i))
                     continue;
 
-                AnimatorControllerParameter par = m_Animator.parameters[i];
+                AnimatorControllerParameter par = parameters[i];
                 if (par.type == AnimatorControllerParameterType.Int)
                 {
                     writer.Write((uint)m_Animator.GetInteger(par.nameHash));
@@ -276,12 +277,13 @@ namespace MLAPI
 
         void ReadParameters(BinaryReader reader, bool autoSend)
         {
-            for (int i = 0; i < m_Animator.parameters.Length; i++)
+            AnimatorControllerParameter[] parameters = m_Animator.parameters;
+            for (int i = 0; i < parameters.Length; i++)
             {
                 if (autoSend && !GetParameterAutoSend(i))
                     continue;
 
-                AnimatorControllerParameter par = m_Animator.parameters[i];
+                AnimatorControllerParameter par = parameters[i];
                 if (par.type == AnimatorControllerParameterType.Int)
                 {
                     int newValue = (int)reader.ReadUInt32();
