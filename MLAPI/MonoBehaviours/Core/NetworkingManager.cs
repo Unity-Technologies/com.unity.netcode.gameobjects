@@ -93,6 +93,7 @@ namespace MLAPI
             //MLAPI channels and messageTypes
             NetworkConfig.Channels.Add("MLAPI_RELIABLE_FRAGMENTED_SEQUENCED", QosType.ReliableFragmentedSequenced);
             NetworkConfig.Channels.Add("MLAPI_POSITION_UPDATE", QosType.StateUpdate);
+            NetworkConfig.Channels.Add("MLAPI_ANIMATION_UPDATE", QosType.ReliableSequenced);
             MessageManager.messageTypes.Add("MLAPI_CONNECTION_REQUEST", 0);
             MessageManager.messageTypes.Add("MLAPI_CONNECTION_APPROVED", 1);
             MessageManager.messageTypes.Add("MLAPI_ADD_OBJECT", 2);
@@ -104,14 +105,21 @@ namespace MLAPI
             MessageManager.messageTypes.Add("MLAPI_CHANGE_OWNER", 8);
             NetworkConfig.MessageTypes.Add("MLAPI_OnRecieveTransformFromClient");
             NetworkConfig.MessageTypes.Add("MLAPI_OnRecieveTransformFromServer");
+            NetworkConfig.MessageTypes.Add("MLAPI_HandleAnimationMessage");
+            NetworkConfig.MessageTypes.Add("MLAPI_HandleAnimationParameterMessage");
+            NetworkConfig.MessageTypes.Add("MLAPI_HandleAnimationTriggerMessage");
 
-            for (int i = 0; i < NetworkConfig.RegisteredScenes.Count; i++)
+            if (NetworkConfig.EnableSceneSwitching)
             {
-                NetworkSceneManager.registeredSceneNames.Add(NetworkConfig.RegisteredScenes[i]);
-                NetworkSceneManager.sceneIndexToString.Add((uint)i, NetworkConfig.RegisteredScenes[i]);
-                NetworkSceneManager.sceneNameToIndex.Add(NetworkConfig.RegisteredScenes[i], (uint)i);
+                for (int i = 0; i < NetworkConfig.RegisteredScenes.Count; i++)
+                {
+                    NetworkSceneManager.registeredSceneNames.Add(NetworkConfig.RegisteredScenes[i]);
+                    NetworkSceneManager.sceneIndexToString.Add((uint)i, NetworkConfig.RegisteredScenes[i]);
+                    NetworkSceneManager.sceneNameToIndex.Add(NetworkConfig.RegisteredScenes[i], (uint)i);
+                }
+
+                NetworkSceneManager.SetCurrentSceneIndex();
             }
-            NetworkSceneManager.SetCurrentSceneIndex();
             
 
             HashSet<string> channelNames = new HashSet<string>();
@@ -859,7 +867,7 @@ namespace MLAPI
             }
         }
 
-        internal void Send(string messageType, string channelName, byte[] data, int clientIdToIgnore, uint? networkId = null)
+        internal void Send(string messageType, string channelName, byte[] data, int clientIdToIgnore, uint? networkId = null, bool ignoreHost = false)
         {
             //2 bytes for messageType, 2 bytes for buffer length and one byte for target bool
             int sizeOfStream = 5;
@@ -885,7 +893,7 @@ namespace MLAPI
                     if (pair.Key == clientIdToIgnore)
                         continue;
                     int clientId = pair.Key;
-                    if (isHost && pair.Key == -1)
+                    if (isHost && pair.Key == -1 && !ignoreHost)
                     {
                         if (networkId == null)
                             MessageManager.InvokeMessageHandlers(messageType, data, clientId);

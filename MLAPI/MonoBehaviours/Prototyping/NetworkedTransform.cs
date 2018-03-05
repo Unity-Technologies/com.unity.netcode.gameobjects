@@ -122,7 +122,7 @@ namespace MLAP
                     float zRot = reader.ReadSingle();
                     lerpStartPos = transform.position;
                     lerpStartRot = transform.rotation;
-                    lerpEndPos = new Vector3(xPos, yPos, zRot);
+                    lerpEndPos = new Vector3(xPos, yPos, zPos);
                     lerpEndRot = Quaternion.Euler(xRot, yRot, zRot);
                     lerpT = 0;
                 }
