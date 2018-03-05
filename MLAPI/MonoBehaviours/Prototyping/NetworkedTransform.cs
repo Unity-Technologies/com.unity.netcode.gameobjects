@@ -81,9 +81,9 @@ namespace MLAP
                             writer.Write(transform.position.x);
                             writer.Write(transform.position.y);
                             writer.Write(transform.position.z);
-                            writer.Write(transform.rotation.x);
-                            writer.Write(transform.rotation.y);
-                            writer.Write(transform.rotation.z);
+                            writer.Write(transform.rotation.eulerAngles.x);
+                            writer.Write(transform.rotation.eulerAngles.y);
+                            writer.Write(transform.rotation.eulerAngles.z);
                         }
                         SendToServerTarget("MLAPI_OnRecieveTransformFromClient", "MLAPI_POSITION_UPDATE", writeStream.GetBuffer());
                     }
@@ -145,7 +145,7 @@ namespace MLAP
                     {
                         lerpStartPos = transform.position;
                         lerpStartRot = transform.rotation;
-                        lerpEndPos = new Vector3(xPos, yPos, zRot);
+                        lerpEndPos = new Vector3(xPos, yPos, zPos);
                         lerpEndRot = Quaternion.Euler(xRot, yRot, zRot);
                         lerpT = 0;
                     }
