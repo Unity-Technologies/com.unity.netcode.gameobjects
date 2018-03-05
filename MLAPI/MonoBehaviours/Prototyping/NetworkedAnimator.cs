@@ -13,6 +13,8 @@ namespace MLAPI
         [SerializeField] uint       m_ParameterSendBits;
         [SerializeField] float m_SendRate = 0.1f;
 
+        AnimatorControllerParameter[] m_AnimatorParameters;
+
         // properties
         public Animator animator
         {
@@ -72,6 +74,7 @@ namespace MLAPI
         {
             Debug.Log("ResetParameterOptions");
             m_ParameterSendBits = 0;
+            m_AnimatorParameters = null;
         }
 
         void FixedUpdate()
@@ -245,12 +248,13 @@ namespace MLAPI
 
         void WriteParameters(BinaryWriter writer, bool autoSend)
         {
-            for (int i = 0; i < m_Animator.parameters.Length; i++)
+            if (m_AnimatorParameters == null) m_AnimatorParameters = m_Animator.parameters;
+            for (int i = 0; i < m_AnimatorParameters.Length; i++)
             {
                 if (autoSend && !GetParameterAutoSend(i))
                     continue;
 
-                AnimatorControllerParameter par = m_Animator.parameters[i];
+                AnimatorControllerParameter par = m_AnimatorParameters[i];
                 if (par.type == AnimatorControllerParameterType.Int)
                 {
                     writer.Write((uint)m_Animator.GetInteger(par.nameHash));
@@ -276,12 +280,13 @@ namespace MLAPI
 
         void ReadParameters(BinaryReader reader, bool autoSend)
         {
-            for (int i = 0; i < m_Animator.parameters.Length; i++)
+            if (m_AnimatorParameters == null) m_AnimatorParameters = m_Animator.parameters;
+            for (int i = 0; i < m_AnimatorParameters.Length; i++)
             {
                 if (autoSend && !GetParameterAutoSend(i))
                     continue;
 
-                AnimatorControllerParameter par = m_Animator.parameters[i];
+                AnimatorControllerParameter par = m_AnimatorParameters[i];
                 if (par.type == AnimatorControllerParameterType.Int)
                 {
                     int newValue = (int)reader.ReadUInt32();
