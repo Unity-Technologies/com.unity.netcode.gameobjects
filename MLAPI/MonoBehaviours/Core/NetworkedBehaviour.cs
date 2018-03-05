@@ -87,6 +87,16 @@ namespace MLAPI
 
         }
 
+        public virtual void OnGainedOwnership()
+        {
+
+        }
+
+        public virtual void OnLostOwnership()
+        {
+
+        }
+
         protected int RegisterMessageHandler(string name, Action<int, byte[]> action)
         {
             int counter = MessageManager.AddIncomingMessageHandler(name, action, networkId);

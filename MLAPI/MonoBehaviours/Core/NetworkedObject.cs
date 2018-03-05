@@ -61,6 +61,32 @@ namespace MLAPI
             SpawnManager.ChangeOwnership(NetworkId, newOwnerClientId);
         }
 
+        internal void InvokeBehaviourOnLostOwnership()
+        {
+            NetworkedBehaviour[] netBehaviours = GetComponentsInChildren<NetworkedBehaviour>();
+            for (int i = 0; i < netBehaviours.Length; i++)
+            {
+                //We check if we are it's networkedObject owner incase a networkedObject exists as a child of our networkedObject.
+                if (netBehaviours[i].networkedObject == this)
+                {
+                    netBehaviours[i].OnLostOwnership();
+                }
+            }
+        }
+
+        internal void InvokeBehaviourOnGainedOwnership()
+        {
+            NetworkedBehaviour[] netBehaviours = GetComponentsInChildren<NetworkedBehaviour>();
+            for (int i = 0; i < netBehaviours.Length; i++)
+            {
+                //We check if we are it's networkedObject owner incase a networkedObject exists as a child of our networkedObject.
+                if (netBehaviours[i].networkedObject == this)
+                {
+                    netBehaviours[i].OnGainedOwnership();
+                }
+            }
+        }
+
         internal void InvokeBehaviourNetworkSpawn()
         {
             NetworkedBehaviour[] netBehaviours = GetComponentsInChildren<NetworkedBehaviour>();

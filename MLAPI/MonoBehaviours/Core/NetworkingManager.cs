@@ -645,6 +645,16 @@ namespace MLAPI
                                         {
                                             uint netId = messageReader.ReadUInt32();
                                             int ownerClientId = messageReader.ReadInt32();
+                                            if (SpawnManager.spawnedObjects[netId].OwnerClientId == MyClientId)
+                                            {
+                                                //We are current owner.
+                                                SpawnManager.spawnedObjects[netId].InvokeBehaviourOnLostOwnership();
+                                            }
+                                            if(ownerClientId == MyClientId)
+                                            {
+                                                //We are new owner.
+                                                SpawnManager.spawnedObjects[netId].InvokeBehaviourOnGainedOwnership();
+                                            }
                                             SpawnManager.spawnedObjects[netId].OwnerClientId = ownerClientId;
                                         }
                                     }
