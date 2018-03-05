@@ -15,10 +15,13 @@ MLAPI (Mid level API) is a framework that hopefully simplifies building networke
 * Built in Lag compensation \[[Wiki page](https://github.com/TwoTenPvP/MLAPI/wiki/Lag-Compensation)\]
 * NetworkTransform replacement
 * Targeted messages \[[Wiki page](https://github.com/TwoTenPvP/MLAPI/wiki/Targeted-Messages)\]
+* Supportes separate Unity projects crosstalking
+* Port of NetworkedAnimator
+* Networked Object Pooling
+
 
 ## Planned features
 * Area of interest
-* Core gameplay components similar to what the HLAPI offers
 * Encrypted messages / full encryption for all messages. Diffie Hellman key exchange with the option to sign the transaction using RSA.
 * Serializer (both for the library to speed up and to allow structs to be sent easily)
 * SyncVars (allow variables to automatically be synced to new clients and current clients when it's changed)
