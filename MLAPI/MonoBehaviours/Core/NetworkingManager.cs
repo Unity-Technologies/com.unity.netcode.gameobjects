@@ -491,13 +491,15 @@ namespace MLAPI
                                                     uint networkId = messageReader.ReadUInt32();
                                                     int ownerId = messageReader.ReadInt32();
                                                     int prefabId = messageReader.ReadInt32();
+                                                    bool isActive = messageReader.ReadBoolean();
                                                     if(isPlayerObject)
                                                     {
                                                         SpawnManager.SpawnPlayerObject(ownerId, networkId);
                                                     }
                                                     else
                                                     {
-                                                        SpawnManager.SpawnObject(prefabId, networkId, ownerId);
+                                                        GameObject go = SpawnManager.SpawnObject(prefabId, networkId, ownerId);
+                                                        go.SetActive(isActive);
                                                     }
                                                 }
                                             }
@@ -980,6 +982,7 @@ namespace MLAPI
                                 writer.Write(pair.Value.NetworkId);
                                 writer.Write(pair.Value.OwnerClientId);
                                 writer.Write(pair.Value.SpawnablePrefabIndex);
+                                writer.Write(pair.Value.gameObject.activeInHierarchy);
                             }
                         }
                     }
