@@ -14,6 +14,10 @@ namespace MLAPI
         [HideInInspector]
         public bool isPlayerObject = false;
         public bool ServerOnly = false;
+        [HideInInspector]
+        public bool IsPooledObject = false;
+        [HideInInspector]
+        public ushort PoolId;
         public bool isLocalPlayer
         {
             get

@@ -1,5 +1,4 @@
-﻿using MLAPI.MonoBehaviours.Core;
-using MLAPI.NetworkingManagerComponents;
+﻿using MLAPI.NetworkingManagerComponents;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -72,6 +71,8 @@ namespace MLAPI
             MessageManager.reverseMessageTypes = new Dictionary<ushort, string>();
             SpawnManager.spawnedObjects = new Dictionary<uint, NetworkedObject>();
             SpawnManager.releasedNetworkObjectIds = new Stack<uint>();
+            NetworkPoolManager.Pools = new Dictionary<ushort, Data.NetworkPool>();
+            NetworkPoolManager.PoolNamesToIndexes = new Dictionary<string, ushort>();
             NetworkSceneManager.registeredSceneNames = new HashSet<string>();
             NetworkSceneManager.sceneIndexToString = new Dictionary<uint, string>();
             NetworkSceneManager.sceneNameToIndex = new Dictionary<string, uint>();
@@ -98,6 +99,8 @@ namespace MLAPI
             MessageManager.messageTypes.Add("MLAPI_CLIENT_DISCONNECT", 3);
             MessageManager.messageTypes.Add("MLAPI_DESTROY_OBJECT", 4);
             MessageManager.messageTypes.Add("MLAPI_SWITCH_SCENE", 5);
+            MessageManager.messageTypes.Add("MLAPI_SPAWN_POOL_OBJECT", 6);
+            MessageManager.messageTypes.Add("MLAPI_DESTROY_POOL_OBJECT", 7);
             NetworkConfig.MessageTypes.Add("MLAPI_OnRecieveTransformFromClient");
             NetworkConfig.MessageTypes.Add("MLAPI_OnRecieveTransformFromServer");
 
@@ -488,13 +491,15 @@ namespace MLAPI
                                                     uint networkId = messageReader.ReadUInt32();
                                                     int ownerId = messageReader.ReadInt32();
                                                     int prefabId = messageReader.ReadInt32();
+                                                    bool isActive = messageReader.ReadBoolean();
                                                     if(isPlayerObject)
                                                     {
                                                         SpawnManager.SpawnPlayerObject(ownerId, networkId);
                                                     }
                                                     else
                                                     {
-                                                        SpawnManager.SpawnObject(prefabId, networkId, ownerId);
+                                                        GameObject go = SpawnManager.SpawnObject(prefabId, networkId, ownerId);
+                                                        go.SetActive(isActive);
                                                     }
                                                 }
                                             }
@@ -577,6 +582,40 @@ namespace MLAPI
                                         }
                                     }
                                 }  
+                                break;
+                            case 6: //Spawn pool object
+                                if(isClient)
+                                {
+                                    using (MemoryStream messageReadStream = new MemoryStream(incommingData))
+                                    {
+                                        using (BinaryReader messageReader = new BinaryReader(messageReadStream))
+                                        {
+                                            uint netId = messageReader.ReadUInt32();
+                                            float xPos = messageReader.ReadSingle();
+                                            float yPos = messageReader.ReadSingle();
+                                            float zPos = messageReader.ReadSingle();
+                                            float xRot = messageReader.ReadSingle();
+                                            float yRot = messageReader.ReadSingle();
+                                            float zRot = messageReader.ReadSingle();
+                                            SpawnManager.spawnedObjects[netId].transform.position = new Vector3(xPos, yPos, zPos);
+                                            SpawnManager.spawnedObjects[netId].transform.rotation = Quaternion.Euler(new Vector3(xRot, yRot, zRot));
+                                            SpawnManager.spawnedObjects[netId].gameObject.SetActive(true);
+                                        }
+                                    }
+                                }
+                                break;
+                            case 7: //Destroy pool object
+                                if(isClient)
+                                {
+                                    using (MemoryStream messageReadStream = new MemoryStream(incommingData))
+                                    {
+                                        using (BinaryReader messageReader = new BinaryReader(messageReadStream))
+                                        {
+                                            uint netId = messageReader.ReadUInt32();
+                                            SpawnManager.spawnedObjects[netId].gameObject.SetActive(false);
+                                        }
+                                    }
+                                }
                                 break;
                         }
                     }
@@ -943,6 +982,7 @@ namespace MLAPI
                                 writer.Write(pair.Value.NetworkId);
                                 writer.Write(pair.Value.OwnerClientId);
                                 writer.Write(pair.Value.SpawnablePrefabIndex);
+                                writer.Write(pair.Value.gameObject.activeInHierarchy);
                             }
                         }
                     }

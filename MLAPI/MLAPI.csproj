@@ -55,6 +55,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Data\NetworkPool.cs" />
     <Compile Include="Data\TrackedPointData.cs" />
     <Compile Include="NetworkingManagerComponents\LagCompensationManager.cs" />
     <Compile Include="MonoBehaviours\Core\NetworkedBehaviour.cs" />
@@ -65,6 +66,7 @@
     <Compile Include="MonoBehaviours\Core\TrackedObject.cs" />
     <Compile Include="MonoBehaviours\Prototyping\NetworkedTransform.cs" />
     <Compile Include="NetworkingManagerComponents\MessageManager.cs" />
+    <Compile Include="NetworkingManagerComponents\NetworkPoolManager.cs" />
     <Compile Include="NetworkingManagerComponents\NetworkSceneManager.cs" />
     <Compile Include="NetworkingManagerComponents\SpawnManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
