@@ -13,7 +13,7 @@ namespace MLAPI
         public List<string> MessageTypes = new List<string>();
         public List<string> PassthroughMessageTypes = new List<string>();
         internal HashSet<ushort> RegisteredPassthroughMessageTypes = new HashSet<ushort>();
-        internal List<string> RegisteredScenes = new List<string>();
+        public List<string> RegisteredScenes = new List<string>();
         public int MessageBufferSize = 65535;
         public int MaxMessagesPerFrame = 150;
         public int MaxConnections = 100;
