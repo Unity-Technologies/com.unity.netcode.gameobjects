@@ -93,7 +93,6 @@ namespace MLAPI
             //MLAPI channels and messageTypes
             NetworkConfig.Channels.Add("MLAPI_RELIABLE_FRAGMENTED_SEQUENCED", QosType.ReliableFragmentedSequenced);
             NetworkConfig.Channels.Add("MLAPI_POSITION_UPDATE", QosType.StateUpdate);
-            NetworkConfig.Channels.Add("MLAPI_SCENE_SWTICH", QosType.AllCostDelivery);
             MessageManager.messageTypes.Add("MLAPI_CONNECTION_REQUEST", 0);
             MessageManager.messageTypes.Add("MLAPI_CONNECTION_APPROVED", 1);
             MessageManager.messageTypes.Add("MLAPI_ADD_OBJECT", 2);

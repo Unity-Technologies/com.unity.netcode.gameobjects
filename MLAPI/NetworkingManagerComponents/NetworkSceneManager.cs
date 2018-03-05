@@ -51,7 +51,7 @@ namespace MLAPI.NetworkingManagerComponents
                 {
                     writer.Write(sceneNameToIndex[sceneName]);
                 }
-                NetworkingManager.singleton.Send("MLAPI_SWITCH_SCENE", "MLAPI_SCENE_SWTICH", stream.GetBuffer());
+                NetworkingManager.singleton.Send("MLAPI_SWITCH_SCENE", "MLAPI_RELIABLE_FRAGMENTED_SEQUENCED", stream.GetBuffer());
             }
         }
 
@@ -62,7 +62,7 @@ namespace MLAPI.NetworkingManagerComponents
                 Debug.LogWarning("MLAPI: Scene switching is not enabled but was requested by the server");
                 return;
             }
-            else if (!sceneIndexToString.ContainsKey(sceneIndex) ||registeredSceneNames.Contains(sceneIndexToString[sceneIndex]))
+            else if (!sceneIndexToString.ContainsKey(sceneIndex) || registeredSceneNames.Contains(sceneIndexToString[sceneIndex]))
             {
                 Debug.LogWarning("MLAPI: Server requested a scene switch to a non registered scene");
                 return;
