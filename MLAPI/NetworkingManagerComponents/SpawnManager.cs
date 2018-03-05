@@ -33,6 +33,7 @@ namespace MLAPI.NetworkingManagerComponents
         internal static void RemoveOwnership(uint netId)
         {
             NetworkedObject netObject = SpawnManager.spawnedObjects[netId];
+            NetworkingManager.singleton.connectedClients[netObject.OwnerClientId].OwnedObjects.RemoveAll(x => x.NetworkId == netId);
             netObject.OwnerClientId = -2;
             using (MemoryStream stream = new MemoryStream(8))
             {
@@ -48,6 +49,8 @@ namespace MLAPI.NetworkingManagerComponents
         internal static void ChangeOwnership(uint netId, int clientId)
         {
             NetworkedObject netObject = SpawnManager.spawnedObjects[netId];
+            NetworkingManager.singleton.connectedClients[netObject.OwnerClientId].OwnedObjects.RemoveAll(x => x.NetworkId == netId);
+            NetworkingManager.singleton.connectedClients[clientId].OwnedObjects.Add(netObject);
             netObject.OwnerClientId = clientId;
             using (MemoryStream stream = new MemoryStream(8))
             {
@@ -114,6 +117,11 @@ namespace MLAPI.NetworkingManagerComponents
         {
             if (!spawnedObjects.ContainsKey(networkId) || (netManager != null && !netManager.NetworkConfig.HandleObjectSpawning))
                 return;
+            if (spawnedObjects[networkId].OwnerClientId > -2 && !spawnedObjects[networkId].isPlayerObject)
+            {
+                //Someone owns it.
+                NetworkingManager.singleton.connectedClients[spawnedObjects[networkId].OwnerClientId].OwnedObjects.RemoveAll(x => x.NetworkId == networkId);
+            }
             GameObject go = spawnedObjects[networkId].gameObject;
             if (netManager != null && netManager.isServer)
             {
@@ -170,7 +178,10 @@ namespace MLAPI.NetworkingManagerComponents
             spawnedObjects.Add(netId, netObject);
             netObject.isSpawned = true;
             if (clientOwnerId != null)
+            {
                 netObject.OwnerClientId = clientOwnerId.Value;
+                NetworkingManager.singleton.connectedClients[clientOwnerId.Value].OwnedObjects.Add(netObject);
+            }
             using (MemoryStream stream = new MemoryStream(13))
             {
                 using (BinaryWriter writer = new BinaryWriter(stream))

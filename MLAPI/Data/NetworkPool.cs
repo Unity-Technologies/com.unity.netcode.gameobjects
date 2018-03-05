@@ -15,7 +15,7 @@ namespace MLAPI.Data
             for (int i = 0; i < size; i++)
             {
                 GameObject go = Object.Instantiate(NetworkingManager.singleton.SpawnablePrefabs[prefabIndex], Vector3.zero, Quaternion.identity);
-                go.GetComponent<NetworkedObject>().IsPooledObject = true;
+                go.GetComponent<NetworkedObject>().isPooledObject = true;
                 go.GetComponent<NetworkedObject>().PoolId = poolId;
                 go.GetComponent<NetworkedObject>().Spawn();
                 go.name = "Pool Id: " + poolId + " #" + i;
