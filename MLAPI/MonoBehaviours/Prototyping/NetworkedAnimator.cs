@@ -339,15 +339,5 @@ namespace MLAPI
                 }
             }
         }
-
-        public override void OnGainedOwnership()
-        {
-            ResetParameterOptions();
-        }
-
-        public override void OnLostOwnership()
-        {
-            ResetParameterOptions();
-        }
     }
 }
