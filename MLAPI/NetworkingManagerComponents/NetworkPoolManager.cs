@@ -7,73 +7,78 @@ namespace MLAPI.NetworkingManagerComponents
 {
     public static class NetworkPoolManager
     {
-        internal static Dictionary<string, NetworkPool> Pools;
-        //We want to keep the pool indexes incrementing, this is to prevent new pools getting old names and the wrong objects being spawned. 
+        internal static Dictionary<ushort, NetworkPool> Pools;
         private static ushort PoolIndex = 0;
+        internal static Dictionary<string, ushort> PoolNamesToIndexes;
 
-        internal static Dictionary<ushort, string> PoolIndexToPoolName = new Dictionary<ushort, string>();
-        internal static Dictionary<string, ushort> PoolNamesToIndexes = new Dictionary<string, ushort>();
-
-        public static void CreatePool(string poolName, GameObject poolPrefab, uint size = 16)
+        //Server only
+        public static void CreatePool(string poolName, int spawnablePrefabIndex, uint size = 16)
         {
-            if(Pools.ContainsKey(poolName))
+            if(!NetworkingManager.singleton.isServer)
             {
-                Debug.LogWarning("MLAPI: A pool with the name " + poolName + " already exists");
+                Debug.LogWarning("MLAPI: Pools can only be created on the server");
                 return;
             }
-            else if(poolPrefab == null)
-            {
-                Debug.LogWarning("MLAPI: A pool prefab is required");
-            }
-            PoolIndexToPoolName.Add(PoolIndex, poolName);
+            NetworkPool pool = new NetworkPool(spawnablePrefabIndex, size, PoolIndex);
             PoolNamesToIndexes.Add(poolName, PoolIndex);
             PoolIndex++;
-            Pools.Add(poolName, new NetworkPool(poolPrefab, size, poolName));
         }
 
-
-        public static void CreatePool(string poolName, GameObject[] poolPrefabs)
+        public static void DestroyPool(string poolName)
         {
-            if (Pools.ContainsKey(poolName))
+            if (!NetworkingManager.singleton.isServer)
             {
-                Debug.LogWarning("MLAPI: A pool with the name " + poolName + " already exists");
+                Debug.LogWarning("MLAPI: Pools can only be destroyed on the server");
                 return;
             }
-            else if (poolPrefabs == null)
+            for (int i = 0; i < Pools[PoolNamesToIndexes[poolName]].objects.Length; i++)
             {
-                Debug.LogWarning("MLAPI: A pool prefab array is required");
+                MonoBehaviour.Destroy(Pools[PoolNamesToIndexes[poolName]].objects[i]);
             }
-            PoolIndexToPoolName.Add(PoolIndex, poolName);
-            PoolNamesToIndexes.Add(poolName, PoolIndex);
-            PoolIndex++;
-            Pools.Add(poolName, new NetworkPool(poolPrefabs, poolName));
+            Pools.Remove(PoolNamesToIndexes[poolName]);
         }
 
         public static GameObject SpawnPoolObject(string poolName, Vector3 position, Quaternion rotation)
         {
-            if(NetworkingManager.singleton.isServer)
+            if (!NetworkingManager.singleton.isServer)
             {
-                using(MemoryStream stream = new MemoryStream(26))
-                {
-                    using(BinaryWriter writer = new BinaryWriter(stream))
-                    {
-                        writer.Write(PoolNamesToIndexes[poolName]);
-                        writer.Write(position.x);
-                        writer.Write(position.y);
-                        writer.Write(position.z);
-                        writer.Write(rotation.eulerAngles.x);
-                        writer.Write(rotation.eulerAngles.y);
-                        writer.Write(rotation.eulerAngles.z);
-                    }
-                    NetworkingManager.singleton.Send("MLAPI_SPAWN_POOL_OBJECT", "MLAPI_RELIABLE_FRAGMENTED_SEQUENCED", stream.GetBuffer());
-                }
+                Debug.LogWarning("MLAPI: Object spawning can only occur on server");
+                return null;
             }
-            return Pools[poolName].SpawnObject(position, rotation);
+            GameObject go = Pools[PoolNamesToIndexes[poolName]].SpawnObject(position, rotation);
+            using (MemoryStream stream = new MemoryStream(28))
+            {
+                using (BinaryWriter writer = new BinaryWriter(stream))
+                {
+                    writer.Write(go.GetComponent<NetworkedObject>().NetworkId);
+                    writer.Write(position.x);
+                    writer.Write(position.y);
+                    writer.Write(position.z);
+                    writer.Write(rotation.eulerAngles.x);
+                    writer.Write(rotation.eulerAngles.y);
+                    writer.Write(rotation.eulerAngles.z);
+                }
+                NetworkingManager.singleton.Send("MLAPI_SPAWN_POOL_OBJECT", "MLAPI_RELIABLE_FRAGMENTED_SEQUENCED", stream.GetBuffer());
+            }
+            return go;
         }
 
-        public static void DestroyPoolObject(GameObject gameObject)
+        public static void DestroyPoolObject(NetworkedObject netObject)
         {
-            gameObject.SetActive(false);
+            if (!NetworkingManager.singleton.isServer)
+            {
+                Debug.LogWarning("MLAPI: Objects can only be destroyed on the server");
+                return;
+            }
+            netObject.gameObject.SetActive(false);
+            using (MemoryStream stream = new MemoryStream(4))
+            {
+                using (BinaryWriter writer = new BinaryWriter(stream))
+                {
+                    writer.Write(netObject.NetworkId);
+                }
+                NetworkingManager.singleton.Send("MLAPI_DESTROY_POOL_OBJECT", "MLAPI_RELIABLE_FRAGMENTED_SEQUENCED", stream.GetBuffer());
+            }
         }
     }
 }

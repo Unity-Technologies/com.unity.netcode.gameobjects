@@ -4,35 +4,23 @@ namespace MLAPI.Data
 {
     internal class NetworkPool
     {
-        internal GameObject prefab;
+        internal int spawnablePrefabIndex;
         internal GameObject[] objects;
-        internal string poolName;
+        internal ushort poolId;
 
-        internal NetworkPool(GameObject prefab, uint size, string name)
+        internal NetworkPool(int prefabIndex, uint size, ushort poolIndex)
         {
             objects = new GameObject[size];
-            poolName = name;
-
+            poolId = poolIndex;
             for (int i = 0; i < size; i++)
             {
-                GameObject go = UnityEngine.Object.Instantiate(prefab, Vector3.zero, Quaternion.identity);
-                go.name = "Pool " + poolName + " #" + i;
+                GameObject go = Object.Instantiate(NetworkingManager.singleton.SpawnablePrefabs[prefabIndex], Vector3.zero, Quaternion.identity);
+                go.GetComponent<NetworkedObject>().IsPooledObject = true;
+                go.GetComponent<NetworkedObject>().PoolId = poolId;
+                go.GetComponent<NetworkedObject>().Spawn();
+                go.name = "Pool Id: " + poolId + " #" + i;
                 go.SetActive(false);
             }
-        }
-
-        internal NetworkPool(GameObject[] prefabs, string name)
-        {
-            objects = prefabs;
-            poolName = name;
-            int size = prefabs.Length;
-
-            for (int i = 0; i < size; i++)
-            {
-                prefabs[i].name = "Pool " + poolName + " #" + i;
-                prefabs[i].SetActive(false);
-            }
-
         }
 
         internal GameObject SpawnObject(Vector3 position, Quaternion rotation)
@@ -47,7 +35,7 @@ namespace MLAPI.Data
                     go.SetActive(true);
                 }
             }
-            Debug.LogWarning("MLAPI: The pool " + poolName + " has ran out of space");
+            Debug.LogWarning("MLAPI: The pool " + poolId + " has ran out of space");
             return null;
         }
     }
