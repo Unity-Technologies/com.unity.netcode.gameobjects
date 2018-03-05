@@ -49,7 +49,7 @@ namespace MLAP
         }
 
 
-        void Start()
+        public override void NetworkStart()
         {
             if (isServer)
             {

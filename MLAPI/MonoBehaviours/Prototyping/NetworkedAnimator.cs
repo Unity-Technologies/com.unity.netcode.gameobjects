@@ -61,7 +61,7 @@ namespace MLAPI
             }
         }
 
-        void Start()
+        public override void NetworkStart()
         {
             RegisterMessageHandler("MLAPI_HandleAnimationMessage", HandleAnimMsg);
             RegisterMessageHandler("MLAPI_HandleAnimationParameterMessage", HandleAnimParamsMsg);
