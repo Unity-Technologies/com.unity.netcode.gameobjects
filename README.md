@@ -17,7 +17,7 @@ MLAPI (Mid level API) is a framework that hopefully simplifies building networke
 * Targeted messages \[[Wiki page](https://github.com/TwoTenPvP/MLAPI/wiki/Targeted-Messages)\]
 * Supports separate Unity projects crosstalking
 * Port of NetworkedAnimator
-* Networked Object Pooling
+* Networked Object Pooling \[[Wiki page](https://github.com/TwoTenPvP/MLAPI/wiki/Networked-Object-Pooling)\]
 
 
 ## Planned features
