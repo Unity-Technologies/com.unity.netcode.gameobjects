@@ -1,8 +1,7 @@
-﻿using MLAPI;
-using System.IO;
+﻿using System.IO;
 using UnityEngine;
 
-namespace MLAP
+namespace MLAPI.MonoBehaviours.Prototyping
 {
     public class NetworkedTransform : NetworkedBehaviour
     {

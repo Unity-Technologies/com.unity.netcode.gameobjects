@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using UnityEngine;
 
-namespace MLAPI
+namespace MLAPI.MonoBehaviours.Prototyping
 {
     public class NetworkedAnimator : NetworkedBehaviour
     {
