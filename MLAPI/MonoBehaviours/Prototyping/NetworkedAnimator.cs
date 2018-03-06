@@ -96,7 +96,7 @@ namespace MLAPI
                 }
                 if(isServer)
                 {
-                    SendToNonLocalClientsTarget("MLAPI_HandleAnimationMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray(), true);
+                    SendToNonLocalClientsTarget("MLAPI_HandleAnimationMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
                 }
                 else
                 {
@@ -154,7 +154,7 @@ namespace MLAPI
                     }
                     if (isServer)
                     {
-                        SendToNonLocalClientsTarget("MLAPI_HandleAnimationParameterMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray(), true);
+                        SendToNonLocalClientsTarget("MLAPI_HandleAnimationParameterMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
                     }
                     else
                     {
@@ -194,7 +194,7 @@ namespace MLAPI
 
             if(isServer)
             {
-                SendToNonLocalClientsTarget("MLAPI_HandleAnimationMessage", "MLAPI_ANIMATION_UPDATE", data, true);
+                SendToNonLocalClientsTarget("MLAPI_HandleAnimationMessage", "MLAPI_ANIMATION_UPDATE", data);
             }
             using(MemoryStream stream = new MemoryStream(data))
             {
@@ -215,7 +215,7 @@ namespace MLAPI
         {
             if (isServer)
             {
-                SendToNonLocalClientsTarget("MLAPI_HandleAnimationParameterMessage", "MLAPI_ANIMATION_UPDATE", data, true);
+                SendToNonLocalClientsTarget("MLAPI_HandleAnimationParameterMessage", "MLAPI_ANIMATION_UPDATE", data);
             }
             using (MemoryStream stream = new MemoryStream(data))
             {
@@ -230,7 +230,7 @@ namespace MLAPI
         {
             if (isServer)
             {
-                SendToNonLocalClientsTarget("MLAPI_HandleAnimationTriggerMessage", "MLAPI_ANIMATION_UPDATE", data, true);
+                SendToNonLocalClientsTarget("MLAPI_HandleAnimationTriggerMessage", "MLAPI_ANIMATION_UPDATE", data);
             }
             using (MemoryStream stream = new MemoryStream(data))
             {
@@ -329,7 +329,7 @@ namespace MLAPI
                     }
                     if (isServer)
                     {
-                        SendToNonLocalClientsTarget("MLAPI_HandleAnimationTriggerMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray(), true);
+                        SendToNonLocalClientsTarget("MLAPI_HandleAnimationTriggerMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
                     }
                     else
                     {

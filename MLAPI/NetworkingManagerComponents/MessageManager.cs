@@ -24,28 +24,6 @@ namespace MLAPI.NetworkingManagerComponents
             }
         }
 
-        internal static void InvokeMessageHandlers(string messageType, byte[] data, int clientId)
-        {
-            if (!messageTypes.ContainsKey(messageType) || !messageCallbacks.ContainsKey(messageTypes[messageType]))
-                return;
-
-            foreach (KeyValuePair<int, Action<int, byte[]>> pair in messageCallbacks[messageTypes[messageType]])
-            {
-                pair.Value(clientId, data);
-            }
-        }
-
-        internal static void InvokeTargetedMessageHandler(string messageType, byte[] data, int clientId, uint networkId)
-        {
-            if (!messageTypes.ContainsKey(messageType) || !messageCallbacks.ContainsKey(messageTypes[messageType]))
-                return;
-            List<int> handlerIds = targetedMessages[messageTypes[messageType]][networkId];
-            for (int i = 0; i < handlerIds.Count; i++)
-            {
-                messageCallbacks[messageTypes[messageType]][handlerIds[i]](clientId, data);
-            }
-        }
-
         internal static int AddIncomingMessageHandler(string name, Action<int, byte[]> action, uint networkId)
         {
             if (messageTypes.ContainsKey(name))

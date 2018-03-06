@@ -670,10 +670,7 @@ namespace MLAPI
             if (isHost && targetId == -1)
             {
                 //Host trying to send data to it's own client
-                if (networkId == null)
-                    MessageManager.InvokeMessageHandlers(MessageManager.reverseMessageTypes[messageType], data, sourceId);
-                else
-                    MessageManager.InvokeTargetedMessageHandler(MessageManager.reverseMessageTypes[messageType], data, sourceId, networkId.Value);
+                Debug.LogWarning("MLAPI: Send method got message aimed at server from the server?");
                 return;
             }
 
@@ -701,13 +698,10 @@ namespace MLAPI
 
         internal void Send(int clientId, string messageType, string channelName, byte[] data, uint? networkId = null)
         {
-            if(isHost && clientId == -1)
+            if(clientId == -1 && isHost)
             {
-                //Host trying to send data to it's own client
-                if (networkId == null)
-                    MessageManager.InvokeMessageHandlers(messageType, data, clientId);
-                else
-                    MessageManager.InvokeTargetedMessageHandler(messageType, data, clientId, networkId.Value);
+                //Don't invoke the message on our own machine. Instant stack overflow.
+                Debug.LogWarning("MLAPI: Cannot send message to own client");
                 return;
             }
             else if(clientId == -1)
@@ -775,10 +769,7 @@ namespace MLAPI
                     int clientId = clientIds[i];
                     if (isHost && clientId == -1)
                     {
-                        if (networkId == null)
-                            MessageManager.InvokeMessageHandlers(messageType, data, clientId);
-                        else
-                            MessageManager.InvokeTargetedMessageHandler(messageType, data, clientId, networkId.Value);
+                        //Don't invoke the message on our own machine. Instant stack overflow.
                         continue;
                     }
                     else if (clientId == -1)
@@ -815,12 +806,9 @@ namespace MLAPI
                 for (int i = 0; i < clientIds.Count; i++)
                 {
                     int clientId = clientIds[i];
-                    if (isHost && clientId == -1)
+                    if (clientId == -1 && isHost)
                     {
-                        if (networkId == null)
-                            MessageManager.InvokeMessageHandlers(messageType, data, clientId);
-                        else
-                            MessageManager.InvokeTargetedMessageHandler(messageType, data, clientId, networkId.Value);
+                        //Don't invoke the message on our own machine. Instant stack overflow.
                         continue;
                     }
                     else if (clientId == -1)
@@ -859,10 +847,7 @@ namespace MLAPI
                     int clientId = pair.Key;
                     if(isHost && pair.Key == -1)
                     {
-                        if (networkId == null)
-                            MessageManager.InvokeMessageHandlers(messageType, data, clientId);
-                        else
-                            MessageManager.InvokeTargetedMessageHandler(messageType, data, clientId, networkId.Value);
+                        //Don't invoke the message on our own machine. Instant stack overflow.
                         continue;
                     }
                     else if (clientId == -1)
@@ -876,7 +861,7 @@ namespace MLAPI
             }
         }
 
-        internal void Send(string messageType, string channelName, byte[] data, int clientIdToIgnore, uint? networkId = null, bool ignoreHost = false)
+        internal void Send(string messageType, string channelName, byte[] data, int clientIdToIgnore, uint? networkId = null)
         {
             //2 bytes for messageType, 2 bytes for buffer length and one byte for target bool
             int sizeOfStream = 5;
@@ -902,12 +887,9 @@ namespace MLAPI
                     if (pair.Key == clientIdToIgnore)
                         continue;
                     int clientId = pair.Key;
-                    if (isHost && pair.Key == -1 && !ignoreHost)
+                    if (isHost && pair.Key == -1)
                     {
-                        if (networkId == null)
-                            MessageManager.InvokeMessageHandlers(messageType, data, clientId);
-                        else
-                            MessageManager.InvokeTargetedMessageHandler(messageType, data, clientId, networkId.Value);
+                        //Don't invoke the message on our own machine. Instant stack overflow.
                         continue;
                     }
                     else if (clientId == -1)

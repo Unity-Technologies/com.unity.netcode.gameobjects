@@ -126,12 +126,10 @@ namespace MLAPI
             }
             if (isServer)
             {
-                MessageManager.InvokeMessageHandlers(messageType, data, -1);
+                Debug.LogWarning("MLAPI: Server can not send messages to server.");
+                return;
             }
-            else
-            {
-                NetworkingManager.singleton.Send(NetworkingManager.singleton.serverClientId, messageType, channelName, data);
-            }
+            NetworkingManager.singleton.Send(NetworkingManager.singleton.serverClientId, messageType, channelName, data);
         }
 
         protected void SendToServerTarget(string messageType, string channelName, byte[] data)
@@ -143,12 +141,10 @@ namespace MLAPI
             }
             if (isServer)
             {
-                MessageManager.InvokeTargetedMessageHandler(messageType, data, -1, networkId);
+                Debug.LogWarning("MLAPI: Server can not send messages to server.");
+                return;
             }
-            else
-            {
-                NetworkingManager.singleton.Send(NetworkingManager.singleton.serverClientId, messageType, channelName, data, networkId);
-            }
+            NetworkingManager.singleton.Send(NetworkingManager.singleton.serverClientId, messageType, channelName, data, networkId);            
         }
 
         protected void SendToLocalClient(string messageType, string channelName, byte[] data)
@@ -181,7 +177,7 @@ namespace MLAPI
             NetworkingManager.singleton.Send(ownerClientId, messageType, channelName, data, networkId);
         }
 
-        protected void SendToNonLocalClients(string messageType, string channelName, byte[] data, bool ignoreHost = false)
+        protected void SendToNonLocalClients(string messageType, string channelName, byte[] data)
         {
             if (MessageManager.messageTypes[messageType] < 32)
             {
@@ -193,10 +189,10 @@ namespace MLAPI
                 Debug.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported");
                 return;
             }
-            NetworkingManager.singleton.Send(messageType, channelName, data, ownerClientId, null, ignoreHost);
+            NetworkingManager.singleton.Send(messageType, channelName, data, ownerClientId, null);
         }
 
-        protected void SendToNonLocalClientsTarget(string messageType, string channelName, byte[] data, bool ignoreHost = false)
+        protected void SendToNonLocalClientsTarget(string messageType, string channelName, byte[] data)
         {
             if (MessageManager.messageTypes[messageType] < 32)
             {
@@ -208,7 +204,7 @@ namespace MLAPI
                 Debug.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported");
                 return;
             }
-            NetworkingManager.singleton.Send(messageType, channelName, data, ownerClientId, networkId, true);
+            NetworkingManager.singleton.Send(messageType, channelName, data, ownerClientId, networkId);
         }
 
         protected void SendToClient(int clientId, string messageType, string channelName, byte[] data)
