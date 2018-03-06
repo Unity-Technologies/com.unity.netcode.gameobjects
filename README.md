@@ -3,7 +3,7 @@ MLAPI (Mid level API) is a framework that hopefully simplifies building networke
 
 ## Features
 * Host support (Client hosts the server)
-* Object and player spawning
+* Object and player spawning \[[Wiki page](https://github.com/TwoTenPvP/MLAPI/wiki/Object-Spawning)\]
 * Connection approval \[[Wiki page](https://github.com/TwoTenPvP/MLAPI/wiki/Connection-Approval)\]
 * Message names
 * Replace the integer QOS with names. When you setup the networking you specify names that are associated with a channel. This makes it easier to manage. You can thus specify that a message should be sent on the "damage" channel which handles all damage related logic and is running on the AllCostDelivery channel.
