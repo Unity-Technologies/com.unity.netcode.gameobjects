@@ -10,7 +10,7 @@ namespace MLAPI.MonoBehaviours.Core
     public class TrackedObject : MonoBehaviour
     {
         internal Dictionary<float, TrackedPointData> FrameData = new Dictionary<float, TrackedPointData>();
-        internal List<float> Framekeys = new List<float>() { 0 };
+        internal LinkedList<float> Framekeys = new LinkedList<float>();
         private Vector3 savedPosition;
         private Quaternion savedRotation;
 
@@ -22,15 +22,21 @@ namespace MLAPI.MonoBehaviours.Core
             float targetTime = currentTime - secondsAgo;
             float previousTime = 0;
             float nextTime = 0;
-            for (int i = 1; i < Framekeys.Count; i++)
+            LinkedListNode<float> node = Framekeys.First;
+            float previousValue = 0f;
+            while(node != null)
             {
-                if (Framekeys[i - 1] <= targetTime && Framekeys[i] >= targetTime)
+                if(previousValue <= targetTime && node.Value >= targetTime)
                 {
-                    previousTime = Framekeys[i];
-                    nextTime = Framekeys[i + 1];
+                    previousTime = previousValue;
+                    nextTime = node.Value;
                     break;
                 }
-                
+                else
+                {
+                    previousValue = node.Value;
+                    node = node.Next;
+                }
             }
 
             float timeBetweenFrames = nextTime - previousTime;
@@ -48,35 +54,35 @@ namespace MLAPI.MonoBehaviours.Core
 
         void Start()
         {
+            Framekeys.AddFirst(0);
             LagCompensationManager.SimulationObjects.Add(this);
         }
 
         void OnDestroy()
         {
+            Framekeys.Clear();
+            FrameData.Clear();
             LagCompensationManager.SimulationObjects.Remove(this);
         }
 
         internal void AddFrame()
         {
             float currentTime = Time.time;
-            for (int i = 0; i < Framekeys.Count; i++)
+            LinkedListNode<float> node = Framekeys.First;
+            LinkedListNode<float> nextNode = node.Next;
+            while (currentTime - node.Value >= NetworkingManager.singleton.NetworkConfig.SecondsHistory)
             {
-                if (currentTime - Framekeys[i] >= NetworkingManager.singleton.NetworkConfig.SecondsHistory)
-                {
-                    for (int j = 0; j < i; j++)
-                    {
-                        FrameData.Remove(Framekeys[0]);
-                        //This is not good for performance. Other datatypes should be concidered.
-                        Framekeys.RemoveAt(0);
-                    }
-                }
+                nextNode = node.Next;
+                FrameData.Remove(node.Value);
+                Framekeys.RemoveFirst();
+                node = nextNode;
             }
             FrameData.Add(Time.time, new TrackedPointData()
             {
                 position = transform.position,
                 rotation = transform.rotation
             });
-            Framekeys.Add(Time.time);
+            Framekeys.AddLast(Time.time);
         }
     }
 }
