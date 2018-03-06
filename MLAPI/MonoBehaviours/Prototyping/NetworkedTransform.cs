@@ -65,7 +65,32 @@ namespace MLAP
         {
             if(isLocalPlayer)
             {
+                //We own the object
                 if(Time.time - lastSendTime >= timeForLerp && (Vector3.Distance(transform.position, lastSentPos) > MinMeters || Quaternion.Angle(transform.rotation, lastSentRot) > MinDegrees))
+                {
+                    lastSendTime = Time.time;
+                    lastSentPos = transform.position;
+                    lastSentRot = transform.rotation;
+                    using (MemoryStream writeStream = new MemoryStream(24))
+                    {
+                        using (BinaryWriter writer = new BinaryWriter(writeStream))
+                        {
+                            writer.Write(transform.position.x);
+                            writer.Write(transform.position.y);
+                            writer.Write(transform.position.z);
+                            writer.Write(transform.rotation.eulerAngles.x);
+                            writer.Write(transform.rotation.eulerAngles.y);
+                            writer.Write(transform.rotation.eulerAngles.z);
+                        }
+                        SendToServerTarget("MLAPI_OnRecieveTransformFromClient", "MLAPI_POSITION_UPDATE", writeStream.GetBuffer());
+                    }
+
+                }
+            }
+            else if(ownerClientId == -2 && isServer)
+            {
+                //This object is not our localObject. But it's not owned by anyone. Thus it's a server object.
+                if (Time.time - lastSendTime >= timeForLerp && (Vector3.Distance(transform.position, lastSentPos) > MinMeters || Quaternion.Angle(transform.rotation, lastSentRot) > MinDegrees))
                 {
                     lastSendTime = Time.time;
                     lastSentPos = transform.position;
@@ -88,7 +113,8 @@ namespace MLAP
             }
             else
             {
-                if((isServer && InterpolateServer) || !isServer)
+                //If we are server and interpolation is turned on for server OR we are not server and interpolation is turned on
+                if((isServer && InterpolateServer && InterpolatePosition) || (!isServer && InterpolatePosition))
                 {
                     if(Vector3.Distance(transform.position, lerpEndPos) > SnapDistance)
                     {
@@ -104,8 +130,6 @@ namespace MLAP
 
         private void OnRecieveTransformFromServer(int clientId, byte[] data)
         {
-            if (isServer)
-                return;
             using (MemoryStream stream = new MemoryStream(data))
             {
                 using (BinaryReader reader = new BinaryReader(stream))
