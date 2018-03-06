@@ -44,7 +44,6 @@ namespace MLAP
                 MinMeters = 0;
         }
 
-
         public override void NetworkStart()
         {
             if (isServer)
@@ -61,36 +60,12 @@ namespace MLAP
             }
         }
 
-        void Update()
+        private void Update()
         {
-            if(isLocalPlayer)
+            if(isOwner || isLocalPlayer || (ownerClientId == -2 && isServer))
             {
-                //We own the object
+                //We own the object OR we are server and the object is not owned by anyone OR we are the object.
                 if(Time.time - lastSendTime >= timeForLerp && (Vector3.Distance(transform.position, lastSentPos) > MinMeters || Quaternion.Angle(transform.rotation, lastSentRot) > MinDegrees))
-                {
-                    lastSendTime = Time.time;
-                    lastSentPos = transform.position;
-                    lastSentRot = transform.rotation;
-                    using (MemoryStream writeStream = new MemoryStream(24))
-                    {
-                        using (BinaryWriter writer = new BinaryWriter(writeStream))
-                        {
-                            writer.Write(transform.position.x);
-                            writer.Write(transform.position.y);
-                            writer.Write(transform.position.z);
-                            writer.Write(transform.rotation.eulerAngles.x);
-                            writer.Write(transform.rotation.eulerAngles.y);
-                            writer.Write(transform.rotation.eulerAngles.z);
-                        }
-                        SendToServerTarget("MLAPI_OnRecieveTransformFromClient", "MLAPI_POSITION_UPDATE", writeStream.GetBuffer());
-                    }
-
-                }
-            }
-            else if(ownerClientId == -2 && isServer)
-            {
-                //This object is not our localObject. But it's not owned by anyone. Thus it's a server object.
-                if (Time.time - lastSendTime >= timeForLerp && (Vector3.Distance(transform.position, lastSentPos) > MinMeters || Quaternion.Angle(transform.rotation, lastSentRot) > MinDegrees))
                 {
                     lastSendTime = Time.time;
                     lastSentPos = transform.position;
@@ -119,7 +94,7 @@ namespace MLAP
                     if(Vector3.Distance(transform.position, lerpEndPos) > SnapDistance)
                     {
                         //Snap, set T to 1 (100% of the lerp)
-                        lerpT = 1;
+                        lerpT = 1f;
                     }
                     lerpT += Time.deltaTime / timeForLerp;
                     transform.position = Vector3.Lerp(lerpStartPos, lerpEndPos, lerpT);
