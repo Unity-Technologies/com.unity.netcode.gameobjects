@@ -10,6 +10,8 @@ namespace MLAPI
 {
     public class NetworkingManager : MonoBehaviour
     {
+        public bool DontDestroy = true;
+        public bool RunInBackground = true;
         public List<GameObject> SpawnablePrefabs;
         public GameObject DefaultPlayerPrefab;
         public static NetworkingManager singleton;
@@ -42,15 +44,28 @@ namespace MLAPI
 
         private void OnValidate()
         {
-            for (int i = 0; i < SpawnablePrefabs.Count; i++)
+            if (SpawnablePrefabs != null)
             {
-                NetworkedObject netObject = SpawnablePrefabs[i].GetComponentInChildren<NetworkedObject>();
+                for (int i = 0; i < SpawnablePrefabs.Count; i++)
+                {
+                    if (SpawnablePrefabs[i] == null)
+                        continue;
+                    NetworkedObject netObject = SpawnablePrefabs[i].GetComponentInChildren<NetworkedObject>();
+                    if (netObject == null)
+                    {
+                        Debug.LogWarning("MLAPI: All SpawnablePrefabs need a NetworkedObject component. Please add one to the prefab " + SpawnablePrefabs[i].gameObject.name);
+                        continue;
+                    }
+                    netObject.SpawnablePrefabIndex = i;
+                }
+            }
+            if (DefaultPlayerPrefab != null)
+            {
+                NetworkedObject netObject = DefaultPlayerPrefab.GetComponentInChildren<NetworkedObject>();
                 if (netObject == null)
                 {
-                    Debug.LogWarning("MLAPI: All SpawnablePrefabs need a NetworkedObject component. Please add one to the prefab " + SpawnablePrefabs[i].gameObject.name);
-                    continue;
+                    Debug.LogWarning("MLAPI: The player object needs a NetworkedObject component.");
                 }
-                netObject.SpawnablePrefabIndex = i;
             }
         }
 
@@ -250,7 +265,10 @@ namespace MLAPI
                 return;
             }
             singleton = this;
-            DontDestroyOnLoad(gameObject);
+            if (DontDestroy)
+                DontDestroyOnLoad(gameObject);
+            if (RunInBackground)
+                Application.runInBackground = true;
         }
         
         private void OnDestroy()
