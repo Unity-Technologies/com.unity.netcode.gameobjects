@@ -1,4 +1,5 @@
-﻿using MLAPI.NetworkingManagerComponents;
+﻿using MLAPI.Attributes;
+using MLAPI.NetworkingManagerComponents;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -73,6 +74,7 @@ namespace MLAPI
         {
             NetworkConfig = netConfig;
 
+            SyncedVarManager.Init();
             pendingClients = new HashSet<int>();
             connectedClients = new Dictionary<int, NetworkedClient>();
             messageBuffer = new byte[NetworkConfig.MessageBufferSize];
@@ -117,6 +119,7 @@ namespace MLAPI
             MessageManager.messageTypes.Add("MLAPI_SPAWN_POOL_OBJECT", 6);
             MessageManager.messageTypes.Add("MLAPI_DESTROY_POOL_OBJECT", 7);
             MessageManager.messageTypes.Add("MLAPI_CHANGE_OWNER", 8);
+            MessageManager.messageTypes.Add("MLAPI_SYNC_VAR_UPDATE", 9);
             NetworkConfig.MessageTypes.Add("MLAPI_OnRecieveTransformFromClient");
             NetworkConfig.MessageTypes.Add("MLAPI_OnRecieveTransformFromServer");
             NetworkConfig.MessageTypes.Add("MLAPI_HandleAnimationMessage");
@@ -361,6 +364,8 @@ namespace MLAPI
             }
             if (isServer)
                 LagCompensationManager.AddFrames();
+
+            NetworkedObject.InvokeSyncvarUpdate();
         }
 
         private IEnumerator ApprovalTimeout(int clientId)
@@ -673,6 +678,71 @@ namespace MLAPI
                                                 SpawnManager.spawnedObjects[netId].InvokeBehaviourOnGainedOwnership();
                                             }
                                             SpawnManager.spawnedObjects[netId].OwnerClientId = ownerClientId;
+                                        }
+                                    }
+                                }
+                                break;
+                            case 9:
+                                if (isClient)
+                                {
+                                    using (MemoryStream messageReadStream = new MemoryStream(incommingData))
+                                    {
+                                        using (BinaryReader messageReader = new BinaryReader(messageReadStream))
+                                        {
+                                            byte dirtyCount = messageReader.ReadByte();
+                                            if(dirtyCount > 0)
+                                            {
+                                                for (int i = 0; i < dirtyCount; i++)
+                                                {
+                                                    uint netId = messageReader.ReadUInt32(); //NetId the syncvar is from
+                                                    ushort orderIndex = messageReader.ReadUInt16();
+                                                    ushort networkBehaviourId = messageReader.ReadUInt16();
+                                                    byte fieldIndex = messageReader.ReadByte();
+                                                    FieldType type = SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).syncedFieldTypes[fieldIndex];
+                                                    switch (type)
+                                                    {
+                                                        case FieldType.Bool:
+                                                            SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(messageReader.ReadBoolean(), fieldIndex);
+                                                            break;
+                                                        case FieldType.Byte:
+                                                            SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(messageReader.ReadByte(), fieldIndex);
+                                                            break;
+                                                        case FieldType.Char:
+                                                            SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(messageReader.ReadChar(), fieldIndex);
+                                                            break;
+                                                        case FieldType.Double:
+                                                            SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(messageReader.ReadDouble(), fieldIndex);
+                                                            break;
+                                                        case FieldType.Single:
+                                                            SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(messageReader.ReadSingle(), fieldIndex);
+                                                            break;
+                                                        case FieldType.Int:
+                                                            SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(messageReader.ReadInt32(), fieldIndex);
+                                                            break;
+                                                        case FieldType.Long:
+                                                            SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(messageReader.ReadInt64(), fieldIndex);
+                                                            break;
+                                                        case FieldType.SByte:
+                                                            SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(messageReader.ReadSByte(), fieldIndex);
+                                                            break;
+                                                        case FieldType.Short:
+                                                            SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(messageReader.ReadInt16(), fieldIndex);
+                                                            break;
+                                                        case FieldType.UInt:
+                                                            SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(messageReader.ReadUInt32(), fieldIndex);
+                                                            break;
+                                                        case FieldType.ULong:
+                                                            SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(messageReader.ReadUInt64(), fieldIndex);
+                                                            break;
+                                                        case FieldType.UShort:
+                                                            SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(messageReader.ReadUInt16(), fieldIndex);
+                                                            break;
+                                                        case FieldType.String:
+                                                            SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(messageReader.ReadString(), fieldIndex);
+                                                            break;
+                                                    }
+                                                }
+                                            }
                                         }
                                     }
                                 }

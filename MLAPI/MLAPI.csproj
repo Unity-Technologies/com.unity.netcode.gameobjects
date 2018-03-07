@@ -41,7 +41,7 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <GenerateSerializationAssemblies>Off</GenerateSerializationAssemblies>
+    <GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -56,6 +56,8 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Attributes\FieldType.cs" />
+    <Compile Include="Attributes\SyncedVar.cs" />
     <Compile Include="Data\NetworkPool.cs" />
     <Compile Include="Data\TrackedPointData.cs" />
     <Compile Include="MonoBehaviours\Prototyping\NetworkedAnimator.cs" />
@@ -71,6 +73,7 @@
     <Compile Include="NetworkingManagerComponents\NetworkPoolManager.cs" />
     <Compile Include="NetworkingManagerComponents\NetworkSceneManager.cs" />
     <Compile Include="NetworkingManagerComponents\SpawnManager.cs" />
+    <Compile Include="NetworkingManagerComponents\SyncedVarManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

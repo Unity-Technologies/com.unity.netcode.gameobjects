@@ -2,11 +2,16 @@
 using System.Collections.Generic;
 using UnityEngine;
 using MLAPI.NetworkingManagerComponents;
+using System.Reflection;
+using MLAPI.Attributes;
+using System.Linq;
+using System.IO;
 
 namespace MLAPI
 {
     public abstract class NetworkedBehaviour : MonoBehaviour
     {
+        public float SyncVarSyncDelay = 0.1f;
         public bool isLocalPlayer
         {
             get
@@ -79,6 +84,7 @@ namespace MLAPI
             {
                 _networkedObject = GetComponentInParent<NetworkedObject>();
             }
+            NetworkedObject.networkedBehaviours.Add(this);
         }
 
         internal bool networkedStartInvoked = false;
@@ -109,6 +115,11 @@ namespace MLAPI
             MessageManager.RemoveIncomingMessageHandler(name, counter, networkId);
         }
 
+        private void OnDisable()
+        {
+            NetworkedObject.networkedBehaviours.Remove(this);
+        }
+
         private void OnDestroy()
         {
             foreach (KeyValuePair<string, int> pair in registeredMessageHandlers)
@@ -116,6 +127,291 @@ namespace MLAPI
                 DeregisterMessageHandler(pair.Key, pair.Value);
             }
         }
+
+        #region SYNC_VAR
+        private List<FieldInfo> syncedFields = new List<FieldInfo>();
+        internal List<FieldType> syncedFieldTypes = new List<FieldType>();
+        private List<object> syncedFieldValues = new List<object>();
+        //A dirty field is a field that's not synced.
+        public bool[] dirtyFields;
+        protected static ushort networkedBehaviourId;
+        //This is just for the unity editor. if you turn the editor to DEBUG mode you can see what the networkedBehaviourId is.
+        private ushort _networkedBehaviourId = networkedBehaviourId;
+        internal void SyncVarInit()
+        {
+            FieldInfo[] sortedFields = GetType().GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy | BindingFlags.Instance).OrderBy(x => x.Name).ToArray();
+            for (byte i = 0; i < sortedFields.Length; i++)
+            {
+                if(sortedFields[i].IsDefined(typeof(SyncedVar), true))
+                {
+                    if (sortedFields[i].FieldType == typeof(bool))
+                    {
+                        syncedFields.Add(sortedFields[i]);
+                        syncedFieldValues.Add(sortedFields[i].GetValue(this));
+                        syncedFieldTypes.Add(FieldType.Bool);
+                    }
+                    else if(sortedFields[i].FieldType == typeof(byte))
+                    {
+                        syncedFields.Add(sortedFields[i]);
+                        syncedFieldValues.Add(sortedFields[i].GetValue(this));
+                        syncedFieldTypes.Add(FieldType.Byte);
+                    }
+                    else if (sortedFields[i].FieldType == typeof(char))
+                    {
+                        syncedFields.Add(sortedFields[i]);
+                        syncedFieldValues.Add(sortedFields[i].GetValue(this));
+                        syncedFieldTypes.Add(FieldType.Char);
+                    }
+                    else if (sortedFields[i].FieldType == typeof(double))
+                    {
+                        syncedFields.Add(sortedFields[i]);
+                        syncedFieldValues.Add(sortedFields[i].GetValue(this));
+                        syncedFieldTypes.Add(FieldType.Double);
+                    }
+                    else if (sortedFields[i].FieldType == typeof(float))
+                    {
+                        syncedFields.Add(sortedFields[i]);
+                        syncedFieldValues.Add(sortedFields[i].GetValue(this));
+                        syncedFieldTypes.Add(FieldType.Single);
+                    }
+                    else if (sortedFields[i].FieldType == typeof(int))
+                    {
+                        syncedFields.Add(sortedFields[i]);
+                        syncedFieldValues.Add(sortedFields[i].GetValue(this));
+                        syncedFieldTypes.Add(FieldType.Int);
+                    }
+                    else if (sortedFields[i].FieldType == typeof(long))
+                    {
+                        syncedFields.Add(sortedFields[i]);
+                        syncedFieldValues.Add(sortedFields[i].GetValue(this));
+                        syncedFieldTypes.Add(FieldType.Long);
+                    }
+                    else if (sortedFields[i].FieldType == typeof(sbyte))
+                    {
+                        syncedFields.Add(sortedFields[i]);
+                        syncedFieldValues.Add(sortedFields[i].GetValue(this));
+                        syncedFieldTypes.Add(FieldType.SByte);
+                    }
+                    else if (sortedFields[i].FieldType == typeof(short))
+                    {
+                        syncedFields.Add(sortedFields[i]);
+                        syncedFieldValues.Add(sortedFields[i].GetValue(this));
+                        syncedFieldTypes.Add(FieldType.Short);
+                    }
+                    else if (sortedFields[i].FieldType == typeof(uint))
+                    {
+                        syncedFields.Add(sortedFields[i]);
+                        syncedFieldValues.Add(sortedFields[i].GetValue(this));
+                        syncedFieldTypes.Add(FieldType.UInt);
+                    }
+                    else if (sortedFields[i].FieldType == typeof(ulong))
+                    {
+                        syncedFields.Add(sortedFields[i]);
+                        syncedFieldValues.Add(sortedFields[i].GetValue(this));
+                        syncedFieldTypes.Add(FieldType.ULong);
+                    }
+                    else if (sortedFields[i].FieldType == typeof(ushort))
+                    {
+                        syncedFields.Add(sortedFields[i]);
+                        syncedFieldValues.Add(sortedFields[i].GetValue(this));
+                        syncedFieldTypes.Add(FieldType.UShort);
+                    }
+                    else if(sortedFields[i].FieldType == typeof(string))
+                    {
+                        syncedFields.Add(sortedFields[i]);
+                        syncedFieldValues.Add(sortedFields[i].GetValue(this));
+                        syncedFieldTypes.Add(FieldType.String);
+                    }
+                    else
+                    {
+                        Debug.LogError("MLAPI: The type " + sortedFields[i].FieldType.ToString() + " can not be used as a syncvar");
+                    }
+                }
+            }
+            if(dirtyFields.Length > 255)
+            {
+                Debug.LogError("MLAPI: You can not have more than 255 SyncVar's per NetworkedBehaviour!");
+            }
+            dirtyFields = new bool[syncedFields.Count];
+        }
+
+        internal void OnSyncVarUpdate(object value, byte fieldIndex)
+        {
+            if (isServer)
+                return;
+            syncedFields[fieldIndex].SetValue(this, value);
+        }
+
+        private float lastSyncTime = 0f;
+        internal void SyncvarUpdate()
+        {
+            if (!isServer)
+                return;
+            SetDirtyness();
+            if(Time.time - lastSyncTime >= SyncVarSyncDelay)
+            {
+                byte dirtyCount = (byte)dirtyFields.Count(x => x == true);
+                if (dirtyCount == 0)
+                    return; //All up to date!
+                //It's sync time!
+                using (MemoryStream stream = new MemoryStream())
+                {
+                    using(BinaryWriter writer = new BinaryWriter(stream))
+                    {
+                        //Write all indexes
+                        writer.Write(dirtyCount);
+                        for (byte i = 0; i < dirtyFields.Length; i++)
+                        {
+                            //Writes all the indexes of the dirty syncvars.
+                            if (dirtyFields[i] == true)
+                            {
+                                writer.Write(networkId);
+                                writer.Write(networkedObject.GetOrderIndex(this));
+                                writer.Write(networkedBehaviourId);
+                                writer.Write(i); //Index
+                                switch (syncedFieldTypes[i])
+                                {
+                                    case FieldType.Bool:
+                                        writer.Write((bool)syncedFields[i].GetValue(this));
+                                        break;
+                                    case FieldType.Byte:
+                                        writer.Write((byte)syncedFields[i].GetValue(this));
+                                        break;
+                                    case FieldType.Char:
+                                        writer.Write((char)syncedFields[i].GetValue(this));
+                                        break;
+                                    case FieldType.Double:
+                                        writer.Write((double)syncedFields[i].GetValue(this));
+                                        break;
+                                    case FieldType.Single:
+                                        writer.Write((float)syncedFields[i].GetValue(this));
+                                        break;
+                                    case FieldType.Int:
+                                        writer.Write((int)syncedFields[i].GetValue(this));
+                                        break;
+                                    case FieldType.Long:
+                                        writer.Write((long)syncedFields[i].GetValue(this));
+                                        break;
+                                    case FieldType.SByte:
+                                        writer.Write((sbyte)syncedFields[i].GetValue(this));
+                                        break;
+                                    case FieldType.Short:
+                                        writer.Write((short)syncedFields[i].GetValue(this));
+                                        break;
+                                    case FieldType.UInt:
+                                        writer.Write((uint)syncedFields[i].GetValue(this));
+                                        break;
+                                    case FieldType.ULong:
+                                        writer.Write((ulong)syncedFields[i].GetValue(this));
+                                        break;
+                                    case FieldType.UShort:
+                                        writer.Write((ushort)syncedFields[i].GetValue(this));
+                                        break;
+                                    case FieldType.String:
+                                        writer.Write((string)syncedFields[i].GetValue(this));
+                                        break;
+                                }
+                                syncedFieldValues[i] = syncedFields[i].GetValue(this);
+                                dirtyFields[i] = false;
+                            }
+                        }
+                        NetworkingManager.singleton.Send("MLAPI_SYNC_VAR_UPDATE", "MLAPI_RELIABLE_FRAGMENTED_SEQUENCED", stream.ToArray(), ownerClientId);
+                    }
+                }
+                lastSyncTime = Time.time;
+            }
+        }
+
+        private void SetDirtyness()
+        {
+            if (!isServer)
+                return;
+            for (int i = 0; i < syncedFields.Count; i++)
+            {
+                switch (syncedFieldTypes[i])
+                {
+                    case FieldType.Bool:
+                        if ((bool)syncedFields[i].GetValue(this) != (bool)syncedFieldValues[i])
+                            dirtyFields[i] = true; //This fields value is out of sync!
+                        else
+                            dirtyFields[i] = false; //Up to date
+                        break;
+                    case FieldType.Byte:
+                        if ((byte)syncedFields[i].GetValue(this) != (byte)syncedFieldValues[i])
+                            dirtyFields[i] = true; //This fields value is out of sync!
+                        else
+                            dirtyFields[i] = false; //Up to date
+                        break;
+                    case FieldType.Char:
+                        if ((char)syncedFields[i].GetValue(this) != (char)syncedFieldValues[i])
+                            dirtyFields[i] = true; //This fields value is out of sync!
+                        else
+                            dirtyFields[i] = false; //Up to date
+                        break;
+                    case FieldType.Double:
+                        if ((double)syncedFields[i].GetValue(this) != (double)syncedFieldValues[i])
+                            dirtyFields[i] = true; //This fields value is out of sync!
+                        else
+                            dirtyFields[i] = false; //Up to date
+                        break;
+                    case FieldType.Single:
+                        if ((float)syncedFields[i].GetValue(this) != (float)syncedFieldValues[i])
+                            dirtyFields[i] = true; //This fields value is out of sync!
+                        else
+                            dirtyFields[i] = false; //Up to date
+                        break;
+                    case FieldType.Int:
+                        if ((int)syncedFields[i].GetValue(this) != (int)syncedFieldValues[i])
+                            dirtyFields[i] = true; //This fields value is out of sync!
+                        else
+                            dirtyFields[i] = false; //Up to date
+                        break;
+                    case FieldType.Long:
+                        if ((long)syncedFields[i].GetValue(this) != (long)syncedFieldValues[i])
+                            dirtyFields[i] = true; //This fields value is out of sync!
+                        else
+                            dirtyFields[i] = false; //Up to date
+                        break;
+                    case FieldType.SByte:
+                        if ((sbyte)syncedFields[i].GetValue(this) != (sbyte)syncedFieldValues[i])
+                            dirtyFields[i] = true; //This fields value is out of sync!
+                        else
+                            dirtyFields[i] = false; //Up to date
+                        break;
+                    case FieldType.Short:
+                        if ((short)syncedFields[i].GetValue(this) != (short)syncedFieldValues[i])
+                            dirtyFields[i] = true; //This fields value is out of sync!
+                        else
+                            dirtyFields[i] = false; //Up to date
+                        break;
+                    case FieldType.UInt:
+                        if ((uint)syncedFields[i].GetValue(this) != (uint)syncedFieldValues[i])
+                            dirtyFields[i] = true; //This fields value is out of sync!
+                        else
+                            dirtyFields[i] = false; //Up to date
+                        break;
+                    case FieldType.ULong:
+                        if ((ulong)syncedFields[i].GetValue(this) != (ulong)syncedFieldValues[i])
+                            dirtyFields[i] = true; //This fields value is out of sync!
+                        else
+                            dirtyFields[i] = false; //Up to date
+                        break;
+                    case FieldType.UShort:
+                        if ((ushort)syncedFields[i].GetValue(this) != (ushort)syncedFieldValues[i])
+                            dirtyFields[i] = true; //This fields value is out of sync!
+                        else
+                            dirtyFields[i] = false; //Up to date
+                        break;
+                    case FieldType.String:
+                        if ((string)syncedFields[i].GetValue(this) != (string)syncedFieldValues[i])
+                            dirtyFields[i] = true; //This fields value is out of sync!
+                        else
+                            dirtyFields[i] = false; //Up to date
+                        break;
+                }
+            }
+        }
+        #endregion
 
         protected void SendToServer(string messageType, string channelName, byte[] data)
         {

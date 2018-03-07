@@ -1,4 +1,5 @@
 ﻿using MLAPI.NetworkingManagerComponents;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace MLAPI
@@ -96,8 +97,35 @@ namespace MLAPI
                 if(netBehaviours[i].networkedObject == this && !netBehaviours[i].networkedStartInvoked)
                 {
                     netBehaviours[i].NetworkStart();
+                    netBehaviours[i].SyncVarInit();
                 }
             }
+        }
+
+        internal static List<NetworkedBehaviour> networkedBehaviours = new List<NetworkedBehaviour>();
+        internal static void InvokeSyncvarUpdate()
+        {
+            for (int i = 0; i < networkedBehaviours.Count; i++)
+            {
+                networkedBehaviours[i].SyncvarUpdate();
+            }
+        }
+
+        internal ushort GetOrderIndex(NetworkedBehaviour instance)
+        {
+            NetworkedBehaviour[] behaviours = GetComponentsInChildren<NetworkedBehaviour>();
+            for (ushort i = 0; i < behaviours.Length; i++)
+            {
+                if (behaviours[i].networkedObject == this && behaviours[i] == instance)
+                    return i;
+            }
+            return 0;
+        }
+
+        internal NetworkedBehaviour GetBehaviourAtOrderIndex(ushort index)
+        {
+            NetworkedBehaviour[] behaviours = GetComponentsInChildren<NetworkedBehaviour>();
+            return behaviours[index];
         }
     }
 }
