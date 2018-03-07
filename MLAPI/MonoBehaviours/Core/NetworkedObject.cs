@@ -97,17 +97,18 @@ namespace MLAPI
                 if(netBehaviours[i].networkedObject == this && !netBehaviours[i].networkedStartInvoked)
                 {
                     netBehaviours[i].NetworkStart();
-                    netBehaviours[i].SyncVarInit();
+                    if (NetworkingManager.singleton.isServer)
+                        netBehaviours[i].SyncVarInit();
                 }
             }
         }
 
-        internal static List<NetworkedBehaviour> networkedBehaviours = new List<NetworkedBehaviour>();
+        internal static List<NetworkedBehaviour> NetworkedBehaviours = new List<NetworkedBehaviour>();
         internal static void InvokeSyncvarUpdate()
         {
-            for (int i = 0; i < networkedBehaviours.Count; i++)
+            for (int i = 0; i < NetworkedBehaviours.Count; i++)
             {
-                networkedBehaviours[i].SyncvarUpdate();
+                NetworkedBehaviours[i].SyncVarUpdate();
             }
         }
 

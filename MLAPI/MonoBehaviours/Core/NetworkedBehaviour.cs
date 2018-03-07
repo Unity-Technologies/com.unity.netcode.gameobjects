@@ -84,7 +84,7 @@ namespace MLAPI
             {
                 _networkedObject = GetComponentInParent<NetworkedObject>();
             }
-            NetworkedObject.networkedBehaviours.Add(this);
+            NetworkedObject.NetworkedBehaviours.Add(this);
         }
 
         internal bool networkedStartInvoked = false;
@@ -117,7 +117,7 @@ namespace MLAPI
 
         private void OnDisable()
         {
-            NetworkedObject.networkedBehaviours.Remove(this);
+            NetworkedObject.NetworkedBehaviours.Remove(this);
         }
 
         private void OnDestroy()
@@ -237,16 +237,12 @@ namespace MLAPI
 
         internal void OnSyncVarUpdate(object value, byte fieldIndex)
         {
-            if (isServer)
-                return;
             syncedFields[fieldIndex].SetValue(this, value);
         }
 
         private float lastSyncTime = 0f;
-        internal void SyncvarUpdate()
+        internal void SyncVarUpdate()
         {
-            if (!isServer)
-                return;
             SetDirtyness();
             if(Time.time - lastSyncTime >= SyncVarSyncDelay)
             {

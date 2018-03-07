@@ -363,9 +363,10 @@ namespace MLAPI
 
             }
             if (isServer)
+            {
                 LagCompensationManager.AddFrames();
-
-            NetworkedObject.InvokeSyncvarUpdate();
+                NetworkedObject.InvokeSyncvarUpdate();
+            }
         }
 
         private IEnumerator ApprovalTimeout(int clientId)
