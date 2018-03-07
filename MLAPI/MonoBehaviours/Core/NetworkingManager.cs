@@ -741,6 +741,29 @@ namespace MLAPI
                                                         case FieldType.String:
                                                             SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(messageReader.ReadString(), fieldIndex);
                                                             break;
+                                                        case FieldType.Vector3:
+                                                            {   //Cases aren't their own scope. Therefor we create a scope for them as they share the X,Y,Z local variables otherwise.
+                                                                float x = messageReader.ReadSingle();
+                                                                float y = messageReader.ReadSingle();
+                                                                float z = messageReader.ReadSingle();
+                                                                SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(new Vector3(x, y, z), fieldIndex);
+                                                            }
+                                                            break;
+                                                        case FieldType.Vector2:
+                                                            {
+                                                                float x = messageReader.ReadSingle();
+                                                                float y = messageReader.ReadSingle();
+                                                                SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(new Vector2(x, y), fieldIndex);
+                                                            }
+                                                            break;
+                                                        case FieldType.Quaternion:
+                                                            {
+                                                                float x = messageReader.ReadSingle();
+                                                                float y = messageReader.ReadSingle();
+                                                                float z = messageReader.ReadSingle();
+                                                                SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(Quaternion.Euler(x, y, z), fieldIndex);
+                                                            }
+                                                            break;
                                                     }
                                                 }
                                             }

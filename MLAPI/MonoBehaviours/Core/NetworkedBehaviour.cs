@@ -222,6 +222,24 @@ namespace MLAPI
                         syncedFieldValues.Add(sortedFields[i].GetValue(this));
                         syncedFieldTypes.Add(FieldType.String);
                     }
+                    else if(sortedFields[i].FieldType == typeof(Vector3))
+                    {
+                        syncedFields.Add(sortedFields[i]);
+                        syncedFieldValues.Add(sortedFields[i].GetValue(this));
+                        syncedFieldTypes.Add(FieldType.Vector3);
+                    }
+                    else if(sortedFields[i].FieldType == typeof(Vector2))
+                    {
+                        syncedFields.Add(sortedFields[i]);
+                        syncedFieldValues.Add(sortedFields[i].GetValue(this));
+                        syncedFieldTypes.Add(FieldType.Vector2);
+                    }
+                    else if (sortedFields[i].FieldType == typeof(Quaternion))
+                    {
+                        syncedFields.Add(sortedFields[i]);
+                        syncedFieldValues.Add(sortedFields[i].GetValue(this));
+                        syncedFieldTypes.Add(FieldType.Quaternion);
+                    }
                     else
                     {
                         Debug.LogError("MLAPI: The type " + sortedFields[i].FieldType.ToString() + " can not be used as a syncvar");
@@ -299,6 +317,23 @@ namespace MLAPI
                             case FieldType.String:
                                 writer.Write((string)syncedFields[i].GetValue(this));
                                 break;
+                            case FieldType.Vector3:
+                                Vector3 vector3 = (Vector3)syncedFields[i].GetValue(this);
+                                writer.Write(vector3.x);
+                                writer.Write(vector3.y);
+                                writer.Write(vector3.z);
+                                break;
+                            case FieldType.Vector2:
+                                Vector2 vector2 = (Vector2)syncedFields[i].GetValue(this);
+                                writer.Write(vector2.x);
+                                writer.Write(vector2.y);
+                                break;
+                            case FieldType.Quaternion:
+                                Vector3 euler = ((Quaternion)syncedFields[i].GetValue(this)).eulerAngles;
+                                writer.Write(euler.x);
+                                writer.Write(euler.y);
+                                writer.Write(euler.z);
+                                break;
                         }
                     }
                     NetworkingManager.singleton.Send(clientId, "MLAPI_SYNC_VAR_UPDATE", "MLAPI_RELIABLE_FRAGMENTED_SEQUENCED", stream.ToArray());
@@ -372,6 +407,24 @@ namespace MLAPI
                                     case FieldType.String:
                                         writer.Write((string)syncedFields[i].GetValue(this));
                                         break;
+                                    case FieldType.Vector3:
+                                        Vector3 vector3 = (Vector3)syncedFields[i].GetValue(this);
+                                        writer.Write(vector3.x);
+                                        writer.Write(vector3.y);
+                                        writer.Write(vector3.z);
+                                        break;
+                                    case FieldType.Vector2:
+                                        Vector2 vector2 = (Vector2)syncedFields[i].GetValue(this);
+                                        writer.Write(vector2.x);
+                                        writer.Write(vector2.y);
+                                        break;
+                                    case FieldType.Quaternion:
+                                        Vector3 euler = ((Quaternion)syncedFields[i].GetValue(this)).eulerAngles;
+                                        writer.Write(euler.x);
+                                        writer.Write(euler.y);
+                                        writer.Write(euler.z);
+                                        break;
+
                                 }
                                 syncedFieldValues[i] = syncedFields[i].GetValue(this);
                                 dirtyFields[i] = false;
@@ -466,6 +519,24 @@ namespace MLAPI
                         break;
                     case FieldType.String:
                         if ((string)syncedFields[i].GetValue(this) != (string)syncedFieldValues[i])
+                            dirtyFields[i] = true; //This fields value is out of sync!
+                        else
+                            dirtyFields[i] = false; //Up to date
+                        break;
+                    case FieldType.Vector3:
+                        if ((Vector3)syncedFields[i].GetValue(this) != (Vector3)syncedFieldValues[i])
+                            dirtyFields[i] = true; //This fields value is out of sync!
+                        else
+                            dirtyFields[i] = false; //Up to date
+                        break;
+                    case FieldType.Vector2:
+                        if ((Vector2)syncedFields[i].GetValue(this) != (Vector2)syncedFieldValues[i])
+                            dirtyFields[i] = true; //This fields value is out of sync!
+                        else
+                            dirtyFields[i] = false; //Up to date
+                        break;
+                    case FieldType.Quaternion:
+                        if ((Quaternion)syncedFields[i].GetValue(this) != (Quaternion)syncedFieldValues[i])
                             dirtyFields[i] = true; //This fields value is out of sync!
                         else
                             dirtyFields[i] = false; //Up to date

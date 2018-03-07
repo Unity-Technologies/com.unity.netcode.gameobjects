@@ -14,6 +14,9 @@
         UInt,
         ULong,
         UShort,
-        String
+        String,
+        Vector3,
+        Vector2,
+        Quaternion
     }
 }
