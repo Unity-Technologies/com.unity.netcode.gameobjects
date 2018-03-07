@@ -112,6 +112,15 @@ namespace MLAPI
             }
         }
 
+        //Flushes all syncVars to client
+        internal void FlushToClient(int clientId)
+        {
+            for (int i = 0; i < NetworkedBehaviours.Count; i++)
+            {
+                NetworkedBehaviours[i].FlushToClient(clientId);
+            }
+        }
+
         internal ushort GetOrderIndex(NetworkedBehaviour instance)
         {
             NetworkedBehaviour[] behaviours = GetComponentsInChildren<NetworkedBehaviour>();

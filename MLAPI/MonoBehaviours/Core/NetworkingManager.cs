@@ -1136,6 +1136,11 @@ namespace MLAPI
                     }
                     Send("MLAPI_ADD_OBJECT", "MLAPI_RELIABLE_FRAGMENTED_SEQUENCED", stream.GetBuffer(), clientId);
                 }
+                //Flush syncvars:
+                foreach (KeyValuePair<uint, NetworkedObject> networkedObject in SpawnManager.spawnedObjects)
+                {
+                    networkedObject.Value.FlushToClient(clientId);
+                }
             }
             else
             {

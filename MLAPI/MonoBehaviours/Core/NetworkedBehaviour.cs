@@ -240,6 +240,72 @@ namespace MLAPI
             syncedFields[fieldIndex].SetValue(this, value);
         }
 
+        internal void FlushToClient(int clientId)
+        {
+            //This NetworkedBehaviour has no SyncVars
+            if (dirtyFields.Length == 0)
+                return;
+
+            using (MemoryStream stream = new MemoryStream())
+            {
+                using (BinaryWriter writer = new BinaryWriter(stream))
+                {
+                    //Write all indexes
+                    writer.Write(dirtyFields.Length);
+                    for (byte i = 0; i < dirtyFields.Length; i++)
+                    {
+                        writer.Write(networkId);
+                        writer.Write(networkedObject.GetOrderIndex(this));
+                        writer.Write(networkedBehaviourId);
+                        writer.Write(i); //Index
+                        switch (syncedFieldTypes[i])
+                        {
+                            case FieldType.Bool:
+                                writer.Write((bool)syncedFields[i].GetValue(this));
+                                break;
+                            case FieldType.Byte:
+                                writer.Write((byte)syncedFields[i].GetValue(this));
+                                break;
+                            case FieldType.Char:
+                                writer.Write((char)syncedFields[i].GetValue(this));
+                                break;
+                            case FieldType.Double:
+                                writer.Write((double)syncedFields[i].GetValue(this));
+                                break;
+                            case FieldType.Single:
+                                writer.Write((float)syncedFields[i].GetValue(this));
+                                break;
+                            case FieldType.Int:
+                                writer.Write((int)syncedFields[i].GetValue(this));
+                                break;
+                            case FieldType.Long:
+                                writer.Write((long)syncedFields[i].GetValue(this));
+                                break;
+                            case FieldType.SByte:
+                                writer.Write((sbyte)syncedFields[i].GetValue(this));
+                                break;
+                            case FieldType.Short:
+                                writer.Write((short)syncedFields[i].GetValue(this));
+                                break;
+                            case FieldType.UInt:
+                                writer.Write((uint)syncedFields[i].GetValue(this));
+                                break;
+                            case FieldType.ULong:
+                                writer.Write((ulong)syncedFields[i].GetValue(this));
+                                break;
+                            case FieldType.UShort:
+                                writer.Write((ushort)syncedFields[i].GetValue(this));
+                                break;
+                            case FieldType.String:
+                                writer.Write((string)syncedFields[i].GetValue(this));
+                                break;
+                        }
+                    }
+                    NetworkingManager.singleton.Send(clientId, "MLAPI_SYNC_VAR_UPDATE", "MLAPI_RELIABLE_FRAGMENTED_SEQUENCED", stream.ToArray());
+                }
+            }
+        }
+
         private float lastSyncTime = 0f;
         internal void SyncVarUpdate()
         {
