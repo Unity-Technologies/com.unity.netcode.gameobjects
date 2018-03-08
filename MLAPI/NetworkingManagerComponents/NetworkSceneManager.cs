@@ -18,6 +18,11 @@ namespace MLAPI.NetworkingManagerComponents
 
         internal static void SetCurrentSceneIndex ()
         {
+            if(!sceneNameToIndex.ContainsKey(SceneManager.GetActiveScene().name))
+            {
+                Debug.LogWarning("MLAPI: Scene switching is enabled but the current scene (" + SceneManager.GetActiveScene().name + ") is not regisered as a network scene.");
+                return;
+            }
             CurrentSceneIndex = sceneNameToIndex[SceneManager.GetActiveScene().name];
         }
 
