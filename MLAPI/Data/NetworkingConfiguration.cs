@@ -32,7 +32,6 @@ namespace MLAPI
         public bool EncryptMessages = false;
         public bool AllowPassthroughMessages = true;
         public bool EnableSceneSwitching = false;
-        public bool UseLegacyChannel = false;
 
         //Cached config hash
         private byte[] ConfigHash = null;
@@ -74,7 +73,6 @@ namespace MLAPI
                     writer.Write(EncryptMessages);
                     writer.Write(AllowPassthroughMessages);
                     writer.Write(EnableSceneSwitching);
-                    writer.Write(UseLegacyChannel);
                 }
                 using(SHA256Managed sha256 = new SHA256Managed())
                 {

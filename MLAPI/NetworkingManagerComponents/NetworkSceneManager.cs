@@ -47,15 +47,8 @@ namespace MLAPI.NetworkingManagerComponents
             isSwitching = true;
             lastScene = SceneManager.GetActiveScene();
             AsyncOperation sceneLoad = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
-#if !UNITY_5
             sceneLoad.completed += OnSceneLoaded;
-#else
-            NetworkingManager.singleton.StartCoroutine(NetworkingManager.singleton.WaitForSceneSwitch(sceneLoad, () =>
-            {
-                //This block runs when scene switch is done.
-                OnSceneLoaded(sceneLoad);
-            }));
-#endif
+
             using(MemoryStream stream = new MemoryStream(4))
             {
                 using (BinaryWriter writer = new BinaryWriter(stream))
@@ -80,15 +73,7 @@ namespace MLAPI.NetworkingManagerComponents
             }
             lastScene = SceneManager.GetActiveScene();
             AsyncOperation sceneLoad = SceneManager.LoadSceneAsync(sceneIndexToString[sceneIndex], LoadSceneMode.Additive);
-#if !UNITY_5
             sceneLoad.completed += OnSceneLoaded;
-#else
-            NetworkingManager.singleton.StartCoroutine(NetworkingManager.singleton.WaitForSceneSwitch(sceneLoad, () =>
-            {
-                //This block runs when scene switch is done.
-                OnSceneLoaded(sceneLoad);
-            }));
-#endif
         }
 
         private static void OnSceneLoaded(AsyncOperation operation)
@@ -101,15 +86,7 @@ namespace MLAPI.NetworkingManagerComponents
                 SceneManager.MoveGameObjectToScene(objectsToKeep[i].gameObject, nextScene);
             }
             AsyncOperation sceneLoad = SceneManager.UnloadSceneAsync(lastScene);
-#if !UNITY_5
             sceneLoad.completed += OnSceneUnload;
-#else
-            NetworkingManager.singleton.StartCoroutine(NetworkingManager.singleton.WaitForSceneSwitch(sceneLoad, () =>
-            {
-                //This block runs when scene switch is done.
-                OnSceneUnload(sceneLoad);
-            }));
-#endif
         }
 
         private static void OnSceneUnload(AsyncOperation operation)

@@ -106,15 +106,7 @@ namespace MLAPI
             ConnectionConfig cConfig = new ConnectionConfig();
 
             //MLAPI channels and messageTypes
-
-            //Legacy channel. ReliableFragmentedSequenced doesn't exist in older Unity versions.
-            if(NetworkConfig.UseLegacyChannel)
-                NetworkConfig.Channels.Add("MLAPI_RELIABLE_FRAGMENTED_SEQUENCED", QosType.ReliableSequenced);
-#if !UNITY_5 //Unity 5.6 has confirmed to not have the ReliableFragmentedSequenced channel type.
-            else
-                NetworkConfig.Channels.Add("MLAPI_RELIABLE_FRAGMENTED_SEQUENCED", QosType.ReliableFragmentedSequenced);
-#endif
-
+            NetworkConfig.Channels.Add("MLAPI_RELIABLE_FRAGMENTED_SEQUENCED", QosType.ReliableFragmentedSequenced);
             NetworkConfig.Channels.Add("MLAPI_POSITION_UPDATE", QosType.StateUpdate);
             NetworkConfig.Channels.Add("MLAPI_ANIMATION_UPDATE", QosType.ReliableSequenced);
             MessageManager.messageTypes.Add("MLAPI_CONNECTION_REQUEST", 0);
@@ -178,18 +170,6 @@ namespace MLAPI
 
             return cConfig;
         }
-
-#if UNITY_5
-        internal IEnumerator WaitForSceneSwitch(AsyncOperation operation, Action callback)
-        {
-            while(!operation.isDone)
-            {
-                yield return null;
-            }
-            callback();
-        }
-#endif
-
 
         public void StartServer(NetworkingConfiguration netConfig)
         {
