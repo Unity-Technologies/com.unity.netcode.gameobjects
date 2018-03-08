@@ -13,7 +13,7 @@ MLAPI (Mid level API) is a framework that hopefully simplifies building networke
 * Replace the integer QOS with names. When you setup the networking you specify names that are associated with a channel. This makes it easier to manage. You can thus specify that a message should be sent on the "damage" channel which handles all damage related logic and is running on the AllCostDelivery channel.
 * ProtocolVersion to allow making different versions not talk to each other.
 * NetworkedBehaviours does not have to be on the root, it's simply just a class that implements the send methods etc.
-* Multiple messages processed every frame with the ability to specify a maximum to prevent freezes in the normal game logic
+* Custom tickrate
 * Supports separate Unity projects crosstalking
 * Passthrough messages \[[Wiki page](https://github.com/TwoTenPvP/MLAPI/wiki/Passthrough-messages)\]
 * Scene Management \[[Wiki page](https://github.com/TwoTenPvP/MLAPI/wiki/Scene-Management)\]
