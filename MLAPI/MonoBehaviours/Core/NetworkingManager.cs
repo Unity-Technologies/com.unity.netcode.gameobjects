@@ -103,7 +103,10 @@ namespace MLAPI
             }
 
             NetworkTransport.Init();
-            ConnectionConfig cConfig = new ConnectionConfig();
+            ConnectionConfig cConfig = new ConnectionConfig()
+            {
+                SendDelay = 0
+            };
 
             //MLAPI channels and messageTypes
             NetworkConfig.Channels.Add("MLAPI_RELIABLE_FRAGMENTED_SEQUENCED", QosType.ReliableFragmentedSequenced);
