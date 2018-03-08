@@ -81,7 +81,9 @@ namespace MLAPI.MonoBehaviours.Prototyping
 
             CheckSendRate();
 
-            if (!CheckAnimStateChanged(out int stateHash, out float normalizedTime))
+            int stateHash;
+            float normalizedTime;
+            if (!CheckAnimStateChanged(out stateHash, out normalizedTime))
             {
                 return;
             }
