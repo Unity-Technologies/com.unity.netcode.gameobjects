@@ -451,6 +451,16 @@ namespace MLAPI
                         //Custom message, invoke all message handlers
                         if(targeted)
                         {
+                            if(!MessageManager.targetedMessages.ContainsKey(messageType))
+                            {
+                                Debug.LogWarning("MLAPI: No handlers for the given messagetype");
+                                return;
+                            }
+                            else if(!MessageManager.targetedMessages[messageType].ContainsKey(targetNetworkId))
+                            {
+                                Debug.LogWarning("MLAPI: No handlers for the given networkId");
+                                return;
+                            }
                             List<int> handlerIds = MessageManager.targetedMessages[messageType][targetNetworkId];
                             for (int i = 0; i < handlerIds.Count; i++)
                             {
@@ -688,7 +698,7 @@ namespace MLAPI
                                     }
                                 }
                                 break;
-                            case 9:
+                            case 9: //Syncvar
                                 if (isClient)
                                 {
                                     using (MemoryStream messageReadStream = new MemoryStream(incommingData))
@@ -696,12 +706,12 @@ namespace MLAPI
                                         using (BinaryReader messageReader = new BinaryReader(messageReadStream))
                                         {
                                             byte dirtyCount = messageReader.ReadByte();
-                                            if(dirtyCount > 0)
+                                            uint netId = messageReader.ReadUInt32();
+                                            ushort orderIndex = messageReader.ReadUInt16();
+                                            if (dirtyCount > 0)
                                             {
                                                 for (int i = 0; i < dirtyCount; i++)
                                                 {
-                                                    uint netId = messageReader.ReadUInt32(); //NetId the syncvar is from
-                                                    ushort orderIndex = messageReader.ReadUInt16();
                                                     byte fieldIndex = messageReader.ReadByte();
                                                     if(!SpawnManager.spawnedObjects.ContainsKey(netId))
                                                     {

@@ -86,8 +86,7 @@ namespace MLAPI
                 if(!childNetworkedBehaviours[i].networkedStartInvoked)
                 {
                     childNetworkedBehaviours[i].NetworkStart();
-                    if (NetworkingManager.singleton.isServer)
-                        childNetworkedBehaviours[i].SyncVarInit();
+                    childNetworkedBehaviours[i].SyncVarInit();
                 }
             }
         }

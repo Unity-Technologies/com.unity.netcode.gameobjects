@@ -266,12 +266,12 @@ namespace MLAPI
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
                     //Write all indexes
-                    writer.Write(dirtyFields.Length);
+                    writer.Write((byte)dirtyFields.Length);
+                    writer.Write(networkId); //NetId
+                    writer.Write(networkedObject.GetOrderIndex(this)); //Behaviour OrderIndex
                     for (byte i = 0; i < dirtyFields.Length; i++)
                     {
-                        writer.Write(networkId);
-                        writer.Write(networkedObject.GetOrderIndex(this));
-                        writer.Write(i); //Index
+                        writer.Write(i); //FieldIndex
                         switch (syncedFieldTypes[i])
                         {
                             case FieldType.Bool:
@@ -332,8 +332,8 @@ namespace MLAPI
                                 break;
                         }
                     }
-                    NetworkingManager.singleton.Send(clientId, "MLAPI_SYNC_VAR_UPDATE", "MLAPI_RELIABLE_FRAGMENTED_SEQUENCED", stream.ToArray());
                 }
+                NetworkingManager.singleton.Send(clientId, "MLAPI_SYNC_VAR_UPDATE", "MLAPI_RELIABLE_FRAGMENTED_SEQUENCED", stream.ToArray());
             }
         }
 
@@ -353,14 +353,14 @@ namespace MLAPI
                     {
                         //Write all indexes
                         writer.Write(dirtyCount);
+                        writer.Write(networkId); //NetId
+                        writer.Write(networkedObject.GetOrderIndex(this)); //Behaviour OrderIndex
                         for (byte i = 0; i < dirtyFields.Length; i++)
                         {
                             //Writes all the indexes of the dirty syncvars.
                             if (dirtyFields[i] == true)
                             {
-                                writer.Write(networkId);
-                                writer.Write(networkedObject.GetOrderIndex(this));
-                                writer.Write(i); //Index
+                                writer.Write(i); //FieldIndex
                                 switch (syncedFieldTypes[i])
                                 {
                                     case FieldType.Bool:
@@ -425,8 +425,8 @@ namespace MLAPI
                                 dirtyFields[i] = false;
                             }
                         }
-                        NetworkingManager.singleton.Send("MLAPI_SYNC_VAR_UPDATE", "MLAPI_RELIABLE_FRAGMENTED_SEQUENCED", stream.ToArray(), ownerClientId);
                     }
+                    NetworkingManager.singleton.Send("MLAPI_SYNC_VAR_UPDATE", "MLAPI_RELIABLE_FRAGMENTED_SEQUENCED", stream.ToArray());
                 }
                 lastSyncTime = Time.time;
             }

@@ -81,7 +81,7 @@ namespace MLAPI.MonoBehaviours.Prototyping
                             writer.Write(transform.rotation.eulerAngles.z);
                         }
                         if (isServer)
-                            SendToNonLocalClientsTarget("MLAPI_OnRecieveTransformFromClient", "MLAPI_POSITION_UPDATE", writeStream.GetBuffer());
+                            SendToClientsTarget("MLAPI_OnRecieveTransformFromServer", "MLAPI_POSITION_UPDATE", writeStream.GetBuffer());
                         else
                             SendToServerTarget("MLAPI_OnRecieveTransformFromClient", "MLAPI_POSITION_UPDATE", writeStream.GetBuffer());
                     }
