@@ -697,6 +697,21 @@ namespace MLAPI
                                                     uint netId = messageReader.ReadUInt32(); //NetId the syncvar is from
                                                     ushort orderIndex = messageReader.ReadUInt16();
                                                     byte fieldIndex = messageReader.ReadByte();
+                                                    if(!SpawnManager.spawnedObjects.ContainsKey(netId))
+                                                    {
+                                                        Debug.LogWarning("MLAPI: Sync message recieved for a non existant object with id: " + netId);
+                                                        return;
+                                                    }
+                                                    else if(SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex) == null)
+                                                    {
+                                                        Debug.LogWarning("MLAPI: Sync message recieved for a non existant behaviour");
+                                                        return;
+                                                    }
+                                                    else if(fieldIndex > (SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).syncedFieldTypes.Count - 1))
+                                                    {
+                                                        Debug.LogWarning("MLAPI: Sync message recieved for field out of bounds");
+                                                        return;
+                                                    }
                                                     FieldType type = SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).syncedFieldTypes[fieldIndex];
                                                     switch (type)
                                                     {
