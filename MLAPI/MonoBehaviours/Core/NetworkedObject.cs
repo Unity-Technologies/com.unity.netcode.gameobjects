@@ -1,4 +1,5 @@
 ﻿using MLAPI.NetworkingManagerComponents;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace MLAPI
@@ -63,41 +64,85 @@ namespace MLAPI
 
         internal void InvokeBehaviourOnLostOwnership()
         {
-            NetworkedBehaviour[] netBehaviours = GetComponentsInChildren<NetworkedBehaviour>();
-            for (int i = 0; i < netBehaviours.Length; i++)
+            for (int i = 0; i < childNetworkedBehaviours.Count; i++)
             {
-                //We check if we are it's networkedObject owner incase a networkedObject exists as a child of our networkedObject.
-                if (netBehaviours[i].networkedObject == this)
-                {
-                    netBehaviours[i].OnLostOwnership();
-                }
+                childNetworkedBehaviours[i].OnLostOwnership();
             }
         }
 
         internal void InvokeBehaviourOnGainedOwnership()
         {
-            NetworkedBehaviour[] netBehaviours = GetComponentsInChildren<NetworkedBehaviour>();
-            for (int i = 0; i < netBehaviours.Length; i++)
+            for (int i = 0; i < childNetworkedBehaviours.Count; i++)
             {
-                //We check if we are it's networkedObject owner incase a networkedObject exists as a child of our networkedObject.
-                if (netBehaviours[i].networkedObject == this)
-                {
-                    netBehaviours[i].OnGainedOwnership();
-                }
+                childNetworkedBehaviours[i].OnGainedOwnership();
             }
         }
 
         internal void InvokeBehaviourNetworkSpawn()
         {
-            NetworkedBehaviour[] netBehaviours = GetComponentsInChildren<NetworkedBehaviour>();
-            for (int i = 0; i < netBehaviours.Length; i++)
+            for (int i = 0; i < childNetworkedBehaviours.Count; i++)
             {
                 //We check if we are it's networkedObject owner incase a networkedObject exists as a child of our networkedObject.
-                if(netBehaviours[i].networkedObject == this && !netBehaviours[i].networkedStartInvoked)
+                if(!childNetworkedBehaviours[i].networkedStartInvoked)
                 {
-                    netBehaviours[i].NetworkStart();
+                    childNetworkedBehaviours[i].NetworkStart();
+                    if (NetworkingManager.singleton.isServer)
+                        childNetworkedBehaviours[i].SyncVarInit();
                 }
             }
+        }
+
+        private List<NetworkedBehaviour> _childNetworkedBehaviours;
+        internal List<NetworkedBehaviour> childNetworkedBehaviours
+        {
+            get
+            {
+                if(_childNetworkedBehaviours == null)
+                {
+                    _childNetworkedBehaviours = new List<NetworkedBehaviour>();
+                    NetworkedBehaviour[] behaviours = GetComponentsInChildren<NetworkedBehaviour>();
+                    for (int i = 0; i < behaviours.Length; i++)
+                    {
+                        if (behaviours[i].networkedObject == this)
+                            _childNetworkedBehaviours.Add(behaviours[i]);
+                    }
+                }
+                return _childNetworkedBehaviours;
+            }
+        }
+
+        internal static List<NetworkedBehaviour> NetworkedBehaviours = new List<NetworkedBehaviour>();
+        internal static void InvokeSyncvarUpdate()
+        {
+            for (int i = 0; i < NetworkedBehaviours.Count; i++)
+            {
+                NetworkedBehaviours[i].SyncVarUpdate();
+            }
+        }
+
+        //Flushes all syncVars to client
+        internal void FlushToClient(int clientId)
+        {
+            for (int i = 0; i < childNetworkedBehaviours.Count; i++)
+            {
+                childNetworkedBehaviours[i].FlushToClient(clientId);
+            }
+        }
+
+        internal ushort GetOrderIndex(NetworkedBehaviour instance)
+        {
+            for (ushort i = 0; i < childNetworkedBehaviours.Count; i++)
+            {
+                if (childNetworkedBehaviours[i] == instance)
+                    return i;
+            }
+            return 0;
+        }
+
+        internal NetworkedBehaviour GetBehaviourAtOrderIndex(ushort index)
+        {
+            //TODO index out of bounds
+            return childNetworkedBehaviours[index];
         }
     }
 }
