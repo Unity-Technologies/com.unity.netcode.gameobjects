@@ -74,7 +74,6 @@ namespace MLAPI
         {
             NetworkConfig = netConfig;
 
-            SyncedVarManager.Init();
             pendingClients = new HashSet<int>();
             connectedClients = new Dictionary<int, NetworkedClient>();
             messageBuffer = new byte[NetworkConfig.MessageBufferSize];
@@ -697,7 +696,6 @@ namespace MLAPI
                                                 {
                                                     uint netId = messageReader.ReadUInt32(); //NetId the syncvar is from
                                                     ushort orderIndex = messageReader.ReadUInt16();
-                                                    ushort networkBehaviourId = messageReader.ReadUInt16();
                                                     byte fieldIndex = messageReader.ReadByte();
                                                     FieldType type = SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).syncedFieldTypes[fieldIndex];
                                                     switch (type)

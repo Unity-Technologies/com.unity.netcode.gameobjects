@@ -134,9 +134,6 @@ namespace MLAPI
         private List<object> syncedFieldValues = new List<object>();
         //A dirty field is a field that's not synced.
         public bool[] dirtyFields;
-        protected static ushort networkedBehaviourId;
-        //This is just for the unity editor. if you turn the editor to DEBUG mode you can see what the networkedBehaviourId is.
-        private ushort _networkedBehaviourId = networkedBehaviourId;
         internal void SyncVarInit()
         {
             FieldInfo[] sortedFields = GetType().GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy | BindingFlags.Instance).OrderBy(x => x.Name).ToArray();
@@ -274,7 +271,6 @@ namespace MLAPI
                     {
                         writer.Write(networkId);
                         writer.Write(networkedObject.GetOrderIndex(this));
-                        writer.Write(networkedBehaviourId);
                         writer.Write(i); //Index
                         switch (syncedFieldTypes[i])
                         {
@@ -364,7 +360,6 @@ namespace MLAPI
                             {
                                 writer.Write(networkId);
                                 writer.Write(networkedObject.GetOrderIndex(this));
-                                writer.Write(networkedBehaviourId);
                                 writer.Write(i); //Index
                                 switch (syncedFieldTypes[i])
                                 {

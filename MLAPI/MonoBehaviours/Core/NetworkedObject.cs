@@ -64,42 +64,50 @@ namespace MLAPI
 
         internal void InvokeBehaviourOnLostOwnership()
         {
-            NetworkedBehaviour[] netBehaviours = GetComponentsInChildren<NetworkedBehaviour>();
-            for (int i = 0; i < netBehaviours.Length; i++)
+            for (int i = 0; i < childNetworkedBehaviours.Count; i++)
             {
-                //We check if we are it's networkedObject owner incase a networkedObject exists as a child of our networkedObject.
-                if (netBehaviours[i].networkedObject == this)
-                {
-                    netBehaviours[i].OnLostOwnership();
-                }
+                childNetworkedBehaviours[i].OnLostOwnership();
             }
         }
 
         internal void InvokeBehaviourOnGainedOwnership()
         {
-            NetworkedBehaviour[] netBehaviours = GetComponentsInChildren<NetworkedBehaviour>();
-            for (int i = 0; i < netBehaviours.Length; i++)
+            for (int i = 0; i < childNetworkedBehaviours.Count; i++)
             {
-                //We check if we are it's networkedObject owner incase a networkedObject exists as a child of our networkedObject.
-                if (netBehaviours[i].networkedObject == this)
-                {
-                    netBehaviours[i].OnGainedOwnership();
-                }
+                childNetworkedBehaviours[i].OnGainedOwnership();
             }
         }
 
         internal void InvokeBehaviourNetworkSpawn()
         {
-            NetworkedBehaviour[] netBehaviours = GetComponentsInChildren<NetworkedBehaviour>();
-            for (int i = 0; i < netBehaviours.Length; i++)
+            for (int i = 0; i < childNetworkedBehaviours.Count; i++)
             {
                 //We check if we are it's networkedObject owner incase a networkedObject exists as a child of our networkedObject.
-                if(netBehaviours[i].networkedObject == this && !netBehaviours[i].networkedStartInvoked)
+                if(!childNetworkedBehaviours[i].networkedStartInvoked)
                 {
-                    netBehaviours[i].NetworkStart();
+                    childNetworkedBehaviours[i].NetworkStart();
                     if (NetworkingManager.singleton.isServer)
-                        netBehaviours[i].SyncVarInit();
+                        childNetworkedBehaviours[i].SyncVarInit();
                 }
+            }
+        }
+
+        private List<NetworkedBehaviour> _childNetworkedBehaviours;
+        internal List<NetworkedBehaviour> childNetworkedBehaviours
+        {
+            get
+            {
+                if(_childNetworkedBehaviours == null)
+                {
+                    _childNetworkedBehaviours = new List<NetworkedBehaviour>();
+                    NetworkedBehaviour[] behaviours = GetComponentsInChildren<NetworkedBehaviour>();
+                    for (int i = 0; i < behaviours.Length; i++)
+                    {
+                        if (behaviours[i].networkedObject == this)
+                            _childNetworkedBehaviours.Add(behaviours[i]);
+                    }
+                }
+                return _childNetworkedBehaviours;
             }
         }
 
@@ -115,18 +123,17 @@ namespace MLAPI
         //Flushes all syncVars to client
         internal void FlushToClient(int clientId)
         {
-            for (int i = 0; i < NetworkedBehaviours.Count; i++)
+            for (int i = 0; i < childNetworkedBehaviours.Count; i++)
             {
-                NetworkedBehaviours[i].FlushToClient(clientId);
+                childNetworkedBehaviours[i].FlushToClient(clientId);
             }
         }
 
         internal ushort GetOrderIndex(NetworkedBehaviour instance)
         {
-            NetworkedBehaviour[] behaviours = GetComponentsInChildren<NetworkedBehaviour>();
-            for (ushort i = 0; i < behaviours.Length; i++)
+            for (ushort i = 0; i < childNetworkedBehaviours.Count; i++)
             {
-                if (behaviours[i].networkedObject == this && behaviours[i] == instance)
+                if (childNetworkedBehaviours[i] == instance)
                     return i;
             }
             return 0;
@@ -134,8 +141,8 @@ namespace MLAPI
 
         internal NetworkedBehaviour GetBehaviourAtOrderIndex(ushort index)
         {
-            NetworkedBehaviour[] behaviours = GetComponentsInChildren<NetworkedBehaviour>();
-            return behaviours[index];
+            //TODO index out of bounds
+            return childNetworkedBehaviours[index];
         }
     }
 }
