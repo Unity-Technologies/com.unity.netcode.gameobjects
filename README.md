@@ -38,4 +38,4 @@ The example project has a much lower priority compared to the library itself. If
 ## Issues and missing features
 If there are any issues, bugs or features that are missing. Please open an issue on GitHub!
 ## Testing
-The project is not extensivley tested. I am however very active on answering and fixing issues. If you are using the library. If you find something doesn't work or throws an exception. Open an issue or submit a PR.
+The project is not extensivley tested. I am however very active on answering and fixing issues. If you are using the library and you find something doesn't work or throws an exception. Open an issue or submit a PR.
