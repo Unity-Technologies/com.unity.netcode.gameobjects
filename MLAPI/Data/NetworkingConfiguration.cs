@@ -15,7 +15,7 @@ namespace MLAPI
         internal HashSet<ushort> RegisteredPassthroughMessageTypes = new HashSet<ushort>();
         public List<string> RegisteredScenes = new List<string>();
         public int MessageBufferSize = 65535;
-        public int MaxMessagesPerFrame = 150;
+        public int Tickrate = 64;
         public int MaxConnections = 100;
         public int Port = 7777;
         public string Address = "127.0.0.1";
