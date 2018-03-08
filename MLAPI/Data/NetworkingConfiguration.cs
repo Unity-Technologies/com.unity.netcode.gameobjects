@@ -32,6 +32,7 @@ namespace MLAPI
         public bool EncryptMessages = false;
         public bool AllowPassthroughMessages = true;
         public bool EnableSceneSwitching = false;
+        public bool UseLegacyChannel = false;
 
         //Cached config hash
         private byte[] ConfigHash = null;

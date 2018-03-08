@@ -106,7 +106,13 @@ namespace MLAPI
             ConnectionConfig cConfig = new ConnectionConfig();
 
             //MLAPI channels and messageTypes
-            NetworkConfig.Channels.Add("MLAPI_RELIABLE_FRAGMENTED_SEQUENCED", QosType.ReliableFragmentedSequenced);
+
+            //Legacy channel. ReliableFragmentedSequenced doesn't exist in older Unity versions.
+            if(NetworkConfig.UseLegacyChannel)
+                NetworkConfig.Channels.Add("MLAPI_RELIABLE_FRAGMENTED_SEQUENCED", QosType.ReliableSequenced);
+            else
+                NetworkConfig.Channels.Add("MLAPI_RELIABLE_FRAGMENTED_SEQUENCED", QosType.ReliableFragmentedSequenced);
+
             NetworkConfig.Channels.Add("MLAPI_POSITION_UPDATE", QosType.StateUpdate);
             NetworkConfig.Channels.Add("MLAPI_ANIMATION_UPDATE", QosType.ReliableSequenced);
             MessageManager.messageTypes.Add("MLAPI_CONNECTION_REQUEST", 0);
