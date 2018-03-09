@@ -108,7 +108,7 @@ namespace MLAPI
             ConnectionConfig cConfig = new ConnectionConfig();
 
             //MLAPI channels and messageTypes
-            NetworkConfig.Channels.Add("MLAPI_RELIABLE_FRAGMENTED_SEQUENCED", QosType.ReliableFragmentedSequenced);
+            NetworkConfig.Channels.Add("MLAPI_INTERNAL", QosType.ReliableFragmentedSequenced);
             NetworkConfig.Channels.Add("MLAPI_POSITION_UPDATE", QosType.StateUpdate);
             NetworkConfig.Channels.Add("MLAPI_ANIMATION_UPDATE", QosType.ReliableSequenced);
             MessageManager.messageTypes.Add("MLAPI_CONNECTION_REQUEST", 0);
@@ -356,7 +356,7 @@ namespace MLAPI
                                                 writer.Write(NetworkConfig.ConnectionData);
                                             }
                                         }
-                                        Send(clientId, "MLAPI_CONNECTION_REQUEST", "MLAPI_RELIABLE_FRAGMENTED_SEQUENCED", writeStream.GetBuffer());
+                                        Send(clientId, "MLAPI_CONNECTION_REQUEST", "MLAPI_INTERNAL", writeStream.GetBuffer());
                                     }
                                 }
                                 break;
@@ -1087,7 +1087,7 @@ namespace MLAPI
                     {
                         writer.Write(clientId);
                     }
-                    Send("MLAPI_CLIENT_DISCONNECT", "MLAPI_RELIABLE_FRAGMENTED_SEQUENCED", stream.GetBuffer(), clientId);
+                    Send("MLAPI_CLIENT_DISCONNECT", "MLAPI_INTERNAL", stream.GetBuffer(), clientId);
                 }   
             }
         }
@@ -1166,7 +1166,7 @@ namespace MLAPI
                             }
                         }
                     }
-                    Send(clientId, "MLAPI_CONNECTION_APPROVED", "MLAPI_RELIABLE_FRAGMENTED_SEQUENCED", writeStream.GetBuffer());
+                    Send(clientId, "MLAPI_CONNECTION_APPROVED", "MLAPI_INTERNAL", writeStream.GetBuffer());
                 }
 
                 //Inform old clients of the new player
@@ -1192,7 +1192,7 @@ namespace MLAPI
                             writer.Write(clientId);
                         }
                     }
-                    Send("MLAPI_ADD_OBJECT", "MLAPI_RELIABLE_FRAGMENTED_SEQUENCED", stream.GetBuffer(), clientId);
+                    Send("MLAPI_ADD_OBJECT", "MLAPI_INTERNAL", stream.GetBuffer(), clientId);
                 }
                 //Flush syncvars:
                 foreach (KeyValuePair<uint, NetworkedObject> networkedObject in SpawnManager.spawnedObjects)
