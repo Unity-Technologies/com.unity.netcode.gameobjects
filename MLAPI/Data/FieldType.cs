@@ -1,4 +1,4 @@
-﻿namespace MLAPI.Attributes
+﻿namespace MLAPI.Data
 {
     internal enum FieldType
     {
