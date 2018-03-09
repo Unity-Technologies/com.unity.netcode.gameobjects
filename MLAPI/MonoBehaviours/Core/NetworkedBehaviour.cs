@@ -333,7 +333,7 @@ namespace MLAPI
                         }
                     }
                 }
-                NetworkingManager.singleton.Send(clientId, "MLAPI_SYNC_VAR_UPDATE", "MLAPI_RELIABLE_FRAGMENTED_SEQUENCED", stream.ToArray());
+                NetworkingManager.singleton.Send(clientId, "MLAPI_SYNC_VAR_UPDATE", "MLAPI_INTERNAL", stream.ToArray());
             }
         }
 
@@ -426,7 +426,7 @@ namespace MLAPI
                             }
                         }
                     }
-                    NetworkingManager.singleton.Send("MLAPI_SYNC_VAR_UPDATE", "MLAPI_RELIABLE_FRAGMENTED_SEQUENCED", stream.ToArray());
+                    NetworkingManager.singleton.Send("MLAPI_SYNC_VAR_UPDATE", "MLAPI_INTERNAL", stream.ToArray());
                 }
                 lastSyncTime = Time.time;
             }

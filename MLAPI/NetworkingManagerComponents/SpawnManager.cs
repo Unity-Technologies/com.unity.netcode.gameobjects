@@ -42,7 +42,7 @@ namespace MLAPI.NetworkingManagerComponents
                     writer.Write(netId);
                     writer.Write(-2);
                 }
-                netManager.Send("MLAPI_CHANGE_OWNER", "MLAPI_RELIABLE_FRAGMENTED_SEQUENCED", stream.GetBuffer());
+                netManager.Send("MLAPI_CHANGE_OWNER", "MLAPI_INTERNAL", stream.GetBuffer());
             }
         }
 
@@ -59,7 +59,7 @@ namespace MLAPI.NetworkingManagerComponents
                     writer.Write(netId);
                     writer.Write(clientId);
                 }
-                netManager.Send("MLAPI_CHANGE_OWNER", "MLAPI_RELIABLE_FRAGMENTED_SEQUENCED", stream.GetBuffer());
+                netManager.Send("MLAPI_CHANGE_OWNER", "MLAPI_INTERNAL", stream.GetBuffer());
             }
         }
 
@@ -136,9 +136,9 @@ namespace MLAPI.NetworkingManagerComponents
                         }
                         //If we are host, send to everyone except ourselves. Otherwise, send to all
                         if (netManager != null && netManager.isHost)
-                            netManager.Send("MLAPI_DESTROY_OBJECT", "MLAPI_RELIABLE_FRAGMENTED_SEQUENCED", stream.GetBuffer(), -1);
+                            netManager.Send("MLAPI_DESTROY_OBJECT", "MLAPI_INTERNAL", stream.GetBuffer(), -1);
                         else
-                            netManager.Send("MLAPI_DESTROY_OBJECT", "MLAPI_RELIABLE_FRAGMENTED_SEQUENCED", stream.GetBuffer());
+                            netManager.Send("MLAPI_DESTROY_OBJECT", "MLAPI_INTERNAL", stream.GetBuffer());
                     }
                 }
             }
@@ -193,9 +193,9 @@ namespace MLAPI.NetworkingManagerComponents
                 }
                 //If we are host, send to everyone except ourselves. Otherwise, send to all
                 if (netManager.isHost)
-                    netManager.Send("MLAPI_ADD_OBJECT", "MLAPI_RELIABLE_FRAGMENTED_SEQUENCED", stream.GetBuffer(), -1);
+                    netManager.Send("MLAPI_ADD_OBJECT", "MLAPI_INTERNAL", stream.GetBuffer(), -1);
                 else
-                    netManager.Send("MLAPI_ADD_OBJECT", "MLAPI_RELIABLE_FRAGMENTED_SEQUENCED", stream.GetBuffer());
+                    netManager.Send("MLAPI_ADD_OBJECT", "MLAPI_INTERNAL", stream.GetBuffer());
             }
         }
     }

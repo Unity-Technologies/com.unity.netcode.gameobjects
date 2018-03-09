@@ -55,7 +55,7 @@ namespace MLAPI.NetworkingManagerComponents
                 {
                     writer.Write(sceneNameToIndex[sceneName]);
                 }
-                NetworkingManager.singleton.Send("MLAPI_SWITCH_SCENE", "MLAPI_RELIABLE_FRAGMENTED_SEQUENCED", stream.GetBuffer());
+                NetworkingManager.singleton.Send("MLAPI_SWITCH_SCENE", "MLAPI_INTERNAL", stream.GetBuffer());
             }
         }
 
