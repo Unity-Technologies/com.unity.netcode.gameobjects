@@ -312,8 +312,10 @@ namespace MLAPI
                 if((Time.time - lastReceiveTickTime >= (1f / NetworkConfig.ReceiveTickrate)) || NetworkConfig.ReceiveTickrate <= 0)
                 {
                     NetworkEventType eventType;
+                    int processedEvents = 0;
                     do
                     {
+                        processedEvents++;
                         eventType = NetworkTransport.Receive(out hostId, out clientId, out channelId, messageBuffer, messageBuffer.Length, out receivedSize, out error);
                         NetworkError networkError = (NetworkError)error;
                         if (networkError == NetworkError.Timeout)
@@ -368,7 +370,8 @@ namespace MLAPI
                                     OnClientDisconnect(clientId);
                                 break;
                         }
-                    } while (eventType != NetworkEventType.Nothing);
+                        // Only do another iteration if: there are no more messages AND (there is no limit to max events or we have processed less than the maximum)
+                    } while (eventType != NetworkEventType.Nothing && (NetworkConfig.MaxReceiveEventsPerTickRate <= 0 || processedEvents < NetworkConfig.MaxReceiveEventsPerTickRate));
                     lastReceiveTickTime = Time.time;
                 }
                 if (isServer && ((Time.time - lastEventTickTime >= (1f / NetworkConfig.EventTickrate)) || NetworkConfig.EventTickrate <= 0))

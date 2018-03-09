@@ -16,6 +16,7 @@ namespace MLAPI
         public List<string> RegisteredScenes = new List<string>();
         public int MessageBufferSize = 65535;
         public int ReceiveTickrate = 64;
+        public int MaxReceiveEventsPerTickRate = 500;
         public int SendTickrate = 64;
         public int EventTickrate = 64;
         public int MaxConnections = 100;
