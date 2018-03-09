@@ -301,7 +301,7 @@ namespace MLAPI
         {
             if(isListening)
             {
-                if(Time.time - lastSendTickTime >= (1f / NetworkConfig.SendTickrate))
+                if((Time.time - lastSendTickTime >= (1f / NetworkConfig.SendTickrate)) || NetworkConfig.SendTickrate <= 0)
                 {
                     foreach (KeyValuePair<int, NetworkedClient> pair in connectedClients)
                     {
@@ -309,68 +309,72 @@ namespace MLAPI
                     }
                     lastSendTickTime = Time.time;
                 }
-                if(Time.time - lastReceiveTickTime >= (1f / NetworkConfig.ReceiveTickrate))
+                if((Time.time - lastReceiveTickTime >= (1f / NetworkConfig.ReceiveTickrate)) || NetworkConfig.ReceiveTickrate <= 0)
                 {
-                    NetworkEventType eventType = NetworkTransport.Receive(out hostId, out clientId, out channelId, messageBuffer, messageBuffer.Length, out receivedSize, out error);
-                    NetworkError networkError = (NetworkError)error;
-                    if (networkError == NetworkError.Timeout)
+                    NetworkEventType eventType;
+                    do
                     {
-                        //Client timed out. 
-                        if (isServer)
+                        eventType = NetworkTransport.Receive(out hostId, out clientId, out channelId, messageBuffer, messageBuffer.Length, out receivedSize, out error);
+                        NetworkError networkError = (NetworkError)error;
+                        if (networkError == NetworkError.Timeout)
                         {
-                            OnClientDisconnect(clientId);
+                            //Client timed out. 
+                            if (isServer)
+                            {
+                                OnClientDisconnect(clientId);
+                                return;
+                            }
+                        }
+                        else if (networkError != NetworkError.Ok)
+                        {
+                            Debug.LogWarning("MLAPI: NetworkTransport receive error: " + networkError.ToString());
                             return;
                         }
-                    }
-                    else if (networkError != NetworkError.Ok)
-                    {
-                        Debug.LogWarning("MLAPI: NetworkTransport receive error: " + networkError.ToString());
-                        return;
-                    }
 
-                    switch (eventType)
-                    {
-                        case NetworkEventType.ConnectEvent:
-                            if (isServer)
-                            {
-                                pendingClients.Add(clientId);
-                                StartCoroutine(ApprovalTimeout(clientId));
-                            }
-                            else
-                            {
-                                int sizeOfStream = 32;
-                                if (NetworkConfig.ConnectionApproval)
-                                    sizeOfStream += 2 + NetworkConfig.ConnectionData.Length;
-
-                                using (MemoryStream writeStream = new MemoryStream(sizeOfStream))
+                        switch (eventType)
+                        {
+                            case NetworkEventType.ConnectEvent:
+                                if (isServer)
                                 {
-                                    using (BinaryWriter writer = new BinaryWriter(writeStream))
-                                    {
-                                        writer.Write(NetworkConfig.GetConfig());
-                                        if (NetworkConfig.ConnectionApproval)
-                                        {
-                                            writer.Write((ushort)NetworkConfig.ConnectionData.Length);
-                                            writer.Write(NetworkConfig.ConnectionData);
-                                        }
-                                    }
-                                    Send(clientId, "MLAPI_CONNECTION_REQUEST", "MLAPI_RELIABLE_FRAGMENTED_SEQUENCED", writeStream.GetBuffer());
+                                    pendingClients.Add(clientId);
+                                    StartCoroutine(ApprovalTimeout(clientId));
                                 }
-                            }
-                            break;
-                        case NetworkEventType.DataEvent:
-                            HandleIncomingData(clientId, messageBuffer, channelId);
-                            break;
-                        case NetworkEventType.DisconnectEvent:
-                            if (isServer)
-                                OnClientDisconnect(clientId);
-                            break;
-                    }
+                                else
+                                {
+                                    int sizeOfStream = 32;
+                                    if (NetworkConfig.ConnectionApproval)
+                                        sizeOfStream += 2 + NetworkConfig.ConnectionData.Length;
+
+                                    using (MemoryStream writeStream = new MemoryStream(sizeOfStream))
+                                    {
+                                        using (BinaryWriter writer = new BinaryWriter(writeStream))
+                                        {
+                                            writer.Write(NetworkConfig.GetConfig());
+                                            if (NetworkConfig.ConnectionApproval)
+                                            {
+                                                writer.Write((ushort)NetworkConfig.ConnectionData.Length);
+                                                writer.Write(NetworkConfig.ConnectionData);
+                                            }
+                                        }
+                                        Send(clientId, "MLAPI_CONNECTION_REQUEST", "MLAPI_RELIABLE_FRAGMENTED_SEQUENCED", writeStream.GetBuffer());
+                                    }
+                                }
+                                break;
+                            case NetworkEventType.DataEvent:
+                                HandleIncomingData(clientId, messageBuffer, channelId);
+                                break;
+                            case NetworkEventType.DisconnectEvent:
+                                if (isServer)
+                                    OnClientDisconnect(clientId);
+                                break;
+                        }
+                    } while (eventType != NetworkEventType.Nothing);
                     lastReceiveTickTime = Time.time;
                 }
-                if (isServer && (Time.time - lastEventTickTime >= (1f / NetworkConfig.EventTickrate)))
+                if (isServer && ((Time.time - lastEventTickTime >= (1f / NetworkConfig.EventTickrate)) || NetworkConfig.EventTickrate <= 0))
                 {
                     LagCompensationManager.AddFrames();
-                    NetworkedObject.InvokeSyncvafrUpdate();
+                    NetworkedObject.InvokeSyncvarUpdate();
                     lastEventTickTime = Time.time;
                 }
             }
