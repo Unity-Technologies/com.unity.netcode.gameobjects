@@ -238,6 +238,12 @@ namespace MLAPI
                         syncedFieldValues.Add(sortedFields[i].GetValue(this));
                         syncedFieldTypes.Add(FieldType.Quaternion);
                     }
+                    else if(sortedFields[i].FieldType == typeof(byte[]))
+                    {
+                        syncedFields.Add(sortedFields[i]);
+                        syncedFieldValues.Add(sortedFields[i].GetValue(this));
+                        syncedFieldTypes.Add(FieldType.ByteArray);
+                    }
                     else
                     {
                         Debug.LogError("MLAPI: The type " + sortedFields[i].FieldType.ToString() + " can not be used as a syncvar");
@@ -331,6 +337,10 @@ namespace MLAPI
                                 writer.Write(euler.y);
                                 writer.Write(euler.z);
                                 break;
+                            case FieldType.ByteArray:
+                                writer.Write((ushort)((byte[])syncedFields[i].GetValue(this)).Length);
+                                writer.Write((byte[])syncedFields[i].GetValue(this));
+                                break;
                         }
                     }
                 }
@@ -419,6 +429,10 @@ namespace MLAPI
                                         writer.Write(euler.x);
                                         writer.Write(euler.y);
                                         writer.Write(euler.z);
+                                        break;
+                                    case FieldType.ByteArray:
+                                        writer.Write((ushort)((byte[])syncedFields[i].GetValue(this)).Length);
+                                        writer.Write((byte[])syncedFields[i].GetValue(this));
                                         break;
 
                                 }
@@ -533,6 +547,12 @@ namespace MLAPI
                         break;
                     case FieldType.Quaternion:
                         if ((Quaternion)syncedFields[i].GetValue(this) != (Quaternion)syncedFieldValues[i])
+                            dirtyFields[i] = true; //This fields value is out of sync!
+                        else
+                            dirtyFields[i] = false; //Up to date
+                        break;
+                    case FieldType.ByteArray:
+                        if(((byte[])syncedFields[i].GetValue(this)).SequenceEqual(((byte[])syncedFieldValues[i])))
                             dirtyFields[i] = true; //This fields value is out of sync!
                         else
                             dirtyFields[i] = false; //Up to date

@@ -17,6 +17,7 @@
         String,
         Vector3,
         Vector2,
-        Quaternion
+        Quaternion,
+        ByteArray
     }
 }
