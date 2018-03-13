@@ -94,6 +94,11 @@ namespace MLAPI
             NetworkSceneManager.registeredSceneNames = new HashSet<string>();
             NetworkSceneManager.sceneIndexToString = new Dictionary<uint, string>();
             NetworkSceneManager.sceneNameToIndex = new Dictionary<string, uint>();
+            ClientIdManager.clientIdCounter = 0;
+            ClientIdManager.clientIdToKey = new Dictionary<int, ClientIdKey>();
+            ClientIdManager.keyToClientId = new Dictionary<ClientIdKey, int>();
+            ClientIdManager.releasedClientIds = new Queue<int>();
+
             if (NetworkConfig.HandleObjectSpawning)
             {
                 NetworkedObject[] sceneObjects = FindObjectsOfType<NetworkedObject>();

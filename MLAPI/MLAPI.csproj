@@ -74,6 +74,8 @@
     <Compile Include="NetworkingManagerComponents\NetworkSceneManager.cs" />
     <Compile Include="NetworkingManagerComponents\SpawnManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="NetworkingManagerComponents\ClientIdManager.cs" />
+    <Compile Include="Data\ClientIdKey.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
