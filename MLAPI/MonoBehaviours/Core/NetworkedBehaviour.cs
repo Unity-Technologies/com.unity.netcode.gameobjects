@@ -133,6 +133,7 @@ namespace MLAPI
         private List<FieldInfo> syncedFields = new List<FieldInfo>();
         internal List<FieldType> syncedFieldTypes = new List<FieldType>();
         private List<object> syncedFieldValues = new List<object>();
+        private List<MethodInfo> syncedVarHooks = new List<MethodInfo>();
         //A dirty field is a field that's not synced.
         public bool[] dirtyFields;
         internal void SyncVarInit()
@@ -142,107 +143,134 @@ namespace MLAPI
             {
                 if(sortedFields[i].IsDefined(typeof(SyncedVar), true))
                 {
+                    object[] syncedVarAttributes = sortedFields[i].GetCustomAttributes(typeof(SyncedVar), true);
+                    MethodInfo method = null;
+                    for (int j = 0; j < syncedVarAttributes.Length; j++)
+                    {
+                        if(!string.IsNullOrEmpty(((SyncedVar)syncedVarAttributes[j]).hook))
+                        {
+                            method = GetType().GetMethod(((SyncedVar)syncedVarAttributes[j]).hook, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+                            break;
+                        }
+                    }
                     if (sortedFields[i].FieldType == typeof(bool))
                     {
                         syncedFields.Add(sortedFields[i]);
                         syncedFieldValues.Add(sortedFields[i].GetValue(this));
                         syncedFieldTypes.Add(FieldType.Bool);
+                        syncedVarHooks.Add(method);
                     }
                     else if(sortedFields[i].FieldType == typeof(byte))
                     {
                         syncedFields.Add(sortedFields[i]);
                         syncedFieldValues.Add(sortedFields[i].GetValue(this));
                         syncedFieldTypes.Add(FieldType.Byte);
+                        syncedVarHooks.Add(method);
                     }
                     else if (sortedFields[i].FieldType == typeof(char))
                     {
                         syncedFields.Add(sortedFields[i]);
                         syncedFieldValues.Add(sortedFields[i].GetValue(this));
                         syncedFieldTypes.Add(FieldType.Char);
+                        syncedVarHooks.Add(method);
                     }
                     else if (sortedFields[i].FieldType == typeof(double))
                     {
                         syncedFields.Add(sortedFields[i]);
                         syncedFieldValues.Add(sortedFields[i].GetValue(this));
                         syncedFieldTypes.Add(FieldType.Double);
+                        syncedVarHooks.Add(method);
                     }
                     else if (sortedFields[i].FieldType == typeof(float))
                     {
                         syncedFields.Add(sortedFields[i]);
                         syncedFieldValues.Add(sortedFields[i].GetValue(this));
                         syncedFieldTypes.Add(FieldType.Single);
+                        syncedVarHooks.Add(method);
                     }
                     else if (sortedFields[i].FieldType == typeof(int))
                     {
                         syncedFields.Add(sortedFields[i]);
                         syncedFieldValues.Add(sortedFields[i].GetValue(this));
                         syncedFieldTypes.Add(FieldType.Int);
+                        syncedVarHooks.Add(method);
                     }
                     else if (sortedFields[i].FieldType == typeof(long))
                     {
                         syncedFields.Add(sortedFields[i]);
                         syncedFieldValues.Add(sortedFields[i].GetValue(this));
                         syncedFieldTypes.Add(FieldType.Long);
+                        syncedVarHooks.Add(method);
                     }
                     else if (sortedFields[i].FieldType == typeof(sbyte))
                     {
                         syncedFields.Add(sortedFields[i]);
                         syncedFieldValues.Add(sortedFields[i].GetValue(this));
                         syncedFieldTypes.Add(FieldType.SByte);
+                        syncedVarHooks.Add(method);
                     }
                     else if (sortedFields[i].FieldType == typeof(short))
                     {
                         syncedFields.Add(sortedFields[i]);
                         syncedFieldValues.Add(sortedFields[i].GetValue(this));
                         syncedFieldTypes.Add(FieldType.Short);
+                        syncedVarHooks.Add(method);
                     }
                     else if (sortedFields[i].FieldType == typeof(uint))
                     {
                         syncedFields.Add(sortedFields[i]);
                         syncedFieldValues.Add(sortedFields[i].GetValue(this));
                         syncedFieldTypes.Add(FieldType.UInt);
+                        syncedVarHooks.Add(method);
                     }
                     else if (sortedFields[i].FieldType == typeof(ulong))
                     {
                         syncedFields.Add(sortedFields[i]);
                         syncedFieldValues.Add(sortedFields[i].GetValue(this));
                         syncedFieldTypes.Add(FieldType.ULong);
+                        syncedVarHooks.Add(method);
                     }
                     else if (sortedFields[i].FieldType == typeof(ushort))
                     {
                         syncedFields.Add(sortedFields[i]);
                         syncedFieldValues.Add(sortedFields[i].GetValue(this));
                         syncedFieldTypes.Add(FieldType.UShort);
+                        syncedVarHooks.Add(method);
                     }
                     else if(sortedFields[i].FieldType == typeof(string))
                     {
                         syncedFields.Add(sortedFields[i]);
                         syncedFieldValues.Add(sortedFields[i].GetValue(this));
                         syncedFieldTypes.Add(FieldType.String);
+                        syncedVarHooks.Add(method);
                     }
                     else if(sortedFields[i].FieldType == typeof(Vector3))
                     {
                         syncedFields.Add(sortedFields[i]);
                         syncedFieldValues.Add(sortedFields[i].GetValue(this));
                         syncedFieldTypes.Add(FieldType.Vector3);
+                        syncedVarHooks.Add(method);
                     }
                     else if(sortedFields[i].FieldType == typeof(Vector2))
                     {
                         syncedFields.Add(sortedFields[i]);
                         syncedFieldValues.Add(sortedFields[i].GetValue(this));
                         syncedFieldTypes.Add(FieldType.Vector2);
+                        syncedVarHooks.Add(method);
                     }
                     else if (sortedFields[i].FieldType == typeof(Quaternion))
                     {
                         syncedFields.Add(sortedFields[i]);
                         syncedFieldValues.Add(sortedFields[i].GetValue(this));
                         syncedFieldTypes.Add(FieldType.Quaternion);
+                        syncedVarHooks.Add(method);
                     }
                     else if(sortedFields[i].FieldType == typeof(byte[]))
                     {
                         syncedFields.Add(sortedFields[i]);
                         syncedFieldValues.Add(sortedFields[i].GetValue(this));
                         syncedFieldTypes.Add(FieldType.ByteArray);
+                        syncedVarHooks.Add(method);
                     }
                     else
                     {
@@ -260,6 +288,8 @@ namespace MLAPI
         internal void OnSyncVarUpdate(object value, byte fieldIndex)
         {
             syncedFields[fieldIndex].SetValue(this, value);
+            if (syncedVarHooks[fieldIndex] != null)
+                syncedVarHooks[fieldIndex].Invoke(this, null);
         }
 
         internal void FlushToClient(int clientId)
