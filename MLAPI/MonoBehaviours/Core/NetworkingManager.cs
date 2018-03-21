@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using UnityEngine.Networking;
+using System.Linq;
 
 namespace MLAPI
 {
@@ -1136,14 +1137,9 @@ namespace MLAPI
 
 
                 int sizeOfStream = 16 + ((connectedClients.Count - 1) * 4);
-                int amountOfObjectsToSend = 0;
-                foreach (KeyValuePair<uint, NetworkedObject> pair in SpawnManager.spawnedObjects)
-                {
-                    if (pair.Value.ServerOnly)
-                        continue;
-                    else
-                        amountOfObjectsToSend++;
-                }
+
+                int amountOfObjectsToSend = SpawnManager.spawnedObjects.Values.Count(x => x.ServerOnly == false);
+
                 if(NetworkConfig.HandleObjectSpawning)
                 {
                     sizeOfStream += 4;
