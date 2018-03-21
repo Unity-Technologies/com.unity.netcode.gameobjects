@@ -11,6 +11,7 @@ namespace MLAPI
 {
     public class NetworkingManager : MonoBehaviour
     {
+        public static float NetworkTime;
         public bool DontDestroy = true;
         public bool RunInBackground = true;
         public List<GameObject> SpawnablePrefabs;
@@ -73,6 +74,7 @@ namespace MLAPI
         private ConnectionConfig Init(NetworkingConfiguration netConfig)
         {
             NetworkConfig = netConfig;
+            NetworkTime = 0f;
             lastSendTickTime = 0;
             lastEventTickTime = 0;
             lastReceiveTickTime = 0;
@@ -388,6 +390,7 @@ namespace MLAPI
                     NetworkedObject.InvokeSyncvarUpdate();
                     lastEventTickTime = Time.time;
                 }
+                NetworkTime += Time.deltaTime;
             }
         }
 
@@ -545,6 +548,14 @@ namespace MLAPI
                                             {
                                                 sceneIndex = messageReader.ReadUInt32();
                                             }
+
+                                            float netTime = messageReader.ReadSingle();
+                                            int remoteStamp = messageReader.ReadInt32();
+                                            int msDelay = NetworkTransport.GetRemoteDelayTimeMS(hostId, clientId, remoteStamp, out error);
+                                            if ((NetworkError)error != NetworkError.Ok)
+                                                msDelay = 0;
+                                            NetworkTime = netTime + (msDelay / 1000f);
+
                                             connectedClients.Add(MyClientId, new NetworkedClient() { ClientId = MyClientId });
                                             int clientCount = messageReader.ReadInt32();
                                             for (int i = 0; i < clientCount; i++)
@@ -1124,7 +1135,7 @@ namespace MLAPI
                 }
 
 
-                int sizeOfStream = 4 + 4 + ((connectedClients.Count - 1) * 4);
+                int sizeOfStream = 16 + ((connectedClients.Count - 1) * 4);
                 int amountOfObjectsToSend = 0;
                 foreach (KeyValuePair<uint, NetworkedObject> pair in SpawnManager.spawnedObjects)
                 {
@@ -1136,8 +1147,7 @@ namespace MLAPI
                 if(NetworkConfig.HandleObjectSpawning)
                 {
                     sizeOfStream += 4;
-                    sizeOfStream += 13 * amountOfObjectsToSend;
-                    sizeOfStream += amountOfObjectsToSend; //Bool isActive
+                    sizeOfStream += 14 * amountOfObjectsToSend;
                 }
                 if(NetworkConfig.EnableSceneSwitching)
                 {
@@ -1153,6 +1163,8 @@ namespace MLAPI
                         {
                             writer.Write(NetworkSceneManager.CurrentSceneIndex);
                         }
+                        writer.Write(NetworkTime);
+                        writer.Write(NetworkTransport.GetNetworkTimestamp());
                         writer.Write(connectedClients.Count - 1);
                         foreach (KeyValuePair<int, NetworkedClient> item in connectedClients)
                         {
