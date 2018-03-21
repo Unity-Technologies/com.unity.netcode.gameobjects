@@ -369,7 +369,7 @@ namespace MLAPI
                                                 writer.Write(NetworkConfig.ConnectionData);
                                             }
                                         }
-                                        Send(clientId, "MLAPI_CONNECTION_REQUEST", "MLAPI_INTERNAL", writeStream.GetBuffer());
+                                        Send(clientId, "MLAPI_CONNECTION_REQUEST", "MLAPI_INTERNAL", writeStream.GetBuffer(), null, true);
                                     }
                                 }
                                 break;
@@ -866,7 +866,7 @@ namespace MLAPI
             }
         }
 
-        internal void Send(int clientId, string messageType, string channelName, byte[] data, uint? networkId = null)
+        internal void Send(int clientId, string messageType, string channelName, byte[] data, uint? networkId = null, bool skipQueue = false)
         {
             if(clientId == -1 && isHost)
             {
@@ -910,7 +910,10 @@ namespace MLAPI
                 }
                 if (isPassthrough)
                     clientId = serverClientId;
-                NetworkTransport.QueueMessageForSending(hostId, clientId, MessageManager.channels[channelName], stream.GetBuffer(), sizeOfStream, out error);
+                if (skipQueue)
+                    NetworkTransport.Send(hostId, clientId, MessageManager.channels[channelName], stream.GetBuffer(), sizeOfStream, out error);
+                else
+                    NetworkTransport.QueueMessageForSending(hostId, clientId, MessageManager.channels[channelName], stream.GetBuffer(), sizeOfStream, out error);
             }
         }
 
@@ -1185,7 +1188,7 @@ namespace MLAPI
                             }
                         }
                     }
-                    Send(clientId, "MLAPI_CONNECTION_APPROVED", "MLAPI_INTERNAL", writeStream.GetBuffer());
+                    Send(clientId, "MLAPI_CONNECTION_APPROVED", "MLAPI_INTERNAL", writeStream.GetBuffer(), null, true);
                 }
 
                 //Inform old clients of the new player
