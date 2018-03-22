@@ -14,6 +14,7 @@ MLAPI (Mid level API) is a framework that hopefully simplifies building networke
 * ProtocolVersion to allow making different versions not talk to each other.
 * NetworkedBehaviours does not have to be on the root, it's simply just a class that implements the send methods etc.
 * Custom tickrate
+* Synced network time
 * Supports separate Unity projects crosstalking
 * Passthrough messages \[[Wiki page](https://github.com/TwoTenPvP/MLAPI/wiki/Passthrough-messages)\]
 * Scene Management \[[Wiki page](https://github.com/TwoTenPvP/MLAPI/wiki/Scene-Management)\]
