@@ -20,6 +20,13 @@ namespace MLAPI
                 return networkedObject.isLocalPlayer;
             }
         }
+        public bool isOwner
+        {
+            get
+            {
+                return networkedObject.isOwner;
+            }
+        }
         protected bool isServer
         {
             get
@@ -39,13 +46,6 @@ namespace MLAPI
             get
             {
                 return NetworkingManager.singleton.isHost;
-            }
-        }
-        protected bool isOwner
-        {
-            get
-            {
-                return networkedObject.isOwner;
             }
         }
         public NetworkedObject networkedObject
