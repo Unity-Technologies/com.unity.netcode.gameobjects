@@ -126,6 +126,8 @@ namespace MLAPI
             NetworkConfig.Channels.Add("MLAPI_INTERNAL", QosType.ReliableFragmentedSequenced);
             NetworkConfig.Channels.Add("MLAPI_POSITION_UPDATE", QosType.StateUpdate);
             NetworkConfig.Channels.Add("MLAPI_ANIMATION_UPDATE", QosType.ReliableSequenced);
+            NetworkConfig.Channels.Add("MLAPI_NAV_AGENT_STATE", QosType.ReliableSequenced);
+            NetworkConfig.Channels.Add("MLAPI_NAV_AGENT_CORRECTION", QosType.StateUpdate);
             MessageManager.messageTypes.Add("MLAPI_CONNECTION_REQUEST", 0);
             MessageManager.messageTypes.Add("MLAPI_CONNECTION_APPROVED", 1);
             MessageManager.messageTypes.Add("MLAPI_ADD_OBJECT", 2);
@@ -141,6 +143,8 @@ namespace MLAPI
             NetworkConfig.MessageTypes.Add("MLAPI_HandleAnimationMessage");
             NetworkConfig.MessageTypes.Add("MLAPI_HandleAnimationParameterMessage");
             NetworkConfig.MessageTypes.Add("MLAPI_HandleAnimationTriggerMessage");
+            NetworkConfig.MessageTypes.Add("MLAPI_OnNavMeshStateUpdate");
+            NetworkConfig.MessageTypes.Add("MLAPI_OnNavMeshCorrectionUpdate");
 
             if (NetworkConfig.EnableSceneSwitching)
             {
