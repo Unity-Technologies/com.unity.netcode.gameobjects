@@ -45,6 +45,7 @@ namespace MLAPI
         public bool IsClientConnected;
         public Action OnClientConnectedCallback = null;
         public Action OnClientDisconnectCallback = null;
+        public Action OnServerStarted = null;
 
         public NetworkingConfiguration NetworkConfig;
 
@@ -202,6 +203,9 @@ namespace MLAPI
             isServer = true;
             isClient = false;
             isListening = true;
+
+            if (OnServerStarted != null)
+                OnServerStarted.Invoke();
         }
 
         public void StartClient(NetworkingConfiguration netConfig)
@@ -271,6 +275,9 @@ namespace MLAPI
             {
                 SpawnManager.SpawnPlayerObject(-1, 0);
             }
+
+            if (OnServerStarted != null)
+                OnServerStarted.Invoke();
         }
 
         private void OnEnable()
