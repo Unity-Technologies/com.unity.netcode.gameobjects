@@ -4,18 +4,18 @@ using IntXLib;
 
 namespace ECDH
 {
-    public class Point
+    public class CurvePoint
     {
-        public static readonly Point POINT_AT_INFINITY = new Point();
+        public static readonly CurvePoint POINT_AT_INFINITY = new CurvePoint();
         public IntX X { get; private set; }
         public IntX Y { get; private set; }
         private bool pai = false;
-        public Point(IntX x, IntX y)
+        public CurvePoint(IntX x, IntX y)
         {
             X = x;
             Y = y;
         }
-        private Point() { pai = true; } // Accessing corrdinates causes undocumented behaviour
+        private CurvePoint() { pai = true; } // Accessing corrdinates causes undocumented behaviour
         public override string ToString()
         {
             return pai ? "(POINT_AT_INFINITY)" : "(" + X + ", " + Y + ")";
@@ -41,7 +41,7 @@ namespace ECDH
             this.type = type;
         }
 
-        public Point Add(Point p1, Point p2)
+        public CurvePoint Add(CurvePoint p1, CurvePoint p2)
         {
 #if SAFE_MATH
             CheckOnCurve(p1);
@@ -49,10 +49,10 @@ namespace ECDH
 #endif
 
             // Special cases
-            if (p1 == Point.POINT_AT_INFINITY && p2 == Point.POINT_AT_INFINITY) return Point.POINT_AT_INFINITY;
-            else if (p1 == Point.POINT_AT_INFINITY) return p2;
-            else if (p2 == Point.POINT_AT_INFINITY) return p1;
-            else if (p1.X == p2.X && p1.Y == Inverse(p2).Y) return Point.POINT_AT_INFINITY;
+            if (p1 == CurvePoint.POINT_AT_INFINITY && p2 == CurvePoint.POINT_AT_INFINITY) return CurvePoint.POINT_AT_INFINITY;
+            else if (p1 == CurvePoint.POINT_AT_INFINITY) return p2;
+            else if (p2 == CurvePoint.POINT_AT_INFINITY) return p1;
+            else if (p1.X == p2.X && p1.Y == Inverse(p2).Y) return CurvePoint.POINT_AT_INFINITY;
             
             IntX x3 = 0, y3 = 0;
             if (type == CurveType.Weierstrass)
@@ -84,15 +84,15 @@ namespace ECDH
                 y3 = Mod(((2 * p1.X + p2.X + a) * co) - (b * co * co * co) - p1.Y);
             }
             
-            return new Point(x3, y3);
+            return new CurvePoint(x3, y3);
         }
 
-        public Point Multiply(Point p, IntX scalar)
+        public CurvePoint Multiply(CurvePoint p, IntX scalar)
         {
             if (scalar <= 0) throw new Exception("Cannot multiply by a scalar which is <= 0");
-            if (p == Point.POINT_AT_INFINITY) return Point.POINT_AT_INFINITY;
+            if (p == CurvePoint.POINT_AT_INFINITY) return CurvePoint.POINT_AT_INFINITY;
 
-            Point p1 = new Point(p.X, p.Y);
+            CurvePoint p1 = new CurvePoint(p.X, p.Y);
             scalar.GetInternalState(out uint[] u, out bool b);
             long high_bit = -1;
             for (int i = u.Length - 1; i>=0; --i)
@@ -144,19 +144,19 @@ namespace ECDH
             return Mod(m, modulo);
         }
 
-        public Point Inverse(Point p) => Inverse(p, modulo);
-        protected static Point Inverse(Point p, IntX modulo) => new Point(p.X, Mod(-p.Y, modulo));
+        public CurvePoint Inverse(CurvePoint p) => Inverse(p, modulo);
+        protected static CurvePoint Inverse(CurvePoint p, IntX modulo) => new CurvePoint(p.X, Mod(-p.Y, modulo));
 
-        public bool IsOnCurve(Point p)
+        public bool IsOnCurve(CurvePoint p)
         {
             try { CheckOnCurve(p); }
             catch { return false; }
             return true;
         }
-        protected void CheckOnCurve(Point p)
+        protected void CheckOnCurve(CurvePoint p)
         {
             if (
-                p!=Point.POINT_AT_INFINITY &&                                                                           // The point at infinity is asserted to be on the curve
+                p!=CurvePoint.POINT_AT_INFINITY &&                                                                      // The point at infinity is asserted to be on the curve
                 (type == CurveType.Weierstrass && Mod(p.Y * p.Y) != Mod((p.X * p.X * p.X) + (p.X * a) + b)) ||          // Weierstrass formula
                 (type == CurveType.Montgomery && Mod(b * p.Y * p.Y) != Mod((p.X * p.X * p.X) + (p.X * p.X * a) + p.X))  // Montgomery formula
                 ) throw new Exception("Point is not on curve");
