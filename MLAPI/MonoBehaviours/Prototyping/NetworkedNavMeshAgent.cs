@@ -102,6 +102,7 @@ namespace MLAPI.MonoBehaviours.Prototyping
                         SendToClientsTarget(proximityClients, "MLAPI_OnNavMeshCorrectionUpdate", "MLAPI_NAV_AGENT_CORRECTION", stream.GetBuffer());
                     }
                 }
+                lastCorrectionTime = Time.time;
             }
         }
 
