@@ -44,6 +44,7 @@ namespace MLAPI
 
         public bool IsClientConnected;
         public Action OnClientConnectedCallback = null;
+        public Action OnClientDisconnectCallback = null;
 
         public NetworkingConfiguration NetworkConfig;
 
@@ -341,6 +342,8 @@ namespace MLAPI
                             }
                             else
                             {
+                                if (OnClientDisconnectCallback != null)
+                                    OnClientDisconnectCallback.Invoke();
                                 IsClientConnected = false;
                             }
                         }
@@ -386,7 +389,12 @@ namespace MLAPI
                                 if (isServer)
                                     OnClientDisconnect(clientId);
                                 else
+                                {
+                                    if (OnClientDisconnectCallback != null)
+                                        OnClientDisconnectCallback.Invoke();
+
                                     IsClientConnected = false;
+                                }
                                 break;
                         }
                         // Only do another iteration if: there are no more messages AND (there is no limit to max events or we have processed less than the maximum)
