@@ -31,6 +31,8 @@ namespace MLAPI.MonoBehaviours.Prototyping
         [Tooltip("If enable proximity is turned on, on clients within this range will be recieving position updates from the server")]
         public float ProximityRange = 50;
 
+        private static byte[] positionUpdateBuffer = new byte[24];
+
         private void OnValidate()
         {
             if (!AssumeSyncedSends && InterpolatePosition)
@@ -69,7 +71,7 @@ namespace MLAPI.MonoBehaviours.Prototyping
                     lastSendTime = Time.time;
                     lastSentPos = transform.position;
                     lastSentRot = transform.rotation;
-                    using (MemoryStream writeStream = new MemoryStream(24))
+                    using (MemoryStream writeStream = new MemoryStream(positionUpdateBuffer))
                     {
                         using (BinaryWriter writer = new BinaryWriter(writeStream))
                         {
@@ -151,7 +153,7 @@ namespace MLAPI.MonoBehaviours.Prototyping
                         transform.position = new Vector3(xPos, yPos, zPos);
                         transform.rotation = Quaternion.Euler(new Vector3(xRot, yRot, zRot));
                     }
-                    using (MemoryStream writeStream = new MemoryStream(24))
+                    using (MemoryStream writeStream = new MemoryStream(positionUpdateBuffer))
                     {
                         using(BinaryWriter writer = new BinaryWriter(writeStream))
                         {
