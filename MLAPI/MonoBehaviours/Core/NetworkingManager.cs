@@ -43,8 +43,8 @@ namespace MLAPI
         internal int serverClientId;
 
         public bool IsClientConnected;
-        public Action OnClientConnectedCallback = null;
-        public Action OnClientDisconnectCallback = null;
+        public Action<int> OnClientConnectedCallback = null;
+        public Action<int> OnClientDisconnectCallback = null;
         public Action OnServerStarted = null;
 
         public NetworkingConfiguration NetworkConfig;
@@ -352,11 +352,10 @@ namespace MLAPI
                                 return;
                             }
                             else
-                            {
-                                if (OnClientDisconnectCallback != null)
-                                    OnClientDisconnectCallback.Invoke();
                                 IsClientConnected = false;
-                            }
+
+                            if (OnClientDisconnectCallback != null)
+                                OnClientDisconnectCallback.Invoke(clientId);
                         }
                         else if (networkError != NetworkError.Ok)
                         {
@@ -400,12 +399,10 @@ namespace MLAPI
                                 if (isServer)
                                     OnClientDisconnect(clientId);
                                 else
-                                {
-                                    if (OnClientDisconnectCallback != null)
-                                        OnClientDisconnectCallback.Invoke();
-
                                     IsClientConnected = false;
-                                }
+
+                                if (OnClientDisconnectCallback != null)
+                                    OnClientDisconnectCallback.Invoke(clientId);
                                 break;
                         }
                         // Only do another iteration if: there are no more messages AND (there is no limit to max events or we have processed less than the maximum)
@@ -565,7 +562,6 @@ namespace MLAPI
                             case 1: //Server informs client it has been approved:
                                 if (isClient)
                                 {
-                                    //SceneManager.LoadScene(PlaySceneIndex);
                                     using (MemoryStream messageReadStream = new MemoryStream(incommingData))
                                     {
                                         using (BinaryReader messageReader = new BinaryReader(messageReadStream))
@@ -618,9 +614,9 @@ namespace MLAPI
                                             }
                                         }
                                     }
-                                    if (OnClientConnectedCallback != null)
-                                        OnClientConnectedCallback.Invoke();
                                     IsClientConnected = true;
+                                    if (OnClientConnectedCallback != null)
+                                        OnClientConnectedCallback.Invoke(clientId);
                                 }
                                 break;
                             case 2:
@@ -1219,6 +1215,9 @@ namespace MLAPI
                         }
                     }
                     Send(clientId, "MLAPI_CONNECTION_APPROVED", "MLAPI_INTERNAL", writeStream.GetBuffer(), null, true);
+
+                    if (OnClientConnectedCallback != null)
+                        OnClientConnectedCallback.Invoke(clientId);
                 }
 
                 //Inform old clients of the new player
