@@ -14,6 +14,7 @@ namespace MLAPI.MonoBehaviours.Prototyping
         //TODO rephrase.
         [Tooltip("Everytime a correction packet is recieved. This is the percentage (between 0 & 1) that we will move towards the goal.")]
         public float DriftCorrectionPercentage = 0.1f;
+        public bool WarpOnDestinationChange = false;
 
         private static byte[] stateUpdateBuffer = new byte[36];
         private static byte[] correctionBuffer = new byte[24];
@@ -133,7 +134,10 @@ namespace MLAPI.MonoBehaviours.Prototyping
 
                     agent.SetDestination(destination);
                     agent.velocity = velocity;
-                    agent.Warp(position);
+                    if (WarpOnDestinationChange)
+                        agent.Warp(position);
+                    else
+                        agent.Warp(Vector3.Lerp(transform.position, position, DriftCorrectionPercentage));
                 }
             }
         }
