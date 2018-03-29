@@ -14,9 +14,6 @@ namespace MLAPI.NetworkingManagerComponents
         internal static Dictionary<ushort, Dictionary<int, Action<int, byte[]>>> messageCallbacks;
         internal static Dictionary<ushort, int> messageHandlerCounter;
         internal static Dictionary<ushort, Stack<int>> releasedMessageHandlerCounters;
-        //Key: messageType, Value key: networkId, value value: handlerIds
-        //internal static Dictionary<ushort, Dictionary<uint, List<int>>> targetedMessages;
-        
 
         private static NetworkingManager netManager
         {

@@ -503,26 +503,6 @@ namespace MLAPI
                         //Custom message, invoke all message handlers
                         if(targeted)
                         {
-                            /*
-                            if(!MessageManager.targetedMessages.ContainsKey(messageType))
-                            {
-                                Debug.LogWarning("MLAPI: No handlers for the given messagetype");
-                                return;
-                            }
-                            else if(!MessageManager.targetedMessages[messageType].ContainsKey(targetNetworkId))
-                            {
-                                Debug.LogWarning("MLAPI: No handlers for the given networkId");
-                                return;
-                            }
-                            List<int> handlerIds = MessageManager.targetedMessages[messageType][targetNetworkId];
-                            for (int i = 0; i < handlerIds.Count; i++)
-                            {
-                                if (isPassthrough)
-                                    MessageManager.messageCallbacks[messageType][handlerIds[i]](passthroughOrigin, incommingData);
-                                else
-                                    MessageManager.messageCallbacks[messageType][handlerIds[i]](clientId, incommingData);
-                            }
-                            */
                             if (!SpawnManager.spawnedObjects.ContainsKey(targetNetworkId))
                             {
                                 Debug.LogWarning("MLAPI: No target for message found");
