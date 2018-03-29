@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using IntXLib;
 
-namespace ECDH
+namespace MLAPI.NetworkingManagerComponents
 {
     public class CurvePoint
     {

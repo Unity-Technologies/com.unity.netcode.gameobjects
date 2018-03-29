@@ -13,6 +13,7 @@ namespace MLAPI
         public List<string> MessageTypes = new List<string>();
         public List<string> PassthroughMessageTypes = new List<string>();
         internal HashSet<ushort> RegisteredPassthroughMessageTypes = new HashSet<ushort>();
+        public HashSet<int> EncryptedChannels = new HashSet<int>();
         public List<string> RegisteredScenes = new List<string>();
         public int MessageBufferSize = 65535;
         public int ReceiveTickrate = 64;
@@ -28,11 +29,8 @@ namespace MLAPI
         public byte[] ConnectionData = new byte[0];
         public float SecondsHistory = 5;
         public bool HandleObjectSpawning = true;
-        //TODO
-        public bool CompressMessages = false;
-        //Should only be used for dedicated servers and will require the servers RSA keypair being hard coded into clients in order to exchange a AES key
-        //TODO
-        public bool EncryptMessages = false;
+
+        public bool EnableEncryption = true;
         public bool AllowPassthroughMessages = true;
         public bool EnableSceneSwitching = false;
 
@@ -72,8 +70,7 @@ namespace MLAPI
                         }
                     }
                     writer.Write(HandleObjectSpawning);
-                    writer.Write(CompressMessages);
-                    writer.Write(EncryptMessages);
+                    writer.Write(EnableEncryption);
                     writer.Write(AllowPassthroughMessages);
                     writer.Write(EnableSceneSwitching);
                 }

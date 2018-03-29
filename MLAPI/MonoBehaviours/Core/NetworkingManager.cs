@@ -49,6 +49,10 @@ namespace MLAPI
 
         public NetworkingConfiguration NetworkConfig;
 
+        private EllipticDiffieHellman clientDiffieHellman;
+        private Dictionary<int, byte[]> diffieHellmanPublicKeys;
+        private byte[] clientAesKey;
+
         private void OnValidate()
         {
             if (SpawnablePrefabs != null)
@@ -86,6 +90,7 @@ namespace MLAPI
             pendingClients = new HashSet<int>();
             connectedClients = new Dictionary<int, NetworkedClient>();
             messageBuffer = new byte[NetworkConfig.MessageBufferSize];
+            diffieHellmanPublicKeys = new Dictionary<int, byte[]>();
             MessageManager.channels = new Dictionary<string, int>();
             MessageManager.messageTypes = new Dictionary<string, ushort>();
             MessageManager.messageCallbacks = new Dictionary<ushort, Dictionary<int, Action<int, byte[]>>>();
@@ -372,15 +377,29 @@ namespace MLAPI
                                 }
                                 else
                                 {
+                                    byte[] diffiePublic = new byte[0];
+                                    if(NetworkConfig.EnableEncryption)
+                                    {
+                                        clientDiffieHellman = new EllipticDiffieHellman(EllipticDiffieHellman.DEFAULT_CURVE, EllipticDiffieHellman.DEFAULT_GENERATOR, EllipticDiffieHellman.DEFAULT_ORDER);
+                                        diffiePublic = clientDiffieHellman.GetPublicKey();
+                                    }
+
                                     int sizeOfStream = 32;
                                     if (NetworkConfig.ConnectionApproval)
                                         sizeOfStream += 2 + NetworkConfig.ConnectionData.Length;
+                                    if (NetworkConfig.EnableEncryption)
+                                        sizeOfStream += 2 + diffiePublic.Length;
 
                                     using (MemoryStream writeStream = new MemoryStream(sizeOfStream))
                                     {
                                         using (BinaryWriter writer = new BinaryWriter(writeStream))
                                         {
                                             writer.Write(NetworkConfig.GetConfig());
+                                            if (NetworkConfig.EnableEncryption)
+                                            {
+                                                writer.Write((ushort)diffiePublic.Length);
+                                                writer.Write(diffiePublic);
+                                            }
                                             if (NetworkConfig.ConnectionApproval)
                                             {
                                                 writer.Write((ushort)NetworkConfig.ConnectionData.Length);
@@ -469,6 +488,14 @@ namespace MLAPI
 
                     ushort bytesToRead = reader.ReadUInt16();
                     byte[] incommingData = reader.ReadBytes(bytesToRead);
+                    if(NetworkConfig.EncryptedChannels.Contains(channelId))
+                    {
+                        //Encrypted message
+                        if (isServer)
+                            incommingData = CryptographyHelper.Decrypt(incommingData, connectedClients[clientId].AesKey);
+                        else
+                            incommingData = CryptographyHelper.Decrypt(incommingData, clientAesKey);
+                    }
 
                     if (isServer && isPassthrough && !NetworkConfig.RegisteredPassthroughMessageTypes.Contains(messageType))
                     {
@@ -550,6 +577,18 @@ namespace MLAPI
                                                 DisconnectClient(clientId);
                                                 return;
                                             }
+                                            byte[] aesKey = new byte[0];
+                                            if(NetworkConfig.EnableEncryption)
+                                            {
+                                                ushort diffiePublicSize = reader.ReadUInt16();
+                                                byte[] diffiePublic = reader.ReadBytes(diffiePublicSize);
+                                                diffieHellmanPublicKeys.Add(clientId, diffiePublic);
+                                                /*
+                                                EllipticDiffieHellman diffieHellman = new EllipticDiffieHellman(EllipticDiffieHellman.DEFAULT_CURVE, EllipticDiffieHellman.DEFAULT_GENERATOR, EllipticDiffieHellman.DEFAULT_ORDER);
+                                                aesKey = diffieHellman.GetSharedSecret(diffiePublic);
+                                                */
+
+                                            }
                                             if (NetworkConfig.ConnectionApproval)
                                             {
                                                 ushort bufferSize = messageReader.ReadUInt16();
@@ -576,6 +615,12 @@ namespace MLAPI
                                             if(NetworkConfig.EnableSceneSwitching)
                                             {
                                                 sceneIndex = messageReader.ReadUInt32();
+                                            }
+
+                                            if (NetworkConfig.EnableEncryption)
+                                            {
+                                                ushort keyLength = reader.ReadUInt16();
+                                                clientAesKey = clientDiffieHellman.GetSharedSecret(reader.ReadBytes(keyLength));
                                             }
 
                                             float netTime = messageReader.ReadSingle();
@@ -894,8 +939,18 @@ namespace MLAPI
                         writer.Write(orderId.Value);
                     writer.Write(true);
                     writer.Write(sourceId);
-                    writer.Write((ushort)data.Length);
-                    writer.Write(data);
+                    if(NetworkConfig.EncryptedChannels.Contains(channelId))
+                    {
+                        //Encrypted message
+                        byte[] encrypted = CryptographyHelper.Encrypt(data, connectedClients[targetId].AesKey);
+                        writer.Write((ushort)encrypted.Length);
+                        writer.Write(encrypted);
+                    }
+                    else
+                    {
+                        writer.Write((ushort)data.Length);
+                        writer.Write(data);
+                    }
                 }
                 NetworkTransport.QueueMessageForSending(hostId, targetId, channelId, stream.GetBuffer(), sizeOfStream, out error);
             }
@@ -944,8 +999,25 @@ namespace MLAPI
                     writer.Write(isPassthrough);
                     if (isPassthrough)
                         writer.Write(clientId);
-                    writer.Write((ushort)data.Length);
-                    writer.Write(data);
+
+                    if (NetworkConfig.EncryptedChannels.Contains(MessageManager.channels[channelName]))
+                    {
+                        //This is an encrypted message.
+                        byte[] encrypted;
+                        if (isServer)
+                            encrypted = CryptographyHelper.Encrypt(data, connectedClients[clientId].AesKey);
+                        else
+                            encrypted = CryptographyHelper.Encrypt(data, clientAesKey);
+
+                        writer.Write((ushort)encrypted.Length);
+                        writer.Write(encrypted);
+                    }
+                    else
+                    {
+                        //Send in plaintext.
+                        writer.Write((ushort)data.Length);
+                        writer.Write(data);
+                    }
                 }
                 if (isPassthrough)
                     clientId = serverClientId;
@@ -958,7 +1030,12 @@ namespace MLAPI
 
         internal void Send(int[] clientIds, string messageType, string channelName, byte[] data, uint? networkId = null, ushort? orderId = null)
         {
-            int sizeOfStream = 6;
+            if (NetworkConfig.EncryptedChannels.Contains(MessageManager.channels[channelName]))
+            {
+                Debug.LogWarning("MLAPI: Cannot send messages over encrypted channel to multiple clients.");
+                return;
+            }
+                int sizeOfStream = 6;
             if (networkId != null)
                 sizeOfStream += 4;
             if (orderId != null)
@@ -1000,6 +1077,12 @@ namespace MLAPI
 
         internal void Send(List<int> clientIds, string messageType, string channelName, byte[] data, uint? networkId = null, ushort? orderId = null)
         {
+            if (NetworkConfig.EncryptedChannels.Contains(MessageManager.channels[channelName]))
+            {
+                Debug.LogWarning("MLAPI: Cannot send messages over encrypted channel to multiple clients.");
+                return;
+            }
+
             //2 bytes for messageType, 2 bytes for buffer length and one byte for target bool
             int sizeOfStream = 6;
             if (networkId != null)
@@ -1043,6 +1126,12 @@ namespace MLAPI
 
         internal void Send(string messageType, string channelName, byte[] data, uint? networkId = null, ushort? orderId = null)
         {
+            if (NetworkConfig.EncryptedChannels.Contains(MessageManager.channels[channelName]))
+            {
+                Debug.LogWarning("MLAPI: Cannot send messages over encrypted channel to multiple clients.");
+                return;
+            }
+
             //2 bytes for messageType, 2 bytes for buffer length and one byte for target bool
             int sizeOfStream = 6;
             if (networkId != null)
@@ -1087,6 +1176,12 @@ namespace MLAPI
 
         internal void Send(string messageType, string channelName, byte[] data, int clientIdToIgnore, uint? networkId = null, ushort? orderId = null)
         {
+            if (NetworkConfig.EncryptedChannels.Contains(MessageManager.channels[channelName]))
+            {
+                Debug.LogWarning("MLAPI: Cannot send messages over encrypted channel to multiple clients.");
+                return;
+            }
+
             //2 bytes for messageType, 2 bytes for buffer length and one byte for target bool
             int sizeOfStream = 5;
             if (networkId != null)
@@ -1134,10 +1229,16 @@ namespace MLAPI
         {
             if (!isServer)
                 return;
+
             if (pendingClients.Contains(clientId))
                 pendingClients.Remove(clientId);
+
             if (connectedClients.ContainsKey(clientId))
                 connectedClients.Remove(clientId);
+
+            if (diffieHellmanPublicKeys.ContainsKey(clientId))
+                diffieHellmanPublicKeys.Remove(clientId);
+
             NetworkTransport.Disconnect(hostId, clientId, out error);          
         }
 
@@ -1180,9 +1281,23 @@ namespace MLAPI
                 //Inform new client it got approved
                 if (pendingClients.Contains(clientId))
                     pendingClients.Remove(clientId);
+
+                byte[] aesKey = new byte[0];
+                byte[] publicKey = new byte[0];
+                if (NetworkConfig.EnableEncryption)
+                {
+                    EllipticDiffieHellman diffieHellman = new EllipticDiffieHellman(EllipticDiffieHellman.DEFAULT_CURVE, EllipticDiffieHellman.DEFAULT_GENERATOR, EllipticDiffieHellman.DEFAULT_ORDER);
+                    aesKey = diffieHellman.GetSharedSecret(diffieHellmanPublicKeys[clientId]);
+                    publicKey = diffieHellman.GetPublicKey();
+
+                    if (diffieHellmanPublicKeys.ContainsKey(clientId))
+                        diffieHellmanPublicKeys.Remove(clientId);
+                }
+
                 NetworkedClient client = new NetworkedClient()
                 {
-                    ClientId = clientId
+                    ClientId = clientId,
+                    AesKey = aesKey
                 };
                 connectedClients.Add(clientId, client);
                 
@@ -1193,7 +1308,6 @@ namespace MLAPI
                     connectedClients[clientId].PlayerObject = go;
                 }
 
-
                 int sizeOfStream = 16 + ((connectedClients.Count - 1) * 4);
 
                 int amountOfObjectsToSend = SpawnManager.spawnedObjects.Values.Count(x => x.ServerOnly == false);
@@ -1202,6 +1316,10 @@ namespace MLAPI
                 {
                     sizeOfStream += 4;
                     sizeOfStream += 14 * amountOfObjectsToSend;
+                }
+                if(NetworkConfig.EnableEncryption)
+                {
+                    sizeOfStream += 2 + publicKey.Length;
                 }
                 if(NetworkConfig.EnableSceneSwitching)
                 {
@@ -1217,8 +1335,16 @@ namespace MLAPI
                         {
                             writer.Write(NetworkSceneManager.CurrentSceneIndex);
                         }
+
+                        if(NetworkConfig.EnableEncryption)
+                        {
+                            writer.Write((ushort)publicKey.Length);
+                            writer.Write(publicKey);
+                        }
+
                         writer.Write(NetworkTime);
                         writer.Write(NetworkTransport.GetNetworkTimestamp());
+
                         writer.Write(connectedClients.Count - 1);
                         foreach (KeyValuePair<int, NetworkedClient> item in connectedClients)
                         {
@@ -1284,6 +1410,10 @@ namespace MLAPI
             {
                 if (pendingClients.Contains(clientId))
                     pendingClients.Remove(clientId);
+
+                if (diffieHellmanPublicKeys.ContainsKey(clientId))
+                    diffieHellmanPublicKeys.Remove(clientId);
+
                 NetworkTransport.Disconnect(hostId, clientId, out error);
             }
         }

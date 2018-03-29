@@ -8,5 +8,6 @@ namespace MLAPI
         public int ClientId;
         public GameObject PlayerObject;
         public List<NetworkedObject> OwnedObjects = new List<NetworkedObject>();
+        public byte[] AesKey;
     }
 }
