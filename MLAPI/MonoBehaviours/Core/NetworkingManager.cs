@@ -91,7 +91,6 @@ namespace MLAPI
             MessageManager.messageCallbacks = new Dictionary<ushort, Dictionary<int, Action<int, byte[]>>>();
             MessageManager.messageHandlerCounter = new Dictionary<ushort, int>();
             MessageManager.releasedMessageHandlerCounters = new Dictionary<ushort, Stack<int>>();
-            MessageManager.targetedMessages = new Dictionary<ushort, Dictionary<uint, List<int>>>();
             MessageManager.reverseChannels = new Dictionary<int, string>();
             MessageManager.reverseMessageTypes = new Dictionary<ushort, string>();
             SpawnManager.spawnedObjects = new Dictionary<uint, NetworkedObject>();
@@ -388,7 +387,7 @@ namespace MLAPI
                                                 writer.Write(NetworkConfig.ConnectionData);
                                             }
                                         }
-                                        Send(clientId, "MLAPI_CONNECTION_REQUEST", "MLAPI_INTERNAL", writeStream.GetBuffer(), null, true);
+                                        Send(clientId, "MLAPI_CONNECTION_REQUEST", "MLAPI_INTERNAL", writeStream.GetBuffer(), null, null, true);
                                     }
                                 }
                                 break;
@@ -443,8 +442,12 @@ namespace MLAPI
                     ushort messageType = reader.ReadUInt16();
                     bool targeted = reader.ReadBoolean();
                     uint targetNetworkId = 0;
+                    ushort networkOrderId = 0;
                     if(targeted)
+                    {
                         targetNetworkId = reader.ReadUInt32();
+                        networkOrderId = reader.ReadUInt16();
+                    }
                     bool isPassthrough = reader.ReadBoolean();
 
                     int passthroughOrigin = 0;
@@ -485,9 +488,13 @@ namespace MLAPI
                             return;
                         }
                         uint? netIdTarget = null;
+                        ushort? netOrderId = null;
                         if (targeted)
+                        {
                             netIdTarget = targetNetworkId;
-                        PassthroughSend(passthroughTarget, clientId, messageType, channelId, incommingData, netIdTarget);
+                            netOrderId = networkOrderId;
+                        }
+                        PassthroughSend(passthroughTarget, clientId, messageType, channelId, incommingData, netIdTarget, netOrderId);
                         return;
                     }
                        
@@ -496,6 +503,7 @@ namespace MLAPI
                         //Custom message, invoke all message handlers
                         if(targeted)
                         {
+                            /*
                             if(!MessageManager.targetedMessages.ContainsKey(messageType))
                             {
                                 Debug.LogWarning("MLAPI: No handlers for the given messagetype");
@@ -514,6 +522,23 @@ namespace MLAPI
                                 else
                                     MessageManager.messageCallbacks[messageType][handlerIds[i]](clientId, incommingData);
                             }
+                            */
+                            if (!SpawnManager.spawnedObjects.ContainsKey(targetNetworkId))
+                            {
+                                Debug.LogWarning("MLAPI: No target for message found");
+                                return;
+                            }
+                            else if (!SpawnManager.spawnedObjects[targetNetworkId].targetMessageActions.ContainsKey(networkOrderId))
+                            {
+                                Debug.LogWarning("MLAPI: No target messageType for message found");
+                                return;
+                            }
+                            else if (!SpawnManager.spawnedObjects[targetNetworkId].targetMessageActions[networkOrderId].ContainsKey(messageType))
+                            {
+                                Debug.LogWarning("MLAPI: No target found with the given messageType");
+                                return;
+                            }
+                            SpawnManager.spawnedObjects[targetNetworkId].targetMessageActions[networkOrderId][messageType].Invoke(clientId, incommingData);
                         }
                         else
                         {
@@ -861,7 +886,7 @@ namespace MLAPI
             }
         }
 
-        internal void PassthroughSend(int targetId, int sourceId, ushort messageType, int channelId, byte[] data, uint? networkId = null)
+        internal void PassthroughSend(int targetId, int sourceId, ushort messageType, int channelId, byte[] data, uint? networkId = null, ushort? orderId = null)
         {
             if (isHost && targetId == -1)
             {
@@ -873,6 +898,8 @@ namespace MLAPI
             int sizeOfStream = 10;
             if (networkId != null)
                 sizeOfStream += 4;
+            if (orderId != null)
+                sizeOfStream += 2;
             sizeOfStream += data.Length;
 
             using (MemoryStream stream = new MemoryStream(sizeOfStream))
@@ -883,6 +910,8 @@ namespace MLAPI
                     writer.Write(networkId != null);
                     if (networkId != null)
                         writer.Write(networkId.Value);
+                    if (orderId != null)
+                        writer.Write(orderId.Value);
                     writer.Write(true);
                     writer.Write(sourceId);
                     writer.Write((ushort)data.Length);
@@ -892,7 +921,7 @@ namespace MLAPI
             }
         }
 
-        internal void Send(int clientId, string messageType, string channelName, byte[] data, uint? networkId = null, bool skipQueue = false)
+        internal void Send(int clientId, string messageType, string channelName, byte[] data, uint? networkId = null, ushort? orderId = null, bool skipQueue = false)
         {
             if(clientId == -1 && isHost)
             {
@@ -916,6 +945,8 @@ namespace MLAPI
             int sizeOfStream = 6;
             if (networkId != null)
                 sizeOfStream += 4;
+            if (orderId != null)
+                sizeOfStream += 2;
             if (isPassthrough)
                 sizeOfStream += 4;
             sizeOfStream += data.Length;
@@ -928,6 +959,8 @@ namespace MLAPI
                     writer.Write(networkId != null);
                     if (networkId != null)
                         writer.Write(networkId.Value);
+                    if (orderId != null)
+                        writer.Write(orderId.Value);
                     writer.Write(isPassthrough);
                     if (isPassthrough)
                         writer.Write(clientId);
@@ -943,11 +976,13 @@ namespace MLAPI
             }
         }
 
-        internal void Send(int[] clientIds, string messageType, string channelName, byte[] data, uint? networkId = null)
+        internal void Send(int[] clientIds, string messageType, string channelName, byte[] data, uint? networkId = null, ushort? orderId = null)
         {
             int sizeOfStream = 6;
             if (networkId != null)
                 sizeOfStream += 4;
+            if (orderId != null)
+                sizeOfStream += 2;
             sizeOfStream += data.Length;
 
             using (MemoryStream stream = new MemoryStream(sizeOfStream))
@@ -958,6 +993,8 @@ namespace MLAPI
                     writer.Write(networkId != null);
                     if (networkId != null)
                         writer.Write(networkId.Value);
+                    if (orderId != null)
+                        writer.Write(orderId.Value);
                     writer.Write(false);
                     writer.Write((ushort)data.Length);
                     writer.Write(data);
@@ -981,12 +1018,14 @@ namespace MLAPI
             }
         }
 
-        internal void Send(List<int> clientIds, string messageType, string channelName, byte[] data, uint? networkId = null)
+        internal void Send(List<int> clientIds, string messageType, string channelName, byte[] data, uint? networkId = null, ushort? orderId = null)
         {
             //2 bytes for messageType, 2 bytes for buffer length and one byte for target bool
             int sizeOfStream = 6;
             if (networkId != null)
                 sizeOfStream += 4;
+            if (orderId != null)
+                sizeOfStream += 2;
             sizeOfStream += data.Length;
 
             using (MemoryStream stream = new MemoryStream(sizeOfStream))
@@ -997,6 +1036,8 @@ namespace MLAPI
                     writer.Write(networkId != null);
                     if (networkId != null)
                         writer.Write(networkId.Value);
+                    if (orderId != null)
+                        writer.Write(orderId.Value);
                     writer.Write(false);
                     writer.Write((ushort)data.Length);
                     writer.Write(data);
@@ -1020,12 +1061,14 @@ namespace MLAPI
             }
         }
 
-        internal void Send(string messageType, string channelName, byte[] data, uint? networkId = null)
+        internal void Send(string messageType, string channelName, byte[] data, uint? networkId = null, ushort? orderId = null)
         {
             //2 bytes for messageType, 2 bytes for buffer length and one byte for target bool
             int sizeOfStream = 6;
             if (networkId != null)
                 sizeOfStream += 4;
+            if (orderId != null)
+                sizeOfStream += 2;
             sizeOfStream += data.Length;
 
             using (MemoryStream stream = new MemoryStream(sizeOfStream))
@@ -1036,6 +1079,8 @@ namespace MLAPI
                     writer.Write(networkId != null);
                     if (networkId != null)
                         writer.Write(networkId.Value);
+                    if (orderId != null)
+                        writer.Write(orderId.Value);
                     writer.Write(false);
                     writer.Write((ushort)data.Length);
                     writer.Write(data);
@@ -1060,12 +1105,14 @@ namespace MLAPI
             }
         }
 
-        internal void Send(string messageType, string channelName, byte[] data, int clientIdToIgnore, uint? networkId = null)
+        internal void Send(string messageType, string channelName, byte[] data, int clientIdToIgnore, uint? networkId = null, ushort? orderId = null)
         {
             //2 bytes for messageType, 2 bytes for buffer length and one byte for target bool
             int sizeOfStream = 5;
             if (networkId != null)
                 sizeOfStream += 4;
+            if (orderId != null)
+                sizeOfStream += 2;
             sizeOfStream += data.Length;
 
             using (MemoryStream stream = new MemoryStream(sizeOfStream))
@@ -1076,6 +1123,8 @@ namespace MLAPI
                     writer.Write(networkId != null);
                     if (networkId != null)
                         writer.Write(networkId.Value);
+                    if (orderId != null)
+                        writer.Write(orderId.Value);
                     writer.Write(false);
                     writer.Write((ushort)data.Length);
                     writer.Write(data);
@@ -1214,7 +1263,7 @@ namespace MLAPI
                             }
                         }
                     }
-                    Send(clientId, "MLAPI_CONNECTION_APPROVED", "MLAPI_INTERNAL", writeStream.GetBuffer(), null, true);
+                    Send(clientId, "MLAPI_CONNECTION_APPROVED", "MLAPI_INTERNAL", writeStream.GetBuffer(), null, null, true);
 
                     if (OnClientConnectedCallback != null)
                         OnClientConnectedCallback.Invoke(clientId);

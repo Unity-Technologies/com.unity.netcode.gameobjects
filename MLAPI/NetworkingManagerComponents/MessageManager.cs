@@ -10,11 +10,13 @@ namespace MLAPI.NetworkingManagerComponents
         internal static Dictionary<int, string> reverseChannels;
         internal static Dictionary<string, ushort> messageTypes;
         internal static Dictionary<ushort, string> reverseMessageTypes;
+        
         internal static Dictionary<ushort, Dictionary<int, Action<int, byte[]>>> messageCallbacks;
         internal static Dictionary<ushort, int> messageHandlerCounter;
         internal static Dictionary<ushort, Stack<int>> releasedMessageHandlerCounters;
-        //Key: messageType, Value key: networkId, value value: handlerId
-        internal static Dictionary<ushort, Dictionary<uint, List<int>>> targetedMessages;
+        //Key: messageType, Value key: networkId, value value: handlerIds
+        //internal static Dictionary<ushort, Dictionary<uint, List<int>>> targetedMessages;
+        
 
         private static NetworkingManager netManager
         {
@@ -24,18 +26,11 @@ namespace MLAPI.NetworkingManagerComponents
             }
         }
 
+        
         internal static int AddIncomingMessageHandler(string name, Action<int, byte[]> action, uint networkId)
         {
             if (messageTypes.ContainsKey(name))
             {
-                if(!targetedMessages.ContainsKey(messageTypes[name]))
-                {
-                    targetedMessages.Add(messageTypes[name], new Dictionary<uint, List<int>>());
-                }
-                if(!targetedMessages[messageTypes[name]].ContainsKey(networkId))
-                {
-                    targetedMessages[messageTypes[name]].Add(networkId, new List<int>());
-                }
                 if (messageCallbacks.ContainsKey(messageTypes[name]))
                 {
                     int handlerId = 0;
@@ -59,7 +54,6 @@ namespace MLAPI.NetworkingManagerComponents
                         messageHandlerCounter.Add(messageTypes[name], handlerId + 1);
                     }
                     messageCallbacks[messageTypes[name]].Add(handlerId, action);
-                    targetedMessages[messageTypes[name]][networkId].Add(handlerId);
                     return handlerId;
                 }
                 else
@@ -67,7 +61,6 @@ namespace MLAPI.NetworkingManagerComponents
                     messageCallbacks.Add(messageTypes[name], new Dictionary<int, Action<int, byte[]>>());
                     messageHandlerCounter.Add(messageTypes[name], 1);
                     messageCallbacks[messageTypes[name]].Add(0, action);
-                    targetedMessages[messageTypes[name]][networkId].Add(0);
                     return 0;
                 }
             }
@@ -89,8 +82,8 @@ namespace MLAPI.NetworkingManagerComponents
                 if (!releasedMessageHandlerCounters.ContainsKey(messageTypes[name]))
                     releasedMessageHandlerCounters.Add(messageTypes[name], new Stack<int>());
                 releasedMessageHandlerCounters[messageTypes[name]].Push(counter);
-                targetedMessages[messageTypes[name]][networkId].Remove(counter);
             }
         }
+        
     }
 }

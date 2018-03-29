@@ -61,7 +61,7 @@ namespace MLAPI.MonoBehaviours.Prototyping
                     }
                     if (!EnableProximity)
                     {
-                        SendToClientsTarget("MLAPI_OnNavMeshStateUpdate", "MLAPI_NAV_AGENT_STATE", stream.GetBuffer());
+                        SendToClientsTarget("MLAPI_OnNavMeshStateUpdate", "MLAPI_NAV_AGENT_STATE", stateUpdateBuffer);
                     }
                     else
                     {
@@ -71,7 +71,7 @@ namespace MLAPI.MonoBehaviours.Prototyping
                             if (Vector3.Distance(client.Value.PlayerObject.transform.position, transform.position) <= ProximityRange)
                                 proximityClients.Add(client.Key);
                         }
-                        SendToClientsTarget(proximityClients, "MLAPI_OnNavMeshStateUpdate", "MLAPI_NAV_AGENT_STATE", stream.GetBuffer());
+                        SendToClientsTarget(proximityClients, "MLAPI_OnNavMeshStateUpdate", "MLAPI_NAV_AGENT_STATE", stateUpdateBuffer);
                     }
                 }
             }
@@ -93,7 +93,7 @@ namespace MLAPI.MonoBehaviours.Prototyping
 
                     if (!EnableProximity)
                     {
-                        SendToClientsTarget("MLAPI_OnNavMeshCorrectionUpdate", "MLAPI_NAV_AGENT_CORRECTION", stream.GetBuffer());
+                        SendToClientsTarget("MLAPI_OnNavMeshCorrectionUpdate", "MLAPI_NAV_AGENT_CORRECTION", correctionBuffer);
                     }
                     else
                     {
@@ -103,7 +103,7 @@ namespace MLAPI.MonoBehaviours.Prototyping
                             if (Vector3.Distance(client.Value.PlayerObject.transform.position, transform.position) <= ProximityRange)
                                 proximityClients.Add(client.Key);
                         }
-                        SendToClientsTarget(proximityClients, "MLAPI_OnNavMeshCorrectionUpdate", "MLAPI_NAV_AGENT_CORRECTION", stream.GetBuffer());
+                        SendToClientsTarget(proximityClients, "MLAPI_OnNavMeshCorrectionUpdate", "MLAPI_NAV_AGENT_CORRECTION", correctionBuffer);
                     }
                 }
                 lastCorrectionTime = Time.time;

@@ -1,4 +1,5 @@
 ﻿using MLAPI.NetworkingManagerComponents;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -143,5 +144,8 @@ namespace MLAPI
             //TODO index out of bounds
             return childNetworkedBehaviours[index];
         }
+
+        //Key: behaviourOrderId, value key: messageType, value value callback 
+        internal Dictionary<ushort, Dictionary<ushort, Action<int, byte[]>>> targetMessageActions = new Dictionary<ushort, Dictionary<ushort, Action<int, byte[]>>>();
     }
 }

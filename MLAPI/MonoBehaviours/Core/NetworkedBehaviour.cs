@@ -104,16 +104,40 @@ namespace MLAPI
 
         }
 
-        protected int RegisterMessageHandler(string name, Action<int, byte[]> action)
+        protected void RegisterMessageHandler(string name, Action<int, byte[]> action)
         {
+            if (!MessageManager.messageTypes.ContainsKey(name))
+            {
+                Debug.LogWarning("MLAPI: The messageType " + name + " is not registered");
+                return;
+            }
+            ushort messageType = MessageManager.messageTypes[name];
+            ushort behaviourOrder = networkedObject.GetOrderIndex(this);
+
+            if (!networkedObject.targetMessageActions.ContainsKey(behaviourOrder))
+                networkedObject.targetMessageActions.Add(behaviourOrder, new Dictionary<ushort, Action<int, byte[]>>());
+            if (networkedObject.targetMessageActions[behaviourOrder].ContainsKey(messageType))
+            {
+                Debug.LogWarning("MLAPI: Each NetworkedBehaviour can only register one callback per instance per message type");
+                return;
+            }
+
+            networkedObject.targetMessageActions[behaviourOrder].Add(messageType, action);
             int counter = MessageManager.AddIncomingMessageHandler(name, action, networkId);
             registeredMessageHandlers.Add(name, counter);
-            return counter;
         }
 
         protected void DeregisterMessageHandler(string name, int counter)
         {
             MessageManager.RemoveIncomingMessageHandler(name, counter, networkId);
+            ushort messageType = MessageManager.messageTypes[name];
+            ushort behaviourOrder = networkedObject.GetOrderIndex(this);
+
+            if (networkedObject.targetMessageActions.ContainsKey(behaviourOrder) && 
+                networkedObject.targetMessageActions[behaviourOrder].ContainsKey(messageType))
+            {
+                networkedObject.targetMessageActions[behaviourOrder].Remove(messageType);
+            }
         }
 
         private void OnDisable()
@@ -619,7 +643,7 @@ namespace MLAPI
                 Debug.LogWarning("MLAPI: Server can not send messages to server.");
                 return;
             }
-            NetworkingManager.singleton.Send(NetworkingManager.singleton.serverClientId, messageType, channelName, data, networkId);            
+            NetworkingManager.singleton.Send(NetworkingManager.singleton.serverClientId, messageType, channelName, data, networkId, networkedObject.GetOrderIndex(this));            
         }
 
         protected void SendToLocalClient(string messageType, string channelName, byte[] data)
@@ -649,7 +673,7 @@ namespace MLAPI
                 Debug.LogWarning("MLAPI: Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
                 return;
             }
-            NetworkingManager.singleton.Send(ownerClientId, messageType, channelName, data, networkId);
+            NetworkingManager.singleton.Send(ownerClientId, messageType, channelName, data, networkId, networkedObject.GetOrderIndex(this));
         }
 
         protected void SendToNonLocalClients(string messageType, string channelName, byte[] data)
@@ -664,7 +688,7 @@ namespace MLAPI
                 Debug.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported");
                 return;
             }
-            NetworkingManager.singleton.Send(messageType, channelName, data, ownerClientId, null);
+            NetworkingManager.singleton.Send(messageType, channelName, data, ownerClientId);
         }
 
         protected void SendToNonLocalClientsTarget(string messageType, string channelName, byte[] data)
@@ -679,7 +703,7 @@ namespace MLAPI
                 Debug.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported");
                 return;
             }
-            NetworkingManager.singleton.Send(messageType, channelName, data, ownerClientId, networkId);
+            NetworkingManager.singleton.Send(messageType, channelName, data, ownerClientId, networkId, networkedObject.GetOrderIndex(this));
         }
 
         protected void SendToClient(int clientId, string messageType, string channelName, byte[] data)
@@ -709,7 +733,7 @@ namespace MLAPI
                 Debug.LogWarning("MLAPI: Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
                 return;
             }
-            NetworkingManager.singleton.Send(clientId, messageType, channelName, data, networkId);
+            NetworkingManager.singleton.Send(clientId, messageType, channelName, data, networkId, networkedObject.GetOrderIndex(this));
         }
 
         protected void SendToClients(int[] clientIds, string messageType, string channelName, byte[] data)
@@ -739,7 +763,7 @@ namespace MLAPI
                 Debug.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported");
                 return;
             }
-            NetworkingManager.singleton.Send(clientIds, messageType, channelName, data, networkId);
+            NetworkingManager.singleton.Send(clientIds, messageType, channelName, data, networkId, networkedObject.GetOrderIndex(this));
         }
 
         protected void SendToClients(List<int> clientIds, string messageType, string channelName, byte[] data)
@@ -769,7 +793,7 @@ namespace MLAPI
                 Debug.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported");
                 return;
             }
-            NetworkingManager.singleton.Send(clientIds, messageType, channelName, data, networkId);
+            NetworkingManager.singleton.Send(clientIds, messageType, channelName, data, networkId, networkedObject.GetOrderIndex(this));
         }
 
         protected void SendToClients(string messageType, string channelName, byte[] data)
@@ -799,7 +823,7 @@ namespace MLAPI
                 Debug.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported");
                 return;
             }
-            NetworkingManager.singleton.Send(messageType, channelName, data, networkId);
+            NetworkingManager.singleton.Send(messageType, channelName, data, networkId, networkedObject.GetOrderIndex(this));
         }
 
         protected NetworkedObject GetNetworkedObject(uint networkId)
