@@ -868,6 +868,7 @@ namespace MLAPI
             }
         }
 
+        #region SEND METHODS
         internal void PassthroughSend(int targetId, int sourceId, ushort messageType, int channelId, byte[] data, uint? networkId = null, ushort? orderId = null)
         {
             if (isHost && targetId == -1)
@@ -1131,6 +1132,7 @@ namespace MLAPI
                 }
             }
         }
+        #endregion
 
         private void DisconnectClient(int clientId)
         {

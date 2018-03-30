@@ -616,6 +616,7 @@ namespace MLAPI
         }
         #endregion
 
+        #region SEND METHODS
         protected void SendToServer(string messageType, string channelName, byte[] data)
         {
             if(MessageManager.messageTypes[messageType] < 32)
@@ -825,6 +826,7 @@ namespace MLAPI
             }
             NetworkingManager.singleton.Send(messageType, channelName, data, networkId, networkedObject.GetOrderIndex(this));
         }
+        #endregion
 
         protected NetworkedObject GetNetworkedObject(uint networkId)
         {
