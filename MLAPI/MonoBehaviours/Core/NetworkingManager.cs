@@ -585,8 +585,8 @@ namespace MLAPI
                                             byte[] aesKey = new byte[0];
                                             if(NetworkConfig.EnableEncryption)
                                             {
-                                                ushort diffiePublicSize = reader.ReadUInt16();
-                                                byte[] diffiePublic = reader.ReadBytes(diffiePublicSize);
+                                                ushort diffiePublicSize = messageReader.ReadUInt16();
+                                                byte[] diffiePublic = messageReader.ReadBytes(diffiePublicSize);
                                                 diffieHellmanPublicKeys.Add(clientId, diffiePublic);
                                                 /*
                                                 EllipticDiffieHellman diffieHellman = new EllipticDiffieHellman(EllipticDiffieHellman.DEFAULT_CURVE, EllipticDiffieHellman.DEFAULT_GENERATOR, EllipticDiffieHellman.DEFAULT_ORDER);
@@ -624,8 +624,8 @@ namespace MLAPI
 
                                             if (NetworkConfig.EnableEncryption)
                                             {
-                                                ushort keyLength = reader.ReadUInt16();
-                                                clientAesKey = clientDiffieHellman.GetSharedSecret(reader.ReadBytes(keyLength));
+                                                ushort keyLength = messageReader.ReadUInt16();
+                                                clientAesKey = clientDiffieHellman.GetSharedSecret(messageReader.ReadBytes(keyLength));
                                             }
 
                                             float netTime = messageReader.ReadSingle();
