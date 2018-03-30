@@ -1,11 +1,13 @@
 ![](https://i.imgur.com/d0amtqs.png)
 
 MLAPI (Mid level API) is a framework that hopefully simplifies building networked games in Unity. It is built on the LLAPI and is similar to the HLAPI in many ways. It does not however integrate into the compiler and it's meant to offer much greater flexibility than the HLAPI while keeping some of it's simplicity. It offers greater performance over the HLAPI.
+### Getting Started
+To get started, check the [Wiki](https://github.com/TwoTenPvP/MLAPI/wiki)
 
 ### Requirements
 * Unity 2017 or newer
 
-## Features
+## Feature highlights
 * Host support (Client hosts the server)
 * Object and player spawning \[[Wiki page](https://github.com/TwoTenPvP/MLAPI/wiki/Object-Spawning)\]
 * Connection approval \[[Wiki page](https://github.com/TwoTenPvP/MLAPI/wiki/Connection-Approval)\]
@@ -22,6 +24,7 @@ MLAPI (Mid level API) is a framework that hopefully simplifies building networke
 * NetworkTransform replacement \[[Wiki page](https://github.com/TwoTenPvP/MLAPI/wiki/NetworkedTransform)\]
 * Targeted messages \[[Wiki page](https://github.com/TwoTenPvP/MLAPI/wiki/Targeted-Messages)\]
 * Port of NetworkedAnimator \[[Wiki page](https://github.com/TwoTenPvP/MLAPI/wiki/NetworkedAnimator)\]
+* Networked NavMeshAgent \[[Wiki page](https://github.com/TwoTenPvP/MLAPI/wiki/NetworkedNavMeshAgent)\]
 * Networked Object Pooling \[[Wiki page](https://github.com/TwoTenPvP/MLAPI/wiki/Networked-Object-Pooling)\]
 * Synced Vars \[[Wiki page](https://github.com/TwoTenPvP/MLAPI/wiki/SyncedVars)\]
 
@@ -40,6 +43,4 @@ The example project has a much lower priority compared to the library itself. If
 
 
 ## Issues and missing features
-If there are any issues, bugs or features that are missing. Please open an issue on GitHub!
-## Testing
-The project is not extensivley tested. I am however very active on answering and fixing issues. If you are using the library and you find something doesn't work or throws an exception. Open an issue or submit a PR.
+If there are any issues, bugs or features that are missing. Please open an issue on the GitHub [issues page](https://github.com/TwoTenPvP/MLAPI/issues)
