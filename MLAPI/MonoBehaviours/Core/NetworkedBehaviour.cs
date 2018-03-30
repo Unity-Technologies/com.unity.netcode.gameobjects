@@ -159,7 +159,7 @@ namespace MLAPI
         private List<object> syncedFieldValues = new List<object>();
         private List<MethodInfo> syncedVarHooks = new List<MethodInfo>();
         //A dirty field is a field that's not synced.
-        public bool[] dirtyFields;
+        private bool[] dirtyFields;
         internal void SyncVarInit()
         {
             FieldInfo[] sortedFields = GetType().GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy | BindingFlags.Instance).OrderBy(x => x.Name).ToArray();

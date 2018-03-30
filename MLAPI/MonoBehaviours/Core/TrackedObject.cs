@@ -7,6 +7,7 @@ namespace MLAPI.MonoBehaviours.Core
 {
     //Based on: https://twotenpvp.github.io/lag-compensation-in-unity.html
     //Modified to be used with latency rather than fixed frames and subframes. Thus it will be less accrurate but more modular.
+    [AddComponentMenu("MLAPI/TrackedObject", -98)]
     public class TrackedObject : MonoBehaviour
     {
         internal Dictionary<float, TrackedPointData> FrameData = new Dictionary<float, TrackedPointData>();

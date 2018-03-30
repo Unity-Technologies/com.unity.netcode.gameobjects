@@ -4,6 +4,7 @@ using UnityEngine;
 
 namespace MLAPI.MonoBehaviours.Prototyping
 {
+    [AddComponentMenu("MLAPI/NetworkedAnimator")]
     public class NetworkedAnimator : NetworkedBehaviour
     {
         public bool EnableProximity = false;

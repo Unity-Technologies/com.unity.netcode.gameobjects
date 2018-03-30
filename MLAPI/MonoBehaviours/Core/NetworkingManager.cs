@@ -10,6 +10,7 @@ using System.Linq;
 
 namespace MLAPI
 {
+    [AddComponentMenu("MLAPI/NetworkingManager", -100)]
     public class NetworkingManager : MonoBehaviour
     {
         public static float NetworkTime;
@@ -19,6 +20,7 @@ namespace MLAPI
         public GameObject DefaultPlayerPrefab;
         public static NetworkingManager singleton;
         //Client only, what my connectionId is on the server
+        [HideInInspector]
         public int MyClientId;
         internal Dictionary<int, NetworkedClient> connectedClients;
         public Dictionary<int, NetworkedClient> ConnectedClients
@@ -41,7 +43,7 @@ namespace MLAPI
         private bool isListening;
         private byte[] messageBuffer;
         internal int serverClientId;
-
+        [HideInInspector]
         public bool IsClientConnected;
         public Action<int> OnClientConnectedCallback = null;
         public Action<int> OnClientDisconnectCallback = null;

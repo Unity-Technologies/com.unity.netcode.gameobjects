@@ -3,6 +3,7 @@ using UnityEngine;
 
 namespace MLAPI.MonoBehaviours.Prototyping
 {
+    [AddComponentMenu("MLAPI/NetworkedTransform")]
     public class NetworkedTransform : NetworkedBehaviour
     {
         [Range(0f, 120f)]

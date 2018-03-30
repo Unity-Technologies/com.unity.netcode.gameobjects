@@ -5,6 +5,7 @@ using UnityEngine;
 
 namespace MLAPI
 {
+    [AddComponentMenu("MLAPI/NetworkedObject", -99)]
     public class NetworkedObject : MonoBehaviour
     {
         [HideInInspector]
