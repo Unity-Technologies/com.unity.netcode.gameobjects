@@ -502,6 +502,7 @@ namespace MLAPI
                        
                     if (messageType >= 32)
                     {
+                        #region CUSTOM MESSAGE
                         //Custom message, invoke all message handlers
                         if(targeted)
                         {
@@ -532,9 +533,11 @@ namespace MLAPI
                                     pair.Value(clientId, incommingData);
                             }
                         }
+                        #endregion
                     }
                     else
                     {
+                        #region INTERNAL MESSAGE
                         //MLAPI message
                         switch (messageType)
                         {
@@ -863,6 +866,7 @@ namespace MLAPI
                                 }
                                 break;
                         }
+                        #endregion
                     }
                 }
             }
