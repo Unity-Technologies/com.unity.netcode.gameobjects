@@ -302,11 +302,11 @@ namespace MLAPI
                     }
                 }
             }
-            if(dirtyFields.Length > 255)
+            dirtyFields = new bool[syncedFields.Count];
+            if (dirtyFields.Length > 255)
             {
                 Debug.LogError("MLAPI: You can not have more than 255 SyncVar's per NetworkedBehaviour!");
             }
-            dirtyFields = new bool[syncedFields.Count];
         }
 
         internal void OnSyncVarUpdate(object value, byte fieldIndex)
