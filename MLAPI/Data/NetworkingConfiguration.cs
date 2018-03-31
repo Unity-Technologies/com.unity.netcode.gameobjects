@@ -77,6 +77,7 @@ namespace MLAPI
                     writer.Write(EnableEncryption);
                     writer.Write(AllowPassthroughMessages);
                     writer.Write(EnableSceneSwitching);
+                    writer.Write(SignKeyExchange);
                 }
                 using(SHA256Managed sha256 = new SHA256Managed())
                 {
