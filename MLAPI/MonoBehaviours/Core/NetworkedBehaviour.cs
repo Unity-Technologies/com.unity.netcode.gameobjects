@@ -67,7 +67,7 @@ namespace MLAPI
             }
         }
         /// <summary>
-        /// The NetworkedObject that owns this NetworkedBehaviour instance
+        /// Gets the NetworkedObject that owns this NetworkedBehaviour instance
         /// </summary>
         public NetworkedObject networkedObject
         {
@@ -82,7 +82,7 @@ namespace MLAPI
         }
         private NetworkedObject _networkedObject = null;
         /// <summary>
-        /// The NetworkId of the NetworkedObject that owns the NetworkedBehaviour instance
+        /// Gets the NetworkId of the NetworkedObject that owns the NetworkedBehaviour instance
         /// </summary>
         public uint networkId
         {
@@ -92,7 +92,7 @@ namespace MLAPI
             }
         }
         /// <summary>
-        /// The clientId that owns the NetworkedObject
+        /// Gets the clientId that owns the NetworkedObject
         /// </summary>
         public int ownerClientId
         {

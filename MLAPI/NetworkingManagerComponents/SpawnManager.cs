@@ -34,7 +34,7 @@ namespace MLAPI.NetworkingManagerComponents
         {
             NetworkedObject netObject = SpawnManager.spawnedObjects[netId];
             NetworkingManager.singleton.connectedClients[netObject.OwnerClientId].OwnedObjects.RemoveAll(x => x.NetworkId == netId);
-            netObject.OwnerClientId = -2;
+            netObject.ownerClientId = -2;
             using (MemoryStream stream = new MemoryStream(8))
             {
                 using (BinaryWriter writer = new BinaryWriter(stream))
@@ -51,7 +51,7 @@ namespace MLAPI.NetworkingManagerComponents
             NetworkedObject netObject = SpawnManager.spawnedObjects[netId];
             NetworkingManager.singleton.connectedClients[netObject.OwnerClientId].OwnedObjects.RemoveAll(x => x.NetworkId == netId);
             NetworkingManager.singleton.connectedClients[clientId].OwnedObjects.Add(netObject);
-            netObject.OwnerClientId = clientId;
+            netObject.ownerClientId = clientId;
             using (MemoryStream stream = new MemoryStream(8))
             {
                 using (BinaryWriter writer = new BinaryWriter(stream))
@@ -72,16 +72,16 @@ namespace MLAPI.NetworkingManagerComponents
                 Debug.LogWarning("MLAPI: Please add a NetworkedObject component to the root of all spawnable objects");
                 netObject = go.AddComponent<NetworkedObject>();
             }
-            netObject.SpawnablePrefabIndex = spawnablePrefabIndex;
+            netObject.spawnablePrefabIndex = spawnablePrefabIndex;
             if (netManager.isServer)
             {
-                netObject.NetworkId = GetNetworkObjectId();
+                netObject.networkId = GetNetworkObjectId();
             }
             else
             {
-                netObject.NetworkId = networkId;
+                netObject.networkId = networkId;
             }
-            netObject.OwnerClientId = ownerId;
+            netObject.ownerClientId = ownerId;
 
             spawnedObjects.Add(netObject.NetworkId, netObject);
             netObject.InvokeBehaviourNetworkSpawn();
@@ -97,16 +97,16 @@ namespace MLAPI.NetworkingManagerComponents
                 Debug.LogWarning("MLAPI: Please add a NetworkedObject component to the root of the player prefab");
                 netObject = go.AddComponent<NetworkedObject>();
             }
-            netObject.OwnerClientId = clientId;
+            netObject.ownerClientId = clientId;
             if (NetworkingManager.singleton.isServer)
             {
-                netObject.NetworkId = GetNetworkObjectId();
+                netObject.networkId = GetNetworkObjectId();
             }
             else
             {
-                netObject.NetworkId = networkId;
+                netObject.networkId = networkId;
             }
-            netObject.isPlayerObject = true;
+            netObject._isPlayerObject = true;
             netManager.connectedClients[clientId].PlayerObject = go;
             spawnedObjects.Add(netObject.NetworkId, netObject);
             netObject.InvokeBehaviourNetworkSpawn();
@@ -179,7 +179,7 @@ namespace MLAPI.NetworkingManagerComponents
             netObject.isSpawned = true;
             if (clientOwnerId != null)
             {
-                netObject.OwnerClientId = clientOwnerId.Value;
+                netObject.ownerClientId = clientOwnerId.Value;
                 NetworkingManager.singleton.connectedClients[clientOwnerId.Value].OwnedObjects.Add(netObject);
             }
             using (MemoryStream stream = new MemoryStream(13))

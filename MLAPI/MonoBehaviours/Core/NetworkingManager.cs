@@ -17,7 +17,14 @@ namespace MLAPI
         /// <summary>
         /// A syncronized time, represents the time in seconds since the server application started. Is replicated across all clients
         /// </summary>
-        public static float NetworkTime;
+        public float NetworkTime
+        {
+            get
+            {
+                return networkTime;
+            }
+        }
+        internal float networkTime;
         /// <summary>
         /// Gets or sets if the NetworkingManager should be marked as DontDestroyOnLoad
         /// </summary>
@@ -37,12 +44,26 @@ namespace MLAPI
         /// <summary>
         /// The singleton instance of the NetworkingManager
         /// </summary>
-        public static NetworkingManager singleton;
+        public static NetworkingManager singleton
+        {
+            get
+            {
+                return _singleton;
+            }
+        }
+        private static NetworkingManager _singleton;
         /// <summary>
         /// The clientId the server calls the local client by, only valid for clients
         /// </summary>
         [HideInInspector]
-        public int MyClientId;
+        public int MyClientId
+        {
+            get
+            {
+                return myClientId;
+            }
+        }
+        internal int myClientId;
         internal Dictionary<int, NetworkedClient> connectedClients;
         /// <summary>
         /// Gets a dictionary of connected clients
@@ -74,7 +95,14 @@ namespace MLAPI
         /// Gets if we are connected as a client
         /// </summary>
         [HideInInspector]
-        public bool IsClientConnected;
+        public bool IsClientConnected
+        {
+            get
+            {
+                return _isClientConnected;
+            }
+        }
+        internal bool _isClientConnected;
         /// <summary>
         /// The callback to invoke once a client connects
         /// </summary>
@@ -110,7 +138,7 @@ namespace MLAPI
                         Debug.LogWarning("MLAPI: All SpawnablePrefabs need a NetworkedObject component. Please add one to the prefab " + SpawnablePrefabs[i].gameObject.name);
                         continue;
                     }
-                    netObject.SpawnablePrefabIndex = i;
+                    netObject.spawnablePrefabIndex = i;
                 }
             }
             if (DefaultPlayerPrefab != null)
@@ -126,7 +154,7 @@ namespace MLAPI
         private ConnectionConfig Init(NetworkingConfiguration netConfig)
         {
             NetworkConfig = netConfig;
-            NetworkTime = 0f;
+            networkTime = 0f;
             lastSendTickTime = 0;
             lastEventTickTime = 0;
             lastReceiveTickTime = 0;
@@ -360,7 +388,7 @@ namespace MLAPI
                 Destroy(this);
                 return;
             }
-            singleton = this;
+            _singleton = this;
             if (DontDestroy)
                 DontDestroyOnLoad(gameObject);
             if (RunInBackground)
@@ -369,7 +397,7 @@ namespace MLAPI
         
         private void OnDestroy()
         {
-            singleton = null;
+            _singleton = null;
             Shutdown();
         }
 
@@ -420,7 +448,7 @@ namespace MLAPI
                                 return;
                             }
                             else
-                                IsClientConnected = false;
+                                _isClientConnected = false;
 
                             if (OnClientDisconnectCallback != null)
                                 OnClientDisconnectCallback.Invoke(clientId);
@@ -481,7 +509,7 @@ namespace MLAPI
                                 if (isServer)
                                     OnClientDisconnect(clientId);
                                 else
-                                    IsClientConnected = false;
+                                    _isClientConnected = false;
 
                                 if (OnClientDisconnectCallback != null)
                                     OnClientDisconnectCallback.Invoke(clientId);
@@ -497,7 +525,7 @@ namespace MLAPI
                     NetworkedObject.InvokeSyncvarUpdate();
                     lastEventTickTime = Time.time;
                 }
-                NetworkTime += Time.deltaTime;
+                networkTime += Time.deltaTime;
             }
         }
 
@@ -673,7 +701,7 @@ namespace MLAPI
                                     {
                                         using (BinaryReader messageReader = new BinaryReader(messageReadStream))
                                         {
-                                            MyClientId = messageReader.ReadInt32();
+                                            myClientId = messageReader.ReadInt32();
                                             uint sceneIndex = 0;
                                             if(NetworkConfig.EnableSceneSwitching)
                                             {
@@ -709,7 +737,7 @@ namespace MLAPI
                                             int msDelay = NetworkTransport.GetRemoteDelayTimeMS(hostId, clientId, remoteStamp, out error);
                                             if ((NetworkError)error != NetworkError.Ok)
                                                 msDelay = 0;
-                                            NetworkTime = netTime + (msDelay / 1000f);
+                                            networkTime = netTime + (msDelay / 1000f);
 
                                             connectedClients.Add(MyClientId, new NetworkedClient() { ClientId = MyClientId });
                                             int clientCount = messageReader.ReadInt32();
@@ -745,7 +773,7 @@ namespace MLAPI
                                             }
                                         }
                                     }
-                                    IsClientConnected = true;
+                                    _isClientConnected = true;
                                     if (OnClientConnectedCallback != null)
                                         OnClientConnectedCallback.Invoke(clientId);
                                 }
@@ -879,7 +907,7 @@ namespace MLAPI
                                                 //We are new owner.
                                                 SpawnManager.spawnedObjects[netId].InvokeBehaviourOnGainedOwnership();
                                             }
-                                            SpawnManager.spawnedObjects[netId].OwnerClientId = ownerClientId;
+                                            SpawnManager.spawnedObjects[netId].ownerClientId = ownerClientId;
                                         }
                                     }
                                 }

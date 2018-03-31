@@ -9,39 +9,81 @@ namespace MLAPI
     public class NetworkedObject : MonoBehaviour
     {
         /// <summary>
-        /// The unique ID of this object that is synced across the network
+        /// Gets the unique ID of this object that is synced across the network
         /// </summary>
         [HideInInspector]
-        public uint NetworkId;
+        public uint NetworkId
+        {
+            get
+            {
+                return networkId;
+            }
+        }
+        internal uint networkId;
         /// <summary>
-        /// The clientId of the owner of this NetworkedObject
+        /// Gets the clientId of the owner of this NetworkedObject
         /// </summary>
         [HideInInspector]
-        public int OwnerClientId = -2;
+        public int OwnerClientId
+        {
+            get
+            {
+                return ownerClientId;
+            }
+        }
+        internal int ownerClientId = -2;
         /// <summary>
         /// The index of the prefab used to spawn this in the spawnablePrefabs list
         /// </summary>
         [HideInInspector]
-        public int SpawnablePrefabIndex;
+        public int SpawnablePrefabIndex
+        {
+            get
+            {
+                return spawnablePrefabIndex;
+            }
+        }
+        internal int spawnablePrefabIndex;
         /// <summary>
         /// Gets if this object is a player object
         /// </summary>
         [HideInInspector]
-        public bool isPlayerObject = false;
+        public bool isPlayerObject
+        {
+            get
+            {
+                return _isPlayerObject;
+            }
+        }
+        internal bool _isPlayerObject = false;
         /// <summary>
-        /// Gets or sets if this object should be replicated across the network
+        /// Gets or sets if this object should be replicated across the network. Can only be changed before the object is spawned
         /// </summary>
         public bool ServerOnly = false;
         /// <summary>
         /// Gets if this object is part of a pool
         /// </summary>
         [HideInInspector]
-        public bool isPooledObject = false;
+        public bool isPooledObject
+        {
+            get
+            {
+                return _isPooledObject;
+            }
+        }
+        internal bool _isPooledObject = false;
         /// <summary>
         /// Gets the poolId this object is part of
         /// </summary>
         [HideInInspector]
-        public ushort PoolId;
+        public ushort PoolId
+        {
+            get
+            {
+                return poolId;
+            }
+        }
+        internal ushort poolId;
         /// <summary>
         /// Gets if the object is the the personal clients player object
         /// </summary>
