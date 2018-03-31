@@ -11,7 +11,7 @@ namespace MLAPI.NetworkingManagerComponents
     /// </summary>
     public static class LagCompensationManager
     {
-        public static List<TrackedObject> SimulationObjects = new List<TrackedObject>();
+        internal static List<TrackedObject> SimulationObjects = new List<TrackedObject>();
 
         /// <summary>
         /// Turns time back a given amount of seconds, invokes an action and turns it back

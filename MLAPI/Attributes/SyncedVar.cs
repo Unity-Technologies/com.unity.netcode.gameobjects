@@ -12,10 +12,5 @@ namespace MLAPI.Attributes
         /// The method name to invoke when the SyncVar get's updated.
         /// </summary>
         public string hook;
-
-        public SyncedVar()
-        {
-            
-        }
     }
 }

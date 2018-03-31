@@ -79,9 +79,9 @@ namespace MLAPI.NetworkingManagerComponents
         }
     }
 
-    public static class DHHelper
+    internal static class DHHelper
     {
-        public static byte[] ToArray(this IntX v)
+        internal static byte[] ToArray(this IntX v)
         {
             v.GetInternalState(out uint[] digits, out bool negative);
             byte[] b = DigitConverter.ToBytes(digits);
@@ -90,7 +90,7 @@ namespace MLAPI.NetworkingManagerComponents
             b1[b.Length] = (byte)(negative ? 1 : 0);
             return b1;
         }
-        public static IntX FromArray(byte[] b)
+        internal static IntX FromArray(byte[] b)
         {
             if (b.Length == 0) return new IntX();
             byte[] b1 = new byte[b.Length - 1];
@@ -98,7 +98,7 @@ namespace MLAPI.NetworkingManagerComponents
             uint[] u = DigitConverter.FromBytes(b1);
             return new IntX(u, b[b.Length - 1]==1);
         }
-        public static bool BitAt(this uint[] data, long index) => (data[index / 32] & (1 << (int)(index % 32))) != 0;
-        public static IntX Abs(this IntX i) => i < 0 ? -i : i;
+        internal static bool BitAt(this uint[] data, long index) => (data[index / 32] & (1 << (int)(index % 32))) != 0;
+        internal static IntX Abs(this IntX i) => i < 0 ? -i : i;
     }
 }

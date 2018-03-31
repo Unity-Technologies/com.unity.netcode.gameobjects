@@ -12,12 +12,27 @@ namespace MLAPI.MonoBehaviours.Prototyping
     public class NetworkedNavMeshAgent : NetworkedBehaviour
     {
         private NavMeshAgent agent;
+        /// <summary>
+        /// Is proximity enabled
+        /// </summary>
         public bool EnableProximity = false;
+        /// <summary>
+        /// The proximity range
+        /// </summary>
         public float ProximityRange = 50f;
+        /// <summary>
+        /// The delay in seconds between corrections
+        /// </summary>
         public float CorrectionDelay = 3f;
         //TODO rephrase.
+        /// <summary>
+        /// The percentage to lerp on corrections
+        /// </summary>
         [Tooltip("Everytime a correction packet is recieved. This is the percentage (between 0 & 1) that we will move towards the goal.")]
         public float DriftCorrectionPercentage = 0.1f;
+        /// <summary>
+        /// Should we warp on destination change
+        /// </summary>
         public bool WarpOnDestinationChange = false;
 
         private static byte[] stateUpdateBuffer = new byte[36];
@@ -28,6 +43,9 @@ namespace MLAPI.MonoBehaviours.Prototyping
             agent = GetComponent<NavMeshAgent>();
         }
 
+        /// <summary>
+        /// Registers message handlers
+        /// </summary>
         public override void NetworkStart()
         {
             if (isClient)

@@ -10,7 +10,13 @@ namespace MLAPI.MonoBehaviours.Prototyping
     [AddComponentMenu("MLAPI/NetworkedAnimator")]
     public class NetworkedAnimator : NetworkedBehaviour
     {
+        /// <summary>
+        /// Is proximity enabled
+        /// </summary>
         public bool EnableProximity = false;
+        /// <summary>
+        /// The proximity range
+        /// </summary>
         public float ProximityRange = 50f;
 
         [SerializeField]
@@ -25,6 +31,8 @@ namespace MLAPI.MonoBehaviours.Prototyping
         private int transitionHash;
         private float sendTimer;
 
+
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
         // tracking - these should probably move to a Preview component. -- Comment from HLAPI. Needs clarification
         public string param0;
         public string param1;
@@ -32,7 +40,11 @@ namespace MLAPI.MonoBehaviours.Prototyping
         public string param3;
         public string param4;
         public string param5;
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 
+        /// <summary>
+        /// Gets or sets the animator component used for syncing the animations
+        /// </summary>
         public Animator animator
         {
             get { return _animator; }
@@ -42,7 +54,11 @@ namespace MLAPI.MonoBehaviours.Prototyping
                 ResetParameterOptions();
             }
         }
-
+        /// <summary>
+        /// TODO
+        /// </summary>
+        /// <param name="index"></param>
+        /// <param name="value"></param>
         public void SetParameterAutoSend(int index, bool value)
         {
             if (value)
@@ -54,7 +70,11 @@ namespace MLAPI.MonoBehaviours.Prototyping
                 parameterSendBits &= (uint)(~(1 << index));
             }
         }
-
+        /// <summary>
+        /// TODO
+        /// </summary>
+        /// <param name="index"></param>
+        /// <returns></returns>
         public bool GetParameterAutoSend(int index)
         {
             return (parameterSendBits & (uint)(1 << index)) != 0;
@@ -68,6 +88,9 @@ namespace MLAPI.MonoBehaviours.Prototyping
             }
         }
 
+        /// <summary>
+        /// Registers message handlers
+        /// </summary>
         public override void NetworkStart()
         {
             RegisterMessageHandler("MLAPI_HandleAnimationMessage", HandleAnimMsg);
@@ -75,6 +98,9 @@ namespace MLAPI.MonoBehaviours.Prototyping
             RegisterMessageHandler("MLAPI_HandleAnimationTriggerMessage", HandleAnimTriggerMsg);
         }
 
+        /// <summary>
+        /// TODO
+        /// </summary>
         public void ResetParameterOptions()
         {
             Debug.Log("ResetParameterOptions");
@@ -377,11 +403,19 @@ namespace MLAPI.MonoBehaviours.Prototyping
             }
         }
 
+        /// <summary>
+        /// TODO
+        /// </summary>
+        /// <param name="triggerName"></param>
         public void SetTrigger(string triggerName)
         {
             SetTrigger(Animator.StringToHash(triggerName));
         }
 
+        /// <summary>
+        /// TODO
+        /// </summary>
+        /// <param name="hash"></param>
         public void SetTrigger(int hash)
         {
             if (isLocalPlayer || isOwner)

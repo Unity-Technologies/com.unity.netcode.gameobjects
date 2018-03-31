@@ -9,16 +9,37 @@ namespace MLAPI.MonoBehaviours.Prototyping
     [AddComponentMenu("MLAPI/NetworkedTransform")]
     public class NetworkedTransform : NetworkedBehaviour
     {
+        /// <summary>
+        /// Sends per second
+        /// </summary>
         [Range(0f, 120f)]
         public float SendsPerSecond = 20;
+        /// <summary>
+        /// Is the sends per second assumed to be the same across all instances
+        /// </summary>
         [Tooltip("This assumes that the SendsPerSecond is synced across clients")]
         public bool AssumeSyncedSends = true;
+        /// <summary>
+        /// Enable interpolation
+        /// </summary>
         [Tooltip("This requires AssumeSyncedSends to be true")]
         public bool InterpolatePosition = true;
+        /// <summary>
+        /// The distance before snaping to the position
+        /// </summary>
         [Tooltip("The transform will snap if the distance is greater than this distance")]
         public float SnapDistance = 10f;
+        /// <summary>
+        /// Should the server interpolate
+        /// </summary>
         public bool InterpolateServer = true;
+        /// <summary>
+        /// The min meters to move before a send is sent
+        /// </summary>
         public float MinMeters = 0.15f;
+        /// <summary>
+        /// The min degrees to rotate before a send it sent
+        /// </summary>
         public float MinDegrees = 1.5f;
         private float timeForLerp;
         private float lerpT;
@@ -30,8 +51,13 @@ namespace MLAPI.MonoBehaviours.Prototyping
         private float lastSendTime;
         private Vector3 lastSentPos;
         private Quaternion lastSentRot;
-
+        /// <summary>
+        /// Should proximity be enabled
+        /// </summary>
         public bool EnableProximity = false;
+        /// <summary>
+        /// The distance to use for proximity
+        /// </summary>
         [Tooltip("If enable proximity is turned on, on clients within this range will be recieving position updates from the server")]
         public float ProximityRange = 50;
 
@@ -48,7 +74,10 @@ namespace MLAPI.MonoBehaviours.Prototyping
             if (MinMeters < 0)
                 MinMeters = 0;
         }
-
+        
+        /// <summary>
+        /// Registers message handlers
+        /// </summary>
         public override void NetworkStart()
         {
             if (isServer)

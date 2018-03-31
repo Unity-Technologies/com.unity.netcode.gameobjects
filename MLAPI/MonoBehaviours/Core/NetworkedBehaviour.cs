@@ -118,27 +118,39 @@ namespace MLAPI
         }
 
         internal bool networkedStartInvoked = false;
+        /// <summary>
+        /// Gets called when message handlers are ready to be registered and the networking is setup
+        /// </summary>
         public virtual void NetworkStart()
         {
 
         }
-
+        /// <summary>
+        /// Gets called when the local client gains ownership of this object
+        /// </summary>
         public virtual void OnGainedOwnership()
         {
 
         }
-
+        /// <summary>
+        /// Gets called when we loose ownership of this object
+        /// </summary>
         public virtual void OnLostOwnership()
         {
 
         }
-
-        protected void RegisterMessageHandler(string name, Action<int, byte[]> action)
+        /// <summary>
+        /// Registers a message handler
+        /// </summary>
+        /// <param name="name">The MessageType to register</param>
+        /// <param name="action">The callback to get invoked whenever a message is received</param>
+        /// <returns>HandlerId for the messageHandler that can be used to deregister the messageHandler</returns>
+        protected int RegisterMessageHandler(string name, Action<int, byte[]> action)
         {
             if (!MessageManager.messageTypes.ContainsKey(name))
             {
                 Debug.LogWarning("MLAPI: The messageType " + name + " is not registered");
-                return;
+                return -1;
             }
             ushort messageType = MessageManager.messageTypes[name];
             ushort behaviourOrder = networkedObject.GetOrderIndex(this);
@@ -148,14 +160,20 @@ namespace MLAPI
             if (networkedObject.targetMessageActions[behaviourOrder].ContainsKey(messageType))
             {
                 Debug.LogWarning("MLAPI: Each NetworkedBehaviour can only register one callback per instance per message type");
-                return;
+                return -1;
             }
 
             networkedObject.targetMessageActions[behaviourOrder].Add(messageType, action);
             int counter = MessageManager.AddIncomingMessageHandler(name, action, networkId);
             registeredMessageHandlers.Add(name, counter);
+            return counter;
         }
 
+        /// <summary>
+        /// Deregisters a given message handler
+        /// </summary>
+        /// <param name="name">The MessageType to deregister</param>
+        /// <param name="counter">The messageHandlerId to deregister</param>
         protected void DeregisterMessageHandler(string name, int counter)
         {
             MessageManager.RemoveIncomingMessageHandler(name, counter, networkId);
