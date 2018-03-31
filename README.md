@@ -27,12 +27,13 @@ To get started, check the [Wiki](https://github.com/TwoTenPvP/MLAPI/wiki)
 * Networked NavMeshAgent \[[Wiki page](https://github.com/TwoTenPvP/MLAPI/wiki/NetworkedNavMeshAgent)\]
 * Networked Object Pooling \[[Wiki page](https://github.com/TwoTenPvP/MLAPI/wiki/Networked-Object-Pooling)\]
 * Synced Vars \[[Wiki page](https://github.com/TwoTenPvP/MLAPI/wiki/SyncedVars)\]
+* Encryption \[[Wiki page](https://github.com/TwoTenPvP/MLAPI/wiki/Message-Encryption)\]
 
 
 ## Planned features
 * Area of interest
-* Encrypted messages / full encryption for all messages. Diffie Hellman key exchange with the option to sign the transaction using RSA.
-* Serializer (both for the library to speed up and to allow structs to be sent easily)
+* Serializer
+* BinaryWriter & BinaryReader replacement
 * Message compression
 
 ## Example
