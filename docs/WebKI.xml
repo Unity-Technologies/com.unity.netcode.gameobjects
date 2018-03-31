@@ -246,8 +246,8 @@
   <HelpKINode Title="NetworkedTransform.ProximityRange field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedTransform_ProximityRange.htm" />
   <HelpKINode Title="NetworkedTransform.SendsPerSecond field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedTransform_SendsPerSecond.htm" />
   <HelpKINode Title="NetworkedTransform.SnapDistance field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedTransform_SnapDistance.htm" />
-  <HelpKINode Title="networkId property" Url="html/P_MLAPI_NetworkedBehaviour_networkId.htm" />
   <HelpKINode Title="NetworkId property" Url="html/P_MLAPI_NetworkedObject_NetworkId.htm" />
+  <HelpKINode Title="networkId property" Url="html/P_MLAPI_NetworkedBehaviour_networkId.htm" />
   <HelpKINode Title="NetworkingConfiguration class">
     <HelpKINode Title="NetworkingConfiguration Class" Url="html/T_MLAPI_NetworkingConfiguration.htm" />
     <HelpKINode Title="constructor" Url="html/M_MLAPI_NetworkingConfiguration__ctor.htm" />
@@ -337,8 +337,8 @@
   <HelpKINode Title="OnLostOwnership method" Url="html/M_MLAPI_NetworkedBehaviour_OnLostOwnership.htm" />
   <HelpKINode Title="OnServerStarted field" Url="html/F_MLAPI_NetworkingManager_OnServerStarted.htm" />
   <HelpKINode Title="OwnedObjects field" Url="html/F_MLAPI_NetworkedClient_OwnedObjects.htm" />
-  <HelpKINode Title="OwnerClientId property" Url="html/P_MLAPI_NetworkedObject_OwnerClientId.htm" />
   <HelpKINode Title="ownerClientId property" Url="html/P_MLAPI_NetworkedBehaviour_ownerClientId.htm" />
+  <HelpKINode Title="OwnerClientId property" Url="html/P_MLAPI_NetworkedObject_OwnerClientId.htm" />
   <HelpKINode Title="param0 field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedAnimator_param0.htm" />
   <HelpKINode Title="param1 field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedAnimator_param1.htm" />
   <HelpKINode Title="param2 field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedAnimator_param2.htm" />
