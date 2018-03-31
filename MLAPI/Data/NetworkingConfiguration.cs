@@ -13,6 +13,7 @@ namespace MLAPI
         public List<string> MessageTypes = new List<string>();
         public List<string> PassthroughMessageTypes = new List<string>();
         internal HashSet<ushort> RegisteredPassthroughMessageTypes = new HashSet<ushort>();
+        public HashSet<int> EncryptedChannels = new HashSet<int>();
         public List<string> RegisteredScenes = new List<string>();
         public int MessageBufferSize = 65535;
         public int ReceiveTickrate = 64;
@@ -28,11 +29,12 @@ namespace MLAPI
         public byte[] ConnectionData = new byte[0];
         public float SecondsHistory = 5;
         public bool HandleObjectSpawning = true;
-        //TODO
-        public bool CompressMessages = false;
-        //Should only be used for dedicated servers and will require the servers RSA keypair being hard coded into clients in order to exchange a AES key
-        //TODO
-        public bool EncryptMessages = false;
+
+        public bool EnableEncryption = true;
+        public bool SignKeyExchange = true;
+        public string RSAPrivateKey = "<RSAKeyValue><Modulus>vBEvOQki/EftWOgwh4G8/nFRvcDJLylc8P7Dhz5m/hpkkNtAMzizNKYUrGbs7sYWlEuMYBOWrzkIDGOMoOsYc9uCi+8EcmNoHDlIhK5yNfZUexYBF551VbvZ625LSBR7kmBxkyo4IPuA09fYCHeUFm3prt4h6aTD0Hjc7ZsJHUU=</Modulus><Exponent>EQ==</Exponent><P>ydgcrq5qLJOdDQibD3m9+o3/dkKoFeCC110dnMgdpEteCruyBdL0zjGKKvjjgy3XTSSp43EN591NiXaBp0JtDw==</P><Q>7obHrUnUCsSHUsIJ7+JOrupcGrQ0XaYcQ+Uwb2v7d2YUzwZ46U4gI9snfD2J0tc3DGEh3v3G0Q8q7bxEe3H4aw==</Q><DP>L34k3c6vkgSdbHp+1nb/hj+HZx6+I0PijQbZyolwYuSOmR0a1DGjA1bzVWe9D86NAxevgM9OkOjG8yrxVIgZqQ==</DP><DQ>OB+2gyBuIKa2bdNNodrlVlVC2RtXnZB/HwjAGjeGdnJfP8VJoE6eJo3rLEq3BG7fxq1xYaUfuLhGVg4uOyngGQ==</DQ><InverseQ>o97PimYu58qH5eFmySRCIsyhBr/tK2GM17Zd9QQPJZRSorrhIJn1m6gwQ/G5aJLIM/3Yl04CoyqmQGsPXMzW2w==</InverseQ><D>CxAR1i22w4vCquB7U0Pd8Nl9R2Wxez6rHTwpnoszPB+rkAzlqKj7e5FMgpykhoQfciKPyWqQZKkAeTMIRbN56JinvpAt5POId/28HDd5xjGymHE81k3RzoHqzQXFIOF1TSYKUWzjPPF/TU4nn7auD4i6lOODATsMqtLr5DRBN/0=</D></RSAKeyValue>"; //CHANGE THESE FOR PRODUCTION!
+        public string RSAPublicKey = "<RSAKeyValue><Modulus>vBEvOQki/EftWOgwh4G8/nFRvcDJLylc8P7Dhz5m/hpkkNtAMzizNKYUrGbs7sYWlEuMYBOWrzkIDGOMoOsYc9uCi+8EcmNoHDlIhK5yNfZUexYBF551VbvZ625LSBR7kmBxkyo4IPuA09fYCHeUFm3prt4h6aTD0Hjc7ZsJHUU=</Modulus><Exponent>EQ==</Exponent></RSAKeyValue>"; //CHANGE THESE FOR PRODUCTION!
+
         public bool AllowPassthroughMessages = true;
         public bool EnableSceneSwitching = false;
 
@@ -72,8 +74,7 @@ namespace MLAPI
                         }
                     }
                     writer.Write(HandleObjectSpawning);
-                    writer.Write(CompressMessages);
-                    writer.Write(EncryptMessages);
+                    writer.Write(EnableEncryption);
                     writer.Write(AllowPassthroughMessages);
                     writer.Write(EnableSceneSwitching);
                 }
