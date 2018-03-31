@@ -1,10 +1,24 @@
 ﻿namespace MLAPI.Data
 {
-    struct ClientIdKey
+    /// <summary>
+    /// A struct representing a client. Contains a hostId and a connectionId.
+    /// </summary>
+    internal struct ClientIdKey
     {
+        /// <summary>
+        /// The NetworkTransport hostId
+        /// </summary>
         internal readonly int hostId;
+        /// <summary>
+        /// The NetworkTransport connectionId
+        /// </summary>
         internal readonly int connectionId;
 
+        /// <summary>
+        /// Creates a new ClientIdKey
+        /// </summary>
+        /// <param name="hostId">The NetworkTransport hostId</param>
+        /// <param name="connectionId">The NetworkTransport connectionId</param>
         internal ClientIdKey (int hostId, int connectionId)
         {
             this.hostId = hostId;

@@ -26,6 +26,10 @@ namespace MLAPI.NetworkingManagerComponents
             CurrentSceneIndex = sceneNameToIndex[SceneManager.GetActiveScene().name];
         }
 
+        /// <summary>
+        /// Switches to a scene with a given name. Can only be called from Server
+        /// </summary>
+        /// <param name="sceneName">The name of the scene to switch to</param>
         public static void SwitchScene(string sceneName)
         {
             if(!NetworkingManager.singleton.NetworkConfig.EnableSceneSwitching)

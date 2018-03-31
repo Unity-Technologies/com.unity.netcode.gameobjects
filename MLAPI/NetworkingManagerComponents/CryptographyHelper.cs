@@ -6,6 +6,12 @@ namespace MLAPI.NetworkingManagerComponents
 {
     public static class CryptographyHelper
     {
+        /// <summary>
+        /// Decrypts a message with AES with a given key and a salt that is encoded as the first 16 bytes of the buffer
+        /// </summary>
+        /// <param name="encryptedBuffer">The buffer with the salt</param>
+        /// <param name="key">The key to use</param>
+        /// <returns>The decrypted byte array</returns>
         public static byte[] Decrypt(byte[] encryptedBuffer, byte[] key)
         {
             byte[] iv = new byte[16];
@@ -26,6 +32,12 @@ namespace MLAPI.NetworkingManagerComponents
             }
         }
 
+        /// <summary>
+        /// Encrypts a message with AES with a given key and a random salt that gets encoded as the first 16 bytes of the encrypted buffer
+        /// </summary>
+        /// <param name="clearBuffer">The buffer to be encrypted</param>
+        /// <param name="key">The key to use</param>
+        /// <returns>The encrypted byte array with encoded salt</returns>
         public static byte[] Encrypt(byte[] clearBuffer, byte[] key)
         {
             using (MemoryStream stream = new MemoryStream())

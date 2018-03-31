@@ -8,19 +8,43 @@ namespace MLAPI
     [AddComponentMenu("MLAPI/NetworkedObject", -99)]
     public class NetworkedObject : MonoBehaviour
     {
+        /// <summary>
+        /// The unique ID of this object that is synced across the network
+        /// </summary>
         [HideInInspector]
         public uint NetworkId;
+        /// <summary>
+        /// The clientId of the owner of this NetworkedObject
+        /// </summary>
         [HideInInspector]
         public int OwnerClientId = -2;
+        /// <summary>
+        /// The index of the prefab used to spawn this in the spawnablePrefabs list
+        /// </summary>
         [HideInInspector]
         public int SpawnablePrefabIndex;
+        /// <summary>
+        /// Gets if this object is a player object
+        /// </summary>
         [HideInInspector]
         public bool isPlayerObject = false;
+        /// <summary>
+        /// Gets or sets if this object should be replicated across the network
+        /// </summary>
         public bool ServerOnly = false;
+        /// <summary>
+        /// Gets if this object is part of a pool
+        /// </summary>
         [HideInInspector]
         public bool isPooledObject = false;
+        /// <summary>
+        /// Gets the poolId this object is part of
+        /// </summary>
         [HideInInspector]
         public ushort PoolId;
+        /// <summary>
+        /// Gets if the object is the the personal clients player object
+        /// </summary>
         public bool isLocalPlayer
         {
             get
@@ -28,7 +52,9 @@ namespace MLAPI
                 return isPlayerObject && (OwnerClientId == NetworkingManager.singleton.MyClientId || (OwnerClientId == -1 && NetworkingManager.singleton.isHost));
             }
         }
-
+        /// <summary>
+        /// Gets if the object is owned by the local player
+        /// </summary>
         public bool isOwner
         {
             get
@@ -44,21 +70,32 @@ namespace MLAPI
 
         internal bool isSpawned = false;
 
+        /// <summary>
+        /// Spawns this GameObject across the network. Can only be called from the Server
+        /// </summary>
         public void Spawn()
         {
             SpawnManager.OnSpawnObject(this);
         }
-
+        /// <summary>
+        /// Spawns an object across the network with a given owner. Can only be called from server
+        /// </summary>
+        /// <param name="clientId">The clientId to own the object</param>
         public void SpawnWithOwnership(int clientId)
         {
             SpawnManager.OnSpawnObject(this, clientId);
         }
-
+        /// <summary>
+        /// Removes all ownership of an object from any client. Can only be called from server
+        /// </summary>
         public void RemoveOwnership()
         {
             SpawnManager.RemoveOwnership(NetworkId);
         }
-
+        /// <summary>
+        /// Changes the owner of the object. Can only be called from server
+        /// </summary>
+        /// <param name="newOwnerClientId">The new owner clientId</param>
         public void ChangeOwnership(int newOwnerClientId)
         {
             SpawnManager.ChangeOwnership(NetworkId, newOwnerClientId);

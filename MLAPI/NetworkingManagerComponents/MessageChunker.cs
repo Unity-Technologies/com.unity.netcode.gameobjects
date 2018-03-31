@@ -5,6 +5,12 @@ namespace MLAPI.NetworkingManagerComponents
 {
     public static class MessageChunker
     {
+        /// <summary>
+        /// Chunks a large byte array to smaller chunks
+        /// </summary>
+        /// <param name="message">The large byte array</param>
+        /// <param name="chunkSize">The amount of bytes of non header data to use for each chunk</param>
+        /// <returns>List of chunks</returns>
         public static List<byte[]> GetChunkedMessage(ref byte[] message, int chunkSize)
         {
             List<byte[]> chunks = new List<byte[]>((int)Math.Ceiling((double)message.Length / chunkSize));
@@ -36,6 +42,12 @@ namespace MLAPI.NetworkingManagerComponents
             return chunks;
         }
 
+        /// <summary>
+        /// Checks if a list of chunks has missing parts
+        /// </summary>
+        /// <param name="chunks">The list of chunks</param>
+        /// <param name="expectedChunksCount">The expected amount of chunks</param>
+        /// <returns>If list of chunks has missing parts</returns>
         public static bool HasMissingParts(ref List<byte[]> chunks, uint expectedChunksCount)
         {
             if (chunks.Count < expectedChunksCount)
@@ -54,6 +66,11 @@ namespace MLAPI.NetworkingManagerComponents
             return chunks.Count - duplicateCount != expectedChunksCount;
         }
 
+        /// <summary>
+        /// Checks if a list of chunks is in correct order
+        /// </summary>
+        /// <param name="chunks">The list of chunks</param>
+        /// <returns>If all chunks are in order</returns>
         public static bool IsOrdered(ref List<byte[]> chunks)
         {
             uint lastChunkIndex = 0;
@@ -69,6 +86,12 @@ namespace MLAPI.NetworkingManagerComponents
             return true;
         }
 
+        /// <summary>
+        /// Checks if a list of chunks have any duplicates inside of it
+        /// </summary>
+        /// <param name="chunks">The list of chunks</param>
+        /// <param name="expectedChunksCount">The expected amount of chunks</param>
+        /// <returns>If a list of chunks has duplicate chunks in it</returns>
         public static bool HasDuplicates(ref List<byte[]> chunks, uint expectedChunksCount)
         {
             if (chunks.Count > expectedChunksCount)
@@ -86,7 +109,12 @@ namespace MLAPI.NetworkingManagerComponents
             return false;
         }
 
-
+        /// <summary>
+        /// Converts a list of chunks back into the original buffer, this requires the list to be in correct order and properly verified
+        /// </summary>
+        /// <param name="chunks">The list of chunks</param>
+        /// <param name="chunkSize">The size of each chunk. Optional</param>
+        /// <returns></returns>
         public static byte[] GetMessageOrdered(ref List<byte[]> chunks, int chunkSize = -1)
         {
             if (chunks.Count == 0)
@@ -107,6 +135,12 @@ namespace MLAPI.NetworkingManagerComponents
             return message;
         }
 
+        /// <summary>
+        /// Converts a list of chunks back into the original buffer, this does not require the list to be in correct order and properly verified
+        /// </summary>
+        /// <param name="chunks">The list of chunks</param>
+        /// <param name="chunkSize">The size of each chunk. Optional</param>
+        /// <returns></returns>
         public static byte[] GetMessageUnordered(ref List<byte[]> chunks, int chunkSize = -1)
         {
             if (chunks.Count == 0)

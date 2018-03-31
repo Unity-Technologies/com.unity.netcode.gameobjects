@@ -14,16 +14,39 @@ namespace MLAPI
     [AddComponentMenu("MLAPI/NetworkingManager", -100)]
     public class NetworkingManager : MonoBehaviour
     {
+        /// <summary>
+        /// A syncronized time, represents the time in seconds since the server application started. Is replicated across all clients
+        /// </summary>
         public static float NetworkTime;
+        /// <summary>
+        /// Gets or sets if the NetworkingManager should be marked as DontDestroyOnLoad
+        /// </summary>
         public bool DontDestroy = true;
+        /// <summary>
+        /// Gets or sets if the application should be set to run in background
+        /// </summary>
         public bool RunInBackground = true;
+        /// <summary>
+        /// A list of spawnable prefabs
+        /// </summary>
         public List<GameObject> SpawnablePrefabs;
+        /// <summary>
+        /// The default prefab to give to players
+        /// </summary>
         public GameObject DefaultPlayerPrefab;
+        /// <summary>
+        /// The singleton instance of the NetworkingManager
+        /// </summary>
         public static NetworkingManager singleton;
-        //Client only, what my connectionId is on the server
+        /// <summary>
+        /// The clientId the server calls the local client by, only valid for clients
+        /// </summary>
         [HideInInspector]
         public int MyClientId;
         internal Dictionary<int, NetworkedClient> connectedClients;
+        /// <summary>
+        /// Gets a dictionary of connected clients
+        /// </summary>
         public Dictionary<int, NetworkedClient> ConnectedClients
         {
             get
@@ -34,6 +57,9 @@ namespace MLAPI
         internal HashSet<int> pendingClients;
         internal bool isServer;
         internal bool isClient;
+        /// <summary>
+        /// Gets if we are running as host
+        /// </summary>
         public bool isHost
         {
             get
@@ -44,12 +70,26 @@ namespace MLAPI
         private bool isListening;
         private byte[] messageBuffer;
         internal int serverClientId;
+        /// <summary>
+        /// Gets if we are connected as a client
+        /// </summary>
         [HideInInspector]
         public bool IsClientConnected;
+        /// <summary>
+        /// The callback to invoke once a client connects
+        /// </summary>
         public Action<int> OnClientConnectedCallback = null;
+        /// <summary>
+        /// The callback to invoke when a client disconnects
+        /// </summary>
         public Action<int> OnClientDisconnectCallback = null;
+        /// <summary>
+        /// The callback to invoke once the server is ready
+        /// </summary>
         public Action OnServerStarted = null;
-
+        /// <summary>
+        /// The current NetworkingConfiguration
+        /// </summary>
         public NetworkingConfiguration NetworkConfig;
 
         private EllipticDiffieHellman clientDiffieHellman;
@@ -199,6 +239,10 @@ namespace MLAPI
             return cConfig;
         }
 
+        /// <summary>
+        /// Starts a server with a given NetworkingConfiguration
+        /// </summary>
+        /// <param name="netConfig">The NetworkingConfiguration to use</param>
         public void StartServer(NetworkingConfiguration netConfig)
         {
             ConnectionConfig cConfig = Init(netConfig);
@@ -219,6 +263,10 @@ namespace MLAPI
                 OnServerStarted.Invoke();
         }
 
+        /// <summary>
+        /// Starts a client with a given NetworkingConfiguration
+        /// </summary>
+        /// <param name="netConfig">The NetworkingConfiguration to use</param>
         public void StartClient(NetworkingConfiguration netConfig)
         {
             ConnectionConfig cConfig = Init(netConfig);
@@ -231,6 +279,9 @@ namespace MLAPI
             serverClientId = NetworkTransport.Connect(hostId, NetworkConfig.Address, NetworkConfig.Port, 0, out error);
         }
 
+        /// <summary>
+        /// Stops the running server
+        /// </summary>
         public void StopServer()
         {
             HashSet<int> sentIds = new HashSet<int>();
@@ -254,18 +305,28 @@ namespace MLAPI
             Shutdown();
         }
 
+        /// <summary>
+        /// Stops the running host
+        /// </summary>
         public void StopHost()
         {
             StopServer();
             //We don't stop client since we dont actually have a transport connection to our own host. We just handle host messages directly in the MLAPI
         }
 
+        /// <summary>
+        /// Stops the running client
+        /// </summary>
         public void StopClient()
         {
             NetworkTransport.Disconnect(hostId, serverClientId, out error);
             Shutdown();
         }
 
+        /// <summary>
+        /// Starts a Host with a given NetworkingConfiguration
+        /// </summary>
+        /// <param name="netConfig">The NetworkingConfiguration to use</param>
         public void StartHost(NetworkingConfiguration netConfig)
         {
             ConnectionConfig cConfig = Init(netConfig);

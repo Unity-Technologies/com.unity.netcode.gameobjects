@@ -12,7 +12,13 @@ namespace MLAPI
 {
     public abstract class NetworkedBehaviour : MonoBehaviour
     {
+        /// <summary>
+        /// The minimum delay in seconds between SyncedVar sends
+        /// </summary>
         public float SyncVarSyncDelay = 0.1f;
+        /// <summary>
+        /// Gets if the object is the the personal clients player object
+        /// </summary>
         public bool isLocalPlayer
         {
             get
@@ -20,6 +26,9 @@ namespace MLAPI
                 return networkedObject.isLocalPlayer;
             }
         }
+        /// <summary>
+        /// Gets if the object is owned by the local player
+        /// </summary>
         public bool isOwner
         {
             get
@@ -27,6 +36,9 @@ namespace MLAPI
                 return networkedObject.isOwner;
             }
         }
+        /// <summary>
+        /// Gets if we are executing as server
+        /// </summary>
         protected bool isServer
         {
             get
@@ -34,6 +46,9 @@ namespace MLAPI
                 return NetworkingManager.singleton.isServer;
             }
         }
+        /// <summary>
+        /// Gets if we are executing as client
+        /// </summary>
         protected bool isClient
         {
             get
@@ -41,6 +56,9 @@ namespace MLAPI
                 return NetworkingManager.singleton.isClient;
             }
         }
+        /// <summary>
+        /// Gets if we are executing as Host, I.E Server and Client
+        /// </summary>
         protected bool isHost
         {
             get
@@ -48,6 +66,9 @@ namespace MLAPI
                 return NetworkingManager.singleton.isHost;
             }
         }
+        /// <summary>
+        /// The NetworkedObject that owns this NetworkedBehaviour instance
+        /// </summary>
         public NetworkedObject networkedObject
         {
             get
@@ -60,6 +81,9 @@ namespace MLAPI
             }
         }
         private NetworkedObject _networkedObject = null;
+        /// <summary>
+        /// The NetworkId of the NetworkedObject that owns the NetworkedBehaviour instance
+        /// </summary>
         public uint networkId
         {
             get
@@ -67,7 +91,9 @@ namespace MLAPI
                 return networkedObject.NetworkId;
             }
         }
-
+        /// <summary>
+        /// The clientId that owns the NetworkedObject
+        /// </summary>
         public int ownerClientId
         {
             get
@@ -617,6 +643,12 @@ namespace MLAPI
         #endregion
 
         #region SEND METHODS
+        /// <summary>
+        /// Sends a buffer to the server from client
+        /// </summary>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="data">The binary data to send</param>
         protected void SendToServer(string messageType, string channelName, byte[] data)
         {
             if(MessageManager.messageTypes[messageType] < 32)
@@ -632,6 +664,12 @@ namespace MLAPI
             NetworkingManager.singleton.Send(NetworkingManager.singleton.serverClientId, messageType, channelName, data);
         }
 
+        /// <summary>
+        /// Sends a buffer to the server from client. Only handlers on this NetworkedBehaviour will get invoked
+        /// </summary>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="data">The binary data to send</param>
         protected void SendToServerTarget(string messageType, string channelName, byte[] data)
         {
             if (MessageManager.messageTypes[messageType] < 32)
@@ -647,6 +685,12 @@ namespace MLAPI
             NetworkingManager.singleton.Send(NetworkingManager.singleton.serverClientId, messageType, channelName, data, networkId, networkedObject.GetOrderIndex(this));            
         }
 
+        /// <summary>
+        /// Sends a buffer to the server from client
+        /// </summary>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="data">The binary data to send</param>
         protected void SendToLocalClient(string messageType, string channelName, byte[] data)
         {
             if (MessageManager.messageTypes[messageType] < 32)
@@ -662,6 +706,12 @@ namespace MLAPI
             NetworkingManager.singleton.Send(ownerClientId, messageType, channelName, data);
         }
 
+        /// <summary>
+        /// Sends a buffer to the client that owns this object from the server. Only handlers on this NetworkedBehaviour will get invoked
+        /// </summary>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="data">The binary data to send</param>
         protected void SendToLocalClientTarget(string messageType, string channelName, byte[] data)
         {
             if (MessageManager.messageTypes[messageType] < 32)
@@ -677,6 +727,12 @@ namespace MLAPI
             NetworkingManager.singleton.Send(ownerClientId, messageType, channelName, data, networkId, networkedObject.GetOrderIndex(this));
         }
 
+        /// <summary>
+        /// Sends a buffer to all clients except to the owner object from the server
+        /// </summary>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="data">The binary data to send</param>
         protected void SendToNonLocalClients(string messageType, string channelName, byte[] data)
         {
             if (MessageManager.messageTypes[messageType] < 32)
@@ -692,6 +748,12 @@ namespace MLAPI
             NetworkingManager.singleton.Send(messageType, channelName, data, ownerClientId);
         }
 
+        /// <summary>
+        /// Sends a buffer to all clients except to the owner object from the server. Only handlers on this NetworkedBehaviour will get invoked
+        /// </summary>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="data">The binary data to send</param>
         protected void SendToNonLocalClientsTarget(string messageType, string channelName, byte[] data)
         {
             if (MessageManager.messageTypes[messageType] < 32)
@@ -707,6 +769,13 @@ namespace MLAPI
             NetworkingManager.singleton.Send(messageType, channelName, data, ownerClientId, networkId, networkedObject.GetOrderIndex(this));
         }
 
+        /// <summary>
+        /// Sends a buffer to a client with a given clientId from Server
+        /// </summary>
+        /// <param name="clientId">The clientId to send the message to</param>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="data">The binary data to send</param>
         protected void SendToClient(int clientId, string messageType, string channelName, byte[] data)
         {
             if (MessageManager.messageTypes[messageType] < 32)
@@ -722,6 +791,13 @@ namespace MLAPI
             NetworkingManager.singleton.Send(clientId, messageType, channelName, data);
         }
 
+        /// <summary>
+        /// Sends a buffer to a client with a given clientId from Server. Only handlers on this NetworkedBehaviour gets invoked
+        /// </summary>
+        /// <param name="clientId">The clientId to send the message to</param>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="data">The binary data to send</param>
         protected void SendToClientTarget(int clientId, string messageType, string channelName, byte[] data)
         {
             if (MessageManager.messageTypes[messageType] < 32)
@@ -737,6 +813,13 @@ namespace MLAPI
             NetworkingManager.singleton.Send(clientId, messageType, channelName, data, networkId, networkedObject.GetOrderIndex(this));
         }
 
+        /// <summary>
+        /// Sends a buffer to multiple clients from the server
+        /// </summary>
+        /// <param name="clientIds">The clientId's to send to</param>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="data">The binary data to send</param>
         protected void SendToClients(int[] clientIds, string messageType, string channelName, byte[] data)
         {
             if (MessageManager.messageTypes[messageType] < 32)
@@ -752,6 +835,13 @@ namespace MLAPI
             NetworkingManager.singleton.Send(clientIds, messageType, channelName, data);
         }
 
+        /// <summary>
+        /// Sends a buffer to multiple clients from the server. Only handlers on this NetworkedBehaviour gets invoked
+        /// </summary>
+        /// <param name="clientIds">The clientId's to send to</param>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="data">The binary data to send</param>
         protected void SendToClientsTarget(int[] clientIds, string messageType, string channelName, byte[] data)
         {
             if (MessageManager.messageTypes[messageType] < 32)
@@ -767,6 +857,13 @@ namespace MLAPI
             NetworkingManager.singleton.Send(clientIds, messageType, channelName, data, networkId, networkedObject.GetOrderIndex(this));
         }
 
+        /// <summary>
+        /// Sends a buffer to multiple clients from the server
+        /// </summary>
+        /// <param name="clientIds">The clientId's to send to</param>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="data">The binary data to send</param>
         protected void SendToClients(List<int> clientIds, string messageType, string channelName, byte[] data)
         {
             if (MessageManager.messageTypes[messageType] < 32)
@@ -782,6 +879,13 @@ namespace MLAPI
             NetworkingManager.singleton.Send(clientIds, messageType, channelName, data);
         }
 
+        /// <summary>
+        /// Sends a buffer to multiple clients from the server. Only handlers on this NetworkedBehaviour gets invoked
+        /// </summary>
+        /// <param name="clientIds">The clientId's to send to</param>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="data">The binary data to send</param>
         protected void SendToClientsTarget(List<int> clientIds, string messageType, string channelName, byte[] data)
         {
             if (MessageManager.messageTypes[messageType] < 32)
@@ -797,6 +901,12 @@ namespace MLAPI
             NetworkingManager.singleton.Send(clientIds, messageType, channelName, data, networkId, networkedObject.GetOrderIndex(this));
         }
 
+        /// <summary>
+        /// Sends a buffer to all clients from the server
+        /// </summary>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="data">The binary data to send</param>
         protected void SendToClients(string messageType, string channelName, byte[] data)
         {
             if (MessageManager.messageTypes[messageType] < 32)
@@ -812,6 +922,12 @@ namespace MLAPI
             NetworkingManager.singleton.Send(messageType, channelName, data);
         }
 
+        /// <summary>
+        /// Sends a buffer to all clients from the server. Only handlers on this NetworkedBehaviour will get invoked
+        /// </summary>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="data">The binary data to send</param>
         protected void SendToClientsTarget(string messageType, string channelName, byte[] data)
         {
             if (MessageManager.messageTypes[messageType] < 32)
@@ -828,6 +944,11 @@ namespace MLAPI
         }
         #endregion
 
+        /// <summary>
+        /// Gets the local instance of a object with a given NetworkId
+        /// </summary>
+        /// <param name="networkId"></param>
+        /// <returns></returns>
         protected NetworkedObject GetNetworkedObject(uint networkId)
         {
             return SpawnManager.spawnedObjects[networkId];

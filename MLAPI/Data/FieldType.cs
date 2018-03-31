@@ -1,5 +1,8 @@
 ﻿namespace MLAPI.Data
 {
+    /// <summary>
+    /// The datatype used to classify SyncedVars
+    /// </summary>
     internal enum FieldType
     {
         Bool,
