@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace MLAPI
+namespace MLAPI.MonoBehaviours.Core
 {
     /// <summary>
     /// A component used to identify that a GameObject is networked

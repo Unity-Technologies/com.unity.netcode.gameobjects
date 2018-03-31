@@ -8,7 +8,7 @@ using System.Linq;
 using System.IO;
 using MLAPI.Data;
 
-namespace MLAPI
+namespace MLAPI.MonoBehaviours.Core
 {
     /// <summary>
     /// The base class to override to write networked code. Inherits MonoBehaviour

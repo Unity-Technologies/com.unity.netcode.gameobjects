@@ -9,7 +9,7 @@ using UnityEngine.Networking;
 using System.Linq;
 using System.Security.Cryptography;
 
-namespace MLAPI
+namespace MLAPI.MonoBehaviours.Core
 {
     /// <summary>
     /// The main component of the library
