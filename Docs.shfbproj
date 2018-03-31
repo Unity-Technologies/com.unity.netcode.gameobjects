@@ -54,8 +54,8 @@
       <Argument Key="maxVersionParts" Value="" />
       <Argument Key="defaultLanguage" Value="cs" />
       <Argument Key="includeEnumValues" Value="true" />
-      <Argument Key="baseSourceCodeUrl" Value="https://github.com/TwoTenPvP/MLAPI/" />
-      <Argument Key="requestExampleUrl" Value="" />
+      <Argument Key="baseSourceCodeUrl" Value="https://github.com/TwoTenPvP/MLAPI/blob/master/MLAPI/" />
+      <Argument Key="requestExampleUrl" Value="https://github.com/TwoTenPvP/MLAPI/issues/new" />
     </TransformComponentArguments>
   </PropertyGroup>
   <!-- There are no properties for these groups.  AnyCPU needs to appear in order for Visual Studio to perform

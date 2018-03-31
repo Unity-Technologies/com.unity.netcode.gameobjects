@@ -5,8 +5,18 @@
   <HelpKINode Title="AllowPassthroughMessages field" Url="html/F_MLAPI_NetworkingConfiguration_AllowPassthroughMessages.htm" />
   <HelpKINode Title="animator property" Url="html/P_MLAPI_MonoBehaviours_Prototyping_NetworkedAnimator_animator.htm" />
   <HelpKINode Title="AssumeSyncedSends field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedTransform_AssumeSyncedSends.htm" />
+  <HelpKINode Title="BinarySerializer class">
+    <HelpKINode Title="BinarySerializer Class" Url="html/T_MLAPI_NetworkingManagerComponents_BinarySerializer.htm" />
+    <HelpKINode Title="methods" Url="html/Methods_T_MLAPI_NetworkingManagerComponents_BinarySerializer.htm" />
+  </HelpKINode>
+  <HelpKINode Title="BinarySerializer.ClearCache method" Url="html/M_MLAPI_NetworkingManagerComponents_BinarySerializer_ClearCache.htm" />
+  <HelpKINode Title="BinarySerializer.Deserialize(Of T) method" Url="html/M_MLAPI_NetworkingManagerComponents_BinarySerializer_Deserialize__1.htm" />
+  <HelpKINode Title="BinarySerializer.Deserialize&lt;T&gt; method" Url="html/M_MLAPI_NetworkingManagerComponents_BinarySerializer_Deserialize__1.htm" />
+  <HelpKINode Title="BinarySerializer.Serialize(Of T) method" Url="html/M_MLAPI_NetworkingManagerComponents_BinarySerializer_Serialize__1.htm" />
+  <HelpKINode Title="BinarySerializer.Serialize&lt;T&gt; method" Url="html/M_MLAPI_NetworkingManagerComponents_BinarySerializer_Serialize__1.htm" />
   <HelpKINode Title="ChangeOwnership method" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedObject_ChangeOwnership.htm" />
   <HelpKINode Title="Channels field" Url="html/F_MLAPI_NetworkingConfiguration_Channels.htm" />
+  <HelpKINode Title="ClearCache method" Url="html/M_MLAPI_NetworkingManagerComponents_BinarySerializer_ClearCache.htm" />
   <HelpKINode Title="ClientConnectionBufferTimeout field" Url="html/F_MLAPI_NetworkingConfiguration_ClientConnectionBufferTimeout.htm" />
   <HelpKINode Title="ClientId field" Url="html/F_MLAPI_NetworkedClient_ClientId.htm" />
   <HelpKINode Title="CompareConfig method" Url="html/M_MLAPI_NetworkingConfiguration_CompareConfig.htm" />
@@ -25,6 +35,8 @@
   <HelpKINode Title="Decrypt method" Url="html/M_MLAPI_NetworkingManagerComponents_CryptographyHelper_Decrypt.htm" />
   <HelpKINode Title="DefaultPlayerPrefab field" Url="html/F_MLAPI_MonoBehaviours_Core_NetworkingManager_DefaultPlayerPrefab.htm" />
   <HelpKINode Title="DeregisterMessageHandler method" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_DeregisterMessageHandler.htm" />
+  <HelpKINode Title="Deserialize(Of T) method" Url="html/M_MLAPI_NetworkingManagerComponents_BinarySerializer_Deserialize__1.htm" />
+  <HelpKINode Title="Deserialize&lt;T&gt; method" Url="html/M_MLAPI_NetworkingManagerComponents_BinarySerializer_Deserialize__1.htm" />
   <HelpKINode Title="DestroyPool method" Url="html/M_MLAPI_NetworkingManagerComponents_NetworkPoolManager_DestroyPool.htm" />
   <HelpKINode Title="DestroyPoolObject method" Url="html/M_MLAPI_NetworkingManagerComponents_NetworkPoolManager_DestroyPoolObject.htm" />
   <HelpKINode Title="DontDestroy field" Url="html/F_MLAPI_MonoBehaviours_Core_NetworkingManager_DontDestroy.htm" />
@@ -107,6 +119,7 @@
   <HelpKINode Title="MLAPI.NetworkedClient class" Url="html/T_MLAPI_NetworkedClient.htm" />
   <HelpKINode Title="MLAPI.NetworkingConfiguration class" Url="html/T_MLAPI_NetworkingConfiguration.htm" />
   <HelpKINode Title="MLAPI.NetworkingManagerComponents namespace" Url="html/N_MLAPI_NetworkingManagerComponents.htm" />
+  <HelpKINode Title="MLAPI.NetworkingManagerComponents.BinarySerializer class" Url="html/T_MLAPI_NetworkingManagerComponents_BinarySerializer.htm" />
   <HelpKINode Title="MLAPI.NetworkingManagerComponents.CryptographyHelper class" Url="html/T_MLAPI_NetworkingManagerComponents_CryptographyHelper.htm" />
   <HelpKINode Title="MLAPI.NetworkingManagerComponents.LagCompensationManager class" Url="html/T_MLAPI_NetworkingManagerComponents_LagCompensationManager.htm" />
   <HelpKINode Title="MLAPI.NetworkingManagerComponents.MessageChunker class" Url="html/T_MLAPI_NetworkingManagerComponents_MessageChunker.htm" />
@@ -325,8 +338,8 @@
   <HelpKINode Title="OnLostOwnership method" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_OnLostOwnership.htm" />
   <HelpKINode Title="OnServerStarted field" Url="html/F_MLAPI_MonoBehaviours_Core_NetworkingManager_OnServerStarted.htm" />
   <HelpKINode Title="OwnedObjects field" Url="html/F_MLAPI_NetworkedClient_OwnedObjects.htm" />
-  <HelpKINode Title="OwnerClientId property" Url="html/P_MLAPI_MonoBehaviours_Core_NetworkedObject_OwnerClientId.htm" />
   <HelpKINode Title="ownerClientId property" Url="html/P_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_ownerClientId.htm" />
+  <HelpKINode Title="OwnerClientId property" Url="html/P_MLAPI_MonoBehaviours_Core_NetworkedObject_OwnerClientId.htm" />
   <HelpKINode Title="param0 field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedAnimator_param0.htm" />
   <HelpKINode Title="param1 field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedAnimator_param1.htm" />
   <HelpKINode Title="param2 field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedAnimator_param2.htm" />
@@ -364,6 +377,8 @@
   <HelpKINode Title="SendToNonLocalClientsTarget method" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToNonLocalClientsTarget.htm" />
   <HelpKINode Title="SendToServer method" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToServer.htm" />
   <HelpKINode Title="SendToServerTarget method" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToServerTarget.htm" />
+  <HelpKINode Title="Serialize(Of T) method" Url="html/M_MLAPI_NetworkingManagerComponents_BinarySerializer_Serialize__1.htm" />
+  <HelpKINode Title="Serialize&lt;T&gt; method" Url="html/M_MLAPI_NetworkingManagerComponents_BinarySerializer_Serialize__1.htm" />
   <HelpKINode Title="ServerOnly field" Url="html/F_MLAPI_MonoBehaviours_Core_NetworkedObject_ServerOnly.htm" />
   <HelpKINode Title="SetParameterAutoSend method" Url="html/M_MLAPI_MonoBehaviours_Prototyping_NetworkedAnimator_SetParameterAutoSend.htm" />
   <HelpKINode Title="SetTrigger method" Url="html/Overload_MLAPI_MonoBehaviours_Prototyping_NetworkedAnimator_SetTrigger.htm" />
