@@ -7,6 +7,7 @@ using System.IO;
 using UnityEngine;
 using UnityEngine.Networking;
 using System.Linq;
+using System.Security.Cryptography;
 
 namespace MLAPI
 {
@@ -588,10 +589,6 @@ namespace MLAPI
                                                 ushort diffiePublicSize = messageReader.ReadUInt16();
                                                 byte[] diffiePublic = messageReader.ReadBytes(diffiePublicSize);
                                                 diffieHellmanPublicKeys.Add(clientId, diffiePublic);
-                                                /*
-                                                EllipticDiffieHellman diffieHellman = new EllipticDiffieHellman(EllipticDiffieHellman.DEFAULT_CURVE, EllipticDiffieHellman.DEFAULT_GENERATOR, EllipticDiffieHellman.DEFAULT_ORDER);
-                                                aesKey = diffieHellman.GetSharedSecret(diffiePublic);
-                                                */
 
                                             }
                                             if (NetworkConfig.ConnectionApproval)
@@ -625,7 +622,25 @@ namespace MLAPI
                                             if (NetworkConfig.EnableEncryption)
                                             {
                                                 ushort keyLength = messageReader.ReadUInt16();
-                                                clientAesKey = clientDiffieHellman.GetSharedSecret(messageReader.ReadBytes(keyLength));
+                                                byte[] serverPublicKey = messageReader.ReadBytes(keyLength);
+                                                clientAesKey = clientDiffieHellman.GetSharedSecret(serverPublicKey);
+                                                if (NetworkConfig.SignKeyExchange)
+                                                {
+                                                    ushort signatureLength = messageReader.ReadUInt16();
+                                                    byte[] publicKeySignature = messageReader.ReadBytes(signatureLength);
+                                                    using (RSACryptoServiceProvider rsa = new RSACryptoServiceProvider())
+                                                    {
+                                                        rsa.PersistKeyInCsp = false;
+                                                        rsa.FromXmlString(NetworkConfig.RSAPublicKey);
+                                                        if(!rsa.VerifyData(serverPublicKey, new SHA512CryptoServiceProvider(), publicKeySignature))
+                                                        {
+                                                            //Man in the middle.
+                                                            Debug.LogWarning("MLAPI: Signature doesnt match for the key exchange public part. Disconnecting");
+                                                            StopClient();
+                                                            return;
+                                                        }
+                                                    }
+                                                }
                                             }
 
                                             float netTime = messageReader.ReadSingle();
@@ -1292,6 +1307,7 @@ namespace MLAPI
 
                 byte[] aesKey = new byte[0];
                 byte[] publicKey = new byte[0];
+                byte[] publicKeySignature = new byte[0];
                 if (NetworkConfig.EnableEncryption)
                 {
                     EllipticDiffieHellman diffieHellman = new EllipticDiffieHellman(EllipticDiffieHellman.DEFAULT_CURVE, EllipticDiffieHellman.DEFAULT_GENERATOR, EllipticDiffieHellman.DEFAULT_ORDER);
@@ -1300,6 +1316,16 @@ namespace MLAPI
 
                     if (diffieHellmanPublicKeys.ContainsKey(clientId))
                         diffieHellmanPublicKeys.Remove(clientId);
+
+                    if (NetworkConfig.SignKeyExchange)
+                    {
+                        using (RSACryptoServiceProvider rsa = new RSACryptoServiceProvider())
+                        {
+                            rsa.PersistKeyInCsp = false;
+                            rsa.FromXmlString(NetworkConfig.RSAPrivateKey);
+                            publicKeySignature = rsa.SignData(publicKeySignature, new SHA512CryptoServiceProvider());
+                        }
+                    }
                 }
 
                 NetworkedClient client = new NetworkedClient()
@@ -1315,21 +1341,26 @@ namespace MLAPI
                     GameObject go = SpawnManager.SpawnPlayerObject(clientId, networkId);
                     connectedClients[clientId].PlayerObject = go;
                 }
-
                 int sizeOfStream = 16 + ((connectedClients.Count - 1) * 4);
 
                 int amountOfObjectsToSend = SpawnManager.spawnedObjects.Values.Count(x => x.ServerOnly == false);
 
-                if(NetworkConfig.HandleObjectSpawning)
+                if (NetworkConfig.HandleObjectSpawning)
                 {
                     sizeOfStream += 4;
                     sizeOfStream += 14 * amountOfObjectsToSend;
                 }
-                if(NetworkConfig.EnableEncryption)
+
+                if (NetworkConfig.EnableEncryption)
                 {
                     sizeOfStream += 2 + publicKey.Length;
+                    if (NetworkConfig.SignKeyExchange)
+                    {
+                        sizeOfStream += 2 + publicKeySignature.Length;
+                    }
                 }
-                if(NetworkConfig.EnableSceneSwitching)
+
+                if (NetworkConfig.EnableSceneSwitching)
                 {
                     sizeOfStream += 4;
                 }
@@ -1344,10 +1375,15 @@ namespace MLAPI
                             writer.Write(NetworkSceneManager.CurrentSceneIndex);
                         }
 
-                        if(NetworkConfig.EnableEncryption)
+                        if (NetworkConfig.EnableEncryption)
                         {
                             writer.Write((ushort)publicKey.Length);
                             writer.Write(publicKey);
+                            if (NetworkConfig.SignKeyExchange)
+                            {
+                                writer.Write((ushort)publicKeySignature.Length);
+                                writer.Write(publicKeySignature);
+                            }
                         }
 
                         writer.Write(NetworkTime);
