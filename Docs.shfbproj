@@ -29,7 +29,7 @@
     <HelpFileVersion>1.0.0.0</HelpFileVersion>
     <RootNamespaceContainer>False</RootNamespaceContainer>
     <NamespaceGrouping>False</NamespaceGrouping>
-    <Preliminary>False</Preliminary>
+    <Preliminary>True</Preliminary>
     <SdkLinkTarget>Blank</SdkLinkTarget>
     <NamingMethod>MemberName</NamingMethod>
     <ContentPlacement>AboveNamespaces</ContentPlacement>
@@ -37,10 +37,26 @@
     <WarnOnMissingSourceContext>False</WarnOnMissingSourceContext>
     <DocumentationSources>
       <DocumentationSource sourceFile="MLAPI\bin\Debug\MLAPI.dll" />
-<DocumentationSource sourceFile="MLAPI\bin\Debug\MLAPI.xml" /></DocumentationSources>
+      <DocumentationSource sourceFile="MLAPI\bin\Debug\MLAPI.xml" />
+    </DocumentationSources>
     <MissingTags>Summary, Parameter, Returns, AutoDocumentCtors, TypeParameter, AutoDocumentDispose</MissingTags>
     <HeaderText>
     </HeaderText>
+    <FooterText>
+    </FooterText>
+    <TransformComponentArguments>
+      <Argument Key="logoFile" Value="MLAPI_Logo.png" />
+      <Argument Key="logoHeight" Value="" />
+      <Argument Key="logoWidth" Value="600" />
+      <Argument Key="logoAltText" Value="" />
+      <Argument Key="logoPlacement" Value="right" />
+      <Argument Key="logoAlignment" Value="right" />
+      <Argument Key="maxVersionParts" Value="" />
+      <Argument Key="defaultLanguage" Value="cs" />
+      <Argument Key="includeEnumValues" Value="true" />
+      <Argument Key="baseSourceCodeUrl" Value="https://github.com/TwoTenPvP/MLAPI/" />
+      <Argument Key="requestExampleUrl" Value="" />
+    </TransformComponentArguments>
   </PropertyGroup>
   <!-- There are no properties for these groups.  AnyCPU needs to appear in order for Visual Studio to perform
 			 the build.  The others are optional common platform types that may appear. -->
