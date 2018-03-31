@@ -60,14 +60,14 @@ namespace MLAPI.MonoBehaviours.Core
         void Start()
         {
             Framekeys.AddFirst(0);
-            LagCompensationManager.SimulationObjects.Add(this);
+            LagCompensationManager.simulationObjects.Add(this);
         }
 
         void OnDestroy()
         {
             Framekeys.Clear();
             FrameData.Clear();
-            LagCompensationManager.SimulationObjects.Remove(this);
+            LagCompensationManager.simulationObjects.Remove(this);
         }
 
         internal void AddFrame()

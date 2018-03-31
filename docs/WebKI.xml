@@ -72,8 +72,10 @@
   <HelpKINode Title="LagCompensationManager class">
     <HelpKINode Title="LagCompensationManager Class" Url="html/T_MLAPI_NetworkingManagerComponents_LagCompensationManager.htm" />
     <HelpKINode Title="methods" Url="html/Methods_T_MLAPI_NetworkingManagerComponents_LagCompensationManager.htm" />
+    <HelpKINode Title="properties" Url="html/Properties_T_MLAPI_NetworkingManagerComponents_LagCompensationManager.htm" />
   </HelpKINode>
   <HelpKINode Title="LagCompensationManager.Simulate method" Url="html/Overload_MLAPI_NetworkingManagerComponents_LagCompensationManager_Simulate.htm" />
+  <HelpKINode Title="LagCompensationManager.SimulationObjects property" Url="html/P_MLAPI_NetworkingManagerComponents_LagCompensationManager_SimulationObjects.htm" />
   <HelpKINode Title="MaxConnections field" Url="html/F_MLAPI_NetworkingConfiguration_MaxConnections.htm" />
   <HelpKINode Title="MaxReceiveEventsPerTickRate field" Url="html/F_MLAPI_NetworkingConfiguration_MaxReceiveEventsPerTickRate.htm" />
   <HelpKINode Title="MessageBufferSize field" Url="html/F_MLAPI_NetworkingConfiguration_MessageBufferSize.htm" />
@@ -232,8 +234,8 @@
   <HelpKINode Title="NetworkedTransform.ProximityRange field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedTransform_ProximityRange.htm" />
   <HelpKINode Title="NetworkedTransform.SendsPerSecond field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedTransform_SendsPerSecond.htm" />
   <HelpKINode Title="NetworkedTransform.SnapDistance field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedTransform_SnapDistance.htm" />
-  <HelpKINode Title="networkId property" Url="html/P_MLAPI_NetworkedBehaviour_networkId.htm" />
   <HelpKINode Title="NetworkId property" Url="html/P_MLAPI_NetworkedObject_NetworkId.htm" />
+  <HelpKINode Title="networkId property" Url="html/P_MLAPI_NetworkedBehaviour_networkId.htm" />
   <HelpKINode Title="NetworkingConfiguration class">
     <HelpKINode Title="NetworkingConfiguration Class" Url="html/T_MLAPI_NetworkingConfiguration.htm" />
     <HelpKINode Title="constructor" Url="html/M_MLAPI_NetworkingConfiguration__ctor.htm" />
@@ -367,6 +369,7 @@
   <HelpKINode Title="SetTrigger method" Url="html/Overload_MLAPI_MonoBehaviours_Prototyping_NetworkedAnimator_SetTrigger.htm" />
   <HelpKINode Title="SignKeyExchange field" Url="html/F_MLAPI_NetworkingConfiguration_SignKeyExchange.htm" />
   <HelpKINode Title="Simulate method" Url="html/Overload_MLAPI_NetworkingManagerComponents_LagCompensationManager_Simulate.htm" />
+  <HelpKINode Title="SimulationObjects property" Url="html/P_MLAPI_NetworkingManagerComponents_LagCompensationManager_SimulationObjects.htm" />
   <HelpKINode Title="singleton property" Url="html/P_MLAPI_NetworkingManager_singleton.htm" />
   <HelpKINode Title="SnapDistance field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedTransform_SnapDistance.htm" />
   <HelpKINode Title="Spawn method" Url="html/M_MLAPI_NetworkedObject_Spawn.htm" />

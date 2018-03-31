@@ -11,7 +11,17 @@ namespace MLAPI.NetworkingManagerComponents
     /// </summary>
     public static class LagCompensationManager
     {
-        internal static List<TrackedObject> SimulationObjects = new List<TrackedObject>();
+        internal static List<TrackedObject> simulationObjects = new List<TrackedObject>();
+        /// <summary>
+        /// Simulation objects
+        /// </summary>
+        public static List<TrackedObject> SimulationObjects
+        {
+            get
+            {
+                return simulationObjects;
+            }
+        }
 
         /// <summary>
         /// Turns time back a given amount of seconds, invokes an action and turns it back
@@ -25,16 +35,16 @@ namespace MLAPI.NetworkingManagerComponents
                 Debug.LogWarning("MLAPI: Lag compensation simulations are only to be ran on the server.");
                 return;
             }
-            for (int i = 0; i < SimulationObjects.Count; i++)
+            for (int i = 0; i < simulationObjects.Count; i++)
             {
-                SimulationObjects[i].ReverseTransform(secondsAgo);
+                simulationObjects[i].ReverseTransform(secondsAgo);
             }
 
             action.Invoke();
 
-            for (int i = 0; i < SimulationObjects.Count; i++)
+            for (int i = 0; i < simulationObjects.Count; i++)
             {
-                SimulationObjects[i].ResetStateTransform();
+                simulationObjects[i].ResetStateTransform();
             }
         }
 
@@ -57,9 +67,9 @@ namespace MLAPI.NetworkingManagerComponents
 
         internal static void AddFrames()
         {
-            for (int i = 0; i < SimulationObjects.Count; i++)
+            for (int i = 0; i < simulationObjects.Count; i++)
             {
-                SimulationObjects[i].AddFrame();
+                simulationObjects[i].AddFrame();
             }
         }
     }
