@@ -3,6 +3,9 @@ using System.Collections.Generic;
 
 namespace MLAPI.NetworkingManagerComponents
 {
+    /// <summary>
+    /// Helper class to chunk messages
+    /// </summary>
     public static class MessageChunker
     {
         /// <summary>

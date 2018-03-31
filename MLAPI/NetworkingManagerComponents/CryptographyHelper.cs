@@ -4,6 +4,9 @@ using System.IO;
 
 namespace MLAPI.NetworkingManagerComponents
 {
+    /// <summary>
+    /// Helper class for encryption purposes
+    /// </summary>
     public static class CryptographyHelper
     {
         /// <summary>

@@ -6,6 +6,9 @@ using UnityEngine.Networking;
 
 namespace MLAPI.NetworkingManagerComponents
 {
+    /// <summary>
+    /// The main class for controlling lag compensation
+    /// </summary>
     public static class LagCompensationManager
     {
         public static List<TrackedObject> SimulationObjects = new List<TrackedObject>();

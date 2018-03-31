@@ -10,6 +10,9 @@ using MLAPI.Data;
 
 namespace MLAPI
 {
+    /// <summary>
+    /// The base class to override to write networked code. Inherits MonoBehaviour
+    /// </summary>
     public abstract class NetworkedBehaviour : MonoBehaviour
     {
         /// <summary>

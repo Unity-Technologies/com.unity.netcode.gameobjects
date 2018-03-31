@@ -11,6 +11,9 @@ using System.Security.Cryptography;
 
 namespace MLAPI
 {
+    /// <summary>
+    /// The main component of the library
+    /// </summary>
     [AddComponentMenu("MLAPI/NetworkingManager", -100)]
     public class NetworkingManager : MonoBehaviour
     {

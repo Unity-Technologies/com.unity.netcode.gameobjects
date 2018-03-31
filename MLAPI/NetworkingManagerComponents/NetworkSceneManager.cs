@@ -6,6 +6,9 @@ using UnityEngine.SceneManagement;
 
 namespace MLAPI.NetworkingManagerComponents
 {
+    /// <summary>
+    /// Main class for managing network scenes
+    /// </summary>
     public static class NetworkSceneManager
     {
         internal static HashSet<string> registeredSceneNames;

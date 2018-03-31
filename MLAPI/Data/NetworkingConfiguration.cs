@@ -6,6 +6,9 @@ using UnityEngine.Networking;
 
 namespace MLAPI
 {
+    /// <summary>
+    /// The configuration object used to start server, client and hosts
+    /// </summary>
     public class NetworkingConfiguration
     {
         /// <summary>

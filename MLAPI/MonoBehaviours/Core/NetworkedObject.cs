@@ -5,6 +5,9 @@ using UnityEngine;
 
 namespace MLAPI
 {
+    /// <summary>
+    /// A component used to identify that a GameObject is networked
+    /// </summary>
     [AddComponentMenu("MLAPI/NetworkedObject", -99)]
     public class NetworkedObject : MonoBehaviour
     {

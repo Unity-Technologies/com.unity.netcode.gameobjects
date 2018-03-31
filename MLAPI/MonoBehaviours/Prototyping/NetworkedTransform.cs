@@ -3,6 +3,9 @@ using UnityEngine;
 
 namespace MLAPI.MonoBehaviours.Prototyping
 {
+    /// <summary>
+    /// A prototype component for syncing transforms
+    /// </summary>
     [AddComponentMenu("MLAPI/NetworkedTransform")]
     public class NetworkedTransform : NetworkedBehaviour
     {

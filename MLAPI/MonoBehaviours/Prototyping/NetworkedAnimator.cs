@@ -4,6 +4,9 @@ using UnityEngine;
 
 namespace MLAPI.MonoBehaviours.Prototyping
 {
+    /// <summary>
+    /// A prototype component for syncing animations
+    /// </summary>
     [AddComponentMenu("MLAPI/NetworkedAnimator")]
     public class NetworkedAnimator : NetworkedBehaviour
     {

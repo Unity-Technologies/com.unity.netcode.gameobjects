@@ -5,6 +5,9 @@ using UnityEngine;
 
 namespace MLAPI.NetworkingManagerComponents
 {
+    /// <summary>
+    /// Main class for managing network pools
+    /// </summary>
     public static class NetworkPoolManager
     {
         internal static Dictionary<ushort, NetworkPool> Pools;

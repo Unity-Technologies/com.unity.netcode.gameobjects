@@ -4,7 +4,7 @@ using IntXLib;
 
 namespace MLAPI.NetworkingManagerComponents
 {
-    public class CurvePoint
+    internal class CurvePoint
     {
         public static readonly CurvePoint POINT_AT_INFINITY = new CurvePoint();
         public IntX X { get; private set; }
@@ -22,7 +22,7 @@ namespace MLAPI.NetworkingManagerComponents
         }
     }
 
-    public class EllipticCurve
+    internal class EllipticCurve
     {
         public enum CurveType { Weierstrass, Montgomery }
 

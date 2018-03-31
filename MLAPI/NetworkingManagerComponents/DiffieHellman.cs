@@ -5,7 +5,7 @@ using System.Security.Cryptography;
 
 namespace MLAPI.NetworkingManagerComponents
 {
-    public class EllipticDiffieHellman
+    internal class EllipticDiffieHellman
     {
         protected static readonly RNGCryptoServiceProvider rand = new RNGCryptoServiceProvider();
         public static readonly IntX DEFAULT_PRIME = (new IntX(1) << 255) - 19;

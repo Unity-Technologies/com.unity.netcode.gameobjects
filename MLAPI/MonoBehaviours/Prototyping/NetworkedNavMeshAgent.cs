@@ -5,6 +5,9 @@ using UnityEngine.AI;
 
 namespace MLAPI.MonoBehaviours.Prototyping
 {
+    /// <summary>
+    /// A prototype component for syncing navmeshagents
+    /// </summary>
     [AddComponentMenu("MLAPI/NetworkedNavMeshAgent")]
     public class NetworkedNavMeshAgent : NetworkedBehaviour
     {
