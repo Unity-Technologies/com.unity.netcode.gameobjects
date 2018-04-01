@@ -686,6 +686,18 @@ namespace MLAPI.MonoBehaviours.Core
         }
 
         /// <summary>
+        /// Sends a binary serialized class to the server from client 
+        /// </summary>
+        /// <typeparam name="T">The class type to send</typeparam>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="instance">The instance to send</param>
+        protected void SendToServer<T>(string messageType, string channelName, T instance)
+        {
+            SendToServer(messageType, channelName, BinarySerializer.Serialize<T>(instance));
+        }
+
+        /// <summary>
         /// Sends a buffer to the server from client. Only handlers on this NetworkedBehaviour will get invoked
         /// </summary>
         /// <param name="messageType">User defined messageType</param>
@@ -704,6 +716,18 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
             NetworkingManager.singleton.Send(NetworkingManager.singleton.serverClientId, messageType, channelName, data, networkId, networkedObject.GetOrderIndex(this));            
+        }
+
+        /// <summary>
+        /// Sends a binary serialized class to the server from client. Only handlers on this NetworkedBehaviour will get invoked
+        /// </summary>
+        /// <typeparam name="T">The class type to send</typeparam>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="instance">The instance to send</param>
+        protected void SendToServerTarget<T>(string messageType, string channelName, T instance)
+        {
+            SendToServerTarget(messageType, channelName, BinarySerializer.Serialize<T>(instance));
         }
 
         /// <summary>
@@ -728,6 +752,18 @@ namespace MLAPI.MonoBehaviours.Core
         }
 
         /// <summary>
+        /// Sends a binary serialized class to the server from client
+        /// </summary>
+        /// <typeparam name="T">The class type to send</typeparam>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>	
+        /// <param name="instance">The instance to send</param>
+        protected void SendToLocalClient<T>(string messageType, string channelName, T instance)
+        {
+            SendToLocalClient(messageType, channelName, BinarySerializer.Serialize<T>(instance));
+        }
+
+        /// <summary>
         /// Sends a buffer to the client that owns this object from the server. Only handlers on this NetworkedBehaviour will get invoked
         /// </summary>
         /// <param name="messageType">User defined messageType</param>
@@ -746,6 +782,18 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
             NetworkingManager.singleton.Send(ownerClientId, messageType, channelName, data, networkId, networkedObject.GetOrderIndex(this));
+        }
+
+        /// <summary>
+        /// Sends a buffer to the client that owns this object from the server. Only handlers on this NetworkedBehaviour will get invoked
+        /// </summary>
+        /// <typeparam name="T">The class type to send</typeparam>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>	
+        /// <param name="instance">The instance to send</param>
+        protected void SendToLocalClientTarget<T>(string messageType, string channelName, T instance)
+        {
+            SendToLocalClientTarget(messageType, channelName, BinarySerializer.Serialize<T>(instance));
         }
 
         /// <summary>
@@ -770,6 +818,18 @@ namespace MLAPI.MonoBehaviours.Core
         }
 
         /// <summary>
+        /// Sends a binary serialized class to all clients except to the owner object from the server
+        /// </summary>
+        /// <typeparam name="T">The class type to send</typeparam>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>	
+        /// <param name="instance">The instance to send</param>
+        protected void SendToNonLocalClients<T>(string messageType, string channelName, T instance)
+        {
+            SendToNonLocalClients(messageType, channelName, BinarySerializer.Serialize<T>(instance));
+        }
+
+        /// <summary>
         /// Sends a buffer to all clients except to the owner object from the server. Only handlers on this NetworkedBehaviour will get invoked
         /// </summary>
         /// <param name="messageType">User defined messageType</param>
@@ -788,6 +848,18 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
             NetworkingManager.singleton.Send(messageType, channelName, data, ownerClientId, networkId, networkedObject.GetOrderIndex(this));
+        }
+
+        /// <summary>
+        /// Sends a binary serialized class to all clients except to the owner object from the server. Only handlers on this NetworkedBehaviour will get invoked
+        /// </summary>
+        /// <typeparam name="T">The class type to send</typeparam>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>	
+        /// <param name="instance">The instance to send</param>
+        protected void SendToNonLocalClientsTarget<T>(string messageType, string channelName, T instance)
+        {
+            SendToNonLocalClientsTarget(messageType, channelName, BinarySerializer.Serialize<T>(instance));
         }
 
         /// <summary>
@@ -813,6 +885,19 @@ namespace MLAPI.MonoBehaviours.Core
         }
 
         /// <summary>
+        /// Sends a binary serialized class to a client with a given clientId from Server
+        /// </summary>
+        /// <typeparam name="T">The class type to send</typeparam>
+        /// <param name="clientId">The clientId to send the message to</param>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>	
+        /// <param name="instance">The instance to send</param>
+        protected void SendToClient<T>(int clientId, string messageType, string channelName, T instance)
+        {
+            SendToClient(clientId, messageType, channelName, BinarySerializer.Serialize<T>(instance));
+        }
+
+        /// <summary>
         /// Sends a buffer to a client with a given clientId from Server. Only handlers on this NetworkedBehaviour gets invoked
         /// </summary>
         /// <param name="clientId">The clientId to send the message to</param>
@@ -832,6 +917,19 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
             NetworkingManager.singleton.Send(clientId, messageType, channelName, data, networkId, networkedObject.GetOrderIndex(this));
+        }
+
+        /// <summary>
+        /// Sends a buffer to a client with a given clientId from Server. Only handlers on this NetworkedBehaviour gets invoked
+        /// </summary>
+        /// <typeparam name="T">The class type to send</typeparam>
+        /// <param name="clientId">The clientId to send the message to</param>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>	
+        /// <param name="instance">The instance to send</param>
+        protected void SendToClientTarget<T>(int clientId, string messageType, string channelName, T instance)
+        {
+            SendToClientTarget(clientId, messageType, channelName, BinarySerializer.Serialize<T>(instance));
         }
 
         /// <summary>
@@ -857,6 +955,19 @@ namespace MLAPI.MonoBehaviours.Core
         }
 
         /// <summary>
+        /// Sends a binary serialized class to multiple clients from the server
+        /// </summary>
+        /// <typeparam name="T">The class type to send</typeparam>
+        /// <param name="clientIds">The clientId's to send to</param>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>	
+        /// <param name="instance">The instance to send</param>
+        protected void SendToClients<T>(int[] clientIds, string messageType, string channelName, T instance)
+        {
+            SendToClients(clientIds, messageType, channelName, BinarySerializer.Serialize<T>(instance));
+        }
+
+        /// <summary>
         /// Sends a buffer to multiple clients from the server. Only handlers on this NetworkedBehaviour gets invoked
         /// </summary>
         /// <param name="clientIds">The clientId's to send to</param>
@@ -876,6 +987,19 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
             NetworkingManager.singleton.Send(clientIds, messageType, channelName, data, networkId, networkedObject.GetOrderIndex(this));
+        }
+
+        /// <summary>
+        /// Sends a buffer to multiple clients from the server. Only handlers on this NetworkedBehaviour gets invoked
+        /// </summary>
+        /// <typeparam name="T">The class type to send</typeparam>
+        /// <param name="clientIds">The clientId's to send to</param>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>	
+        /// <param name="instance">The instance to send</param>
+        protected void SendToClientsTarget<T>(int[] clientIds, string messageType, string channelName, T instance)
+        {
+            SendToClientsTarget(clientIds, messageType, channelName, BinarySerializer.Serialize<T>(instance));
         }
 
         /// <summary>
@@ -901,6 +1025,19 @@ namespace MLAPI.MonoBehaviours.Core
         }
 
         /// <summary>
+        /// Sends a binary serialized class to multiple clients from the server
+        /// </summary>
+        /// <typeparam name="T">The class type to send</typeparam>
+        /// <param name="clientIds">The clientId's to send to</param>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>	
+        /// <param name="instance">The instance to send</param>
+        protected void SendToClients<T>(List<int> clientIds, string messageType, string channelName, T instance)
+        {
+            SendToClients(clientIds, messageType, channelName, BinarySerializer.Serialize<T>(instance));
+        }
+
+        /// <summary>
         /// Sends a buffer to multiple clients from the server. Only handlers on this NetworkedBehaviour gets invoked
         /// </summary>
         /// <param name="clientIds">The clientId's to send to</param>
@@ -920,6 +1057,11 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
             NetworkingManager.singleton.Send(clientIds, messageType, channelName, data, networkId, networkedObject.GetOrderIndex(this));
+        }
+
+        protected void SendToClientsTarget<T>(List<int> clientIds, string messageType, string channelName, T instance)
+        {
+            SendToClientsTarget(clientIds, messageType, channelName, BinarySerializer.Serialize<T>(instance));
         }
 
         /// <summary>
@@ -944,6 +1086,18 @@ namespace MLAPI.MonoBehaviours.Core
         }
 
         /// <summary>
+        /// Sends a buffer to all clients from the server
+        /// </summary>
+        /// <typeparam name="T">The class type to send</typeparam>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>	
+        /// <param name="instance">The instance to send</param>
+        protected void SendToClients<T>(string messageType, string channelName, T instance)
+        {
+            SendToClients(messageType, channelName, BinarySerializer.Serialize<T>(instance));
+        }
+
+        /// <summary>
         /// Sends a buffer to all clients from the server. Only handlers on this NetworkedBehaviour will get invoked
         /// </summary>
         /// <param name="messageType">User defined messageType</param>
@@ -962,6 +1116,18 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
             NetworkingManager.singleton.Send(messageType, channelName, data, networkId, networkedObject.GetOrderIndex(this));
+        }
+
+        /// <summary>
+        /// Sends a buffer to all clients from the server. Only handlers on this NetworkedBehaviour will get invoked
+        /// </summary>
+        /// <typeparam name="T">The class type to send</typeparam>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>	
+        /// <param name="instance">The instance to send</param>
+        protected void SendToClientsTarget<T>(string messageType, string channelName, T instance)
+        {
+            SendToClientsTarget(messageType, channelName, BinarySerializer.Serialize<T>(instance));
         }
         #endregion
 
