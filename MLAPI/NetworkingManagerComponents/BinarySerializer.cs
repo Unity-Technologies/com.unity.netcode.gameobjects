@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using UnityEngine;
 
 namespace MLAPI.NetworkingManagerComponents
 {
@@ -74,6 +75,8 @@ namespace MLAPI.NetworkingManagerComponents
                     outputSize += Encoding.UTF8.GetByteCount((string)sortedFields[i].GetValue(instance)) + 2;
                 else if (sortedFields[i].FieldType == typeof(byte[]))
                     outputSize += ((byte[])sortedFields[i].GetValue(instance)).Length + 2; //Two bytes to specify the size
+                else
+                    Debug.LogWarning("MLAPI: The type \"" + sortedFields[i].FieldType.Name + "\" is not supported by the Binary Serializer. It will be ignored");
             }
 
             //Write data
@@ -187,6 +190,8 @@ namespace MLAPI.NetworkingManagerComponents
                             ushort size = reader.ReadUInt16();
                             sortedFields[i].SetValue(instance, reader.ReadBytes(size));
                         }
+                        else
+                            Debug.LogWarning("MLAPI: The type \"" + sortedFields[i].FieldType.Name + "\" is not supported by the Binary Serializer. It will be ignored");
                     }
                 }
             }
