@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 
-namespace MLAPI.NetworkingManagerComponents
+namespace MLAPI.NetworkingManagerComponents.Core
 {
     /// <summary>
     /// Main class for managing network pools

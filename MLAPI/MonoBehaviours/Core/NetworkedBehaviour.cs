@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
-using MLAPI.NetworkingManagerComponents;
 using System.Reflection;
 using MLAPI.Attributes;
 using System.Linq;
 using System.IO;
 using MLAPI.Data;
+using MLAPI.NetworkingManagerComponents.Binary;
+using MLAPI.NetworkingManagerComponents.Core;
 
 namespace MLAPI.MonoBehaviours.Core
 {

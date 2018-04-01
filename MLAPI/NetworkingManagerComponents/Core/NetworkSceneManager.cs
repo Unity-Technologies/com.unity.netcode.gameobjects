@@ -5,7 +5,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace MLAPI.NetworkingManagerComponents
+namespace MLAPI.NetworkingManagerComponents.Core
 {
     /// <summary>
     /// Main class for managing network scenes

@@ -6,7 +6,7 @@ using System.Reflection;
 using System.Text;
 using UnityEngine;
 
-namespace MLAPI.NetworkingManagerComponents
+namespace MLAPI.NetworkingManagerComponents.Binary
 {
     /// <summary>
     /// Helper class for serializing classes to binary

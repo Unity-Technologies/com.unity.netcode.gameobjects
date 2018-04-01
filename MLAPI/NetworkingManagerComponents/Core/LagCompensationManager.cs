@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Networking;
 
-namespace MLAPI.NetworkingManagerComponents
+namespace MLAPI.NetworkingManagerComponents.Core
 {
     /// <summary>
     /// The main class for controlling lag compensation

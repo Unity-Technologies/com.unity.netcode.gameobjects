@@ -1,4 +1,4 @@
-﻿using MLAPI.NetworkingManagerComponents;
+﻿using MLAPI.NetworkingManagerComponents.Core;
 using System;
 using System.Collections.Generic;
 using UnityEngine;

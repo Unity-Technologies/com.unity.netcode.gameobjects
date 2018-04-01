@@ -3,7 +3,7 @@ using IntXLib;
 using System.Text;
 using System.Security.Cryptography;
 
-namespace MLAPI.NetworkingManagerComponents
+namespace MLAPI.NetworkingManagerComponents.Cryptography
 {
     internal class EllipticDiffieHellman
     {

@@ -73,11 +73,11 @@
     <Compile Include="Data\TrackedPointData.cs" />
     <Compile Include="MonoBehaviours\Prototyping\NetworkedAnimator.cs" />
     <Compile Include="MonoBehaviours\Prototyping\NetworkedNavMeshAgent.cs" />
-    <Compile Include="NetworkingManagerComponents\BinarySerializer.cs" />
-    <Compile Include="NetworkingManagerComponents\CryptographyHelper.cs" />
-    <Compile Include="NetworkingManagerComponents\DiffieHellman.cs" />
-    <Compile Include="NetworkingManagerComponents\EllipticCurve.cs" />
-    <Compile Include="NetworkingManagerComponents\LagCompensationManager.cs" />
+    <Compile Include="NetworkingManagerComponents\Binary\BinarySerializer.cs" />
+    <Compile Include="NetworkingManagerComponents\Cryptography\CryptographyHelper.cs" />
+    <Compile Include="NetworkingManagerComponents\Cryptography\DiffieHellman.cs" />
+    <Compile Include="NetworkingManagerComponents\Cryptography\EllipticCurve.cs" />
+    <Compile Include="NetworkingManagerComponents\Core\LagCompensationManager.cs" />
     <Compile Include="MonoBehaviours\Core\NetworkedBehaviour.cs" />
     <Compile Include="Data\NetworkedClient.cs" />
     <Compile Include="MonoBehaviours\Core\NetworkedObject.cs" />
@@ -85,14 +85,14 @@
     <Compile Include="MonoBehaviours\Core\NetworkingManager.cs" />
     <Compile Include="MonoBehaviours\Core\TrackedObject.cs" />
     <Compile Include="MonoBehaviours\Prototyping\NetworkedTransform.cs" />
-    <Compile Include="NetworkingManagerComponents\MessageManager.cs" />
-    <Compile Include="NetworkingManagerComponents\NetworkPoolManager.cs" />
-    <Compile Include="NetworkingManagerComponents\NetworkSceneManager.cs" />
-    <Compile Include="NetworkingManagerComponents\SpawnManager.cs" />
+    <Compile Include="NetworkingManagerComponents\Core\MessageManager.cs" />
+    <Compile Include="NetworkingManagerComponents\Core\NetworkPoolManager.cs" />
+    <Compile Include="NetworkingManagerComponents\Core\NetworkSceneManager.cs" />
+    <Compile Include="NetworkingManagerComponents\Core\SpawnManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="NetworkingManagerComponents\ClientIdManager.cs" />
+    <Compile Include="NetworkingManagerComponents\Core\ClientIdManager.cs" />
     <Compile Include="Data\ClientIdKey.cs" />
-    <Compile Include="NetworkingManagerComponents\MessageChunker.cs" />
+    <Compile Include="NetworkingManagerComponents\Binary\MessageChunker.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

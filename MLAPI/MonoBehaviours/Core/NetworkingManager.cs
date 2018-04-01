@@ -1,5 +1,4 @@
 ﻿using MLAPI.Data;
-using MLAPI.NetworkingManagerComponents;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -8,6 +7,8 @@ using UnityEngine;
 using UnityEngine.Networking;
 using System.Linq;
 using System.Security.Cryptography;
+using MLAPI.NetworkingManagerComponents.Cryptography;
+using MLAPI.NetworkingManagerComponents.Core;
 
 namespace MLAPI.MonoBehaviours.Core
 {
