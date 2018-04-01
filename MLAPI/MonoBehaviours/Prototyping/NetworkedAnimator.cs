@@ -117,8 +117,10 @@ namespace MLAPI.MonoBehaviours.Prototyping
 
             CheckSendRate();
 
+#pragma warning disable IDE0018 // Inline variable declaration, Unity's Mono version doesn't support it
             int stateHash;
             float normalizedTime;
+#pragma warning restore IDE0018 // Inline variable declaration, Unity's Mono version doesn't support it
             if (!CheckAnimStateChanged(out stateHash, out normalizedTime))
             {
                 return;
