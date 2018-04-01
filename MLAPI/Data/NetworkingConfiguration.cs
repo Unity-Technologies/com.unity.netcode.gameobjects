@@ -4,7 +4,7 @@ using System.IO;
 using System.Security.Cryptography;
 using UnityEngine.Networking;
 
-namespace MLAPI
+namespace MLAPI.Data
 {
     /// <summary>
     /// The configuration object used to start server, client and hosts

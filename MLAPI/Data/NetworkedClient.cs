@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace MLAPI
+namespace MLAPI.Data
 {
     /// <summary>
     /// A NetworkedClient
