@@ -66,6 +66,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Attributes\BinaryIgnore.cs" />
     <Compile Include="Data\FieldType.cs" />
     <Compile Include="Attributes\SyncedVar.cs" />
     <Compile Include="Data\NetworkPool.cs" />

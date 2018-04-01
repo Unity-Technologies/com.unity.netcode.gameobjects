@@ -1,10 +1,9 @@
-﻿using System;
+﻿using MLAPI.Attributes;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using UnityEngine;
 
 namespace MLAPI.NetworkingManagerComponents
 {
@@ -37,7 +36,7 @@ namespace MLAPI.NetworkingManagerComponents
                 sortedFields = cachedFields[instance.GetType().FullName];
             else
             {
-                sortedFields = instance.GetType().GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).OrderBy(x => x.Name).ToArray();
+                sortedFields = instance.GetType().GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).OrderBy(x => x.Name).Where(x => !x.IsDefined(typeof(BinaryIgnore), true)).ToArray();
                 cachedFields.Add(instance.GetType().FullName, sortedFields);
             }
 
@@ -142,7 +141,7 @@ namespace MLAPI.NetworkingManagerComponents
                 sortedFields = cachedFields[instance.GetType().FullName];
             else
             {
-                sortedFields = instance.GetType().GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).OrderBy(x => x.Name).ToArray();
+                sortedFields = instance.GetType().GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).OrderBy(x => x.Name).Where(x => !x.IsDefined(typeof(BinaryIgnore), true)).ToArray();
                 cachedFields.Add(instance.GetType().FullName, sortedFields);
             }
 
