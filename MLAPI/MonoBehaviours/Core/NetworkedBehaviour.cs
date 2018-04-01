@@ -1059,6 +1059,14 @@ namespace MLAPI.MonoBehaviours.Core
             NetworkingManager.singleton.Send(clientIds, messageType, channelName, data, networkId, networkedObject.GetOrderIndex(this));
         }
 
+        /// <summary>
+        /// Sends a buffer to multiple clients from the server. Only handlers on this NetworkedBehaviour gets invoked
+        /// </summary>
+        /// <typeparam name="T">The class type to send</typeparam>
+        /// <param name="clientIds">The clientId's to send to</param>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>	
+        /// <param name="instance">The instance to send</param>
         protected void SendToClientsTarget<T>(List<int> clientIds, string messageType, string channelName, T instance)
         {
             SendToClientsTarget(clientIds, messageType, channelName, BinarySerializer.Serialize<T>(instance));
