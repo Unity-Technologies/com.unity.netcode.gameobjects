@@ -74,7 +74,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 Debug.LogWarning("MLAPI: Scene switching is not enabled but was requested by the server");
                 return;
             }
-            else if (!sceneIndexToString.ContainsKey(sceneIndex) || registeredSceneNames.Contains(sceneIndexToString[sceneIndex]))
+            else if (!sceneIndexToString.ContainsKey(sceneIndex) || !registeredSceneNames.Contains(sceneIndexToString[sceneIndex]))
             {
                 Debug.LogWarning("MLAPI: Server requested a scene switch to a non registered scene");
                 return;
