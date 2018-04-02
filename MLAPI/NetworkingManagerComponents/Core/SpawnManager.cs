@@ -75,6 +75,15 @@ namespace MLAPI.NetworkingManagerComponents.Core
             }
         }
 
+        internal static void DestroyNonSceneObjects()
+        {
+            foreach (KeyValuePair<uint, NetworkedObject> netObject in spawnedObjects)
+            {
+                if (!netObject.Value.sceneObject)
+                    MonoBehaviour.Destroy(netObject.Value.gameObject);
+            }
+        }
+
         internal static GameObject SpawnObject(int spawnablePrefabIndex, uint networkId, int ownerId, Vector3 position, Quaternion rotation)
         {
             GameObject go = MonoBehaviour.Instantiate(netManager.SpawnablePrefabs[spawnablePrefabIndex]);

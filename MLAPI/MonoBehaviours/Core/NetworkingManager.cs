@@ -365,6 +365,12 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="netConfig">The NetworkingConfiguration to use</param>
         public void StartServer()
         {
+            if (isServer || isClient)
+            {
+                Debug.LogWarning("MLAPI: Cannot start server while an instance is already running");
+                return;
+            }
+
             ConnectionConfig cConfig = Init();
             if (NetworkConfig.ConnectionApproval)
             {
@@ -389,6 +395,12 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="netConfig">The NetworkingConfiguration to use</param>
         public void StartClient()
         {
+            if (isServer || isClient)
+            {
+                Debug.LogWarning("MLAPI: Cannot start client while an instance is already running");
+                return;
+            }
+
             ConnectionConfig cConfig = Init();
             HostTopology hostTopology = new HostTopology(cConfig, NetworkConfig.MaxConnections);
             hostId =  NetworkTransport.AddHost(hostTopology, 0, null);
@@ -453,6 +465,11 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="netConfig">The NetworkingConfiguration to use</param>
         public void StartHost()
         {
+            if (isServer || isClient)
+            {
+                Debug.LogWarning("MLAPI: Cannot start host while an instance is already running");
+                return;
+            }
             ConnectionConfig cConfig = Init();
             if (NetworkConfig.ConnectionApproval)
             {
@@ -502,6 +519,7 @@ namespace MLAPI.MonoBehaviours.Core
             isListening = false;
             _isClient = false;
             _isServer = false;
+            SpawnManager.DestroyNonSceneObjects();
             NetworkTransport.Shutdown();
         }
 
