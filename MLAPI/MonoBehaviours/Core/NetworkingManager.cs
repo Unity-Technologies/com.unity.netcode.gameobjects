@@ -247,32 +247,34 @@ namespace MLAPI.MonoBehaviours.Core
             };
 
             //MLAPI channels and messageTypes
-            List<Channel> internalChannels = new List<Channel>();
-            internalChannels.Add(new Channel()
+            List<Channel> internalChannels = new List<Channel>
             {
-                Name = "MLAPI_INTERNAL",
-                Type = QosType.ReliableFragmentedSequenced
-            });
-            internalChannels.Add(new Channel()
-            {
-                Name = "MLAPI_POSITION_UPDATE",
-                Type = QosType.StateUpdate
-            });
-            internalChannels.Add(new Channel()
-            {
-                Name = "MLAPI_ANIMATION_UPDATE",
-                Type = QosType.ReliableSequenced
-            });
-            internalChannels.Add(new Channel()
-            {
-                Name = "MLAPI_NAV_AGENT_STATE",
-                Type = QosType.ReliableSequenced
-            });
-            internalChannels.Add(new Channel()
-            {
-                Name = "MLAPI_NAV_AGENT_CORRECTION",
-                Type = QosType.StateUpdate
-            });
+                new Channel()
+                {
+                    Name = "MLAPI_INTERNAL",
+                    Type = QosType.ReliableFragmentedSequenced
+                },
+                new Channel()
+                {
+                    Name = "MLAPI_POSITION_UPDATE",
+                    Type = QosType.StateUpdate
+                },
+                new Channel()
+                {
+                    Name = "MLAPI_ANIMATION_UPDATE",
+                    Type = QosType.ReliableSequenced
+                },
+                new Channel()
+                {
+                    Name = "MLAPI_NAV_AGENT_STATE",
+                    Type = QosType.ReliableSequenced
+                },
+                new Channel()
+                {
+                    Name = "MLAPI_NAV_AGENT_CORRECTION",
+                    Type = QosType.StateUpdate
+                }
+            };
 
             HashSet<string> channelNames = new HashSet<string>();
             for (int i = 0; i < internalChannels.Count; i++)
@@ -299,14 +301,16 @@ namespace MLAPI.MonoBehaviours.Core
             MessageManager.messageTypes.Add("MLAPI_CHANGE_OWNER", 8);
             MessageManager.messageTypes.Add("MLAPI_SYNC_VAR_UPDATE", 9);
 
-            List<string> messageTypes = new List<string>(NetworkConfig.MessageTypes);
-            messageTypes.Add("MLAPI_OnRecieveTransformFromClient");
-            messageTypes.Add("MLAPI_OnRecieveTransformFromServer");
-            messageTypes.Add("MLAPI_HandleAnimationMessage");
-            messageTypes.Add("MLAPI_HandleAnimationParameterMessage");
-            messageTypes.Add("MLAPI_HandleAnimationTriggerMessage");
-            messageTypes.Add("MLAPI_OnNavMeshStateUpdate");
-            messageTypes.Add("MLAPI_OnNavMeshCorrectionUpdate");
+            List<string> messageTypes = new List<string>(NetworkConfig.MessageTypes)
+            {
+                "MLAPI_OnRecieveTransformFromClient",
+                "MLAPI_OnRecieveTransformFromServer",
+                "MLAPI_HandleAnimationMessage",
+                "MLAPI_HandleAnimationParameterMessage",
+                "MLAPI_HandleAnimationTriggerMessage",
+                "MLAPI_OnNavMeshStateUpdate",
+                "MLAPI_OnNavMeshCorrectionUpdate"
+            };
 
             if (NetworkConfig.EnableSceneSwitching)
             {
