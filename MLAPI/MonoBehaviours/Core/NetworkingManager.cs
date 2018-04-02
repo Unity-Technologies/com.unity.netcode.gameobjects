@@ -92,7 +92,9 @@ namespace MLAPI.MonoBehaviours.Core
                 return isServer && isClient;
             }
         }
-
+        /// <summary>
+        /// Gets wheter or not a client is running
+        /// </summary>
         public bool isClient
         {
             get
@@ -101,6 +103,9 @@ namespace MLAPI.MonoBehaviours.Core
             }
         }
 
+        /// <summary>
+        /// Gets wheter or not a server is running
+        /// </summary>
         public bool isServer
         {
             get
