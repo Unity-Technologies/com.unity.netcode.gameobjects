@@ -77,10 +77,13 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
         internal static void DestroyNonSceneObjects()
         {
-            foreach (KeyValuePair<uint, NetworkedObject> netObject in spawnedObjects)
+            if(spawnedObjects != null)
             {
-                if (!netObject.Value.sceneObject)
-                    MonoBehaviour.Destroy(netObject.Value.gameObject);
+                foreach (KeyValuePair<uint, NetworkedObject> netObject in spawnedObjects)
+                {
+                    if (!netObject.Value.sceneObject)
+                        MonoBehaviour.Destroy(netObject.Value.gameObject);
+                }
             }
         }
 
