@@ -70,7 +70,10 @@
   <HelpKINode Title="hook field" Url="html/F_MLAPI_Attributes_SyncedVar_hook.htm" />
   <HelpKINode Title="InterpolatePosition field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedTransform_InterpolatePosition.htm" />
   <HelpKINode Title="InterpolateServer field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedTransform_InterpolateServer.htm" />
-  <HelpKINode Title="isClient property" Url="html/P_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_isClient.htm" />
+  <HelpKINode Title="isClient property">
+    <HelpKINode Title="NetworkedBehaviour.isClient Property " Url="html/P_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_isClient.htm" />
+    <HelpKINode Title="NetworkingManager.isClient Property " Url="html/P_MLAPI_MonoBehaviours_Core_NetworkingManager_isClient.htm" />
+  </HelpKINode>
   <HelpKINode Title="IsClientConnected property" Url="html/P_MLAPI_MonoBehaviours_Core_NetworkingManager_IsClientConnected.htm" />
   <HelpKINode Title="isHost property">
     <HelpKINode Title="NetworkedBehaviour.isHost Property " Url="html/P_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_isHost.htm" />
@@ -87,7 +90,11 @@
   </HelpKINode>
   <HelpKINode Title="isPlayerObject property" Url="html/P_MLAPI_MonoBehaviours_Core_NetworkedObject_isPlayerObject.htm" />
   <HelpKINode Title="isPooledObject property" Url="html/P_MLAPI_MonoBehaviours_Core_NetworkedObject_isPooledObject.htm" />
-  <HelpKINode Title="isServer property" Url="html/P_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_isServer.htm" />
+  <HelpKINode Title="isServer property">
+    <HelpKINode Title="NetworkedBehaviour.isServer Property " Url="html/P_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_isServer.htm" />
+    <HelpKINode Title="NetworkingManager.isServer Property " Url="html/P_MLAPI_MonoBehaviours_Core_NetworkingManager_isServer.htm" />
+  </HelpKINode>
+  <HelpKINode Title="isSpawned property" Url="html/P_MLAPI_MonoBehaviours_Core_NetworkedObject_isSpawned.htm" />
   <HelpKINode Title="LagCompensationManager class">
     <HelpKINode Title="LagCompensationManager Class" Url="html/T_MLAPI_NetworkingManagerComponents_Core_LagCompensationManager.htm" />
     <HelpKINode Title="methods" Url="html/Methods_T_MLAPI_NetworkingManagerComponents_Core_LagCompensationManager.htm" />
@@ -230,6 +237,7 @@
   <HelpKINode Title="NetworkedObject.isOwner property" Url="html/P_MLAPI_MonoBehaviours_Core_NetworkedObject_isOwner.htm" />
   <HelpKINode Title="NetworkedObject.isPlayerObject property" Url="html/P_MLAPI_MonoBehaviours_Core_NetworkedObject_isPlayerObject.htm" />
   <HelpKINode Title="NetworkedObject.isPooledObject property" Url="html/P_MLAPI_MonoBehaviours_Core_NetworkedObject_isPooledObject.htm" />
+  <HelpKINode Title="NetworkedObject.isSpawned property" Url="html/P_MLAPI_MonoBehaviours_Core_NetworkedObject_isSpawned.htm" />
   <HelpKINode Title="NetworkedObject.NetworkedObject constructor" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedObject__ctor.htm" />
   <HelpKINode Title="NetworkedObject.NetworkId property" Url="html/P_MLAPI_MonoBehaviours_Core_NetworkedObject_NetworkId.htm" />
   <HelpKINode Title="NetworkedObject.OwnerClientId property" Url="html/P_MLAPI_MonoBehaviours_Core_NetworkedObject_OwnerClientId.htm" />
@@ -304,8 +312,10 @@
   <HelpKINode Title="NetworkingManager.ConnectedClients property" Url="html/P_MLAPI_MonoBehaviours_Core_NetworkingManager_ConnectedClients.htm" />
   <HelpKINode Title="NetworkingManager.DefaultPlayerPrefab field" Url="html/F_MLAPI_MonoBehaviours_Core_NetworkingManager_DefaultPlayerPrefab.htm" />
   <HelpKINode Title="NetworkingManager.DontDestroy field" Url="html/F_MLAPI_MonoBehaviours_Core_NetworkingManager_DontDestroy.htm" />
+  <HelpKINode Title="NetworkingManager.isClient property" Url="html/P_MLAPI_MonoBehaviours_Core_NetworkingManager_isClient.htm" />
   <HelpKINode Title="NetworkingManager.IsClientConnected property" Url="html/P_MLAPI_MonoBehaviours_Core_NetworkingManager_IsClientConnected.htm" />
   <HelpKINode Title="NetworkingManager.isHost property" Url="html/P_MLAPI_MonoBehaviours_Core_NetworkingManager_isHost.htm" />
+  <HelpKINode Title="NetworkingManager.isServer property" Url="html/P_MLAPI_MonoBehaviours_Core_NetworkingManager_isServer.htm" />
   <HelpKINode Title="NetworkingManager.MyClientId property" Url="html/P_MLAPI_MonoBehaviours_Core_NetworkingManager_MyClientId.htm" />
   <HelpKINode Title="NetworkingManager.NetworkConfig field" Url="html/F_MLAPI_MonoBehaviours_Core_NetworkingManager_NetworkConfig.htm" />
   <HelpKINode Title="NetworkingManager.NetworkingManager constructor" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkingManager__ctor.htm" />
@@ -348,8 +358,8 @@
   <HelpKINode Title="OnLostOwnership method" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_OnLostOwnership.htm" />
   <HelpKINode Title="OnServerStarted field" Url="html/F_MLAPI_MonoBehaviours_Core_NetworkingManager_OnServerStarted.htm" />
   <HelpKINode Title="OwnedObjects field" Url="html/F_MLAPI_Data_NetworkedClient_OwnedObjects.htm" />
-  <HelpKINode Title="ownerClientId property" Url="html/P_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_ownerClientId.htm" />
   <HelpKINode Title="OwnerClientId property" Url="html/P_MLAPI_MonoBehaviours_Core_NetworkedObject_OwnerClientId.htm" />
+  <HelpKINode Title="ownerClientId property" Url="html/P_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_ownerClientId.htm" />
   <HelpKINode Title="param0 field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedAnimator_param0.htm" />
   <HelpKINode Title="param1 field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedAnimator_param1.htm" />
   <HelpKINode Title="param2 field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedAnimator_param2.htm" />
