@@ -206,10 +206,12 @@ namespace MLAPI.MonoBehaviours.Core
         internal List<FieldType> syncedFieldTypes = new List<FieldType>();
         private List<object> syncedFieldValues = new List<object>();
         private List<MethodInfo> syncedVarHooks = new List<MethodInfo>();
+        private bool syncVarInit = false;
         //A dirty field is a field that's not synced.
         private bool[] dirtyFields;
         internal void SyncVarInit()
         {
+            syncVarInit = true;
             FieldInfo[] sortedFields = GetType().GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy | BindingFlags.Instance).OrderBy(x => x.Name).ToArray();
             for (byte i = 0; i < sortedFields.Length; i++)
             {
@@ -453,6 +455,8 @@ namespace MLAPI.MonoBehaviours.Core
         private float lastSyncTime = 0f;
         internal void SyncVarUpdate()
         {
+            if (!syncVarInit)
+                SyncVarInit();
             SetDirtyness();
             if(Time.time - lastSyncTime >= SyncVarSyncDelay)
             {
