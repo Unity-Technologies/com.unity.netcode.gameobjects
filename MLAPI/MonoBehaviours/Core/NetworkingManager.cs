@@ -797,6 +797,7 @@ namespace MLAPI.MonoBehaviours.Core
                                                 uint networkId = messageReader.ReadUInt32();
                                                 int ownerId = messageReader.ReadInt32();
                                                 int prefabId = messageReader.ReadInt32();
+
                                                 if (isPlayerObject)
                                                 {
                                                     connectedClients.Add(ownerId, new NetworkedClient() { ClientId = ownerId });

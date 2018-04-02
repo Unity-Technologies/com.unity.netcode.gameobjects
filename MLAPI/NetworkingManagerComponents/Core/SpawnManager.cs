@@ -1,4 +1,5 @@
 ﻿using MLAPI.MonoBehaviours.Core;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
@@ -170,12 +171,13 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 Debug.LogWarning("MLAPI: Server only objects does not have to be spawned");
                 return;
             }
-            else if (netManager.NetworkConfig.HandleObjectSpawning)
+            else if (!netManager.NetworkConfig.HandleObjectSpawning)
             {
                 Debug.LogWarning("MLAPI: NetworkingConfiguration is set to not handle object spawning");
                 return;
             }
             uint netId = GetNetworkObjectId();
+            netObject.networkId = netId;
             spawnedObjects.Add(netId, netObject);
             netObject.isSpawned = true;
             if (clientOwnerId != null)
@@ -192,11 +194,8 @@ namespace MLAPI.NetworkingManagerComponents.Core
                     writer.Write(netObject.OwnerClientId);
                     writer.Write(netObject.SpawnablePrefabIndex);
                 }
-                //If we are host, send to everyone except ourselves. Otherwise, send to all
-                if (netManager.isHost)
-                    netManager.Send("MLAPI_ADD_OBJECT", "MLAPI_INTERNAL", stream.GetBuffer(), -1);
-                else
-                    netManager.Send("MLAPI_ADD_OBJECT", "MLAPI_INTERNAL", stream.GetBuffer());
+
+                netManager.Send("MLAPI_ADD_OBJECT", "MLAPI_INTERNAL", stream.GetBuffer());
             }
         }
     }
