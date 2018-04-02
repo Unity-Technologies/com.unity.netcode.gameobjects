@@ -199,7 +199,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 netObject.ownerClientId = clientOwnerId.Value;
                 NetworkingManager.singleton.connectedClients[clientOwnerId.Value].OwnedObjects.Add(netObject);
             }
-            using (MemoryStream stream = new MemoryStream(13))
+            using (MemoryStream stream = new MemoryStream(37))
             {
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
