@@ -37,6 +37,8 @@ namespace MLAPI.MonoBehaviours.Core
         {
             get
             {
+                if (Framekeys.First == null || Framekeys.Last == null)
+                    return 0;
                 float totalSpan = Framekeys.Last.Value - Framekeys.First.Value;
                 return (totalSpan / Framekeys.Count) * 1000f;
             }
