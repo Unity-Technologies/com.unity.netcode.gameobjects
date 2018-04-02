@@ -247,31 +247,46 @@ namespace MLAPI.MonoBehaviours.Core
             };
 
             //MLAPI channels and messageTypes
-            NetworkConfig.Channels.Add(new Channel()
+            List<Channel> internalChannels = new List<Channel>();
+            internalChannels.Add(new Channel()
             {
                 Name = "MLAPI_INTERNAL",
                 Type = QosType.ReliableFragmentedSequenced
             });
-            NetworkConfig.Channels.Add(new Channel()
+            internalChannels.Add(new Channel()
             {
                 Name = "MLAPI_POSITION_UPDATE",
                 Type = QosType.StateUpdate
             });
-            NetworkConfig.Channels.Add(new Channel()
+            internalChannels.Add(new Channel()
             {
                 Name = "MLAPI_ANIMATION_UPDATE",
                 Type = QosType.ReliableSequenced
             });
-            NetworkConfig.Channels.Add(new Channel()
+            internalChannels.Add(new Channel()
             {
                 Name = "MLAPI_NAV_AGENT_STATE",
                 Type = QosType.ReliableSequenced
             });
-            NetworkConfig.Channels.Add(new Channel()
+            internalChannels.Add(new Channel()
             {
                 Name = "MLAPI_NAV_AGENT_CORRECTION",
                 Type = QosType.StateUpdate
             });
+
+            HashSet<string> channelNames = new HashSet<string>();
+            for (int i = 0; i < internalChannels.Count; i++)
+            {
+                if (channelNames.Contains(internalChannels[i].Name))
+                {
+                    Debug.LogWarning("MLAPI: Duplicate channel name: " + NetworkConfig.Channels[i].Name);
+                    continue;
+                }
+                int channelId = cConfig.AddChannel(internalChannels[i].Type);
+                MessageManager.channels.Add(internalChannels[i].Name, channelId);
+                channelNames.Add(internalChannels[i].Name);
+                MessageManager.reverseChannels.Add(channelId, internalChannels[i].Name);
+            }
 
             MessageManager.messageTypes.Add("MLAPI_CONNECTION_REQUEST", 0);
             MessageManager.messageTypes.Add("MLAPI_CONNECTION_APPROVED", 1);
@@ -283,13 +298,15 @@ namespace MLAPI.MonoBehaviours.Core
             MessageManager.messageTypes.Add("MLAPI_DESTROY_POOL_OBJECT", 7);
             MessageManager.messageTypes.Add("MLAPI_CHANGE_OWNER", 8);
             MessageManager.messageTypes.Add("MLAPI_SYNC_VAR_UPDATE", 9);
-            NetworkConfig.MessageTypes.Add("MLAPI_OnRecieveTransformFromClient");
-            NetworkConfig.MessageTypes.Add("MLAPI_OnRecieveTransformFromServer");
-            NetworkConfig.MessageTypes.Add("MLAPI_HandleAnimationMessage");
-            NetworkConfig.MessageTypes.Add("MLAPI_HandleAnimationParameterMessage");
-            NetworkConfig.MessageTypes.Add("MLAPI_HandleAnimationTriggerMessage");
-            NetworkConfig.MessageTypes.Add("MLAPI_OnNavMeshStateUpdate");
-            NetworkConfig.MessageTypes.Add("MLAPI_OnNavMeshCorrectionUpdate");
+
+            List<string> messageTypes = new List<string>(NetworkConfig.MessageTypes);
+            messageTypes.Add("MLAPI_OnRecieveTransformFromClient");
+            messageTypes.Add("MLAPI_OnRecieveTransformFromServer");
+            messageTypes.Add("MLAPI_HandleAnimationMessage");
+            messageTypes.Add("MLAPI_HandleAnimationParameterMessage");
+            messageTypes.Add("MLAPI_HandleAnimationTriggerMessage");
+            messageTypes.Add("MLAPI_OnNavMeshStateUpdate");
+            messageTypes.Add("MLAPI_OnNavMeshCorrectionUpdate");
 
             if (NetworkConfig.EnableSceneSwitching)
             {
@@ -334,7 +351,6 @@ namespace MLAPI.MonoBehaviours.Core
                 }
             }
 
-            HashSet<string> channelNames = new HashSet<string>();
             for (int i = 0; i < NetworkConfig.Channels.Count; i++)
             {
                 if(channelNames.Contains(NetworkConfig.Channels[i].Name))
@@ -350,10 +366,10 @@ namespace MLAPI.MonoBehaviours.Core
 
             //0-32 are reserved for MLAPI messages
             ushort messageId = 32;
-            for (ushort i = 0; i < NetworkConfig.MessageTypes.Count; i++)
+            for (ushort i = 0; i < messageTypes.Count; i++)
             {
-                MessageManager.messageTypes.Add(NetworkConfig.MessageTypes[i], messageId);
-                MessageManager.reverseMessageTypes.Add(messageId, NetworkConfig.MessageTypes[i]);
+                MessageManager.messageTypes.Add(messageTypes[i], messageId);
+                MessageManager.reverseMessageTypes.Add(messageId, messageTypes[i]);
                 messageId++;
             }
             return cConfig;
