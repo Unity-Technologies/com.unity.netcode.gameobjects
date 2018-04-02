@@ -19,6 +19,29 @@ namespace MLAPI.MonoBehaviours.Core
         private Vector3 savedPosition;
         private Quaternion savedRotation;
 
+        /// <summary>
+        /// Gets the total amount of points stored in the component
+        /// </summary>
+        public int TotalPoints
+        {
+            get
+            {
+                return Framekeys.Count;
+            }
+        }
+
+        /// <summary>
+        /// Gets the average amount of time between the points in miliseconds
+        /// </summary>
+        public float AvgTimeBetweenPointsMs
+        {
+            get
+            {
+                float totalSpan = Framekeys.Last.Value - Framekeys.First.Value;
+                return (totalSpan / Framekeys.Count) * 1000f;
+            }
+        }
+
         internal void ReverseTransform(float secondsAgo)
         {
             savedPosition = transform.position;
@@ -75,7 +98,7 @@ namespace MLAPI.MonoBehaviours.Core
             float currentTime = Time.time;
             LinkedListNode<float> node = Framekeys.First;
             LinkedListNode<float> nextNode = node.Next;
-            while (currentTime - node.Value >= NetworkingManager.singleton.NetworkConfig.SecondsHistory)
+            while (node != null && currentTime - node.Value >= NetworkingManager.singleton.NetworkConfig.SecondsHistory)
             {
                 nextNode = node.Next;
                 FrameData.Remove(node.Value);
