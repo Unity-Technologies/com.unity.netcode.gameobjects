@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Security.Cryptography;
+using System.Text;
+using UnityEngine;
 using UnityEngine.Networking;
 
 namespace MLAPI.Data
@@ -9,7 +12,8 @@ namespace MLAPI.Data
     /// <summary>
     /// The configuration object used to start server, client and hosts
     /// </summary>
-    public class NetworkingConfiguration
+    [Serializable]
+    public class NetworkConfig
     {
         /// <summary>
         /// The protocol version. Different versions doesn't talk to each other.
@@ -18,7 +22,7 @@ namespace MLAPI.Data
         /// <summary>
         /// Channels used by the NetworkedTransport
         /// </summary>
-        public SortedDictionary<string, QosType> Channels = new SortedDictionary<string, QosType>();
+        public List<Channel> Channels = new List<Channel>();
         /// <summary>
         /// Registered MessageTypes
         /// </summary>
@@ -27,14 +31,12 @@ namespace MLAPI.Data
         /// List of MessageTypes that can be passed through by Server. MessageTypes in this list should thus not be trusted to as great of an extent as normal messages.
         /// </summary>
         public List<string> PassthroughMessageTypes = new List<string>();
-        /// <summary>
-        /// Internal collection of Passthrough MessageTypes
-        /// </summary>
-        internal HashSet<ushort> RegisteredPassthroughMessageTypes = new HashSet<ushort>();
+        internal HashSet<ushort> PassthroughMessageHashSet = new HashSet<ushort>();
         /// <summary>
         /// Set of channels that will have all message contents encrypted when used
         /// </summary>
-        public HashSet<int> EncryptedChannels = new HashSet<int>();
+        public List<string> EncryptedChannels = new List<string>();
+        internal HashSet<string> EncryptedChannelsHashSet = new HashSet<string>();
         /// <summary>
         /// A list of SceneNames that can be used during networked games.
         /// </summary>
@@ -80,10 +82,6 @@ namespace MLAPI.Data
         /// </summary>
         public bool ConnectionApproval = false;
         /// <summary>
-        /// The callback to invoke when a connection has to be decided if it should get approved
-        /// </summary>
-        public Action<byte[], int, Action<int, bool>> ConnectionApprovalCallback = null;
-        /// <summary>
         /// The data to send during connection which can be used to decide on if a client should get accepted
         /// </summary>
         public byte[] ConnectionData = new byte[0];
@@ -106,10 +104,12 @@ namespace MLAPI.Data
         /// <summary>
         /// Private RSA XML key to use for signing key exchange
         /// </summary>
+        [TextArea]
         public string RSAPrivateKey = "<RSAKeyValue><Modulus>vBEvOQki/EftWOgwh4G8/nFRvcDJLylc8P7Dhz5m/hpkkNtAMzizNKYUrGbs7sYWlEuMYBOWrzkIDGOMoOsYc9uCi+8EcmNoHDlIhK5yNfZUexYBF551VbvZ625LSBR7kmBxkyo4IPuA09fYCHeUFm3prt4h6aTD0Hjc7ZsJHUU=</Modulus><Exponent>EQ==</Exponent><P>ydgcrq5qLJOdDQibD3m9+o3/dkKoFeCC110dnMgdpEteCruyBdL0zjGKKvjjgy3XTSSp43EN591NiXaBp0JtDw==</P><Q>7obHrUnUCsSHUsIJ7+JOrupcGrQ0XaYcQ+Uwb2v7d2YUzwZ46U4gI9snfD2J0tc3DGEh3v3G0Q8q7bxEe3H4aw==</Q><DP>L34k3c6vkgSdbHp+1nb/hj+HZx6+I0PijQbZyolwYuSOmR0a1DGjA1bzVWe9D86NAxevgM9OkOjG8yrxVIgZqQ==</DP><DQ>OB+2gyBuIKa2bdNNodrlVlVC2RtXnZB/HwjAGjeGdnJfP8VJoE6eJo3rLEq3BG7fxq1xYaUfuLhGVg4uOyngGQ==</DQ><InverseQ>o97PimYu58qH5eFmySRCIsyhBr/tK2GM17Zd9QQPJZRSorrhIJn1m6gwQ/G5aJLIM/3Yl04CoyqmQGsPXMzW2w==</InverseQ><D>CxAR1i22w4vCquB7U0Pd8Nl9R2Wxez6rHTwpnoszPB+rkAzlqKj7e5FMgpykhoQfciKPyWqQZKkAeTMIRbN56JinvpAt5POId/28HDd5xjGymHE81k3RzoHqzQXFIOF1TSYKUWzjPPF/TU4nn7auD4i6lOODATsMqtLr5DRBN/0=</D></RSAKeyValue>"; //CHANGE THESE FOR PRODUCTION!
         /// <summary>
         /// Public RSA XML key to use for signing key exchange
         /// </summary>
+        [TextArea]
         public string RSAPublicKey = "<RSAKeyValue><Modulus>vBEvOQki/EftWOgwh4G8/nFRvcDJLylc8P7Dhz5m/hpkkNtAMzizNKYUrGbs7sYWlEuMYBOWrzkIDGOMoOsYc9uCi+8EcmNoHDlIhK5yNfZUexYBF551VbvZ625LSBR7kmBxkyo4IPuA09fYCHeUFm3prt4h6aTD0Hjc7ZsJHUU=</Modulus><Exponent>EQ==</Exponent></RSAKeyValue>"; //CHANGE THESE FOR PRODUCTION!
         /// <summary>
         /// Wheter or not to allow any type of passthrough messages
@@ -119,10 +119,12 @@ namespace MLAPI.Data
         /// Wheter or not to enable scene switching
         /// </summary>
         public bool EnableSceneSwitching = false;
+        /// <summary>
+        /// The RSA Keysize to use
+        /// </summary>
+        public int RSAKeySize = 2048;
 
-        //Cached config hash
         private byte[] ConfigHash = null;
-
         /// <summary>
         /// Gets a SHA256 hash of parts of the NetworkingConfiguration instance
         /// </summary>
@@ -133,32 +135,39 @@ namespace MLAPI.Data
             if (ConfigHash != null && cache)
                 return ConfigHash;
 
-            using(MemoryStream writeStream = new MemoryStream())
+            using (MemoryStream writeStream = new MemoryStream())
             {
-                using(BinaryWriter writer = new BinaryWriter(writeStream))
+                using (BinaryWriter writer = new BinaryWriter(writeStream))
                 {
                     writer.Write(ProtocolVersion);
-                    foreach (KeyValuePair<string, QosType> pair in Channels)
+                    for (int i = 0; i < Channels.Count; i++)
                     {
-                        writer.Write(pair.Key);
-                        writer.Write((int)pair.Value);
+                        writer.Write(Channels[i].Name);
+                        writer.Write((byte)Channels[i].Type);
                     }
                     for (int i = 0; i < MessageTypes.Count; i++)
                     {
                         writer.Write(MessageTypes[i]);
                     }
-                    if(AllowPassthroughMessages)
+                    if (AllowPassthroughMessages)
                     {
                         for (int i = 0; i < PassthroughMessageTypes.Count; i++)
                         {
                             writer.Write(PassthroughMessageTypes[i]);
                         }
                     }
-                    if(EnableSceneSwitching)
+                    if (EnableSceneSwitching)
                     {
                         for (int i = 0; i < RegisteredScenes.Count; i++)
                         {
                             writer.Write(RegisteredScenes[i]);
+                        }
+                    }
+                    if(EnableEncryption)
+                    {
+                        for (int i = 0; i < EncryptedChannels.Count; i++)
+                        {
+                            writer.Write(EncryptedChannels[i]);
                         }
                     }
                     writer.Write(HandleObjectSpawning);
@@ -167,7 +176,7 @@ namespace MLAPI.Data
                     writer.Write(EnableSceneSwitching);
                     writer.Write(SignKeyExchange);
                 }
-                using(SHA256Managed sha256 = new SHA256Managed())
+                using (SHA256Managed sha256 = new SHA256Managed())
                 {
                     //Returns a 256 bit / 32 byte long checksum of the config
                     if (cache)

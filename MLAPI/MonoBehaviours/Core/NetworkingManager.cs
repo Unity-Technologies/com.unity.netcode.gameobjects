@@ -142,13 +142,19 @@ namespace MLAPI.MonoBehaviours.Core
         /// </summary>
         public Action OnServerStarted = null;
         /// <summary>
+        /// The callback to invoke during connection approval
+        /// </summary>
+        public Action<byte[], int, Action<int, bool>> ConnectionApprovalCallback = null;
+        /// <summary>
         /// The current NetworkingConfiguration
         /// </summary>
-        public NetworkingConfiguration NetworkConfig;
+        public NetworkConfig NetworkConfig;
 
         private EllipticDiffieHellman clientDiffieHellman;
         private Dictionary<int, byte[]> diffieHellmanPublicKeys;
         private byte[] clientAesKey;
+
+        public bool RegenerateRSAKeys = false;
 
         private void OnValidate()
         {
@@ -175,11 +181,26 @@ namespace MLAPI.MonoBehaviours.Core
                     Debug.LogWarning("MLAPI: The player object needs a NetworkedObject component.");
                 }
             }
+
+            if (!NetworkConfig.EnableEncryption)
+                RegenerateRSAKeys = false;
+            else
+            {
+                if(RegenerateRSAKeys)
+                {
+                    using (RSACryptoServiceProvider rsa = new RSACryptoServiceProvider())
+                    {
+                        rsa.PersistKeyInCsp = false;
+                        NetworkConfig.RSAPrivateKey = rsa.ToXmlString(true);
+                        NetworkConfig.RSAPublicKey = rsa.ToXmlString(false);
+                    }
+                    RegenerateRSAKeys = false;
+                }
+            }
         }
 
-        private ConnectionConfig Init(NetworkingConfiguration netConfig)
+        private ConnectionConfig Init()
         {
-            NetworkConfig = netConfig;
             networkTime = 0f;
             lastSendTickTime = 0;
             lastEventTickTime = 0;
@@ -226,11 +247,32 @@ namespace MLAPI.MonoBehaviours.Core
             };
 
             //MLAPI channels and messageTypes
-            NetworkConfig.Channels.Add("MLAPI_INTERNAL", QosType.ReliableFragmentedSequenced);
-            NetworkConfig.Channels.Add("MLAPI_POSITION_UPDATE", QosType.StateUpdate);
-            NetworkConfig.Channels.Add("MLAPI_ANIMATION_UPDATE", QosType.ReliableSequenced);
-            NetworkConfig.Channels.Add("MLAPI_NAV_AGENT_STATE", QosType.ReliableSequenced);
-            NetworkConfig.Channels.Add("MLAPI_NAV_AGENT_CORRECTION", QosType.StateUpdate);
+            NetworkConfig.Channels.Add(new Channel()
+            {
+                Name = "MLAPI_INTERNAL",
+                Type = QosType.ReliableFragmentedSequenced
+            });
+            NetworkConfig.Channels.Add(new Channel()
+            {
+                Name = "MLAPI_POSITION_UPDATE",
+                Type = QosType.StateUpdate
+            });
+            NetworkConfig.Channels.Add(new Channel()
+            {
+                Name = "MLAPI_ANIMATION_UPDATE",
+                Type = QosType.ReliableSequenced
+            });
+            NetworkConfig.Channels.Add(new Channel()
+            {
+                Name = "MLAPI_NAV_AGENT_STATE",
+                Type = QosType.ReliableSequenced
+            });
+            NetworkConfig.Channels.Add(new Channel()
+            {
+                Name = "MLAPI_NAV_AGENT_CORRECTION",
+                Type = QosType.StateUpdate
+            });
+
             MessageManager.messageTypes.Add("MLAPI_CONNECTION_REQUEST", 0);
             MessageManager.messageTypes.Add("MLAPI_CONNECTION_APPROVED", 1);
             MessageManager.messageTypes.Add("MLAPI_ADD_OBJECT", 2);
@@ -260,21 +302,52 @@ namespace MLAPI.MonoBehaviours.Core
 
                 NetworkSceneManager.SetCurrentSceneIndex();
             }
-            
+
+            if(NetworkConfig.EnableEncryption)
+            {
+                List<string> channelNameList = NetworkConfig.Channels.Select(x => x.Name).ToList();
+                for (int i = 0; i < NetworkConfig.EncryptedChannels.Count; i++)
+                {
+                    if (NetworkConfig.EncryptedChannelsHashSet.Contains(NetworkConfig.EncryptedChannels[i]))
+                    {
+                        Debug.LogWarning("MLAPI: Duplicate encrypted channel: " + NetworkConfig.EncryptedChannels[i]);
+                        continue;
+                    }
+                    else if (!channelNameList.Contains(NetworkConfig.EncryptedChannels[i]))
+                    {
+                        Debug.LogWarning("MLAPI: Channel  " + NetworkConfig.EncryptedChannels[i] + " doesn't exist");
+                    }
+                    NetworkConfig.EncryptedChannelsHashSet.Add(NetworkConfig.EncryptedChannels[i]);
+                }
+            }
+
+            if (NetworkConfig.AllowPassthroughMessages)
+            {
+                for (int i = 0; i < NetworkConfig.PassthroughMessageTypes.Count; i++)
+                {
+                    if(!NetworkConfig.MessageTypes.Contains(NetworkConfig.PassthroughMessageTypes[i]))
+                    {
+                        Debug.LogWarning("MLAPI: The messageType " + NetworkConfig.PassthroughMessageTypes[i] + " doesn't exist");
+                        continue;
+                    }
+                    NetworkConfig.PassthroughMessageHashSet.Add(MessageManager.messageTypes[NetworkConfig.PassthroughMessageTypes[i]]);
+                }
+            }
 
             HashSet<string> channelNames = new HashSet<string>();
-            foreach (KeyValuePair<string, QosType> pair in NetworkConfig.Channels)
+            for (int i = 0; i < NetworkConfig.Channels.Count; i++)
             {
-                if(channelNames.Contains(pair.Key))
+                if(channelNames.Contains(NetworkConfig.Channels[i].Name))
                 {
-                    Debug.LogWarning("MLAPI: Duplicate channel name: " + pair.Key);
+                    Debug.LogWarning("MLAPI: Duplicate channel name: " + NetworkConfig.Channels[i].Name);
                     continue;
                 }
-                int channelId = cConfig.AddChannel(pair.Value);
-                MessageManager.channels.Add(pair.Key, channelId);
-                channelNames.Add(pair.Key);
-                MessageManager.reverseChannels.Add(channelId, pair.Key);
+                int channelId = cConfig.AddChannel(NetworkConfig.Channels[i].Type);
+                MessageManager.channels.Add(NetworkConfig.Channels[i].Name, channelId);
+                channelNames.Add(NetworkConfig.Channels[i].Name);
+                MessageManager.reverseChannels.Add(channelId, NetworkConfig.Channels[i].Name);
             }
+
             //0-32 are reserved for MLAPI messages
             ushort messageId = 32;
             for (ushort i = 0; i < NetworkConfig.MessageTypes.Count; i++)
@@ -283,15 +356,6 @@ namespace MLAPI.MonoBehaviours.Core
                 MessageManager.reverseMessageTypes.Add(messageId, NetworkConfig.MessageTypes[i]);
                 messageId++;
             }
-
-            if (NetworkConfig.AllowPassthroughMessages)
-            {
-                for (int i = 0; i < NetworkConfig.PassthroughMessageTypes.Count; i++)
-                {
-                    NetworkConfig.RegisteredPassthroughMessageTypes.Add(MessageManager.messageTypes[NetworkConfig.PassthroughMessageTypes[i]]);
-                }
-            }
-
             return cConfig;
         }
 
@@ -299,12 +363,12 @@ namespace MLAPI.MonoBehaviours.Core
         /// Starts a server with a given NetworkingConfiguration
         /// </summary>
         /// <param name="netConfig">The NetworkingConfiguration to use</param>
-        public void StartServer(NetworkingConfiguration netConfig)
+        public void StartServer()
         {
-            ConnectionConfig cConfig = Init(netConfig);
+            ConnectionConfig cConfig = Init();
             if (NetworkConfig.ConnectionApproval)
             {
-                if (NetworkConfig.ConnectionApprovalCallback == null)
+                if (ConnectionApprovalCallback == null)
                 {
                     Debug.LogWarning("MLAPI: No ConnectionApproval callback defined. Connection approval will timeout");
                 }
@@ -323,9 +387,9 @@ namespace MLAPI.MonoBehaviours.Core
         /// Starts a client with a given NetworkingConfiguration
         /// </summary>
         /// <param name="netConfig">The NetworkingConfiguration to use</param>
-        public void StartClient(NetworkingConfiguration netConfig)
+        public void StartClient()
         {
-            ConnectionConfig cConfig = Init(netConfig);
+            ConnectionConfig cConfig = Init();
             HostTopology hostTopology = new HostTopology(cConfig, NetworkConfig.MaxConnections);
             hostId =  NetworkTransport.AddHost(hostTopology, 0, null);
 
@@ -387,12 +451,12 @@ namespace MLAPI.MonoBehaviours.Core
         /// Starts a Host with a given NetworkingConfiguration
         /// </summary>
         /// <param name="netConfig">The NetworkingConfiguration to use</param>
-        public void StartHost(NetworkingConfiguration netConfig)
+        public void StartHost()
         {
-            ConnectionConfig cConfig = Init(netConfig);
+            ConnectionConfig cConfig = Init();
             if (NetworkConfig.ConnectionApproval)
             {
-                if (NetworkConfig.ConnectionApprovalCallback == null)
+                if (ConnectionApprovalCallback == null)
                 {
                     Debug.LogWarning("MLAPI: No ConnectionApproval callback defined. Connection approval will timeout");
                 }
@@ -612,7 +676,7 @@ namespace MLAPI.MonoBehaviours.Core
 
                     ushort bytesToRead = reader.ReadUInt16();
                     byte[] incommingData = reader.ReadBytes(bytesToRead);
-                    if(NetworkConfig.EncryptedChannels.Contains(channelId))
+                    if(NetworkConfig.EncryptedChannelsHashSet.Contains(MessageManager.reverseChannels[channelId]))
                     {
                         //Encrypted message
                         if (isServer)
@@ -621,12 +685,12 @@ namespace MLAPI.MonoBehaviours.Core
                             incommingData = CryptographyHelper.Decrypt(incommingData, clientAesKey);
                     }
 
-                    if (isServer && isPassthrough && !NetworkConfig.RegisteredPassthroughMessageTypes.Contains(messageType))
+                    if (isServer && isPassthrough && !NetworkConfig.PassthroughMessageHashSet.Contains(messageType))
                     {
                         Debug.LogWarning("MLAPI: Client " + clientId + " tried to send a passthrough message for a messageType not registered as passthrough");
                         return;
                     }
-                    else if(isClient && isPassthrough && !NetworkConfig.RegisteredPassthroughMessageTypes.Contains(messageType))
+                    else if(isClient && isPassthrough && !NetworkConfig.PassthroughMessageHashSet.Contains(messageType))
                     {
                         Debug.LogWarning("MLAPI: Server tried to send a passthrough message for a messageType not registered as passthrough");
                         return;
@@ -716,7 +780,7 @@ namespace MLAPI.MonoBehaviours.Core
                                             {
                                                 ushort bufferSize = messageReader.ReadUInt16();
                                                 byte[] connectionBuffer = messageReader.ReadBytes(bufferSize);
-                                                NetworkConfig.ConnectionApprovalCallback(connectionBuffer, clientId, HandleApproval);
+                                                ConnectionApprovalCallback(connectionBuffer, clientId, HandleApproval);
                                             }
                                             else
                                             {
@@ -1104,7 +1168,7 @@ namespace MLAPI.MonoBehaviours.Core
                         writer.Write(orderId.Value);
                     writer.Write(true);
                     writer.Write(sourceId);
-                    if(NetworkConfig.EncryptedChannels.Contains(channelId))
+                    if(NetworkConfig.EncryptedChannelsHashSet.Contains(MessageManager.reverseChannels[channelId]))
                     {
                         //Encrypted message
                         byte[] encrypted = CryptographyHelper.Encrypt(data, connectedClients[targetId].AesKey);
@@ -1136,7 +1200,7 @@ namespace MLAPI.MonoBehaviours.Core
             }
 
             bool isPassthrough = (!isServer && clientId != serverClientId && NetworkConfig.AllowPassthroughMessages);
-            if (isPassthrough && !NetworkConfig.RegisteredPassthroughMessageTypes.Contains(MessageManager.messageTypes[messageType]))
+            if (isPassthrough && !NetworkConfig.PassthroughMessageHashSet.Contains(MessageManager.messageTypes[messageType]))
             {
                 Debug.LogWarning("MLAPI: The The MessageType " + messageType + " is not registered as an allowed passthrough message type.");
                 return;
@@ -1165,7 +1229,7 @@ namespace MLAPI.MonoBehaviours.Core
                     if (isPassthrough)
                         writer.Write(clientId);
 
-                    if (NetworkConfig.EncryptedChannels.Contains(MessageManager.channels[channelName]))
+                    if (NetworkConfig.EncryptedChannelsHashSet.Contains(channelName))
                     {
                         //This is an encrypted message.
                         byte[] encrypted;
@@ -1195,7 +1259,7 @@ namespace MLAPI.MonoBehaviours.Core
 
         internal void Send(int[] clientIds, string messageType, string channelName, byte[] data, uint? networkId = null, ushort? orderId = null)
         {
-            if (NetworkConfig.EncryptedChannels.Contains(MessageManager.channels[channelName]))
+            if (NetworkConfig.EncryptedChannelsHashSet.Contains(channelName))
             {
                 Debug.LogWarning("MLAPI: Cannot send messages over encrypted channel to multiple clients.");
                 return;
@@ -1242,7 +1306,7 @@ namespace MLAPI.MonoBehaviours.Core
 
         internal void Send(List<int> clientIds, string messageType, string channelName, byte[] data, uint? networkId = null, ushort? orderId = null)
         {
-            if (NetworkConfig.EncryptedChannels.Contains(MessageManager.channels[channelName]))
+            if (NetworkConfig.EncryptedChannelsHashSet.Contains(channelName))
             {
                 Debug.LogWarning("MLAPI: Cannot send messages over encrypted channel to multiple clients.");
                 return;
@@ -1291,7 +1355,7 @@ namespace MLAPI.MonoBehaviours.Core
 
         internal void Send(string messageType, string channelName, byte[] data, uint? networkId = null, ushort? orderId = null)
         {
-            if (NetworkConfig.EncryptedChannels.Contains(MessageManager.channels[channelName]))
+            if (NetworkConfig.EncryptedChannels.Contains(channelName))
             {
                 Debug.LogWarning("MLAPI: Cannot send messages over encrypted channel to multiple clients.");
                 return;
@@ -1341,7 +1405,7 @@ namespace MLAPI.MonoBehaviours.Core
 
         internal void Send(string messageType, string channelName, byte[] data, int clientIdToIgnore, uint? networkId = null, ushort? orderId = null)
         {
-            if (NetworkConfig.EncryptedChannels.Contains(MessageManager.channels[channelName]))
+            if (NetworkConfig.EncryptedChannels.Contains(channelName))
             {
                 Debug.LogWarning("MLAPI: Cannot send messages over encrypted channel to multiple clients.");
                 return;

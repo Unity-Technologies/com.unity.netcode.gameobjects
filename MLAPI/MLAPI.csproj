@@ -67,8 +67,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Attributes\BinaryIgnore.cs" />
+    <Compile Include="Data\Channel.cs" />
     <Compile Include="Data\FieldType.cs" />
     <Compile Include="Attributes\SyncedVar.cs" />
+    <Compile Include="Data\NetworkConfig.cs" />
     <Compile Include="Data\NetworkPool.cs" />
     <Compile Include="Data\TrackedPointData.cs" />
     <Compile Include="MonoBehaviours\Prototyping\NetworkedAnimator.cs" />
@@ -81,7 +83,6 @@
     <Compile Include="MonoBehaviours\Core\NetworkedBehaviour.cs" />
     <Compile Include="Data\NetworkedClient.cs" />
     <Compile Include="MonoBehaviours\Core\NetworkedObject.cs" />
-    <Compile Include="Data\NetworkingConfiguration.cs" />
     <Compile Include="MonoBehaviours\Core\NetworkingManager.cs" />
     <Compile Include="MonoBehaviours\Core\TrackedObject.cs" />
     <Compile Include="MonoBehaviours\Prototyping\NetworkedTransform.cs" />
