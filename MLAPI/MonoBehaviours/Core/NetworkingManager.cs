@@ -1530,7 +1530,7 @@ namespace MLAPI.MonoBehaviours.Core
                         {
                             rsa.PersistKeyInCsp = false;
                             rsa.FromXmlString(NetworkConfig.RSAPrivateKey);
-                            publicKeySignature = rsa.SignData(publicKeySignature, new SHA512CryptoServiceProvider());
+                            publicKeySignature = rsa.SignData(publicKey, new SHA512CryptoServiceProvider());
                         }
                     }
                 }
@@ -1555,7 +1555,7 @@ namespace MLAPI.MonoBehaviours.Core
                 if (NetworkConfig.HandleObjectSpawning)
                 {
                     sizeOfStream += 4;
-                    sizeOfStream += 14 * amountOfObjectsToSend;
+                    sizeOfStream += 38 * amountOfObjectsToSend;
                 }
 
                 if (NetworkConfig.EnableEncryption)

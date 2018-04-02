@@ -119,10 +119,6 @@ namespace MLAPI.Data
         /// Wheter or not to enable scene switching
         /// </summary>
         public bool EnableSceneSwitching = false;
-        /// <summary>
-        /// The RSA Keysize to use
-        /// </summary>
-        public int RSAKeySize = 2048;
 
         private byte[] ConfigHash = null;
         /// <summary>
