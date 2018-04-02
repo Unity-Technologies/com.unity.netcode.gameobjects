@@ -38,14 +38,6 @@ namespace MLAPI.MonoBehaviours.Core
         /// </summary>
         public bool RunInBackground = true;
         /// <summary>
-        /// A list of spawnable prefabs
-        /// </summary>
-        public List<GameObject> SpawnablePrefabs;
-        /// <summary>
-        /// The default prefab to give to players
-        /// </summary>
-        public GameObject DefaultPlayerPrefab;
-        /// <summary>
         /// The singleton instance of the NetworkingManager
         /// </summary>
         public static NetworkingManager singleton
@@ -158,24 +150,24 @@ namespace MLAPI.MonoBehaviours.Core
 
         private void OnValidate()
         {
-            if (SpawnablePrefabs != null)
+            if (NetworkConfig.SpawnablePrefabs != null)
             {
-                for (int i = 0; i < SpawnablePrefabs.Count; i++)
+                for (int i = 0; i < NetworkConfig.SpawnablePrefabs.Count; i++)
                 {
-                    if (SpawnablePrefabs[i] == null)
+                    if (NetworkConfig.SpawnablePrefabs[i] == null)
                         continue;
-                    NetworkedObject netObject = SpawnablePrefabs[i].GetComponentInChildren<NetworkedObject>();
+                    NetworkedObject netObject = NetworkConfig.SpawnablePrefabs[i].GetComponentInChildren<NetworkedObject>();
                     if (netObject == null)
                     {
-                        Debug.LogWarning("MLAPI: All SpawnablePrefabs need a NetworkedObject component. Please add one to the prefab " + SpawnablePrefabs[i].gameObject.name);
+                        Debug.LogWarning("MLAPI: All SpawnablePrefabs need a NetworkedObject component. Please add one to the prefab " + NetworkConfig.SpawnablePrefabs[i].gameObject.name);
                         continue;
                     }
                     netObject.spawnablePrefabIndex = i;
                 }
             }
-            if (DefaultPlayerPrefab != null)
+            if (NetworkConfig.PlayerPrefab != null)
             {
-                NetworkedObject netObject = DefaultPlayerPrefab.GetComponentInChildren<NetworkedObject>();
+                NetworkedObject netObject = NetworkConfig.PlayerPrefab.GetComponentInChildren<NetworkedObject>();
                 if (netObject == null)
                 {
                     Debug.LogWarning("MLAPI: The player object needs a NetworkedObject component.");

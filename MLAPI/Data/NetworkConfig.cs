@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MLAPI.MonoBehaviours.Core;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -41,6 +42,14 @@ namespace MLAPI.Data
         /// A list of SceneNames that can be used during networked games.
         /// </summary>
         public List<string> RegisteredScenes = new List<string>();
+        /// <summary>
+        /// A list of spawnable prefabs
+        /// </summary>
+        public List<GameObject> SpawnablePrefabs = new List<GameObject>();
+        /// <summary>
+        /// The default player prefab
+        /// </summary>
+        public GameObject PlayerPrefab;
         /// <summary>
         /// The size of the receive message buffer. This is the max message size.
         /// </summary>
@@ -165,6 +174,10 @@ namespace MLAPI.Data
                         {
                             writer.Write(EncryptedChannels[i]);
                         }
+                    }
+                    if(HandleObjectSpawning)
+                    {
+                        writer.Write(SpawnablePrefabs.Count);
                     }
                     writer.Write(HandleObjectSpawning);
                     writer.Write(EnableEncryption);

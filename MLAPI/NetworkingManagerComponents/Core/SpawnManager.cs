@@ -89,7 +89,9 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
         internal static GameObject SpawnObject(int spawnablePrefabIndex, uint networkId, int ownerId, Vector3 position, Quaternion rotation)
         {
-            GameObject go = MonoBehaviour.Instantiate(netManager.SpawnablePrefabs[spawnablePrefabIndex]);
+            if (spawnablePrefabIndex >= netManager.NetworkConfig.SpawnablePrefabs.Count)
+                return null;
+            GameObject go = MonoBehaviour.Instantiate(netManager.NetworkConfig.SpawnablePrefabs[spawnablePrefabIndex]);
             NetworkedObject netObject = go.GetComponent<NetworkedObject>();
             if (netObject == null)
             {
@@ -117,7 +119,9 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
         internal static GameObject SpawnPlayerObject(int clientId, uint networkId)
         {
-            GameObject go = MonoBehaviour.Instantiate(netManager.DefaultPlayerPrefab);
+            if (netManager.NetworkConfig.PlayerPrefab == null)
+                return null;
+            GameObject go = MonoBehaviour.Instantiate(netManager.NetworkConfig.PlayerPrefab);
             NetworkedObject netObject = go.GetComponent<NetworkedObject>();
             if (netObject == null)
             {
