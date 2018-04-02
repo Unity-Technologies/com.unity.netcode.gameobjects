@@ -752,6 +752,7 @@ namespace MLAPI.MonoBehaviours.Core
                                             }
                                             if(NetworkConfig.HandleObjectSpawning)
                                             {
+                                                SpawnManager.DestroyUnspawnedObjects();
                                                 int objectCount = messageReader.ReadInt32();
                                                 for (int i = 0; i < objectCount; i++)
                                                 {
@@ -760,13 +761,24 @@ namespace MLAPI.MonoBehaviours.Core
                                                     int ownerId = messageReader.ReadInt32();
                                                     int prefabId = messageReader.ReadInt32();
                                                     bool isActive = messageReader.ReadBoolean();
-                                                    if(isPlayerObject)
+
+                                                    float xPos = messageReader.ReadSingle();
+                                                    float yPos = messageReader.ReadSingle();
+                                                    float zPos = messageReader.ReadSingle();
+
+                                                    float xRot = messageReader.ReadSingle();
+                                                    float yRot = messageReader.ReadSingle();
+                                                    float zRot = messageReader.ReadSingle();
+
+                                                    if (isPlayerObject)
                                                     {
                                                         SpawnManager.SpawnPlayerObject(ownerId, networkId);
                                                     }
                                                     else
                                                     {
-                                                        GameObject go = SpawnManager.SpawnObject(prefabId, networkId, ownerId);
+                                                        GameObject go = SpawnManager.SpawnObject(prefabId, networkId, ownerId, 
+                                                            new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot));
+
                                                         go.SetActive(isActive);
                                                     }
                                                 }
@@ -798,6 +810,14 @@ namespace MLAPI.MonoBehaviours.Core
                                                 int ownerId = messageReader.ReadInt32();
                                                 int prefabId = messageReader.ReadInt32();
 
+                                                float xPos = messageReader.ReadSingle();
+                                                float yPos = messageReader.ReadSingle();
+                                                float zPos = messageReader.ReadSingle();
+
+                                                float xRot = messageReader.ReadSingle();
+                                                float yRot = messageReader.ReadSingle();
+                                                float zRot = messageReader.ReadSingle();
+
                                                 if (isPlayerObject)
                                                 {
                                                     connectedClients.Add(ownerId, new NetworkedClient() { ClientId = ownerId });
@@ -805,7 +825,8 @@ namespace MLAPI.MonoBehaviours.Core
                                                 }
                                                 else
                                                 {
-                                                    SpawnManager.SpawnObject(prefabId, networkId, ownerId);
+                                                    SpawnManager.SpawnObject(prefabId, networkId, ownerId,
+                                                        new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot));
                                                 }
                                             }
                                             else
@@ -1504,6 +1525,14 @@ namespace MLAPI.MonoBehaviours.Core
                                 writer.Write(pair.Value.OwnerClientId);
                                 writer.Write(pair.Value.SpawnablePrefabIndex);
                                 writer.Write(pair.Value.gameObject.activeInHierarchy);
+
+                                writer.Write(pair.Value.transform.position.x);
+                                writer.Write(pair.Value.transform.position.y);
+                                writer.Write(pair.Value.transform.position.z);
+
+                                writer.Write(pair.Value.transform.rotation.x);
+                                writer.Write(pair.Value.transform.rotation.y);
+                                writer.Write(pair.Value.transform.rotation.z);
                             }
                         }
                     }

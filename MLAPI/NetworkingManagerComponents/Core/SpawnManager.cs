@@ -65,7 +65,17 @@ namespace MLAPI.NetworkingManagerComponents.Core
             }
         }
 
-        internal static GameObject SpawnObject(int spawnablePrefabIndex, uint networkId, int ownerId)
+        internal static void DestroyUnspawnedObjects()
+        {
+            NetworkedObject[] netObjects = MonoBehaviour.FindObjectsOfType<NetworkedObject>();
+            for (int i = 0; i < netObjects.Length; i++)
+            {
+                if (!netObjects[i].isSpawned)
+                    MonoBehaviour.Destroy(netObjects[i].gameObject);
+            }
+        }
+
+        internal static GameObject SpawnObject(int spawnablePrefabIndex, uint networkId, int ownerId, Vector3 position, Quaternion rotation)
         {
             GameObject go = MonoBehaviour.Instantiate(netManager.SpawnablePrefabs[spawnablePrefabIndex]);
             NetworkedObject netObject = go.GetComponent<NetworkedObject>();
@@ -84,6 +94,8 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 netObject.networkId = networkId;
             }
             netObject.ownerClientId = ownerId;
+            netObject.transform.position = position;
+            netObject.transform.rotation = rotation;
 
             spawnedObjects.Add(netObject.NetworkId, netObject);
             netObject.InvokeBehaviourNetworkSpawn();
@@ -193,6 +205,14 @@ namespace MLAPI.NetworkingManagerComponents.Core
                     writer.Write(netObject.NetworkId);
                     writer.Write(netObject.OwnerClientId);
                     writer.Write(netObject.SpawnablePrefabIndex);
+
+                    writer.Write(netObject.transform.position.x);
+                    writer.Write(netObject.transform.position.y);
+                    writer.Write(netObject.transform.position.z);
+
+                    writer.Write(netObject.transform.rotation.x);
+                    writer.Write(netObject.transform.rotation.y);
+                    writer.Write(netObject.transform.rotation.z);
                 }
 
                 netManager.Send("MLAPI_ADD_OBJECT", "MLAPI_INTERNAL", stream.GetBuffer());
