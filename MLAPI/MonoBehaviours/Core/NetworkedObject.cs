@@ -186,6 +186,7 @@ namespace MLAPI.MonoBehaviours.Core
                 {
                     childNetworkedBehaviours[i].NetworkStart();
                     childNetworkedBehaviours[i].SyncVarInit();
+                    childNetworkedBehaviours[i].networkedStartInvoked = true;
                 }
             }
         }

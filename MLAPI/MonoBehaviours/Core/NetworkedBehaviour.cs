@@ -211,6 +211,8 @@ namespace MLAPI.MonoBehaviours.Core
         private bool[] dirtyFields;
         internal void SyncVarInit()
         {
+            if (syncVarInit)
+                return;
             syncVarInit = true;
             FieldInfo[] sortedFields = GetType().GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy | BindingFlags.Instance).OrderBy(x => x.Name).ToArray();
             for (byte i = 0; i < sortedFields.Length; i++)
