@@ -124,7 +124,8 @@ namespace MLAPI.MonoBehaviours.Core
 
         private void OnDestroy()
         {
-            SpawnManager.OnDestroyObject(NetworkId, false);
+            if (NetworkingManager.singleton != null)
+                SpawnManager.OnDestroyObject(NetworkId, false);
         }
 
         /// <summary>
@@ -132,7 +133,8 @@ namespace MLAPI.MonoBehaviours.Core
         /// </summary>
         public void Spawn()
         {
-            SpawnManager.OnSpawnObject(this);
+            if (NetworkingManager.singleton != null)
+                SpawnManager.OnSpawnObject(this);
         }
         /// <summary>
         /// Spawns an object across the network with a given owner. Can only be called from server
@@ -140,7 +142,8 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="clientId">The clientId to own the object</param>
         public void SpawnWithOwnership(int clientId)
         {
-            SpawnManager.OnSpawnObject(this, clientId);
+            if (NetworkingManager.singleton != null)
+                SpawnManager.OnSpawnObject(this, clientId);
         }
         /// <summary>
         /// Removes all ownership of an object from any client. Can only be called from server
