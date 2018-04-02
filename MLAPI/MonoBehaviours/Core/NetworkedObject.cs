@@ -9,7 +9,7 @@ namespace MLAPI.MonoBehaviours.Core
     /// A component used to identify that a GameObject is networked
     /// </summary>
     [AddComponentMenu("MLAPI/NetworkedObject", -99)]
-    public class NetworkedObject : MonoBehaviour
+    public sealed class NetworkedObject : MonoBehaviour
     {
         /// <summary>
         /// Gets the unique ID of this object that is synced across the network
@@ -62,6 +62,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <summary>
         /// Gets or sets if this object should be replicated across the network. Can only be changed before the object is spawned
         /// </summary>
+        [SerializeField]
         public bool ServerOnly = false;
         /// <summary>
         /// Gets if this object is part of a pool
@@ -108,12 +109,23 @@ namespace MLAPI.MonoBehaviours.Core
             }
         }
 
+        /// <summary>
+        /// Gets if the object has yet been spawned across the network
+        /// </summary>
+        public bool isSpawned
+        {
+            get
+            {
+                return _isSpawned;
+            }
+        }
+        internal bool _isSpawned = false;
+        internal bool sceneObject = false;
+
         private void OnDestroy()
         {
             SpawnManager.OnDestroyObject(NetworkId, false);
         }
-
-        internal bool isSpawned = false;
 
         /// <summary>
         /// Spawns this GameObject across the network. Can only be called from the Server

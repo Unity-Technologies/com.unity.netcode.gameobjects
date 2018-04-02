@@ -65,12 +65,12 @@ namespace MLAPI.NetworkingManagerComponents.Core
             }
         }
 
-        internal static void DestroyUnspawnedObjects()
+        internal static void DestroySceneObjects()
         {
             NetworkedObject[] netObjects = MonoBehaviour.FindObjectsOfType<NetworkedObject>();
             for (int i = 0; i < netObjects.Length; i++)
             {
-                if (!netObjects[i].isSpawned)
+                if (netObjects[i].sceneObject)
                     MonoBehaviour.Destroy(netObjects[i].gameObject);
             }
         }
@@ -96,6 +96,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             netObject.ownerClientId = ownerId;
             netObject.transform.position = position;
             netObject.transform.rotation = rotation;
+            netObject._isSpawned = true;
 
             spawnedObjects.Add(netObject.NetworkId, netObject);
             netObject.InvokeBehaviourNetworkSpawn();
@@ -121,6 +122,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 netObject.networkId = networkId;
             }
             netObject._isPlayerObject = true;
+            netObject._isSpawned = true;
             netManager.connectedClients[clientId].PlayerObject = go;
             spawnedObjects.Add(netObject.NetworkId, netObject);
             netObject.InvokeBehaviourNetworkSpawn();
@@ -191,7 +193,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             uint netId = GetNetworkObjectId();
             netObject.networkId = netId;
             spawnedObjects.Add(netId, netObject);
-            netObject.isSpawned = true;
+            netObject._isSpawned = true;
             if (clientOwnerId != null)
             {
                 netObject.ownerClientId = clientOwnerId.Value;

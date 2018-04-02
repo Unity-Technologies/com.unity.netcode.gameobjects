@@ -80,8 +80,8 @@ namespace MLAPI.MonoBehaviours.Core
             }
         }
         internal HashSet<int> pendingClients;
-        internal bool isServer;
-        internal bool isClient;
+        internal bool _isServer;
+        internal bool _isClient;
         /// <summary>
         /// Gets if we are running as host
         /// </summary>
@@ -92,6 +92,23 @@ namespace MLAPI.MonoBehaviours.Core
                 return isServer && isClient;
             }
         }
+
+        public bool isClient
+        {
+            get
+            {
+                return _isClient;
+            }
+        }
+
+        public bool isServer
+        {
+            get
+            {
+                return _isServer;
+            }
+        }
+
         private bool isListening;
         private byte[] messageBuffer;
         internal int serverClientId;
@@ -192,6 +209,8 @@ namespace MLAPI.MonoBehaviours.Core
                 {
                     uint networkId = SpawnManager.GetNetworkObjectId();
                     SpawnManager.spawnedObjects.Add(networkId, sceneObjects[i]);
+                    sceneObjects[i]._isSpawned = true;
+                    sceneObjects[i].sceneObject = true;
                 }
             }
 
@@ -287,8 +306,8 @@ namespace MLAPI.MonoBehaviours.Core
             }
             HostTopology hostTopology = new HostTopology(cConfig, NetworkConfig.MaxConnections);
             hostId = NetworkTransport.AddHost(hostTopology, NetworkConfig.Port);
-            isServer = true;
-            isClient = false;
+            _isServer = true;
+            _isClient = false;
             isListening = true;
 
             if (OnServerStarted != null)
@@ -305,8 +324,8 @@ namespace MLAPI.MonoBehaviours.Core
             HostTopology hostTopology = new HostTopology(cConfig, NetworkConfig.MaxConnections);
             hostId =  NetworkTransport.AddHost(hostTopology, 0, null);
 
-            isServer = false;
-            isClient = true;
+            _isServer = false;
+            _isClient = true;
             isListening = true;
             serverClientId = NetworkTransport.Connect(hostId, NetworkConfig.Address, NetworkConfig.Port, 0, out error);
         }
@@ -334,6 +353,7 @@ namespace MLAPI.MonoBehaviours.Core
                     NetworkTransport.Disconnect(hostId, clientId, out error);
                 }
             }
+            _isServer = false;
             Shutdown();
         }
 
@@ -342,6 +362,8 @@ namespace MLAPI.MonoBehaviours.Core
         /// </summary>
         public void StopHost()
         {
+            _isClient = false;
+            _isServer = false;
             StopServer();
             //We don't stop client since we dont actually have a transport connection to our own host. We just handle host messages directly in the MLAPI
         }
@@ -351,6 +373,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// </summary>
         public void StopClient()
         {
+            _isClient = false;
             NetworkTransport.Disconnect(hostId, serverClientId, out error);
             Shutdown();
         }
@@ -371,8 +394,8 @@ namespace MLAPI.MonoBehaviours.Core
             }
             HostTopology hostTopology = new HostTopology(cConfig, NetworkConfig.MaxConnections);
             hostId = NetworkTransport.AddHost(hostTopology, NetworkConfig.Port, null);
-            isServer = true;
-            isClient = true;
+            _isServer = true;
+            _isClient = true;
             isListening = true;
             connectedClients.Add(-1, new NetworkedClient() { ClientId = -1 });
             if(NetworkConfig.HandleObjectSpawning)
@@ -408,8 +431,8 @@ namespace MLAPI.MonoBehaviours.Core
         private void Shutdown()
         {
             isListening = false;
-            isClient = false;
-            isServer = false;
+            _isClient = false;
+            _isServer = false;
             NetworkTransport.Shutdown();
         }
 
@@ -752,7 +775,7 @@ namespace MLAPI.MonoBehaviours.Core
                                             }
                                             if(NetworkConfig.HandleObjectSpawning)
                                             {
-                                                SpawnManager.DestroyUnspawnedObjects();
+                                                SpawnManager.DestroySceneObjects();
                                                 int objectCount = messageReader.ReadInt32();
                                                 for (int i = 0; i < objectCount; i++)
                                                 {
