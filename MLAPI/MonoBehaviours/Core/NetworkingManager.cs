@@ -1288,7 +1288,7 @@ namespace MLAPI.MonoBehaviours.Core
             else if(netId.IsHost())
             {
                 //Client trying to send data to host
-                netId = new NetId((byte)serverHostId, (ushort)serverConnectionId, false, false);
+                netId = NetId.ServerNetId;
             }
 
             bool isPassthrough = (!isServer && clientId != NetId.ServerNetId.GetClientId() && NetworkConfig.AllowPassthroughMessages);
@@ -1342,7 +1342,7 @@ namespace MLAPI.MonoBehaviours.Core
                 }
                 byte error;
                 if (isPassthrough)
-                    netId = new NetId((byte)serverHostId, (ushort)serverConnectionId, false, false);
+                    netId = NetId.ServerNetId;
                 if (skipQueue)
                     NetworkTransport.Send(netId.HostId, netId.ConnectionId, MessageManager.channels[channelName], stream.GetBuffer(), sizeOfStream, out error);
                 else
@@ -1391,7 +1391,7 @@ namespace MLAPI.MonoBehaviours.Core
                     else if (netId.IsHost())
                     {
                         //Client trying to send data to host
-                        netId = new NetId((byte)serverHostId, (ushort)serverConnectionId, false, false);
+                        netId = NetId.ServerNetId;
                     }
                     byte error;
                     NetworkTransport.QueueMessageForSending(netId.HostId, netId.ConnectionId, channel, stream.GetBuffer(), sizeOfStream, out error);
@@ -1441,7 +1441,7 @@ namespace MLAPI.MonoBehaviours.Core
                     else if (netId.IsHost())
                     {
                         //Client trying to send data to host
-                        netId = new NetId((byte)serverHostId, (ushort)serverConnectionId, false, false);
+                        netId = NetId.ServerNetId;
                     }
                     byte error;
                     NetworkTransport.QueueMessageForSending(netId.HostId, netId.ConnectionId, channel, stream.GetBuffer(), sizeOfStream, out error);
@@ -1491,7 +1491,7 @@ namespace MLAPI.MonoBehaviours.Core
                     else if (netId.IsHost())
                     {
                         //Client trying to send data to host
-                        netId = new NetId((byte)serverHostId, (ushort)serverConnectionId, false, false);
+                        netId = NetId.ServerNetId;
                     }
                     byte error;
                     NetworkTransport.QueueMessageForSending(netId.HostId, netId.ConnectionId, channel, stream.GetBuffer(), sizeOfStream, out error);
@@ -1544,7 +1544,7 @@ namespace MLAPI.MonoBehaviours.Core
                     else if (netId.IsHost())
                     {
                         //Client trying to send data to host
-                        netId = new NetId((byte)serverHostId, (ushort)serverConnectionId, false, false);
+                        netId = NetId.ServerNetId;
                     }
                     byte error;
                     NetworkTransport.QueueMessageForSending(netId.HostId, netId.ConnectionId, channel, stream.GetBuffer(), sizeOfStream, out error);
