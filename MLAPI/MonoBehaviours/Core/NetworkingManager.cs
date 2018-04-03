@@ -1652,9 +1652,9 @@ namespace MLAPI.MonoBehaviours.Core
                                 writer.Write(pair.Value.transform.position.y);
                                 writer.Write(pair.Value.transform.position.z);
 
-                                writer.Write(pair.Value.transform.rotation.x);
-                                writer.Write(pair.Value.transform.rotation.y);
-                                writer.Write(pair.Value.transform.rotation.z);
+                                writer.Write(pair.Value.transform.rotation.eulerAngles.x);
+                                writer.Write(pair.Value.transform.rotation.eulerAngles.y);
+                                writer.Write(pair.Value.transform.rotation.eulerAngles.z);
                             }
                         }
                     }

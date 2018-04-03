@@ -228,9 +228,9 @@ namespace MLAPI.NetworkingManagerComponents.Core
                     writer.Write(netObject.transform.position.y);
                     writer.Write(netObject.transform.position.z);
 
-                    writer.Write(netObject.transform.rotation.x);
-                    writer.Write(netObject.transform.rotation.y);
-                    writer.Write(netObject.transform.rotation.z);
+                    writer.Write(netObject.transform.rotation.eulerAngles.x);
+                    writer.Write(netObject.transform.rotation.eulerAngles.y);
+                    writer.Write(netObject.transform.rotation.eulerAngles.z);
                 }
 
                 netManager.Send("MLAPI_ADD_OBJECT", "MLAPI_INTERNAL", stream.GetBuffer());
