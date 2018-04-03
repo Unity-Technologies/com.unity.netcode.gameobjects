@@ -51,7 +51,6 @@ namespace MLAPI.MonoBehaviours.Core
         /// <summary>
         /// The clientId the server calls the local client by, only valid for clients
         /// </summary>
-        [HideInInspector]
         public int MyClientId
         {
             get
@@ -112,7 +111,6 @@ namespace MLAPI.MonoBehaviours.Core
         /// <summary>
         /// Gets if we are connected as a client
         /// </summary>
-        [HideInInspector]
         public bool IsClientConnected
         {
             get

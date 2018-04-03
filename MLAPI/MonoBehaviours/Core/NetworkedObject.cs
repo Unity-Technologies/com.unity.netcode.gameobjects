@@ -14,7 +14,6 @@ namespace MLAPI.MonoBehaviours.Core
         /// <summary>
         /// Gets the unique ID of this object that is synced across the network
         /// </summary>
-        [HideInInspector]
         public uint NetworkId
         {
             get
@@ -26,7 +25,6 @@ namespace MLAPI.MonoBehaviours.Core
         /// <summary>
         /// Gets the clientId of the owner of this NetworkedObject
         /// </summary>
-        [HideInInspector]
         public int OwnerClientId
         {
             get
@@ -38,7 +36,6 @@ namespace MLAPI.MonoBehaviours.Core
         /// <summary>
         /// The index of the prefab used to spawn this in the spawnablePrefabs list
         /// </summary>
-        [HideInInspector]
         public int SpawnablePrefabIndex
         {
             get
@@ -50,7 +47,6 @@ namespace MLAPI.MonoBehaviours.Core
         /// <summary>
         /// Gets if this object is a player object
         /// </summary>
-        [HideInInspector]
         public bool isPlayerObject
         {
             get
@@ -67,7 +63,6 @@ namespace MLAPI.MonoBehaviours.Core
         /// <summary>
         /// Gets if this object is part of a pool
         /// </summary>
-        [HideInInspector]
         public bool isPooledObject
         {
             get
@@ -79,7 +74,6 @@ namespace MLAPI.MonoBehaviours.Core
         /// <summary>
         /// Gets the poolId this object is part of
         /// </summary>
-        [HideInInspector]
         public ushort PoolId
         {
             get
