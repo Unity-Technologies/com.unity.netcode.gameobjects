@@ -462,7 +462,13 @@ namespace MLAPI.MonoBehaviours.Core
             SetDirtyness();
             if(Time.time - lastSyncTime >= SyncVarSyncDelay)
             {
-                byte dirtyCount = (byte)dirtyFields.Count(x => x == true);
+                byte dirtyCount = 0;
+                for (byte i = 0; i < dirtyFields.Length; i++)
+                {
+                    if (dirtyFields[i])
+                        dirtyCount++;
+                }
+
                 if (dirtyCount == 0)
                     return; //All up to date!
                 //It's sync time!
