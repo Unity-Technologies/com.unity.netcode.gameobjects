@@ -387,10 +387,13 @@ namespace MLAPI.MonoBehaviours.Core
                 }
             }
             HostTopology hostTopology = new HostTopology(cConfig, NetworkConfig.MaxConnections);
-            NetworkTransport.AddHost(hostTopology, NetworkConfig.Port);
-
-            if(NetworkConfig.UseWebsockets)           
-                NetworkTransport.AddWebsocketHost(hostTopology, NetworkConfig.WebsocketsPort);
+            for (int i = 0; i < NetworkConfig.ServerTransports.Count; i++)
+            {
+                if (NetworkConfig.ServerTransports[i].Websockets)
+                    NetworkTransport.AddWebsocketHost(hostTopology, NetworkConfig.ServerTransports[i].Port);
+                else
+                    NetworkTransport.AddHost(hostTopology, NetworkConfig.ServerTransports[i].Port);
+            } 
             
             _isServer = true;
             _isClient = false;
@@ -420,7 +423,7 @@ namespace MLAPI.MonoBehaviours.Core
             _isClient = true;
             isListening = true;
             byte error;
-            serverConnectionId = NetworkTransport.Connect(serverHostId, NetworkConfig.Address, NetworkConfig.Port, 0, out error);
+            serverConnectionId = NetworkTransport.Connect(serverHostId, NetworkConfig.ConnectAddress, NetworkConfig.ConnectPort, 0, out error);
             Debug.LogWarning("MLAPI: Connection failed: " + ((NetworkError)error).ToString());
         }
 
@@ -444,7 +447,7 @@ namespace MLAPI.MonoBehaviours.Core
             _isClient = true;
             isListening = true;
             byte error;
-            serverConnectionId = NetworkTransport.Connect(serverHostId, NetworkConfig.Address, NetworkConfig.WebsocketsPort, 0, out error);
+            serverConnectionId = NetworkTransport.Connect(serverHostId, NetworkConfig.ConnectAddress, NetworkConfig.ConnectPort, 0, out error);
             Debug.LogWarning("MLAPI: Connection failed: " + ((NetworkError)error).ToString());
         }
 
@@ -527,9 +530,13 @@ namespace MLAPI.MonoBehaviours.Core
                 }
             }
             HostTopology hostTopology = new HostTopology(cConfig, NetworkConfig.MaxConnections);
-            NetworkTransport.AddHost(hostTopology, NetworkConfig.Port, null);
-            if (NetworkConfig.UseWebsockets)
-                NetworkTransport.AddWebsocketHost(hostTopology, NetworkConfig.WebsocketsPort);
+            for (int i = 0; i < NetworkConfig.ServerTransports.Count; i++)
+            {
+                if (NetworkConfig.ServerTransports[i].Websockets)
+                    NetworkTransport.AddWebsocketHost(hostTopology, NetworkConfig.ServerTransports[i].Port);
+                else
+                    NetworkTransport.AddHost(hostTopology, NetworkConfig.ServerTransports[i].Port);
+            }
 
             _isServer = true;
             _isClient = true;

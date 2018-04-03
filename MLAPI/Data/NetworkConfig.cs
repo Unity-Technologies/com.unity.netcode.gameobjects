@@ -21,6 +21,18 @@ namespace MLAPI.Data
         /// </summary>
         public ushort ProtocolVersion = 0;
         /// <summary>
+        /// The transport hosts the sever uses
+        /// </summary>
+        public List<TransportHost> ServerTransports = new List<TransportHost>()
+        {
+            new TransportHost()
+            {
+                Name = "UDP Socket",
+                Port = 7777,
+                Websockets = false
+            }
+        };
+        /// <summary>
         /// Channels used by the NetworkedTransport
         /// </summary>
         public List<Channel> Channels = new List<Channel>();
@@ -75,13 +87,13 @@ namespace MLAPI.Data
         /// </summary>
         public int MaxConnections = 100;
         /// <summary>
-        /// The port for the NetworkTransport to use
+        /// The port for the NetworkTransport to use when connecting
         /// </summary>
-        public int Port = 7777;
+        public int ConnectPort = 7777;
         /// <summary>
         /// The address to connect to
         /// </summary>
-        public string Address = "127.0.0.1";
+        public string ConnectAddress = "127.0.0.1";
         /// <summary>
         /// The amount of seconds to wait for handshake to complete before timing out a client
         /// </summary>
@@ -128,14 +140,6 @@ namespace MLAPI.Data
         /// Wheter or not to enable scene switching
         /// </summary>
         public bool EnableSceneSwitching = false;
-        /// <summary>
-        /// Wheter or not we should have an additional host that listens for WebSocket requests
-        /// </summary>
-        public bool UseWebsockets = false;
-        /// <summary>
-        /// The port the websocket host listens on
-        /// </summary>
-        public int WebsocketsPort = 7778;
 
         private byte[] ConfigHash = null;
         /// <summary>
