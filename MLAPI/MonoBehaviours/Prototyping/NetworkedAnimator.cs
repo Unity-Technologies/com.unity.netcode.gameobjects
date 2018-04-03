@@ -138,8 +138,8 @@ namespace MLAPI.MonoBehaviours.Prototyping
                 {
                     if(EnableProximity)
                     {
-                        List<int> clientsInProximity = new List<int>();
-                        foreach (KeyValuePair<int, NetworkedClient> client in NetworkingManager.singleton.connectedClients)
+                        List<uint> clientsInProximity = new List<uint>();
+                        foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.connectedClients)
                         {
                             if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
                                 clientsInProximity.Add(client.Key);
@@ -207,8 +207,8 @@ namespace MLAPI.MonoBehaviours.Prototyping
                     {
                         if (EnableProximity)
                         {
-                            List<int> clientsInProximity = new List<int>();
-                            foreach (KeyValuePair<int, NetworkedClient> client in NetworkingManager.singleton.connectedClients)
+                            List<uint> clientsInProximity = new List<uint>();
+                            foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.connectedClients)
                             {
                                 if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
                                     clientsInProximity.Add(client.Key);
@@ -248,7 +248,7 @@ namespace MLAPI.MonoBehaviours.Prototyping
             if (i == 5) param5 = p;
         }
 
-        private void HandleAnimMsg(int clientId, byte[] data)
+        private void HandleAnimMsg(uint clientId, byte[] data)
         {
             // usually transitions will be triggered by parameters, if not, play anims directly.
             // NOTE: this plays "animations", not transitions, so any transitions will be skipped.
@@ -258,8 +258,8 @@ namespace MLAPI.MonoBehaviours.Prototyping
             {
                 if (EnableProximity)
                 {
-                    List<int> clientsInProximity = new List<int>();
-                    foreach (KeyValuePair<int, NetworkedClient> client in NetworkingManager.singleton.connectedClients)
+                    List<uint> clientsInProximity = new List<uint>();
+                    foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.connectedClients)
                     {
                         if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
                             clientsInProximity.Add(client.Key);
@@ -284,14 +284,14 @@ namespace MLAPI.MonoBehaviours.Prototyping
             }
         }
 
-        private void HandleAnimParamsMsg(int clientId, byte[] data)
+        private void HandleAnimParamsMsg(uint clientId, byte[] data)
         {
             if (isServer)
             {
                 if (EnableProximity)
                 {
-                    List<int> clientsInProximity = new List<int>();
-                    foreach (KeyValuePair<int, NetworkedClient> client in NetworkingManager.singleton.connectedClients)
+                    List<uint> clientsInProximity = new List<uint>();
+                    foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.connectedClients)
                     {
                         if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
                             clientsInProximity.Add(client.Key);
@@ -310,14 +310,14 @@ namespace MLAPI.MonoBehaviours.Prototyping
             }
         }
 
-        private void HandleAnimTriggerMsg(int clientId, byte[] data)
+        private void HandleAnimTriggerMsg(uint clientId, byte[] data)
         {
             if (isServer)
             {
                 if (EnableProximity)
                 {
-                    List<int> clientsInProximity = new List<int>();
-                    foreach (KeyValuePair<int, NetworkedClient> client in NetworkingManager.singleton.connectedClients)
+                    List<uint> clientsInProximity = new List<uint>();
+                    foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.connectedClients)
                     {
                         if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
                             clientsInProximity.Add(client.Key);
@@ -434,8 +434,8 @@ namespace MLAPI.MonoBehaviours.Prototyping
                     {
                         if (EnableProximity)
                         {
-                            List<int> clientsInProximity = new List<int>();
-                            foreach (KeyValuePair<int, NetworkedClient> client in NetworkingManager.singleton.connectedClients)
+                            List<uint> clientsInProximity = new List<uint>();
+                            foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.connectedClients)
                             {
                                 if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
                                     clientsInProximity.Add(client.Key);

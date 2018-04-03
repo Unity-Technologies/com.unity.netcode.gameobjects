@@ -73,6 +73,7 @@
     <Compile Include="Data\NetworkConfig.cs" />
     <Compile Include="Data\NetworkPool.cs" />
     <Compile Include="Data\TrackedPointData.cs" />
+    <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="MonoBehaviours\Prototyping\NetworkedAnimator.cs" />
     <Compile Include="MonoBehaviours\Prototyping\NetworkedNavMeshAgent.cs" />
     <Compile Include="NetworkingManagerComponents\Binary\BinarySerializer.cs" />
@@ -91,8 +92,7 @@
     <Compile Include="NetworkingManagerComponents\Core\NetworkSceneManager.cs" />
     <Compile Include="NetworkingManagerComponents\Core\SpawnManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="NetworkingManagerComponents\Core\ClientIdManager.cs" />
-    <Compile Include="Data\ClientIdKey.cs" />
+    <Compile Include="Data\NetId.cs" />
     <Compile Include="NetworkingManagerComponents\Binary\MessageChunker.cs" />
   </ItemGroup>
   <ItemGroup>

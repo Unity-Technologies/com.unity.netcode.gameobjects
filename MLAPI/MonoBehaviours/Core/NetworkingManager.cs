@@ -51,26 +51,26 @@ namespace MLAPI.MonoBehaviours.Core
         /// <summary>
         /// The clientId the server calls the local client by, only valid for clients
         /// </summary>
-        public int MyClientId
+        public uint MyClientId
         {
             get
             {
                 return myClientId;
             }
         }
-        internal int myClientId;
-        internal Dictionary<int, NetworkedClient> connectedClients;
+        internal uint myClientId;
+        internal Dictionary<uint, NetworkedClient> connectedClients;
         /// <summary>
         /// Gets a dictionary of connected clients
         /// </summary>
-        public Dictionary<int, NetworkedClient> ConnectedClients
+        public Dictionary<uint, NetworkedClient> ConnectedClients
         {
             get
             {
                 return connectedClients;
             }
         }
-        internal HashSet<int> pendingClients;
+        internal HashSet<uint> pendingClients;
         internal bool _isServer;
         internal bool _isClient;
         /// <summary>
@@ -107,7 +107,8 @@ namespace MLAPI.MonoBehaviours.Core
 
         private bool isListening;
         private byte[] messageBuffer;
-        internal int serverClientId;
+        internal int serverConnectionId;
+        internal int serverHostId;
         /// <summary>
         /// Gets if we are connected as a client
         /// </summary>
@@ -122,11 +123,11 @@ namespace MLAPI.MonoBehaviours.Core
         /// <summary>
         /// The callback to invoke once a client connects
         /// </summary>
-        public Action<int> OnClientConnectedCallback = null;
+        public Action<uint> OnClientConnectedCallback = null;
         /// <summary>
         /// The callback to invoke when a client disconnects
         /// </summary>
-        public Action<int> OnClientDisconnectCallback = null;
+        public Action<uint> OnClientDisconnectCallback = null;
         /// <summary>
         /// The callback to invoke once the server is ready
         /// </summary>
@@ -134,14 +135,14 @@ namespace MLAPI.MonoBehaviours.Core
         /// <summary>
         /// The callback to invoke during connection approval
         /// </summary>
-        public Action<byte[], int, Action<int, bool>> ConnectionApprovalCallback = null;
+        public Action<byte[], uint, Action<uint, bool>> ConnectionApprovalCallback = null;
         /// <summary>
         /// The current NetworkingConfiguration
         /// </summary>
         public NetworkConfig NetworkConfig;
 
         private EllipticDiffieHellman clientDiffieHellman;
-        private Dictionary<int, byte[]> diffieHellmanPublicKeys;
+        private Dictionary<uint, byte[]> diffieHellmanPublicKeys;
         private byte[] clientAesKey;
 
         public bool RegenerateRSAKeys = false;
@@ -195,13 +196,13 @@ namespace MLAPI.MonoBehaviours.Core
             lastSendTickTime = 0;
             lastEventTickTime = 0;
             lastReceiveTickTime = 0;
-            pendingClients = new HashSet<int>();
-            connectedClients = new Dictionary<int, NetworkedClient>();
+            pendingClients = new HashSet<uint>();
+            connectedClients = new Dictionary<uint, NetworkedClient>();
             messageBuffer = new byte[NetworkConfig.MessageBufferSize];
-            diffieHellmanPublicKeys = new Dictionary<int, byte[]>();
+            diffieHellmanPublicKeys = new Dictionary<uint, byte[]>();
             MessageManager.channels = new Dictionary<string, int>();
             MessageManager.messageTypes = new Dictionary<string, ushort>();
-            MessageManager.messageCallbacks = new Dictionary<ushort, Dictionary<int, Action<int, byte[]>>>();
+            MessageManager.messageCallbacks = new Dictionary<ushort, Dictionary<int, Action<uint, byte[]>>>();
             MessageManager.messageHandlerCounter = new Dictionary<ushort, int>();
             MessageManager.releasedMessageHandlerCounters = new Dictionary<ushort, Stack<int>>();
             MessageManager.reverseChannels = new Dictionary<int, string>();
@@ -213,10 +214,6 @@ namespace MLAPI.MonoBehaviours.Core
             NetworkSceneManager.registeredSceneNames = new HashSet<string>();
             NetworkSceneManager.sceneIndexToString = new Dictionary<uint, string>();
             NetworkSceneManager.sceneNameToIndex = new Dictionary<string, uint>();
-            ClientIdManager.clientIdCounter = 0;
-            ClientIdManager.clientIdToKey = new Dictionary<int, ClientIdKey>();
-            ClientIdManager.keyToClientId = new Dictionary<ClientIdKey, int>();
-            ClientIdManager.releasedClientIds = new Queue<int>();
 
             if (NetworkConfig.HandleObjectSpawning)
             {
@@ -390,7 +387,11 @@ namespace MLAPI.MonoBehaviours.Core
                 }
             }
             HostTopology hostTopology = new HostTopology(cConfig, NetworkConfig.MaxConnections);
-            hostId = NetworkTransport.AddHost(hostTopology, NetworkConfig.Port);
+            NetworkTransport.AddHost(hostTopology, NetworkConfig.Port);
+
+            if(NetworkConfig.UseWebsockets)           
+                NetworkTransport.AddWebsocketHost(hostTopology, NetworkConfig.WebsocketsPort);
+            
             _isServer = true;
             _isClient = false;
             isListening = true;
@@ -413,12 +414,38 @@ namespace MLAPI.MonoBehaviours.Core
 
             ConnectionConfig cConfig = Init();
             HostTopology hostTopology = new HostTopology(cConfig, NetworkConfig.MaxConnections);
-            hostId =  NetworkTransport.AddHost(hostTopology, 0, null);
+            serverHostId = NetworkTransport.AddHost(hostTopology, 0, null);
 
             _isServer = false;
             _isClient = true;
             isListening = true;
-            serverClientId = NetworkTransport.Connect(hostId, NetworkConfig.Address, NetworkConfig.Port, 0, out error);
+            byte error;
+            serverConnectionId = NetworkTransport.Connect(serverHostId, NetworkConfig.Address, NetworkConfig.Port, 0, out error);
+            Debug.LogWarning("MLAPI: Connection failed: " + ((NetworkError)error).ToString());
+        }
+
+        /// <summary>
+        /// Starts a client with a given NetworkingConfiguration
+        /// </summary>
+        /// <param name="netConfig">The NetworkingConfiguration to use</param>
+        public void StartClientWebsocket()
+        {
+            if (isServer || isClient)
+            {
+                Debug.LogWarning("MLAPI: Cannot start client while an instance is already running");
+                return;
+            }
+
+            ConnectionConfig cConfig = Init();
+            HostTopology hostTopology = new HostTopology(cConfig, NetworkConfig.MaxConnections);
+            serverHostId = NetworkTransport.AddWebsocketHost(hostTopology, 0, null);
+
+            _isServer = false;
+            _isClient = true;
+            isListening = true;
+            byte error;
+            serverConnectionId = NetworkTransport.Connect(serverHostId, NetworkConfig.Address, NetworkConfig.WebsocketsPort, 0, out error);
+            Debug.LogWarning("MLAPI: Connection failed: " + ((NetworkError)error).ToString());
         }
 
         /// <summary>
@@ -426,22 +453,32 @@ namespace MLAPI.MonoBehaviours.Core
         /// </summary>
         public void StopServer()
         {
-            HashSet<int> sentIds = new HashSet<int>();
+            HashSet<uint> disconnectedIds = new HashSet<uint>();
             //Don't know if I have to disconnect the clients. I'm assuming the NetworkTransport does all the cleaning on shtudown. But this way the clients get a disconnect message from server (so long it does't get lost)
-            foreach (KeyValuePair<int, NetworkedClient> pair in connectedClients)
+            foreach (KeyValuePair<uint, NetworkedClient> pair in connectedClients)
             {
-                if(!sentIds.Contains(pair.Key))
+                if(!disconnectedIds.Contains(pair.Key))
                 {
-                    sentIds.Add(pair.Key);
-                    NetworkTransport.Disconnect(hostId, pair.Key, out error);
+                    disconnectedIds.Add(pair.Key);
+                    NetId netId = new NetId(pair.Key);
+                    if (netId.IsHost())
+                        continue;
+
+                    byte error;
+                    NetworkTransport.Disconnect(netId.HostId, netId.ConnectionId, out error);
                 }
             }
-            foreach (int clientId in pendingClients)
+            foreach (uint clientId in pendingClients)
             {
-                if (!sentIds.Contains(clientId))
+                if (!disconnectedIds.Contains(clientId))
                 {
-                    sentIds.Add(clientId);
-                    NetworkTransport.Disconnect(hostId, clientId, out error);
+                    disconnectedIds.Add(clientId);
+                    NetId netId = new NetId(clientId);
+                    if (netId.IsHost())
+                        continue;
+
+                    byte error;
+                    NetworkTransport.Disconnect(netId.HostId, netId.ConnectionId, out error);
                 }
             }
             _isServer = false;
@@ -465,7 +502,8 @@ namespace MLAPI.MonoBehaviours.Core
         public void StopClient()
         {
             _isClient = false;
-            NetworkTransport.Disconnect(hostId, serverClientId, out error);
+            byte error;
+            NetworkTransport.Disconnect(serverHostId, serverConnectionId, out error);
             Shutdown();
         }
 
@@ -489,14 +527,23 @@ namespace MLAPI.MonoBehaviours.Core
                 }
             }
             HostTopology hostTopology = new HostTopology(cConfig, NetworkConfig.MaxConnections);
-            hostId = NetworkTransport.AddHost(hostTopology, NetworkConfig.Port, null);
+            NetworkTransport.AddHost(hostTopology, NetworkConfig.Port, null);
+            if (NetworkConfig.UseWebsockets)
+                NetworkTransport.AddWebsocketHost(hostTopology, NetworkConfig.WebsocketsPort);
+
             _isServer = true;
             _isClient = true;
             isListening = true;
-            connectedClients.Add(-1, new NetworkedClient() { ClientId = -1 });
+
+            NetId netId = new NetId(0, 0, true, false);
+            connectedClients.Add(netId.GetClientId(), new NetworkedClient()
+            {
+                ClientId = netId.GetClientId()
+            });
+
             if(NetworkConfig.HandleObjectSpawning)
             {
-                SpawnManager.SpawnPlayerObject(-1, 0);
+                SpawnManager.SpawnPlayerObject(netId.GetClientId(), 0);
             }
 
             if (OnServerStarted != null)
@@ -534,11 +581,11 @@ namespace MLAPI.MonoBehaviours.Core
         }
 
         //Receive stuff
-        internal int hostId;
-        private int clientId;
-        private int channelId;
-        private int receivedSize;
-        private byte error;
+        //internal int hostId;
+        //private int clientId;
+        //private int channelId;
+        //private int receivedSize;
+        //private byte error;
         private float lastReceiveTickTime;
         private float lastSendTickTime;
         private float lastEventTickTime;
@@ -548,9 +595,14 @@ namespace MLAPI.MonoBehaviours.Core
             {
                 if((Time.time - lastSendTickTime >= (1f / NetworkConfig.SendTickrate)) || NetworkConfig.SendTickrate <= 0)
                 {
-                    foreach (KeyValuePair<int, NetworkedClient> pair in connectedClients)
+                    foreach (KeyValuePair<uint, NetworkedClient> pair in connectedClients)
                     {
-                        NetworkTransport.SendQueuedMessages(hostId, pair.Key, out error);
+                        NetId netId = new NetId(pair.Key);
+                        if (netId.IsHost() || netId.IsInvalid())                        
+                            continue;   
+                        
+                        byte error;
+                        NetworkTransport.SendQueuedMessages(netId.HostId, netId.ConnectionId, out error);
                     }
                     lastSendTickTime = Time.time;
                 }
@@ -561,21 +613,27 @@ namespace MLAPI.MonoBehaviours.Core
                     do
                     {
                         processedEvents++;
-                        eventType = NetworkTransport.Receive(out hostId, out clientId, out channelId, messageBuffer, messageBuffer.Length, out receivedSize, out error);
+                        int hostId;
+                        int connectionId;
+                        int channelId;
+                        int receivedSize;
+                        byte error;
+                        eventType = NetworkTransport.Receive(out hostId, out connectionId, out channelId, messageBuffer, messageBuffer.Length, out receivedSize, out error);
+                        NetId netId = new NetId((byte)hostId, (ushort)connectionId, false, false);
                         NetworkError networkError = (NetworkError)error;
                         if (networkError == NetworkError.Timeout)
                         {
                             //Client timed out. 
                             if (isServer)
                             {
-                                OnClientDisconnect(clientId);
+                                OnClientDisconnect(netId.GetClientId());
                                 return;
                             }
                             else
                                 _isClientConnected = false;
 
                             if (OnClientDisconnectCallback != null)
-                                OnClientDisconnectCallback.Invoke(clientId);
+                                OnClientDisconnectCallback.Invoke(netId.GetClientId());
                         }
                         else if (networkError != NetworkError.Ok)
                         {
@@ -588,8 +646,8 @@ namespace MLAPI.MonoBehaviours.Core
                             case NetworkEventType.ConnectEvent:
                                 if (isServer)
                                 {
-                                    pendingClients.Add(clientId);
-                                    StartCoroutine(ApprovalTimeout(clientId));
+                                    pendingClients.Add(netId.GetClientId());
+                                    StartCoroutine(ApprovalTimeout(netId.GetClientId()));
                                 }
                                 else
                                 {
@@ -622,21 +680,21 @@ namespace MLAPI.MonoBehaviours.Core
                                                 writer.Write(NetworkConfig.ConnectionData);
                                             }
                                         }
-                                        Send(clientId, "MLAPI_CONNECTION_REQUEST", "MLAPI_INTERNAL", writeStream.GetBuffer(), null, null, true);
+                                        Send(netId.GetClientId(), "MLAPI_CONNECTION_REQUEST", "MLAPI_INTERNAL", writeStream.GetBuffer(), null, null, true);
                                     }
                                 }
                                 break;
                             case NetworkEventType.DataEvent:
-                                HandleIncomingData(clientId, messageBuffer, channelId);
+                                HandleIncomingData(netId.GetClientId(), messageBuffer, channelId);
                                 break;
                             case NetworkEventType.DisconnectEvent:
                                 if (isServer)
-                                    OnClientDisconnect(clientId);
+                                    OnClientDisconnect(netId.GetClientId());
                                 else
                                     _isClientConnected = false;
 
                                 if (OnClientDisconnectCallback != null)
-                                    OnClientDisconnectCallback.Invoke(clientId);
+                                    OnClientDisconnectCallback.Invoke(netId.GetClientId());
                                 break;
                         }
                         // Only do another iteration if: there are no more messages AND (there is no limit to max events or we have processed less than the maximum)
@@ -653,7 +711,7 @@ namespace MLAPI.MonoBehaviours.Core
             }
         }
 
-        private IEnumerator ApprovalTimeout(int clientId)
+        private IEnumerator ApprovalTimeout(uint clientId)
         {
             float timeStarted = Time.time;
             //We yield every frame incase a pending client disconnects and someone else gets its connection id
@@ -668,7 +726,7 @@ namespace MLAPI.MonoBehaviours.Core
             }
         }
 
-        private void HandleIncomingData(int clientId, byte[] data, int channelId)
+        private void HandleIncomingData(uint clientId, byte[] data, int channelId)
         {
             using(MemoryStream readStream = new MemoryStream(data))
             {
@@ -685,13 +743,13 @@ namespace MLAPI.MonoBehaviours.Core
                     }
                     bool isPassthrough = reader.ReadBoolean();
 
-                    int passthroughOrigin = 0;
-                    int passthroughTarget = 0;
+                    uint passthroughOrigin = 0;
+                    uint passthroughTarget = 0;
 
                     if (isPassthrough && isServer)
-                        passthroughTarget = reader.ReadInt32();
+                        passthroughTarget = reader.ReadUInt32();
                     else if (isPassthrough && !isServer)
-                        passthroughOrigin = reader.ReadInt32();
+                        passthroughOrigin = reader.ReadUInt32();
 
 
                     //Client tried to send a network message that was not the connection request before he was accepted.
@@ -766,7 +824,7 @@ namespace MLAPI.MonoBehaviours.Core
                         }
                         else
                         {
-                            foreach (KeyValuePair<int, Action<int, byte[]>> pair in MessageManager.messageCallbacks[messageType])
+                            foreach (KeyValuePair<int, Action<uint, byte[]>> pair in MessageManager.messageCallbacks[messageType])
                             {
                                 if (isPassthrough)
                                     pair.Value(passthroughOrigin, incommingData);
@@ -825,7 +883,7 @@ namespace MLAPI.MonoBehaviours.Core
                                     {
                                         using (BinaryReader messageReader = new BinaryReader(messageReadStream))
                                         {
-                                            myClientId = messageReader.ReadInt32();
+                                            myClientId = messageReader.ReadUInt32();
                                             uint sceneIndex = 0;
                                             if(NetworkConfig.EnableSceneSwitching)
                                             {
@@ -858,17 +916,19 @@ namespace MLAPI.MonoBehaviours.Core
 
                                             float netTime = messageReader.ReadSingle();
                                             int remoteStamp = messageReader.ReadInt32();
-                                            int msDelay = NetworkTransport.GetRemoteDelayTimeMS(hostId, clientId, remoteStamp, out error);
+                                            byte error;
+                                            NetId netId = new NetId(clientId);
+                                            int msDelay = NetworkTransport.GetRemoteDelayTimeMS(netId.HostId, netId.ConnectionId, remoteStamp, out error);
                                             if ((NetworkError)error != NetworkError.Ok)
                                                 msDelay = 0;
                                             networkTime = netTime + (msDelay / 1000f);
 
-                                            connectedClients.Add(MyClientId, new NetworkedClient() { ClientId = MyClientId });
+                                            connectedClients.Add(clientId, new NetworkedClient() { ClientId = clientId });
                                             int clientCount = messageReader.ReadInt32();
                                             for (int i = 0; i < clientCount; i++)
                                             {
-                                                int conId = messageReader.ReadInt32();
-                                                connectedClients.Add(conId, new NetworkedClient() { ClientId = conId });
+                                                uint _clientId = messageReader.ReadUInt32();
+                                                connectedClients.Add(_clientId, new NetworkedClient() { ClientId = _clientId });
                                             }
                                             if(NetworkConfig.HandleObjectSpawning)
                                             {
@@ -878,7 +938,7 @@ namespace MLAPI.MonoBehaviours.Core
                                                 {
                                                     bool isPlayerObject = messageReader.ReadBoolean();
                                                     uint networkId = messageReader.ReadUInt32();
-                                                    int ownerId = messageReader.ReadInt32();
+                                                    uint ownerId = messageReader.ReadUInt32();
                                                     int prefabId = messageReader.ReadInt32();
                                                     bool isActive = messageReader.ReadBoolean();
 
@@ -927,7 +987,7 @@ namespace MLAPI.MonoBehaviours.Core
                                             {
                                                 bool isPlayerObject = messageReader.ReadBoolean();
                                                 uint networkId = messageReader.ReadUInt32();
-                                                int ownerId = messageReader.ReadInt32();
+                                                uint ownerId = messageReader.ReadUInt32();
                                                 int prefabId = messageReader.ReadInt32();
 
                                                 float xPos = messageReader.ReadSingle();
@@ -951,7 +1011,7 @@ namespace MLAPI.MonoBehaviours.Core
                                             }
                                             else
                                             {
-                                                int ownerId = messageReader.ReadInt32();
+                                                uint ownerId = messageReader.ReadUInt32();
                                                 connectedClients.Add(ownerId, new NetworkedClient() { ClientId = ownerId });
                                             }
                                         }
@@ -967,7 +1027,7 @@ namespace MLAPI.MonoBehaviours.Core
                                     {
                                         using (BinaryReader messageReader = new BinaryReader(messageReadStream))
                                         {
-                                            int disconnectedClientId = messageReader.ReadInt32();
+                                            uint disconnectedClientId = messageReader.ReadUInt32();
                                             OnClientDisconnect(disconnectedClientId);
                                         }
                                     }
@@ -1042,7 +1102,7 @@ namespace MLAPI.MonoBehaviours.Core
                                         using (BinaryReader messageReader = new BinaryReader(messageReadStream))
                                         {
                                             uint netId = messageReader.ReadUInt32();
-                                            int ownerClientId = messageReader.ReadInt32();
+                                            uint ownerClientId = messageReader.ReadUInt32();
                                             if (SpawnManager.spawnedObjects[netId].OwnerClientId == MyClientId)
                                             {
                                                 //We are current owner.
@@ -1168,9 +1228,10 @@ namespace MLAPI.MonoBehaviours.Core
         }
 
         #region SEND METHODS
-        internal void PassthroughSend(int targetId, int sourceId, ushort messageType, int channelId, byte[] data, uint? networkId = null, ushort? orderId = null)
+        internal void PassthroughSend(uint targetId, uint sourceId, ushort messageType, int channelId, byte[] data, uint? networkId = null, ushort? orderId = null)
         {
-            if (isHost && targetId == -1)
+            NetId targetNetId = new NetId(targetId);
+            if (isHost && targetNetId.IsHost())
             {
                 //Host trying to send data to it's own client
                 Debug.LogWarning("MLAPI: Send method got message aimed at server from the server?");
@@ -1209,25 +1270,28 @@ namespace MLAPI.MonoBehaviours.Core
                         writer.Write(data);
                     }
                 }
-                NetworkTransport.QueueMessageForSending(hostId, targetId, channelId, stream.GetBuffer(), sizeOfStream, out error);
+
+                byte error;
+                NetworkTransport.QueueMessageForSending(targetNetId.HostId, targetNetId.ConnectionId, channelId, stream.GetBuffer(), sizeOfStream, out error);
             }
         }
 
-        internal void Send(int clientId, string messageType, string channelName, byte[] data, uint? networkId = null, ushort? orderId = null, bool skipQueue = false)
+        internal void Send(uint clientId, string messageType, string channelName, byte[] data, uint? networkId = null, ushort? orderId = null, bool skipQueue = false)
         {
-            if(clientId == -1 && isHost)
+            NetId netId = new NetId(clientId);
+            if(isHost && netId.IsHost())
             {
                 //Don't invoke the message on our own machine. Instant stack overflow.
                 Debug.LogWarning("MLAPI: Cannot send message to own client");
                 return;
             }
-            else if(clientId == -1)
+            else if(netId.IsHost())
             {
                 //Client trying to send data to host
-                clientId = serverClientId;
+                netId = new NetId((byte)serverHostId, (ushort)serverConnectionId, false, false);
             }
 
-            bool isPassthrough = (!isServer && clientId != serverClientId && NetworkConfig.AllowPassthroughMessages);
+            bool isPassthrough = (!isServer && clientId != NetId.ServerNetId.GetClientId() && NetworkConfig.AllowPassthroughMessages);
             if (isPassthrough && !NetworkConfig.PassthroughMessageHashSet.Contains(MessageManager.messageTypes[messageType]))
             {
                 Debug.LogWarning("MLAPI: The The MessageType " + messageType + " is not registered as an allowed passthrough message type.");
@@ -1276,23 +1340,25 @@ namespace MLAPI.MonoBehaviours.Core
                         writer.Write(data);
                     }
                 }
+                byte error;
                 if (isPassthrough)
-                    clientId = serverClientId;
+                    netId = new NetId((byte)serverHostId, (ushort)serverConnectionId, false, false);
                 if (skipQueue)
-                    NetworkTransport.Send(hostId, clientId, MessageManager.channels[channelName], stream.GetBuffer(), sizeOfStream, out error);
+                    NetworkTransport.Send(netId.HostId, netId.ConnectionId, MessageManager.channels[channelName], stream.GetBuffer(), sizeOfStream, out error);
                 else
-                    NetworkTransport.QueueMessageForSending(hostId, clientId, MessageManager.channels[channelName], stream.GetBuffer(), sizeOfStream, out error);
+                    NetworkTransport.QueueMessageForSending(netId.HostId, netId.ConnectionId, MessageManager.channels[channelName], stream.GetBuffer(), sizeOfStream, out error);
             }
         }
 
-        internal void Send(int[] clientIds, string messageType, string channelName, byte[] data, uint? networkId = null, ushort? orderId = null)
+        internal void Send(uint[] clientIds, string messageType, string channelName, byte[] data, uint? networkId = null, ushort? orderId = null)
         {
             if (NetworkConfig.EncryptedChannelsHashSet.Contains(channelName))
             {
                 Debug.LogWarning("MLAPI: Cannot send messages over encrypted channel to multiple clients.");
                 return;
             }
-                int sizeOfStream = 6;
+
+            int sizeOfStream = 6;
             if (networkId != null)
                 sizeOfStream += 4;
             if (orderId != null)
@@ -1316,23 +1382,24 @@ namespace MLAPI.MonoBehaviours.Core
                 int channel = MessageManager.channels[channelName];
                 for (int i = 0; i < clientIds.Length; i++)
                 {
-                    int clientId = clientIds[i];
-                    if (isHost && clientId == -1)
+                    NetId netId = new NetId(clientIds[i]);
+                    if (isHost && netId.IsHost())
                     {
                         //Don't invoke the message on our own machine. Instant stack overflow.
                         continue;
                     }
-                    else if (clientId == -1)
+                    else if (netId.IsHost())
                     {
                         //Client trying to send data to host
-                        clientId = serverClientId;
+                        netId = new NetId((byte)serverHostId, (ushort)serverConnectionId, false, false);
                     }
-                    NetworkTransport.QueueMessageForSending(hostId, clientId, channel, stream.GetBuffer(), sizeOfStream, out error);
+                    byte error;
+                    NetworkTransport.QueueMessageForSending(netId.HostId, netId.ConnectionId, channel, stream.GetBuffer(), sizeOfStream, out error);
                 }
             }
         }
 
-        internal void Send(List<int> clientIds, string messageType, string channelName, byte[] data, uint? networkId = null, ushort? orderId = null)
+        internal void Send(List<uint> clientIds, string messageType, string channelName, byte[] data, uint? networkId = null, ushort? orderId = null)
         {
             if (NetworkConfig.EncryptedChannelsHashSet.Contains(channelName))
             {
@@ -1365,18 +1432,19 @@ namespace MLAPI.MonoBehaviours.Core
                 int channel = MessageManager.channels[channelName];
                 for (int i = 0; i < clientIds.Count; i++)
                 {
-                    int clientId = clientIds[i];
-                    if (clientId == -1 && isHost)
+                    NetId netId = new NetId(clientIds[i]);
+                    if (isHost && netId.IsHost())
                     {
                         //Don't invoke the message on our own machine. Instant stack overflow.
                         continue;
                     }
-                    else if (clientId == -1)
+                    else if (netId.IsHost())
                     {
                         //Client trying to send data to host
-                        clientId = serverClientId;
+                        netId = new NetId((byte)serverHostId, (ushort)serverConnectionId, false, false);
                     }
-                    NetworkTransport.QueueMessageForSending(hostId, clientId, channel, stream.GetBuffer(), sizeOfStream, out error);
+                    byte error;
+                    NetworkTransport.QueueMessageForSending(netId.HostId, netId.ConnectionId, channel, stream.GetBuffer(), sizeOfStream, out error);
                 }
             }
         }
@@ -1412,26 +1480,26 @@ namespace MLAPI.MonoBehaviours.Core
                     writer.Write(data);
                 }
                 int channel = MessageManager.channels[channelName];
-                foreach (KeyValuePair<int, NetworkedClient> pair in connectedClients)
+                foreach (KeyValuePair<uint, NetworkedClient> pair in connectedClients)
                 {
-                    int clientId = pair.Key;
-                    if(isHost && pair.Key == -1)
+                    NetId netId = new NetId(pair.Key);
+                    if(isHost && netId.IsHost())
                     {
                         //Don't invoke the message on our own machine. Instant stack overflow.
                         continue;
                     }
-                    else if (clientId == -1)
+                    else if (netId.IsHost())
                     {
                         //Client trying to send data to host
-                        clientId = serverClientId;
+                        netId = new NetId((byte)serverHostId, (ushort)serverConnectionId, false, false);
                     }
-                    NetworkTransport.QueueMessageForSending(hostId, clientId, channel, stream.GetBuffer(), sizeOfStream, out error);
-                    
+                    byte error;
+                    NetworkTransport.QueueMessageForSending(netId.HostId, netId.ConnectionId, channel, stream.GetBuffer(), sizeOfStream, out error);
                 }
             }
         }
 
-        internal void Send(string messageType, string channelName, byte[] data, int clientIdToIgnore, uint? networkId = null, ushort? orderId = null)
+        internal void Send(string messageType, string channelName, byte[] data, uint clientIdToIgnore, uint? networkId = null, ushort? orderId = null)
         {
             if (NetworkConfig.EncryptedChannels.Contains(channelName))
             {
@@ -1462,28 +1530,30 @@ namespace MLAPI.MonoBehaviours.Core
                     writer.Write(data);
                 }
                 int channel = MessageManager.channels[channelName];
-                foreach (KeyValuePair<int, NetworkedClient> pair in connectedClients)
+                foreach (KeyValuePair<uint, NetworkedClient> pair in connectedClients)
                 {
                     if (pair.Key == clientIdToIgnore)
                         continue;
-                    int clientId = pair.Key;
-                    if (isHost && pair.Key == -1)
+
+                    NetId netId = new NetId(pair.Key);
+                    if (isHost && netId.IsHost())
                     {
                         //Don't invoke the message on our own machine. Instant stack overflow.
                         continue;
                     }
-                    else if (clientId == -1)
+                    else if (netId.IsHost())
                     {
                         //Client trying to send data to host
-                        clientId = serverClientId;
+                        netId = new NetId((byte)serverHostId, (ushort)serverConnectionId, false, false);
                     }
-                    NetworkTransport.QueueMessageForSending(hostId, clientId, channel, stream.GetBuffer(), sizeOfStream, out error);
+                    byte error;
+                    NetworkTransport.QueueMessageForSending(netId.HostId, netId.ConnectionId, channel, stream.GetBuffer(), sizeOfStream, out error);
                 }
             }
         }
         #endregion
 
-        private void DisconnectClient(int clientId)
+        private void DisconnectClient(uint clientId)
         {
             if (!isServer)
                 return;
@@ -1497,10 +1567,15 @@ namespace MLAPI.MonoBehaviours.Core
             if (diffieHellmanPublicKeys.ContainsKey(clientId))
                 diffieHellmanPublicKeys.Remove(clientId);
 
-            NetworkTransport.Disconnect(hostId, clientId, out error);          
+            NetId netId = new NetId(clientId);
+            if (netId.IsHost() || netId.IsInvalid())
+                return;
+
+            byte error;
+            NetworkTransport.Disconnect(netId.HostId, netId.ConnectionId, out error);          
         }
 
-        private void OnClientDisconnect(int clientId)
+        private void OnClientDisconnect(uint clientId)
         {
             if (pendingClients.Contains(clientId))
                 pendingClients.Remove(clientId);
@@ -1532,7 +1607,7 @@ namespace MLAPI.MonoBehaviours.Core
             }
         }
 
-        private void HandleApproval(int clientId, bool approved)
+        private void HandleApproval(uint clientId, bool approved)
         {
             if(approved)
             {
@@ -1625,12 +1700,12 @@ namespace MLAPI.MonoBehaviours.Core
                         writer.Write(NetworkTransport.GetNetworkTimestamp());
 
                         writer.Write(connectedClients.Count - 1);
-                        foreach (KeyValuePair<int, NetworkedClient> item in connectedClients)
+                        foreach (KeyValuePair<uint, NetworkedClient> item in connectedClients)
                         {
                             //Our own ID. Already added as the first one above
                             if (item.Key == clientId)
                                 continue;
-                            writer.Write(item.Key); //Connection id
+                            writer.Write(item.Key); //ClientId
                         }
                         if (NetworkConfig.HandleObjectSpawning)
                         {
@@ -1701,7 +1776,10 @@ namespace MLAPI.MonoBehaviours.Core
                 if (diffieHellmanPublicKeys.ContainsKey(clientId))
                     diffieHellmanPublicKeys.Remove(clientId);
 
-                NetworkTransport.Disconnect(hostId, clientId, out error);
+                NetId netId = new NetId(clientId);
+
+                byte error;
+                NetworkTransport.Disconnect(netId.HostId, netId.ConnectionId, out error);
             }
         }
     }

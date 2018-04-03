@@ -98,7 +98,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <summary>
         /// Gets the clientId that owns the NetworkedObject
         /// </summary>
-        public int ownerClientId
+        public uint ownerClientId
         {
             get
             {
@@ -146,7 +146,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="name">The MessageType to register</param>
         /// <param name="action">The callback to get invoked whenever a message is received</param>
         /// <returns>HandlerId for the messageHandler that can be used to deregister the messageHandler</returns>
-        protected int RegisterMessageHandler(string name, Action<int, byte[]> action)
+        protected int RegisterMessageHandler(string name, Action<uint, byte[]> action)
         {
             if (!MessageManager.messageTypes.ContainsKey(name))
             {
@@ -157,7 +157,7 @@ namespace MLAPI.MonoBehaviours.Core
             ushort behaviourOrder = networkedObject.GetOrderIndex(this);
 
             if (!networkedObject.targetMessageActions.ContainsKey(behaviourOrder))
-                networkedObject.targetMessageActions.Add(behaviourOrder, new Dictionary<ushort, Action<int, byte[]>>());
+                networkedObject.targetMessageActions.Add(behaviourOrder, new Dictionary<ushort, Action<uint, byte[]>>());
             if (networkedObject.targetMessageActions[behaviourOrder].ContainsKey(messageType))
             {
                 Debug.LogWarning("MLAPI: Each NetworkedBehaviour can only register one callback per instance per message type");
@@ -368,7 +368,7 @@ namespace MLAPI.MonoBehaviours.Core
                 syncedVarHooks[fieldIndex].Invoke(this, null);
         }
 
-        internal void FlushToClient(int clientId)
+        internal void FlushToClient(uint clientId)
         {
             //This NetworkedBehaviour has no SyncVars
             if (dirtyFields.Length == 0)
@@ -689,7 +689,7 @@ namespace MLAPI.MonoBehaviours.Core
                 Debug.LogWarning("MLAPI: Server can not send messages to server.");
                 return;
             }
-            NetworkingManager.singleton.Send(NetworkingManager.singleton.serverClientId, messageType, channelName, data);
+            NetworkingManager.singleton.Send(NetId.ServerNetId.GetClientId(), messageType, channelName, data);
         }
 
         /// <summary>
@@ -722,7 +722,7 @@ namespace MLAPI.MonoBehaviours.Core
                 Debug.LogWarning("MLAPI: Server can not send messages to server.");
                 return;
             }
-            NetworkingManager.singleton.Send(NetworkingManager.singleton.serverClientId, messageType, channelName, data, networkId, networkedObject.GetOrderIndex(this));            
+            NetworkingManager.singleton.Send(NetId.ServerNetId.GetClientId(), messageType, channelName, data, networkId, networkedObject.GetOrderIndex(this));            
         }
 
         /// <summary>
@@ -876,7 +876,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="messageType">User defined messageType</param>
         /// <param name="channelName">User defined channelName</param>
         /// <param name="data">The binary data to send</param>
-        protected void SendToClient(int clientId, string messageType, string channelName, byte[] data)
+        protected void SendToClient(uint clientId, string messageType, string channelName, byte[] data)
         {
             if (MessageManager.messageTypes[messageType] < 32)
             {
@@ -911,7 +911,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="messageType">User defined messageType</param>
         /// <param name="channelName">User defined channelName</param>
         /// <param name="data">The binary data to send</param>
-        protected void SendToClientTarget(int clientId, string messageType, string channelName, byte[] data)
+        protected void SendToClientTarget(uint clientId, string messageType, string channelName, byte[] data)
         {
             if (MessageManager.messageTypes[messageType] < 32)
             {
@@ -946,7 +946,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="messageType">User defined messageType</param>
         /// <param name="channelName">User defined channelName</param>
         /// <param name="data">The binary data to send</param>
-        protected void SendToClients(int[] clientIds, string messageType, string channelName, byte[] data)
+        protected void SendToClients(uint[] clientIds, string messageType, string channelName, byte[] data)
         {
             if (MessageManager.messageTypes[messageType] < 32)
             {
@@ -981,7 +981,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="messageType">User defined messageType</param>
         /// <param name="channelName">User defined channelName</param>
         /// <param name="data">The binary data to send</param>
-        protected void SendToClientsTarget(int[] clientIds, string messageType, string channelName, byte[] data)
+        protected void SendToClientsTarget(uint[] clientIds, string messageType, string channelName, byte[] data)
         {
             if (MessageManager.messageTypes[messageType] < 32)
             {
@@ -1016,7 +1016,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="messageType">User defined messageType</param>
         /// <param name="channelName">User defined channelName</param>
         /// <param name="data">The binary data to send</param>
-        protected void SendToClients(List<int> clientIds, string messageType, string channelName, byte[] data)
+        protected void SendToClients(List<uint> clientIds, string messageType, string channelName, byte[] data)
         {
             if (MessageManager.messageTypes[messageType] < 32)
             {
@@ -1051,7 +1051,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="messageType">User defined messageType</param>
         /// <param name="channelName">User defined channelName</param>
         /// <param name="data">The binary data to send</param>
-        protected void SendToClientsTarget(List<int> clientIds, string messageType, string channelName, byte[] data)
+        protected void SendToClientsTarget(List<uint> clientIds, string messageType, string channelName, byte[] data)
         {
             if (MessageManager.messageTypes[messageType] < 32)
             {
@@ -1074,7 +1074,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="messageType">User defined messageType</param>
         /// <param name="channelName">User defined channelName</param>	
         /// <param name="instance">The instance to send</param>
-        protected void SendToClientsTarget<T>(List<int> clientIds, string messageType, string channelName, T instance)
+        protected void SendToClientsTarget<T>(List<uint> clientIds, string messageType, string channelName, T instance)
         {
             SendToClientsTarget(clientIds, messageType, channelName, BinarySerializer.Serialize<T>(instance));
         }

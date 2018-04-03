@@ -89,8 +89,8 @@ namespace MLAPI.MonoBehaviours.Prototyping
                     }
                     else
                     {
-                        List<int> proximityClients = new List<int>();
-                        foreach (KeyValuePair<int, NetworkedClient> client in NetworkingManager.singleton.connectedClients)
+                        List<uint> proximityClients = new List<uint>();
+                        foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.connectedClients)
                         {
                             if (Vector3.Distance(client.Value.PlayerObject.transform.position, transform.position) <= ProximityRange)
                                 proximityClients.Add(client.Key);
@@ -121,8 +121,8 @@ namespace MLAPI.MonoBehaviours.Prototyping
                     }
                     else
                     {
-                        List<int> proximityClients = new List<int>();
-                        foreach (KeyValuePair<int, NetworkedClient> client in NetworkingManager.singleton.connectedClients)
+                        List<uint> proximityClients = new List<uint>();
+                        foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.connectedClients)
                         {
                             if (Vector3.Distance(client.Value.PlayerObject.transform.position, transform.position) <= ProximityRange)
                                 proximityClients.Add(client.Key);
@@ -134,7 +134,7 @@ namespace MLAPI.MonoBehaviours.Prototyping
             }
         }
 
-        private void OnNavMeshStateUpdate(int clientId, byte[] data)
+        private void OnNavMeshStateUpdate(uint clientId, byte[] data)
         {
             using (MemoryStream stream = new MemoryStream(data))
             {
@@ -166,7 +166,7 @@ namespace MLAPI.MonoBehaviours.Prototyping
             }
         }
 
-        private void OnNavMeshCorrectionUpdate(int clinetId, byte[] data)
+        private void OnNavMeshCorrectionUpdate(uint clientId, byte[] data)
         {
             using (MemoryStream stream = new MemoryStream(data))
             {

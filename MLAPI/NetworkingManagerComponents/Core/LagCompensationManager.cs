@@ -1,4 +1,5 @@
-﻿using MLAPI.MonoBehaviours.Core;
+﻿using MLAPI.Data;
+using MLAPI.MonoBehaviours.Core;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -54,14 +55,15 @@ namespace MLAPI.NetworkingManagerComponents.Core
         /// </summary>
         /// <param name="clientId">The clientId's RTT to use</param>
         /// <param name="action">The action to invoke when time is turned back</param>
-        public static void Simulate(int clientId, Action action)
+        public static void Simulate(uint clientId, Action action)
         {
             if (!NetworkingManager.singleton.isServer)
             {
                 Debug.LogWarning("MLAPI: Lag compensation simulations are only to be ran on the server.");
                 return;
             }
-            float milisecondsDelay = NetworkTransport.GetCurrentRTT(NetworkingManager.singleton.hostId, clientId, out error) / 2f;
+            NetId netId = new NetId(clientId);
+            float milisecondsDelay = NetworkTransport.GetCurrentRTT(netId.HostId, netId.ConnectionId, out error) / 2f;
             Simulate(milisecondsDelay * 1000f, action);
         }
 

@@ -128,6 +128,14 @@ namespace MLAPI.Data
         /// Wheter or not to enable scene switching
         /// </summary>
         public bool EnableSceneSwitching = false;
+        /// <summary>
+        /// Wheter or not we should have an additional host that listens for WebSocket requests
+        /// </summary>
+        public bool UseWebsockets = false;
+        /// <summary>
+        /// The port the websocket host listens on
+        /// </summary>
+        public int WebsocketsPort = 7778;
 
         private byte[] ConfigHash = null;
         /// <summary>

@@ -12,7 +12,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
         internal static Dictionary<string, ushort> messageTypes;
         internal static Dictionary<ushort, string> reverseMessageTypes;
         
-        internal static Dictionary<ushort, Dictionary<int, Action<int, byte[]>>> messageCallbacks;
+        internal static Dictionary<ushort, Dictionary<int, Action<uint, byte[]>>> messageCallbacks;
         internal static Dictionary<ushort, int> messageHandlerCounter;
         internal static Dictionary<ushort, Stack<int>> releasedMessageHandlerCounters;
 
@@ -25,7 +25,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
         }
 
         
-        internal static int AddIncomingMessageHandler(string name, Action<int, byte[]> action, uint networkId)
+        internal static int AddIncomingMessageHandler(string name, Action<uint, byte[]> action, uint networkId)
         {
             if (messageTypes.ContainsKey(name))
             {
@@ -56,7 +56,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 }
                 else
                 {
-                    messageCallbacks.Add(messageTypes[name], new Dictionary<int, Action<int, byte[]>>());
+                    messageCallbacks.Add(messageTypes[name], new Dictionary<int, Action<uint, byte[]>>());
                     messageHandlerCounter.Add(messageTypes[name], 1);
                     messageCallbacks[messageTypes[name]].Add(0, action);
                     return 0;

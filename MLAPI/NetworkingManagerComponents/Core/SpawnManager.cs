@@ -1,4 +1,5 @@
-﻿using MLAPI.MonoBehaviours.Core;
+﻿using MLAPI.Data;
+using MLAPI.MonoBehaviours.Core;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -36,19 +37,19 @@ namespace MLAPI.NetworkingManagerComponents.Core
         {
             NetworkedObject netObject = SpawnManager.spawnedObjects[netId];
             NetworkingManager.singleton.connectedClients[netObject.OwnerClientId].OwnedObjects.RemoveAll(x => x.NetworkId == netId);
-            netObject.ownerClientId = -2;
+            netObject.ownerClientId = new NetId(0, 0, false, true).GetClientId();
             using (MemoryStream stream = new MemoryStream(8))
             {
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
                     writer.Write(netId);
-                    writer.Write(-2);
+                    writer.Write(netObject.ownerClientId);
                 }
                 netManager.Send("MLAPI_CHANGE_OWNER", "MLAPI_INTERNAL", stream.GetBuffer());
             }
         }
 
-        internal static void ChangeOwnership(uint netId, int clientId)
+        internal static void ChangeOwnership(uint netId, uint clientId)
         {
             NetworkedObject netObject = SpawnManager.spawnedObjects[netId];
             NetworkingManager.singleton.connectedClients[netObject.OwnerClientId].OwnedObjects.RemoveAll(x => x.NetworkId == netId);
@@ -87,7 +88,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             }
         }
 
-        internal static GameObject SpawnObject(int spawnablePrefabIndex, uint networkId, int ownerId, Vector3 position, Quaternion rotation)
+        internal static GameObject SpawnObject(int spawnablePrefabIndex, uint networkId, uint ownerId, Vector3 position, Quaternion rotation)
         {
             if (spawnablePrefabIndex >= netManager.NetworkConfig.SpawnablePrefabs.Count)
                 return null;
@@ -117,7 +118,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             return go;
         }
 
-        internal static GameObject SpawnPlayerObject(int clientId, uint networkId)
+        internal static GameObject SpawnPlayerObject(uint clientId, uint networkId)
         {
             if (netManager.NetworkConfig.PlayerPrefab == null)
                 return null;
@@ -149,7 +150,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
         {
             if (!spawnedObjects.ContainsKey(networkId) || (netManager != null && !netManager.NetworkConfig.HandleObjectSpawning))
                 return;
-            if (spawnedObjects[networkId].OwnerClientId > -2 && !spawnedObjects[networkId].isPlayerObject)
+            if (!new NetId(spawnedObjects[networkId].OwnerClientId).IsInvalid() && !spawnedObjects[networkId].isPlayerObject)
             {
                 //Someone owns it.
                 NetworkingManager.singleton.connectedClients[spawnedObjects[networkId].OwnerClientId].OwnedObjects.RemoveAll(x => x.NetworkId == networkId);
@@ -168,7 +169,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                         }
                         //If we are host, send to everyone except ourselves. Otherwise, send to all
                         if (netManager != null && netManager.isHost)
-                            netManager.Send("MLAPI_DESTROY_OBJECT", "MLAPI_INTERNAL", stream.GetBuffer(), -1);
+                            netManager.Send("MLAPI_DESTROY_OBJECT", "MLAPI_INTERNAL", stream.GetBuffer(), new NetId(0, 0, true, false).GetClientId());
                         else
                             netManager.Send("MLAPI_DESTROY_OBJECT", "MLAPI_INTERNAL", stream.GetBuffer());
                     }
@@ -179,7 +180,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             spawnedObjects.Remove(networkId);
         }
 
-        internal static void OnSpawnObject(NetworkedObject netObject, int? clientOwnerId = null)
+        internal static void OnSpawnObject(NetworkedObject netObject, uint? clientOwnerId = null)
         {
             if (netObject.isSpawned)
             {

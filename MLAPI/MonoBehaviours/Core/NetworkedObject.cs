@@ -1,4 +1,5 @@
-﻿using MLAPI.NetworkingManagerComponents.Core;
+﻿using MLAPI.Data;
+using MLAPI.NetworkingManagerComponents.Core;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -25,14 +26,14 @@ namespace MLAPI.MonoBehaviours.Core
         /// <summary>
         /// Gets the clientId of the owner of this NetworkedObject
         /// </summary>
-        public int OwnerClientId
+        public uint OwnerClientId
         {
             get
             {
                 return ownerClientId;
             }
         }
-        internal int ownerClientId = -2;
+        internal uint ownerClientId = new NetId(0, 0, false, true).GetClientId();
         /// <summary>
         /// The index of the prefab used to spawn this in the spawnablePrefabs list
         /// </summary>
@@ -89,7 +90,7 @@ namespace MLAPI.MonoBehaviours.Core
         {
             get
             {
-                return isPlayerObject && (OwnerClientId == NetworkingManager.singleton.MyClientId || (OwnerClientId == -1 && NetworkingManager.singleton.isHost));
+                return isPlayerObject && (OwnerClientId == NetworkingManager.singleton.MyClientId || (new NetId(ownerClientId).IsHost() && NetworkingManager.singleton.isHost));
             }
         }
         /// <summary>
@@ -99,7 +100,7 @@ namespace MLAPI.MonoBehaviours.Core
         {
             get
             {
-                return !isPlayerObject && (OwnerClientId == NetworkingManager.singleton.MyClientId || (OwnerClientId == -1 && NetworkingManager.singleton.isHost));
+                return !isPlayerObject && (OwnerClientId == NetworkingManager.singleton.MyClientId || (new NetId(ownerClientId).IsHost() && NetworkingManager.singleton.isHost));
             }
         }
 
@@ -134,7 +135,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// Spawns an object across the network with a given owner. Can only be called from server
         /// </summary>
         /// <param name="clientId">The clientId to own the object</param>
-        public void SpawnWithOwnership(int clientId)
+        public void SpawnWithOwnership(uint clientId)
         {
             if (NetworkingManager.singleton != null)
                 SpawnManager.OnSpawnObject(this, clientId);
@@ -150,7 +151,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// Changes the owner of the object. Can only be called from server
         /// </summary>
         /// <param name="newOwnerClientId">The new owner clientId</param>
-        public void ChangeOwnership(int newOwnerClientId)
+        public void ChangeOwnership(uint newOwnerClientId)
         {
             SpawnManager.ChangeOwnership(NetworkId, newOwnerClientId);
         }
@@ -214,7 +215,7 @@ namespace MLAPI.MonoBehaviours.Core
         }
 
         //Flushes all syncVars to client
-        internal void FlushToClient(int clientId)
+        internal void FlushToClient(uint clientId)
         {
             for (int i = 0; i < childNetworkedBehaviours.Count; i++)
             {
@@ -239,6 +240,6 @@ namespace MLAPI.MonoBehaviours.Core
         }
 
         //Key: behaviourOrderId, value key: messageType, value value callback 
-        internal Dictionary<ushort, Dictionary<ushort, Action<int, byte[]>>> targetMessageActions = new Dictionary<ushort, Dictionary<ushort, Action<int, byte[]>>>();
+        internal Dictionary<ushort, Dictionary<ushort, Action<uint, byte[]>>> targetMessageActions = new Dictionary<ushort, Dictionary<ushort, Action<uint, byte[]>>>();
     }
 }

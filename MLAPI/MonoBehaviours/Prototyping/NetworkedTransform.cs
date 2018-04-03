@@ -1,4 +1,5 @@
-﻿using MLAPI.MonoBehaviours.Core;
+﻿using MLAPI.Data;
+using MLAPI.MonoBehaviours.Core;
 using System.IO;
 using UnityEngine;
 
@@ -97,7 +98,7 @@ namespace MLAPI.MonoBehaviours.Prototyping
 
         private void Update()
         {
-            if(isOwner || isLocalPlayer || (ownerClientId == -2 && isServer))
+            if(isOwner || isLocalPlayer || (new NetId(ownerClientId).IsInvalid() && isServer))
             {
                 //We own the object OR we are server and the object is not owned by anyone OR we are the object.
                 if(Time.time - lastSendTime >= timeForLerp && (Vector3.Distance(transform.position, lastSentPos) > MinMeters || Quaternion.Angle(transform.rotation, lastSentRot) > MinDegrees))
@@ -141,7 +142,7 @@ namespace MLAPI.MonoBehaviours.Prototyping
             }
         }
 
-        private void OnRecieveTransformFromServer(int clientId, byte[] data)
+        private void OnRecieveTransformFromServer(uint clientId, byte[] data)
         {
             using (MemoryStream stream = new MemoryStream(data))
             {
@@ -162,9 +163,9 @@ namespace MLAPI.MonoBehaviours.Prototyping
             }
         }
 
-        private void OnRecieveTransformFromClient(int clientId, byte[] data)
+        private void OnRecieveTransformFromClient(uint clientId, byte[] data)
         {
-            using(MemoryStream readStream = new MemoryStream(data))
+            using (MemoryStream readStream = new MemoryStream(data))
             {
                 using(BinaryReader reader = new BinaryReader(readStream))
                 {
@@ -200,7 +201,8 @@ namespace MLAPI.MonoBehaviours.Prototyping
                         }
                         if(EnableProximity)
                         {
-                            for (int i = 0; i < NetworkingManager.singleton.connectedClients.Count; i++)
+                            // For instead of Foreach?! TODO!!!
+                            for (uint i = 0; i < NetworkingManager.singleton.connectedClients.Count; i++)
                             {
                                 if (Vector3.Distance(NetworkingManager.singleton.connectedClients[i].PlayerObject.transform.position, transform.position) <= ProximityRange)
                                 {

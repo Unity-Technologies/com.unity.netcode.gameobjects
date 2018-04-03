@@ -12,7 +12,7 @@ namespace MLAPI.Data
         /// <summary>
         /// The Id of the NetworkedClient
         /// </summary>
-        public int ClientId;
+        public uint ClientId;
         /// <summary>
         /// The PlayerObject of the Client
         /// </summary>
