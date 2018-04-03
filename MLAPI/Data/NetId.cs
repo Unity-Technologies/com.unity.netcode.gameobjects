@@ -40,23 +40,24 @@ namespace MLAPI.Data
         }
 
 
+        private static byte[] tempUIntBytes = new byte[4];
+        private static byte[] tempUShortBytes = new byte[2];
         public NetId(uint clientId)
         {
-            byte[] bytes = BitConverter.GetBytes(clientId);
-            HostId = bytes[0];
-            ConnectionId = BitConverter.ToUInt16(bytes, 1);
-            Meta = bytes[3];
+            tempUIntBytes = BitConverter.GetBytes(clientId);
+            HostId = tempUIntBytes[0];
+            ConnectionId = BitConverter.ToUInt16(tempUIntBytes, 1);
+            Meta = tempUIntBytes[3];
         }
 
         public uint GetClientId()
         {
-            byte[] bytes = new byte[4];
-            byte[] connIdBytes = BitConverter.GetBytes(ConnectionId);
-            bytes[0] = HostId;
-            bytes[1] = connIdBytes[0];
-            bytes[2] = connIdBytes[1];
-            bytes[3] = Meta;
-            return BitConverter.ToUInt32(bytes, 0);
+            tempUShortBytes = BitConverter.GetBytes(ConnectionId);
+            tempUIntBytes[0] = HostId;
+            tempUIntBytes[1] = tempUShortBytes[0];
+            tempUIntBytes[2] = tempUShortBytes[1];
+            tempUIntBytes[3] = Meta;
+            return BitConverter.ToUInt32(tempUIntBytes, 0);
         }
 
         public override bool Equals (object obj)
