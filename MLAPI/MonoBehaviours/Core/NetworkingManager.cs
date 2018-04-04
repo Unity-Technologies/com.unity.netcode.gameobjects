@@ -224,6 +224,7 @@ namespace MLAPI.MonoBehaviours.Core
                     SpawnManager.spawnedObjects.Add(networkId, sceneObjects[i]);
                     sceneObjects[i]._isSpawned = true;
                     sceneObjects[i].sceneObject = true;
+                    sceneObjects[i].InvokeBehaviourNetworkSpawn();
                 }
             }
 
