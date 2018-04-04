@@ -39,17 +39,10 @@ namespace MLAPI.Data
         /// <summary>
         /// Registered MessageTypes
         /// </summary>
-        public List<string> MessageTypes = new List<string>();
-        /// <summary>
-        /// List of MessageTypes that can be passed through by Server. MessageTypes in this list should thus not be trusted to as great of an extent as normal messages.
-        /// </summary>
-        public List<string> PassthroughMessageTypes = new List<string>();
+        public List<MessageType> MessageTypes = new List<MessageType>();
         internal HashSet<ushort> PassthroughMessageHashSet = new HashSet<ushort>();
-        /// <summary>
-        /// Set of channels that will have all message contents encrypted when used
-        /// </summary>
-        public List<string> EncryptedChannels = new List<string>();
         internal HashSet<string> EncryptedChannelsHashSet = new HashSet<string>();
+        internal List<string> EncryptedChannels = new List<string>();
         /// <summary>
         /// A list of SceneNames that can be used during networked games.
         /// </summary>
@@ -161,30 +154,20 @@ namespace MLAPI.Data
                     {
                         writer.Write(Channels[i].Name);
                         writer.Write((byte)Channels[i].Type);
+                        if (EnableEncryption)
+                            writer.Write(Channels[i].Encrypted);
                     }
                     for (int i = 0; i < MessageTypes.Count; i++)
                     {
-                        writer.Write(MessageTypes[i]);
-                    }
-                    if (AllowPassthroughMessages)
-                    {
-                        for (int i = 0; i < PassthroughMessageTypes.Count; i++)
-                        {
-                            writer.Write(PassthroughMessageTypes[i]);
-                        }
+                        writer.Write(MessageTypes[i].Name);
+                        if (AllowPassthroughMessages)
+                            writer.Write(MessageTypes[i].Passthrough);
                     }
                     if (EnableSceneSwitching)
                     {
                         for (int i = 0; i < RegisteredScenes.Count; i++)
                         {
                             writer.Write(RegisteredScenes[i]);
-                        }
-                    }
-                    if(EnableEncryption)
-                    {
-                        for (int i = 0; i < EncryptedChannels.Count; i++)
-                        {
-                            writer.Write(EncryptedChannels[i]);
                         }
                     }
                     if(HandleObjectSpawning)

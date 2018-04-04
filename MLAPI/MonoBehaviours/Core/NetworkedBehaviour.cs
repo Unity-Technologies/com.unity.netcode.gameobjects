@@ -756,7 +756,7 @@ namespace MLAPI.MonoBehaviours.Core
                 Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
                 return;
             }
-            if (!isServer && (!NetworkingManager.singleton.NetworkConfig.AllowPassthroughMessages || !NetworkingManager.singleton.NetworkConfig.PassthroughMessageTypes.Contains(messageType)))
+            if (!isServer && (!NetworkingManager.singleton.NetworkConfig.AllowPassthroughMessages || !NetworkingManager.singleton.NetworkConfig.PassthroughMessageHashSet.Contains(MessageManager.messageTypes[messageType])))
             {
                 Debug.LogWarning("MLAPI: Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
                 return;
@@ -789,7 +789,7 @@ namespace MLAPI.MonoBehaviours.Core
                 Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
                 return;
             }
-            if (!isServer && (!NetworkingManager.singleton.NetworkConfig.AllowPassthroughMessages || !NetworkingManager.singleton.NetworkConfig.PassthroughMessageTypes.Contains(messageType)))
+            if (!isServer && (!NetworkingManager.singleton.NetworkConfig.AllowPassthroughMessages || !NetworkingManager.singleton.NetworkConfig.PassthroughMessageHashSet.Contains(MessageManager.messageTypes[messageType])))
             {
                 Debug.LogWarning("MLAPI: Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
                 return;
@@ -889,7 +889,7 @@ namespace MLAPI.MonoBehaviours.Core
                 Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
                 return;
             }
-            if (!isServer && (!NetworkingManager.singleton.NetworkConfig.AllowPassthroughMessages || !NetworkingManager.singleton.NetworkConfig.PassthroughMessageTypes.Contains(messageType)))
+            if (!isServer && (!NetworkingManager.singleton.NetworkConfig.AllowPassthroughMessages || !NetworkingManager.singleton.NetworkConfig.PassthroughMessageHashSet.Contains(MessageManager.messageTypes[messageType])))
             {
                 Debug.LogWarning("MLAPI: Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
                 return;
@@ -924,7 +924,7 @@ namespace MLAPI.MonoBehaviours.Core
                 Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
                 return;
             }
-            if (!isServer && (!NetworkingManager.singleton.NetworkConfig.AllowPassthroughMessages || !NetworkingManager.singleton.NetworkConfig.PassthroughMessageTypes.Contains(messageType)))
+            if (!isServer && (!NetworkingManager.singleton.NetworkConfig.AllowPassthroughMessages || !NetworkingManager.singleton.NetworkConfig.PassthroughMessageHashSet.Contains(MessageManager.messageTypes[messageType])))
             {
                 Debug.LogWarning("MLAPI: Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
                 return;

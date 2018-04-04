@@ -145,6 +145,9 @@ namespace MLAPI.MonoBehaviours.Core
         private Dictionary<uint, byte[]> diffieHellmanPublicKeys;
         private byte[] clientAesKey;
 
+        /// <summary>
+        /// An inspector bool that acts as a Trigger for regenerating RSA keys. Should not be used outside Unity editor.
+        /// </summary>
         public bool RegenerateRSAKeys = false;
 
         private void OnValidate()
@@ -264,6 +267,17 @@ namespace MLAPI.MonoBehaviours.Core
                 }
             };
 
+            if (NetworkConfig.EnableEncryption)
+            {
+                for (int i = 0; i < NetworkConfig.Channels.Count; i++)
+                {
+                    if (NetworkConfig.Channels[i].Encrypted)
+                    {
+                        NetworkConfig.EncryptedChannels.Add(NetworkConfig.Channels[i].Name);
+                    }
+                }
+            }
+
             HashSet<string> channelNames = new HashSet<string>();
             for (int i = 0; i < internalChannels.Count; i++)
             {
@@ -289,15 +303,43 @@ namespace MLAPI.MonoBehaviours.Core
             MessageManager.messageTypes.Add("MLAPI_CHANGE_OWNER", 8);
             MessageManager.messageTypes.Add("MLAPI_SYNC_VAR_UPDATE", 9);
 
-            List<string> messageTypes = new List<string>(NetworkConfig.MessageTypes)
+            List<MessageType> messageTypes = new List<MessageType>(NetworkConfig.MessageTypes)
             {
-                "MLAPI_OnRecieveTransformFromClient",
-                "MLAPI_OnRecieveTransformFromServer",
-                "MLAPI_HandleAnimationMessage",
-                "MLAPI_HandleAnimationParameterMessage",
-                "MLAPI_HandleAnimationTriggerMessage",
-                "MLAPI_OnNavMeshStateUpdate",
-                "MLAPI_OnNavMeshCorrectionUpdate"
+                new MessageType()
+                {
+                    Name = "MLAPI_OnRecieveTransformFromClient",
+                    Passthrough = false
+                },
+                new MessageType()
+                {
+                    Name = "MLAPI_OnRecieveTransformFromServer",
+                    Passthrough = false
+                },
+                new MessageType()
+                {
+                    Name = "MLAPI_HandleAnimationMessage",
+                    Passthrough = false
+                },
+                new MessageType()
+                {
+                    Name = "MLAPI_HandleAnimationParameterMessage",
+                    Passthrough = false
+                },
+                new MessageType()
+                {
+                    Name = "MLAPI_HandleAnimationTriggerMessage",
+                    Passthrough = false
+                },
+                new MessageType()
+                {
+                    Name = "MLAPI_OnNavMeshStateUpdate",
+                    Passthrough = false
+                },
+                new MessageType()
+                {
+                    Name = "MLAPI_OnNavMeshCorrectionUpdate",
+                    Passthrough = false
+                }
             };
 
             if (NetworkConfig.EnableSceneSwitching)
@@ -332,14 +374,10 @@ namespace MLAPI.MonoBehaviours.Core
 
             if (NetworkConfig.AllowPassthroughMessages)
             {
-                for (int i = 0; i < NetworkConfig.PassthroughMessageTypes.Count; i++)
+                for (int i = 0; i < NetworkConfig.MessageTypes.Count; i++)
                 {
-                    if(!NetworkConfig.MessageTypes.Contains(NetworkConfig.PassthroughMessageTypes[i]))
-                    {
-                        Debug.LogWarning("MLAPI: The messageType " + NetworkConfig.PassthroughMessageTypes[i] + " doesn't exist");
-                        continue;
-                    }
-                    NetworkConfig.PassthroughMessageHashSet.Add(MessageManager.messageTypes[NetworkConfig.PassthroughMessageTypes[i]]);
+                    if (NetworkConfig.MessageTypes[i].Passthrough)
+                        NetworkConfig.PassthroughMessageHashSet.Add(MessageManager.messageTypes[NetworkConfig.MessageTypes[i].Name]);
                 }
             }
 
@@ -360,17 +398,16 @@ namespace MLAPI.MonoBehaviours.Core
             ushort messageId = 32;
             for (ushort i = 0; i < messageTypes.Count; i++)
             {
-                MessageManager.messageTypes.Add(messageTypes[i], messageId);
-                MessageManager.reverseMessageTypes.Add(messageId, messageTypes[i]);
+                MessageManager.messageTypes.Add(messageTypes[i].Name, messageId);
+                MessageManager.reverseMessageTypes.Add(messageId, messageTypes[i].Name);
                 messageId++;
             }
             return cConfig;
         }
 
         /// <summary>
-        /// Starts a server with a given NetworkingConfiguration
+        /// Starts a server
         /// </summary>
-        /// <param name="netConfig">The NetworkingConfiguration to use</param>
         public void StartServer()
         {
             if (isServer || isClient)
@@ -405,9 +442,8 @@ namespace MLAPI.MonoBehaviours.Core
         }
 
         /// <summary>
-        /// Starts a client with a given NetworkingConfiguration
+        /// Starts a client
         /// </summary>
-        /// <param name="netConfig">The NetworkingConfiguration to use</param>
         public void StartClient()
         {
             if (isServer || isClient)
@@ -429,9 +465,8 @@ namespace MLAPI.MonoBehaviours.Core
         }
 
         /// <summary>
-        /// Starts a client with a given NetworkingConfiguration
+        /// Starts a client using Websockets
         /// </summary>
-        /// <param name="netConfig">The NetworkingConfiguration to use</param>
         public void StartClientWebsocket()
         {
             if (isServer || isClient)
@@ -512,9 +547,8 @@ namespace MLAPI.MonoBehaviours.Core
         }
 
         /// <summary>
-        /// Starts a Host with a given NetworkingConfiguration
+        /// Starts a Host
         /// </summary>
-        /// <param name="netConfig">The NetworkingConfiguration to use</param>
         public void StartHost()
         {
             if (isServer || isClient)
