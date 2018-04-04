@@ -274,11 +274,22 @@ namespace MLAPI.MonoBehaviours.Core
                     if (NetworkConfig.Channels[i].Encrypted)
                     {
                         NetworkConfig.EncryptedChannels.Add(NetworkConfig.Channels[i].Name);
+                        NetworkConfig.EncryptedChannelsHashSet.Add(NetworkConfig.Channels[i].Name);
                     }
                 }
             }
 
+            if (NetworkConfig.AllowPassthroughMessages)
+            {
+                for (int i = 0; i < NetworkConfig.MessageTypes.Count; i++)
+                {
+                    if (NetworkConfig.MessageTypes[i].Passthrough)
+                        NetworkConfig.PassthroughMessageHashSet.Add(MessageManager.messageTypes[NetworkConfig.MessageTypes[i].Name]);
+                }
+            }
+
             HashSet<string> channelNames = new HashSet<string>();
+            //Register internal channels
             for (int i = 0; i < internalChannels.Count; i++)
             {
                 if (channelNames.Contains(internalChannels[i].Name))
@@ -354,33 +365,7 @@ namespace MLAPI.MonoBehaviours.Core
                 NetworkSceneManager.SetCurrentSceneIndex();
             }
 
-            if(NetworkConfig.EnableEncryption)
-            {
-                List<string> channelNameList = NetworkConfig.Channels.Select(x => x.Name).ToList();
-                for (int i = 0; i < NetworkConfig.EncryptedChannels.Count; i++)
-                {
-                    if (NetworkConfig.EncryptedChannelsHashSet.Contains(NetworkConfig.EncryptedChannels[i]))
-                    {
-                        Debug.LogWarning("MLAPI: Duplicate encrypted channel: " + NetworkConfig.EncryptedChannels[i]);
-                        continue;
-                    }
-                    else if (!channelNameList.Contains(NetworkConfig.EncryptedChannels[i]))
-                    {
-                        Debug.LogWarning("MLAPI: Channel  " + NetworkConfig.EncryptedChannels[i] + " doesn't exist");
-                    }
-                    NetworkConfig.EncryptedChannelsHashSet.Add(NetworkConfig.EncryptedChannels[i]);
-                }
-            }
-
-            if (NetworkConfig.AllowPassthroughMessages)
-            {
-                for (int i = 0; i < NetworkConfig.MessageTypes.Count; i++)
-                {
-                    if (NetworkConfig.MessageTypes[i].Passthrough)
-                        NetworkConfig.PassthroughMessageHashSet.Add(MessageManager.messageTypes[NetworkConfig.MessageTypes[i].Name]);
-                }
-            }
-
+            //Register user channels
             for (int i = 0; i < NetworkConfig.Channels.Count; i++)
             {
                 if(channelNames.Contains(NetworkConfig.Channels[i].Name))
@@ -622,12 +607,6 @@ namespace MLAPI.MonoBehaviours.Core
             NetworkTransport.Shutdown();
         }
 
-        //Receive stuff
-        //internal int hostId;
-        //private int clientId;
-        //private int channelId;
-        //private int receivedSize;
-        //private byte error;
         private float lastReceiveTickTime;
         private float lastSendTickTime;
         private float lastEventTickTime;
