@@ -51,6 +51,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 Debug.LogWarning("MLAPI: The scene " + sceneName + " is not registered as a switchable scene.");
                 return;
             }
+            SpawnManager.DestroySceneObjects(); //Destroy current scene objects before switching.
             CurrentSceneIndex = sceneNameToIndex[sceneName];
             isSwitching = true;
             lastScene = SceneManager.GetActiveScene();
@@ -67,6 +68,10 @@ namespace MLAPI.NetworkingManagerComponents.Core
             }
         }
 
+        /// <summary>
+        /// Called on client
+        /// </summary>
+        /// <param name="sceneIndex"></param>
         internal static void OnSceneSwitch(uint sceneIndex)
         {
             if (!NetworkingManager.singleton.NetworkConfig.EnableSceneSwitching)
@@ -79,6 +84,11 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 Debug.LogWarning("MLAPI: Server requested a scene switch to a non registered scene");
                 return;
             }
+            else if(SceneManager.GetActiveScene().name == sceneIndexToString[sceneIndex])
+            {
+                return; //This scene is already loaded. This usually happends at first load
+            }
+            SpawnManager.DestroySceneObjects();
             lastScene = SceneManager.GetActiveScene();
             AsyncOperation sceneLoad = SceneManager.LoadSceneAsync(sceneIndexToString[sceneIndex], LoadSceneMode.Additive);
             sceneLoad.completed += OnSceneLoaded;
@@ -100,6 +110,16 @@ namespace MLAPI.NetworkingManagerComponents.Core
         private static void OnSceneUnload(AsyncOperation operation)
         {
             isSwitching = false;
+            if(NetworkingManager.singleton.isServer)
+            {
+                SpawnManager.MarkSceneObjects();
+                SpawnManager.FlushSceneObjects();
+            }
+            else
+            {
+                Debug.LogError("DESTROING OBJECTS");
+                SpawnManager.DestroySceneObjects();
+            }
         }
     }
 }

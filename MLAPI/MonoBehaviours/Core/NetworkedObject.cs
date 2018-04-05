@@ -12,6 +12,15 @@ namespace MLAPI.MonoBehaviours.Core
     [AddComponentMenu("MLAPI/NetworkedObject", -99)]
     public sealed class NetworkedObject : MonoBehaviour
     {
+        private void OnValidate()
+        {
+            if(string.IsNullOrEmpty(NetworkedPrefabName))
+            {
+                Debug.LogWarning("MLAPI: The networked object " + gameObject.name + " has not been assigned a networkedPrefabName. Setting it to " + gameObject.name);
+                NetworkedPrefabName = gameObject.name;
+            }
+        }
+
         /// <summary>
         /// Gets the unique ID of this object that is synced across the network
         /// </summary>
@@ -35,16 +44,9 @@ namespace MLAPI.MonoBehaviours.Core
         }
         internal uint ownerClientId = new NetId(0, 0, false, true).GetClientId();
         /// <summary>
-        /// The index of the prefab used to spawn this in the spawnablePrefabs list
+        /// The name of the NetworkedPrefab
         /// </summary>
-        public int SpawnablePrefabIndex
-        {
-            get
-            {
-                return spawnablePrefabIndex;
-            }
-        }
-        internal int spawnablePrefabIndex;
+        public string NetworkedPrefabName = string.Empty;
         /// <summary>
         /// Gets if this object is a player object
         /// </summary>
@@ -56,11 +58,6 @@ namespace MLAPI.MonoBehaviours.Core
             }
         }
         internal bool _isPlayerObject = false;
-        /// <summary>
-        /// Gets or sets if this object should be replicated across the network. Can only be changed before the object is spawned
-        /// </summary>
-        [SerializeField]
-        public bool ServerOnly = false;
         /// <summary>
         /// Gets if this object is part of a pool
         /// </summary>
@@ -115,7 +112,7 @@ namespace MLAPI.MonoBehaviours.Core
             }
         }
         internal bool _isSpawned = false;
-        internal bool sceneObject = false;
+        internal bool? sceneObject = null;
 
         private void OnDestroy()
         {
@@ -129,7 +126,7 @@ namespace MLAPI.MonoBehaviours.Core
         public void Spawn()
         {
             if (NetworkingManager.singleton != null)
-                SpawnManager.OnSpawnObject(this);
+                SpawnManager.SpawnPrefabIndexServer(this);
         }
         /// <summary>
         /// Spawns an object across the network with a given owner. Can only be called from server
@@ -138,7 +135,7 @@ namespace MLAPI.MonoBehaviours.Core
         public void SpawnWithOwnership(uint clientId)
         {
             if (NetworkingManager.singleton != null)
-                SpawnManager.OnSpawnObject(this, clientId);
+                SpawnManager.SpawnPrefabIndexServer(this, clientId);
         }
         /// <summary>
         /// Removes all ownership of an object from any client. Can only be called from server

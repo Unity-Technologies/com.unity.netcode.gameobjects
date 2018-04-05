@@ -9,6 +9,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using MLAPI.NetworkingManagerComponents.Cryptography;
 using MLAPI.NetworkingManagerComponents.Core;
+using UnityEngine.SceneManagement;
 
 namespace MLAPI.MonoBehaviours.Core
 {
@@ -152,24 +153,29 @@ namespace MLAPI.MonoBehaviours.Core
 
         private void OnValidate()
         {
-            if (NetworkConfig.SpawnablePrefabs != null)
+            if(NetworkConfig.EnableSceneSwitching && !NetworkConfig.RegisteredScenes.Contains(SceneManager.GetActiveScene().name))
             {
-                for (int i = 0; i < NetworkConfig.SpawnablePrefabs.Count; i++)
+                Debug.LogWarning("MLAPI: The active scene is not registered as a networked scene. The MLAPI has added it");
+                NetworkConfig.RegisteredScenes.Add(SceneManager.GetActiveScene().name);
+            }
+            if(!NetworkConfig.EnableSceneSwitching && NetworkConfig.HandleObjectSpawning)
+            {
+                Debug.LogWarning("MLAPI: Please be aware that Scene objects are NOT supported if SceneManagement is turned on, even if HandleObjectSpawning is turned on");
+            }
+            if(NetworkConfig.HandleObjectSpawning)
+            {
+                for (int i = 0; i < NetworkConfig.NetworkedPrefabs.Count; i++)
                 {
-                    if (NetworkConfig.SpawnablePrefabs[i] == null)
-                        continue;
-                    NetworkedObject netObject = NetworkConfig.SpawnablePrefabs[i].GetComponentInChildren<NetworkedObject>();
-                    if (netObject == null)
+                    if (string.IsNullOrEmpty(NetworkConfig.NetworkedPrefabs[i].name))
                     {
-                        Debug.LogWarning("MLAPI: All SpawnablePrefabs need a NetworkedObject component. Please add one to the prefab " + NetworkConfig.SpawnablePrefabs[i].gameObject.name);
-                        continue;
+                        Debug.LogWarning("MLAPI: The prefab " + NetworkConfig.NetworkedPrefabs[i].prefab.name + " does not have a set NetworkedPrefab name. Setting it to " + NetworkConfig.NetworkedPrefabs[i].prefab.name);
+                        NetworkConfig.NetworkedPrefabs[i].name = NetworkConfig.NetworkedPrefabs[i].prefab.name;
                     }
-                    netObject.spawnablePrefabIndex = i;
                 }
             }
-            if (NetworkConfig.PlayerPrefab != null)
+            if (!string.IsNullOrEmpty(NetworkConfig.PlayerPrefabName))
             {
-                NetworkedObject netObject = NetworkConfig.PlayerPrefab.GetComponentInChildren<NetworkedObject>();
+                NetworkedObject netObject = NetworkConfig.NetworkedPrefabs.Find(x => x.name == NetworkConfig.PlayerPrefabName).prefab.GetComponentInChildren<NetworkedObject>();
                 if (netObject == null)
                 {
                     Debug.LogWarning("MLAPI: The player object needs a NetworkedObject component.");
@@ -193,7 +199,7 @@ namespace MLAPI.MonoBehaviours.Core
             }
         }
 
-        private ConnectionConfig Init()
+        private ConnectionConfig Init(bool server)
         {
             networkTime = 0f;
             lastSendTickTime = 0;
@@ -218,16 +224,34 @@ namespace MLAPI.MonoBehaviours.Core
             NetworkSceneManager.sceneIndexToString = new Dictionary<uint, string>();
             NetworkSceneManager.sceneNameToIndex = new Dictionary<string, uint>();
 
-            if (NetworkConfig.HandleObjectSpawning)
+            if(NetworkConfig.HandleObjectSpawning)
             {
-                NetworkedObject[] sceneObjects = FindObjectsOfType<NetworkedObject>();
-                for (int i = 0; i < sceneObjects.Length; i++)
+                NetworkConfig.NetworkPrefabIds = new Dictionary<string, int>();
+                NetworkConfig.NetworkPrefabNames = new Dictionary<int, string>();
+                NetworkConfig.NetworkedPrefabs.OrderBy(x => x.name);
+                for (int i = 0; i < NetworkConfig.NetworkedPrefabs.Count; i++)
                 {
-                    uint networkId = SpawnManager.GetNetworkObjectId();
-                    SpawnManager.spawnedObjects.Add(networkId, sceneObjects[i]);
-                    sceneObjects[i]._isSpawned = true;
-                    sceneObjects[i].sceneObject = true;
-                    sceneObjects[i].InvokeBehaviourNetworkSpawn();
+                    NetworkConfig.NetworkPrefabIds.Add(NetworkConfig.NetworkedPrefabs[i].name, i);
+                    NetworkConfig.NetworkPrefabNames.Add(i, NetworkConfig.NetworkedPrefabs[i].name);
+                }
+                if (NetworkConfig.EnableSceneSwitching)
+                {
+                    SpawnManager.MarkSceneObjects();
+                    if (NetworkConfig.HandleObjectSpawning)
+                    {
+                        if (server)
+                        {
+                            bool isServerState = _isServer;
+                            _isServer = true;
+                            NetworkedObject[] networkedObjects = FindObjectsOfType<NetworkedObject>();
+                            for (int i = 0; i < networkedObjects.Length; i++)
+                            {
+                                if (networkedObjects[i].sceneObject == null || networkedObjects[i].sceneObject == true)
+                                    networkedObjects[i].Spawn();
+                            }
+                            _isServer = isServerState;
+                        }
+                    }
                 }
             }
 
@@ -313,6 +337,7 @@ namespace MLAPI.MonoBehaviours.Core
             MessageManager.messageTypes.Add("MLAPI_DESTROY_POOL_OBJECT", 7);
             MessageManager.messageTypes.Add("MLAPI_CHANGE_OWNER", 8);
             MessageManager.messageTypes.Add("MLAPI_SYNC_VAR_UPDATE", 9);
+            MessageManager.messageTypes.Add("MLAPI_ADD_OBJECTS", 10);
 
             List<MessageType> messageTypes = new List<MessageType>(NetworkConfig.MessageTypes)
             {
@@ -401,7 +426,7 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
 
-            ConnectionConfig cConfig = Init();
+            ConnectionConfig cConfig = Init(true);
             if (NetworkConfig.ConnectionApproval)
             {
                 if (ConnectionApprovalCallback == null)
@@ -437,7 +462,7 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
 
-            ConnectionConfig cConfig = Init();
+            ConnectionConfig cConfig = Init(false);
             HostTopology hostTopology = new HostTopology(cConfig, NetworkConfig.MaxConnections);
             serverHostId = NetworkTransport.AddHost(hostTopology, 0, null);
 
@@ -446,7 +471,6 @@ namespace MLAPI.MonoBehaviours.Core
             isListening = true;
             byte error;
             serverConnectionId = NetworkTransport.Connect(serverHostId, NetworkConfig.ConnectAddress, NetworkConfig.ConnectPort, 0, out error);
-            Debug.LogWarning("MLAPI: Connection failed: " + ((NetworkError)error).ToString());
         }
 
         /// <summary>
@@ -460,7 +484,7 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
 
-            ConnectionConfig cConfig = Init();
+            ConnectionConfig cConfig = Init(false);
             HostTopology hostTopology = new HostTopology(cConfig, NetworkConfig.MaxConnections);
             serverHostId = NetworkTransport.AddWebsocketHost(hostTopology, 0, null);
 
@@ -469,7 +493,6 @@ namespace MLAPI.MonoBehaviours.Core
             isListening = true;
             byte error;
             serverConnectionId = NetworkTransport.Connect(serverHostId, NetworkConfig.ConnectAddress, NetworkConfig.ConnectPort, 0, out error);
-            Debug.LogWarning("MLAPI: Connection failed: " + ((NetworkError)error).ToString());
         }
 
         /// <summary>
@@ -541,7 +564,7 @@ namespace MLAPI.MonoBehaviours.Core
                 Debug.LogWarning("MLAPI: Cannot start host while an instance is already running");
                 return;
             }
-            ConnectionConfig cConfig = Init();
+            ConnectionConfig cConfig = Init(true);
             if (NetworkConfig.ConnectionApproval)
             {
                 if (ConnectionApprovalCallback == null)
@@ -876,7 +899,7 @@ namespace MLAPI.MonoBehaviours.Core
                                                 return;
                                             }
                                             byte[] aesKey = new byte[0];
-                                            if(NetworkConfig.EnableEncryption)
+                                            if (NetworkConfig.EnableEncryption)
                                             {
                                                 ushort diffiePublicSize = messageReader.ReadUInt16();
                                                 byte[] diffiePublic = messageReader.ReadBytes(diffiePublicSize);
@@ -906,7 +929,7 @@ namespace MLAPI.MonoBehaviours.Core
                                         {
                                             myClientId = messageReader.ReadUInt32();
                                             uint sceneIndex = 0;
-                                            if(NetworkConfig.EnableSceneSwitching)
+                                            if (NetworkConfig.EnableSceneSwitching)
                                             {
                                                 sceneIndex = messageReader.ReadUInt32();
                                             }
@@ -924,7 +947,7 @@ namespace MLAPI.MonoBehaviours.Core
                                                     {
                                                         rsa.PersistKeyInCsp = false;
                                                         rsa.FromXmlString(NetworkConfig.RSAPublicKey);
-                                                        if(!rsa.VerifyData(serverPublicKey, new SHA512CryptoServiceProvider(), publicKeySignature))
+                                                        if (!rsa.VerifyData(serverPublicKey, new SHA512CryptoServiceProvider(), publicKeySignature))
                                                         {
                                                             //Man in the middle.
                                                             Debug.LogWarning("MLAPI: Signature doesnt match for the key exchange public part. Disconnecting");
@@ -951,7 +974,7 @@ namespace MLAPI.MonoBehaviours.Core
                                                 uint _clientId = messageReader.ReadUInt32();
                                                 connectedClients.Add(_clientId, new NetworkedClient() { ClientId = _clientId });
                                             }
-                                            if(NetworkConfig.HandleObjectSpawning)
+                                            if (NetworkConfig.HandleObjectSpawning)
                                             {
                                                 SpawnManager.DestroySceneObjects();
                                                 int objectCount = messageReader.ReadInt32();
@@ -962,6 +985,7 @@ namespace MLAPI.MonoBehaviours.Core
                                                     uint ownerId = messageReader.ReadUInt32();
                                                     int prefabId = messageReader.ReadInt32();
                                                     bool isActive = messageReader.ReadBoolean();
+                                                    bool sceneObject = messageReader.ReadBoolean();
 
                                                     float xPos = messageReader.ReadSingle();
                                                     float yPos = messageReader.ReadSingle();
@@ -977,14 +1001,15 @@ namespace MLAPI.MonoBehaviours.Core
                                                     }
                                                     else
                                                     {
-                                                        GameObject go = SpawnManager.SpawnObject(prefabId, networkId, ownerId, 
+                                                        GameObject go = SpawnManager.SpawnPrefabIndexClient(prefabId, networkId, ownerId,
                                                             new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot));
 
+                                                        go.GetComponent<NetworkedObject>().sceneObject = sceneObject;
                                                         go.SetActive(isActive);
                                                     }
                                                 }
                                             }
-                                            if(NetworkConfig.EnableSceneSwitching)
+                                            if (NetworkConfig.EnableSceneSwitching)
                                             {
                                                 NetworkSceneManager.OnSceneSwitch(sceneIndex);
                                             }
@@ -1004,12 +1029,13 @@ namespace MLAPI.MonoBehaviours.Core
                                     {
                                         using (BinaryReader messageReader = new BinaryReader(messageReadStream))
                                         {
-                                            if(NetworkConfig.HandleObjectSpawning)
+                                            if (NetworkConfig.HandleObjectSpawning)
                                             {
                                                 bool isPlayerObject = messageReader.ReadBoolean();
                                                 uint networkId = messageReader.ReadUInt32();
                                                 uint ownerId = messageReader.ReadUInt32();
                                                 int prefabId = messageReader.ReadInt32();
+                                                bool sceneObject = messageReader.ReadBoolean();
 
                                                 float xPos = messageReader.ReadSingle();
                                                 float yPos = messageReader.ReadSingle();
@@ -1026,8 +1052,9 @@ namespace MLAPI.MonoBehaviours.Core
                                                 }
                                                 else
                                                 {
-                                                    SpawnManager.SpawnObject(prefabId, networkId, ownerId,
-                                                        new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot));
+                                                    GameObject go = SpawnManager.SpawnPrefabIndexClient(prefabId, networkId, ownerId,
+                                                                        new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot));
+                                                    go.GetComponent<NetworkedObject>().sceneObject = sceneObject;
                                                 }
                                             }
                                             else
@@ -1042,7 +1069,7 @@ namespace MLAPI.MonoBehaviours.Core
                             case 3:
                                 //Server informs client another client disconnected
                                 //MLAPI_CLIENT_DISCONNECT
-                                if(isClient)
+                                if (isClient)
                                 {
                                     using (MemoryStream messageReadStream = new MemoryStream(incommingData))
                                     {
@@ -1056,7 +1083,7 @@ namespace MLAPI.MonoBehaviours.Core
                                 break;
                             case 4:
                                 //Server infroms clients to destroy an object
-                                if(isClient)
+                                if (isClient)
                                 {
                                     using (MemoryStream messageReadStream = new MemoryStream(incommingData))
                                     {
@@ -1079,10 +1106,10 @@ namespace MLAPI.MonoBehaviours.Core
                                             NetworkSceneManager.OnSceneSwitch(messageReader.ReadUInt32());
                                         }
                                     }
-                                }  
+                                }
                                 break;
                             case 6: //Spawn pool object
-                                if(isClient)
+                                if (isClient)
                                 {
                                     using (MemoryStream messageReadStream = new MemoryStream(incommingData))
                                     {
@@ -1103,7 +1130,7 @@ namespace MLAPI.MonoBehaviours.Core
                                 }
                                 break;
                             case 7: //Destroy pool object
-                                if(isClient)
+                                if (isClient)
                                 {
                                     using (MemoryStream messageReadStream = new MemoryStream(incommingData))
                                     {
@@ -1116,7 +1143,7 @@ namespace MLAPI.MonoBehaviours.Core
                                 }
                                 break;
                             case 8: //Change owner
-                                if(isClient)
+                                if (isClient)
                                 {
                                     using (MemoryStream messageReadStream = new MemoryStream(incommingData))
                                     {
@@ -1129,7 +1156,7 @@ namespace MLAPI.MonoBehaviours.Core
                                                 //We are current owner.
                                                 SpawnManager.spawnedObjects[netId].InvokeBehaviourOnLostOwnership();
                                             }
-                                            if(ownerClientId == MyClientId)
+                                            if (ownerClientId == MyClientId)
                                             {
                                                 //We are new owner.
                                                 SpawnManager.spawnedObjects[netId].InvokeBehaviourOnGainedOwnership();
@@ -1154,17 +1181,17 @@ namespace MLAPI.MonoBehaviours.Core
                                                 for (int i = 0; i < dirtyCount; i++)
                                                 {
                                                     byte fieldIndex = messageReader.ReadByte();
-                                                    if(!SpawnManager.spawnedObjects.ContainsKey(netId))
+                                                    if (!SpawnManager.spawnedObjects.ContainsKey(netId))
                                                     {
                                                         Debug.LogWarning("MLAPI: Sync message recieved for a non existant object with id: " + netId);
                                                         return;
                                                     }
-                                                    else if(SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex) == null)
+                                                    else if (SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex) == null)
                                                     {
                                                         Debug.LogWarning("MLAPI: Sync message recieved for a non existant behaviour");
                                                         return;
                                                     }
-                                                    else if(fieldIndex > (SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).syncedFieldTypes.Count - 1))
+                                                    else if (fieldIndex > (SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).syncedFieldTypes.Count - 1))
                                                     {
                                                         Debug.LogWarning("MLAPI: Sync message recieved for field out of bounds");
                                                         return;
@@ -1240,6 +1267,51 @@ namespace MLAPI.MonoBehaviours.Core
                                         }
                                     }
                                 }
+                                break;
+                            case 10:
+                                if (isClient) //MLAPI_ADD_OBJECTS (plural)
+                                {
+                                    Debug.LogError("AddObjects");
+                                    using (MemoryStream messageReadStream = new MemoryStream(incommingData))
+                                    {
+                                        using (BinaryReader messageReader = new BinaryReader(messageReadStream))
+                                        {
+                                            if (NetworkConfig.HandleObjectSpawning)
+                                            {
+                                                ushort objectCount = messageReader.ReadUInt16();
+                                                for (int i = 0; i < objectCount; i++)
+                                                {
+                                                    bool isPlayerObject = messageReader.ReadBoolean();
+                                                    uint networkId = messageReader.ReadUInt32();
+                                                    uint ownerId = messageReader.ReadUInt32();
+                                                    int prefabId = messageReader.ReadInt32();
+                                                    bool sceneObject = messageReader.ReadBoolean();
+
+                                                    float xPos = messageReader.ReadSingle();
+                                                    float yPos = messageReader.ReadSingle();
+                                                    float zPos = messageReader.ReadSingle();
+
+                                                    float xRot = messageReader.ReadSingle();
+                                                    float yRot = messageReader.ReadSingle();
+                                                    float zRot = messageReader.ReadSingle();
+
+                                                    if (isPlayerObject)
+                                                    {
+                                                        connectedClients.Add(ownerId, new NetworkedClient() { ClientId = ownerId });
+                                                        SpawnManager.SpawnPlayerObject(ownerId, networkId);
+                                                    }
+                                                    else
+                                                    {
+                                                        GameObject go = SpawnManager.SpawnPrefabIndexClient(prefabId, networkId, ownerId,
+                                                                            new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot));
+                                                        go.GetComponent<NetworkedObject>().sceneObject = sceneObject;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                        
                                 break;
                         }
                         #endregion
@@ -1472,6 +1544,8 @@ namespace MLAPI.MonoBehaviours.Core
 
         internal void Send(string messageType, string channelName, byte[] data, uint? networkId = null, ushort? orderId = null)
         {
+            if (connectedClients.Count == 0)
+                return;
             if (NetworkConfig.EncryptedChannels.Contains(channelName))
             {
                 Debug.LogWarning("MLAPI: Cannot send messages over encrypted channel to multiple clients.");
@@ -1672,9 +1746,9 @@ namespace MLAPI.MonoBehaviours.Core
                     GameObject go = SpawnManager.SpawnPlayerObject(clientId, networkId);
                     connectedClients[clientId].PlayerObject = go;
                 }
-                int sizeOfStream = 16 + ((connectedClients.Count - 1) * 4);
+                int sizeOfStream = 17 + ((connectedClients.Count - 1) * 4);
 
-                int amountOfObjectsToSend = SpawnManager.spawnedObjects.Values.Count(x => x.ServerOnly == false);
+                int amountOfObjectsToSend = SpawnManager.spawnedObjects.Values.Count();
 
                 if (NetworkConfig.HandleObjectSpawning)
                 {
@@ -1734,13 +1808,12 @@ namespace MLAPI.MonoBehaviours.Core
 
                             foreach (KeyValuePair<uint, NetworkedObject> pair in SpawnManager.spawnedObjects)
                             {
-                                if (pair.Value.ServerOnly)
-                                    continue;
                                 writer.Write(pair.Value.isPlayerObject);
                                 writer.Write(pair.Value.NetworkId);
                                 writer.Write(pair.Value.OwnerClientId);
-                                writer.Write(pair.Value.SpawnablePrefabIndex);
+                                writer.Write(NetworkConfig.NetworkPrefabIds[pair.Value.NetworkedPrefabName]);
                                 writer.Write(pair.Value.gameObject.activeInHierarchy);
+                                writer.Write(pair.Value.sceneObject == null ? true : pair.Value.sceneObject.Value);
 
                                 writer.Write(pair.Value.transform.position.x);
                                 writer.Write(pair.Value.transform.position.y);
@@ -1761,7 +1834,7 @@ namespace MLAPI.MonoBehaviours.Core
                 //Inform old clients of the new player
 
                 if(NetworkConfig.HandleObjectSpawning)
-                    sizeOfStream = 13;
+                    sizeOfStream = 38;
                 else
                     sizeOfStream = 4;
 
@@ -1775,6 +1848,15 @@ namespace MLAPI.MonoBehaviours.Core
                             writer.Write(connectedClients[clientId].PlayerObject.GetComponent<NetworkedObject>().NetworkId);
                             writer.Write(clientId);
                             writer.Write(-1);
+                            writer.Write(false);
+
+                            writer.Write(connectedClients[clientId].PlayerObject.transform.position.x);
+                            writer.Write(connectedClients[clientId].PlayerObject.transform.position.y);
+                            writer.Write(connectedClients[clientId].PlayerObject.transform.position.z);
+
+                            writer.Write(connectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.x);
+                            writer.Write(connectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.y);
+                            writer.Write(connectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.z);
                         }
                         else
                         {

@@ -50,11 +50,13 @@ namespace MLAPI.Data
         /// <summary>
         /// A list of spawnable prefabs
         /// </summary>
-        public List<GameObject> SpawnablePrefabs = new List<GameObject>();
+        public List<NetworkedPrefab> NetworkedPrefabs = new List<NetworkedPrefab>();
+        internal Dictionary<string, int> NetworkPrefabIds;
+        internal Dictionary<int, string> NetworkPrefabNames;
         /// <summary>
         /// The default player prefab
         /// </summary>
-        public GameObject PlayerPrefab;
+        public string PlayerPrefabName;
         /// <summary>
         /// The size of the receive message buffer. This is the max message size.
         /// </summary>
@@ -132,7 +134,7 @@ namespace MLAPI.Data
         /// <summary>
         /// Wheter or not to enable scene switching
         /// </summary>
-        public bool EnableSceneSwitching = false;
+        public bool EnableSceneSwitching = true;
 
         private byte[] ConfigHash = null;
         /// <summary>
@@ -172,7 +174,10 @@ namespace MLAPI.Data
                     }
                     if(HandleObjectSpawning)
                     {
-                        writer.Write(SpawnablePrefabs.Count);
+                        for (int i = 0; i < NetworkedPrefabs.Count; i++)
+                        {
+                            writer.Write(NetworkedPrefabs[i].name);
+                        }
                     }
                     writer.Write(HandleObjectSpawning);
                     writer.Write(EnableEncryption);
