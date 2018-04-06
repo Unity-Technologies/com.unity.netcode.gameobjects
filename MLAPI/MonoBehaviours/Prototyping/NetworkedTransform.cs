@@ -1,20 +1,47 @@
-﻿using System.IO;
+﻿using MLAPI.Data;
+using MLAPI.MonoBehaviours.Core;
+using System.IO;
 using UnityEngine;
 
 namespace MLAPI.MonoBehaviours.Prototyping
 {
+    /// <summary>
+    /// A prototype component for syncing transforms
+    /// </summary>
+    [AddComponentMenu("MLAPI/NetworkedTransform")]
     public class NetworkedTransform : NetworkedBehaviour
     {
+        /// <summary>
+        /// Sends per second
+        /// </summary>
         [Range(0f, 120f)]
         public float SendsPerSecond = 20;
+        /// <summary>
+        /// Is the sends per second assumed to be the same across all instances
+        /// </summary>
         [Tooltip("This assumes that the SendsPerSecond is synced across clients")]
         public bool AssumeSyncedSends = true;
+        /// <summary>
+        /// Enable interpolation
+        /// </summary>
         [Tooltip("This requires AssumeSyncedSends to be true")]
         public bool InterpolatePosition = true;
+        /// <summary>
+        /// The distance before snaping to the position
+        /// </summary>
         [Tooltip("The transform will snap if the distance is greater than this distance")]
         public float SnapDistance = 10f;
+        /// <summary>
+        /// Should the server interpolate
+        /// </summary>
         public bool InterpolateServer = true;
+        /// <summary>
+        /// The min meters to move before a send is sent
+        /// </summary>
         public float MinMeters = 0.15f;
+        /// <summary>
+        /// The min degrees to rotate before a send it sent
+        /// </summary>
         public float MinDegrees = 1.5f;
         private float timeForLerp;
         private float lerpT;
@@ -26,8 +53,13 @@ namespace MLAPI.MonoBehaviours.Prototyping
         private float lastSendTime;
         private Vector3 lastSentPos;
         private Quaternion lastSentRot;
-
+        /// <summary>
+        /// Should proximity be enabled
+        /// </summary>
         public bool EnableProximity = false;
+        /// <summary>
+        /// The distance to use for proximity
+        /// </summary>
         [Tooltip("If enable proximity is turned on, on clients within this range will be recieving position updates from the server")]
         public float ProximityRange = 50;
 
@@ -44,7 +76,10 @@ namespace MLAPI.MonoBehaviours.Prototyping
             if (MinMeters < 0)
                 MinMeters = 0;
         }
-
+        
+        /// <summary>
+        /// Registers message handlers
+        /// </summary>
         public override void NetworkStart()
         {
             if (isServer)
@@ -63,7 +98,7 @@ namespace MLAPI.MonoBehaviours.Prototyping
 
         private void Update()
         {
-            if(isOwner || isLocalPlayer || (ownerClientId == -2 && isServer))
+            if(isOwner || isLocalPlayer || (new NetId(ownerClientId).IsInvalid() && isServer))
             {
                 //We own the object OR we are server and the object is not owned by anyone OR we are the object.
                 if(Time.time - lastSendTime >= timeForLerp && (Vector3.Distance(transform.position, lastSentPos) > MinMeters || Quaternion.Angle(transform.rotation, lastSentRot) > MinDegrees))
@@ -83,9 +118,9 @@ namespace MLAPI.MonoBehaviours.Prototyping
                             writer.Write(transform.rotation.eulerAngles.z);
                         }
                         if (isServer)
-                            SendToClientsTarget("MLAPI_OnRecieveTransformFromServer", "MLAPI_POSITION_UPDATE", writeStream.GetBuffer());
+                            SendToClientsTarget("MLAPI_OnRecieveTransformFromServer", "MLAPI_POSITION_UPDATE", positionUpdateBuffer);
                         else
-                            SendToServerTarget("MLAPI_OnRecieveTransformFromClient", "MLAPI_POSITION_UPDATE", writeStream.GetBuffer());
+                            SendToServerTarget("MLAPI_OnRecieveTransformFromClient", "MLAPI_POSITION_UPDATE", positionUpdateBuffer);
                     }
 
                 }
@@ -107,7 +142,7 @@ namespace MLAPI.MonoBehaviours.Prototyping
             }
         }
 
-        private void OnRecieveTransformFromServer(int clientId, byte[] data)
+        private void OnRecieveTransformFromServer(uint clientId, byte[] data)
         {
             using (MemoryStream stream = new MemoryStream(data))
             {
@@ -128,9 +163,9 @@ namespace MLAPI.MonoBehaviours.Prototyping
             }
         }
 
-        private void OnRecieveTransformFromClient(int clientId, byte[] data)
+        private void OnRecieveTransformFromClient(uint clientId, byte[] data)
         {
-            using(MemoryStream readStream = new MemoryStream(data))
+            using (MemoryStream readStream = new MemoryStream(data))
             {
                 using(BinaryReader reader = new BinaryReader(readStream))
                 {
@@ -166,17 +201,18 @@ namespace MLAPI.MonoBehaviours.Prototyping
                         }
                         if(EnableProximity)
                         {
-                            for (int i = 0; i < NetworkingManager.singleton.connectedClients.Count; i++)
+                            // For instead of Foreach?! TODO!!!
+                            for (uint i = 0; i < NetworkingManager.singleton.connectedClients.Count; i++)
                             {
                                 if (Vector3.Distance(NetworkingManager.singleton.connectedClients[i].PlayerObject.transform.position, transform.position) <= ProximityRange)
                                 {
-                                    SendToClientTarget(NetworkingManager.singleton.connectedClients[i].ClientId, "MLAPI_OnRecieveTransformFromServer", "MLAPI_POSITION_UPDATE", writeStream.GetBuffer());
+                                    SendToClientTarget(NetworkingManager.singleton.connectedClients[i].ClientId, "MLAPI_OnRecieveTransformFromServer", "MLAPI_POSITION_UPDATE", positionUpdateBuffer);
                                 }
                             }
                         }
                         else
                         {
-                            SendToNonLocalClientsTarget("MLAPI_OnRecieveTransformFromServer", "MLAPI_POSITION_UPDATE", writeStream.GetBuffer());
+                            SendToNonLocalClientsTarget("MLAPI_OnRecieveTransformFromServer", "MLAPI_POSITION_UPDATE", positionUpdateBuffer);
                         }
                     }
                 }

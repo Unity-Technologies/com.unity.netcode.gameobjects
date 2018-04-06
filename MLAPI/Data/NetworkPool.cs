@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using MLAPI.MonoBehaviours.Core;
+using UnityEngine;
 
 namespace MLAPI.Data
 {
@@ -7,15 +8,15 @@ namespace MLAPI.Data
         internal GameObject[] objects;
         internal ushort poolId;
 
-        internal NetworkPool(int prefabIndex, uint size, ushort poolIndex)
+        internal NetworkPool(int prefabId, uint size, ushort poolIndex)
         {
             objects = new GameObject[size];
             poolId = poolIndex;
             for (int i = 0; i < size; i++)
             {
-                GameObject go = Object.Instantiate(NetworkingManager.singleton.SpawnablePrefabs[prefabIndex], Vector3.zero, Quaternion.identity);
-                go.GetComponent<NetworkedObject>().isPooledObject = true;
-                go.GetComponent<NetworkedObject>().PoolId = poolId;
+                GameObject go = MonoBehaviour.Instantiate(NetworkingManager.singleton.NetworkConfig.NetworkedPrefabs[prefabId].prefab, Vector3.zero, Quaternion.identity);
+                go.GetComponent<NetworkedObject>()._isPooledObject = true;
+                go.GetComponent<NetworkedObject>().poolId = poolId;
                 go.GetComponent<NetworkedObject>().Spawn();
                 go.name = "Pool Id: " + poolId + " #" + i;
                 go.SetActive(false);

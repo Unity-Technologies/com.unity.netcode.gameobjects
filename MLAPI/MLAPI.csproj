@@ -24,6 +24,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>
+    <DocumentationFile>bin\Debug\MLAPI.xml</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -42,6 +43,12 @@
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <DocumentationFile>
+    </DocumentationFile>
+  </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>false</SignAssembly>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="IntXLib, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1744b76c74eaee1e, processorArchitecture=MSIL">
@@ -59,29 +66,37 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Attributes\BinaryIgnore.cs" />
+    <Compile Include="Data\Channel.cs" />
     <Compile Include="Data\FieldType.cs" />
     <Compile Include="Attributes\SyncedVar.cs" />
+    <Compile Include="Data\NetworkConfig.cs" />
+    <Compile Include="Data\NetworkedPrefab.cs" />
     <Compile Include="Data\NetworkPool.cs" />
     <Compile Include="Data\TrackedPointData.cs" />
+    <Compile Include="Data\TransportHost.cs" />
+    <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="MonoBehaviours\Prototyping\NetworkedAnimator.cs" />
-    <Compile Include="NetworkingManagerComponents\DiffieHellman.cs" />
-    <Compile Include="NetworkingManagerComponents\EllipticCurve.cs" />
-    <Compile Include="NetworkingManagerComponents\LagCompensationManager.cs" />
+    <Compile Include="MonoBehaviours\Prototyping\NetworkedNavMeshAgent.cs" />
+    <Compile Include="NetworkingManagerComponents\Binary\BinarySerializer.cs" />
+    <Compile Include="NetworkingManagerComponents\Cryptography\CryptographyHelper.cs" />
+    <Compile Include="NetworkingManagerComponents\Cryptography\DiffieHellman.cs" />
+    <Compile Include="NetworkingManagerComponents\Cryptography\EllipticCurve.cs" />
+    <Compile Include="NetworkingManagerComponents\Core\LagCompensationManager.cs" />
     <Compile Include="MonoBehaviours\Core\NetworkedBehaviour.cs" />
     <Compile Include="Data\NetworkedClient.cs" />
     <Compile Include="MonoBehaviours\Core\NetworkedObject.cs" />
-    <Compile Include="Data\NetworkingConfiguration.cs" />
     <Compile Include="MonoBehaviours\Core\NetworkingManager.cs" />
     <Compile Include="MonoBehaviours\Core\TrackedObject.cs" />
     <Compile Include="MonoBehaviours\Prototyping\NetworkedTransform.cs" />
-    <Compile Include="NetworkingManagerComponents\MessageManager.cs" />
-    <Compile Include="NetworkingManagerComponents\NetworkPoolManager.cs" />
-    <Compile Include="NetworkingManagerComponents\NetworkSceneManager.cs" />
-    <Compile Include="NetworkingManagerComponents\SpawnManager.cs" />
+    <Compile Include="NetworkingManagerComponents\Core\MessageManager.cs" />
+    <Compile Include="NetworkingManagerComponents\Core\NetworkPoolManager.cs" />
+    <Compile Include="NetworkingManagerComponents\Core\NetworkSceneManager.cs" />
+    <Compile Include="NetworkingManagerComponents\Core\SpawnManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="NetworkingManagerComponents\ClientIdManager.cs" />
-    <Compile Include="Data\ClientIdKey.cs" />
-    <Compile Include="NetworkingManagerComponents\MessageChunker.cs" />
+    <Compile Include="Data\NetId.cs" />
+    <Compile Include="NetworkingManagerComponents\Binary\MessageChunker.cs" />
+    <Compile Include="Data\MessageType.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

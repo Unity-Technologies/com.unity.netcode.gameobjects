@@ -1,22 +1,40 @@
-﻿using System.IO;
+﻿using MLAPI.Data;
+using MLAPI.MonoBehaviours.Core;
+using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 
 namespace MLAPI.MonoBehaviours.Prototyping
 {
+    /// <summary>
+    /// A prototype component for syncing animations
+    /// </summary>
+    [AddComponentMenu("MLAPI/NetworkedAnimator")]
     public class NetworkedAnimator : NetworkedBehaviour
     {
+        /// <summary>
+        /// Is proximity enabled
+        /// </summary>
+        public bool EnableProximity = false;
+        /// <summary>
+        /// The proximity range
+        /// </summary>
+        public float ProximityRange = 50f;
+
         [SerializeField]
         private Animator _animator;
         [SerializeField]
         private uint parameterSendBits;
         [SerializeField]
-        private float sendRate = 0.1f;
+        private readonly float sendRate = 0.1f;
         private AnimatorControllerParameter[] animatorParameters;
 
         private int animationHash;
         private int transitionHash;
         private float sendTimer;
 
+
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
         // tracking - these should probably move to a Preview component. -- Comment from HLAPI. Needs clarification
         public string param0;
         public string param1;
@@ -24,7 +42,11 @@ namespace MLAPI.MonoBehaviours.Prototyping
         public string param3;
         public string param4;
         public string param5;
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 
+        /// <summary>
+        /// Gets or sets the animator component used for syncing the animations
+        /// </summary>
         public Animator animator
         {
             get { return _animator; }
@@ -34,7 +56,11 @@ namespace MLAPI.MonoBehaviours.Prototyping
                 ResetParameterOptions();
             }
         }
-
+        /// <summary>
+        /// TODO
+        /// </summary>
+        /// <param name="index"></param>
+        /// <param name="value"></param>
         public void SetParameterAutoSend(int index, bool value)
         {
             if (value)
@@ -46,7 +72,11 @@ namespace MLAPI.MonoBehaviours.Prototyping
                 parameterSendBits &= (uint)(~(1 << index));
             }
         }
-
+        /// <summary>
+        /// TODO
+        /// </summary>
+        /// <param name="index"></param>
+        /// <returns></returns>
         public bool GetParameterAutoSend(int index)
         {
             return (parameterSendBits & (uint)(1 << index)) != 0;
@@ -60,6 +90,9 @@ namespace MLAPI.MonoBehaviours.Prototyping
             }
         }
 
+        /// <summary>
+        /// Registers message handlers
+        /// </summary>
         public override void NetworkStart()
         {
             RegisterMessageHandler("MLAPI_HandleAnimationMessage", HandleAnimMsg);
@@ -67,6 +100,9 @@ namespace MLAPI.MonoBehaviours.Prototyping
             RegisterMessageHandler("MLAPI_HandleAnimationTriggerMessage", HandleAnimTriggerMsg);
         }
 
+        /// <summary>
+        /// TODO
+        /// </summary>
         public void ResetParameterOptions()
         {
             Debug.Log("ResetParameterOptions");
@@ -81,8 +117,10 @@ namespace MLAPI.MonoBehaviours.Prototyping
 
             CheckSendRate();
 
+#pragma warning disable IDE0018 // Inline variable declaration, Unity's Mono version doesn't support it
             int stateHash;
             float normalizedTime;
+#pragma warning restore IDE0018 // Inline variable declaration, Unity's Mono version doesn't support it
             if (!CheckAnimStateChanged(out stateHash, out normalizedTime))
             {
                 return;
@@ -98,7 +136,18 @@ namespace MLAPI.MonoBehaviours.Prototyping
                 }
                 if(isServer)
                 {
-                    SendToNonLocalClientsTarget("MLAPI_HandleAnimationMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
+                    if(EnableProximity)
+                    {
+                        List<uint> clientsInProximity = new List<uint>();
+                        foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.connectedClients)
+                        {
+                            if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
+                                clientsInProximity.Add(client.Key);
+                        }
+                        SendToClientsTarget(clientsInProximity ,"MLAPI_HandleAnimationMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
+                    }
+                    else
+                        SendToNonLocalClientsTarget("MLAPI_HandleAnimationMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
                 }
                 else
                 {
@@ -156,7 +205,18 @@ namespace MLAPI.MonoBehaviours.Prototyping
                     }
                     if (isServer)
                     {
-                        SendToNonLocalClientsTarget("MLAPI_HandleAnimationParameterMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
+                        if (EnableProximity)
+                        {
+                            List<uint> clientsInProximity = new List<uint>();
+                            foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.connectedClients)
+                            {
+                                if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
+                                    clientsInProximity.Add(client.Key);
+                            }
+                            SendToClientsTarget(clientsInProximity, "MLAPI_HandleAnimationParameterMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
+                        }
+                        else
+                            SendToNonLocalClientsTarget("MLAPI_HandleAnimationParameterMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
                     }
                     else
                     {
@@ -188,7 +248,7 @@ namespace MLAPI.MonoBehaviours.Prototyping
             if (i == 5) param5 = p;
         }
 
-        private void HandleAnimMsg(int clientId, byte[] data)
+        private void HandleAnimMsg(uint clientId, byte[] data)
         {
             // usually transitions will be triggered by parameters, if not, play anims directly.
             // NOTE: this plays "animations", not transitions, so any transitions will be skipped.
@@ -196,7 +256,18 @@ namespace MLAPI.MonoBehaviours.Prototyping
 
             if(isServer)
             {
-                SendToNonLocalClientsTarget("MLAPI_HandleAnimationMessage", "MLAPI_ANIMATION_UPDATE", data);
+                if (EnableProximity)
+                {
+                    List<uint> clientsInProximity = new List<uint>();
+                    foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.connectedClients)
+                    {
+                        if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
+                            clientsInProximity.Add(client.Key);
+                    }
+                    SendToClientsTarget(clientsInProximity, "MLAPI_HandleAnimationMessage", "MLAPI_ANIMATION_UPDATE", data);
+                }
+                else
+                    SendToNonLocalClientsTarget("MLAPI_HandleAnimationMessage", "MLAPI_ANIMATION_UPDATE", data);
             }
             using(MemoryStream stream = new MemoryStream(data))
             {
@@ -213,11 +284,22 @@ namespace MLAPI.MonoBehaviours.Prototyping
             }
         }
 
-        private void HandleAnimParamsMsg(int clientId, byte[] data)
+        private void HandleAnimParamsMsg(uint clientId, byte[] data)
         {
             if (isServer)
             {
-                SendToNonLocalClientsTarget("MLAPI_HandleAnimationParameterMessage", "MLAPI_ANIMATION_UPDATE", data);
+                if (EnableProximity)
+                {
+                    List<uint> clientsInProximity = new List<uint>();
+                    foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.connectedClients)
+                    {
+                        if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
+                            clientsInProximity.Add(client.Key);
+                    }
+                    SendToClientsTarget(clientsInProximity, "MLAPI_HandleAnimationParameterMessage", "MLAPI_ANIMATION_UPDATE", data);
+                }
+                else
+                    SendToNonLocalClientsTarget("MLAPI_HandleAnimationParameterMessage", "MLAPI_ANIMATION_UPDATE", data);
             }
             using (MemoryStream stream = new MemoryStream(data))
             {
@@ -228,11 +310,22 @@ namespace MLAPI.MonoBehaviours.Prototyping
             }
         }
 
-        private void HandleAnimTriggerMsg(int clientId, byte[] data)
+        private void HandleAnimTriggerMsg(uint clientId, byte[] data)
         {
             if (isServer)
             {
-                SendToNonLocalClientsTarget("MLAPI_HandleAnimationTriggerMessage", "MLAPI_ANIMATION_UPDATE", data);
+                if (EnableProximity)
+                {
+                    List<uint> clientsInProximity = new List<uint>();
+                    foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.connectedClients)
+                    {
+                        if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
+                            clientsInProximity.Add(client.Key);
+                    }
+                    SendToClientsTarget(clientsInProximity, "MLAPI_HandleAnimationTriggerMessage", "MLAPI_ANIMATION_UPDATE", data);
+                }
+                else
+                    SendToNonLocalClientsTarget("MLAPI_HandleAnimationTriggerMessage", "MLAPI_ANIMATION_UPDATE", data);
             }
             using (MemoryStream stream = new MemoryStream(data))
             {
@@ -314,11 +407,19 @@ namespace MLAPI.MonoBehaviours.Prototyping
             }
         }
 
+        /// <summary>
+        /// TODO
+        /// </summary>
+        /// <param name="triggerName"></param>
         public void SetTrigger(string triggerName)
         {
             SetTrigger(Animator.StringToHash(triggerName));
         }
 
+        /// <summary>
+        /// TODO
+        /// </summary>
+        /// <param name="hash"></param>
         public void SetTrigger(int hash)
         {
             if (isLocalPlayer || isOwner)
@@ -331,7 +432,18 @@ namespace MLAPI.MonoBehaviours.Prototyping
                     }
                     if (isServer)
                     {
-                        SendToNonLocalClientsTarget("MLAPI_HandleAnimationTriggerMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
+                        if (EnableProximity)
+                        {
+                            List<uint> clientsInProximity = new List<uint>();
+                            foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.connectedClients)
+                            {
+                                if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
+                                    clientsInProximity.Add(client.Key);
+                            }
+                            SendToClientsTarget(clientsInProximity, "MLAPI_HandleAnimationTriggerMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
+                        }
+                        else
+                            SendToNonLocalClientsTarget("MLAPI_HandleAnimationTriggerMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
                     }
                     else
                     {

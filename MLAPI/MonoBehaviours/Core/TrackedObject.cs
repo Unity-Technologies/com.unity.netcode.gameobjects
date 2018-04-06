@@ -1,5 +1,5 @@
 ﻿using MLAPI.Data;
-using MLAPI.NetworkingManagerComponents;
+using MLAPI.NetworkingManagerComponents.Core;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -7,12 +7,42 @@ namespace MLAPI.MonoBehaviours.Core
 {
     //Based on: https://twotenpvp.github.io/lag-compensation-in-unity.html
     //Modified to be used with latency rather than fixed frames and subframes. Thus it will be less accrurate but more modular.
+
+    /// <summary>
+    /// A component used for lag compensation. Each object with this component will get tracked
+    /// </summary>
+    [AddComponentMenu("MLAPI/TrackedObject", -98)]
     public class TrackedObject : MonoBehaviour
     {
         internal Dictionary<float, TrackedPointData> FrameData = new Dictionary<float, TrackedPointData>();
         internal LinkedList<float> Framekeys = new LinkedList<float>();
         private Vector3 savedPosition;
         private Quaternion savedRotation;
+
+        /// <summary>
+        /// Gets the total amount of points stored in the component
+        /// </summary>
+        public int TotalPoints
+        {
+            get
+            {
+                return Framekeys.Count;
+            }
+        }
+
+        /// <summary>
+        /// Gets the average amount of time between the points in miliseconds
+        /// </summary>
+        public float AvgTimeBetweenPointsMs
+        {
+            get
+            {
+                if (Framekeys.First == null || Framekeys.Last == null)
+                    return 0;
+                float totalSpan = Framekeys.Last.Value - Framekeys.First.Value;
+                return (totalSpan / Framekeys.Count) * 1000f;
+            }
+        }
 
         internal void ReverseTransform(float secondsAgo)
         {
@@ -55,14 +85,14 @@ namespace MLAPI.MonoBehaviours.Core
         void Start()
         {
             Framekeys.AddFirst(0);
-            LagCompensationManager.SimulationObjects.Add(this);
+            LagCompensationManager.simulationObjects.Add(this);
         }
 
         void OnDestroy()
         {
             Framekeys.Clear();
             FrameData.Clear();
-            LagCompensationManager.SimulationObjects.Remove(this);
+            LagCompensationManager.simulationObjects.Remove(this);
         }
 
         internal void AddFrame()
@@ -70,7 +100,7 @@ namespace MLAPI.MonoBehaviours.Core
             float currentTime = Time.time;
             LinkedListNode<float> node = Framekeys.First;
             LinkedListNode<float> nextNode = node.Next;
-            while (currentTime - node.Value >= NetworkingManager.singleton.NetworkConfig.SecondsHistory)
+            while (node != null && currentTime - node.Value >= NetworkingManager.singleton.NetworkConfig.SecondsHistory)
             {
                 nextNode = node.Next;
                 FrameData.Remove(node.Value);

@@ -1,19 +1,41 @@
-﻿using System.Collections.Generic;
+﻿using MLAPI.Data;
+using MLAPI.MonoBehaviours.Core;
+using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using UnityEngine.AI;
 
 namespace MLAPI.MonoBehaviours.Prototyping
 {
+    /// <summary>
+    /// A prototype component for syncing navmeshagents
+    /// </summary>
+    [AddComponentMenu("MLAPI/NetworkedNavMeshAgent")]
     public class NetworkedNavMeshAgent : NetworkedBehaviour
     {
         private NavMeshAgent agent;
+        /// <summary>
+        /// Is proximity enabled
+        /// </summary>
         public bool EnableProximity = false;
+        /// <summary>
+        /// The proximity range
+        /// </summary>
         public float ProximityRange = 50f;
+        /// <summary>
+        /// The delay in seconds between corrections
+        /// </summary>
         public float CorrectionDelay = 3f;
         //TODO rephrase.
+        /// <summary>
+        /// The percentage to lerp on corrections
+        /// </summary>
         [Tooltip("Everytime a correction packet is recieved. This is the percentage (between 0 & 1) that we will move towards the goal.")]
         public float DriftCorrectionPercentage = 0.1f;
+        /// <summary>
+        /// Should we warp on destination change
+        /// </summary>
+        public bool WarpOnDestinationChange = false;
 
         private static byte[] stateUpdateBuffer = new byte[36];
         private static byte[] correctionBuffer = new byte[24];
@@ -23,6 +45,9 @@ namespace MLAPI.MonoBehaviours.Prototyping
             agent = GetComponent<NavMeshAgent>();
         }
 
+        /// <summary>
+        /// Registers message handlers
+        /// </summary>
         public override void NetworkStart()
         {
             if (isClient)
@@ -60,17 +85,17 @@ namespace MLAPI.MonoBehaviours.Prototyping
                     }
                     if (!EnableProximity)
                     {
-                        SendToClientsTarget("MLAPI_OnNavMeshStateUpdate", "MLAPI_NAV_AGENT_STATE", stream.GetBuffer());
+                        SendToClientsTarget("MLAPI_OnNavMeshStateUpdate", "MLAPI_NAV_AGENT_STATE", stateUpdateBuffer);
                     }
                     else
                     {
-                        List<int> proximityClients = new List<int>();
-                        foreach (KeyValuePair<int, NetworkedClient> client in NetworkingManager.singleton.connectedClients)
+                        List<uint> proximityClients = new List<uint>();
+                        foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.connectedClients)
                         {
                             if (Vector3.Distance(client.Value.PlayerObject.transform.position, transform.position) <= ProximityRange)
                                 proximityClients.Add(client.Key);
                         }
-                        SendToClientsTarget(proximityClients, "MLAPI_OnNavMeshStateUpdate", "MLAPI_NAV_AGENT_STATE", stream.GetBuffer());
+                        SendToClientsTarget(proximityClients, "MLAPI_OnNavMeshStateUpdate", "MLAPI_NAV_AGENT_STATE", stateUpdateBuffer);
                     }
                 }
             }
@@ -92,24 +117,24 @@ namespace MLAPI.MonoBehaviours.Prototyping
 
                     if (!EnableProximity)
                     {
-                        SendToClientsTarget("MLAPI_OnNavMeshCorrectionUpdate", "MLAPI_NAV_AGENT_CORRECTION", stream.GetBuffer());
+                        SendToClientsTarget("MLAPI_OnNavMeshCorrectionUpdate", "MLAPI_NAV_AGENT_CORRECTION", correctionBuffer);
                     }
                     else
                     {
-                        List<int> proximityClients = new List<int>();
-                        foreach (KeyValuePair<int, NetworkedClient> client in NetworkingManager.singleton.connectedClients)
+                        List<uint> proximityClients = new List<uint>();
+                        foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.connectedClients)
                         {
                             if (Vector3.Distance(client.Value.PlayerObject.transform.position, transform.position) <= ProximityRange)
                                 proximityClients.Add(client.Key);
                         }
-                        SendToClientsTarget(proximityClients, "MLAPI_OnNavMeshCorrectionUpdate", "MLAPI_NAV_AGENT_CORRECTION", stream.GetBuffer());
+                        SendToClientsTarget(proximityClients, "MLAPI_OnNavMeshCorrectionUpdate", "MLAPI_NAV_AGENT_CORRECTION", correctionBuffer);
                     }
                 }
                 lastCorrectionTime = Time.time;
             }
         }
 
-        private void OnNavMeshStateUpdate(int clientId, byte[] data)
+        private void OnNavMeshStateUpdate(uint clientId, byte[] data)
         {
             using (MemoryStream stream = new MemoryStream(data))
             {
@@ -133,12 +158,15 @@ namespace MLAPI.MonoBehaviours.Prototyping
 
                     agent.SetDestination(destination);
                     agent.velocity = velocity;
-                    agent.Warp(position);
+                    if (WarpOnDestinationChange)
+                        agent.Warp(position);
+                    else
+                        agent.Warp(Vector3.Lerp(transform.position, position, DriftCorrectionPercentage));
                 }
             }
         }
 
-        private void OnNavMeshCorrectionUpdate(int clinetId, byte[] data)
+        private void OnNavMeshCorrectionUpdate(uint clientId, byte[] data)
         {
             using (MemoryStream stream = new MemoryStream(data))
             {

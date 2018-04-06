@@ -1,18 +1,28 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
-using MLAPI.NetworkingManagerComponents;
 using System.Reflection;
 using MLAPI.Attributes;
 using System.Linq;
 using System.IO;
 using MLAPI.Data;
+using MLAPI.NetworkingManagerComponents.Binary;
+using MLAPI.NetworkingManagerComponents.Core;
 
-namespace MLAPI
+namespace MLAPI.MonoBehaviours.Core
 {
+    /// <summary>
+    /// The base class to override to write networked code. Inherits MonoBehaviour
+    /// </summary>
     public abstract class NetworkedBehaviour : MonoBehaviour
     {
+        /// <summary>
+        /// The minimum delay in seconds between SyncedVar sends
+        /// </summary>
         public float SyncVarSyncDelay = 0.1f;
+        /// <summary>
+        /// Gets if the object is the the personal clients player object
+        /// </summary>
         public bool isLocalPlayer
         {
             get
@@ -20,6 +30,9 @@ namespace MLAPI
                 return networkedObject.isLocalPlayer;
             }
         }
+        /// <summary>
+        /// Gets if the object is owned by the local player
+        /// </summary>
         public bool isOwner
         {
             get
@@ -27,6 +40,9 @@ namespace MLAPI
                 return networkedObject.isOwner;
             }
         }
+        /// <summary>
+        /// Gets if we are executing as server
+        /// </summary>
         protected bool isServer
         {
             get
@@ -34,6 +50,9 @@ namespace MLAPI
                 return NetworkingManager.singleton.isServer;
             }
         }
+        /// <summary>
+        /// Gets if we are executing as client
+        /// </summary>
         protected bool isClient
         {
             get
@@ -41,6 +60,9 @@ namespace MLAPI
                 return NetworkingManager.singleton.isClient;
             }
         }
+        /// <summary>
+        /// Gets if we are executing as Host, I.E Server and Client
+        /// </summary>
         protected bool isHost
         {
             get
@@ -48,6 +70,9 @@ namespace MLAPI
                 return NetworkingManager.singleton.isHost;
             }
         }
+        /// <summary>
+        /// Gets the NetworkedObject that owns this NetworkedBehaviour instance
+        /// </summary>
         public NetworkedObject networkedObject
         {
             get
@@ -60,6 +85,9 @@ namespace MLAPI
             }
         }
         private NetworkedObject _networkedObject = null;
+        /// <summary>
+        /// Gets the NetworkId of the NetworkedObject that owns the NetworkedBehaviour instance
+        /// </summary>
         public uint networkId
         {
             get
@@ -67,8 +95,10 @@ namespace MLAPI
                 return networkedObject.NetworkId;
             }
         }
-
-        public int ownerClientId
+        /// <summary>
+        /// Gets the clientId that owns the NetworkedObject
+        /// </summary>
+        public uint ownerClientId
         {
             get
             {
@@ -89,31 +119,73 @@ namespace MLAPI
         }
 
         internal bool networkedStartInvoked = false;
+        /// <summary>
+        /// Gets called when message handlers are ready to be registered and the networking is setup
+        /// </summary>
         public virtual void NetworkStart()
         {
 
         }
-
+        /// <summary>
+        /// Gets called when the local client gains ownership of this object
+        /// </summary>
         public virtual void OnGainedOwnership()
         {
 
         }
-
+        /// <summary>
+        /// Gets called when we loose ownership of this object
+        /// </summary>
         public virtual void OnLostOwnership()
         {
 
         }
-
-        protected int RegisterMessageHandler(string name, Action<int, byte[]> action)
+        /// <summary>
+        /// Registers a message handler
+        /// </summary>
+        /// <param name="name">The MessageType to register</param>
+        /// <param name="action">The callback to get invoked whenever a message is received</param>
+        /// <returns>HandlerId for the messageHandler that can be used to deregister the messageHandler</returns>
+        protected int RegisterMessageHandler(string name, Action<uint, byte[]> action)
         {
+            if (!MessageManager.messageTypes.ContainsKey(name))
+            {
+                Debug.LogWarning("MLAPI: The messageType " + name + " is not registered");
+                return -1;
+            }
+            ushort messageType = MessageManager.messageTypes[name];
+            ushort behaviourOrder = networkedObject.GetOrderIndex(this);
+
+            if (!networkedObject.targetMessageActions.ContainsKey(behaviourOrder))
+                networkedObject.targetMessageActions.Add(behaviourOrder, new Dictionary<ushort, Action<uint, byte[]>>());
+            if (networkedObject.targetMessageActions[behaviourOrder].ContainsKey(messageType))
+            {
+                Debug.LogWarning("MLAPI: Each NetworkedBehaviour can only register one callback per instance per message type");
+                return -1;
+            }
+
+            networkedObject.targetMessageActions[behaviourOrder].Add(messageType, action);
             int counter = MessageManager.AddIncomingMessageHandler(name, action, networkId);
             registeredMessageHandlers.Add(name, counter);
             return counter;
         }
 
+        /// <summary>
+        /// Deregisters a given message handler
+        /// </summary>
+        /// <param name="name">The MessageType to deregister</param>
+        /// <param name="counter">The messageHandlerId to deregister</param>
         protected void DeregisterMessageHandler(string name, int counter)
         {
             MessageManager.RemoveIncomingMessageHandler(name, counter, networkId);
+            ushort messageType = MessageManager.messageTypes[name];
+            ushort behaviourOrder = networkedObject.GetOrderIndex(this);
+
+            if (networkedObject.targetMessageActions.ContainsKey(behaviourOrder) && 
+                networkedObject.targetMessageActions[behaviourOrder].ContainsKey(messageType))
+            {
+                networkedObject.targetMessageActions[behaviourOrder].Remove(messageType);
+            }
         }
 
         private void OnDisable()
@@ -134,10 +206,14 @@ namespace MLAPI
         internal List<FieldType> syncedFieldTypes = new List<FieldType>();
         private List<object> syncedFieldValues = new List<object>();
         private List<MethodInfo> syncedVarHooks = new List<MethodInfo>();
+        private bool syncVarInit = false;
         //A dirty field is a field that's not synced.
-        public bool[] dirtyFields;
+        private bool[] dirtyFields;
         internal void SyncVarInit()
         {
+            if (syncVarInit)
+                return;
+            syncVarInit = true;
             FieldInfo[] sortedFields = GetType().GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy | BindingFlags.Instance).OrderBy(x => x.Name).ToArray();
             for (byte i = 0; i < sortedFields.Length; i++)
             {
@@ -278,11 +354,11 @@ namespace MLAPI
                     }
                 }
             }
-            if(dirtyFields.Length > 255)
+            dirtyFields = new bool[syncedFields.Count];
+            if (dirtyFields.Length > 255)
             {
                 Debug.LogError("MLAPI: You can not have more than 255 SyncVar's per NetworkedBehaviour!");
             }
-            dirtyFields = new bool[syncedFields.Count];
         }
 
         internal void OnSyncVarUpdate(object value, byte fieldIndex)
@@ -292,7 +368,7 @@ namespace MLAPI
                 syncedVarHooks[fieldIndex].Invoke(this, null);
         }
 
-        internal void FlushToClient(int clientId)
+        internal void FlushToClient(uint clientId)
         {
             //This NetworkedBehaviour has no SyncVars
             if (dirtyFields.Length == 0)
@@ -381,10 +457,18 @@ namespace MLAPI
         private float lastSyncTime = 0f;
         internal void SyncVarUpdate()
         {
+            if (!syncVarInit)
+                SyncVarInit();
             SetDirtyness();
             if(Time.time - lastSyncTime >= SyncVarSyncDelay)
             {
-                byte dirtyCount = (byte)dirtyFields.Count(x => x == true);
+                byte dirtyCount = 0;
+                for (byte i = 0; i < dirtyFields.Length; i++)
+                {
+                    if (dirtyFields[i])
+                        dirtyCount++;
+                }
+
                 if (dirtyCount == 0)
                     return; //All up to date!
                 //It's sync time!
@@ -592,6 +676,13 @@ namespace MLAPI
         }
         #endregion
 
+        #region SEND METHODS
+        /// <summary>
+        /// Sends a buffer to the server from client
+        /// </summary>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="data">The binary data to send</param>
         protected void SendToServer(string messageType, string channelName, byte[] data)
         {
             if(MessageManager.messageTypes[messageType] < 32)
@@ -604,9 +695,27 @@ namespace MLAPI
                 Debug.LogWarning("MLAPI: Server can not send messages to server.");
                 return;
             }
-            NetworkingManager.singleton.Send(NetworkingManager.singleton.serverClientId, messageType, channelName, data);
+            NetworkingManager.singleton.Send(NetId.ServerNetId.GetClientId(), messageType, channelName, data);
         }
 
+        /// <summary>
+        /// Sends a binary serialized class to the server from client 
+        /// </summary>
+        /// <typeparam name="T">The class type to send</typeparam>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="instance">The instance to send</param>
+        protected void SendToServer<T>(string messageType, string channelName, T instance)
+        {
+            SendToServer(messageType, channelName, BinarySerializer.Serialize<T>(instance));
+        }
+
+        /// <summary>
+        /// Sends a buffer to the server from client. Only handlers on this NetworkedBehaviour will get invoked
+        /// </summary>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="data">The binary data to send</param>
         protected void SendToServerTarget(string messageType, string channelName, byte[] data)
         {
             if (MessageManager.messageTypes[messageType] < 32)
@@ -619,9 +728,27 @@ namespace MLAPI
                 Debug.LogWarning("MLAPI: Server can not send messages to server.");
                 return;
             }
-            NetworkingManager.singleton.Send(NetworkingManager.singleton.serverClientId, messageType, channelName, data, networkId);            
+            NetworkingManager.singleton.Send(NetId.ServerNetId.GetClientId(), messageType, channelName, data, networkId, networkedObject.GetOrderIndex(this));            
         }
 
+        /// <summary>
+        /// Sends a binary serialized class to the server from client. Only handlers on this NetworkedBehaviour will get invoked
+        /// </summary>
+        /// <typeparam name="T">The class type to send</typeparam>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="instance">The instance to send</param>
+        protected void SendToServerTarget<T>(string messageType, string channelName, T instance)
+        {
+            SendToServerTarget(messageType, channelName, BinarySerializer.Serialize<T>(instance));
+        }
+
+        /// <summary>
+        /// Sends a buffer to the server from client
+        /// </summary>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="data">The binary data to send</param>
         protected void SendToLocalClient(string messageType, string channelName, byte[] data)
         {
             if (MessageManager.messageTypes[messageType] < 32)
@@ -629,7 +756,7 @@ namespace MLAPI
                 Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
                 return;
             }
-            if (!isServer && (!NetworkingManager.singleton.NetworkConfig.AllowPassthroughMessages || !NetworkingManager.singleton.NetworkConfig.PassthroughMessageTypes.Contains(messageType)))
+            if (!isServer && (!NetworkingManager.singleton.NetworkConfig.AllowPassthroughMessages || !NetworkingManager.singleton.NetworkConfig.PassthroughMessageHashSet.Contains(MessageManager.messageTypes[messageType])))
             {
                 Debug.LogWarning("MLAPI: Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
                 return;
@@ -637,6 +764,24 @@ namespace MLAPI
             NetworkingManager.singleton.Send(ownerClientId, messageType, channelName, data);
         }
 
+        /// <summary>
+        /// Sends a binary serialized class to the server from client
+        /// </summary>
+        /// <typeparam name="T">The class type to send</typeparam>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>	
+        /// <param name="instance">The instance to send</param>
+        protected void SendToLocalClient<T>(string messageType, string channelName, T instance)
+        {
+            SendToLocalClient(messageType, channelName, BinarySerializer.Serialize<T>(instance));
+        }
+
+        /// <summary>
+        /// Sends a buffer to the client that owns this object from the server. Only handlers on this NetworkedBehaviour will get invoked
+        /// </summary>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="data">The binary data to send</param>
         protected void SendToLocalClientTarget(string messageType, string channelName, byte[] data)
         {
             if (MessageManager.messageTypes[messageType] < 32)
@@ -644,14 +789,32 @@ namespace MLAPI
                 Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
                 return;
             }
-            if (!isServer && (!NetworkingManager.singleton.NetworkConfig.AllowPassthroughMessages || !NetworkingManager.singleton.NetworkConfig.PassthroughMessageTypes.Contains(messageType)))
+            if (!isServer && (!NetworkingManager.singleton.NetworkConfig.AllowPassthroughMessages || !NetworkingManager.singleton.NetworkConfig.PassthroughMessageHashSet.Contains(MessageManager.messageTypes[messageType])))
             {
                 Debug.LogWarning("MLAPI: Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
                 return;
             }
-            NetworkingManager.singleton.Send(ownerClientId, messageType, channelName, data, networkId);
+            NetworkingManager.singleton.Send(ownerClientId, messageType, channelName, data, networkId, networkedObject.GetOrderIndex(this));
         }
 
+        /// <summary>
+        /// Sends a buffer to the client that owns this object from the server. Only handlers on this NetworkedBehaviour will get invoked
+        /// </summary>
+        /// <typeparam name="T">The class type to send</typeparam>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>	
+        /// <param name="instance">The instance to send</param>
+        protected void SendToLocalClientTarget<T>(string messageType, string channelName, T instance)
+        {
+            SendToLocalClientTarget(messageType, channelName, BinarySerializer.Serialize<T>(instance));
+        }
+
+        /// <summary>
+        /// Sends a buffer to all clients except to the owner object from the server
+        /// </summary>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="data">The binary data to send</param>
         protected void SendToNonLocalClients(string messageType, string channelName, byte[] data)
         {
             if (MessageManager.messageTypes[messageType] < 32)
@@ -664,9 +827,27 @@ namespace MLAPI
                 Debug.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported");
                 return;
             }
-            NetworkingManager.singleton.Send(messageType, channelName, data, ownerClientId, null);
+            NetworkingManager.singleton.Send(messageType, channelName, data, ownerClientId);
         }
 
+        /// <summary>
+        /// Sends a binary serialized class to all clients except to the owner object from the server
+        /// </summary>
+        /// <typeparam name="T">The class type to send</typeparam>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>	
+        /// <param name="instance">The instance to send</param>
+        protected void SendToNonLocalClients<T>(string messageType, string channelName, T instance)
+        {
+            SendToNonLocalClients(messageType, channelName, BinarySerializer.Serialize<T>(instance));
+        }
+
+        /// <summary>
+        /// Sends a buffer to all clients except to the owner object from the server. Only handlers on this NetworkedBehaviour will get invoked
+        /// </summary>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="data">The binary data to send</param>
         protected void SendToNonLocalClientsTarget(string messageType, string channelName, byte[] data)
         {
             if (MessageManager.messageTypes[messageType] < 32)
@@ -679,17 +860,36 @@ namespace MLAPI
                 Debug.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported");
                 return;
             }
-            NetworkingManager.singleton.Send(messageType, channelName, data, ownerClientId, networkId);
+            NetworkingManager.singleton.Send(messageType, channelName, data, ownerClientId, networkId, networkedObject.GetOrderIndex(this));
         }
 
-        protected void SendToClient(int clientId, string messageType, string channelName, byte[] data)
+        /// <summary>
+        /// Sends a binary serialized class to all clients except to the owner object from the server. Only handlers on this NetworkedBehaviour will get invoked
+        /// </summary>
+        /// <typeparam name="T">The class type to send</typeparam>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>	
+        /// <param name="instance">The instance to send</param>
+        protected void SendToNonLocalClientsTarget<T>(string messageType, string channelName, T instance)
+        {
+            SendToNonLocalClientsTarget(messageType, channelName, BinarySerializer.Serialize<T>(instance));
+        }
+
+        /// <summary>
+        /// Sends a buffer to a client with a given clientId from Server
+        /// </summary>
+        /// <param name="clientId">The clientId to send the message to</param>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="data">The binary data to send</param>
+        protected void SendToClient(uint clientId, string messageType, string channelName, byte[] data)
         {
             if (MessageManager.messageTypes[messageType] < 32)
             {
                 Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
                 return;
             }
-            if (!isServer && (!NetworkingManager.singleton.NetworkConfig.AllowPassthroughMessages || !NetworkingManager.singleton.NetworkConfig.PassthroughMessageTypes.Contains(messageType)))
+            if (!isServer && (!NetworkingManager.singleton.NetworkConfig.AllowPassthroughMessages || !NetworkingManager.singleton.NetworkConfig.PassthroughMessageHashSet.Contains(MessageManager.messageTypes[messageType])))
             {
                 Debug.LogWarning("MLAPI: Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
                 return;
@@ -697,22 +897,62 @@ namespace MLAPI
             NetworkingManager.singleton.Send(clientId, messageType, channelName, data);
         }
 
-        protected void SendToClientTarget(int clientId, string messageType, string channelName, byte[] data)
+        /// <summary>
+        /// Sends a binary serialized class to a client with a given clientId from Server
+        /// </summary>
+        /// <typeparam name="T">The class type to send</typeparam>
+        /// <param name="clientId">The clientId to send the message to</param>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>	
+        /// <param name="instance">The instance to send</param>
+        protected void SendToClient<T>(int clientId, string messageType, string channelName, T instance)
+        {
+            SendToClient(clientId, messageType, channelName, BinarySerializer.Serialize<T>(instance));
+        }
+
+        /// <summary>
+        /// Sends a buffer to a client with a given clientId from Server. Only handlers on this NetworkedBehaviour gets invoked
+        /// </summary>
+        /// <param name="clientId">The clientId to send the message to</param>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="data">The binary data to send</param>
+        protected void SendToClientTarget(uint clientId, string messageType, string channelName, byte[] data)
         {
             if (MessageManager.messageTypes[messageType] < 32)
             {
                 Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
                 return;
             }
-            if (!isServer && (!NetworkingManager.singleton.NetworkConfig.AllowPassthroughMessages || !NetworkingManager.singleton.NetworkConfig.PassthroughMessageTypes.Contains(messageType)))
+            if (!isServer && (!NetworkingManager.singleton.NetworkConfig.AllowPassthroughMessages || !NetworkingManager.singleton.NetworkConfig.PassthroughMessageHashSet.Contains(MessageManager.messageTypes[messageType])))
             {
                 Debug.LogWarning("MLAPI: Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
                 return;
             }
-            NetworkingManager.singleton.Send(clientId, messageType, channelName, data, networkId);
+            NetworkingManager.singleton.Send(clientId, messageType, channelName, data, networkId, networkedObject.GetOrderIndex(this));
         }
 
-        protected void SendToClients(int[] clientIds, string messageType, string channelName, byte[] data)
+        /// <summary>
+        /// Sends a buffer to a client with a given clientId from Server. Only handlers on this NetworkedBehaviour gets invoked
+        /// </summary>
+        /// <typeparam name="T">The class type to send</typeparam>
+        /// <param name="clientId">The clientId to send the message to</param>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>	
+        /// <param name="instance">The instance to send</param>
+        protected void SendToClientTarget<T>(int clientId, string messageType, string channelName, T instance)
+        {
+            SendToClientTarget(clientId, messageType, channelName, BinarySerializer.Serialize<T>(instance));
+        }
+
+        /// <summary>
+        /// Sends a buffer to multiple clients from the server
+        /// </summary>
+        /// <param name="clientIds">The clientId's to send to</param>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="data">The binary data to send</param>
+        protected void SendToClients(uint[] clientIds, string messageType, string channelName, byte[] data)
         {
             if (MessageManager.messageTypes[messageType] < 32)
             {
@@ -727,7 +967,27 @@ namespace MLAPI
             NetworkingManager.singleton.Send(clientIds, messageType, channelName, data);
         }
 
-        protected void SendToClientsTarget(int[] clientIds, string messageType, string channelName, byte[] data)
+        /// <summary>
+        /// Sends a binary serialized class to multiple clients from the server
+        /// </summary>
+        /// <typeparam name="T">The class type to send</typeparam>
+        /// <param name="clientIds">The clientId's to send to</param>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>	
+        /// <param name="instance">The instance to send</param>
+        protected void SendToClients<T>(int[] clientIds, string messageType, string channelName, T instance)
+        {
+            SendToClients(clientIds, messageType, channelName, BinarySerializer.Serialize<T>(instance));
+        }
+
+        /// <summary>
+        /// Sends a buffer to multiple clients from the server. Only handlers on this NetworkedBehaviour gets invoked
+        /// </summary>
+        /// <param name="clientIds">The clientId's to send to</param>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="data">The binary data to send</param>
+        protected void SendToClientsTarget(uint[] clientIds, string messageType, string channelName, byte[] data)
         {
             if (MessageManager.messageTypes[messageType] < 32)
             {
@@ -739,10 +999,30 @@ namespace MLAPI
                 Debug.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported");
                 return;
             }
-            NetworkingManager.singleton.Send(clientIds, messageType, channelName, data, networkId);
+            NetworkingManager.singleton.Send(clientIds, messageType, channelName, data, networkId, networkedObject.GetOrderIndex(this));
         }
 
-        protected void SendToClients(List<int> clientIds, string messageType, string channelName, byte[] data)
+        /// <summary>
+        /// Sends a buffer to multiple clients from the server. Only handlers on this NetworkedBehaviour gets invoked
+        /// </summary>
+        /// <typeparam name="T">The class type to send</typeparam>
+        /// <param name="clientIds">The clientId's to send to</param>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>	
+        /// <param name="instance">The instance to send</param>
+        protected void SendToClientsTarget<T>(int[] clientIds, string messageType, string channelName, T instance)
+        {
+            SendToClientsTarget(clientIds, messageType, channelName, BinarySerializer.Serialize<T>(instance));
+        }
+
+        /// <summary>
+        /// Sends a buffer to multiple clients from the server
+        /// </summary>
+        /// <param name="clientIds">The clientId's to send to</param>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="data">The binary data to send</param>
+        protected void SendToClients(List<uint> clientIds, string messageType, string channelName, byte[] data)
         {
             if (MessageManager.messageTypes[messageType] < 32)
             {
@@ -757,7 +1037,27 @@ namespace MLAPI
             NetworkingManager.singleton.Send(clientIds, messageType, channelName, data);
         }
 
-        protected void SendToClientsTarget(List<int> clientIds, string messageType, string channelName, byte[] data)
+        /// <summary>
+        /// Sends a binary serialized class to multiple clients from the server
+        /// </summary>
+        /// <typeparam name="T">The class type to send</typeparam>
+        /// <param name="clientIds">The clientId's to send to</param>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>	
+        /// <param name="instance">The instance to send</param>
+        protected void SendToClients<T>(List<int> clientIds, string messageType, string channelName, T instance)
+        {
+            SendToClients(clientIds, messageType, channelName, BinarySerializer.Serialize<T>(instance));
+        }
+
+        /// <summary>
+        /// Sends a buffer to multiple clients from the server. Only handlers on this NetworkedBehaviour gets invoked
+        /// </summary>
+        /// <param name="clientIds">The clientId's to send to</param>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="data">The binary data to send</param>
+        protected void SendToClientsTarget(List<uint> clientIds, string messageType, string channelName, byte[] data)
         {
             if (MessageManager.messageTypes[messageType] < 32)
             {
@@ -769,9 +1069,28 @@ namespace MLAPI
                 Debug.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported");
                 return;
             }
-            NetworkingManager.singleton.Send(clientIds, messageType, channelName, data, networkId);
+            NetworkingManager.singleton.Send(clientIds, messageType, channelName, data, networkId, networkedObject.GetOrderIndex(this));
         }
 
+        /// <summary>
+        /// Sends a buffer to multiple clients from the server. Only handlers on this NetworkedBehaviour gets invoked
+        /// </summary>
+        /// <typeparam name="T">The class type to send</typeparam>
+        /// <param name="clientIds">The clientId's to send to</param>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>	
+        /// <param name="instance">The instance to send</param>
+        protected void SendToClientsTarget<T>(List<uint> clientIds, string messageType, string channelName, T instance)
+        {
+            SendToClientsTarget(clientIds, messageType, channelName, BinarySerializer.Serialize<T>(instance));
+        }
+
+        /// <summary>
+        /// Sends a buffer to all clients from the server
+        /// </summary>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="data">The binary data to send</param>
         protected void SendToClients(string messageType, string channelName, byte[] data)
         {
             if (MessageManager.messageTypes[messageType] < 32)
@@ -787,6 +1106,24 @@ namespace MLAPI
             NetworkingManager.singleton.Send(messageType, channelName, data);
         }
 
+        /// <summary>
+        /// Sends a buffer to all clients from the server
+        /// </summary>
+        /// <typeparam name="T">The class type to send</typeparam>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>	
+        /// <param name="instance">The instance to send</param>
+        protected void SendToClients<T>(string messageType, string channelName, T instance)
+        {
+            SendToClients(messageType, channelName, BinarySerializer.Serialize<T>(instance));
+        }
+
+        /// <summary>
+        /// Sends a buffer to all clients from the server. Only handlers on this NetworkedBehaviour will get invoked
+        /// </summary>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="data">The binary data to send</param>
         protected void SendToClientsTarget(string messageType, string channelName, byte[] data)
         {
             if (MessageManager.messageTypes[messageType] < 32)
@@ -799,9 +1136,27 @@ namespace MLAPI
                 Debug.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported");
                 return;
             }
-            NetworkingManager.singleton.Send(messageType, channelName, data, networkId);
+            NetworkingManager.singleton.Send(messageType, channelName, data, networkId, networkedObject.GetOrderIndex(this));
         }
 
+        /// <summary>
+        /// Sends a buffer to all clients from the server. Only handlers on this NetworkedBehaviour will get invoked
+        /// </summary>
+        /// <typeparam name="T">The class type to send</typeparam>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>	
+        /// <param name="instance">The instance to send</param>
+        protected void SendToClientsTarget<T>(string messageType, string channelName, T instance)
+        {
+            SendToClientsTarget(messageType, channelName, BinarySerializer.Serialize<T>(instance));
+        }
+        #endregion
+
+        /// <summary>
+        /// Gets the local instance of a object with a given NetworkId
+        /// </summary>
+        /// <param name="networkId"></param>
+        /// <returns></returns>
         protected NetworkedObject GetNetworkedObject(uint networkId)
         {
             return SpawnManager.spawnedObjects[networkId];
