@@ -64,6 +64,8 @@
     <Compile Include="Data\NetworkPool.cs" />
     <Compile Include="Data\TrackedPointData.cs" />
     <Compile Include="MonoBehaviours\Prototyping\NetworkedAnimator.cs" />
+    <Compile Include="NetworkingManagerComponents\DiffieHellman.cs" />
+    <Compile Include="NetworkingManagerComponents\EllipticCurve.cs" />
     <Compile Include="NetworkingManagerComponents\LagCompensationManager.cs" />
     <Compile Include="MonoBehaviours\Core\NetworkedBehaviour.cs" />
     <Compile Include="Data\NetworkedClient.cs" />
