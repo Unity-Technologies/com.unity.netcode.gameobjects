@@ -16,7 +16,7 @@ namespace MLAPI.MonoBehaviours.Core
         {
             if(string.IsNullOrEmpty(NetworkedPrefabName))
             {
-                Debug.LogWarning("MLAPI: The networked object " + gameObject.name + " has not been assigned a networkedPrefabName. Setting it to " + gameObject.name);
+                Debug.LogWarning("MLAPI: The NetworkedObject " + gameObject.name + " does not have a NetworkedPrefabName. It has been set to the gameObject name");
                 NetworkedPrefabName = gameObject.name;
             }
         }
