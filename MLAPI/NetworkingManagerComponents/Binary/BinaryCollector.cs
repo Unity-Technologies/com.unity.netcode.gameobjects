@@ -74,13 +74,37 @@ namespace Tofvesson.Common
                 collect = new object[bufferSize];
         }
 
-        public void Push<T>(T b)
+        private void Push<T>(T b)
         {
             if (b is string || b.GetType().IsArray || IsSupportedType(b.GetType()))
                 collect[collectCount++] = b is string ? Encoding.UTF8.GetBytes(b as string) : b as object;
             //else
             //    Debug.LogWarning("MLAPI: The type \"" + b.GetType() + "\" is not supported by the Binary Serializer. It will be ignored");
         }
+
+
+        public void WriteBool(bool b)               => Push(b);
+        public void WriteFloat(float f)             => Push(f);
+        public void WriteDouble(double d)           => Push(d);
+        public void WriteByte(byte b)               => Push(b);
+        public void WriteUShort(ushort s)           => Push(s);
+        public void WriteUInt(uint i)               => Push(i);
+        public void WriteULong(ulong l)             => Push(l);
+        public void WriteSByte(sbyte b)             => Push(b);
+        public void WriteShort(short s)             => Push(s);
+        public void WriteInt(int i)                 => Push(i);
+        public void WriteLong(long l)               => Push(l);
+        public void WriteFloatArray(float[] f)      => Push(f);
+        public void WriteDoubleArray(double[] d)    => Push(d);
+        public void WriteByteArray(byte[] b)        => Push(b);
+        public void WriteUShortArray(ushort[] s)    => Push(s);
+        public void WriteUIntArray(uint[] i)        => Push(i);
+        public void WriteULongArray(ulong[] l)      => Push(l);
+        public void WriteSByteArray(sbyte[] b)      => Push(b);
+        public void WriteShortArray(short[] s)      => Push(s);
+        public void WriteIntArray(int[] i)          => Push(i);
+        public void WriteLongArray(long[] l)        => Push(l);
+        public void WriteString(string s)           => Push(s);
 
         public byte[] ToArray()
         {
@@ -135,18 +159,18 @@ namespace Tofvesson.Common
                             else result_holder.SetValue(0UL, 0);
                             type_holder.SetValue(t, 0); // Insert the value to convert into the preallocated holder array
                             Buffer.BlockCopy(type_holder, 0, result_holder, 0, bytes); // Perform an internal copy to the byte-based holder
-                            dynamic d = result_holder.GetValue(0);
 
                             // Since floating point flag bits are seemingly the highest bytes of the floating point values
                             // and even very small values have them, we swap the endianness in the hopes of reducing the size
-                            Serialize(BinaryHelpers.SwapEndian(d), writeTo, ref bitOffset);
+                            if(size) Serialize(BinaryHelpers.SwapEndian((uint)result_holder.GetValue(0)), writeTo, ref bitOffset);
+                            else Serialize(BinaryHelpers.SwapEndian((ulong)result_holder.GetValue(0)), writeTo, ref bitOffset);
                         }
                     //bitOffset += offset;
                 }
                 else
                 {
                     bool signed = IsSigned(t.GetType());
-                    dynamic value;
+                    ulong value;
                     if (signed)
                     {
                         Type t1 = t.GetType();
@@ -155,9 +179,12 @@ namespace Tofvesson.Common
                         else if (t1 == typeof(int)) value = (uint)ZigZagEncode(t as int? ?? 0, 4);
                         else /*if (t1 == typeof(long))*/ value = (ulong)ZigZagEncode(t as long? ?? 0, 8);
                     }
-                    else value = t;
+                    else if (t is byte) value = t as byte? ?? 0;
+                    else if (t is ushort) value = t as ushort? ?? 0;
+                    else if (t is uint) value = t as uint? ?? 0;
+                    else /*if (t is ulong)*/ value = t as ulong? ?? 0;
 
-                    if (value <= 240) WriteByte(writeTo, value, bitOffset);
+                    if (value <= 240) WriteByte(writeTo, (byte)value, bitOffset);
                     else if (value <= 2287)
                     {
                         WriteByte(writeTo, (value - 240) / 256 + 241, bitOffset);
@@ -246,7 +273,7 @@ namespace Tofvesson.Common
 
         private static void WriteBit(byte[] b, bool bit, long index)
             => b[index / 8] = (byte)((b[index / 8] & ~(1 << (int)(index % 8))) | (bit ? 1 << (int)(index % 8) : 0));
-        //private static void WriteByte(byte[] b, dynamic value, long index) => WriteByte(b, (byte)value, index);
+        private static void WriteByte(byte[] b, ulong value, long index) => WriteByte(b, (byte)value, index);
         private static void WriteByte(byte[] b, byte value, long index)
         {
             int byteIndex = (int)(index / 8);

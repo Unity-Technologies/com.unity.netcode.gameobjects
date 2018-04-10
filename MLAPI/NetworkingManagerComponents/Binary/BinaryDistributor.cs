@@ -9,6 +9,7 @@ namespace Tofvesson.Common
 {
     public class BinaryDistributor
     {
+        private delegate T Getter<T>();
         private static readonly float[] holder_f = new float[1];
         private static readonly double[] holder_d = new double[1];
         private static readonly ulong[] holder_u = new ulong[1];
@@ -18,13 +19,15 @@ namespace Tofvesson.Common
         private long bitCount = 0;
         public BinaryDistributor(byte[] readFrom) => this.readFrom = readFrom;
 
-        public bool ReadBit()
+        public bool ReadBool()
         {
             bool result = (readFrom[bitCount / 8] & (byte)(1 << (int)(bitCount % 8))) != 0;
             ++bitCount;
             return result;
         }
 
+        public float ReadFloat() => ReadFloating<float>();
+        public double ReadDouble() => ReadFloating<double>();
         public byte ReadByte()
         {
             int shift = (int)(bitCount % 8);
@@ -35,51 +38,55 @@ namespace Tofvesson.Common
             bitCount += 8;
             return result;
         }
-
-        public float ReadFloat() => ReadFloating<float>();
-        public double ReadDouble() => ReadFloating<double>();
-        public float[] ReadFloatArray() => ReadFloatingArray<float>();
-        public double[] ReadDoubleArray() => ReadFloatingArray<double>();
-        public ushort ReadUShort() => ReadUnsigned<ushort>();
-        public uint ReadUInt() => ReadUnsigned<uint>();
-        public ulong ReadULong() => ReadUnsigned<ulong>();
+        public ushort ReadUShort() => (ushort)ReadULong();
+        public uint ReadUInt() => (uint)ReadULong();
         public sbyte ReadSByte() => (sbyte)ZigZagDecode(ReadByte(), 1);
         public short ReadShort() => (short)ZigZagDecode(ReadUShort(), 2);
         public int ReadInt() => (int)ZigZagDecode(ReadUInt(), 4);
-        public long ReadLong() => (long)ZigZagDecode(ReadULong(), 8);
+        public long ReadLong() => ZigZagDecode(ReadULong(), 8);
+        public float[] ReadFloatArray() => ReadArray(ReadFloat);
+        public double[] ReadDoubleArray() => ReadArray(ReadDouble);
+        public byte[] ReadByteArray() => ReadArray(ReadByte);
+        public ushort[] ReadUShortArray() => ReadArray(ReadUShort);
+        public uint[] ReadUIntArray() => ReadArray(ReadUInt);
+        public ulong[] ReadULongArray() => ReadArray(ReadULong);
+        public sbyte[] ReadSByteArray() => ReadArray(ReadSByte);
+        public short[] ReadShortArray() => ReadArray(ReadShort);
+        public int[] ReadIntArray() => ReadArray(ReadInt);
+        public long[] ReadLongArray() => ReadArray(ReadLong);
+        public string ReadString() => Encoding.UTF8.GetString(ReadByteArray());
 
-        private T ReadUnsigned<T>()
+        private ulong ReadULong()
         {
-            dynamic header = ReadByte();
-            if (header <= 240) return (T) header;
-            if (header <= 248) return (T) (240 + 256 * (header - 241) + ReadByte());
-            if (header == 249) return (T) (header = 2288 + 256 * ReadByte() + ReadByte());
-            dynamic res = ReadByte() | ((long)ReadByte() << 8) | ((long)ReadByte() << 16);
+            ulong header = ReadByte();
+            if (header <= 240) return header;
+            if (header <= 248) return 240 + 256 * (header - 241) + ReadByte();
+            if (header == 249) return 2288 + 256UL * ReadByte() + ReadByte();
+            ulong res = ReadByte() | ((ulong)ReadByte() << 8) | ((ulong)ReadByte() << 16);
             if(header > 250)
             {
-                res |= (long) ReadByte() << 24;
+                res |= (ulong) ReadByte() << 24;
                 if(header > 251)
                 {
-                    res |= (long)ReadByte() << 32;
+                    res |= (ulong)ReadByte() << 32;
                     if(header > 252)
                     {
-                        res |= (long)ReadByte() << 40;
+                        res |= (ulong)ReadByte() << 40;
                         if (header > 253)
                         {
-                            res |= (long)ReadByte() << 48;
-                            if (header > 254) res |= (long)ReadByte() << 56;
+                            res |= (ulong)ReadByte() << 48;
+                            if (header > 254) res |= (ulong)ReadByte() << 56;
                         }
                     }
                 }
             }
-            return (T) res;
+            return res;
         }
-        private T[] ReadFloatingArray<T>()
+        private T[] ReadArray<T>(Getter<T> g)
         {
-            ushort size = ReadUShort();
-            T[] result = new T[size];
-            for (short s = 0; s < size; ++s)
-                result[s] = ReadFloating<T>();
+            T[] result = new T[ReadUShort()];
+            for (ushort s = 0; s < result.Length; ++s)
+                result[s] = g();
             return result;
         }
 
