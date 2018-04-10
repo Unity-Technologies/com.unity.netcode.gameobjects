@@ -153,15 +153,20 @@ namespace MLAPI.MonoBehaviours.Core
 
         private void OnValidate()
         {
+            if (NetworkConfig == null)
+                return; //May occur when the component is added
+             
             if(NetworkConfig.EnableSceneSwitching && !NetworkConfig.RegisteredScenes.Contains(SceneManager.GetActiveScene().name))
             {
                 Debug.LogWarning("MLAPI: The active scene is not registered as a networked scene. The MLAPI has added it");
                 NetworkConfig.RegisteredScenes.Add(SceneManager.GetActiveScene().name);
             }
+
             if(!NetworkConfig.EnableSceneSwitching && NetworkConfig.HandleObjectSpawning)
             {
                 Debug.LogWarning("MLAPI: Please be aware that Scene objects are NOT supported if SceneManagement is turned on, even if HandleObjectSpawning is turned on");
             }
+
             if(NetworkConfig.HandleObjectSpawning)
             {
                 for (int i = 0; i < NetworkConfig.NetworkedPrefabs.Count; i++)
@@ -173,6 +178,7 @@ namespace MLAPI.MonoBehaviours.Core
                     }
                 }
             }
+
             if (NetworkConfig.HandleObjectSpawning)
             {
                 if(!string.IsNullOrEmpty(NetworkConfig.PlayerPrefabName))
@@ -198,7 +204,9 @@ namespace MLAPI.MonoBehaviours.Core
             }
 
             if (!NetworkConfig.EnableEncryption)
+            {
                 RegenerateRSAKeys = false;
+            }
             else
             {
                 if(RegenerateRSAKeys)
