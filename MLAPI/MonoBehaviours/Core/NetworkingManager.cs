@@ -311,6 +311,11 @@ namespace MLAPI.MonoBehaviours.Core
                 {
                     Name = "MLAPI_NAV_AGENT_CORRECTION",
                     Type = QosType.StateUpdate
+                },
+                new Channel()
+                {
+                    Name = "MLAPI_TIME_SYNC",
+                    Type = QosType.Unreliable
                 }
             };
 
@@ -361,6 +366,7 @@ namespace MLAPI.MonoBehaviours.Core
             MessageManager.messageTypes.Add("MLAPI_CHANGE_OWNER", 8);
             MessageManager.messageTypes.Add("MLAPI_SYNC_VAR_UPDATE", 9);
             MessageManager.messageTypes.Add("MLAPI_ADD_OBJECTS", 10);
+            MessageManager.messageTypes.Add("MLAPI_TIME_SYNC", 11);
 
             List<MessageType> messageTypes = new List<MessageType>(NetworkConfig.MessageTypes)
             {
@@ -656,11 +662,12 @@ namespace MLAPI.MonoBehaviours.Core
         private float lastReceiveTickTime;
         private float lastSendTickTime;
         private float lastEventTickTime;
+        private float lastTimeSyncTime;
         private void Update()
         {
             if(isListening)
             {
-                if((Time.time - lastSendTickTime >= (1f / NetworkConfig.SendTickrate)) || NetworkConfig.SendTickrate <= 0)
+                if((NetworkTime - lastSendTickTime >= (1f / NetworkConfig.SendTickrate)) || NetworkConfig.SendTickrate <= 0)
                 {
                     foreach (KeyValuePair<uint, NetworkedClient> pair in connectedClients)
                     {
@@ -671,9 +678,9 @@ namespace MLAPI.MonoBehaviours.Core
                         byte error;
                         NetworkTransport.SendQueuedMessages(netId.HostId, netId.ConnectionId, out error);
                     }
-                    lastSendTickTime = Time.time;
+                    lastSendTickTime = NetworkTime;
                 }
-                if((Time.time - lastReceiveTickTime >= (1f / NetworkConfig.ReceiveTickrate)) || NetworkConfig.ReceiveTickrate <= 0)
+                if((NetworkTime - lastReceiveTickTime >= (1f / NetworkConfig.ReceiveTickrate)) || NetworkConfig.ReceiveTickrate <= 0)
                 {
                     NetworkEventType eventType;
                     int processedEvents = 0;
@@ -766,23 +773,31 @@ namespace MLAPI.MonoBehaviours.Core
                         }
                         // Only do another iteration if: there are no more messages AND (there is no limit to max events or we have processed less than the maximum)
                     } while (eventType != NetworkEventType.Nothing && (NetworkConfig.MaxReceiveEventsPerTickRate <= 0 || processedEvents < NetworkConfig.MaxReceiveEventsPerTickRate));
-                    lastReceiveTickTime = Time.time;
+                    lastReceiveTickTime = NetworkTime;
                 }
-                if (isServer && ((Time.time - lastEventTickTime >= (1f / NetworkConfig.EventTickrate)) || NetworkConfig.EventTickrate <= 0))
+
+                if (isServer && ((NetworkTime - lastEventTickTime >= (1f / NetworkConfig.EventTickrate)) || NetworkConfig.EventTickrate <= 0))
                 {
                     LagCompensationManager.AddFrames();
                     NetworkedObject.InvokeSyncvarUpdate();
-                    lastEventTickTime = Time.time;
+                    lastEventTickTime = NetworkTime;
                 }
+
+                if (NetworkConfig.EnableTimeResync && NetworkTime - lastTimeSyncTime >= 30)
+                {
+                    SyncTime();
+                    lastTimeSyncTime = NetworkTime;
+                }
+
                 networkTime += Time.deltaTime;
             }
         }
 
         private IEnumerator ApprovalTimeout(uint clientId)
         {
-            float timeStarted = Time.time;
+            float timeStarted = NetworkTime;
             //We yield every frame incase a pending client disconnects and someone else gets its connection id
-            while (Time.time - timeStarted < NetworkConfig.ClientConnectionBufferTimeout && pendingClients.Contains(clientId))
+            while (NetworkTime - timeStarted < NetworkConfig.ClientConnectionBufferTimeout && pendingClients.Contains(clientId))
             {
                 yield return null;
             }
@@ -1336,6 +1351,26 @@ namespace MLAPI.MonoBehaviours.Core
                                 }
                         
                                 break;
+                            case 11:
+                                if (isClient)
+                                {
+                                    using (MemoryStream messageReadStream = new MemoryStream(incommingData))
+                                    {
+                                        using (BinaryReader messageReader = new BinaryReader(messageReadStream))
+                                        {
+                                            float netTime = messageReader.ReadSingle();
+                                            int timestamp = messageReader.ReadInt32();
+
+                                            NetId netId = new NetId(clientId);
+                                            byte error;
+                                            int msDelay = NetworkTransport.GetRemoteDelayTimeMS(netId.HostId, netId.ConnectionId, timestamp, out error);
+                                            if ((NetworkError)error != NetworkError.Ok)
+                                                msDelay = 0;
+                                            networkTime = netTime + (msDelay / 1000f);
+                                        }
+                                    }
+                                }
+                                break;
                         }
                         #endregion
                     }
@@ -1722,6 +1757,24 @@ namespace MLAPI.MonoBehaviours.Core
                     }
                     Send("MLAPI_CLIENT_DISCONNECT", "MLAPI_INTERNAL", stream.GetBuffer(), clientId);
                 }   
+            }
+        }
+
+        private void SyncTime()
+        {
+            using (MemoryStream stream = new MemoryStream(8))
+            {
+                using (BinaryWriter writer = new BinaryWriter(stream))
+                {
+                    writer.Write(NetworkTime);
+                    int timestamp = NetworkTransport.GetNetworkTimestamp();
+                    writer.Write(timestamp);
+                }
+
+                foreach (KeyValuePair<uint, NetworkedClient> pair in connectedClients)
+                {
+                    Send("MLAPI_TIME_SYNC", "MLAPI_TIME_SYNC", stream.GetBuffer());
+                }
             }
         }
 

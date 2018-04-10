@@ -48,7 +48,7 @@ namespace MLAPI.MonoBehaviours.Core
         {
             savedPosition = transform.position;
             savedRotation = transform.rotation;
-            float currentTime = Time.time;
+            float currentTime = NetworkingManager.singleton.NetworkTime;
             float targetTime = currentTime - secondsAgo;
             float previousTime = 0;
             float nextTime = 0;
@@ -97,7 +97,7 @@ namespace MLAPI.MonoBehaviours.Core
 
         internal void AddFrame()
         {
-            float currentTime = Time.time;
+            float currentTime = NetworkingManager.singleton.NetworkTime;
             LinkedListNode<float> node = Framekeys.First;
             LinkedListNode<float> nextNode = node.Next;
             while (node != null && currentTime - node.Value >= NetworkingManager.singleton.NetworkConfig.SecondsHistory)
@@ -107,12 +107,12 @@ namespace MLAPI.MonoBehaviours.Core
                 Framekeys.RemoveFirst();
                 node = nextNode;
             }
-            FrameData.Add(Time.time, new TrackedPointData()
+            FrameData.Add(NetworkingManager.singleton.NetworkTime, new TrackedPointData()
             {
                 position = transform.position,
                 rotation = transform.rotation
             });
-            Framekeys.AddLast(Time.time);
+            Framekeys.AddLast(NetworkingManager.singleton.NetworkTime);
         }
     }
 }
