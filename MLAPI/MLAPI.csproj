@@ -36,13 +36,13 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Development|AnyCPU'">
     <DebugSymbols>true</DebugSymbols>
-    <OutputPath>..\..\MLAPI-Examples\Assets\</OutputPath>
+    <OutputPath>..\..\MLAPI-Examples\Assets\MLAPI\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <DebugType>full</DebugType>
     <PlatformTarget>AnyCPU</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <GenerateSerializationAssemblies>Auto</GenerateSerializationAssemblies>
+    <GenerateSerializationAssemblies>Off</GenerateSerializationAssemblies>
     <RunCodeAnalysis>false</RunCodeAnalysis>
     <DocumentationFile>
     </DocumentationFile>
