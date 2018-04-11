@@ -6,10 +6,9 @@ using UnityEngine;
 
 namespace MLAPI.NetworkingManagerComponents.Binary
 {
-    public sealed class BitWiter : IDisposable
+    public sealed class BitWriter : IDisposable
     {
-        // Collects reusable 
-        private static readonly List<WeakReference> expired = new List<WeakReference>();
+        private static readonly Queue<List<object>> listPool = new Queue<List<object>>();
         
         private static readonly float[] holder_f = new float[1];
         private static readonly double[] holder_d = new double[1];
@@ -38,43 +37,45 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             dec_hi, 
             dec_flags;
 
-        static BitWiter()
+        static BitWriter()
         {
             dec_lo = typeof(decimal).GetField("lo", BindingFlags.NonPublic);
             dec_mid = typeof(decimal).GetField("mid", BindingFlags.NonPublic);
             dec_hi = typeof(decimal).GetField("hi", BindingFlags.NonPublic);
             dec_flags = typeof(decimal).GetField("flags", BindingFlags.NonPublic);
+
+            for (int i = 0; i < 10; i++)
+            {
+                listPool.Enqueue(new List<object>());
+            }
         }
 
-        private object[] collect;
+        private List<object> collect = null;
+        private bool tempAlloc = false;
         private readonly int bufferSize;
         private int collectCount = 0;
 
         /// <summary>
         /// Allocates a new binary collector.
         /// </summary>
-        public BitWiter(int bufferSize)
+        public BitWriter()
         {
-            this.bufferSize = bufferSize;
-            for (int i = expired.Count - 1; i >= 0; --i)
-                if (expired[i].IsAlive)
-                {
-                    collect = (object[])expired[i].Target;
-                    if (collect.Length >= bufferSize)
-                    {
-                        expired.RemoveAt(i); // This entry he been un-expired for now
-                        break;
-                    }
-                }
-                else expired.RemoveAt(i); // Entry has been collected by GC
-            if (collect == null || collect.Length < bufferSize)
-                collect = new object[bufferSize];
+            if (listPool.Count == 0)
+            {
+                Debug.LogWarning("MLAPI: There can be no more than 10 BitWriters. Have you forgotten do dispose? (It will still work with worse performance)");
+                collect = new List<object>();
+                tempAlloc = true;
+            }
+            else
+            {
+                collect = listPool.Dequeue();
+            }
         }
 
         private void Push<T>(T b)
         {
             if (b is string || b.GetType().IsArray || IsSupportedType(b.GetType()))
-                collect[collectCount++] = b is string ? Encoding.UTF8.GetBytes(b as string) : b as object;
+                collect.Add(b is string ? Encoding.UTF8.GetBytes(b as string) : b as object);
             //else
             //    Debug.LogWarning("MLAPI: The type \"" + b.GetType() + "\" is not supported by the Binary Serializer. It will be ignored");
         }
@@ -122,7 +123,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             foreach (var item in collect)
                 Serialize(item, buffer, ref bitOffset);
 
-            return (bitCount / 8) + (bitCount % 8 == 0 ? 0 : 1));
+            return (bitCount / 8) + (bitCount % 8 == 0 ? 0 : 1);
         }
 
         public long GetFinalizeSize()
@@ -367,8 +368,12 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         // Creates a weak reference to the allocated collector so that reuse may be possible
         public void Dispose()
         {
-            expired.Add(new WeakReference(collect));
-            collect = null;
+            if (!tempAlloc)
+            {
+                collect.Clear();
+                listPool.Enqueue(collect);
+            }
+            collect = null; //GC picks this
         }
     }
 }
