@@ -52,7 +52,6 @@ namespace MLAPI.NetworkingManagerComponents.Binary
 
         private List<object> collect = null;
         private bool tempAlloc = false;
-        private readonly int bufferSize;
         private int collectCount = 0;
 
         /// <summary>
