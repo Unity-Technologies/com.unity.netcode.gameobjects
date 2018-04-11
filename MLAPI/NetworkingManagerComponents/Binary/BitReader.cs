@@ -1,13 +1,10 @@
-﻿using MLAPI.NetworkingManagerComponents.Binary;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace Tofvesson.Common
+namespace MLAPI.NetworkingManagerComponents.Binary
 {
-    public class BinaryDistributor
+    public class BitReader
     {
         private delegate T Getter<T>();
         private static readonly float[] holder_f = new float[1];
@@ -17,7 +14,7 @@ namespace Tofvesson.Common
 
         private readonly byte[] readFrom;
         private long bitCount = 0;
-        public BinaryDistributor(byte[] readFrom) => this.readFrom = readFrom;
+        public BitReader(byte[] readFrom) => this.readFrom = readFrom;
 
         public bool ReadBool()
         {

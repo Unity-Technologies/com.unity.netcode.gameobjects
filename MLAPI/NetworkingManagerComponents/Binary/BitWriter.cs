@@ -1,15 +1,12 @@
-﻿using MLAPI.NetworkingManagerComponents.Binary;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Text;
+using UnityEngine;
 
-namespace Tofvesson.Common
+namespace MLAPI.NetworkingManagerComponents.Binary
 {
-    public sealed class BinaryCollector : IDisposable
+    public sealed class BitWiter : IDisposable
     {
         // Collects reusable 
         private static readonly List<WeakReference> expired = new List<WeakReference>();
@@ -41,7 +38,7 @@ namespace Tofvesson.Common
             dec_hi, 
             dec_flags;
 
-        static BinaryCollector()
+        static BitWiter()
         {
             dec_lo = typeof(decimal).GetField("lo", BindingFlags.NonPublic);
             dec_mid = typeof(decimal).GetField("mid", BindingFlags.NonPublic);
@@ -56,7 +53,7 @@ namespace Tofvesson.Common
         /// <summary>
         /// Allocates a new binary collector.
         /// </summary>
-        public BinaryCollector(int bufferSize)
+        public BitWiter(int bufferSize)
         {
             this.bufferSize = bufferSize;
             for (int i = expired.Count - 1; i >= 0; --i)
@@ -106,17 +103,33 @@ namespace Tofvesson.Common
         public void WriteLongArray(long[] l)        => Push(l);
         public void WriteString(string s)           => Push(s);
 
-        public byte[] ToArray()
+        public long Finalize(ref byte[] buffer)
         {
+            if(buffer == null)
+            {
+                Debug.LogWarning("MLAPI: no buffer provided");
+                return 0;
+            }
             long bitCount = 0;
             for (int i = 0; i < collectCount; ++i) bitCount += GetBitCount(collect[i]);
 
-            byte[] alloc = new byte[(bitCount / 8) + (bitCount % 8 == 0 ? 0 : 1)];
+            if(buffer.Length < ((bitCount / 8) + (bitCount % 8 == 0 ? 0 : 1)))
+            {
+                Debug.LogWarning("MLAPI: The buffer size is not large enough");
+                return 0;
+            }
             long bitOffset = 0;
             foreach (var item in collect)
-                Serialize(item, alloc, ref bitOffset);
+                Serialize(item, buffer, ref bitOffset);
 
-            return alloc;
+            return (bitCount / 8) + (bitCount % 8 == 0 ? 0 : 1));
+        }
+
+        public long GetFinalizeSize()
+        {
+            long bitCount = 0;
+            for (int i = 0; i < collectCount; ++i) bitCount += GetBitCount(collect[i]);
+            return ((bitCount / 8) + (bitCount % 8 == 0 ? 0 : 1));
         }
 
         private static void Serialize<T>(T t, byte[] writeTo, ref long bitOffset)
