@@ -101,9 +101,9 @@ namespace MLAPI.MonoBehaviours.Prototyping
             if(isOwner || isLocalPlayer || (new NetId(ownerClientId).IsInvalid() && isServer))
             {
                 //We own the object OR we are server and the object is not owned by anyone OR we are the object.
-                if(Time.time - lastSendTime >= timeForLerp && (Vector3.Distance(transform.position, lastSentPos) > MinMeters || Quaternion.Angle(transform.rotation, lastSentRot) > MinDegrees))
+                if(NetworkingManager.singleton.NetworkTime - lastSendTime >= timeForLerp && (Vector3.Distance(transform.position, lastSentPos) > MinMeters || Quaternion.Angle(transform.rotation, lastSentRot) > MinDegrees))
                 {
-                    lastSendTime = Time.time;
+                    lastSendTime = NetworkingManager.singleton.NetworkTime;
                     lastSentPos = transform.position;
                     lastSentRot = transform.rotation;
                     using (MemoryStream writeStream = new MemoryStream(positionUpdateBuffer))

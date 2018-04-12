@@ -100,7 +100,7 @@ namespace MLAPI.MonoBehaviours.Prototyping
                 }
             }
 
-            if(Time.time - lastCorrectionTime >= CorrectionDelay)
+            if(NetworkingManager.singleton.NetworkTime - lastCorrectionTime >= CorrectionDelay)
             {
                 using (MemoryStream stream = new MemoryStream(correctionBuffer))
                 {
@@ -130,7 +130,7 @@ namespace MLAPI.MonoBehaviours.Prototyping
                         SendToClientsTarget(proximityClients, "MLAPI_OnNavMeshCorrectionUpdate", "MLAPI_NAV_AGENT_CORRECTION", correctionBuffer);
                     }
                 }
-                lastCorrectionTime = Time.time;
+                lastCorrectionTime = NetworkingManager.singleton.NetworkTime;
             }
         }
 

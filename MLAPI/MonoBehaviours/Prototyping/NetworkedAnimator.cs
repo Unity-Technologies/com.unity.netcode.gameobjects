@@ -193,9 +193,9 @@ namespace MLAPI.MonoBehaviours.Prototyping
 
         private void CheckSendRate()
         {
-            if (sendMessagesAllowed && sendRate != 0 && sendTimer < Time.time)
+            if (sendMessagesAllowed && sendRate != 0 && sendTimer < NetworkingManager.singleton.NetworkTime)
             {
-                sendTimer = Time.time + sendRate;
+                sendTimer = NetworkingManager.singleton.NetworkTime + sendRate;
 
                 using(MemoryStream stream = new MemoryStream())
                 {

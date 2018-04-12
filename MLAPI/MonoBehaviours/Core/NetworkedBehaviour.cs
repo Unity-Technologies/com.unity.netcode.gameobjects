@@ -460,7 +460,7 @@ namespace MLAPI.MonoBehaviours.Core
             if (!syncVarInit)
                 SyncVarInit();
             SetDirtyness();
-            if(Time.time - lastSyncTime >= SyncVarSyncDelay)
+            if(NetworkingManager.singleton.NetworkTime - lastSyncTime >= SyncVarSyncDelay)
             {
                 byte dirtyCount = 0;
                 for (byte i = 0; i < dirtyFields.Length; i++)
@@ -557,7 +557,7 @@ namespace MLAPI.MonoBehaviours.Core
                     }
                     NetworkingManager.singleton.Send("MLAPI_SYNC_VAR_UPDATE", "MLAPI_INTERNAL", stream.ToArray());
                 }
-                lastSyncTime = Time.time;
+                lastSyncTime = NetworkingManager.singleton.NetworkTime;
             }
         }
 

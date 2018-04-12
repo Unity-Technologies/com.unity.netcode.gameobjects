@@ -135,6 +135,10 @@ namespace MLAPI.Data
         /// Wheter or not to enable scene switching
         /// </summary>
         public bool EnableSceneSwitching = true;
+        /// <summary>
+        /// If your logic uses the NetwokrTime, this should probably be turned off. If however it's needed to maximize accuracy, this is recommended to be turned on
+        /// </summary>
+        public bool EnableTimeResync = false;
 
         private byte[] ConfigHash = null;
         /// <summary>
