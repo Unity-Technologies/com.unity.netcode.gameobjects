@@ -41,16 +41,16 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         public short ReadShort() => (short)ZigZagDecode(ReadUShort(), 2);
         public int ReadInt() => (int)ZigZagDecode(ReadUInt(), 4);
         public long ReadLong() => ZigZagDecode(ReadULong(), 8);
-        public float[] ReadFloatArray() => ReadArray(ReadFloat);
-        public double[] ReadDoubleArray() => ReadArray(ReadDouble);
-        public byte[] ReadByteArray() => ReadArray(ReadByte);
-        public ushort[] ReadUShortArray() => ReadArray(ReadUShort);
-        public uint[] ReadUIntArray() => ReadArray(ReadUInt);
-        public ulong[] ReadULongArray() => ReadArray(ReadULong);
-        public sbyte[] ReadSByteArray() => ReadArray(ReadSByte);
-        public short[] ReadShortArray() => ReadArray(ReadShort);
-        public int[] ReadIntArray() => ReadArray(ReadInt);
-        public long[] ReadLongArray() => ReadArray(ReadLong);
+        public float[] ReadFloatArray(int known = -1) => ReadArray(ReadFloat, known);
+        public double[] ReadDoubleArray(int known = -1) => ReadArray(ReadDouble, known);
+        public byte[] ReadByteArray(int known = -1) => ReadArray(ReadByte, known);
+        public ushort[] ReadUShortArray(int known = -1) => ReadArray(ReadUShort, known);
+        public uint[] ReadUIntArray(int known = -1) => ReadArray(ReadUInt, known);
+        public ulong[] ReadULongArray(int known = -1) => ReadArray(ReadULong, known);
+        public sbyte[] ReadSByteArray(int known = -1) => ReadArray(ReadSByte, known);
+        public short[] ReadShortArray(int known = -1) => ReadArray(ReadShort, known);
+        public int[] ReadIntArray(int known = -1) => ReadArray(ReadInt, known);
+        public long[] ReadLongArray(int known = -1) => ReadArray(ReadLong, known);
         public string ReadString() => Encoding.UTF8.GetString(ReadByteArray());
 
         private ulong ReadULong()
@@ -79,9 +79,9 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             }
             return res;
         }
-        private T[] ReadArray<T>(Getter<T> g)
+        private T[] ReadArray<T>(Getter<T> g, int knownSize = -1)
         {
-            T[] result = new T[ReadUShort()];
+            T[] result = new T[knownSize > 0 ? (uint)knownSize : ReadUInt()];
             for (ushort s = 0; s < result.Length; ++s)
                 result[s] = g();
             return result;

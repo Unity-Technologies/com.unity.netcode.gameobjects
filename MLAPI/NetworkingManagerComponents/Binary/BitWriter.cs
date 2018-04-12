@@ -91,17 +91,23 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         public void WriteShort(short s)             => Push(s);
         public void WriteInt(int i)                 => Push(i);
         public void WriteLong(long l)               => Push(l);
-        public void WriteFloatArray(float[] f)      => Push(f);
-        public void WriteDoubleArray(double[] d)    => Push(d);
-        public void WriteByteArray(byte[] b)        => Push(b);
-        public void WriteUShortArray(ushort[] s)    => Push(s);
-        public void WriteUIntArray(uint[] i)        => Push(i);
-        public void WriteULongArray(ulong[] l)      => Push(l);
-        public void WriteSByteArray(sbyte[] b)      => Push(b);
-        public void WriteShortArray(short[] s)      => Push(s);
-        public void WriteIntArray(int[] i)          => Push(i);
-        public void WriteLongArray(long[] l)        => Push(l);
         public void WriteString(string s)           => Push(s);
+        public void WriteFloatArray(float[] f, bool known = false)      => PushArray(f, known);
+        public void WriteDoubleArray(double[] d, bool known = false)    => PushArray(d, known);
+        public void WriteByteArray(byte[] b, bool known = false)        => PushArray(b, known);
+        public void WriteUShortArray(ushort[] s, bool known = false)    => PushArray(s, known);
+        public void WriteUIntArray(uint[] i, bool known = false)        => PushArray(i, known);
+        public void WriteULongArray(ulong[] l, bool known = false)      => PushArray(l, known);
+        public void WriteSByteArray(sbyte[] b, bool known = false)      => PushArray(b, known);
+        public void WriteShortArray(short[] s, bool known = false)      => PushArray(s, known);
+        public void WriteIntArray(int[] i, bool known = false)          => PushArray(i, known);
+        public void WriteLongArray(long[] l, bool known = false)        => PushArray(l, known);
+
+        private void PushArray<T>(T[] t, bool knownSize = false)
+        {
+            if (!knownSize) Push(t);
+            else foreach (T t1 in t) Push(t1);
+        }
 
         public long Finalize(ref byte[] buffer)
         {
@@ -139,7 +145,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             if (type.IsArray)
             {
                 var array = t as Array;
-                Serialize((ushort)array.Length, writeTo, ref bitOffset);
+                Serialize((uint)array.Length, writeTo, ref bitOffset);
                 foreach (var element in array)
                     Serialize(element, writeTo, ref bitOffset);
             }
