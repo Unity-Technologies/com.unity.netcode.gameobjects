@@ -217,14 +217,14 @@ namespace MLAPI.NetworkingManagerComponents.Core
             }
         }
 
-        internal static GameObject SpawnPlayerObject(uint clientId, uint networkId)
+        internal static GameObject SpawnPlayerObject(uint clientId, uint networkId, Vector3 position, Quaternion rotation)
         {
             if (string.IsNullOrEmpty(netManager.NetworkConfig.PlayerPrefabName) || !netManager.NetworkConfig.NetworkPrefabIds.ContainsKey(netManager.NetworkConfig.PlayerPrefabName))
             {
                 Debug.LogWarning("MLAPI: There is no player prefab in the NetworkConfig, or it's not registered at as a spawnable prefab");
                 return null;
             }
-            GameObject go = MonoBehaviour.Instantiate(netManager.NetworkConfig.NetworkedPrefabs[netManager.NetworkConfig.NetworkPrefabIds[netManager.NetworkConfig.PlayerPrefabName]].prefab);
+            GameObject go = MonoBehaviour.Instantiate(netManager.NetworkConfig.NetworkedPrefabs[netManager.NetworkConfig.NetworkPrefabIds[netManager.NetworkConfig.PlayerPrefabName]].prefab, position, rotation);
             NetworkedObject netObject = go.GetComponent<NetworkedObject>();
             if (netObject == null)
             {

@@ -136,7 +136,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <summary>
         /// The callback to invoke during connection approval
         /// </summary>
-        public Action<byte[], uint, Action<uint, bool>> ConnectionApprovalCallback = null;
+        public Action<byte[], uint, Action<uint, bool, Vector3, Quaternion>> ConnectionApprovalCallback = null;
         /// <summary>
         /// The current NetworkingConfiguration
         /// </summary>
@@ -586,13 +586,14 @@ namespace MLAPI.MonoBehaviours.Core
         /// <summary>
         /// Starts a Host
         /// </summary>
-        public void StartHost()
+        public void StartHost(Vector3? pos = null, Quaternion? rot = null)
         {
             if (isServer || isClient)
             {
                 Debug.LogWarning("MLAPI: Cannot start host while an instance is already running");
                 return;
             }
+
             ConnectionConfig cConfig = Init(true);
             if (NetworkConfig.ConnectionApproval)
             {
@@ -622,7 +623,7 @@ namespace MLAPI.MonoBehaviours.Core
 
             if(NetworkConfig.HandleObjectSpawning)
             {
-                SpawnManager.SpawnPlayerObject(netId.GetClientId(), 0);
+                SpawnManager.SpawnPlayerObject(netId.GetClientId(), 0, pos.GetValueOrDefault(), rot.GetValueOrDefault());
             }
 
             if (OnServerStarted != null)
@@ -952,7 +953,7 @@ namespace MLAPI.MonoBehaviours.Core
                                             }
                                             else
                                             {
-                                                HandleApproval(clientId, true);
+                                                HandleApproval(clientId, true, Vector3.zero, Quaternion.identity);
                                             }
                                         }
                                     }
@@ -1035,7 +1036,7 @@ namespace MLAPI.MonoBehaviours.Core
 
                                                     if (isPlayerObject)
                                                     {
-                                                        SpawnManager.SpawnPlayerObject(ownerId, networkId);
+                                                        SpawnManager.SpawnPlayerObject(ownerId, networkId, new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot));
                                                     }
                                                     else
                                                     {
@@ -1086,7 +1087,7 @@ namespace MLAPI.MonoBehaviours.Core
                                                 if (isPlayerObject)
                                                 {
                                                     connectedClients.Add(ownerId, new NetworkedClient() { ClientId = ownerId });
-                                                    SpawnManager.SpawnPlayerObject(ownerId, networkId);
+                                                    SpawnManager.SpawnPlayerObject(ownerId, networkId, new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot));
                                                 }
                                                 else
                                                 {
@@ -1161,7 +1162,7 @@ namespace MLAPI.MonoBehaviours.Core
                                             float yRot = messageReader.ReadSingle();
                                             float zRot = messageReader.ReadSingle();
                                             SpawnManager.spawnedObjects[netId].transform.position = new Vector3(xPos, yPos, zPos);
-                                            SpawnManager.spawnedObjects[netId].transform.rotation = Quaternion.Euler(new Vector3(xRot, yRot, zRot));
+                                            SpawnManager.spawnedObjects[netId].transform.rotation = Quaternion.Euler(xRot, yRot, zRot);
                                             SpawnManager.spawnedObjects[netId].gameObject.SetActive(true);
                                         }
                                     }
@@ -1336,7 +1337,7 @@ namespace MLAPI.MonoBehaviours.Core
                                                     if (isPlayerObject)
                                                     {
                                                         connectedClients.Add(ownerId, new NetworkedClient() { ClientId = ownerId });
-                                                        SpawnManager.SpawnPlayerObject(ownerId, networkId);
+                                                        SpawnManager.SpawnPlayerObject(ownerId, networkId, new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot));
                                                     }
                                                     else
                                                     {
@@ -1778,7 +1779,7 @@ namespace MLAPI.MonoBehaviours.Core
             }
         }
 
-        private void HandleApproval(uint clientId, bool approved)
+        private void HandleApproval(uint clientId, bool approved, Vector3 position, Quaternion rotation)
         {
             if(approved)
             {
@@ -1819,7 +1820,7 @@ namespace MLAPI.MonoBehaviours.Core
                 if(NetworkConfig.HandleObjectSpawning)
                 {
                     uint networkId = SpawnManager.GetNetworkObjectId();
-                    GameObject go = SpawnManager.SpawnPlayerObject(clientId, networkId);
+                    GameObject go = SpawnManager.SpawnPlayerObject(clientId, networkId, position, rotation);
                     connectedClients[clientId].PlayerObject = go;
                 }
                 int sizeOfStream = 17 + ((connectedClients.Count - 1) * 4);
