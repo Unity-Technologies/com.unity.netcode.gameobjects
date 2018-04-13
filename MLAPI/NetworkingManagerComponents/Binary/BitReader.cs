@@ -35,6 +35,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             bitCount += 8;
             return result;
         }
+        public void SkipPadded() => bitCount += (8 - (bitCount % 8)) % 8;
         public ushort ReadUShort() => (ushort)ReadULong();
         public uint ReadUInt() => (uint)ReadULong();
         public sbyte ReadSByte() => (sbyte)ZigZagDecode(ReadByte(), 1);
