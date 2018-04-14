@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -114,6 +113,26 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             foreach (T t1 in t) Push(signed ? (object)ZigZagEncode(t1 as long? ?? t1 as int? ?? t1 as short? ?? t1 as sbyte? ?? 0, size) : (object)t1);
         }
 
+        public byte[] Finalize()
+        {
+            long bitCount = 0;
+            for (int i = 0; i < collect.Count; ++i) bitCount += collect[i] == null ? (8 - (bitCount % 8)) % 8 : GetBitCount(collect[i]);
+            byte[] buffer = new byte[((bitCount / 8) + (bitCount % 8 == 0 ? 0 : 1))];
+
+            long bitOffset = 0;
+            bool isAligned = true;
+            foreach (var item in collect)
+                if (item == null)
+                {
+                    bitOffset += (8 - (bitOffset % 8)) % 8;
+                    isAligned = true;
+                }
+                else Serialize(item, buffer, ref bitOffset, ref isAligned);
+
+            return buffer;
+        }
+
+        //The ref is not needed. It's purley there to indicate that it's treated as a reference inside the method.
         public long Finalize(ref byte[] buffer)
         {
             if(buffer == null)
@@ -145,7 +164,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         public long GetFinalizeSize()
         {
             long bitCount = 0;
-            for (int i = 0; i < collect.Count; ++i) bitCount += collect[i]==null ? (8 - (bitCount % 8)) % 8 : GetBitCount(collect[i]);
+            for (int i = 0; i < collect.Count; ++i) bitCount += collect[i] == null ? (8 - (bitCount % 8)) % 8 : GetBitCount(collect[i]);
             return ((bitCount / 8) + (bitCount % 8 == 0 ? 0 : 1));
         }
 
