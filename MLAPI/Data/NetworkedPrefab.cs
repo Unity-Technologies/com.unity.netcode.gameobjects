@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MLAPI.MonoBehaviours.Core;
+using System;
 using UnityEngine;
 
 namespace MLAPI.Data
@@ -9,13 +10,18 @@ namespace MLAPI.Data
     [Serializable]
     public class NetworkedPrefab
     {
-        /// <summary>
-        /// The name of the networked prefab
-        /// </summary>
-        public string name;
+        internal string name
+        {
+            get
+            {
+                return prefab.GetComponent<NetworkedObject>().NetworkedPrefabName;
+            }
+        }
         /// <summary>
         /// The gameobject of the prefab
         /// </summary>
         public GameObject prefab;
+
+        public bool playerPrefab;
     }
 }

@@ -5,6 +5,8 @@ VisualStudioVersion = 15.0.27130.2027
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MLAPI", "MLAPI\MLAPI.csproj", "{EE431720-A9ED-43DC-9E74-10B693816D38}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MLAPI-Editor", "MLAPI-Editor\MLAPI-Editor.csproj", "{A45DBD43-D640-4562-9F24-6745269CEDF7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,6 +20,12 @@ Global
 		{EE431720-A9ED-43DC-9E74-10B693816D38}.Development|Any CPU.Build.0 = Development|Any CPU
 		{EE431720-A9ED-43DC-9E74-10B693816D38}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EE431720-A9ED-43DC-9E74-10B693816D38}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A45DBD43-D640-4562-9F24-6745269CEDF7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A45DBD43-D640-4562-9F24-6745269CEDF7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A45DBD43-D640-4562-9F24-6745269CEDF7}.Development|Any CPU.ActiveCfg = Debug|Any CPU
+		{A45DBD43-D640-4562-9F24-6745269CEDF7}.Development|Any CPU.Build.0 = Debug|Any CPU
+		{A45DBD43-D640-4562-9F24-6745269CEDF7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A45DBD43-D640-4562-9F24-6745269CEDF7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -50,13 +50,16 @@ namespace MLAPI.Data
         /// <summary>
         /// A list of spawnable prefabs
         /// </summary>
+        [HideInInspector]
         public List<NetworkedPrefab> NetworkedPrefabs = new List<NetworkedPrefab>();
         internal Dictionary<string, int> NetworkPrefabIds;
         internal Dictionary<int, string> NetworkPrefabNames;
         /// <summary>
         /// The default player prefab
         /// </summary>
-        public string PlayerPrefabName;
+        [SerializeField]
+        [HideInInspector]
+        internal string PlayerPrefabName;
         /// <summary>
         /// The size of the receive message buffer. This is the max message size.
         /// </summary>
@@ -100,6 +103,7 @@ namespace MLAPI.Data
         /// <summary>
         /// The data to send during connection which can be used to decide on if a client should get accepted
         /// </summary>
+        [HideInInspector]
         public byte[] ConnectionData = new byte[0];
         /// <summary>
         /// The amount of seconds to keep a lag compensation position history

@@ -173,34 +173,21 @@ namespace MLAPI.MonoBehaviours.Core
                 {
                     if (string.IsNullOrEmpty(NetworkConfig.NetworkedPrefabs[i].name))
                     {
-                        Debug.LogWarning("MLAPI: The NetworkedPrefab " + NetworkConfig.NetworkedPrefabs[i].prefab.name + " does not have a NetworkedPrefabName. It has been set to the gameObject name");
-                        NetworkConfig.NetworkedPrefabs[i].name = NetworkConfig.NetworkedPrefabs[i].prefab.name;
+                        Debug.LogWarning("MLAPI: The NetworkedPrefab " + NetworkConfig.NetworkedPrefabs[i].prefab.name + " does not have a NetworkedPrefabName.");
                     }
                 }
-            }
-
-            if (NetworkConfig.HandleObjectSpawning)
-            {
-                if(!string.IsNullOrEmpty(NetworkConfig.PlayerPrefabName))
+                int playerPrefabCount = NetworkConfig.NetworkedPrefabs.Count(x => x.playerPrefab == true);
+                if (playerPrefabCount == 0)
                 {
-                    //Handle spawning is on and a prefabName is set
-                    GameObject playerPrefab = null;
-                    for (int i = 0; i < NetworkConfig.NetworkedPrefabs.Count; i++)
-                    {
-                        if (NetworkConfig.NetworkedPrefabs[i].name == NetworkConfig.PlayerPrefabName)
-                        {
-                            playerPrefab = NetworkConfig.NetworkedPrefabs[i].prefab;
-                            break;
-                        }
-                    }
-                    if (playerPrefab == null)
-                        Debug.LogWarning("MLAPI: There is no NetworkedPrefab with the name specified in the PlayerPrefabName");
+                    Debug.LogWarning("MLAPI: There is no NetworkedPrefab marked as a PlayerPrefab");
+                }
+                else if (playerPrefabCount > 1)
+                {
+                    Debug.LogWarning("MLAPI: Only one networked prefab can be marked as a player prefab");
                 }
                 else
-                {
-                    //Handle spawning but no prefabName is set
-                    Debug.LogWarning("MLAPI: There is no PlayerPrefabName set.");
-                }
+                    NetworkConfig.PlayerPrefabName =  NetworkConfig.NetworkedPrefabs.Find(x => x.playerPrefab == true).name;
+
             }
 
             if (!NetworkConfig.EnableEncryption)
