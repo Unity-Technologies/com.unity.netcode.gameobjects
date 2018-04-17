@@ -155,7 +155,7 @@ namespace MLAPI.MonoBehaviours.Core
         {
             if (NetworkConfig == null)
                 return; //May occur when the component is added
-             
+
             if(NetworkConfig.EnableSceneSwitching && !NetworkConfig.RegisteredScenes.Contains(SceneManager.GetActiveScene().name))
             {
                 Debug.LogWarning("MLAPI: The active scene is not registered as a networked scene. The MLAPI has added it");
@@ -252,10 +252,17 @@ namespace MLAPI.MonoBehaviours.Core
                 NetworkConfig.NetworkPrefabIds = new Dictionary<string, int>();
                 NetworkConfig.NetworkPrefabNames = new Dictionary<int, string>();
                 NetworkConfig.NetworkedPrefabs.OrderBy(x => x.name);
+                HashSet<string> networkedPrefabName = new HashSet<string>();
                 for (int i = 0; i < NetworkConfig.NetworkedPrefabs.Count; i++)
                 {
+                    if (networkedPrefabName.Contains(NetworkConfig.NetworkedPrefabs[i].name))
+                    {
+                        Debug.LogWarning("MLAPI: Duplicate NetworkedPrefabName " + NetworkConfig.NetworkedPrefabs[i].name);
+                        continue;
+                    }
                     NetworkConfig.NetworkPrefabIds.Add(NetworkConfig.NetworkedPrefabs[i].name, i);
                     NetworkConfig.NetworkPrefabNames.Add(i, NetworkConfig.NetworkedPrefabs[i].name);
+                    networkedPrefabName.Add(NetworkConfig.NetworkedPrefabs[i].name);
                 }
                 if (NetworkConfig.EnableSceneSwitching)
                 {
@@ -321,22 +328,38 @@ namespace MLAPI.MonoBehaviours.Core
 
             if (NetworkConfig.EnableEncryption)
             {
+                HashSet<string> addedEncryptedChannels = new HashSet<string>();
                 for (int i = 0; i < NetworkConfig.Channels.Count; i++)
                 {
+                    if (addedEncryptedChannels.Contains(NetworkConfig.Channels[i].Name))
+                    {
+                        Debug.LogWarning("MLAPI: Duplicate encrypted channel name " + NetworkConfig.Channels[i].Name);
+                        continue;
+                    }
                     if (NetworkConfig.Channels[i].Encrypted)
                     {
                         NetworkConfig.EncryptedChannels.Add(NetworkConfig.Channels[i].Name);
                         NetworkConfig.EncryptedChannelsHashSet.Add(NetworkConfig.Channels[i].Name);
                     }
+                    addedEncryptedChannels.Add(NetworkConfig.Channels[i].Name);
                 }
             }
 
             if (NetworkConfig.AllowPassthroughMessages)
             {
+                HashSet<string> addedPassthroughMessages = new HashSet<string>();
                 for (int i = 0; i < NetworkConfig.MessageTypes.Count; i++)
                 {
+                    if (addedPassthroughMessages.Contains(NetworkConfig.MessageTypes[i].Name))
+                    {
+                        Debug.LogWarning("MLAPI: Duplicate passthrough message type " + NetworkConfig.MessageTypes[i].Name);
+                        continue;
+                    }
                     if (NetworkConfig.MessageTypes[i].Passthrough)
+                    {
                         NetworkConfig.PassthroughMessageHashSet.Add(MessageManager.messageTypes[NetworkConfig.MessageTypes[i].Name]);
+                        addedPassthroughMessages.Add(NetworkConfig.MessageTypes[i].Name);
+                    }
                 }
             }
 
