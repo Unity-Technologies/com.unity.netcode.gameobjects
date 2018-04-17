@@ -1,6 +1,6 @@
 ﻿using MLAPI.MonoBehaviours.Core;
+using MLAPI.NetworkingManagerComponents.Binary;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -58,13 +58,11 @@ namespace MLAPI.NetworkingManagerComponents.Core
             AsyncOperation sceneLoad = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
             sceneLoad.completed += OnSceneLoaded;
 
-            using(MemoryStream stream = new MemoryStream(4))
+            using (BitWriter writer = new BitWriter())
             {
-                using (BinaryWriter writer = new BinaryWriter(stream))
-                {
-                    writer.Write(sceneNameToIndex[sceneName]);
-                }
-                InternalMessageHandler.Send("MLAPI_SWITCH_SCENE", "MLAPI_INTERNAL", stream.GetBuffer());
+                writer.WriteUInt(sceneNameToIndex[sceneName]);
+
+                InternalMessageHandler.Send("MLAPI_SWITCH_SCENE", "MLAPI_INTERNAL", writer.Finalize());
             }
         }
 

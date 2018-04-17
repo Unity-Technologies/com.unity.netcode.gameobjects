@@ -7,7 +7,6 @@
     {
         Bool,
         Byte,
-        Char,
         Double,
         Single,
         Int,

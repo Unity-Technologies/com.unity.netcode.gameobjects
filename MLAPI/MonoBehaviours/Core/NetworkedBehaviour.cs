@@ -4,7 +4,6 @@ using UnityEngine;
 using System.Reflection;
 using MLAPI.Attributes;
 using System.Linq;
-using System.IO;
 using MLAPI.Data;
 using MLAPI.NetworkingManagerComponents.Binary;
 using MLAPI.NetworkingManagerComponents.Core;
@@ -245,18 +244,6 @@ namespace MLAPI.MonoBehaviours.Core
                             HookMethod = method
                         });
                     }
-                    else if (sortedFields[i].FieldType == typeof(char))
-                    {
-                        syncedVarFields.Add(new SyncedVarField()
-                        {
-                            Dirty = false,
-                            Target = ((SyncedVar)sortedFields[i].GetCustomAttributes(typeof(SyncedVar), true)[0]).target,
-                            FieldInfo = sortedFields[i],
-                            FieldType = FieldType.Char,
-                            FieldValue = sortedFields[i].GetValue(this),
-                            HookMethod = method
-                        });
-                    }
                     else if (sortedFields[i].FieldType == typeof(double))
                     {
                         syncedVarFields.Add(new SyncedVarField()
@@ -450,95 +437,88 @@ namespace MLAPI.MonoBehaviours.Core
             if (syncedVarFields.Count == 0)
                 return;
 
-            using (MemoryStream stream = new MemoryStream())
+            using (BitWriter writer = new BitWriter())
             {
-                using (BinaryWriter writer = new BinaryWriter(stream))
+                //Write all indexes
+                int syncCount = 0;
+                for (int i = 0; i < syncedVarFields.Count; i++)
                 {
-                    //Write all indexes
-                    int syncCount = 0;
-                    for (int i = 0; i < syncedVarFields.Count; i++)
+                    if (!syncedVarFields[i].Target)
+                        syncCount++;
+                    else if (syncedVarFields[i].Target && ownerClientId == clientId)
+                        syncCount++;
+                }
+                if (syncCount == 0)
+                    return;
+                writer.WriteByte((byte)syncCount);
+                writer.WriteUInt(networkId); //NetId
+                writer.WriteUShort(networkedObject.GetOrderIndex(this)); //Behaviour OrderIndex
+                for (byte i = 0; i < syncedVarFields.Count; i++)
+                {
+                    if (syncedVarFields[i].Target && clientId != ownerClientId)
+                        continue;
+                    writer.WriteByte(i); //FieldIndex
+                    switch (syncedVarFields[i].FieldType)
                     {
-                        if (!syncedVarFields[i].Target)
-                            syncCount++;
-                        else if (syncedVarFields[i].Target && ownerClientId == clientId)
-                            syncCount++;
-                    }
-                    if (syncCount == 0)
-                        return;
-                    writer.Write((byte)syncCount);
-                    writer.Write(networkId); //NetId
-                    writer.Write(networkedObject.GetOrderIndex(this)); //Behaviour OrderIndex
-                    for (byte i = 0; i < syncedVarFields.Count; i++)
-                    {
-                        if (syncedVarFields[i].Target && clientId != ownerClientId)
-                            continue;
-                        writer.Write(i); //FieldIndex
-                        switch (syncedVarFields[i].FieldType)
-                        {
-                            case FieldType.Bool:
-                                writer.Write((bool)syncedVarFields[i].FieldInfo.GetValue(this));
-                                break;
-                            case FieldType.Byte:
-                                writer.Write((byte)syncedVarFields[i].FieldInfo.GetValue(this));
-                                break;
-                            case FieldType.Char:
-                                writer.Write((char)syncedVarFields[i].FieldInfo.GetValue(this));
-                                break;
-                            case FieldType.Double:
-                                writer.Write((double)syncedVarFields[i].FieldInfo.GetValue(this));
-                                break;
-                            case FieldType.Single:
-                                writer.Write((float)syncedVarFields[i].FieldInfo.GetValue(this));
-                                break;
-                            case FieldType.Int:
-                                writer.Write((int)syncedVarFields[i].FieldInfo.GetValue(this));
-                                break;
-                            case FieldType.Long:
-                                writer.Write((long)syncedVarFields[i].FieldInfo.GetValue(this));
-                                break;
-                            case FieldType.SByte:
-                                writer.Write((sbyte)syncedVarFields[i].FieldInfo.GetValue(this));
-                                break;
-                            case FieldType.Short:
-                                writer.Write((short)syncedVarFields[i].FieldInfo.GetValue(this));
-                                break;
-                            case FieldType.UInt:
-                                writer.Write((uint)syncedVarFields[i].FieldInfo.GetValue(this));
-                                break;
-                            case FieldType.ULong:
-                                writer.Write((ulong)syncedVarFields[i].FieldInfo.GetValue(this));
-                                break;
-                            case FieldType.UShort:
-                                writer.Write((ushort)syncedVarFields[i].FieldInfo.GetValue(this));
-                                break;
-                            case FieldType.String:
-                                writer.Write((string)syncedVarFields[i].FieldInfo.GetValue(this));
-                                break;
-                            case FieldType.Vector3:
-                                Vector3 vector3 = (Vector3)syncedVarFields[i].FieldInfo.GetValue(this);
-                                writer.Write(vector3.x);
-                                writer.Write(vector3.y);
-                                writer.Write(vector3.z);
-                                break;
-                            case FieldType.Vector2:
-                                Vector2 vector2 = (Vector2)syncedVarFields[i].FieldInfo.GetValue(this);
-                                writer.Write(vector2.x);
-                                writer.Write(vector2.y);
-                                break;
-                            case FieldType.Quaternion:
-                                Vector3 euler = ((Quaternion)syncedVarFields[i].FieldInfo.GetValue(this)).eulerAngles;
-                                writer.Write(euler.x);
-                                writer.Write(euler.y);
-                                writer.Write(euler.z);
-                                break;
-                            case FieldType.ByteArray:
-                                writer.Write((ushort)((byte[])syncedVarFields[i].FieldInfo.GetValue(this)).Length);
-                                writer.Write((byte[])syncedVarFields[i].FieldInfo.GetValue(this));
-                                break;
-                        }
+                        case FieldType.Bool:
+                            writer.WriteBool((bool)syncedVarFields[i].FieldInfo.GetValue(this));
+                            break;
+                        case FieldType.Byte:
+                            writer.WriteByte((byte)syncedVarFields[i].FieldInfo.GetValue(this));
+                            break;
+                        case FieldType.Double:
+                            writer.WriteDouble((double)syncedVarFields[i].FieldInfo.GetValue(this));
+                            break;
+                        case FieldType.Single:
+                            writer.WriteFloat((float)syncedVarFields[i].FieldInfo.GetValue(this));
+                            break;
+                        case FieldType.Int:
+                            writer.WriteInt((int)syncedVarFields[i].FieldInfo.GetValue(this));
+                            break;
+                        case FieldType.Long:
+                            writer.WriteLong((long)syncedVarFields[i].FieldInfo.GetValue(this));
+                            break;
+                        case FieldType.SByte:
+                            writer.WriteSByte((sbyte)syncedVarFields[i].FieldInfo.GetValue(this));
+                            break;
+                        case FieldType.Short:
+                            writer.WriteShort((short)syncedVarFields[i].FieldInfo.GetValue(this));
+                            break;
+                        case FieldType.UInt:
+                            writer.WriteUInt((uint)syncedVarFields[i].FieldInfo.GetValue(this));
+                            break;
+                        case FieldType.ULong:
+                            writer.WriteULong((ulong)syncedVarFields[i].FieldInfo.GetValue(this));
+                            break;
+                        case FieldType.UShort:
+                            writer.WriteUShort((ushort)syncedVarFields[i].FieldInfo.GetValue(this));
+                            break;
+                        case FieldType.String:
+                            writer.WriteString((string)syncedVarFields[i].FieldInfo.GetValue(this));
+                            break;
+                        case FieldType.Vector3:
+                            Vector3 vector3 = (Vector3)syncedVarFields[i].FieldInfo.GetValue(this);
+                            writer.WriteFloat(vector3.x);
+                            writer.WriteFloat(vector3.y);
+                            writer.WriteFloat(vector3.z);
+                            break;
+                        case FieldType.Vector2:
+                            Vector2 vector2 = (Vector2)syncedVarFields[i].FieldInfo.GetValue(this);
+                            writer.WriteFloat(vector2.x);
+                            writer.WriteFloat(vector2.y);
+                            break;
+                        case FieldType.Quaternion:
+                            Vector3 euler = ((Quaternion)syncedVarFields[i].FieldInfo.GetValue(this)).eulerAngles;
+                            writer.WriteFloat(euler.x);
+                            writer.WriteFloat(euler.y);
+                            writer.WriteFloat(euler.z);
+                            break;
+                        case FieldType.ByteArray:
+                            writer.WriteByteArray((byte[])syncedVarFields[i].FieldInfo.GetValue(this));
+                            break;
                     }
                 }
-                InternalMessageHandler.Send(clientId, "MLAPI_SYNC_VAR_UPDATE", "MLAPI_INTERNAL", stream.ToArray());
+                InternalMessageHandler.Send(clientId, "MLAPI_SYNC_VAR_UPDATE", "MLAPI_INTERNAL", writer.Finalize());
             }
         }
 
@@ -571,177 +551,162 @@ namespace MLAPI.MonoBehaviours.Core
                 if (dirtyTargets == 0)
                 {
                     //It's sync time!
-                    using (MemoryStream stream = new MemoryStream())
+                    using (BitWriter writer = new BitWriter())
                     {
-                        using (BinaryWriter writer = new BinaryWriter(stream))
+                        //Write all indexes
+                        writer.WriteByte(totalDirtyCount);
+                        writer.WriteUInt(networkId); //NetId
+                        writer.WriteUShort(networkedObject.GetOrderIndex(this)); //Behaviour OrderIndex
+                        for (byte i = 0; i < syncedVarFields.Count; i++)
                         {
-                            //Write all indexes
-                            writer.Write(totalDirtyCount);
-                            writer.Write(networkId); //NetId
-                            writer.Write(networkedObject.GetOrderIndex(this)); //Behaviour OrderIndex
-                            for (byte i = 0; i < syncedVarFields.Count; i++)
+                            //Writes all the indexes of the dirty syncvars.
+                            if (syncedVarFields[i].Dirty == true)
                             {
-                                //Writes all the indexes of the dirty syncvars.
-                                if (syncedVarFields[i].Dirty == true)
+                                writer.WriteByte(i); //FieldIndex
+                                switch (syncedVarFields[i].FieldType)
                                 {
-                                    writer.Write(i); //FieldIndex
-                                    switch (syncedVarFields[i].FieldType)
-                                    {
-                                        case FieldType.Bool:
-                                            writer.Write((bool)syncedVarFields[i].FieldInfo.GetValue(this));
-                                            break;
-                                        case FieldType.Byte:
-                                            writer.Write((byte)syncedVarFields[i].FieldInfo.GetValue(this));
-                                            break;
-                                        case FieldType.Char:
-                                            writer.Write((char)syncedVarFields[i].FieldInfo.GetValue(this));
-                                            break;
-                                        case FieldType.Double:
-                                            writer.Write((double)syncedVarFields[i].FieldInfo.GetValue(this));
-                                            break;
-                                        case FieldType.Single:
-                                            writer.Write((float)syncedVarFields[i].FieldInfo.GetValue(this));
-                                            break;
-                                        case FieldType.Int:
-                                            writer.Write((int)syncedVarFields[i].FieldInfo.GetValue(this));
-                                            break;
-                                        case FieldType.Long:
-                                            writer.Write((long)syncedVarFields[i].FieldInfo.GetValue(this));
-                                            break;
-                                        case FieldType.SByte:
-                                            writer.Write((sbyte)syncedVarFields[i].FieldInfo.GetValue(this));
-                                            break;
-                                        case FieldType.Short:
-                                            writer.Write((short)syncedVarFields[i].FieldInfo.GetValue(this));
-                                            break;
-                                        case FieldType.UInt:
-                                            writer.Write((uint)syncedVarFields[i].FieldInfo.GetValue(this));
-                                            break;
-                                        case FieldType.ULong:
-                                            writer.Write((ulong)syncedVarFields[i].FieldInfo.GetValue(this));
-                                            break;
-                                        case FieldType.UShort:
-                                            writer.Write((ushort)syncedVarFields[i].FieldInfo.GetValue(this));
-                                            break;
-                                        case FieldType.String:
-                                            writer.Write((string)syncedVarFields[i].FieldInfo.GetValue(this));
-                                            break;
-                                        case FieldType.Vector3:
-                                            Vector3 vector3 = (Vector3)syncedVarFields[i].FieldInfo.GetValue(this);
-                                            writer.Write(vector3.x);
-                                            writer.Write(vector3.y);
-                                            writer.Write(vector3.z);
-                                            break;
-                                        case FieldType.Vector2:
-                                            Vector2 vector2 = (Vector2)syncedVarFields[i].FieldInfo.GetValue(this);
-                                            writer.Write(vector2.x);
-                                            writer.Write(vector2.y);
-                                            break;
-                                        case FieldType.Quaternion:
-                                            Vector3 euler = ((Quaternion)syncedVarFields[i].FieldInfo.GetValue(this)).eulerAngles;
-                                            writer.Write(euler.x);
-                                            writer.Write(euler.y);
-                                            writer.Write(euler.z);
-                                            break;
-                                        case FieldType.ByteArray:
-                                            writer.Write((ushort)((byte[])syncedVarFields[i].FieldInfo.GetValue(this)).Length);
-                                            writer.Write((byte[])syncedVarFields[i].FieldInfo.GetValue(this));
-                                            break;
+                                    case FieldType.Bool:
+                                        writer.WriteBool((bool)syncedVarFields[i].FieldInfo.GetValue(this));
+                                        break;
+                                    case FieldType.Byte:
+                                        writer.WriteByte((byte)syncedVarFields[i].FieldInfo.GetValue(this));
+                                        break;
+                                    case FieldType.Double:
+                                        writer.WriteDouble((double)syncedVarFields[i].FieldInfo.GetValue(this));
+                                        break;
+                                    case FieldType.Single:
+                                        writer.WriteFloat((float)syncedVarFields[i].FieldInfo.GetValue(this));
+                                        break;
+                                    case FieldType.Int:
+                                        writer.WriteInt((int)syncedVarFields[i].FieldInfo.GetValue(this));
+                                        break;
+                                    case FieldType.Long:
+                                        writer.WriteLong((long)syncedVarFields[i].FieldInfo.GetValue(this));
+                                        break;
+                                    case FieldType.SByte:
+                                        writer.WriteSByte((sbyte)syncedVarFields[i].FieldInfo.GetValue(this));
+                                        break;
+                                    case FieldType.Short:
+                                        writer.WriteShort((short)syncedVarFields[i].FieldInfo.GetValue(this));
+                                        break;
+                                    case FieldType.UInt:
+                                        writer.WriteUInt((uint)syncedVarFields[i].FieldInfo.GetValue(this));
+                                        break;
+                                    case FieldType.ULong:
+                                        writer.WriteULong((ulong)syncedVarFields[i].FieldInfo.GetValue(this));
+                                        break;
+                                    case FieldType.UShort:
+                                        writer.WriteUShort((ushort)syncedVarFields[i].FieldInfo.GetValue(this));
+                                        break;
+                                    case FieldType.String:
+                                        writer.WriteString((string)syncedVarFields[i].FieldInfo.GetValue(this));
+                                        break;
+                                    case FieldType.Vector3:
+                                        Vector3 vector3 = (Vector3)syncedVarFields[i].FieldInfo.GetValue(this);
+                                        writer.WriteFloat(vector3.x);
+                                        writer.WriteFloat(vector3.y);
+                                        writer.WriteFloat(vector3.z);
+                                        break;
+                                    case FieldType.Vector2:
+                                        Vector2 vector2 = (Vector2)syncedVarFields[i].FieldInfo.GetValue(this);
+                                        writer.WriteFloat(vector2.x);
+                                        writer.WriteFloat(vector2.y);
+                                        break;
+                                    case FieldType.Quaternion:
+                                        Vector3 euler = ((Quaternion)syncedVarFields[i].FieldInfo.GetValue(this)).eulerAngles;
+                                        writer.WriteFloat(euler.x);
+                                        writer.WriteFloat(euler.y);
+                                        writer.WriteFloat(euler.z);
+                                        break;
+                                    case FieldType.ByteArray:
+                                        writer.WriteByteArray((byte[])syncedVarFields[i].FieldInfo.GetValue(this));
+                                        break;
 
-                                    }
-                                    syncedVarFields[i].FieldValue = syncedVarFields[i].FieldInfo.GetValue(this);
-                                    syncedVarFields[i].Dirty = false;
                                 }
+                                syncedVarFields[i].FieldValue = syncedVarFields[i].FieldInfo.GetValue(this);
+                                syncedVarFields[i].Dirty = false;
                             }
                         }
-                        InternalMessageHandler.Send("MLAPI_SYNC_VAR_UPDATE", "MLAPI_INTERNAL", stream.ToArray());
+                        InternalMessageHandler.Send("MLAPI_SYNC_VAR_UPDATE", "MLAPI_INTERNAL", writer.Finalize());
                     }
                 }
                 else
                 {
                     //It's sync time. This is the target receivers packet.
-                    using (MemoryStream stream = new MemoryStream())
+                    using (BitWriter writer = new BitWriter())
                     {
-                        using (BinaryWriter writer = new BinaryWriter(stream))
+                        //Write all indexes
+                        writer.WriteByte(totalDirtyCount);
+                        writer.WriteUInt(networkId); //NetId
+                        writer.WriteUShort(networkedObject.GetOrderIndex(this)); //Behaviour OrderIndex
+                        for (byte i = 0; i < syncedVarFields.Count; i++)
                         {
-                            //Write all indexes
-                            writer.Write(totalDirtyCount);
-                            writer.Write(networkId); //NetId
-                            writer.Write(networkedObject.GetOrderIndex(this)); //Behaviour OrderIndex
-                            for (byte i = 0; i < syncedVarFields.Count; i++)
+                            //Writes all the indexes of the dirty syncvars.
+                            if (syncedVarFields[i].Dirty == true)
                             {
-                                //Writes all the indexes of the dirty syncvars.
-                                if (syncedVarFields[i].Dirty == true)
+                                writer.WriteByte(i); //FieldIndex
+                                switch (syncedVarFields[i].FieldType)
                                 {
-                                    writer.Write(i); //FieldIndex
-                                    switch (syncedVarFields[i].FieldType)
-                                    {
-                                        case FieldType.Bool:
-                                            writer.Write((bool)syncedVarFields[i].FieldInfo.GetValue(this));
-                                            break;
-                                        case FieldType.Byte:
-                                            writer.Write((byte)syncedVarFields[i].FieldInfo.GetValue(this));
-                                            break;
-                                        case FieldType.Char:
-                                            writer.Write((char)syncedVarFields[i].FieldInfo.GetValue(this));
-                                            break;
-                                        case FieldType.Double:
-                                            writer.Write((double)syncedVarFields[i].FieldInfo.GetValue(this));
-                                            break;
-                                        case FieldType.Single:
-                                            writer.Write((float)syncedVarFields[i].FieldInfo.GetValue(this));
-                                            break;
-                                        case FieldType.Int:
-                                            writer.Write((int)syncedVarFields[i].FieldInfo.GetValue(this));
-                                            break;
-                                        case FieldType.Long:
-                                            writer.Write((long)syncedVarFields[i].FieldInfo.GetValue(this));
-                                            break;
-                                        case FieldType.SByte:
-                                            writer.Write((sbyte)syncedVarFields[i].FieldInfo.GetValue(this));
-                                            break;
-                                        case FieldType.Short:
-                                            writer.Write((short)syncedVarFields[i].FieldInfo.GetValue(this));
-                                            break;
-                                        case FieldType.UInt:
-                                            writer.Write((uint)syncedVarFields[i].FieldInfo.GetValue(this));
-                                            break;
-                                        case FieldType.ULong:
-                                            writer.Write((ulong)syncedVarFields[i].FieldInfo.GetValue(this));
-                                            break;
-                                        case FieldType.UShort:
-                                            writer.Write((ushort)syncedVarFields[i].FieldInfo.GetValue(this));
-                                            break;
-                                        case FieldType.String:
-                                            writer.Write((string)syncedVarFields[i].FieldInfo.GetValue(this));
-                                            break;
-                                        case FieldType.Vector3:
-                                            Vector3 vector3 = (Vector3)syncedVarFields[i].FieldInfo.GetValue(this);
-                                            writer.Write(vector3.x);
-                                            writer.Write(vector3.y);
-                                            writer.Write(vector3.z);
-                                            break;
-                                        case FieldType.Vector2:
-                                            Vector2 vector2 = (Vector2)syncedVarFields[i].FieldInfo.GetValue(this);
-                                            writer.Write(vector2.x);
-                                            writer.Write(vector2.y);
-                                            break;
-                                        case FieldType.Quaternion:
-                                            Vector3 euler = ((Quaternion)syncedVarFields[i].FieldInfo.GetValue(this)).eulerAngles;
-                                            writer.Write(euler.x);
-                                            writer.Write(euler.y);
-                                            writer.Write(euler.z);
-                                            break;
-                                        case FieldType.ByteArray:
-                                            writer.Write((ushort)((byte[])syncedVarFields[i].FieldInfo.GetValue(this)).Length);
-                                            writer.Write((byte[])syncedVarFields[i].FieldInfo.GetValue(this));
-                                            break;
-
-                                    }
+                                    case FieldType.Bool:
+                                        writer.WriteBool((bool)syncedVarFields[i].FieldInfo.GetValue(this));
+                                        break;
+                                    case FieldType.Byte:
+                                        writer.WriteByte((byte)syncedVarFields[i].FieldInfo.GetValue(this));
+                                        break;
+                                    case FieldType.Double:
+                                        writer.WriteDouble((double)syncedVarFields[i].FieldInfo.GetValue(this));
+                                        break;
+                                    case FieldType.Single:
+                                        writer.WriteFloat((float)syncedVarFields[i].FieldInfo.GetValue(this));
+                                        break;
+                                    case FieldType.Int:
+                                        writer.WriteInt((int)syncedVarFields[i].FieldInfo.GetValue(this));
+                                        break;
+                                    case FieldType.Long:
+                                        writer.WriteLong((long)syncedVarFields[i].FieldInfo.GetValue(this));
+                                        break;
+                                    case FieldType.SByte:
+                                        writer.WriteSByte((sbyte)syncedVarFields[i].FieldInfo.GetValue(this));
+                                        break;
+                                    case FieldType.Short:
+                                        writer.WriteShort((short)syncedVarFields[i].FieldInfo.GetValue(this));
+                                        break;
+                                    case FieldType.UInt:
+                                        writer.WriteUInt((uint)syncedVarFields[i].FieldInfo.GetValue(this));
+                                        break;
+                                    case FieldType.ULong:
+                                        writer.WriteULong((ulong)syncedVarFields[i].FieldInfo.GetValue(this));
+                                        break;
+                                    case FieldType.UShort:
+                                        writer.WriteUShort((ushort)syncedVarFields[i].FieldInfo.GetValue(this));
+                                        break;
+                                    case FieldType.String:
+                                        writer.WriteString((string)syncedVarFields[i].FieldInfo.GetValue(this));
+                                        break;
+                                    case FieldType.Vector3:
+                                        Vector3 vector3 = (Vector3)syncedVarFields[i].FieldInfo.GetValue(this);
+                                        writer.WriteFloat(vector3.x);
+                                        writer.WriteFloat(vector3.y);
+                                        writer.WriteFloat(vector3.z);
+                                        break;
+                                    case FieldType.Vector2:
+                                        Vector2 vector2 = (Vector2)syncedVarFields[i].FieldInfo.GetValue(this);
+                                        writer.WriteFloat(vector2.x);
+                                        writer.WriteFloat(vector2.y);
+                                        break;
+                                    case FieldType.Quaternion:
+                                        Vector3 euler = ((Quaternion)syncedVarFields[i].FieldInfo.GetValue(this)).eulerAngles;
+                                        writer.WriteFloat(euler.x);
+                                        writer.WriteFloat(euler.y);
+                                        writer.WriteFloat(euler.z);
+                                        break;
+                                    case FieldType.ByteArray:
+                                        writer.WriteByteArray((byte[])syncedVarFields[i].FieldInfo.GetValue(this));
+                                        break;
                                 }
                             }
                         }
-                        InternalMessageHandler.Send(ownerClientId, "MLAPI_SYNC_VAR_UPDATE", "MLAPI_INTERNAL", stream.ToArray()); //Send only to target
+                        InternalMessageHandler.Send(ownerClientId, "MLAPI_SYNC_VAR_UPDATE", "MLAPI_INTERNAL", writer.Finalize()); //Send only to target
                     }
 
                     if (nonTargetDirtyCount == 0)
@@ -756,81 +721,75 @@ namespace MLAPI.MonoBehaviours.Core
                     }
 
                     //It's sync time. This is the NON target receivers packet.
-                    using (MemoryStream stream = new MemoryStream())
+                    using (BitWriter writer = new BitWriter())
                     {
-                        using (BinaryWriter writer = new BinaryWriter(stream))
-                        {
                             //Write all indexes
-                            writer.Write(nonTargetDirtyCount);
-                            writer.Write(networkId); //NetId
-                            writer.Write(networkedObject.GetOrderIndex(this)); //Behaviour OrderIndex
+                            writer.WriteByte(nonTargetDirtyCount);
+                            writer.WriteUInt(networkId); //NetId
+                            writer.WriteUShort(networkedObject.GetOrderIndex(this)); //Behaviour OrderIndex
                             for (byte i = 0; i < syncedVarFields.Count; i++)
                             {
                                 //Writes all the indexes of the dirty syncvars.
                                 if (syncedVarFields[i].Dirty == true && !syncedVarFields[i].Target)
                                 {
-                                    writer.Write(i); //FieldIndex
+                                    writer.WriteByte(i); //FieldIndex
                                     switch (syncedVarFields[i].FieldType)
                                     {
                                         case FieldType.Bool:
-                                            writer.Write((bool)syncedVarFields[i].FieldInfo.GetValue(this));
+                                            writer.WriteBool((bool)syncedVarFields[i].FieldInfo.GetValue(this));
                                             break;
                                         case FieldType.Byte:
-                                            writer.Write((byte)syncedVarFields[i].FieldInfo.GetValue(this));
-                                            break;
-                                        case FieldType.Char:
-                                            writer.Write((char)syncedVarFields[i].FieldInfo.GetValue(this));
+                                            writer.WriteByte((byte)syncedVarFields[i].FieldInfo.GetValue(this));
                                             break;
                                         case FieldType.Double:
-                                            writer.Write((double)syncedVarFields[i].FieldInfo.GetValue(this));
+                                            writer.WriteDouble((double)syncedVarFields[i].FieldInfo.GetValue(this));
                                             break;
                                         case FieldType.Single:
-                                            writer.Write((float)syncedVarFields[i].FieldInfo.GetValue(this));
+                                            writer.WriteFloat((float)syncedVarFields[i].FieldInfo.GetValue(this));
                                             break;
                                         case FieldType.Int:
-                                            writer.Write((int)syncedVarFields[i].FieldInfo.GetValue(this));
+                                            writer.WriteInt((int)syncedVarFields[i].FieldInfo.GetValue(this));
                                             break;
                                         case FieldType.Long:
-                                            writer.Write((long)syncedVarFields[i].FieldInfo.GetValue(this));
+                                            writer.WriteLong((long)syncedVarFields[i].FieldInfo.GetValue(this));
                                             break;
                                         case FieldType.SByte:
-                                            writer.Write((sbyte)syncedVarFields[i].FieldInfo.GetValue(this));
+                                            writer.WriteSByte((sbyte)syncedVarFields[i].FieldInfo.GetValue(this));
                                             break;
                                         case FieldType.Short:
-                                            writer.Write((short)syncedVarFields[i].FieldInfo.GetValue(this));
+                                            writer.WriteShort((short)syncedVarFields[i].FieldInfo.GetValue(this));
                                             break;
                                         case FieldType.UInt:
-                                            writer.Write((uint)syncedVarFields[i].FieldInfo.GetValue(this));
+                                            writer.WriteUInt((uint)syncedVarFields[i].FieldInfo.GetValue(this));
                                             break;
                                         case FieldType.ULong:
-                                            writer.Write((ulong)syncedVarFields[i].FieldInfo.GetValue(this));
+                                            writer.WriteULong((ulong)syncedVarFields[i].FieldInfo.GetValue(this));
                                             break;
                                         case FieldType.UShort:
-                                            writer.Write((ushort)syncedVarFields[i].FieldInfo.GetValue(this));
+                                            writer.WriteUShort((ushort)syncedVarFields[i].FieldInfo.GetValue(this));
                                             break;
                                         case FieldType.String:
-                                            writer.Write((string)syncedVarFields[i].FieldInfo.GetValue(this));
+                                            writer.WriteString((string)syncedVarFields[i].FieldInfo.GetValue(this));
                                             break;
                                         case FieldType.Vector3:
                                             Vector3 vector3 = (Vector3)syncedVarFields[i].FieldInfo.GetValue(this);
-                                            writer.Write(vector3.x);
-                                            writer.Write(vector3.y);
-                                            writer.Write(vector3.z);
+                                            writer.WriteFloat(vector3.x);
+                                            writer.WriteFloat(vector3.y);
+                                            writer.WriteFloat(vector3.z);
                                             break;
                                         case FieldType.Vector2:
                                             Vector2 vector2 = (Vector2)syncedVarFields[i].FieldInfo.GetValue(this);
-                                            writer.Write(vector2.x);
-                                            writer.Write(vector2.y);
+                                            writer.WriteFloat(vector2.x);
+                                            writer.WriteFloat(vector2.y);
                                             break;
                                         case FieldType.Quaternion:
                                             Vector3 euler = ((Quaternion)syncedVarFields[i].FieldInfo.GetValue(this)).eulerAngles;
-                                            writer.Write(euler.x);
-                                            writer.Write(euler.y);
-                                            writer.Write(euler.z);
+                                            writer.WriteFloat(euler.x);
+                                            writer.WriteFloat(euler.y);
+                                            writer.WriteFloat(euler.z);
                                             break;
                                         case FieldType.ByteArray:
-                                            writer.Write((ushort)((byte[])syncedVarFields[i].FieldInfo.GetValue(this)).Length);
-                                            writer.Write((byte[])syncedVarFields[i].FieldInfo.GetValue(this));
+                                            writer.WriteByteArray((byte[])syncedVarFields[i].FieldInfo.GetValue(this));
                                             break;
 
                                     }
@@ -838,8 +797,8 @@ namespace MLAPI.MonoBehaviours.Core
                                     syncedVarFields[i].Dirty = false;
                                 }
                             }
-                        }
-                        InternalMessageHandler.Send("MLAPI_SYNC_VAR_UPDATE", "MLAPI_INTERNAL", stream.ToArray(), ownerClientId); // Send to everyone except target.
+                        
+                        InternalMessageHandler.Send("MLAPI_SYNC_VAR_UPDATE", "MLAPI_INTERNAL", writer.Finalize(), ownerClientId); // Send to everyone except target.
                     }
                 }
                 lastSyncTime = NetworkingManager.singleton.NetworkTime;
@@ -862,12 +821,6 @@ namespace MLAPI.MonoBehaviours.Core
                         break;
                     case FieldType.Byte:
                         if ((byte)syncedVarFields[i].FieldInfo.GetValue(this) != (byte)syncedVarFields[i].FieldValue)
-                            syncedVarFields[i].Dirty = true; //This fields value is out of sync!
-                        else
-                            syncedVarFields[i].Dirty = false; //Up to date
-                        break;
-                    case FieldType.Char:
-                        if ((char)syncedVarFields[i].FieldInfo.GetValue(this) != (char)syncedVarFields[i].FieldValue)
                             syncedVarFields[i].Dirty = true; //This fields value is out of sync!
                         else
                             syncedVarFields[i].Dirty = false; //Up to date
