@@ -10,6 +10,7 @@ using System.Security.Cryptography;
 using MLAPI.NetworkingManagerComponents.Cryptography;
 using MLAPI.NetworkingManagerComponents.Core;
 using UnityEngine.SceneManagement;
+using MLAPI.NetworkingManagerComponents.Binary;
 
 namespace MLAPI.MonoBehaviours.Core
 {
@@ -821,200 +822,198 @@ namespace MLAPI.MonoBehaviours.Core
 
         private void HandleIncomingData(uint clientId, byte[] data, int channelId)
         {
-            using(MemoryStream readStream = new MemoryStream(data))
+            BitReader reader = new BitReader(data);
+
+            ushort messageType = reader.ReadUShort();
+            bool targeted = reader.ReadBool();
+            uint targetNetworkId = 0;
+            ushort networkOrderId = 0;
+            if (targeted)
             {
-                using (BinaryReader reader = new BinaryReader(readStream))
+                targetNetworkId = reader.ReadUInt();
+                networkOrderId = reader.ReadUShort();
+            }
+            bool isPassthrough = reader.ReadBool();
+
+            uint passthroughOrigin = 0;
+            uint passthroughTarget = 0;
+
+            if (isPassthrough && isServer)
+                passthroughTarget = reader.ReadUInt();
+            else if (isPassthrough && !isServer)
+                passthroughOrigin = reader.ReadUInt();
+
+
+            //Client tried to send a network message that was not the connection request before he was accepted.
+            if (isServer && pendingClients.Contains(clientId) && messageType != 0)
+            {
+                Debug.LogWarning("MLAPI: Message recieved from clientId " + clientId + " before it has been accepted");
+                return;
+            }
+
+
+            //ushort bytesToRead = reader.ReadUShort();
+            reader.SkipPadded();
+
+            byte[] incommingData = reader.ReadByteArray();
+            if (NetworkConfig.EncryptedChannelsHashSet.Contains(MessageManager.reverseChannels[channelId]))
+            {
+                //Encrypted message
+                if (isServer)
+                    incommingData = CryptographyHelper.Decrypt(incommingData, connectedClients[clientId].AesKey);
+                else
+                    incommingData = CryptographyHelper.Decrypt(incommingData, clientAesKey);
+            }
+
+            if (isServer && isPassthrough && !NetworkConfig.PassthroughMessageHashSet.Contains(messageType))
+            {
+                Debug.LogWarning("MLAPI: Client " + clientId + " tried to send a passthrough message for a messageType not registered as passthrough");
+                return;
+            }
+            else if (isClient && isPassthrough && !NetworkConfig.PassthroughMessageHashSet.Contains(messageType))
+            {
+                Debug.LogWarning("MLAPI: Server tried to send a passthrough message for a messageType not registered as passthrough");
+                return;
+            }
+            else if (isServer && isPassthrough)
+            {
+                if (!connectedClients.ContainsKey(passthroughTarget))
                 {
-                    ushort messageType = reader.ReadUInt16();
-                    bool targeted = reader.ReadBoolean();
-                    uint targetNetworkId = 0;
-                    ushort networkOrderId = 0;
-                    if(targeted)
+                    Debug.LogWarning("MLAPI: Passthrough message was sent with invalid target: " + passthroughTarget + " from client " + clientId);
+                    return;
+                }
+                uint? netIdTarget = null;
+                ushort? netOrderId = null;
+                if (targeted)
+                {
+                    netIdTarget = targetNetworkId;
+                    netOrderId = networkOrderId;
+                }
+                InternalMessageHandler.PassthroughSend(passthroughTarget, clientId, messageType, channelId, incommingData, netIdTarget, netOrderId);
+                return;
+            }
+
+            if (messageType >= 32)
+            {
+                #region CUSTOM MESSAGE
+                //Custom message, invoke all message handlers
+                if (targeted)
+                {
+                    if (!SpawnManager.spawnedObjects.ContainsKey(targetNetworkId))
                     {
-                        targetNetworkId = reader.ReadUInt32();
-                        networkOrderId = reader.ReadUInt16();
-                    }
-                    bool isPassthrough = reader.ReadBoolean();
-
-                    uint passthroughOrigin = 0;
-                    uint passthroughTarget = 0;
-
-                    if (isPassthrough && isServer)
-                        passthroughTarget = reader.ReadUInt32();
-                    else if (isPassthrough && !isServer)
-                        passthroughOrigin = reader.ReadUInt32();
-
-
-                    //Client tried to send a network message that was not the connection request before he was accepted.
-                    if (isServer && pendingClients.Contains(clientId) && messageType != 0)
-                    {
-                        Debug.LogWarning("MLAPI: Message recieved from clientId " + clientId + " before it has been accepted");
+                        Debug.LogWarning("MLAPI: No target for message found");
                         return;
                     }
-
-
-                    ushort bytesToRead = reader.ReadUInt16();
-                    byte[] incommingData = reader.ReadBytes(bytesToRead);
-                    if(NetworkConfig.EncryptedChannelsHashSet.Contains(MessageManager.reverseChannels[channelId]))
+                    else if (!SpawnManager.spawnedObjects[targetNetworkId].targetMessageActions.ContainsKey(networkOrderId))
                     {
-                        //Encrypted message
-                        if (isServer)
-                            incommingData = CryptographyHelper.Decrypt(incommingData, connectedClients[clientId].AesKey);
+                        Debug.LogWarning("MLAPI: No target messageType for message found");
+                        return;
+                    }
+                    else if (!SpawnManager.spawnedObjects[targetNetworkId].targetMessageActions[networkOrderId].ContainsKey(messageType))
+                    {
+                        Debug.LogWarning("MLAPI: No target found with the given messageType");
+                        return;
+                    }
+                    SpawnManager.spawnedObjects[targetNetworkId].targetMessageActions[networkOrderId][messageType].Invoke(clientId, incommingData);
+                }
+                else
+                {
+                    foreach (KeyValuePair<int, Action<uint, byte[]>> pair in MessageManager.messageCallbacks[messageType])
+                    {
+                        if (isPassthrough)
+                            pair.Value(passthroughOrigin, incommingData);
                         else
-                            incommingData = CryptographyHelper.Decrypt(incommingData, clientAesKey);
-                    }
-
-                    if (isServer && isPassthrough && !NetworkConfig.PassthroughMessageHashSet.Contains(messageType))
-                    {
-                        Debug.LogWarning("MLAPI: Client " + clientId + " tried to send a passthrough message for a messageType not registered as passthrough");
-                        return;
-                    }
-                    else if(isClient && isPassthrough && !NetworkConfig.PassthroughMessageHashSet.Contains(messageType))
-                    {
-                        Debug.LogWarning("MLAPI: Server tried to send a passthrough message for a messageType not registered as passthrough");
-                        return;
-                    }
-                    else if(isServer && isPassthrough)
-                    {
-                        if (!connectedClients.ContainsKey(passthroughTarget))
-                        {
-                            Debug.LogWarning("MLAPI: Passthrough message was sent with invalid target: " + passthroughTarget + " from client " + clientId);
-                            return;
-                        }
-                        uint? netIdTarget = null;
-                        ushort? netOrderId = null;
-                        if (targeted)
-                        {
-                            netIdTarget = targetNetworkId;
-                            netOrderId = networkOrderId;
-                        }
-                        InternalMessageHandler.PassthroughSend(passthroughTarget, clientId, messageType, channelId, incommingData, netIdTarget, netOrderId);
-                        return;
-                    }
-                       
-                    if (messageType >= 32)
-                    {
-                        #region CUSTOM MESSAGE
-                        //Custom message, invoke all message handlers
-                        if(targeted)
-                        {
-                            if (!SpawnManager.spawnedObjects.ContainsKey(targetNetworkId))
-                            {
-                                Debug.LogWarning("MLAPI: No target for message found");
-                                return;
-                            }
-                            else if (!SpawnManager.spawnedObjects[targetNetworkId].targetMessageActions.ContainsKey(networkOrderId))
-                            {
-                                Debug.LogWarning("MLAPI: No target messageType for message found");
-                                return;
-                            }
-                            else if (!SpawnManager.spawnedObjects[targetNetworkId].targetMessageActions[networkOrderId].ContainsKey(messageType))
-                            {
-                                Debug.LogWarning("MLAPI: No target found with the given messageType");
-                                return;
-                            }
-                            SpawnManager.spawnedObjects[targetNetworkId].targetMessageActions[networkOrderId][messageType].Invoke(clientId, incommingData);
-                        }
-                        else
-                        {
-                            foreach (KeyValuePair<int, Action<uint, byte[]>> pair in MessageManager.messageCallbacks[messageType])
-                            {
-                                if (isPassthrough)
-                                    pair.Value(passthroughOrigin, incommingData);
-                                else
-                                    pair.Value(clientId, incommingData);
-                            }
-                        }
-                        #endregion
-                    }
-                    else
-                    {
-                        #region INTERNAL MESSAGE
-                        //MLAPI message
-                        switch (messageType)
-                        {
-                            case 0: //Client to server > sends connection buffer
-                                if (isServer)
-                                {
-                                    InternalMessageHandler.HandleConnectionRequest(clientId, incommingData, channelId);
-                                }
-                                break;
-                            case 1: //Server informs client it has been approved:
-                                if (isClient)
-                                {
-                                    InternalMessageHandler.HandleConnectionApproved(clientId, incommingData, channelId);
-                                }
-                                break;
-                            case 2:
-                                //Server informs client another client connected
-                                //MLAPI_ADD_OBJECT
-                                if (isClient)
-                                {
-                                    InternalMessageHandler.HandleAddObject(clientId, incommingData, channelId);
-                                }
-                                break;
-                            case 3:
-                                //Server informs client another client disconnected
-                                //MLAPI_CLIENT_DISCONNECT
-                                if (isClient)
-                                {
-                                    InternalMessageHandler.HandleClientDisconnect(clientId, incommingData, channelId);
-                                }
-                                break;
-                            case 4:
-                                //Server infroms clients to destroy an object
-                                if (isClient)
-                                {
-                                    InternalMessageHandler.HandleDestroyObject(clientId, incommingData, channelId);
-                                }
-                                break;
-                            case 5:
-                                //Scene switch
-                                if (isClient)
-                                {
-                                    InternalMessageHandler.HandleSwitchScene(clientId, incommingData, channelId);
-                                }
-                                break;
-                            case 6: //Spawn pool object
-                                if (isClient)
-                                {
-                                    InternalMessageHandler.HandleSpawnPoolObject(clientId, incommingData, channelId);
-                                }
-                                break;
-                            case 7: //Destroy pool object
-                                if (isClient)
-                                {
-                                    InternalMessageHandler.HandleDestroyPoolObject(clientId, incommingData, channelId);
-                                }
-                                break;
-                            case 8: //Change owner
-                                if (isClient)
-                                {
-                                    InternalMessageHandler.HandleChangeOwner(clientId, incommingData, channelId);
-                                }
-                                break;
-                            case 9: //Syncvar
-                                if (isClient)
-                                {
-                                    InternalMessageHandler.HandleSyncVarUpdate(clientId, incommingData, channelId);
-                                }
-                                break;
-                            case 10:
-                                if (isClient) //MLAPI_ADD_OBJECTS (plural)
-                                {
-                                    InternalMessageHandler.HandleAddObjects(clientId, incommingData, channelId);
-                                }
-                                break;
-                            case 11:
-                                if (isClient)
-                                {
-                                    InternalMessageHandler.HandleTimeSync(clientId, incommingData, channelId);
-                                }
-                                break;
-                        }
-                        #endregion
+                            pair.Value(clientId, incommingData);
                     }
                 }
+                #endregion
+            }
+            else
+            {
+                #region INTERNAL MESSAGE
+                //MLAPI message
+                switch (messageType)
+                {
+                    case 0: //Client to server > sends connection buffer
+                        if (isServer)
+                        {
+                            InternalMessageHandler.HandleConnectionRequest(clientId, incommingData, channelId);
+                        }
+                        break;
+                    case 1: //Server informs client it has been approved:
+                        if (isClient)
+                        {
+                            InternalMessageHandler.HandleConnectionApproved(clientId, incommingData, channelId);
+                        }
+                        break;
+                    case 2:
+                        //Server informs client another client connected
+                        //MLAPI_ADD_OBJECT
+                        if (isClient)
+                        {
+                            InternalMessageHandler.HandleAddObject(clientId, incommingData, channelId);
+                        }
+                        break;
+                    case 3:
+                        //Server informs client another client disconnected
+                        //MLAPI_CLIENT_DISCONNECT
+                        if (isClient)
+                        {
+                            InternalMessageHandler.HandleClientDisconnect(clientId, incommingData, channelId);
+                        }
+                        break;
+                    case 4:
+                        //Server infroms clients to destroy an object
+                        if (isClient)
+                        {
+                            InternalMessageHandler.HandleDestroyObject(clientId, incommingData, channelId);
+                        }
+                        break;
+                    case 5:
+                        //Scene switch
+                        if (isClient)
+                        {
+                            InternalMessageHandler.HandleSwitchScene(clientId, incommingData, channelId);
+                        }
+                        break;
+                    case 6: //Spawn pool object
+                        if (isClient)
+                        {
+                            InternalMessageHandler.HandleSpawnPoolObject(clientId, incommingData, channelId);
+                        }
+                        break;
+                    case 7: //Destroy pool object
+                        if (isClient)
+                        {
+                            InternalMessageHandler.HandleDestroyPoolObject(clientId, incommingData, channelId);
+                        }
+                        break;
+                    case 8: //Change owner
+                        if (isClient)
+                        {
+                            InternalMessageHandler.HandleChangeOwner(clientId, incommingData, channelId);
+                        }
+                        break;
+                    case 9: //Syncvar
+                        if (isClient)
+                        {
+                            InternalMessageHandler.HandleSyncVarUpdate(clientId, incommingData, channelId);
+                        }
+                        break;
+                    case 10:
+                        if (isClient) //MLAPI_ADD_OBJECTS (plural)
+                        {
+                            InternalMessageHandler.HandleAddObjects(clientId, incommingData, channelId);
+                        }
+                        break;
+                    case 11:
+                        if (isClient)
+                        {
+                            InternalMessageHandler.HandleTimeSync(clientId, incommingData, channelId);
+                        }
+                        break;
+                }
+                #endregion
             }
         }
 

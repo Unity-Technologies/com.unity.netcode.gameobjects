@@ -1,7 +1,7 @@
-﻿using System.Collections.Generic;
-using System.IO;
+﻿using System;
+using System.Collections.Generic;
 using MLAPI.Data;
-using MLAPI.MonoBehaviours.Core;
+using MLAPI.NetworkingManagerComponents.Binary;
 using MLAPI.NetworkingManagerComponents.Cryptography;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -20,41 +20,29 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 return;
             }
 
-            int sizeOfStream = 10;
-            if (networkId != null)
-                sizeOfStream += 4;
-            if (orderId != null)
-                sizeOfStream += 2;
-            sizeOfStream += data.Length;
-
-            using (MemoryStream stream = new MemoryStream(sizeOfStream))
+            using (BitWriter writer = new BitWriter())
             {
-                using (BinaryWriter writer = new BinaryWriter(stream))
-                {
-                    writer.Write(messageType);
-                    writer.Write(networkId != null);
-                    if (networkId != null)
-                        writer.Write(networkId.Value);
-                    if (orderId != null)
-                        writer.Write(orderId.Value);
-                    writer.Write(true);
-                    writer.Write(sourceId);
-                    if (netManager.NetworkConfig.EncryptedChannelsHashSet.Contains(MessageManager.reverseChannels[channelId]))
-                    {
-                        //Encrypted message
-                        byte[] encrypted = CryptographyHelper.Encrypt(data, netManager.connectedClients[targetId].AesKey);
-                        writer.Write((ushort)encrypted.Length);
-                        writer.Write(encrypted);
-                    }
-                    else
-                    {
-                        writer.Write((ushort)data.Length);
-                        writer.Write(data);
-                    }
-                }
+                writer.WriteUShort(messageType);
+                writer.WriteBool(networkId != null);
+
+                if (networkId != null)
+                    writer.WriteUInt(networkId.Value);
+
+                if (orderId != null)
+                    writer.WriteUShort(orderId.Value);
+
+                writer.WriteBool(true);
+                writer.WriteUInt(sourceId);
+
+                writer.WriteAlignBits();
+
+                if (netManager.NetworkConfig.EncryptedChannelsHashSet.Contains(MessageManager.reverseChannels[channelId]))
+                    writer.WriteByteArray(CryptographyHelper.Encrypt(data, netManager.connectedClients[targetId].AesKey));
+                else
+                    writer.WriteByteArray(data);
 
                 byte error;
-                NetworkTransport.QueueMessageForSending(targetNetId.HostId, targetNetId.ConnectionId, channelId, stream.GetBuffer(), sizeOfStream, out error);
+                NetworkTransport.QueueMessageForSending(targetNetId.HostId, targetNetId.ConnectionId, channelId, writer.Finalize(), (int)writer.GetFinalizeSize(), out error);
             }
         }
 
@@ -80,55 +68,45 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 return;
             }
 
-            int sizeOfStream = 6;
-            if (networkId != null)
-                sizeOfStream += 4;
-            if (orderId != null)
-                sizeOfStream += 2;
-            if (isPassthrough)
-                sizeOfStream += 4;
-            sizeOfStream += data.Length;
-
-            using (MemoryStream stream = new MemoryStream(sizeOfStream))
+            using (BitWriter writer = new BitWriter())
             {
-                using (BinaryWriter writer = new BinaryWriter(stream))
+                writer.WriteUShort(MessageManager.messageTypes[messageType]);
+                writer.WriteBool(networkId != null);
+
+                if (networkId != null)
+                    writer.WriteUInt(networkId.Value);
+
+                if (orderId != null)
+                    writer.WriteUShort(orderId.Value);
+
+                writer.WriteBool(isPassthrough);
+
+                if (isPassthrough)
+                    writer.WriteUInt(clientId);
+
+                writer.WriteAlignBits();
+
+                if (netManager.NetworkConfig.EncryptedChannelsHashSet.Contains(channelName))
                 {
-                    writer.Write(MessageManager.messageTypes[messageType]);
-                    writer.Write(networkId != null);
-                    if (networkId != null)
-                        writer.Write(networkId.Value);
-                    if (orderId != null)
-                        writer.Write(orderId.Value);
-                    writer.Write(isPassthrough);
-                    if (isPassthrough)
-                        writer.Write(clientId);
-
-                    if (netManager.NetworkConfig.EncryptedChannelsHashSet.Contains(channelName))
-                    {
-                        //This is an encrypted message.
-                        byte[] encrypted;
-                        if (netManager.isServer)
-                            encrypted = CryptographyHelper.Encrypt(data, netManager.connectedClients[clientId].AesKey);
-                        else
-                            encrypted = CryptographyHelper.Encrypt(data, netManager.clientAesKey);
-
-                        writer.Write((ushort)encrypted.Length);
-                        writer.Write(encrypted);
-                    }
+                    //This is an encrypted message.
+                    byte[] encrypted;
+                    if (netManager.isServer)
+                        encrypted = CryptographyHelper.Encrypt(data, netManager.connectedClients[clientId].AesKey);
                     else
-                    {
-                        //Send in plaintext.
-                        writer.Write((ushort)data.Length);
-                        writer.Write(data);
-                    }
+                        encrypted = CryptographyHelper.Encrypt(data, netManager.clientAesKey);
+
+                    writer.WriteByteArray(encrypted);
                 }
+                else
+                    writer.WriteByteArray(data);
+
                 byte error;
                 if (isPassthrough)
                     netId = NetId.ServerNetId;
                 if (skipQueue)
-                    NetworkTransport.Send(netId.HostId, netId.ConnectionId, MessageManager.channels[channelName], stream.GetBuffer(), sizeOfStream, out error);
+                    NetworkTransport.Send(netId.HostId, netId.ConnectionId, MessageManager.channels[channelName], writer.Finalize(), (int)writer.GetFinalizeSize(), out error);
                 else
-                    NetworkTransport.QueueMessageForSending(netId.HostId, netId.ConnectionId, MessageManager.channels[channelName], stream.GetBuffer(), sizeOfStream, out error);
+                    NetworkTransport.QueueMessageForSending(netId.HostId, netId.ConnectionId, MessageManager.channels[channelName], writer.Finalize(), (int)writer.GetFinalizeSize(), out error);
             }
         }
 
@@ -140,27 +118,23 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 return;
             }
 
-            int sizeOfStream = 6;
-            if (networkId != null)
-                sizeOfStream += 4;
-            if (orderId != null)
-                sizeOfStream += 2;
-            sizeOfStream += data.Length;
-
-            using (MemoryStream stream = new MemoryStream(sizeOfStream))
+            using (BitWriter writer = new BitWriter())
             {
-                using (BinaryWriter writer = new BinaryWriter(stream))
-                {
-                    writer.Write(MessageManager.messageTypes[messageType]);
-                    writer.Write(networkId != null);
-                    if (networkId != null)
-                        writer.Write(networkId.Value);
-                    if (orderId != null)
-                        writer.Write(orderId.Value);
-                    writer.Write(false);
-                    writer.Write((ushort)data.Length);
-                    writer.Write(data);
-                }
+                writer.WriteUShort(MessageManager.messageTypes[messageType]);
+                writer.WriteBool(networkId != null);
+
+                if (networkId != null)
+                    writer.WriteUInt(networkId.Value);
+
+                if (orderId != null)
+                    writer.WriteUShort(orderId.Value);
+
+                writer.WriteBool(false);
+
+                writer.WriteAlignBits();
+
+                writer.WriteByteArray(data);
+
                 int channel = MessageManager.channels[channelName];
                 for (int i = 0; i < clientIds.Length; i++)
                 {
@@ -176,7 +150,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                         netId = NetId.ServerNetId;
                     }
                     byte error;
-                    NetworkTransport.QueueMessageForSending(netId.HostId, netId.ConnectionId, channel, stream.GetBuffer(), sizeOfStream, out error);
+                    NetworkTransport.QueueMessageForSending(netId.HostId, netId.ConnectionId, channel, writer.Finalize(), (int)writer.GetFinalizeSize(), out error);
                 }
             }
         }
@@ -189,28 +163,23 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 return;
             }
 
-            //2 bytes for messageType, 2 bytes for buffer length and one byte for target bool
-            int sizeOfStream = 6;
-            if (networkId != null)
-                sizeOfStream += 4;
-            if (orderId != null)
-                sizeOfStream += 2;
-            sizeOfStream += data.Length;
-
-            using (MemoryStream stream = new MemoryStream(sizeOfStream))
+            using (BitWriter writer = new BitWriter())
             {
-                using (BinaryWriter writer = new BinaryWriter(stream))
-                {
-                    writer.Write(MessageManager.messageTypes[messageType]);
-                    writer.Write(networkId != null);
-                    if (networkId != null)
-                        writer.Write(networkId.Value);
-                    if (orderId != null)
-                        writer.Write(orderId.Value);
-                    writer.Write(false);
-                    writer.Write((ushort)data.Length);
-                    writer.Write(data);
-                }
+                writer.WriteUShort(MessageManager.messageTypes[messageType]);
+                writer.WriteBool(networkId != null);
+
+                if (networkId != null)
+                    writer.WriteUInt(networkId.Value);
+
+                if (orderId != null)
+                    writer.WriteUShort(orderId.Value);
+
+                writer.WriteBool(false);
+
+                writer.WriteAlignBits();
+
+                writer.WriteByteArray(data);
+
                 int channel = MessageManager.channels[channelName];
                 for (int i = 0; i < clientIds.Count; i++)
                 {
@@ -226,7 +195,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                         netId = NetId.ServerNetId;
                     }
                     byte error;
-                    NetworkTransport.QueueMessageForSending(netId.HostId, netId.ConnectionId, channel, stream.GetBuffer(), sizeOfStream, out error);
+                    NetworkTransport.QueueMessageForSending(netId.HostId, netId.ConnectionId, channel, writer.Finalize(), (int)writer.GetFinalizeSize(), out error);
                 }
             }
         }
@@ -240,29 +209,23 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 Debug.LogWarning("MLAPI: Cannot send messages over encrypted channel to multiple clients.");
                 return;
             }
-
-            //2 bytes for messageType, 2 bytes for buffer length and one byte for target bool
-            int sizeOfStream = 6;
-            if (networkId != null)
-                sizeOfStream += 4;
-            if (orderId != null)
-                sizeOfStream += 2;
-            sizeOfStream += data.Length;
-
-            using (MemoryStream stream = new MemoryStream(sizeOfStream))
+            using (BitWriter writer = new BitWriter())
             {
-                using (BinaryWriter writer = new BinaryWriter(stream))
-                {
-                    writer.Write(MessageManager.messageTypes[messageType]);
-                    writer.Write(networkId != null);
-                    if (networkId != null)
-                        writer.Write(networkId.Value);
-                    if (orderId != null)
-                        writer.Write(orderId.Value);
-                    writer.Write(false);
-                    writer.Write((ushort)data.Length);
-                    writer.Write(data);
-                }
+                writer.WriteUShort(MessageManager.messageTypes[messageType]);
+                writer.WriteBool(networkId != null);
+
+                if (networkId != null)
+                    writer.WriteUInt(networkId.Value);
+
+                if (orderId != null)
+                    writer.WriteUShort(orderId.Value);
+
+                writer.WriteBool(false);
+
+                writer.WriteAlignBits();
+
+                writer.WriteByteArray(data);
+
                 int channel = MessageManager.channels[channelName];
                 foreach (KeyValuePair<uint, NetworkedClient> pair in netManager.connectedClients)
                 {
@@ -278,7 +241,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                         netId = NetId.ServerNetId;
                     }
                     byte error;
-                    NetworkTransport.QueueMessageForSending(netId.HostId, netId.ConnectionId, channel, stream.GetBuffer(), sizeOfStream, out error);
+                    NetworkTransport.QueueMessageForSending(netId.HostId, netId.ConnectionId, channel, writer.Finalize(), (int)writer.GetFinalizeSize(), out error);
                 }
             }
         }
@@ -291,28 +254,23 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 return;
             }
 
-            //2 bytes for messageType, 2 bytes for buffer length and one byte for target bool
-            int sizeOfStream = 5;
-            if (networkId != null)
-                sizeOfStream += 4;
-            if (orderId != null)
-                sizeOfStream += 2;
-            sizeOfStream += data.Length;
-
-            using (MemoryStream stream = new MemoryStream(sizeOfStream))
+            using (BitWriter writer = new BitWriter())
             {
-                using (BinaryWriter writer = new BinaryWriter(stream))
-                {
-                    writer.Write(MessageManager.messageTypes[messageType]);
-                    writer.Write(networkId != null);
-                    if (networkId != null)
-                        writer.Write(networkId.Value);
-                    if (orderId != null)
-                        writer.Write(orderId.Value);
-                    writer.Write(false);
-                    writer.Write((ushort)data.Length);
-                    writer.Write(data);
-                }
+                writer.WriteUShort(MessageManager.messageTypes[messageType]);
+                writer.WriteBool(networkId != null);
+
+                if (networkId != null)
+                    writer.WriteUInt(networkId.Value);
+
+                if (orderId != null)
+                    writer.WriteUShort(orderId.Value);
+
+                writer.WriteBool(false);
+
+                writer.WriteAlignBits();
+
+                writer.WriteByteArray(data);
+
                 int channel = MessageManager.channels[channelName];
                 foreach (KeyValuePair<uint, NetworkedClient> pair in netManager.connectedClients)
                 {
@@ -331,7 +289,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                         netId = NetId.ServerNetId;
                     }
                     byte error;
-                    NetworkTransport.QueueMessageForSending(netId.HostId, netId.ConnectionId, channel, stream.GetBuffer(), sizeOfStream, out error);
+                    NetworkTransport.QueueMessageForSending(netId.HostId, netId.ConnectionId, channel, writer.Finalize(), (int)writer.GetFinalizeSize(), out error);
                 }
             }
         }
