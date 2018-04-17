@@ -232,6 +232,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
                     if (t is byte)
                     {
                         WriteByte(writeTo, t as byte? ?? 0, bitOffset, isAligned);
+                        bitOffset += 8;
                         return;
                     }
                     else if (t is ushort) value = t as ushort? ?? 0;
