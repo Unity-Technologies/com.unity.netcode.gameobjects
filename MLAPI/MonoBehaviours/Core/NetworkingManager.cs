@@ -142,9 +142,9 @@ namespace MLAPI.MonoBehaviours.Core
         /// </summary>
         public NetworkConfig NetworkConfig;
 
-        private EllipticDiffieHellman clientDiffieHellman;
-        private Dictionary<uint, byte[]> diffieHellmanPublicKeys;
-        private byte[] clientAesKey;
+        internal EllipticDiffieHellman clientDiffieHellman;
+        internal Dictionary<uint, byte[]> diffieHellmanPublicKeys;
+        internal byte[] clientAesKey;
 
         /// <summary>
         /// An inspector bool that acts as a Trigger for regenerating RSA keys. Should not be used outside Unity editor.
@@ -778,7 +778,7 @@ namespace MLAPI.MonoBehaviours.Core
                                                 writer.Write(NetworkConfig.ConnectionData);
                                             }
                                         }
-                                        Send(netId.GetClientId(), "MLAPI_CONNECTION_REQUEST", "MLAPI_INTERNAL", writeStream.GetBuffer(), null, null, true);
+                                        InternalMessageHandler.Send(netId.GetClientId(), "MLAPI_CONNECTION_REQUEST", "MLAPI_INTERNAL", writeStream.GetBuffer(), null, null, true);
                                     }
                                 }
                                 break;
@@ -901,7 +901,7 @@ namespace MLAPI.MonoBehaviours.Core
                             netIdTarget = targetNetworkId;
                             netOrderId = networkOrderId;
                         }
-                        PassthroughSend(passthroughTarget, clientId, messageType, channelId, incommingData, netIdTarget, netOrderId);
+                        InternalMessageHandler.PassthroughSend(passthroughTarget, clientId, messageType, channelId, incommingData, netIdTarget, netOrderId);
                         return;
                     }
                        
@@ -949,137 +949,13 @@ namespace MLAPI.MonoBehaviours.Core
                             case 0: //Client to server > sends connection buffer
                                 if (isServer)
                                 {
-                                    using (MemoryStream messageReadStream = new MemoryStream(incommingData))
-                                    {
-                                        using (BinaryReader messageReader = new BinaryReader(messageReadStream))
-                                        {
-                                            byte[] configHash = messageReader.ReadBytes(32);
-                                            if (!NetworkConfig.CompareConfig(configHash))
-                                            {
-                                                Debug.LogWarning("MLAPI: NetworkConfiguration missmatch. The configuration between the server and client does not match.");
-                                                DisconnectClient(clientId);
-                                                return;
-                                            }
-                                            byte[] aesKey = new byte[0];
-                                            if (NetworkConfig.EnableEncryption)
-                                            {
-                                                ushort diffiePublicSize = messageReader.ReadUInt16();
-                                                byte[] diffiePublic = messageReader.ReadBytes(diffiePublicSize);
-                                                diffieHellmanPublicKeys.Add(clientId, diffiePublic);
-
-                                            }
-                                            if (NetworkConfig.ConnectionApproval)
-                                            {
-                                                ushort bufferSize = messageReader.ReadUInt16();
-                                                byte[] connectionBuffer = messageReader.ReadBytes(bufferSize);
-                                                ConnectionApprovalCallback(connectionBuffer, clientId, HandleApproval);
-                                            }
-                                            else
-                                            {
-                                                HandleApproval(clientId, true, Vector3.zero, Quaternion.identity);
-                                            }
-                                        }
-                                    }
+                                    InternalMessageHandler.HandleConnectionRequest(clientId, incommingData, channelId);
                                 }
                                 break;
                             case 1: //Server informs client it has been approved:
                                 if (isClient)
                                 {
-                                    using (MemoryStream messageReadStream = new MemoryStream(incommingData))
-                                    {
-                                        using (BinaryReader messageReader = new BinaryReader(messageReadStream))
-                                        {
-                                            myClientId = messageReader.ReadUInt32();
-                                            uint sceneIndex = 0;
-                                            if (NetworkConfig.EnableSceneSwitching)
-                                            {
-                                                sceneIndex = messageReader.ReadUInt32();
-                                            }
-
-                                            if (NetworkConfig.EnableEncryption)
-                                            {
-                                                ushort keyLength = messageReader.ReadUInt16();
-                                                byte[] serverPublicKey = messageReader.ReadBytes(keyLength);
-                                                clientAesKey = clientDiffieHellman.GetSharedSecret(serverPublicKey);
-                                                if (NetworkConfig.SignKeyExchange)
-                                                {
-                                                    ushort signatureLength = messageReader.ReadUInt16();
-                                                    byte[] publicKeySignature = messageReader.ReadBytes(signatureLength);
-                                                    using (RSACryptoServiceProvider rsa = new RSACryptoServiceProvider())
-                                                    {
-                                                        rsa.PersistKeyInCsp = false;
-                                                        rsa.FromXmlString(NetworkConfig.RSAPublicKey);
-                                                        if (!rsa.VerifyData(serverPublicKey, new SHA512CryptoServiceProvider(), publicKeySignature))
-                                                        {
-                                                            //Man in the middle.
-                                                            Debug.LogWarning("MLAPI: Signature doesnt match for the key exchange public part. Disconnecting");
-                                                            StopClient();
-                                                            return;
-                                                        }
-                                                    }
-                                                }
-                                            }
-
-                                            float netTime = messageReader.ReadSingle();
-                                            int remoteStamp = messageReader.ReadInt32();
-                                            byte error;
-                                            NetId netId = new NetId(clientId);
-                                            int msDelay = NetworkTransport.GetRemoteDelayTimeMS(netId.HostId, netId.ConnectionId, remoteStamp, out error);
-                                            if ((NetworkError)error != NetworkError.Ok)
-                                                msDelay = 0;
-                                            networkTime = netTime + (msDelay / 1000f);
-
-                                            connectedClients.Add(clientId, new NetworkedClient() { ClientId = clientId });
-                                            int clientCount = messageReader.ReadInt32();
-                                            for (int i = 0; i < clientCount; i++)
-                                            {
-                                                uint _clientId = messageReader.ReadUInt32();
-                                                connectedClients.Add(_clientId, new NetworkedClient() { ClientId = _clientId });
-                                            }
-                                            if (NetworkConfig.HandleObjectSpawning)
-                                            {
-                                                SpawnManager.DestroySceneObjects();
-                                                int objectCount = messageReader.ReadInt32();
-                                                for (int i = 0; i < objectCount; i++)
-                                                {
-                                                    bool isPlayerObject = messageReader.ReadBoolean();
-                                                    uint networkId = messageReader.ReadUInt32();
-                                                    uint ownerId = messageReader.ReadUInt32();
-                                                    int prefabId = messageReader.ReadInt32();
-                                                    bool isActive = messageReader.ReadBoolean();
-                                                    bool sceneObject = messageReader.ReadBoolean();
-
-                                                    float xPos = messageReader.ReadSingle();
-                                                    float yPos = messageReader.ReadSingle();
-                                                    float zPos = messageReader.ReadSingle();
-
-                                                    float xRot = messageReader.ReadSingle();
-                                                    float yRot = messageReader.ReadSingle();
-                                                    float zRot = messageReader.ReadSingle();
-
-                                                    if (isPlayerObject)
-                                                    {
-                                                        SpawnManager.SpawnPlayerObject(ownerId, networkId, new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot));
-                                                    }
-                                                    else
-                                                    {
-                                                        GameObject go = SpawnManager.SpawnPrefabIndexClient(prefabId, networkId, ownerId,
-                                                            new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot));
-
-                                                        go.GetComponent<NetworkedObject>().sceneObject = sceneObject;
-                                                        go.SetActive(isActive);
-                                                    }
-                                                }
-                                            }
-                                            if (NetworkConfig.EnableSceneSwitching)
-                                            {
-                                                NetworkSceneManager.OnSceneSwitch(sceneIndex);
-                                            }
-                                        }
-                                    }
-                                    _isClientConnected = true;
-                                    if (OnClientConnectedCallback != null)
-                                        OnClientConnectedCallback.Invoke(clientId);
+                                    InternalMessageHandler.HandleConnectionApproved(clientId, incommingData, channelId);
                                 }
                                 break;
                             case 2:
@@ -1087,45 +963,7 @@ namespace MLAPI.MonoBehaviours.Core
                                 //MLAPI_ADD_OBJECT
                                 if (isClient)
                                 {
-                                    using (MemoryStream messageReadStream = new MemoryStream(incommingData))
-                                    {
-                                        using (BinaryReader messageReader = new BinaryReader(messageReadStream))
-                                        {
-                                            if (NetworkConfig.HandleObjectSpawning)
-                                            {
-                                                bool isPlayerObject = messageReader.ReadBoolean();
-                                                uint networkId = messageReader.ReadUInt32();
-                                                uint ownerId = messageReader.ReadUInt32();
-                                                int prefabId = messageReader.ReadInt32();
-                                                bool sceneObject = messageReader.ReadBoolean();
-
-                                                float xPos = messageReader.ReadSingle();
-                                                float yPos = messageReader.ReadSingle();
-                                                float zPos = messageReader.ReadSingle();
-
-                                                float xRot = messageReader.ReadSingle();
-                                                float yRot = messageReader.ReadSingle();
-                                                float zRot = messageReader.ReadSingle();
-
-                                                if (isPlayerObject)
-                                                {
-                                                    connectedClients.Add(ownerId, new NetworkedClient() { ClientId = ownerId });
-                                                    SpawnManager.SpawnPlayerObject(ownerId, networkId, new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot));
-                                                }
-                                                else
-                                                {
-                                                    GameObject go = SpawnManager.SpawnPrefabIndexClient(prefabId, networkId, ownerId,
-                                                                        new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot));
-                                                    go.GetComponent<NetworkedObject>().sceneObject = sceneObject;
-                                                }
-                                            }
-                                            else
-                                            {
-                                                uint ownerId = messageReader.ReadUInt32();
-                                                connectedClients.Add(ownerId, new NetworkedClient() { ClientId = ownerId });
-                                            }
-                                        }
-                                    }
+                                    InternalMessageHandler.HandleAddObject(clientId, incommingData, channelId);
                                 }
                                 break;
                             case 3:
@@ -1133,266 +971,57 @@ namespace MLAPI.MonoBehaviours.Core
                                 //MLAPI_CLIENT_DISCONNECT
                                 if (isClient)
                                 {
-                                    using (MemoryStream messageReadStream = new MemoryStream(incommingData))
-                                    {
-                                        using (BinaryReader messageReader = new BinaryReader(messageReadStream))
-                                        {
-                                            uint disconnectedClientId = messageReader.ReadUInt32();
-                                            OnClientDisconnect(disconnectedClientId);
-                                        }
-                                    }
+                                    InternalMessageHandler.HandleClientDisconnect(clientId, incommingData, channelId);
                                 }
                                 break;
                             case 4:
                                 //Server infroms clients to destroy an object
                                 if (isClient)
                                 {
-                                    using (MemoryStream messageReadStream = new MemoryStream(incommingData))
-                                    {
-                                        using (BinaryReader messageReader = new BinaryReader(messageReadStream))
-                                        {
-                                            uint netId = messageReader.ReadUInt32();
-                                            SpawnManager.OnDestroyObject(netId, true);
-                                        }
-                                    }
+                                    InternalMessageHandler.HandleDestroyObject(clientId, incommingData, channelId);
                                 }
                                 break;
                             case 5:
                                 //Scene switch
                                 if (isClient)
                                 {
-                                    using (MemoryStream messageReadStream = new MemoryStream(incommingData))
-                                    {
-                                        using (BinaryReader messageReader = new BinaryReader(messageReadStream))
-                                        {
-                                            NetworkSceneManager.OnSceneSwitch(messageReader.ReadUInt32());
-                                        }
-                                    }
+                                    InternalMessageHandler.HandleSwitchScene(clientId, incommingData, channelId);
                                 }
                                 break;
                             case 6: //Spawn pool object
                                 if (isClient)
                                 {
-                                    using (MemoryStream messageReadStream = new MemoryStream(incommingData))
-                                    {
-                                        using (BinaryReader messageReader = new BinaryReader(messageReadStream))
-                                        {
-                                            uint netId = messageReader.ReadUInt32();
-                                            float xPos = messageReader.ReadSingle();
-                                            float yPos = messageReader.ReadSingle();
-                                            float zPos = messageReader.ReadSingle();
-                                            float xRot = messageReader.ReadSingle();
-                                            float yRot = messageReader.ReadSingle();
-                                            float zRot = messageReader.ReadSingle();
-                                            SpawnManager.spawnedObjects[netId].transform.position = new Vector3(xPos, yPos, zPos);
-                                            SpawnManager.spawnedObjects[netId].transform.rotation = Quaternion.Euler(xRot, yRot, zRot);
-                                            SpawnManager.spawnedObjects[netId].gameObject.SetActive(true);
-                                        }
-                                    }
+                                    InternalMessageHandler.HandleSpawnPoolObject(clientId, incommingData, channelId);
                                 }
                                 break;
                             case 7: //Destroy pool object
                                 if (isClient)
                                 {
-                                    using (MemoryStream messageReadStream = new MemoryStream(incommingData))
-                                    {
-                                        using (BinaryReader messageReader = new BinaryReader(messageReadStream))
-                                        {
-                                            uint netId = messageReader.ReadUInt32();
-                                            SpawnManager.spawnedObjects[netId].gameObject.SetActive(false);
-                                        }
-                                    }
+                                    InternalMessageHandler.HandleDestroyPoolObject(clientId, incommingData, channelId);
                                 }
                                 break;
                             case 8: //Change owner
                                 if (isClient)
                                 {
-                                    using (MemoryStream messageReadStream = new MemoryStream(incommingData))
-                                    {
-                                        using (BinaryReader messageReader = new BinaryReader(messageReadStream))
-                                        {
-                                            uint netId = messageReader.ReadUInt32();
-                                            uint ownerClientId = messageReader.ReadUInt32();
-                                            if (SpawnManager.spawnedObjects[netId].OwnerClientId == MyClientId)
-                                            {
-                                                //We are current owner.
-                                                SpawnManager.spawnedObjects[netId].InvokeBehaviourOnLostOwnership();
-                                            }
-                                            if (ownerClientId == MyClientId)
-                                            {
-                                                //We are new owner.
-                                                SpawnManager.spawnedObjects[netId].InvokeBehaviourOnGainedOwnership();
-                                            }
-                                            SpawnManager.spawnedObjects[netId].ownerClientId = ownerClientId;
-                                        }
-                                    }
+                                    InternalMessageHandler.HandleChangeOwner(clientId, incommingData, channelId);
                                 }
                                 break;
                             case 9: //Syncvar
                                 if (isClient)
                                 {
-                                    using (MemoryStream messageReadStream = new MemoryStream(incommingData))
-                                    {
-                                        using (BinaryReader messageReader = new BinaryReader(messageReadStream))
-                                        {
-                                            byte dirtyCount = messageReader.ReadByte();
-                                            uint netId = messageReader.ReadUInt32();
-                                            ushort orderIndex = messageReader.ReadUInt16();
-                                            if (dirtyCount > 0)
-                                            {
-                                                for (int i = 0; i < dirtyCount; i++)
-                                                {
-                                                    byte fieldIndex = messageReader.ReadByte();
-                                                    if (!SpawnManager.spawnedObjects.ContainsKey(netId))
-                                                    {
-                                                        Debug.LogWarning("MLAPI: Sync message recieved for a non existant object with id: " + netId);
-                                                        return;
-                                                    }
-                                                    else if (SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex) == null)
-                                                    {
-                                                        Debug.LogWarning("MLAPI: Sync message recieved for a non existant behaviour");
-                                                        return;
-                                                    }
-                                                    else if (fieldIndex > (SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).syncedFieldTypes.Count - 1))
-                                                    {
-                                                        Debug.LogWarning("MLAPI: Sync message recieved for field out of bounds");
-                                                        return;
-                                                    }
-                                                    FieldType type = SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).syncedFieldTypes[fieldIndex];
-                                                    switch (type)
-                                                    {
-                                                        case FieldType.Bool:
-                                                            SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(messageReader.ReadBoolean(), fieldIndex);
-                                                            break;
-                                                        case FieldType.Byte:
-                                                            SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(messageReader.ReadByte(), fieldIndex);
-                                                            break;
-                                                        case FieldType.Char:
-                                                            SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(messageReader.ReadChar(), fieldIndex);
-                                                            break;
-                                                        case FieldType.Double:
-                                                            SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(messageReader.ReadDouble(), fieldIndex);
-                                                            break;
-                                                        case FieldType.Single:
-                                                            SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(messageReader.ReadSingle(), fieldIndex);
-                                                            break;
-                                                        case FieldType.Int:
-                                                            SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(messageReader.ReadInt32(), fieldIndex);
-                                                            break;
-                                                        case FieldType.Long:
-                                                            SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(messageReader.ReadInt64(), fieldIndex);
-                                                            break;
-                                                        case FieldType.SByte:
-                                                            SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(messageReader.ReadSByte(), fieldIndex);
-                                                            break;
-                                                        case FieldType.Short:
-                                                            SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(messageReader.ReadInt16(), fieldIndex);
-                                                            break;
-                                                        case FieldType.UInt:
-                                                            SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(messageReader.ReadUInt32(), fieldIndex);
-                                                            break;
-                                                        case FieldType.ULong:
-                                                            SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(messageReader.ReadUInt64(), fieldIndex);
-                                                            break;
-                                                        case FieldType.UShort:
-                                                            SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(messageReader.ReadUInt16(), fieldIndex);
-                                                            break;
-                                                        case FieldType.String:
-                                                            SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(messageReader.ReadString(), fieldIndex);
-                                                            break;
-                                                        case FieldType.Vector3:
-                                                            {   //Cases aren't their own scope. Therefor we create a scope for them as they share the X,Y,Z local variables otherwise.
-                                                                float x = messageReader.ReadSingle();
-                                                                float y = messageReader.ReadSingle();
-                                                                float z = messageReader.ReadSingle();
-                                                                SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(new Vector3(x, y, z), fieldIndex);
-                                                            }
-                                                            break;
-                                                        case FieldType.Vector2:
-                                                            {
-                                                                float x = messageReader.ReadSingle();
-                                                                float y = messageReader.ReadSingle();
-                                                                SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(new Vector2(x, y), fieldIndex);
-                                                            }
-                                                            break;
-                                                        case FieldType.Quaternion:
-                                                            {
-                                                                float x = messageReader.ReadSingle();
-                                                                float y = messageReader.ReadSingle();
-                                                                float z = messageReader.ReadSingle();
-                                                                SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(Quaternion.Euler(x, y, z), fieldIndex);
-                                                            }
-                                                            break;
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
+                                    InternalMessageHandler.HandleSyncVarUpdate(clientId, incommingData, channelId);
                                 }
                                 break;
                             case 10:
                                 if (isClient) //MLAPI_ADD_OBJECTS (plural)
                                 {
-                                    Debug.LogError("AddObjects");
-                                    using (MemoryStream messageReadStream = new MemoryStream(incommingData))
-                                    {
-                                        using (BinaryReader messageReader = new BinaryReader(messageReadStream))
-                                        {
-                                            if (NetworkConfig.HandleObjectSpawning)
-                                            {
-                                                ushort objectCount = messageReader.ReadUInt16();
-                                                for (int i = 0; i < objectCount; i++)
-                                                {
-                                                    bool isPlayerObject = messageReader.ReadBoolean();
-                                                    uint networkId = messageReader.ReadUInt32();
-                                                    uint ownerId = messageReader.ReadUInt32();
-                                                    int prefabId = messageReader.ReadInt32();
-                                                    bool sceneObject = messageReader.ReadBoolean();
-
-                                                    float xPos = messageReader.ReadSingle();
-                                                    float yPos = messageReader.ReadSingle();
-                                                    float zPos = messageReader.ReadSingle();
-
-                                                    float xRot = messageReader.ReadSingle();
-                                                    float yRot = messageReader.ReadSingle();
-                                                    float zRot = messageReader.ReadSingle();
-
-                                                    if (isPlayerObject)
-                                                    {
-                                                        connectedClients.Add(ownerId, new NetworkedClient() { ClientId = ownerId });
-                                                        SpawnManager.SpawnPlayerObject(ownerId, networkId, new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot));
-                                                    }
-                                                    else
-                                                    {
-                                                        GameObject go = SpawnManager.SpawnPrefabIndexClient(prefabId, networkId, ownerId,
-                                                                            new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot));
-                                                        go.GetComponent<NetworkedObject>().sceneObject = sceneObject;
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
+                                    InternalMessageHandler.HandleAddObjects(clientId, incommingData, channelId);
                                 }
-                        
                                 break;
                             case 11:
                                 if (isClient)
                                 {
-                                    using (MemoryStream messageReadStream = new MemoryStream(incommingData))
-                                    {
-                                        using (BinaryReader messageReader = new BinaryReader(messageReadStream))
-                                        {
-                                            float netTime = messageReader.ReadSingle();
-                                            int timestamp = messageReader.ReadInt32();
-
-                                            NetId netId = new NetId(clientId);
-                                            byte error;
-                                            int msDelay = NetworkTransport.GetRemoteDelayTimeMS(netId.HostId, netId.ConnectionId, timestamp, out error);
-                                            if ((NetworkError)error != NetworkError.Ok)
-                                                msDelay = 0;
-                                            networkTime = netTime + (msDelay / 1000f);
-                                        }
-                                    }
+                                    InternalMessageHandler.HandleTimeSync(clientId, incommingData, channelId);
                                 }
                                 break;
                         }
@@ -1402,335 +1031,7 @@ namespace MLAPI.MonoBehaviours.Core
             }
         }
 
-        #region SEND METHODS
-        internal void PassthroughSend(uint targetId, uint sourceId, ushort messageType, int channelId, byte[] data, uint? networkId = null, ushort? orderId = null)
-        {
-            NetId targetNetId = new NetId(targetId);
-            if (isHost && targetNetId.IsHost())
-            {
-                //Host trying to send data to it's own client
-                Debug.LogWarning("MLAPI: Send method got message aimed at server from the server?");
-                return;
-            }
-
-            int sizeOfStream = 10;
-            if (networkId != null)
-                sizeOfStream += 4;
-            if (orderId != null)
-                sizeOfStream += 2;
-            sizeOfStream += data.Length;
-
-            using (MemoryStream stream = new MemoryStream(sizeOfStream))
-            {
-                using (BinaryWriter writer = new BinaryWriter(stream))
-                {
-                    writer.Write(messageType);
-                    writer.Write(networkId != null);
-                    if (networkId != null)
-                        writer.Write(networkId.Value);
-                    if (orderId != null)
-                        writer.Write(orderId.Value);
-                    writer.Write(true);
-                    writer.Write(sourceId);
-                    if(NetworkConfig.EncryptedChannelsHashSet.Contains(MessageManager.reverseChannels[channelId]))
-                    {
-                        //Encrypted message
-                        byte[] encrypted = CryptographyHelper.Encrypt(data, connectedClients[targetId].AesKey);
-                        writer.Write((ushort)encrypted.Length);
-                        writer.Write(encrypted);
-                    }
-                    else
-                    {
-                        writer.Write((ushort)data.Length);
-                        writer.Write(data);
-                    }
-                }
-
-                byte error;
-                NetworkTransport.QueueMessageForSending(targetNetId.HostId, targetNetId.ConnectionId, channelId, stream.GetBuffer(), sizeOfStream, out error);
-            }
-        }
-
-        internal void Send(uint clientId, string messageType, string channelName, byte[] data, uint? networkId = null, ushort? orderId = null, bool skipQueue = false)
-        {
-            NetId netId = new NetId(clientId);
-            if(isHost && netId.IsHost())
-            {
-                //Don't invoke the message on our own machine. Instant stack overflow.
-                Debug.LogWarning("MLAPI: Cannot send message to own client");
-                return;
-            }
-            else if(netId.IsHost())
-            {
-                //Client trying to send data to host
-                netId = NetId.ServerNetId;
-            }
-
-            bool isPassthrough = (!isServer && clientId != NetId.ServerNetId.GetClientId() && NetworkConfig.AllowPassthroughMessages);
-            if (isPassthrough && !NetworkConfig.PassthroughMessageHashSet.Contains(MessageManager.messageTypes[messageType]))
-            {
-                Debug.LogWarning("MLAPI: The The MessageType " + messageType + " is not registered as an allowed passthrough message type.");
-                return;
-            }
-
-            int sizeOfStream = 6;
-            if (networkId != null)
-                sizeOfStream += 4;
-            if (orderId != null)
-                sizeOfStream += 2;
-            if (isPassthrough)
-                sizeOfStream += 4;
-            sizeOfStream += data.Length;
-
-            using (MemoryStream stream = new MemoryStream(sizeOfStream))
-            {
-                using (BinaryWriter writer = new BinaryWriter(stream))
-                {
-                    writer.Write(MessageManager.messageTypes[messageType]);
-                    writer.Write(networkId != null);
-                    if (networkId != null)
-                        writer.Write(networkId.Value);
-                    if (orderId != null)
-                        writer.Write(orderId.Value);
-                    writer.Write(isPassthrough);
-                    if (isPassthrough)
-                        writer.Write(clientId);
-
-                    if (NetworkConfig.EncryptedChannelsHashSet.Contains(channelName))
-                    {
-                        //This is an encrypted message.
-                        byte[] encrypted;
-                        if (isServer)
-                            encrypted = CryptographyHelper.Encrypt(data, connectedClients[clientId].AesKey);
-                        else
-                            encrypted = CryptographyHelper.Encrypt(data, clientAesKey);
-
-                        writer.Write((ushort)encrypted.Length);
-                        writer.Write(encrypted);
-                    }
-                    else
-                    {
-                        //Send in plaintext.
-                        writer.Write((ushort)data.Length);
-                        writer.Write(data);
-                    }
-                }
-                byte error;
-                if (isPassthrough)
-                    netId = NetId.ServerNetId;
-                if (skipQueue)
-                    NetworkTransport.Send(netId.HostId, netId.ConnectionId, MessageManager.channels[channelName], stream.GetBuffer(), sizeOfStream, out error);
-                else
-                    NetworkTransport.QueueMessageForSending(netId.HostId, netId.ConnectionId, MessageManager.channels[channelName], stream.GetBuffer(), sizeOfStream, out error);
-            }
-        }
-
-        internal void Send(uint[] clientIds, string messageType, string channelName, byte[] data, uint? networkId = null, ushort? orderId = null)
-        {
-            if (NetworkConfig.EncryptedChannelsHashSet.Contains(channelName))
-            {
-                Debug.LogWarning("MLAPI: Cannot send messages over encrypted channel to multiple clients.");
-                return;
-            }
-
-            int sizeOfStream = 6;
-            if (networkId != null)
-                sizeOfStream += 4;
-            if (orderId != null)
-                sizeOfStream += 2;
-            sizeOfStream += data.Length;
-
-            using (MemoryStream stream = new MemoryStream(sizeOfStream))
-            {
-                using (BinaryWriter writer = new BinaryWriter(stream))
-                {
-                    writer.Write(MessageManager.messageTypes[messageType]);
-                    writer.Write(networkId != null);
-                    if (networkId != null)
-                        writer.Write(networkId.Value);
-                    if (orderId != null)
-                        writer.Write(orderId.Value);
-                    writer.Write(false);
-                    writer.Write((ushort)data.Length);
-                    writer.Write(data);
-                }
-                int channel = MessageManager.channels[channelName];
-                for (int i = 0; i < clientIds.Length; i++)
-                {
-                    NetId netId = new NetId(clientIds[i]);
-                    if (isHost && netId.IsHost())
-                    {
-                        //Don't invoke the message on our own machine. Instant stack overflow.
-                        continue;
-                    }
-                    else if (netId.IsHost())
-                    {
-                        //Client trying to send data to host
-                        netId = NetId.ServerNetId;
-                    }
-                    byte error;
-                    NetworkTransport.QueueMessageForSending(netId.HostId, netId.ConnectionId, channel, stream.GetBuffer(), sizeOfStream, out error);
-                }
-            }
-        }
-
-        internal void Send(List<uint> clientIds, string messageType, string channelName, byte[] data, uint? networkId = null, ushort? orderId = null)
-        {
-            if (NetworkConfig.EncryptedChannelsHashSet.Contains(channelName))
-            {
-                Debug.LogWarning("MLAPI: Cannot send messages over encrypted channel to multiple clients.");
-                return;
-            }
-
-            //2 bytes for messageType, 2 bytes for buffer length and one byte for target bool
-            int sizeOfStream = 6;
-            if (networkId != null)
-                sizeOfStream += 4;
-            if (orderId != null)
-                sizeOfStream += 2;
-            sizeOfStream += data.Length;
-
-            using (MemoryStream stream = new MemoryStream(sizeOfStream))
-            {
-                using (BinaryWriter writer = new BinaryWriter(stream))
-                {
-                    writer.Write(MessageManager.messageTypes[messageType]);
-                    writer.Write(networkId != null);
-                    if (networkId != null)
-                        writer.Write(networkId.Value);
-                    if (orderId != null)
-                        writer.Write(orderId.Value);
-                    writer.Write(false);
-                    writer.Write((ushort)data.Length);
-                    writer.Write(data);
-                }
-                int channel = MessageManager.channels[channelName];
-                for (int i = 0; i < clientIds.Count; i++)
-                {
-                    NetId netId = new NetId(clientIds[i]);
-                    if (isHost && netId.IsHost())
-                    {
-                        //Don't invoke the message on our own machine. Instant stack overflow.
-                        continue;
-                    }
-                    else if (netId.IsHost())
-                    {
-                        //Client trying to send data to host
-                        netId = NetId.ServerNetId;
-                    }
-                    byte error;
-                    NetworkTransport.QueueMessageForSending(netId.HostId, netId.ConnectionId, channel, stream.GetBuffer(), sizeOfStream, out error);
-                }
-            }
-        }
-
-        internal void Send(string messageType, string channelName, byte[] data, uint? networkId = null, ushort? orderId = null)
-        {
-            if (connectedClients.Count == 0)
-                return;
-            if (NetworkConfig.EncryptedChannels.Contains(channelName))
-            {
-                Debug.LogWarning("MLAPI: Cannot send messages over encrypted channel to multiple clients.");
-                return;
-            }
-
-            //2 bytes for messageType, 2 bytes for buffer length and one byte for target bool
-            int sizeOfStream = 6;
-            if (networkId != null)
-                sizeOfStream += 4;
-            if (orderId != null)
-                sizeOfStream += 2;
-            sizeOfStream += data.Length;
-
-            using (MemoryStream stream = new MemoryStream(sizeOfStream))
-            {
-                using (BinaryWriter writer = new BinaryWriter(stream))
-                {
-                    writer.Write(MessageManager.messageTypes[messageType]);
-                    writer.Write(networkId != null);
-                    if (networkId != null)
-                        writer.Write(networkId.Value);
-                    if (orderId != null)
-                        writer.Write(orderId.Value);
-                    writer.Write(false);
-                    writer.Write((ushort)data.Length);
-                    writer.Write(data);
-                }
-                int channel = MessageManager.channels[channelName];
-                foreach (KeyValuePair<uint, NetworkedClient> pair in connectedClients)
-                {
-                    NetId netId = new NetId(pair.Key);
-                    if(isHost && netId.IsHost())
-                    {
-                        //Don't invoke the message on our own machine. Instant stack overflow.
-                        continue;
-                    }
-                    else if (netId.IsHost())
-                    {
-                        //Client trying to send data to host
-                        netId = NetId.ServerNetId;
-                    }
-                    byte error;
-                    NetworkTransport.QueueMessageForSending(netId.HostId, netId.ConnectionId, channel, stream.GetBuffer(), sizeOfStream, out error);
-                }
-            }
-        }
-
-        internal void Send(string messageType, string channelName, byte[] data, uint clientIdToIgnore, uint? networkId = null, ushort? orderId = null)
-        {
-            if (NetworkConfig.EncryptedChannels.Contains(channelName))
-            {
-                Debug.LogWarning("MLAPI: Cannot send messages over encrypted channel to multiple clients.");
-                return;
-            }
-
-            //2 bytes for messageType, 2 bytes for buffer length and one byte for target bool
-            int sizeOfStream = 5;
-            if (networkId != null)
-                sizeOfStream += 4;
-            if (orderId != null)
-                sizeOfStream += 2;
-            sizeOfStream += data.Length;
-
-            using (MemoryStream stream = new MemoryStream(sizeOfStream))
-            {
-                using (BinaryWriter writer = new BinaryWriter(stream))
-                {
-                    writer.Write(MessageManager.messageTypes[messageType]);
-                    writer.Write(networkId != null);
-                    if (networkId != null)
-                        writer.Write(networkId.Value);
-                    if (orderId != null)
-                        writer.Write(orderId.Value);
-                    writer.Write(false);
-                    writer.Write((ushort)data.Length);
-                    writer.Write(data);
-                }
-                int channel = MessageManager.channels[channelName];
-                foreach (KeyValuePair<uint, NetworkedClient> pair in connectedClients)
-                {
-                    if (pair.Key == clientIdToIgnore)
-                        continue;
-
-                    NetId netId = new NetId(pair.Key);
-                    if (isHost && netId.IsHost())
-                    {
-                        //Don't invoke the message on our own machine. Instant stack overflow.
-                        continue;
-                    }
-                    else if (netId.IsHost())
-                    {
-                        //Client trying to send data to host
-                        netId = NetId.ServerNetId;
-                    }
-                    byte error;
-                    NetworkTransport.QueueMessageForSending(netId.HostId, netId.ConnectionId, channel, stream.GetBuffer(), sizeOfStream, out error);
-                }
-            }
-        }
-        #endregion
-
-        private void DisconnectClient(uint clientId)
+        internal void DisconnectClient(uint clientId)
         {
             if (!isServer)
                 return;
@@ -1752,7 +1053,7 @@ namespace MLAPI.MonoBehaviours.Core
             NetworkTransport.Disconnect(netId.HostId, netId.ConnectionId, out error);          
         }
 
-        private void OnClientDisconnect(uint clientId)
+        internal void OnClientDisconnect(uint clientId)
         {
             if (pendingClients.Contains(clientId))
                 pendingClients.Remove(clientId);
@@ -1779,7 +1080,7 @@ namespace MLAPI.MonoBehaviours.Core
                     {
                         writer.Write(clientId);
                     }
-                    Send("MLAPI_CLIENT_DISCONNECT", "MLAPI_INTERNAL", stream.GetBuffer(), clientId);
+                    InternalMessageHandler.Send("MLAPI_CLIENT_DISCONNECT", "MLAPI_INTERNAL", stream.GetBuffer(), clientId);
                 }   
             }
         }
@@ -1797,12 +1098,12 @@ namespace MLAPI.MonoBehaviours.Core
 
                 foreach (KeyValuePair<uint, NetworkedClient> pair in connectedClients)
                 {
-                    Send("MLAPI_TIME_SYNC", "MLAPI_TIME_SYNC", stream.GetBuffer());
+                    InternalMessageHandler.Send("MLAPI_TIME_SYNC", "MLAPI_TIME_SYNC", stream.GetBuffer());
                 }
             }
         }
 
-        private void HandleApproval(uint clientId, bool approved, Vector3 position, Quaternion rotation)
+        internal void HandleApproval(uint clientId, bool approved, Vector3 position, Quaternion rotation)
         {
             if(approved)
             {
@@ -1925,7 +1226,7 @@ namespace MLAPI.MonoBehaviours.Core
                             }
                         }
                     }
-                    Send(clientId, "MLAPI_CONNECTION_APPROVED", "MLAPI_INTERNAL", writeStream.GetBuffer(), null, null, true);
+                    InternalMessageHandler.Send(clientId, "MLAPI_CONNECTION_APPROVED", "MLAPI_INTERNAL", writeStream.GetBuffer(), null, null, true);
 
                     if (OnClientConnectedCallback != null)
                         OnClientConnectedCallback.Invoke(clientId);
@@ -1963,7 +1264,7 @@ namespace MLAPI.MonoBehaviours.Core
                             writer.Write(clientId);
                         }
                     }
-                    Send("MLAPI_ADD_OBJECT", "MLAPI_INTERNAL", stream.GetBuffer(), clientId);
+                    InternalMessageHandler.Send("MLAPI_ADD_OBJECT", "MLAPI_INTERNAL", stream.GetBuffer(), clientId);
                 }
                 //Flush syncvars:
                 foreach (KeyValuePair<uint, NetworkedObject> networkedObject in SpawnManager.spawnedObjects)

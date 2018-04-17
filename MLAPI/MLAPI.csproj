@@ -97,6 +97,9 @@
     <Compile Include="Data\NetId.cs" />
     <Compile Include="NetworkingManagerComponents\Binary\MessageChunker.cs" />
     <Compile Include="Data\MessageType.cs" />
+    <Compile Include="NetworkingManagerComponents\Core\InternalMessageHandler.Send.cs" />
+    <Compile Include="NetworkingManagerComponents\Core\InternalMessageHandler.Receive.cs" />
+    <Compile Include="NetworkingManagerComponents\Core\InternalMessageHandler.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

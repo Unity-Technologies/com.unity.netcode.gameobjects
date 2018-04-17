@@ -450,7 +450,7 @@ namespace MLAPI.MonoBehaviours.Core
                         }
                     }
                 }
-                NetworkingManager.singleton.Send(clientId, "MLAPI_SYNC_VAR_UPDATE", "MLAPI_INTERNAL", stream.ToArray());
+                InternalMessageHandler.Send(clientId, "MLAPI_SYNC_VAR_UPDATE", "MLAPI_INTERNAL", stream.ToArray());
             }
         }
 
@@ -555,7 +555,7 @@ namespace MLAPI.MonoBehaviours.Core
                             }
                         }
                     }
-                    NetworkingManager.singleton.Send("MLAPI_SYNC_VAR_UPDATE", "MLAPI_INTERNAL", stream.ToArray());
+                    InternalMessageHandler.Send("MLAPI_SYNC_VAR_UPDATE", "MLAPI_INTERNAL", stream.ToArray());
                 }
                 lastSyncTime = NetworkingManager.singleton.NetworkTime;
             }
@@ -695,7 +695,7 @@ namespace MLAPI.MonoBehaviours.Core
                 Debug.LogWarning("MLAPI: Server can not send messages to server.");
                 return;
             }
-            NetworkingManager.singleton.Send(NetId.ServerNetId.GetClientId(), messageType, channelName, data);
+            InternalMessageHandler.Send(NetId.ServerNetId.GetClientId(), messageType, channelName, data);
         }
 
         /// <summary>
@@ -728,7 +728,7 @@ namespace MLAPI.MonoBehaviours.Core
                 Debug.LogWarning("MLAPI: Server can not send messages to server.");
                 return;
             }
-            NetworkingManager.singleton.Send(NetId.ServerNetId.GetClientId(), messageType, channelName, data, networkId, networkedObject.GetOrderIndex(this));            
+            InternalMessageHandler.Send(NetId.ServerNetId.GetClientId(), messageType, channelName, data, networkId, networkedObject.GetOrderIndex(this));            
         }
 
         /// <summary>
@@ -761,7 +761,7 @@ namespace MLAPI.MonoBehaviours.Core
                 Debug.LogWarning("MLAPI: Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
                 return;
             }
-            NetworkingManager.singleton.Send(ownerClientId, messageType, channelName, data);
+            InternalMessageHandler.Send(ownerClientId, messageType, channelName, data);
         }
 
         /// <summary>
@@ -794,7 +794,7 @@ namespace MLAPI.MonoBehaviours.Core
                 Debug.LogWarning("MLAPI: Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
                 return;
             }
-            NetworkingManager.singleton.Send(ownerClientId, messageType, channelName, data, networkId, networkedObject.GetOrderIndex(this));
+            InternalMessageHandler.Send(ownerClientId, messageType, channelName, data, networkId, networkedObject.GetOrderIndex(this));
         }
 
         /// <summary>
@@ -827,7 +827,7 @@ namespace MLAPI.MonoBehaviours.Core
                 Debug.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported");
                 return;
             }
-            NetworkingManager.singleton.Send(messageType, channelName, data, ownerClientId);
+            InternalMessageHandler.Send(messageType, channelName, data, ownerClientId);
         }
 
         /// <summary>
@@ -860,7 +860,7 @@ namespace MLAPI.MonoBehaviours.Core
                 Debug.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported");
                 return;
             }
-            NetworkingManager.singleton.Send(messageType, channelName, data, ownerClientId, networkId, networkedObject.GetOrderIndex(this));
+            InternalMessageHandler.Send(messageType, channelName, data, ownerClientId, networkId, networkedObject.GetOrderIndex(this));
         }
 
         /// <summary>
@@ -894,7 +894,7 @@ namespace MLAPI.MonoBehaviours.Core
                 Debug.LogWarning("MLAPI: Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
                 return;
             }
-            NetworkingManager.singleton.Send(clientId, messageType, channelName, data);
+            InternalMessageHandler.Send(clientId, messageType, channelName, data);
         }
 
         /// <summary>
@@ -929,7 +929,7 @@ namespace MLAPI.MonoBehaviours.Core
                 Debug.LogWarning("MLAPI: Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
                 return;
             }
-            NetworkingManager.singleton.Send(clientId, messageType, channelName, data, networkId, networkedObject.GetOrderIndex(this));
+            InternalMessageHandler.Send(clientId, messageType, channelName, data, networkId, networkedObject.GetOrderIndex(this));
         }
 
         /// <summary>
@@ -964,7 +964,7 @@ namespace MLAPI.MonoBehaviours.Core
                 Debug.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported");
                 return;
             }
-            NetworkingManager.singleton.Send(clientIds, messageType, channelName, data);
+            InternalMessageHandler.Send(clientIds, messageType, channelName, data);
         }
 
         /// <summary>
@@ -999,7 +999,7 @@ namespace MLAPI.MonoBehaviours.Core
                 Debug.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported");
                 return;
             }
-            NetworkingManager.singleton.Send(clientIds, messageType, channelName, data, networkId, networkedObject.GetOrderIndex(this));
+            InternalMessageHandler.Send(clientIds, messageType, channelName, data, networkId, networkedObject.GetOrderIndex(this));
         }
 
         /// <summary>
@@ -1034,7 +1034,7 @@ namespace MLAPI.MonoBehaviours.Core
                 Debug.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported");
                 return;
             }
-            NetworkingManager.singleton.Send(clientIds, messageType, channelName, data);
+            InternalMessageHandler.Send(clientIds, messageType, channelName, data);
         }
 
         /// <summary>
@@ -1069,7 +1069,7 @@ namespace MLAPI.MonoBehaviours.Core
                 Debug.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported");
                 return;
             }
-            NetworkingManager.singleton.Send(clientIds, messageType, channelName, data, networkId, networkedObject.GetOrderIndex(this));
+            InternalMessageHandler.Send(clientIds, messageType, channelName, data, networkId, networkedObject.GetOrderIndex(this));
         }
 
         /// <summary>
@@ -1103,7 +1103,7 @@ namespace MLAPI.MonoBehaviours.Core
                 Debug.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported");
                 return;
             }
-            NetworkingManager.singleton.Send(messageType, channelName, data);
+            InternalMessageHandler.Send(messageType, channelName, data);
         }
 
         /// <summary>
@@ -1136,7 +1136,7 @@ namespace MLAPI.MonoBehaviours.Core
                 Debug.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported");
                 return;
             }
-            NetworkingManager.singleton.Send(messageType, channelName, data, networkId, networkedObject.GetOrderIndex(this));
+            InternalMessageHandler.Send(messageType, channelName, data, networkId, networkedObject.GetOrderIndex(this));
         }
 
         /// <summary>

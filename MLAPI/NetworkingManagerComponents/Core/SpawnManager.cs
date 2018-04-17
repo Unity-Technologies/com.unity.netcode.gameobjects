@@ -45,7 +45,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                     writer.Write(netId);
                     writer.Write(netObject.ownerClientId);
                 }
-                netManager.Send("MLAPI_CHANGE_OWNER", "MLAPI_INTERNAL", stream.GetBuffer());
+                InternalMessageHandler.Send("MLAPI_CHANGE_OWNER", "MLAPI_INTERNAL", stream.GetBuffer());
             }
         }
 
@@ -62,7 +62,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                     writer.Write(netId);
                     writer.Write(clientId);
                 }
-                netManager.Send("MLAPI_CHANGE_OWNER", "MLAPI_INTERNAL", stream.GetBuffer());
+                InternalMessageHandler.Send("MLAPI_CHANGE_OWNER", "MLAPI_INTERNAL", stream.GetBuffer());
             }
         }
   
@@ -131,7 +131,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                         writer.Write(sceneObjectsToSync[i].transform.rotation.eulerAngles.z);
                     }
                 }
-                NetworkingManager.singleton.Send("MLAPI_ADD_OBJECTS", "MLAPI_INTERNAL", stream.GetBuffer());
+                InternalMessageHandler.Send("MLAPI_ADD_OBJECTS", "MLAPI_INTERNAL", stream.GetBuffer());
             }
         }
 
@@ -213,7 +213,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                     writer.Write(netObject.transform.rotation.eulerAngles.z);
                 }
 
-                netManager.Send("MLAPI_ADD_OBJECT", "MLAPI_INTERNAL", stream.GetBuffer());
+                InternalMessageHandler.Send("MLAPI_ADD_OBJECT", "MLAPI_INTERNAL", stream.GetBuffer());
             }
         }
 
@@ -269,7 +269,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                         {
                             writer.Write(networkId);
                         }
-                        netManager.Send("MLAPI_DESTROY_OBJECT", "MLAPI_INTERNAL", stream.GetBuffer());
+                        InternalMessageHandler.Send("MLAPI_DESTROY_OBJECT", "MLAPI_INTERNAL", stream.GetBuffer());
                     }
                 }
             }
