@@ -78,6 +78,9 @@
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="MonoBehaviours\Prototyping\NetworkedAnimator.cs" />
     <Compile Include="MonoBehaviours\Prototyping\NetworkedNavMeshAgent.cs" />
+    <Compile Include="NetworkingManagerComponents\Binary\BitWriter.cs" />
+    <Compile Include="NetworkingManagerComponents\Binary\BitReader.cs" />
+    <Compile Include="NetworkingManagerComponents\Binary\BinaryHelpers.cs" />
     <Compile Include="NetworkingManagerComponents\Binary\BinarySerializer.cs" />
     <Compile Include="NetworkingManagerComponents\Cryptography\CryptographyHelper.cs" />
     <Compile Include="NetworkingManagerComponents\Cryptography\DiffieHellman.cs" />
