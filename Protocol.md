@@ -1,4 +1,7 @@
 # MLAPI Protocol
+#### NOTE
+_This protocol specification is TEMPORARY, it's due to change and is just here to give you an aproximate idea of how the protocol works_
+
 The MLAPI protocol is layered. The layers can be seen below.
 
 The first layer is the UDP IP layer. Ontop of the UDP layer, the Unity Network Transport layer is built. And just after that, the MLAPI's protocol starts to appear. The MLAPI has two protocol stages. The first stage is the generic MLAPI message protocol. This is the protocol all messages use that is sent by the user or the MLAPI library.
