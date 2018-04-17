@@ -744,6 +744,17 @@ namespace MLAPI.MonoBehaviours.Core
                         InternalMessageHandler.Send(ownerClientId, "MLAPI_SYNC_VAR_UPDATE", "MLAPI_INTERNAL", stream.ToArray()); //Send only to target
                     }
 
+                    if (nonTargetDirtyCount == 0)
+                    {
+                        //Seems like ONLY targeted syncedVars was changed. Thus we need to remove the dirty tags and return;
+                        for (int i = 0; i < syncedVarFields.Count; i++)
+                        {
+                            syncedVarFields[i].FieldValue = syncedVarFields[i].FieldInfo.GetValue(this);
+                            syncedVarFields[i].Dirty = false;
+                        }
+                        return;
+                    }
+
                     //It's sync time. This is the NON target receivers packet.
                     using (MemoryStream stream = new MemoryStream())
                     {
