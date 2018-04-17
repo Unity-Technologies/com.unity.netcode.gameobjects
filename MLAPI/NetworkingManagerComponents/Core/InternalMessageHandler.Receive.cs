@@ -304,12 +304,12 @@ namespace MLAPI.NetworkingManagerComponents.Core
                                 Debug.LogWarning("MLAPI: Sync message recieved for a non existant behaviour");
                                 return;
                             }
-                            else if (fieldIndex > (SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).syncedFieldTypes.Count - 1))
+                            else if (fieldIndex > (SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).syncedVarFields.Count - 1))
                             {
                                 Debug.LogWarning("MLAPI: Sync message recieved for field out of bounds");
                                 return;
                             }
-                            FieldType type = SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).syncedFieldTypes[fieldIndex];
+                            FieldType type = SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).syncedVarFields[fieldIndex].FieldType;
                             switch (type)
                             {
                                 case FieldType.Bool:

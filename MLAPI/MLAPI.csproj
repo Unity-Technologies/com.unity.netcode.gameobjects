@@ -73,6 +73,7 @@
     <Compile Include="Data\NetworkConfig.cs" />
     <Compile Include="Data\NetworkedPrefab.cs" />
     <Compile Include="Data\NetworkPool.cs" />
+    <Compile Include="Data\SyncedVarField.cs" />
     <Compile Include="Data\TrackedPointData.cs" />
     <Compile Include="Data\TransportHost.cs" />
     <Compile Include="GlobalSuppressions.cs" />

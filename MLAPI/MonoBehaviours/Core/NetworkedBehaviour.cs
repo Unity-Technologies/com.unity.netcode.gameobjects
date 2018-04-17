@@ -202,13 +202,8 @@ namespace MLAPI.MonoBehaviours.Core
         }
 
         #region SYNC_VAR
-        private List<FieldInfo> syncedFields = new List<FieldInfo>();
-        internal List<FieldType> syncedFieldTypes = new List<FieldType>();
-        private List<object> syncedFieldValues = new List<object>();
-        private List<MethodInfo> syncedVarHooks = new List<MethodInfo>();
+        internal List<SyncedVarField> syncedVarFields = new List<SyncedVarField>();
         private bool syncVarInit = false;
-        //A dirty field is a field that's not synced.
-        private bool[] dirtyFields;
         internal void SyncVarInit()
         {
             if (syncVarInit)
@@ -221,132 +216,214 @@ namespace MLAPI.MonoBehaviours.Core
                 {
                     object[] syncedVarAttributes = sortedFields[i].GetCustomAttributes(typeof(SyncedVar), true);
                     MethodInfo method = null;
-                    for (int j = 0; j < syncedVarAttributes.Length; j++)
+                    if (!string.IsNullOrEmpty(((SyncedVar)syncedVarAttributes[0]).hook))
                     {
-                        if(!string.IsNullOrEmpty(((SyncedVar)syncedVarAttributes[j]).hook))
-                        {
-                            method = GetType().GetMethod(((SyncedVar)syncedVarAttributes[j]).hook, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-                            break;
-                        }
+                        method = GetType().GetMethod(((SyncedVar)syncedVarAttributes[0]).hook, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+                        break;
                     }
                     if (sortedFields[i].FieldType == typeof(bool))
                     {
-                        syncedFields.Add(sortedFields[i]);
-                        syncedFieldValues.Add(sortedFields[i].GetValue(this));
-                        syncedFieldTypes.Add(FieldType.Bool);
-                        syncedVarHooks.Add(method);
+                        syncedVarFields.Add(new SyncedVarField()
+                        {
+                            Dirty = false,
+                            Target = ((SyncedVar)sortedFields[i].GetCustomAttributes(typeof(SyncedVar), true)[0]).target,
+                            FieldInfo = sortedFields[i],
+                            FieldType = FieldType.Bool,
+                            FieldValue = sortedFields[i].GetValue(this),
+                            HookMethod = method
+                        });
                     }
                     else if(sortedFields[i].FieldType == typeof(byte))
                     {
-                        syncedFields.Add(sortedFields[i]);
-                        syncedFieldValues.Add(sortedFields[i].GetValue(this));
-                        syncedFieldTypes.Add(FieldType.Byte);
-                        syncedVarHooks.Add(method);
+                        syncedVarFields.Add(new SyncedVarField()
+                        {
+                            Dirty = false,
+                            Target = ((SyncedVar)sortedFields[i].GetCustomAttributes(typeof(SyncedVar), true)[0]).target,
+                            FieldInfo = sortedFields[i],
+                            FieldType = FieldType.Bool,
+                            FieldValue = sortedFields[i].GetValue(this),
+                            HookMethod = method
+                        });
                     }
                     else if (sortedFields[i].FieldType == typeof(char))
                     {
-                        syncedFields.Add(sortedFields[i]);
-                        syncedFieldValues.Add(sortedFields[i].GetValue(this));
-                        syncedFieldTypes.Add(FieldType.Char);
-                        syncedVarHooks.Add(method);
+                        syncedVarFields.Add(new SyncedVarField()
+                        {
+                            Dirty = false,
+                            Target = ((SyncedVar)sortedFields[i].GetCustomAttributes(typeof(SyncedVar), true)[0]).target,
+                            FieldInfo = sortedFields[i],
+                            FieldType = FieldType.Bool,
+                            FieldValue = sortedFields[i].GetValue(this),
+                            HookMethod = method
+                        });
                     }
                     else if (sortedFields[i].FieldType == typeof(double))
                     {
-                        syncedFields.Add(sortedFields[i]);
-                        syncedFieldValues.Add(sortedFields[i].GetValue(this));
-                        syncedFieldTypes.Add(FieldType.Double);
-                        syncedVarHooks.Add(method);
+                        syncedVarFields.Add(new SyncedVarField()
+                        {
+                            Dirty = false,
+                            Target = ((SyncedVar)sortedFields[i].GetCustomAttributes(typeof(SyncedVar), true)[0]).target,
+                            FieldInfo = sortedFields[i],
+                            FieldType = FieldType.Bool,
+                            FieldValue = sortedFields[i].GetValue(this),
+                            HookMethod = method
+                        });
                     }
                     else if (sortedFields[i].FieldType == typeof(float))
                     {
-                        syncedFields.Add(sortedFields[i]);
-                        syncedFieldValues.Add(sortedFields[i].GetValue(this));
-                        syncedFieldTypes.Add(FieldType.Single);
-                        syncedVarHooks.Add(method);
+                        syncedVarFields.Add(new SyncedVarField()
+                        {
+                            Dirty = false,
+                            Target = ((SyncedVar)sortedFields[i].GetCustomAttributes(typeof(SyncedVar), true)[0]).target,
+                            FieldInfo = sortedFields[i],
+                            FieldType = FieldType.Bool,
+                            FieldValue = sortedFields[i].GetValue(this),
+                            HookMethod = method
+                        });
                     }
                     else if (sortedFields[i].FieldType == typeof(int))
                     {
-                        syncedFields.Add(sortedFields[i]);
-                        syncedFieldValues.Add(sortedFields[i].GetValue(this));
-                        syncedFieldTypes.Add(FieldType.Int);
-                        syncedVarHooks.Add(method);
+                        syncedVarFields.Add(new SyncedVarField()
+                        {
+                            Dirty = false,
+                            Target = ((SyncedVar)sortedFields[i].GetCustomAttributes(typeof(SyncedVar), true)[0]).target,
+                            FieldInfo = sortedFields[i],
+                            FieldType = FieldType.Bool,
+                            FieldValue = sortedFields[i].GetValue(this),
+                            HookMethod = method
+                        });
                     }
                     else if (sortedFields[i].FieldType == typeof(long))
                     {
-                        syncedFields.Add(sortedFields[i]);
-                        syncedFieldValues.Add(sortedFields[i].GetValue(this));
-                        syncedFieldTypes.Add(FieldType.Long);
-                        syncedVarHooks.Add(method);
+                        syncedVarFields.Add(new SyncedVarField()
+                        {
+                            Dirty = false,
+                            Target = ((SyncedVar)sortedFields[i].GetCustomAttributes(typeof(SyncedVar), true)[0]).target,
+                            FieldInfo = sortedFields[i],
+                            FieldType = FieldType.Bool,
+                            FieldValue = sortedFields[i].GetValue(this),
+                            HookMethod = method
+                        });
                     }
                     else if (sortedFields[i].FieldType == typeof(sbyte))
                     {
-                        syncedFields.Add(sortedFields[i]);
-                        syncedFieldValues.Add(sortedFields[i].GetValue(this));
-                        syncedFieldTypes.Add(FieldType.SByte);
-                        syncedVarHooks.Add(method);
+                        syncedVarFields.Add(new SyncedVarField()
+                        {
+                            Dirty = false,
+                            Target = ((SyncedVar)sortedFields[i].GetCustomAttributes(typeof(SyncedVar), true)[0]).target,
+                            FieldInfo = sortedFields[i],
+                            FieldType = FieldType.Bool,
+                            FieldValue = sortedFields[i].GetValue(this),
+                            HookMethod = method
+                        });
                     }
                     else if (sortedFields[i].FieldType == typeof(short))
                     {
-                        syncedFields.Add(sortedFields[i]);
-                        syncedFieldValues.Add(sortedFields[i].GetValue(this));
-                        syncedFieldTypes.Add(FieldType.Short);
-                        syncedVarHooks.Add(method);
+                        syncedVarFields.Add(new SyncedVarField()
+                        {
+                            Dirty = false,
+                            Target = ((SyncedVar)sortedFields[i].GetCustomAttributes(typeof(SyncedVar), true)[0]).target,
+                            FieldInfo = sortedFields[i],
+                            FieldType = FieldType.Bool,
+                            FieldValue = sortedFields[i].GetValue(this),
+                            HookMethod = method
+                        });
                     }
                     else if (sortedFields[i].FieldType == typeof(uint))
                     {
-                        syncedFields.Add(sortedFields[i]);
-                        syncedFieldValues.Add(sortedFields[i].GetValue(this));
-                        syncedFieldTypes.Add(FieldType.UInt);
-                        syncedVarHooks.Add(method);
+                        syncedVarFields.Add(new SyncedVarField()
+                        {
+                            Dirty = false,
+                            Target = ((SyncedVar)sortedFields[i].GetCustomAttributes(typeof(SyncedVar), true)[0]).target,
+                            FieldInfo = sortedFields[i],
+                            FieldType = FieldType.Bool,
+                            FieldValue = sortedFields[i].GetValue(this),
+                            HookMethod = method
+                        });
                     }
                     else if (sortedFields[i].FieldType == typeof(ulong))
                     {
-                        syncedFields.Add(sortedFields[i]);
-                        syncedFieldValues.Add(sortedFields[i].GetValue(this));
-                        syncedFieldTypes.Add(FieldType.ULong);
-                        syncedVarHooks.Add(method);
+                        syncedVarFields.Add(new SyncedVarField()
+                        {
+                            Dirty = false,
+                            Target = ((SyncedVar)sortedFields[i].GetCustomAttributes(typeof(SyncedVar), true)[0]).target,
+                            FieldInfo = sortedFields[i],
+                            FieldType = FieldType.Bool,
+                            FieldValue = sortedFields[i].GetValue(this),
+                            HookMethod = method
+                        });
                     }
                     else if (sortedFields[i].FieldType == typeof(ushort))
                     {
-                        syncedFields.Add(sortedFields[i]);
-                        syncedFieldValues.Add(sortedFields[i].GetValue(this));
-                        syncedFieldTypes.Add(FieldType.UShort);
-                        syncedVarHooks.Add(method);
+                        syncedVarFields.Add(new SyncedVarField()
+                        {
+                            Dirty = false,
+                            Target = ((SyncedVar)sortedFields[i].GetCustomAttributes(typeof(SyncedVar), true)[0]).target,
+                            FieldInfo = sortedFields[i],
+                            FieldType = FieldType.Bool,
+                            FieldValue = sortedFields[i].GetValue(this),
+                            HookMethod = method
+                        });
                     }
                     else if(sortedFields[i].FieldType == typeof(string))
                     {
-                        syncedFields.Add(sortedFields[i]);
-                        syncedFieldValues.Add(sortedFields[i].GetValue(this));
-                        syncedFieldTypes.Add(FieldType.String);
-                        syncedVarHooks.Add(method);
+                        syncedVarFields.Add(new SyncedVarField()
+                        {
+                            Dirty = false,
+                            Target = ((SyncedVar)sortedFields[i].GetCustomAttributes(typeof(SyncedVar), true)[0]).target,
+                            FieldInfo = sortedFields[i],
+                            FieldType = FieldType.Bool,
+                            FieldValue = sortedFields[i].GetValue(this),
+                            HookMethod = method
+                        });
                     }
                     else if(sortedFields[i].FieldType == typeof(Vector3))
                     {
-                        syncedFields.Add(sortedFields[i]);
-                        syncedFieldValues.Add(sortedFields[i].GetValue(this));
-                        syncedFieldTypes.Add(FieldType.Vector3);
-                        syncedVarHooks.Add(method);
+                        syncedVarFields.Add(new SyncedVarField()
+                        {
+                            Dirty = false,
+                            Target = ((SyncedVar)sortedFields[i].GetCustomAttributes(typeof(SyncedVar), true)[0]).target,
+                            FieldInfo = sortedFields[i],
+                            FieldType = FieldType.Bool,
+                            FieldValue = sortedFields[i].GetValue(this),
+                            HookMethod = method
+                        });
                     }
                     else if(sortedFields[i].FieldType == typeof(Vector2))
                     {
-                        syncedFields.Add(sortedFields[i]);
-                        syncedFieldValues.Add(sortedFields[i].GetValue(this));
-                        syncedFieldTypes.Add(FieldType.Vector2);
-                        syncedVarHooks.Add(method);
+                        syncedVarFields.Add(new SyncedVarField()
+                        {
+                            Dirty = false,
+                            Target = ((SyncedVar)sortedFields[i].GetCustomAttributes(typeof(SyncedVar), true)[0]).target,
+                            FieldInfo = sortedFields[i],
+                            FieldType = FieldType.Bool,
+                            FieldValue = sortedFields[i].GetValue(this),
+                            HookMethod = method
+                        });
                     }
                     else if (sortedFields[i].FieldType == typeof(Quaternion))
                     {
-                        syncedFields.Add(sortedFields[i]);
-                        syncedFieldValues.Add(sortedFields[i].GetValue(this));
-                        syncedFieldTypes.Add(FieldType.Quaternion);
-                        syncedVarHooks.Add(method);
+                        syncedVarFields.Add(new SyncedVarField()
+                        {
+                            Dirty = false,
+                            Target = ((SyncedVar)sortedFields[i].GetCustomAttributes(typeof(SyncedVar), true)[0]).target,
+                            FieldInfo = sortedFields[i],
+                            FieldType = FieldType.Bool,
+                            FieldValue = sortedFields[i].GetValue(this),
+                            HookMethod = method
+                        });
                     }
                     else if(sortedFields[i].FieldType == typeof(byte[]))
                     {
-                        syncedFields.Add(sortedFields[i]);
-                        syncedFieldValues.Add(sortedFields[i].GetValue(this));
-                        syncedFieldTypes.Add(FieldType.ByteArray);
-                        syncedVarHooks.Add(method);
+                        syncedVarFields.Add(new SyncedVarField()
+                        {
+                            Dirty = false,
+                            Target = ((SyncedVar)sortedFields[i].GetCustomAttributes(typeof(SyncedVar), true)[0]).target,
+                            FieldInfo = sortedFields[i],
+                            FieldType = FieldType.Bool,
+                            FieldValue = sortedFields[i].GetValue(this),
+                            HookMethod = method
+                        });
                     }
                     else
                     {
@@ -354,8 +431,7 @@ namespace MLAPI.MonoBehaviours.Core
                     }
                 }
             }
-            dirtyFields = new bool[syncedFields.Count];
-            if (dirtyFields.Length > 255)
+            if (syncedVarFields.Count > 255)
             {
                 Debug.LogError("MLAPI: You can not have more than 255 SyncVar's per NetworkedBehaviour!");
             }
@@ -363,15 +439,15 @@ namespace MLAPI.MonoBehaviours.Core
 
         internal void OnSyncVarUpdate(object value, byte fieldIndex)
         {
-            syncedFields[fieldIndex].SetValue(this, value);
-            if (syncedVarHooks[fieldIndex] != null)
-                syncedVarHooks[fieldIndex].Invoke(this, null);
+            syncedVarFields[fieldIndex].FieldInfo.SetValue(this, value);
+            if (syncedVarFields[fieldIndex].HookMethod != null)
+                syncedVarFields[fieldIndex].HookMethod.Invoke(this, null);
         }
 
         internal void FlushToClient(uint clientId)
         {
             //This NetworkedBehaviour has no SyncVars
-            if (dirtyFields.Length == 0)
+            if (syncedVarFields.Count == 0)
                 return;
 
             using (MemoryStream stream = new MemoryStream())
@@ -379,73 +455,85 @@ namespace MLAPI.MonoBehaviours.Core
                 using (BinaryWriter writer = new BinaryWriter(stream))
                 {
                     //Write all indexes
-                    writer.Write((byte)dirtyFields.Length);
+                    int syncCount = 0;
+                    for (int i = 0; i < syncedVarFields.Count; i++)
+                    {
+                        if (!syncedVarFields[i].Target)
+                            syncCount++;
+                        else if (syncedVarFields[i].Target && ownerClientId == clientId)
+                            syncCount++;
+                    }
+                    if (syncCount == 0)
+                        return;
+                    writer.Write((byte)syncCount);
                     writer.Write(networkId); //NetId
                     writer.Write(networkedObject.GetOrderIndex(this)); //Behaviour OrderIndex
-                    for (byte i = 0; i < dirtyFields.Length; i++)
+                    for (byte i = 0; i < syncedVarFields.Count; i++)
                     {
+                        if (syncedVarFields[i].Target && clientId != ownerClientId)
+                            continue;
                         writer.Write(i); //FieldIndex
-                        switch (syncedFieldTypes[i])
+                        switch (syncedVarFields[i].FieldType)
                         {
                             case FieldType.Bool:
-                                writer.Write((bool)syncedFields[i].GetValue(this));
+                                writer.Write((bool)syncedVarFields[i].FieldInfo.GetValue(this));
                                 break;
                             case FieldType.Byte:
-                                writer.Write((byte)syncedFields[i].GetValue(this));
+                                writer.Write((byte)syncedVarFields[i].FieldInfo.GetValue(this));
                                 break;
                             case FieldType.Char:
-                                writer.Write((char)syncedFields[i].GetValue(this));
+                                writer.Write((char)syncedVarFields[i].FieldInfo.GetValue(this));
                                 break;
                             case FieldType.Double:
-                                writer.Write((double)syncedFields[i].GetValue(this));
+                                writer.Write((double)syncedVarFields[i].FieldInfo.GetValue(this));
                                 break;
                             case FieldType.Single:
-                                writer.Write((float)syncedFields[i].GetValue(this));
+                                writer.Write((float)syncedVarFields[i].FieldInfo.GetValue(this));
                                 break;
                             case FieldType.Int:
-                                writer.Write((int)syncedFields[i].GetValue(this));
+                                writer.Write((int)syncedVarFields[i].FieldInfo.GetValue(this));
                                 break;
                             case FieldType.Long:
-                                writer.Write((long)syncedFields[i].GetValue(this));
+                                writer.Write((long)syncedVarFields[i].FieldInfo.GetValue(this));
                                 break;
                             case FieldType.SByte:
-                                writer.Write((sbyte)syncedFields[i].GetValue(this));
+                                writer.Write((sbyte)syncedVarFields[i].FieldInfo.GetValue(this));
                                 break;
                             case FieldType.Short:
-                                writer.Write((short)syncedFields[i].GetValue(this));
+                                writer.Write((short)syncedVarFields[i].FieldInfo.GetValue(this));
                                 break;
                             case FieldType.UInt:
-                                writer.Write((uint)syncedFields[i].GetValue(this));
+                                writer.Write((uint)syncedVarFields[i].FieldInfo.GetValue(this));
                                 break;
                             case FieldType.ULong:
-                                writer.Write((ulong)syncedFields[i].GetValue(this));
+                                writer.Write((ulong)syncedVarFields[i].FieldInfo.GetValue(this));
                                 break;
                             case FieldType.UShort:
-                                writer.Write((ushort)syncedFields[i].GetValue(this));
+                                writer.Write((ushort)syncedVarFields[i].FieldInfo.GetValue(this));
                                 break;
                             case FieldType.String:
-                                writer.Write((string)syncedFields[i].GetValue(this));
+                                writer.Write((string)syncedVarFields[i].FieldInfo.GetValue(this));
                                 break;
                             case FieldType.Vector3:
-                                Vector3 vector3 = (Vector3)syncedFields[i].GetValue(this);
+                                Vector3 vector3 = (Vector3)syncedVarFields[i].FieldInfo.GetValue(this);
                                 writer.Write(vector3.x);
                                 writer.Write(vector3.y);
                                 writer.Write(vector3.z);
                                 break;
                             case FieldType.Vector2:
-                                Vector2 vector2 = (Vector2)syncedFields[i].GetValue(this);
+                                Vector2 vector2 = (Vector2)syncedVarFields[i].FieldInfo.GetValue(this);
                                 writer.Write(vector2.x);
                                 writer.Write(vector2.y);
                                 break;
                             case FieldType.Quaternion:
-                                Vector3 euler = ((Quaternion)syncedFields[i].GetValue(this)).eulerAngles;
+                                Vector3 euler = ((Quaternion)syncedVarFields[i].FieldInfo.GetValue(this)).eulerAngles;
                                 writer.Write(euler.x);
                                 writer.Write(euler.y);
                                 writer.Write(euler.z);
                                 break;
                             case FieldType.ByteArray:
-                                writer.Write((ushort)((byte[])syncedFields[i].GetValue(this)).Length);
-                                writer.Write((byte[])syncedFields[i].GetValue(this));
+                                writer.Write((ushort)((byte[])syncedVarFields[i].FieldInfo.GetValue(this)).Length);
+                                writer.Write((byte[])syncedVarFields[i].FieldInfo.GetValue(this));
                                 break;
                         }
                     }
@@ -462,100 +550,286 @@ namespace MLAPI.MonoBehaviours.Core
             SetDirtyness();
             if(NetworkingManager.singleton.NetworkTime - lastSyncTime >= SyncVarSyncDelay)
             {
-                byte dirtyCount = 0;
-                for (byte i = 0; i < dirtyFields.Length; i++)
+                byte nonTargetDirtyCount = 0;
+                byte totalDirtyCount = 0;
+                byte dirtyTargets = 0;
+                for (byte i = 0; i < syncedVarFields.Count; i++)
                 {
-                    if (dirtyFields[i])
-                        dirtyCount++;
+                    if (syncedVarFields[i].Dirty)
+                        totalDirtyCount++;
+                    if (syncedVarFields[i].Target && syncedVarFields[i].Dirty)
+                        dirtyTargets++;
+                    if (syncedVarFields[i].Dirty && !syncedVarFields[i].Target)
+                        nonTargetDirtyCount++;
                 }
 
-                if (dirtyCount == 0)
+                if (totalDirtyCount == 0)
                     return; //All up to date!
-                //It's sync time!
-                using (MemoryStream stream = new MemoryStream())
-                {
-                    using(BinaryWriter writer = new BinaryWriter(stream))
-                    {
-                        //Write all indexes
-                        writer.Write(dirtyCount);
-                        writer.Write(networkId); //NetId
-                        writer.Write(networkedObject.GetOrderIndex(this)); //Behaviour OrderIndex
-                        for (byte i = 0; i < dirtyFields.Length; i++)
-                        {
-                            //Writes all the indexes of the dirty syncvars.
-                            if (dirtyFields[i] == true)
-                            {
-                                writer.Write(i); //FieldIndex
-                                switch (syncedFieldTypes[i])
-                                {
-                                    case FieldType.Bool:
-                                        writer.Write((bool)syncedFields[i].GetValue(this));
-                                        break;
-                                    case FieldType.Byte:
-                                        writer.Write((byte)syncedFields[i].GetValue(this));
-                                        break;
-                                    case FieldType.Char:
-                                        writer.Write((char)syncedFields[i].GetValue(this));
-                                        break;
-                                    case FieldType.Double:
-                                        writer.Write((double)syncedFields[i].GetValue(this));
-                                        break;
-                                    case FieldType.Single:
-                                        writer.Write((float)syncedFields[i].GetValue(this));
-                                        break;
-                                    case FieldType.Int:
-                                        writer.Write((int)syncedFields[i].GetValue(this));
-                                        break;
-                                    case FieldType.Long:
-                                        writer.Write((long)syncedFields[i].GetValue(this));
-                                        break;
-                                    case FieldType.SByte:
-                                        writer.Write((sbyte)syncedFields[i].GetValue(this));
-                                        break;
-                                    case FieldType.Short:
-                                        writer.Write((short)syncedFields[i].GetValue(this));
-                                        break;
-                                    case FieldType.UInt:
-                                        writer.Write((uint)syncedFields[i].GetValue(this));
-                                        break;
-                                    case FieldType.ULong:
-                                        writer.Write((ulong)syncedFields[i].GetValue(this));
-                                        break;
-                                    case FieldType.UShort:
-                                        writer.Write((ushort)syncedFields[i].GetValue(this));
-                                        break;
-                                    case FieldType.String:
-                                        writer.Write((string)syncedFields[i].GetValue(this));
-                                        break;
-                                    case FieldType.Vector3:
-                                        Vector3 vector3 = (Vector3)syncedFields[i].GetValue(this);
-                                        writer.Write(vector3.x);
-                                        writer.Write(vector3.y);
-                                        writer.Write(vector3.z);
-                                        break;
-                                    case FieldType.Vector2:
-                                        Vector2 vector2 = (Vector2)syncedFields[i].GetValue(this);
-                                        writer.Write(vector2.x);
-                                        writer.Write(vector2.y);
-                                        break;
-                                    case FieldType.Quaternion:
-                                        Vector3 euler = ((Quaternion)syncedFields[i].GetValue(this)).eulerAngles;
-                                        writer.Write(euler.x);
-                                        writer.Write(euler.y);
-                                        writer.Write(euler.z);
-                                        break;
-                                    case FieldType.ByteArray:
-                                        writer.Write((ushort)((byte[])syncedFields[i].GetValue(this)).Length);
-                                        writer.Write((byte[])syncedFields[i].GetValue(this));
-                                        break;
 
+                // If we don't have targets. We can send one big message, 
+                // thus only serializing it once. Otherwise, we have to create two messages. One for the non targets and one for the target
+                if (dirtyTargets == 0)
+                {
+                    //It's sync time!
+                    using (MemoryStream stream = new MemoryStream())
+                    {
+                        using (BinaryWriter writer = new BinaryWriter(stream))
+                        {
+                            //Write all indexes
+                            writer.Write(totalDirtyCount);
+                            writer.Write(networkId); //NetId
+                            writer.Write(networkedObject.GetOrderIndex(this)); //Behaviour OrderIndex
+                            for (byte i = 0; i < syncedVarFields.Count; i++)
+                            {
+                                //Writes all the indexes of the dirty syncvars.
+                                if (syncedVarFields[i].Dirty == true)
+                                {
+                                    writer.Write(i); //FieldIndex
+                                    switch (syncedVarFields[i].FieldType)
+                                    {
+                                        case FieldType.Bool:
+                                            writer.Write((bool)syncedVarFields[i].FieldInfo.GetValue(this));
+                                            break;
+                                        case FieldType.Byte:
+                                            writer.Write((byte)syncedVarFields[i].FieldInfo.GetValue(this));
+                                            break;
+                                        case FieldType.Char:
+                                            writer.Write((char)syncedVarFields[i].FieldInfo.GetValue(this));
+                                            break;
+                                        case FieldType.Double:
+                                            writer.Write((double)syncedVarFields[i].FieldInfo.GetValue(this));
+                                            break;
+                                        case FieldType.Single:
+                                            writer.Write((float)syncedVarFields[i].FieldInfo.GetValue(this));
+                                            break;
+                                        case FieldType.Int:
+                                            writer.Write((int)syncedVarFields[i].FieldInfo.GetValue(this));
+                                            break;
+                                        case FieldType.Long:
+                                            writer.Write((long)syncedVarFields[i].FieldInfo.GetValue(this));
+                                            break;
+                                        case FieldType.SByte:
+                                            writer.Write((sbyte)syncedVarFields[i].FieldInfo.GetValue(this));
+                                            break;
+                                        case FieldType.Short:
+                                            writer.Write((short)syncedVarFields[i].FieldInfo.GetValue(this));
+                                            break;
+                                        case FieldType.UInt:
+                                            writer.Write((uint)syncedVarFields[i].FieldInfo.GetValue(this));
+                                            break;
+                                        case FieldType.ULong:
+                                            writer.Write((ulong)syncedVarFields[i].FieldInfo.GetValue(this));
+                                            break;
+                                        case FieldType.UShort:
+                                            writer.Write((ushort)syncedVarFields[i].FieldInfo.GetValue(this));
+                                            break;
+                                        case FieldType.String:
+                                            writer.Write((string)syncedVarFields[i].FieldInfo.GetValue(this));
+                                            break;
+                                        case FieldType.Vector3:
+                                            Vector3 vector3 = (Vector3)syncedVarFields[i].FieldInfo.GetValue(this);
+                                            writer.Write(vector3.x);
+                                            writer.Write(vector3.y);
+                                            writer.Write(vector3.z);
+                                            break;
+                                        case FieldType.Vector2:
+                                            Vector2 vector2 = (Vector2)syncedVarFields[i].FieldInfo.GetValue(this);
+                                            writer.Write(vector2.x);
+                                            writer.Write(vector2.y);
+                                            break;
+                                        case FieldType.Quaternion:
+                                            Vector3 euler = ((Quaternion)syncedVarFields[i].FieldInfo.GetValue(this)).eulerAngles;
+                                            writer.Write(euler.x);
+                                            writer.Write(euler.y);
+                                            writer.Write(euler.z);
+                                            break;
+                                        case FieldType.ByteArray:
+                                            writer.Write((ushort)((byte[])syncedVarFields[i].FieldInfo.GetValue(this)).Length);
+                                            writer.Write((byte[])syncedVarFields[i].FieldInfo.GetValue(this));
+                                            break;
+
+                                    }
+                                    syncedVarFields[i].FieldValue = syncedVarFields[i].FieldInfo.GetValue(this);
+                                    syncedVarFields[i].Dirty = false;
                                 }
-                                syncedFieldValues[i] = syncedFields[i].GetValue(this);
-                                dirtyFields[i] = false;
                             }
                         }
+                        InternalMessageHandler.Send("MLAPI_SYNC_VAR_UPDATE", "MLAPI_INTERNAL", stream.ToArray());
                     }
-                    InternalMessageHandler.Send("MLAPI_SYNC_VAR_UPDATE", "MLAPI_INTERNAL", stream.ToArray());
+                }
+                else
+                {
+                    //It's sync time. This is the target receivers packet.
+                    using (MemoryStream stream = new MemoryStream())
+                    {
+                        using (BinaryWriter writer = new BinaryWriter(stream))
+                        {
+                            //Write all indexes
+                            writer.Write(totalDirtyCount);
+                            writer.Write(networkId); //NetId
+                            writer.Write(networkedObject.GetOrderIndex(this)); //Behaviour OrderIndex
+                            for (byte i = 0; i < syncedVarFields.Count; i++)
+                            {
+                                //Writes all the indexes of the dirty syncvars.
+                                if (syncedVarFields[i].Dirty == true)
+                                {
+                                    writer.Write(i); //FieldIndex
+                                    switch (syncedVarFields[i].FieldType)
+                                    {
+                                        case FieldType.Bool:
+                                            writer.Write((bool)syncedVarFields[i].FieldInfo.GetValue(this));
+                                            break;
+                                        case FieldType.Byte:
+                                            writer.Write((byte)syncedVarFields[i].FieldInfo.GetValue(this));
+                                            break;
+                                        case FieldType.Char:
+                                            writer.Write((char)syncedVarFields[i].FieldInfo.GetValue(this));
+                                            break;
+                                        case FieldType.Double:
+                                            writer.Write((double)syncedVarFields[i].FieldInfo.GetValue(this));
+                                            break;
+                                        case FieldType.Single:
+                                            writer.Write((float)syncedVarFields[i].FieldInfo.GetValue(this));
+                                            break;
+                                        case FieldType.Int:
+                                            writer.Write((int)syncedVarFields[i].FieldInfo.GetValue(this));
+                                            break;
+                                        case FieldType.Long:
+                                            writer.Write((long)syncedVarFields[i].FieldInfo.GetValue(this));
+                                            break;
+                                        case FieldType.SByte:
+                                            writer.Write((sbyte)syncedVarFields[i].FieldInfo.GetValue(this));
+                                            break;
+                                        case FieldType.Short:
+                                            writer.Write((short)syncedVarFields[i].FieldInfo.GetValue(this));
+                                            break;
+                                        case FieldType.UInt:
+                                            writer.Write((uint)syncedVarFields[i].FieldInfo.GetValue(this));
+                                            break;
+                                        case FieldType.ULong:
+                                            writer.Write((ulong)syncedVarFields[i].FieldInfo.GetValue(this));
+                                            break;
+                                        case FieldType.UShort:
+                                            writer.Write((ushort)syncedVarFields[i].FieldInfo.GetValue(this));
+                                            break;
+                                        case FieldType.String:
+                                            writer.Write((string)syncedVarFields[i].FieldInfo.GetValue(this));
+                                            break;
+                                        case FieldType.Vector3:
+                                            Vector3 vector3 = (Vector3)syncedVarFields[i].FieldInfo.GetValue(this);
+                                            writer.Write(vector3.x);
+                                            writer.Write(vector3.y);
+                                            writer.Write(vector3.z);
+                                            break;
+                                        case FieldType.Vector2:
+                                            Vector2 vector2 = (Vector2)syncedVarFields[i].FieldInfo.GetValue(this);
+                                            writer.Write(vector2.x);
+                                            writer.Write(vector2.y);
+                                            break;
+                                        case FieldType.Quaternion:
+                                            Vector3 euler = ((Quaternion)syncedVarFields[i].FieldInfo.GetValue(this)).eulerAngles;
+                                            writer.Write(euler.x);
+                                            writer.Write(euler.y);
+                                            writer.Write(euler.z);
+                                            break;
+                                        case FieldType.ByteArray:
+                                            writer.Write((ushort)((byte[])syncedVarFields[i].FieldInfo.GetValue(this)).Length);
+                                            writer.Write((byte[])syncedVarFields[i].FieldInfo.GetValue(this));
+                                            break;
+
+                                    }
+                                }
+                            }
+                        }
+                        InternalMessageHandler.Send(ownerClientId, "MLAPI_SYNC_VAR_UPDATE", "MLAPI_INTERNAL", stream.ToArray()); //Send only to target
+                    }
+
+                    //It's sync time. This is the NON target receivers packet.
+                    using (MemoryStream stream = new MemoryStream())
+                    {
+                        using (BinaryWriter writer = new BinaryWriter(stream))
+                        {
+                            //Write all indexes
+                            writer.Write(nonTargetDirtyCount);
+                            writer.Write(networkId); //NetId
+                            writer.Write(networkedObject.GetOrderIndex(this)); //Behaviour OrderIndex
+                            for (byte i = 0; i < syncedVarFields.Count; i++)
+                            {
+                                //Writes all the indexes of the dirty syncvars.
+                                if (syncedVarFields[i].Dirty == true && !syncedVarFields[i].Target)
+                                {
+                                    writer.Write(i); //FieldIndex
+                                    switch (syncedVarFields[i].FieldType)
+                                    {
+                                        case FieldType.Bool:
+                                            writer.Write((bool)syncedVarFields[i].FieldInfo.GetValue(this));
+                                            break;
+                                        case FieldType.Byte:
+                                            writer.Write((byte)syncedVarFields[i].FieldInfo.GetValue(this));
+                                            break;
+                                        case FieldType.Char:
+                                            writer.Write((char)syncedVarFields[i].FieldInfo.GetValue(this));
+                                            break;
+                                        case FieldType.Double:
+                                            writer.Write((double)syncedVarFields[i].FieldInfo.GetValue(this));
+                                            break;
+                                        case FieldType.Single:
+                                            writer.Write((float)syncedVarFields[i].FieldInfo.GetValue(this));
+                                            break;
+                                        case FieldType.Int:
+                                            writer.Write((int)syncedVarFields[i].FieldInfo.GetValue(this));
+                                            break;
+                                        case FieldType.Long:
+                                            writer.Write((long)syncedVarFields[i].FieldInfo.GetValue(this));
+                                            break;
+                                        case FieldType.SByte:
+                                            writer.Write((sbyte)syncedVarFields[i].FieldInfo.GetValue(this));
+                                            break;
+                                        case FieldType.Short:
+                                            writer.Write((short)syncedVarFields[i].FieldInfo.GetValue(this));
+                                            break;
+                                        case FieldType.UInt:
+                                            writer.Write((uint)syncedVarFields[i].FieldInfo.GetValue(this));
+                                            break;
+                                        case FieldType.ULong:
+                                            writer.Write((ulong)syncedVarFields[i].FieldInfo.GetValue(this));
+                                            break;
+                                        case FieldType.UShort:
+                                            writer.Write((ushort)syncedVarFields[i].FieldInfo.GetValue(this));
+                                            break;
+                                        case FieldType.String:
+                                            writer.Write((string)syncedVarFields[i].FieldInfo.GetValue(this));
+                                            break;
+                                        case FieldType.Vector3:
+                                            Vector3 vector3 = (Vector3)syncedVarFields[i].FieldInfo.GetValue(this);
+                                            writer.Write(vector3.x);
+                                            writer.Write(vector3.y);
+                                            writer.Write(vector3.z);
+                                            break;
+                                        case FieldType.Vector2:
+                                            Vector2 vector2 = (Vector2)syncedVarFields[i].FieldInfo.GetValue(this);
+                                            writer.Write(vector2.x);
+                                            writer.Write(vector2.y);
+                                            break;
+                                        case FieldType.Quaternion:
+                                            Vector3 euler = ((Quaternion)syncedVarFields[i].FieldInfo.GetValue(this)).eulerAngles;
+                                            writer.Write(euler.x);
+                                            writer.Write(euler.y);
+                                            writer.Write(euler.z);
+                                            break;
+                                        case FieldType.ByteArray:
+                                            writer.Write((ushort)((byte[])syncedVarFields[i].FieldInfo.GetValue(this)).Length);
+                                            writer.Write((byte[])syncedVarFields[i].FieldInfo.GetValue(this));
+                                            break;
+
+                                    }
+                                    syncedVarFields[i].FieldValue = syncedVarFields[i].FieldInfo.GetValue(this);
+                                    syncedVarFields[i].Dirty = false;
+                                }
+                            }
+                        }
+                        InternalMessageHandler.Send("MLAPI_SYNC_VAR_UPDATE", "MLAPI_INTERNAL", stream.ToArray(), ownerClientId); // Send to everyone except target.
+                    }
                 }
                 lastSyncTime = NetworkingManager.singleton.NetworkTime;
             }
@@ -565,111 +839,111 @@ namespace MLAPI.MonoBehaviours.Core
         {
             if (!isServer)
                 return;
-            for (int i = 0; i < syncedFields.Count; i++)
+            for (int i = 0; i < syncedVarFields.Count; i++)
             {
-                switch (syncedFieldTypes[i])
+                switch (syncedVarFields[i].FieldType)
                 {
                     case FieldType.Bool:
-                        if ((bool)syncedFields[i].GetValue(this) != (bool)syncedFieldValues[i])
-                            dirtyFields[i] = true; //This fields value is out of sync!
+                        if ((bool)syncedVarFields[i].FieldInfo.GetValue(this) != (bool)syncedVarFields[i].FieldValue)
+                            syncedVarFields[i].Dirty = true; //This fields value is out of sync!
                         else
-                            dirtyFields[i] = false; //Up to date
+                            syncedVarFields[i].Dirty = false; //Up to date
                         break;
                     case FieldType.Byte:
-                        if ((byte)syncedFields[i].GetValue(this) != (byte)syncedFieldValues[i])
-                            dirtyFields[i] = true; //This fields value is out of sync!
+                        if ((byte)syncedVarFields[i].FieldInfo.GetValue(this) != (byte)syncedVarFields[i].FieldValue)
+                            syncedVarFields[i].Dirty = true; //This fields value is out of sync!
                         else
-                            dirtyFields[i] = false; //Up to date
+                            syncedVarFields[i].Dirty = false; //Up to date
                         break;
                     case FieldType.Char:
-                        if ((char)syncedFields[i].GetValue(this) != (char)syncedFieldValues[i])
-                            dirtyFields[i] = true; //This fields value is out of sync!
+                        if ((char)syncedVarFields[i].FieldInfo.GetValue(this) != (char)syncedVarFields[i].FieldValue)
+                            syncedVarFields[i].Dirty = true; //This fields value is out of sync!
                         else
-                            dirtyFields[i] = false; //Up to date
+                            syncedVarFields[i].Dirty = false; //Up to date
                         break;
                     case FieldType.Double:
-                        if ((double)syncedFields[i].GetValue(this) != (double)syncedFieldValues[i])
-                            dirtyFields[i] = true; //This fields value is out of sync!
+                        if ((double)syncedVarFields[i].FieldInfo.GetValue(this) != (double)syncedVarFields[i].FieldValue)
+                            syncedVarFields[i].Dirty = true; //This fields value is out of sync!
                         else
-                            dirtyFields[i] = false; //Up to date
+                            syncedVarFields[i].Dirty = false; //Up to date
                         break;
                     case FieldType.Single:
-                        if ((float)syncedFields[i].GetValue(this) != (float)syncedFieldValues[i])
-                            dirtyFields[i] = true; //This fields value is out of sync!
+                        if ((float)syncedVarFields[i].FieldInfo.GetValue(this) != (float)syncedVarFields[i].FieldValue)
+                            syncedVarFields[i].Dirty = true; //This fields value is out of sync!
                         else
-                            dirtyFields[i] = false; //Up to date
+                            syncedVarFields[i].Dirty = false; //Up to date
                         break;
                     case FieldType.Int:
-                        if ((int)syncedFields[i].GetValue(this) != (int)syncedFieldValues[i])
-                            dirtyFields[i] = true; //This fields value is out of sync!
+                        if ((int)syncedVarFields[i].FieldInfo.GetValue(this) != (int)syncedVarFields[i].FieldValue)
+                            syncedVarFields[i].Dirty = true; //This fields value is out of sync!
                         else
-                            dirtyFields[i] = false; //Up to date
+                            syncedVarFields[i].Dirty = false; //Up to date
                         break;
                     case FieldType.Long:
-                        if ((long)syncedFields[i].GetValue(this) != (long)syncedFieldValues[i])
-                            dirtyFields[i] = true; //This fields value is out of sync!
+                        if ((long)syncedVarFields[i].FieldInfo.GetValue(this) != (long)syncedVarFields[i].FieldValue)
+                            syncedVarFields[i].Dirty = true; //This fields value is out of sync!
                         else
-                            dirtyFields[i] = false; //Up to date
+                            syncedVarFields[i].Dirty = false; //Up to date
                         break;
                     case FieldType.SByte:
-                        if ((sbyte)syncedFields[i].GetValue(this) != (sbyte)syncedFieldValues[i])
-                            dirtyFields[i] = true; //This fields value is out of sync!
+                        if ((sbyte)syncedVarFields[i].FieldInfo.GetValue(this) != (sbyte)syncedVarFields[i].FieldValue)
+                            syncedVarFields[i].Dirty = true; //This fields value is out of sync!
                         else
-                            dirtyFields[i] = false; //Up to date
+                            syncedVarFields[i].Dirty = false; //Up to date
                         break;
                     case FieldType.Short:
-                        if ((short)syncedFields[i].GetValue(this) != (short)syncedFieldValues[i])
-                            dirtyFields[i] = true; //This fields value is out of sync!
+                        if ((short)syncedVarFields[i].FieldInfo.GetValue(this) != (short)syncedVarFields[i].FieldValue)
+                            syncedVarFields[i].Dirty = true; //This fields value is out of sync!
                         else
-                            dirtyFields[i] = false; //Up to date
+                            syncedVarFields[i].Dirty = false; //Up to date
                         break;
                     case FieldType.UInt:
-                        if ((uint)syncedFields[i].GetValue(this) != (uint)syncedFieldValues[i])
-                            dirtyFields[i] = true; //This fields value is out of sync!
+                        if ((uint)syncedVarFields[i].FieldInfo.GetValue(this) != (uint)syncedVarFields[i].FieldValue)
+                            syncedVarFields[i].Dirty = true; //This fields value is out of sync!
                         else
-                            dirtyFields[i] = false; //Up to date
+                            syncedVarFields[i].Dirty = false; //Up to date
                         break;
                     case FieldType.ULong:
-                        if ((ulong)syncedFields[i].GetValue(this) != (ulong)syncedFieldValues[i])
-                            dirtyFields[i] = true; //This fields value is out of sync!
+                        if ((ulong)syncedVarFields[i].FieldInfo.GetValue(this) != (ulong)syncedVarFields[i].FieldValue)
+                            syncedVarFields[i].Dirty = true; //This fields value is out of sync!
                         else
-                            dirtyFields[i] = false; //Up to date
+                            syncedVarFields[i].Dirty = false; //Up to date
                         break;
                     case FieldType.UShort:
-                        if ((ushort)syncedFields[i].GetValue(this) != (ushort)syncedFieldValues[i])
-                            dirtyFields[i] = true; //This fields value is out of sync!
+                        if ((ushort)syncedVarFields[i].FieldInfo.GetValue(this) != (ushort)syncedVarFields[i].FieldValue)
+                            syncedVarFields[i].Dirty = true; //This fields value is out of sync!
                         else
-                            dirtyFields[i] = false; //Up to date
+                            syncedVarFields[i].Dirty = false; //Up to date
                         break;
                     case FieldType.String:
-                        if ((string)syncedFields[i].GetValue(this) != (string)syncedFieldValues[i])
-                            dirtyFields[i] = true; //This fields value is out of sync!
+                        if ((string)syncedVarFields[i].FieldInfo.GetValue(this) != (string)syncedVarFields[i].FieldValue)
+                            syncedVarFields[i].Dirty = true; //This fields value is out of sync!
                         else
-                            dirtyFields[i] = false; //Up to date
+                            syncedVarFields[i].Dirty = false; //Up to date
                         break;
                     case FieldType.Vector3:
-                        if ((Vector3)syncedFields[i].GetValue(this) != (Vector3)syncedFieldValues[i])
-                            dirtyFields[i] = true; //This fields value is out of sync!
+                        if ((Vector3)syncedVarFields[i].FieldInfo.GetValue(this) != (Vector3)syncedVarFields[i].FieldValue)
+                            syncedVarFields[i].Dirty = true; //This fields value is out of sync!
                         else
-                            dirtyFields[i] = false; //Up to date
+                            syncedVarFields[i].Dirty = false; //Up to date
                         break;
                     case FieldType.Vector2:
-                        if ((Vector2)syncedFields[i].GetValue(this) != (Vector2)syncedFieldValues[i])
-                            dirtyFields[i] = true; //This fields value is out of sync!
+                        if ((Vector2)syncedVarFields[i].FieldInfo.GetValue(this) != (Vector2)syncedVarFields[i].FieldValue)
+                            syncedVarFields[i].Dirty = true; //This fields value is out of sync!
                         else
-                            dirtyFields[i] = false; //Up to date
+                            syncedVarFields[i].Dirty = false; //Up to date
                         break;
                     case FieldType.Quaternion:
-                        if ((Quaternion)syncedFields[i].GetValue(this) != (Quaternion)syncedFieldValues[i])
-                            dirtyFields[i] = true; //This fields value is out of sync!
+                        if ((Quaternion)syncedVarFields[i].FieldInfo.GetValue(this) != (Quaternion)syncedVarFields[i].FieldValue)
+                            syncedVarFields[i].Dirty = true; //This fields value is out of sync!
                         else
-                            dirtyFields[i] = false; //Up to date
+                            syncedVarFields[i].Dirty = false; //Up to date
                         break;
                     case FieldType.ByteArray:
-                        if(((byte[])syncedFields[i].GetValue(this)).SequenceEqual(((byte[])syncedFieldValues[i])))
-                            dirtyFields[i] = true; //This fields value is out of sync!
+                        if(((byte[])syncedVarFields[i].FieldInfo.GetValue(this)).SequenceEqual(((byte[])syncedVarFields[i].FieldValue)))
+                            syncedVarFields[i].Dirty = true; //This fields value is out of sync!
                         else
-                            dirtyFields[i] = false; //Up to date
+                            syncedVarFields[i].Dirty = false; //Up to date
                         break;
                 }
             }

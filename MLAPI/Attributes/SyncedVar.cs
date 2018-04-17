@@ -12,5 +12,9 @@ namespace MLAPI.Attributes
         /// The method name to invoke when the SyncVar get's updated.
         /// </summary>
         public string hook;
+        /// <summary>
+        /// If true, the syncedVar will only be synced to the owner.
+        /// </summary>
+        public bool target;
     }
 }
