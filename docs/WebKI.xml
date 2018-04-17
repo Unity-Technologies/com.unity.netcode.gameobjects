@@ -1,10 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <HelpKI>
-  <HelpKINode Title="Address field" Url="html/F_MLAPI_Data_NetworkingConfiguration_Address.htm" />
   <HelpKINode Title="AesKey field" Url="html/F_MLAPI_Data_NetworkedClient_AesKey.htm" />
-  <HelpKINode Title="AllowPassthroughMessages field" Url="html/F_MLAPI_Data_NetworkingConfiguration_AllowPassthroughMessages.htm" />
+  <HelpKINode Title="AllowPassthroughMessages field" Url="html/F_MLAPI_Data_NetworkConfig_AllowPassthroughMessages.htm" />
   <HelpKINode Title="animator property" Url="html/P_MLAPI_MonoBehaviours_Prototyping_NetworkedAnimator_animator.htm" />
   <HelpKINode Title="AssumeSyncedSends field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedTransform_AssumeSyncedSends.htm" />
+  <HelpKINode Title="AvgTimeBetweenPointsMs property" Url="html/P_MLAPI_MonoBehaviours_Core_TrackedObject_AvgTimeBetweenPointsMs.htm" />
   <HelpKINode Title="BinaryIgnore class">
     <HelpKINode Title="BinaryIgnore Class" Url="html/T_MLAPI_Attributes_BinaryIgnore.htm" />
     <HelpKINode Title="constructor" Url="html/M_MLAPI_Attributes_BinaryIgnore__ctor.htm" />
@@ -22,15 +22,28 @@
   <HelpKINode Title="BinarySerializer.Serialize(Of T) method" Url="html/M_MLAPI_NetworkingManagerComponents_Binary_BinarySerializer_Serialize__1.htm" />
   <HelpKINode Title="BinarySerializer.Serialize&lt;T&gt; method" Url="html/M_MLAPI_NetworkingManagerComponents_Binary_BinarySerializer_Serialize__1.htm" />
   <HelpKINode Title="ChangeOwnership method" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedObject_ChangeOwnership.htm" />
-  <HelpKINode Title="Channels field" Url="html/F_MLAPI_Data_NetworkingConfiguration_Channels.htm" />
+  <HelpKINode Title="Channel class">
+    <HelpKINode Title="Channel Class" Url="html/T_MLAPI_Data_Channel.htm" />
+    <HelpKINode Title="constructor" Url="html/M_MLAPI_Data_Channel__ctor.htm" />
+    <HelpKINode Title="fields" Url="html/Fields_T_MLAPI_Data_Channel.htm" />
+    <HelpKINode Title="methods" Url="html/Methods_T_MLAPI_Data_Channel.htm" />
+  </HelpKINode>
+  <HelpKINode Title="Channel.Channel constructor" Url="html/M_MLAPI_Data_Channel__ctor.htm" />
+  <HelpKINode Title="Channel.Encrypted field" Url="html/F_MLAPI_Data_Channel_Encrypted.htm" />
+  <HelpKINode Title="Channel.Name field" Url="html/F_MLAPI_Data_Channel_Name.htm" />
+  <HelpKINode Title="Channel.Type field" Url="html/F_MLAPI_Data_Channel_Type.htm" />
+  <HelpKINode Title="Channels field" Url="html/F_MLAPI_Data_NetworkConfig_Channels.htm" />
   <HelpKINode Title="ClearCache method" Url="html/M_MLAPI_NetworkingManagerComponents_Binary_BinarySerializer_ClearCache.htm" />
-  <HelpKINode Title="ClientConnectionBufferTimeout field" Url="html/F_MLAPI_Data_NetworkingConfiguration_ClientConnectionBufferTimeout.htm" />
+  <HelpKINode Title="ClientConnectionBufferTimeout field" Url="html/F_MLAPI_Data_NetworkConfig_ClientConnectionBufferTimeout.htm" />
   <HelpKINode Title="ClientId field" Url="html/F_MLAPI_Data_NetworkedClient_ClientId.htm" />
-  <HelpKINode Title="CompareConfig method" Url="html/M_MLAPI_Data_NetworkingConfiguration_CompareConfig.htm" />
+  <HelpKINode Title="CompareConfig method" Url="html/M_MLAPI_Data_NetworkConfig_CompareConfig.htm" />
+  <HelpKINode Title="ConnectAddress field" Url="html/F_MLAPI_Data_NetworkConfig_ConnectAddress.htm" />
   <HelpKINode Title="ConnectedClients property" Url="html/P_MLAPI_MonoBehaviours_Core_NetworkingManager_ConnectedClients.htm" />
-  <HelpKINode Title="ConnectionApproval field" Url="html/F_MLAPI_Data_NetworkingConfiguration_ConnectionApproval.htm" />
-  <HelpKINode Title="ConnectionApprovalCallback field" Url="html/F_MLAPI_Data_NetworkingConfiguration_ConnectionApprovalCallback.htm" />
-  <HelpKINode Title="ConnectionData field" Url="html/F_MLAPI_Data_NetworkingConfiguration_ConnectionData.htm" />
+  <HelpKINode Title="ConnectionApproval field" Url="html/F_MLAPI_Data_NetworkConfig_ConnectionApproval.htm" />
+  <HelpKINode Title="ConnectionApprovalCallback field" Url="html/F_MLAPI_MonoBehaviours_Core_NetworkingManager_ConnectionApprovalCallback.htm" />
+  <HelpKINode Title="ConnectionData field" Url="html/F_MLAPI_Data_NetworkConfig_ConnectionData.htm" />
+  <HelpKINode Title="ConnectionId field" Url="html/F_MLAPI_Data_NetId_ConnectionId.htm" />
+  <HelpKINode Title="ConnectPort field" Url="html/F_MLAPI_Data_NetworkConfig_ConnectPort.htm" />
   <HelpKINode Title="CorrectionDelay field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedNavMeshAgent_CorrectionDelay.htm" />
   <HelpKINode Title="CreatePool method" Url="html/M_MLAPI_NetworkingManagerComponents_Core_NetworkPoolManager_CreatePool.htm" />
   <HelpKINode Title="CryptographyHelper class">
@@ -40,7 +53,6 @@
   <HelpKINode Title="CryptographyHelper.Decrypt method" Url="html/M_MLAPI_NetworkingManagerComponents_Cryptography_CryptographyHelper_Decrypt.htm" />
   <HelpKINode Title="CryptographyHelper.Encrypt method" Url="html/M_MLAPI_NetworkingManagerComponents_Cryptography_CryptographyHelper_Encrypt.htm" />
   <HelpKINode Title="Decrypt method" Url="html/M_MLAPI_NetworkingManagerComponents_Cryptography_CryptographyHelper_Decrypt.htm" />
-  <HelpKINode Title="DefaultPlayerPrefab field" Url="html/F_MLAPI_MonoBehaviours_Core_NetworkingManager_DefaultPlayerPrefab.htm" />
   <HelpKINode Title="DeregisterMessageHandler method" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_DeregisterMessageHandler.htm" />
   <HelpKINode Title="Deserialize(Of T) method" Url="html/M_MLAPI_NetworkingManagerComponents_Binary_BinarySerializer_Deserialize__1.htm" />
   <HelpKINode Title="Deserialize&lt;T&gt; method" Url="html/M_MLAPI_NetworkingManagerComponents_Binary_BinarySerializer_Deserialize__1.htm" />
@@ -48,26 +60,33 @@
   <HelpKINode Title="DestroyPoolObject method" Url="html/M_MLAPI_NetworkingManagerComponents_Core_NetworkPoolManager_DestroyPoolObject.htm" />
   <HelpKINode Title="DontDestroy field" Url="html/F_MLAPI_MonoBehaviours_Core_NetworkingManager_DontDestroy.htm" />
   <HelpKINode Title="DriftCorrectionPercentage field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedNavMeshAgent_DriftCorrectionPercentage.htm" />
-  <HelpKINode Title="EnableEncryption field" Url="html/F_MLAPI_Data_NetworkingConfiguration_EnableEncryption.htm" />
+  <HelpKINode Title="EnableEncryption field" Url="html/F_MLAPI_Data_NetworkConfig_EnableEncryption.htm" />
   <HelpKINode Title="EnableProximity field">
     <HelpKINode Title="NetworkedAnimator.EnableProximity Field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedAnimator_EnableProximity.htm" />
     <HelpKINode Title="NetworkedNavMeshAgent.EnableProximity Field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedNavMeshAgent_EnableProximity.htm" />
     <HelpKINode Title="NetworkedTransform.EnableProximity Field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedTransform_EnableProximity.htm" />
   </HelpKINode>
-  <HelpKINode Title="EnableSceneSwitching field" Url="html/F_MLAPI_Data_NetworkingConfiguration_EnableSceneSwitching.htm" />
+  <HelpKINode Title="EnableSceneSwitching field" Url="html/F_MLAPI_Data_NetworkConfig_EnableSceneSwitching.htm" />
+  <HelpKINode Title="EnableTimeResync field" Url="html/F_MLAPI_Data_NetworkConfig_EnableTimeResync.htm" />
   <HelpKINode Title="Encrypt method" Url="html/M_MLAPI_NetworkingManagerComponents_Cryptography_CryptographyHelper_Encrypt.htm" />
-  <HelpKINode Title="EncryptedChannels field" Url="html/F_MLAPI_Data_NetworkingConfiguration_EncryptedChannels.htm" />
-  <HelpKINode Title="EventTickrate field" Url="html/F_MLAPI_Data_NetworkingConfiguration_EventTickrate.htm" />
+  <HelpKINode Title="Encrypted field" Url="html/F_MLAPI_Data_Channel_Encrypted.htm" />
+  <HelpKINode Title="Equality operator" Url="html/M_MLAPI_Data_NetId_op_Equality.htm" />
+  <HelpKINode Title="Equals method" Url="html/M_MLAPI_Data_NetId_Equals.htm" />
+  <HelpKINode Title="EventTickrate field" Url="html/F_MLAPI_Data_NetworkConfig_EventTickrate.htm" />
   <HelpKINode Title="GetChunkedMessage method" Url="html/M_MLAPI_NetworkingManagerComponents_Binary_MessageChunker_GetChunkedMessage.htm" />
-  <HelpKINode Title="GetConfig method" Url="html/M_MLAPI_Data_NetworkingConfiguration_GetConfig.htm" />
+  <HelpKINode Title="GetClientId method" Url="html/M_MLAPI_Data_NetId_GetClientId.htm" />
+  <HelpKINode Title="GetConfig method" Url="html/M_MLAPI_Data_NetworkConfig_GetConfig.htm" />
+  <HelpKINode Title="GetHashCode method" Url="html/M_MLAPI_Data_NetId_GetHashCode.htm" />
   <HelpKINode Title="GetMessageOrdered method" Url="html/M_MLAPI_NetworkingManagerComponents_Binary_MessageChunker_GetMessageOrdered.htm" />
   <HelpKINode Title="GetMessageUnordered method" Url="html/M_MLAPI_NetworkingManagerComponents_Binary_MessageChunker_GetMessageUnordered.htm" />
   <HelpKINode Title="GetNetworkedObject method" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_GetNetworkedObject.htm" />
   <HelpKINode Title="GetParameterAutoSend method" Url="html/M_MLAPI_MonoBehaviours_Prototyping_NetworkedAnimator_GetParameterAutoSend.htm" />
-  <HelpKINode Title="HandleObjectSpawning field" Url="html/F_MLAPI_Data_NetworkingConfiguration_HandleObjectSpawning.htm" />
+  <HelpKINode Title="HandleObjectSpawning field" Url="html/F_MLAPI_Data_NetworkConfig_HandleObjectSpawning.htm" />
   <HelpKINode Title="HasDuplicates method" Url="html/M_MLAPI_NetworkingManagerComponents_Binary_MessageChunker_HasDuplicates.htm" />
   <HelpKINode Title="HasMissingParts method" Url="html/M_MLAPI_NetworkingManagerComponents_Binary_MessageChunker_HasMissingParts.htm" />
   <HelpKINode Title="hook field" Url="html/F_MLAPI_Attributes_SyncedVar_hook.htm" />
+  <HelpKINode Title="HostId field" Url="html/F_MLAPI_Data_NetId_HostId.htm" />
+  <HelpKINode Title="Inequality operator" Url="html/M_MLAPI_Data_NetId_op_Inequality.htm" />
   <HelpKINode Title="InterpolatePosition field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedTransform_InterpolatePosition.htm" />
   <HelpKINode Title="InterpolateServer field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedTransform_InterpolateServer.htm" />
   <HelpKINode Title="isClient property">
@@ -75,10 +94,12 @@
     <HelpKINode Title="NetworkingManager.isClient Property " Url="html/P_MLAPI_MonoBehaviours_Core_NetworkingManager_isClient.htm" />
   </HelpKINode>
   <HelpKINode Title="IsClientConnected property" Url="html/P_MLAPI_MonoBehaviours_Core_NetworkingManager_IsClientConnected.htm" />
+  <HelpKINode Title="IsHost method" Url="html/M_MLAPI_Data_NetId_IsHost.htm" />
   <HelpKINode Title="isHost property">
     <HelpKINode Title="NetworkedBehaviour.isHost Property " Url="html/P_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_isHost.htm" />
     <HelpKINode Title="NetworkingManager.isHost Property " Url="html/P_MLAPI_MonoBehaviours_Core_NetworkingManager_isHost.htm" />
   </HelpKINode>
+  <HelpKINode Title="IsInvalid method" Url="html/M_MLAPI_Data_NetId_IsInvalid.htm" />
   <HelpKINode Title="isLocalPlayer property">
     <HelpKINode Title="NetworkedBehaviour.isLocalPlayer Property " Url="html/P_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_isLocalPlayer.htm" />
     <HelpKINode Title="NetworkedObject.isLocalPlayer Property " Url="html/P_MLAPI_MonoBehaviours_Core_NetworkedObject_isLocalPlayer.htm" />
@@ -102,9 +123,9 @@
   </HelpKINode>
   <HelpKINode Title="LagCompensationManager.Simulate method" Url="html/Overload_MLAPI_NetworkingManagerComponents_Core_LagCompensationManager_Simulate.htm" />
   <HelpKINode Title="LagCompensationManager.SimulationObjects property" Url="html/P_MLAPI_NetworkingManagerComponents_Core_LagCompensationManager_SimulationObjects.htm" />
-  <HelpKINode Title="MaxConnections field" Url="html/F_MLAPI_Data_NetworkingConfiguration_MaxConnections.htm" />
-  <HelpKINode Title="MaxReceiveEventsPerTickRate field" Url="html/F_MLAPI_Data_NetworkingConfiguration_MaxReceiveEventsPerTickRate.htm" />
-  <HelpKINode Title="MessageBufferSize field" Url="html/F_MLAPI_Data_NetworkingConfiguration_MessageBufferSize.htm" />
+  <HelpKINode Title="MaxConnections field" Url="html/F_MLAPI_Data_NetworkConfig_MaxConnections.htm" />
+  <HelpKINode Title="MaxReceiveEventsPerTickRate field" Url="html/F_MLAPI_Data_NetworkConfig_MaxReceiveEventsPerTickRate.htm" />
+  <HelpKINode Title="MessageBufferSize field" Url="html/F_MLAPI_Data_NetworkConfig_MessageBufferSize.htm" />
   <HelpKINode Title="MessageChunker class">
     <HelpKINode Title="MessageChunker Class" Url="html/T_MLAPI_NetworkingManagerComponents_Binary_MessageChunker.htm" />
     <HelpKINode Title="methods" Url="html/Methods_T_MLAPI_NetworkingManagerComponents_Binary_MessageChunker.htm" />
@@ -115,15 +136,30 @@
   <HelpKINode Title="MessageChunker.HasDuplicates method" Url="html/M_MLAPI_NetworkingManagerComponents_Binary_MessageChunker_HasDuplicates.htm" />
   <HelpKINode Title="MessageChunker.HasMissingParts method" Url="html/M_MLAPI_NetworkingManagerComponents_Binary_MessageChunker_HasMissingParts.htm" />
   <HelpKINode Title="MessageChunker.IsOrdered method" Url="html/M_MLAPI_NetworkingManagerComponents_Binary_MessageChunker_IsOrdered.htm" />
-  <HelpKINode Title="MessageTypes field" Url="html/F_MLAPI_Data_NetworkingConfiguration_MessageTypes.htm" />
+  <HelpKINode Title="MessageType class">
+    <HelpKINode Title="MessageType Class" Url="html/T_MLAPI_Data_MessageType.htm" />
+    <HelpKINode Title="constructor" Url="html/M_MLAPI_Data_MessageType__ctor.htm" />
+    <HelpKINode Title="fields" Url="html/Fields_T_MLAPI_Data_MessageType.htm" />
+    <HelpKINode Title="methods" Url="html/Methods_T_MLAPI_Data_MessageType.htm" />
+  </HelpKINode>
+  <HelpKINode Title="MessageType.MessageType constructor" Url="html/M_MLAPI_Data_MessageType__ctor.htm" />
+  <HelpKINode Title="MessageType.Name field" Url="html/F_MLAPI_Data_MessageType_Name.htm" />
+  <HelpKINode Title="MessageType.Passthrough field" Url="html/F_MLAPI_Data_MessageType_Passthrough.htm" />
+  <HelpKINode Title="MessageTypes field" Url="html/F_MLAPI_Data_NetworkConfig_MessageTypes.htm" />
+  <HelpKINode Title="Meta field" Url="html/F_MLAPI_Data_NetId_Meta.htm" />
   <HelpKINode Title="MinDegrees field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedTransform_MinDegrees.htm" />
   <HelpKINode Title="MinMeters field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedTransform_MinMeters.htm" />
   <HelpKINode Title="MLAPI.Attributes namespace" Url="html/N_MLAPI_Attributes.htm" />
   <HelpKINode Title="MLAPI.Attributes.BinaryIgnore class" Url="html/T_MLAPI_Attributes_BinaryIgnore.htm" />
   <HelpKINode Title="MLAPI.Attributes.SyncedVar class" Url="html/T_MLAPI_Attributes_SyncedVar.htm" />
   <HelpKINode Title="MLAPI.Data namespace" Url="html/N_MLAPI_Data.htm" />
+  <HelpKINode Title="MLAPI.Data.Channel class" Url="html/T_MLAPI_Data_Channel.htm" />
+  <HelpKINode Title="MLAPI.Data.MessageType class" Url="html/T_MLAPI_Data_MessageType.htm" />
+  <HelpKINode Title="MLAPI.Data.NetId structure" Url="html/T_MLAPI_Data_NetId.htm" />
+  <HelpKINode Title="MLAPI.Data.NetworkConfig class" Url="html/T_MLAPI_Data_NetworkConfig.htm" />
   <HelpKINode Title="MLAPI.Data.NetworkedClient class" Url="html/T_MLAPI_Data_NetworkedClient.htm" />
-  <HelpKINode Title="MLAPI.Data.NetworkingConfiguration class" Url="html/T_MLAPI_Data_NetworkingConfiguration.htm" />
+  <HelpKINode Title="MLAPI.Data.NetworkedPrefab class" Url="html/T_MLAPI_Data_NetworkedPrefab.htm" />
+  <HelpKINode Title="MLAPI.Data.TransportHost class" Url="html/T_MLAPI_Data_TransportHost.htm" />
   <HelpKINode Title="MLAPI.MonoBehaviours.Core namespace" Url="html/N_MLAPI_MonoBehaviours_Core.htm" />
   <HelpKINode Title="MLAPI.MonoBehaviours.Core.NetworkedBehaviour class" Url="html/T_MLAPI_MonoBehaviours_Core_NetworkedBehaviour.htm" />
   <HelpKINode Title="MLAPI.MonoBehaviours.Core.NetworkedObject class" Url="html/T_MLAPI_MonoBehaviours_Core_NetworkedObject.htm" />
@@ -143,7 +179,67 @@
   <HelpKINode Title="MLAPI.NetworkingManagerComponents.Cryptography namespace" Url="html/N_MLAPI_NetworkingManagerComponents_Cryptography.htm" />
   <HelpKINode Title="MLAPI.NetworkingManagerComponents.Cryptography.CryptographyHelper class" Url="html/T_MLAPI_NetworkingManagerComponents_Cryptography_CryptographyHelper.htm" />
   <HelpKINode Title="MyClientId property" Url="html/P_MLAPI_MonoBehaviours_Core_NetworkingManager_MyClientId.htm" />
+  <HelpKINode Title="Name field">
+    <HelpKINode Title="Channel.Name Field" Url="html/F_MLAPI_Data_Channel_Name.htm" />
+    <HelpKINode Title="MessageType.Name Field" Url="html/F_MLAPI_Data_MessageType_Name.htm" />
+    <HelpKINode Title="TransportHost.Name Field" Url="html/F_MLAPI_Data_TransportHost_Name.htm" />
+  </HelpKINode>
+  <HelpKINode Title="NetId structure">
+    <HelpKINode Title="NetId Structure" Url="html/T_MLAPI_Data_NetId.htm" />
+    <HelpKINode Title="constructor" Url="html/Overload_MLAPI_Data_NetId__ctor.htm" />
+    <HelpKINode Title="fields" Url="html/Fields_T_MLAPI_Data_NetId.htm" />
+    <HelpKINode Title="methods" Url="html/Methods_T_MLAPI_Data_NetId.htm" />
+    <HelpKINode Title="operators" Url="html/Operators_T_MLAPI_Data_NetId.htm" />
+    <HelpKINode Title="properties" Url="html/Properties_T_MLAPI_Data_NetId.htm" />
+  </HelpKINode>
+  <HelpKINode Title="NetId.ConnectionId field" Url="html/F_MLAPI_Data_NetId_ConnectionId.htm" />
+  <HelpKINode Title="NetId.Equality operator" Url="html/M_MLAPI_Data_NetId_op_Equality.htm" />
+  <HelpKINode Title="NetId.Equals method" Url="html/M_MLAPI_Data_NetId_Equals.htm" />
+  <HelpKINode Title="NetId.GetClientId method" Url="html/M_MLAPI_Data_NetId_GetClientId.htm" />
+  <HelpKINode Title="NetId.GetHashCode method" Url="html/M_MLAPI_Data_NetId_GetHashCode.htm" />
+  <HelpKINode Title="NetId.HostId field" Url="html/F_MLAPI_Data_NetId_HostId.htm" />
+  <HelpKINode Title="NetId.Inequality operator" Url="html/M_MLAPI_Data_NetId_op_Inequality.htm" />
+  <HelpKINode Title="NetId.IsHost method" Url="html/M_MLAPI_Data_NetId_IsHost.htm" />
+  <HelpKINode Title="NetId.IsInvalid method" Url="html/M_MLAPI_Data_NetId_IsInvalid.htm" />
+  <HelpKINode Title="NetId.Meta field" Url="html/F_MLAPI_Data_NetId_Meta.htm" />
+  <HelpKINode Title="NetId.NetId constructor" Url="html/Overload_MLAPI_Data_NetId__ctor.htm" />
+  <HelpKINode Title="NetId.ServerNetId property" Url="html/P_MLAPI_Data_NetId_ServerNetId.htm" />
+  <HelpKINode Title="NetworkConfig class">
+    <HelpKINode Title="NetworkConfig Class" Url="html/T_MLAPI_Data_NetworkConfig.htm" />
+    <HelpKINode Title="constructor" Url="html/M_MLAPI_Data_NetworkConfig__ctor.htm" />
+    <HelpKINode Title="fields" Url="html/Fields_T_MLAPI_Data_NetworkConfig.htm" />
+    <HelpKINode Title="methods" Url="html/Methods_T_MLAPI_Data_NetworkConfig.htm" />
+  </HelpKINode>
   <HelpKINode Title="NetworkConfig field" Url="html/F_MLAPI_MonoBehaviours_Core_NetworkingManager_NetworkConfig.htm" />
+  <HelpKINode Title="NetworkConfig.AllowPassthroughMessages field" Url="html/F_MLAPI_Data_NetworkConfig_AllowPassthroughMessages.htm" />
+  <HelpKINode Title="NetworkConfig.Channels field" Url="html/F_MLAPI_Data_NetworkConfig_Channels.htm" />
+  <HelpKINode Title="NetworkConfig.ClientConnectionBufferTimeout field" Url="html/F_MLAPI_Data_NetworkConfig_ClientConnectionBufferTimeout.htm" />
+  <HelpKINode Title="NetworkConfig.CompareConfig method" Url="html/M_MLAPI_Data_NetworkConfig_CompareConfig.htm" />
+  <HelpKINode Title="NetworkConfig.ConnectAddress field" Url="html/F_MLAPI_Data_NetworkConfig_ConnectAddress.htm" />
+  <HelpKINode Title="NetworkConfig.ConnectionApproval field" Url="html/F_MLAPI_Data_NetworkConfig_ConnectionApproval.htm" />
+  <HelpKINode Title="NetworkConfig.ConnectionData field" Url="html/F_MLAPI_Data_NetworkConfig_ConnectionData.htm" />
+  <HelpKINode Title="NetworkConfig.ConnectPort field" Url="html/F_MLAPI_Data_NetworkConfig_ConnectPort.htm" />
+  <HelpKINode Title="NetworkConfig.EnableEncryption field" Url="html/F_MLAPI_Data_NetworkConfig_EnableEncryption.htm" />
+  <HelpKINode Title="NetworkConfig.EnableSceneSwitching field" Url="html/F_MLAPI_Data_NetworkConfig_EnableSceneSwitching.htm" />
+  <HelpKINode Title="NetworkConfig.EnableTimeResync field" Url="html/F_MLAPI_Data_NetworkConfig_EnableTimeResync.htm" />
+  <HelpKINode Title="NetworkConfig.EventTickrate field" Url="html/F_MLAPI_Data_NetworkConfig_EventTickrate.htm" />
+  <HelpKINode Title="NetworkConfig.GetConfig method" Url="html/M_MLAPI_Data_NetworkConfig_GetConfig.htm" />
+  <HelpKINode Title="NetworkConfig.HandleObjectSpawning field" Url="html/F_MLAPI_Data_NetworkConfig_HandleObjectSpawning.htm" />
+  <HelpKINode Title="NetworkConfig.MaxConnections field" Url="html/F_MLAPI_Data_NetworkConfig_MaxConnections.htm" />
+  <HelpKINode Title="NetworkConfig.MaxReceiveEventsPerTickRate field" Url="html/F_MLAPI_Data_NetworkConfig_MaxReceiveEventsPerTickRate.htm" />
+  <HelpKINode Title="NetworkConfig.MessageBufferSize field" Url="html/F_MLAPI_Data_NetworkConfig_MessageBufferSize.htm" />
+  <HelpKINode Title="NetworkConfig.MessageTypes field" Url="html/F_MLAPI_Data_NetworkConfig_MessageTypes.htm" />
+  <HelpKINode Title="NetworkConfig.NetworkConfig constructor" Url="html/M_MLAPI_Data_NetworkConfig__ctor.htm" />
+  <HelpKINode Title="NetworkConfig.NetworkedPrefabs field" Url="html/F_MLAPI_Data_NetworkConfig_NetworkedPrefabs.htm" />
+  <HelpKINode Title="NetworkConfig.ProtocolVersion field" Url="html/F_MLAPI_Data_NetworkConfig_ProtocolVersion.htm" />
+  <HelpKINode Title="NetworkConfig.ReceiveTickrate field" Url="html/F_MLAPI_Data_NetworkConfig_ReceiveTickrate.htm" />
+  <HelpKINode Title="NetworkConfig.RegisteredScenes field" Url="html/F_MLAPI_Data_NetworkConfig_RegisteredScenes.htm" />
+  <HelpKINode Title="NetworkConfig.RSAPrivateKey field" Url="html/F_MLAPI_Data_NetworkConfig_RSAPrivateKey.htm" />
+  <HelpKINode Title="NetworkConfig.RSAPublicKey field" Url="html/F_MLAPI_Data_NetworkConfig_RSAPublicKey.htm" />
+  <HelpKINode Title="NetworkConfig.SecondsHistory field" Url="html/F_MLAPI_Data_NetworkConfig_SecondsHistory.htm" />
+  <HelpKINode Title="NetworkConfig.SendTickrate field" Url="html/F_MLAPI_Data_NetworkConfig_SendTickrate.htm" />
+  <HelpKINode Title="NetworkConfig.ServerTransports field" Url="html/F_MLAPI_Data_NetworkConfig_ServerTransports.htm" />
+  <HelpKINode Title="NetworkConfig.SignKeyExchange field" Url="html/F_MLAPI_Data_NetworkConfig_SignKeyExchange.htm" />
   <HelpKINode Title="NetworkedAnimator class">
     <HelpKINode Title="NetworkedAnimator Class" Url="html/T_MLAPI_MonoBehaviours_Prototyping_NetworkedAnimator.htm" />
     <HelpKINode Title="constructor" Url="html/M_MLAPI_MonoBehaviours_Prototyping_NetworkedAnimator__ctor.htm" />
@@ -239,14 +335,24 @@
   <HelpKINode Title="NetworkedObject.isPooledObject property" Url="html/P_MLAPI_MonoBehaviours_Core_NetworkedObject_isPooledObject.htm" />
   <HelpKINode Title="NetworkedObject.isSpawned property" Url="html/P_MLAPI_MonoBehaviours_Core_NetworkedObject_isSpawned.htm" />
   <HelpKINode Title="NetworkedObject.NetworkedObject constructor" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedObject__ctor.htm" />
+  <HelpKINode Title="NetworkedObject.NetworkedPrefabName field" Url="html/F_MLAPI_MonoBehaviours_Core_NetworkedObject_NetworkedPrefabName.htm" />
   <HelpKINode Title="NetworkedObject.NetworkId property" Url="html/P_MLAPI_MonoBehaviours_Core_NetworkedObject_NetworkId.htm" />
   <HelpKINode Title="NetworkedObject.OwnerClientId property" Url="html/P_MLAPI_MonoBehaviours_Core_NetworkedObject_OwnerClientId.htm" />
   <HelpKINode Title="NetworkedObject.PoolId property" Url="html/P_MLAPI_MonoBehaviours_Core_NetworkedObject_PoolId.htm" />
   <HelpKINode Title="NetworkedObject.RemoveOwnership method" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedObject_RemoveOwnership.htm" />
-  <HelpKINode Title="NetworkedObject.ServerOnly field" Url="html/F_MLAPI_MonoBehaviours_Core_NetworkedObject_ServerOnly.htm" />
   <HelpKINode Title="NetworkedObject.Spawn method" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedObject_Spawn.htm" />
-  <HelpKINode Title="NetworkedObject.SpawnablePrefabIndex property" Url="html/P_MLAPI_MonoBehaviours_Core_NetworkedObject_SpawnablePrefabIndex.htm" />
   <HelpKINode Title="NetworkedObject.SpawnWithOwnership method" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedObject_SpawnWithOwnership.htm" />
+  <HelpKINode Title="NetworkedPrefab class">
+    <HelpKINode Title="NetworkedPrefab Class" Url="html/T_MLAPI_Data_NetworkedPrefab.htm" />
+    <HelpKINode Title="constructor" Url="html/M_MLAPI_Data_NetworkedPrefab__ctor.htm" />
+    <HelpKINode Title="fields" Url="html/Fields_T_MLAPI_Data_NetworkedPrefab.htm" />
+    <HelpKINode Title="methods" Url="html/Methods_T_MLAPI_Data_NetworkedPrefab.htm" />
+  </HelpKINode>
+  <HelpKINode Title="NetworkedPrefab.NetworkedPrefab constructor" Url="html/M_MLAPI_Data_NetworkedPrefab__ctor.htm" />
+  <HelpKINode Title="NetworkedPrefab.playerPrefab field" Url="html/F_MLAPI_Data_NetworkedPrefab_playerPrefab.htm" />
+  <HelpKINode Title="NetworkedPrefab.prefab field" Url="html/F_MLAPI_Data_NetworkedPrefab_prefab.htm" />
+  <HelpKINode Title="NetworkedPrefabName field" Url="html/F_MLAPI_MonoBehaviours_Core_NetworkedObject_NetworkedPrefabName.htm" />
+  <HelpKINode Title="NetworkedPrefabs field" Url="html/F_MLAPI_Data_NetworkConfig_NetworkedPrefabs.htm" />
   <HelpKINode Title="NetworkedTransform class">
     <HelpKINode Title="NetworkedTransform Class" Url="html/T_MLAPI_MonoBehaviours_Prototyping_NetworkedTransform.htm" />
     <HelpKINode Title="constructor" Url="html/M_MLAPI_MonoBehaviours_Prototyping_NetworkedTransform__ctor.htm" />
@@ -265,43 +371,8 @@
   <HelpKINode Title="NetworkedTransform.ProximityRange field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedTransform_ProximityRange.htm" />
   <HelpKINode Title="NetworkedTransform.SendsPerSecond field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedTransform_SendsPerSecond.htm" />
   <HelpKINode Title="NetworkedTransform.SnapDistance field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedTransform_SnapDistance.htm" />
-  <HelpKINode Title="networkId property" Url="html/P_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_networkId.htm" />
   <HelpKINode Title="NetworkId property" Url="html/P_MLAPI_MonoBehaviours_Core_NetworkedObject_NetworkId.htm" />
-  <HelpKINode Title="NetworkingConfiguration class">
-    <HelpKINode Title="NetworkingConfiguration Class" Url="html/T_MLAPI_Data_NetworkingConfiguration.htm" />
-    <HelpKINode Title="constructor" Url="html/M_MLAPI_Data_NetworkingConfiguration__ctor.htm" />
-    <HelpKINode Title="fields" Url="html/Fields_T_MLAPI_Data_NetworkingConfiguration.htm" />
-    <HelpKINode Title="methods" Url="html/Methods_T_MLAPI_Data_NetworkingConfiguration.htm" />
-  </HelpKINode>
-  <HelpKINode Title="NetworkingConfiguration.Address field" Url="html/F_MLAPI_Data_NetworkingConfiguration_Address.htm" />
-  <HelpKINode Title="NetworkingConfiguration.AllowPassthroughMessages field" Url="html/F_MLAPI_Data_NetworkingConfiguration_AllowPassthroughMessages.htm" />
-  <HelpKINode Title="NetworkingConfiguration.Channels field" Url="html/F_MLAPI_Data_NetworkingConfiguration_Channels.htm" />
-  <HelpKINode Title="NetworkingConfiguration.ClientConnectionBufferTimeout field" Url="html/F_MLAPI_Data_NetworkingConfiguration_ClientConnectionBufferTimeout.htm" />
-  <HelpKINode Title="NetworkingConfiguration.CompareConfig method" Url="html/M_MLAPI_Data_NetworkingConfiguration_CompareConfig.htm" />
-  <HelpKINode Title="NetworkingConfiguration.ConnectionApproval field" Url="html/F_MLAPI_Data_NetworkingConfiguration_ConnectionApproval.htm" />
-  <HelpKINode Title="NetworkingConfiguration.ConnectionApprovalCallback field" Url="html/F_MLAPI_Data_NetworkingConfiguration_ConnectionApprovalCallback.htm" />
-  <HelpKINode Title="NetworkingConfiguration.ConnectionData field" Url="html/F_MLAPI_Data_NetworkingConfiguration_ConnectionData.htm" />
-  <HelpKINode Title="NetworkingConfiguration.EnableEncryption field" Url="html/F_MLAPI_Data_NetworkingConfiguration_EnableEncryption.htm" />
-  <HelpKINode Title="NetworkingConfiguration.EnableSceneSwitching field" Url="html/F_MLAPI_Data_NetworkingConfiguration_EnableSceneSwitching.htm" />
-  <HelpKINode Title="NetworkingConfiguration.EncryptedChannels field" Url="html/F_MLAPI_Data_NetworkingConfiguration_EncryptedChannels.htm" />
-  <HelpKINode Title="NetworkingConfiguration.EventTickrate field" Url="html/F_MLAPI_Data_NetworkingConfiguration_EventTickrate.htm" />
-  <HelpKINode Title="NetworkingConfiguration.GetConfig method" Url="html/M_MLAPI_Data_NetworkingConfiguration_GetConfig.htm" />
-  <HelpKINode Title="NetworkingConfiguration.HandleObjectSpawning field" Url="html/F_MLAPI_Data_NetworkingConfiguration_HandleObjectSpawning.htm" />
-  <HelpKINode Title="NetworkingConfiguration.MaxConnections field" Url="html/F_MLAPI_Data_NetworkingConfiguration_MaxConnections.htm" />
-  <HelpKINode Title="NetworkingConfiguration.MaxReceiveEventsPerTickRate field" Url="html/F_MLAPI_Data_NetworkingConfiguration_MaxReceiveEventsPerTickRate.htm" />
-  <HelpKINode Title="NetworkingConfiguration.MessageBufferSize field" Url="html/F_MLAPI_Data_NetworkingConfiguration_MessageBufferSize.htm" />
-  <HelpKINode Title="NetworkingConfiguration.MessageTypes field" Url="html/F_MLAPI_Data_NetworkingConfiguration_MessageTypes.htm" />
-  <HelpKINode Title="NetworkingConfiguration.NetworkingConfiguration constructor" Url="html/M_MLAPI_Data_NetworkingConfiguration__ctor.htm" />
-  <HelpKINode Title="NetworkingConfiguration.PassthroughMessageTypes field" Url="html/F_MLAPI_Data_NetworkingConfiguration_PassthroughMessageTypes.htm" />
-  <HelpKINode Title="NetworkingConfiguration.Port field" Url="html/F_MLAPI_Data_NetworkingConfiguration_Port.htm" />
-  <HelpKINode Title="NetworkingConfiguration.ProtocolVersion field" Url="html/F_MLAPI_Data_NetworkingConfiguration_ProtocolVersion.htm" />
-  <HelpKINode Title="NetworkingConfiguration.ReceiveTickrate field" Url="html/F_MLAPI_Data_NetworkingConfiguration_ReceiveTickrate.htm" />
-  <HelpKINode Title="NetworkingConfiguration.RegisteredScenes field" Url="html/F_MLAPI_Data_NetworkingConfiguration_RegisteredScenes.htm" />
-  <HelpKINode Title="NetworkingConfiguration.RSAPrivateKey field" Url="html/F_MLAPI_Data_NetworkingConfiguration_RSAPrivateKey.htm" />
-  <HelpKINode Title="NetworkingConfiguration.RSAPublicKey field" Url="html/F_MLAPI_Data_NetworkingConfiguration_RSAPublicKey.htm" />
-  <HelpKINode Title="NetworkingConfiguration.SecondsHistory field" Url="html/F_MLAPI_Data_NetworkingConfiguration_SecondsHistory.htm" />
-  <HelpKINode Title="NetworkingConfiguration.SendTickrate field" Url="html/F_MLAPI_Data_NetworkingConfiguration_SendTickrate.htm" />
-  <HelpKINode Title="NetworkingConfiguration.SignKeyExchange field" Url="html/F_MLAPI_Data_NetworkingConfiguration_SignKeyExchange.htm" />
+  <HelpKINode Title="networkId property" Url="html/P_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_networkId.htm" />
   <HelpKINode Title="NetworkingManager class">
     <HelpKINode Title="NetworkingManager Class" Url="html/T_MLAPI_MonoBehaviours_Core_NetworkingManager.htm" />
     <HelpKINode Title="constructor" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkingManager__ctor.htm" />
@@ -310,7 +381,7 @@
     <HelpKINode Title="properties" Url="html/Properties_T_MLAPI_MonoBehaviours_Core_NetworkingManager.htm" />
   </HelpKINode>
   <HelpKINode Title="NetworkingManager.ConnectedClients property" Url="html/P_MLAPI_MonoBehaviours_Core_NetworkingManager_ConnectedClients.htm" />
-  <HelpKINode Title="NetworkingManager.DefaultPlayerPrefab field" Url="html/F_MLAPI_MonoBehaviours_Core_NetworkingManager_DefaultPlayerPrefab.htm" />
+  <HelpKINode Title="NetworkingManager.ConnectionApprovalCallback field" Url="html/F_MLAPI_MonoBehaviours_Core_NetworkingManager_ConnectionApprovalCallback.htm" />
   <HelpKINode Title="NetworkingManager.DontDestroy field" Url="html/F_MLAPI_MonoBehaviours_Core_NetworkingManager_DontDestroy.htm" />
   <HelpKINode Title="NetworkingManager.isClient property" Url="html/P_MLAPI_MonoBehaviours_Core_NetworkingManager_isClient.htm" />
   <HelpKINode Title="NetworkingManager.IsClientConnected property" Url="html/P_MLAPI_MonoBehaviours_Core_NetworkingManager_IsClientConnected.htm" />
@@ -323,10 +394,11 @@
   <HelpKINode Title="NetworkingManager.OnClientConnectedCallback field" Url="html/F_MLAPI_MonoBehaviours_Core_NetworkingManager_OnClientConnectedCallback.htm" />
   <HelpKINode Title="NetworkingManager.OnClientDisconnectCallback field" Url="html/F_MLAPI_MonoBehaviours_Core_NetworkingManager_OnClientDisconnectCallback.htm" />
   <HelpKINode Title="NetworkingManager.OnServerStarted field" Url="html/F_MLAPI_MonoBehaviours_Core_NetworkingManager_OnServerStarted.htm" />
+  <HelpKINode Title="NetworkingManager.RegenerateRSAKeys field" Url="html/F_MLAPI_MonoBehaviours_Core_NetworkingManager_RegenerateRSAKeys.htm" />
   <HelpKINode Title="NetworkingManager.RunInBackground field" Url="html/F_MLAPI_MonoBehaviours_Core_NetworkingManager_RunInBackground.htm" />
   <HelpKINode Title="NetworkingManager.singleton property" Url="html/P_MLAPI_MonoBehaviours_Core_NetworkingManager_singleton.htm" />
-  <HelpKINode Title="NetworkingManager.SpawnablePrefabs field" Url="html/F_MLAPI_MonoBehaviours_Core_NetworkingManager_SpawnablePrefabs.htm" />
   <HelpKINode Title="NetworkingManager.StartClient method" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkingManager_StartClient.htm" />
+  <HelpKINode Title="NetworkingManager.StartClientWebsocket method" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkingManager_StartClientWebsocket.htm" />
   <HelpKINode Title="NetworkingManager.StartHost method" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkingManager_StartHost.htm" />
   <HelpKINode Title="NetworkingManager.StartServer method" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkingManager_StartServer.htm" />
   <HelpKINode Title="NetworkingManager.StopClient method" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkingManager_StopClient.htm" />
@@ -358,35 +430,38 @@
   <HelpKINode Title="OnLostOwnership method" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_OnLostOwnership.htm" />
   <HelpKINode Title="OnServerStarted field" Url="html/F_MLAPI_MonoBehaviours_Core_NetworkingManager_OnServerStarted.htm" />
   <HelpKINode Title="OwnedObjects field" Url="html/F_MLAPI_Data_NetworkedClient_OwnedObjects.htm" />
-  <HelpKINode Title="OwnerClientId property" Url="html/P_MLAPI_MonoBehaviours_Core_NetworkedObject_OwnerClientId.htm" />
   <HelpKINode Title="ownerClientId property" Url="html/P_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_ownerClientId.htm" />
+  <HelpKINode Title="OwnerClientId property" Url="html/P_MLAPI_MonoBehaviours_Core_NetworkedObject_OwnerClientId.htm" />
   <HelpKINode Title="param0 field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedAnimator_param0.htm" />
   <HelpKINode Title="param1 field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedAnimator_param1.htm" />
   <HelpKINode Title="param2 field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedAnimator_param2.htm" />
   <HelpKINode Title="param3 field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedAnimator_param3.htm" />
   <HelpKINode Title="param4 field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedAnimator_param4.htm" />
   <HelpKINode Title="param5 field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedAnimator_param5.htm" />
-  <HelpKINode Title="PassthroughMessageTypes field" Url="html/F_MLAPI_Data_NetworkingConfiguration_PassthroughMessageTypes.htm" />
+  <HelpKINode Title="Passthrough field" Url="html/F_MLAPI_Data_MessageType_Passthrough.htm" />
   <HelpKINode Title="PlayerObject field" Url="html/F_MLAPI_Data_NetworkedClient_PlayerObject.htm" />
+  <HelpKINode Title="playerPrefab field" Url="html/F_MLAPI_Data_NetworkedPrefab_playerPrefab.htm" />
   <HelpKINode Title="PoolId property" Url="html/P_MLAPI_MonoBehaviours_Core_NetworkedObject_PoolId.htm" />
-  <HelpKINode Title="Port field" Url="html/F_MLAPI_Data_NetworkingConfiguration_Port.htm" />
-  <HelpKINode Title="ProtocolVersion field" Url="html/F_MLAPI_Data_NetworkingConfiguration_ProtocolVersion.htm" />
+  <HelpKINode Title="Port field" Url="html/F_MLAPI_Data_TransportHost_Port.htm" />
+  <HelpKINode Title="prefab field" Url="html/F_MLAPI_Data_NetworkedPrefab_prefab.htm" />
+  <HelpKINode Title="ProtocolVersion field" Url="html/F_MLAPI_Data_NetworkConfig_ProtocolVersion.htm" />
   <HelpKINode Title="ProximityRange field">
     <HelpKINode Title="NetworkedAnimator.ProximityRange Field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedAnimator_ProximityRange.htm" />
     <HelpKINode Title="NetworkedNavMeshAgent.ProximityRange Field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedNavMeshAgent_ProximityRange.htm" />
     <HelpKINode Title="NetworkedTransform.ProximityRange Field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedTransform_ProximityRange.htm" />
   </HelpKINode>
-  <HelpKINode Title="ReceiveTickrate field" Url="html/F_MLAPI_Data_NetworkingConfiguration_ReceiveTickrate.htm" />
-  <HelpKINode Title="RegisteredScenes field" Url="html/F_MLAPI_Data_NetworkingConfiguration_RegisteredScenes.htm" />
+  <HelpKINode Title="ReceiveTickrate field" Url="html/F_MLAPI_Data_NetworkConfig_ReceiveTickrate.htm" />
+  <HelpKINode Title="RegenerateRSAKeys field" Url="html/F_MLAPI_MonoBehaviours_Core_NetworkingManager_RegenerateRSAKeys.htm" />
+  <HelpKINode Title="RegisteredScenes field" Url="html/F_MLAPI_Data_NetworkConfig_RegisteredScenes.htm" />
   <HelpKINode Title="RegisterMessageHandler method" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_RegisterMessageHandler.htm" />
   <HelpKINode Title="RemoveOwnership method" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedObject_RemoveOwnership.htm" />
   <HelpKINode Title="ResetParameterOptions method" Url="html/M_MLAPI_MonoBehaviours_Prototyping_NetworkedAnimator_ResetParameterOptions.htm" />
-  <HelpKINode Title="RSAPrivateKey field" Url="html/F_MLAPI_Data_NetworkingConfiguration_RSAPrivateKey.htm" />
-  <HelpKINode Title="RSAPublicKey field" Url="html/F_MLAPI_Data_NetworkingConfiguration_RSAPublicKey.htm" />
+  <HelpKINode Title="RSAPrivateKey field" Url="html/F_MLAPI_Data_NetworkConfig_RSAPrivateKey.htm" />
+  <HelpKINode Title="RSAPublicKey field" Url="html/F_MLAPI_Data_NetworkConfig_RSAPublicKey.htm" />
   <HelpKINode Title="RunInBackground field" Url="html/F_MLAPI_MonoBehaviours_Core_NetworkingManager_RunInBackground.htm" />
-  <HelpKINode Title="SecondsHistory field" Url="html/F_MLAPI_Data_NetworkingConfiguration_SecondsHistory.htm" />
+  <HelpKINode Title="SecondsHistory field" Url="html/F_MLAPI_Data_NetworkConfig_SecondsHistory.htm" />
   <HelpKINode Title="SendsPerSecond field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedTransform_SendsPerSecond.htm" />
-  <HelpKINode Title="SendTickrate field" Url="html/F_MLAPI_Data_NetworkingConfiguration_SendTickrate.htm" />
+  <HelpKINode Title="SendTickrate field" Url="html/F_MLAPI_Data_NetworkConfig_SendTickrate.htm" />
   <HelpKINode Title="SendToClient method" Url="html/Overload_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToClient.htm" />
   <HelpKINode Title="SendToClients method" Url="html/Overload_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToClients.htm" />
   <HelpKINode Title="SendToClientsTarget method" Url="html/Overload_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToClientsTarget.htm" />
@@ -399,20 +474,20 @@
   <HelpKINode Title="SendToServerTarget method" Url="html/Overload_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToServerTarget.htm" />
   <HelpKINode Title="Serialize(Of T) method" Url="html/M_MLAPI_NetworkingManagerComponents_Binary_BinarySerializer_Serialize__1.htm" />
   <HelpKINode Title="Serialize&lt;T&gt; method" Url="html/M_MLAPI_NetworkingManagerComponents_Binary_BinarySerializer_Serialize__1.htm" />
-  <HelpKINode Title="ServerOnly field" Url="html/F_MLAPI_MonoBehaviours_Core_NetworkedObject_ServerOnly.htm" />
+  <HelpKINode Title="ServerNetId property" Url="html/P_MLAPI_Data_NetId_ServerNetId.htm" />
+  <HelpKINode Title="ServerTransports field" Url="html/F_MLAPI_Data_NetworkConfig_ServerTransports.htm" />
   <HelpKINode Title="SetParameterAutoSend method" Url="html/M_MLAPI_MonoBehaviours_Prototyping_NetworkedAnimator_SetParameterAutoSend.htm" />
   <HelpKINode Title="SetTrigger method" Url="html/Overload_MLAPI_MonoBehaviours_Prototyping_NetworkedAnimator_SetTrigger.htm" />
-  <HelpKINode Title="SignKeyExchange field" Url="html/F_MLAPI_Data_NetworkingConfiguration_SignKeyExchange.htm" />
+  <HelpKINode Title="SignKeyExchange field" Url="html/F_MLAPI_Data_NetworkConfig_SignKeyExchange.htm" />
   <HelpKINode Title="Simulate method" Url="html/Overload_MLAPI_NetworkingManagerComponents_Core_LagCompensationManager_Simulate.htm" />
   <HelpKINode Title="SimulationObjects property" Url="html/P_MLAPI_NetworkingManagerComponents_Core_LagCompensationManager_SimulationObjects.htm" />
   <HelpKINode Title="singleton property" Url="html/P_MLAPI_MonoBehaviours_Core_NetworkingManager_singleton.htm" />
   <HelpKINode Title="SnapDistance field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedTransform_SnapDistance.htm" />
   <HelpKINode Title="Spawn method" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedObject_Spawn.htm" />
-  <HelpKINode Title="SpawnablePrefabIndex property" Url="html/P_MLAPI_MonoBehaviours_Core_NetworkedObject_SpawnablePrefabIndex.htm" />
-  <HelpKINode Title="SpawnablePrefabs field" Url="html/F_MLAPI_MonoBehaviours_Core_NetworkingManager_SpawnablePrefabs.htm" />
   <HelpKINode Title="SpawnPoolObject method" Url="html/M_MLAPI_NetworkingManagerComponents_Core_NetworkPoolManager_SpawnPoolObject.htm" />
   <HelpKINode Title="SpawnWithOwnership method" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedObject_SpawnWithOwnership.htm" />
   <HelpKINode Title="StartClient method" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkingManager_StartClient.htm" />
+  <HelpKINode Title="StartClientWebsocket method" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkingManager_StartClientWebsocket.htm" />
   <HelpKINode Title="StartHost method" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkingManager_StartHost.htm" />
   <HelpKINode Title="StartServer method" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkingManager_StartServer.htm" />
   <HelpKINode Title="StopClient method" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkingManager_StopClient.htm" />
@@ -429,12 +504,27 @@
   <HelpKINode Title="SyncedVar.hook field" Url="html/F_MLAPI_Attributes_SyncedVar_hook.htm" />
   <HelpKINode Title="SyncedVar.SyncedVar constructor" Url="html/M_MLAPI_Attributes_SyncedVar__ctor.htm" />
   <HelpKINode Title="SyncVarSyncDelay field" Url="html/F_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SyncVarSyncDelay.htm" />
+  <HelpKINode Title="TotalPoints property" Url="html/P_MLAPI_MonoBehaviours_Core_TrackedObject_TotalPoints.htm" />
   <HelpKINode Title="TrackedObject class">
     <HelpKINode Title="TrackedObject Class" Url="html/T_MLAPI_MonoBehaviours_Core_TrackedObject.htm" />
     <HelpKINode Title="constructor" Url="html/M_MLAPI_MonoBehaviours_Core_TrackedObject__ctor.htm" />
     <HelpKINode Title="methods" Url="html/Methods_T_MLAPI_MonoBehaviours_Core_TrackedObject.htm" />
     <HelpKINode Title="properties" Url="html/Properties_T_MLAPI_MonoBehaviours_Core_TrackedObject.htm" />
   </HelpKINode>
+  <HelpKINode Title="TrackedObject.AvgTimeBetweenPointsMs property" Url="html/P_MLAPI_MonoBehaviours_Core_TrackedObject_AvgTimeBetweenPointsMs.htm" />
+  <HelpKINode Title="TrackedObject.TotalPoints property" Url="html/P_MLAPI_MonoBehaviours_Core_TrackedObject_TotalPoints.htm" />
   <HelpKINode Title="TrackedObject.TrackedObject constructor" Url="html/M_MLAPI_MonoBehaviours_Core_TrackedObject__ctor.htm" />
+  <HelpKINode Title="TransportHost class">
+    <HelpKINode Title="TransportHost Class" Url="html/T_MLAPI_Data_TransportHost.htm" />
+    <HelpKINode Title="constructor" Url="html/M_MLAPI_Data_TransportHost__ctor.htm" />
+    <HelpKINode Title="fields" Url="html/Fields_T_MLAPI_Data_TransportHost.htm" />
+    <HelpKINode Title="methods" Url="html/Methods_T_MLAPI_Data_TransportHost.htm" />
+  </HelpKINode>
+  <HelpKINode Title="TransportHost.Name field" Url="html/F_MLAPI_Data_TransportHost_Name.htm" />
+  <HelpKINode Title="TransportHost.Port field" Url="html/F_MLAPI_Data_TransportHost_Port.htm" />
+  <HelpKINode Title="TransportHost.TransportHost constructor" Url="html/M_MLAPI_Data_TransportHost__ctor.htm" />
+  <HelpKINode Title="TransportHost.Websockets field" Url="html/F_MLAPI_Data_TransportHost_Websockets.htm" />
+  <HelpKINode Title="Type field" Url="html/F_MLAPI_Data_Channel_Type.htm" />
   <HelpKINode Title="WarpOnDestinationChange field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedNavMeshAgent_WarpOnDestinationChange.htm" />
+  <HelpKINode Title="Websockets field" Url="html/F_MLAPI_Data_TransportHost_Websockets.htm" />
 </HelpKI>
