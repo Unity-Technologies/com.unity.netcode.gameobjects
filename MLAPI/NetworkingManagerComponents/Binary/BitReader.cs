@@ -54,7 +54,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         public long[] ReadLongArray(int known = -1) => ReadArray(ReadLong, known);
         public string ReadString() => Encoding.UTF8.GetString(ReadByteArray());
 
-        private ulong ReadULong()
+        public ulong ReadULong()
         {
             ulong header = ReadByte();
             if (header <= 240) return header;
