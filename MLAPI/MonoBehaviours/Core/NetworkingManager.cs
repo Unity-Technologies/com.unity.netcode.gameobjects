@@ -813,7 +813,7 @@ namespace MLAPI.MonoBehaviours.Core
                     lastTimeSyncTime = NetworkTime;
                 }
 
-                networkTime += Time.deltaTime;
+                networkTime += Time.unscaledDeltaTime;
             }
         }
 

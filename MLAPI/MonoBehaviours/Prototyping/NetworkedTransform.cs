@@ -135,7 +135,7 @@ namespace MLAPI.MonoBehaviours.Prototyping
                         //Snap, set T to 1 (100% of the lerp)
                         lerpT = 1f;
                     }
-                    lerpT += Time.deltaTime / timeForLerp;
+                    lerpT += Time.unscaledDeltaTime / timeForLerp;
                     transform.position = Vector3.Lerp(lerpStartPos, lerpEndPos, lerpT);
                     transform.rotation = Quaternion.Slerp(lerpStartRot, lerpEndRot, lerpT);
                 }
