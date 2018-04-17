@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using MLAPI.Data;
 using MLAPI.NetworkingManagerComponents.Binary;
 using MLAPI.NetworkingManagerComponents.Cryptography;
@@ -10,6 +9,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
 {
     internal static partial class InternalMessageHandler
     {
+        internal static byte[] FinalMessageBuffer;
         internal static void PassthroughSend(uint targetId, uint sourceId, ushort messageType, int channelId, byte[] data, uint? networkId = null, ushort? orderId = null)
         {
             NetId targetNetId = new NetId(targetId);
@@ -41,8 +41,10 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 else
                     writer.WriteByteArray(data);
 
+                writer.Finalize(ref FinalMessageBuffer);
+
                 byte error;
-                NetworkTransport.QueueMessageForSending(targetNetId.HostId, targetNetId.ConnectionId, channelId, writer.Finalize(), (int)writer.GetFinalizeSize(), out error);
+                NetworkTransport.QueueMessageForSending(targetNetId.HostId, targetNetId.ConnectionId, channelId, FinalMessageBuffer, (int)writer.GetFinalizeSize(), out error);
             }
         }
 
@@ -103,10 +105,13 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 byte error;
                 if (isPassthrough)
                     netId = NetId.ServerNetId;
+
+                writer.Finalize(ref FinalMessageBuffer);
+
                 if (skipQueue)
-                    NetworkTransport.Send(netId.HostId, netId.ConnectionId, MessageManager.channels[channelName], writer.Finalize(), (int)writer.GetFinalizeSize(), out error);
+                    NetworkTransport.Send(netId.HostId, netId.ConnectionId, MessageManager.channels[channelName], FinalMessageBuffer, (int)writer.GetFinalizeSize(), out error);
                 else
-                    NetworkTransport.QueueMessageForSending(netId.HostId, netId.ConnectionId, MessageManager.channels[channelName], writer.Finalize(), (int)writer.GetFinalizeSize(), out error);
+                    NetworkTransport.QueueMessageForSending(netId.HostId, netId.ConnectionId, MessageManager.channels[channelName], FinalMessageBuffer, (int)writer.GetFinalizeSize(), out error);
             }
         }
 
@@ -149,8 +154,11 @@ namespace MLAPI.NetworkingManagerComponents.Core
                         //Client trying to send data to host
                         netId = NetId.ServerNetId;
                     }
+
+                    writer.Finalize(ref FinalMessageBuffer);
+
                     byte error;
-                    NetworkTransport.QueueMessageForSending(netId.HostId, netId.ConnectionId, channel, writer.Finalize(), (int)writer.GetFinalizeSize(), out error);
+                    NetworkTransport.QueueMessageForSending(netId.HostId, netId.ConnectionId, channel, FinalMessageBuffer, (int)writer.GetFinalizeSize(), out error);
                 }
             }
         }
@@ -194,8 +202,11 @@ namespace MLAPI.NetworkingManagerComponents.Core
                         //Client trying to send data to host
                         netId = NetId.ServerNetId;
                     }
+
+                    writer.Finalize(ref FinalMessageBuffer);
+
                     byte error;
-                    NetworkTransport.QueueMessageForSending(netId.HostId, netId.ConnectionId, channel, writer.Finalize(), (int)writer.GetFinalizeSize(), out error);
+                    NetworkTransport.QueueMessageForSending(netId.HostId, netId.ConnectionId, channel, FinalMessageBuffer, (int)writer.GetFinalizeSize(), out error);
                 }
             }
         }
@@ -240,8 +251,11 @@ namespace MLAPI.NetworkingManagerComponents.Core
                         //Client trying to send data to host
                         netId = NetId.ServerNetId;
                     }
+
+                    writer.Finalize(ref FinalMessageBuffer);
+
                     byte error;
-                    NetworkTransport.QueueMessageForSending(netId.HostId, netId.ConnectionId, channel, writer.Finalize(), (int)writer.GetFinalizeSize(), out error);
+                    NetworkTransport.QueueMessageForSending(netId.HostId, netId.ConnectionId, channel, FinalMessageBuffer, (int)writer.GetFinalizeSize(), out error);
                 }
             }
         }
@@ -288,8 +302,11 @@ namespace MLAPI.NetworkingManagerComponents.Core
                         //Client trying to send data to host
                         netId = NetId.ServerNetId;
                     }
+
+                    writer.Finalize(ref FinalMessageBuffer);
+
                     byte error;
-                    NetworkTransport.QueueMessageForSending(netId.HostId, netId.ConnectionId, channel, writer.Finalize(), (int)writer.GetFinalizeSize(), out error);
+                    NetworkTransport.QueueMessageForSending(netId.HostId, netId.ConnectionId, channel, FinalMessageBuffer, (int)writer.GetFinalizeSize(), out error);
                 }
             }
         }

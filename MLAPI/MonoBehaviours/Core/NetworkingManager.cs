@@ -234,6 +234,7 @@ namespace MLAPI.MonoBehaviours.Core
             NetworkSceneManager.registeredSceneNames = new HashSet<string>();
             NetworkSceneManager.sceneIndexToString = new Dictionary<uint, string>();
             NetworkSceneManager.sceneNameToIndex = new Dictionary<string, uint>();
+            InternalMessageHandler.FinalMessageBuffer = new byte[NetworkConfig.MessageBufferSize];
 
             if(NetworkConfig.HandleObjectSpawning)
             {
