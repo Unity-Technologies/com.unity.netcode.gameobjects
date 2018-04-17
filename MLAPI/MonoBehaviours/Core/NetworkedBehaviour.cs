@@ -240,7 +240,7 @@ namespace MLAPI.MonoBehaviours.Core
                             Dirty = false,
                             Target = ((SyncedVar)sortedFields[i].GetCustomAttributes(typeof(SyncedVar), true)[0]).target,
                             FieldInfo = sortedFields[i],
-                            FieldType = FieldType.Bool,
+                            FieldType = FieldType.Byte,
                             FieldValue = sortedFields[i].GetValue(this),
                             HookMethod = method
                         });
@@ -252,7 +252,7 @@ namespace MLAPI.MonoBehaviours.Core
                             Dirty = false,
                             Target = ((SyncedVar)sortedFields[i].GetCustomAttributes(typeof(SyncedVar), true)[0]).target,
                             FieldInfo = sortedFields[i],
-                            FieldType = FieldType.Bool,
+                            FieldType = FieldType.Char,
                             FieldValue = sortedFields[i].GetValue(this),
                             HookMethod = method
                         });
@@ -264,7 +264,7 @@ namespace MLAPI.MonoBehaviours.Core
                             Dirty = false,
                             Target = ((SyncedVar)sortedFields[i].GetCustomAttributes(typeof(SyncedVar), true)[0]).target,
                             FieldInfo = sortedFields[i],
-                            FieldType = FieldType.Bool,
+                            FieldType = FieldType.Double,
                             FieldValue = sortedFields[i].GetValue(this),
                             HookMethod = method
                         });
@@ -276,7 +276,7 @@ namespace MLAPI.MonoBehaviours.Core
                             Dirty = false,
                             Target = ((SyncedVar)sortedFields[i].GetCustomAttributes(typeof(SyncedVar), true)[0]).target,
                             FieldInfo = sortedFields[i],
-                            FieldType = FieldType.Bool,
+                            FieldType = FieldType.Single,
                             FieldValue = sortedFields[i].GetValue(this),
                             HookMethod = method
                         });
@@ -288,7 +288,7 @@ namespace MLAPI.MonoBehaviours.Core
                             Dirty = false,
                             Target = ((SyncedVar)sortedFields[i].GetCustomAttributes(typeof(SyncedVar), true)[0]).target,
                             FieldInfo = sortedFields[i],
-                            FieldType = FieldType.Bool,
+                            FieldType = FieldType.Int,
                             FieldValue = sortedFields[i].GetValue(this),
                             HookMethod = method
                         });
@@ -300,7 +300,7 @@ namespace MLAPI.MonoBehaviours.Core
                             Dirty = false,
                             Target = ((SyncedVar)sortedFields[i].GetCustomAttributes(typeof(SyncedVar), true)[0]).target,
                             FieldInfo = sortedFields[i],
-                            FieldType = FieldType.Bool,
+                            FieldType = FieldType.Long,
                             FieldValue = sortedFields[i].GetValue(this),
                             HookMethod = method
                         });
@@ -312,7 +312,7 @@ namespace MLAPI.MonoBehaviours.Core
                             Dirty = false,
                             Target = ((SyncedVar)sortedFields[i].GetCustomAttributes(typeof(SyncedVar), true)[0]).target,
                             FieldInfo = sortedFields[i],
-                            FieldType = FieldType.Bool,
+                            FieldType = FieldType.SByte,
                             FieldValue = sortedFields[i].GetValue(this),
                             HookMethod = method
                         });
@@ -324,7 +324,7 @@ namespace MLAPI.MonoBehaviours.Core
                             Dirty = false,
                             Target = ((SyncedVar)sortedFields[i].GetCustomAttributes(typeof(SyncedVar), true)[0]).target,
                             FieldInfo = sortedFields[i],
-                            FieldType = FieldType.Bool,
+                            FieldType = FieldType.Short,
                             FieldValue = sortedFields[i].GetValue(this),
                             HookMethod = method
                         });
@@ -336,7 +336,7 @@ namespace MLAPI.MonoBehaviours.Core
                             Dirty = false,
                             Target = ((SyncedVar)sortedFields[i].GetCustomAttributes(typeof(SyncedVar), true)[0]).target,
                             FieldInfo = sortedFields[i],
-                            FieldType = FieldType.Bool,
+                            FieldType = FieldType.UInt,
                             FieldValue = sortedFields[i].GetValue(this),
                             HookMethod = method
                         });
@@ -348,7 +348,7 @@ namespace MLAPI.MonoBehaviours.Core
                             Dirty = false,
                             Target = ((SyncedVar)sortedFields[i].GetCustomAttributes(typeof(SyncedVar), true)[0]).target,
                             FieldInfo = sortedFields[i],
-                            FieldType = FieldType.Bool,
+                            FieldType = FieldType.ULong,
                             FieldValue = sortedFields[i].GetValue(this),
                             HookMethod = method
                         });
@@ -360,7 +360,7 @@ namespace MLAPI.MonoBehaviours.Core
                             Dirty = false,
                             Target = ((SyncedVar)sortedFields[i].GetCustomAttributes(typeof(SyncedVar), true)[0]).target,
                             FieldInfo = sortedFields[i],
-                            FieldType = FieldType.Bool,
+                            FieldType = FieldType.UShort,
                             FieldValue = sortedFields[i].GetValue(this),
                             HookMethod = method
                         });
@@ -372,7 +372,7 @@ namespace MLAPI.MonoBehaviours.Core
                             Dirty = false,
                             Target = ((SyncedVar)sortedFields[i].GetCustomAttributes(typeof(SyncedVar), true)[0]).target,
                             FieldInfo = sortedFields[i],
-                            FieldType = FieldType.Bool,
+                            FieldType = FieldType.String,
                             FieldValue = sortedFields[i].GetValue(this),
                             HookMethod = method
                         });
@@ -384,7 +384,7 @@ namespace MLAPI.MonoBehaviours.Core
                             Dirty = false,
                             Target = ((SyncedVar)sortedFields[i].GetCustomAttributes(typeof(SyncedVar), true)[0]).target,
                             FieldInfo = sortedFields[i],
-                            FieldType = FieldType.Bool,
+                            FieldType = FieldType.Vector3,
                             FieldValue = sortedFields[i].GetValue(this),
                             HookMethod = method
                         });
@@ -396,7 +396,7 @@ namespace MLAPI.MonoBehaviours.Core
                             Dirty = false,
                             Target = ((SyncedVar)sortedFields[i].GetCustomAttributes(typeof(SyncedVar), true)[0]).target,
                             FieldInfo = sortedFields[i],
-                            FieldType = FieldType.Bool,
+                            FieldType = FieldType.Vector2,
                             FieldValue = sortedFields[i].GetValue(this),
                             HookMethod = method
                         });
@@ -408,7 +408,7 @@ namespace MLAPI.MonoBehaviours.Core
                             Dirty = false,
                             Target = ((SyncedVar)sortedFields[i].GetCustomAttributes(typeof(SyncedVar), true)[0]).target,
                             FieldInfo = sortedFields[i],
-                            FieldType = FieldType.Bool,
+                            FieldType = FieldType.Quaternion,
                             FieldValue = sortedFields[i].GetValue(this),
                             HookMethod = method
                         });
@@ -420,7 +420,7 @@ namespace MLAPI.MonoBehaviours.Core
                             Dirty = false,
                             Target = ((SyncedVar)sortedFields[i].GetCustomAttributes(typeof(SyncedVar), true)[0]).target,
                             FieldInfo = sortedFields[i],
-                            FieldType = FieldType.Bool,
+                            FieldType = FieldType.ByteArray,
                             FieldValue = sortedFields[i].GetValue(this),
                             HookMethod = method
                         });
