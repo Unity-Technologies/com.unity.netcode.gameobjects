@@ -2,7 +2,6 @@
 using MLAPI.MonoBehaviours.Core;
 using MLAPI.NetworkingManagerComponents.Binary;
 using System.Collections.Generic;
-using System.IO;
 using UnityEngine;
 
 namespace MLAPI.NetworkingManagerComponents.Core

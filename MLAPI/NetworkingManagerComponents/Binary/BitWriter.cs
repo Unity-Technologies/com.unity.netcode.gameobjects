@@ -218,17 +218,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
                 }
                 else
                 {
-                    //bool signed = IsSigned(t.GetType());
                     ulong value;
-                    /*if (signed)
-                    {
-                        Type t1 = t.GetType();
-                        if (t1 == typeof(sbyte)) value = (byte)ZigZagEncode(t as sbyte? ?? 0, 1);
-                        else if (t1 == typeof(short)) value = (ushort)ZigZagEncode(t as short? ?? 0, 2);
-                        else if (t1 == typeof(int)) value = (uint)ZigZagEncode(t as int? ?? 0, 4);
-                        else /*if (t1 == typeof(long)) value = (ulong)ZigZagEncode(t as long? ?? 0, 8);
-                    }
-                    else*/
                     if (t is byte)
                     {
                         WriteByte(writeTo, t as byte? ?? 0, bitOffset, isAligned);
@@ -237,7 +227,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
                     }
                     else if (t is ushort) value = t as ushort? ?? 0;
                     else if (t is uint) value = t as uint? ?? 0;
-                    else /*if (t is ulong)*/ value = t as ulong? ?? 0;
+                    else value = t as ulong? ?? 0;
 
                     if (value <= 240) WriteByte(writeTo, (byte)value, bitOffset, isAligned);
                     else if (value <= 2287)
@@ -324,8 +314,6 @@ namespace MLAPI.NetworkingManagerComponents.Binary
                 else if (t is bool || t is decimal) count += ba;
                 else count += BytesToRead(t) * 8;
             }
-            //else
-            //    Debug.LogWarning("MLAPI: The type \"" + b.GetType() + "\" is not supported by the Binary Serializer. It will be ignored");
             return count;
         }
 

@@ -1,5 +1,4 @@
-﻿using System;
-using MLAPI.MonoBehaviours.Core;
+﻿using MLAPI.MonoBehaviours.Core;
 
 namespace MLAPI.NetworkingManagerComponents.Core
 {

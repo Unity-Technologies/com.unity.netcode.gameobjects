@@ -97,8 +97,6 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             lock(result_holder)
                 lock (type_holder)
                 {
-                    //for (int i = 0; i < size; ++i)
-                    //    holder.SetValue(ReadByte(), i);
                     if (size == 4) result_holder.SetValue(BinaryHelpers.SwapEndian(ReadUInt()), 0);
                     else result_holder.SetValue(BinaryHelpers.SwapEndian(ReadULong()), 0);
                     Buffer.BlockCopy(result_holder, 0, type_holder, 0, size);

@@ -1,13 +1,8 @@
-﻿using MLAPI.MonoBehaviours.Core;
-using MLAPI.NetworkingManagerComponents.Binary;
+﻿using MLAPI.NetworkingManagerComponents.Binary;
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Security.Cryptography;
-using System.Text;
 using UnityEngine;
-using UnityEngine.Networking;
 
 namespace MLAPI.Data
 {
