@@ -1,4 +1,5 @@
-﻿using System;
+﻿#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+using System;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -107,3 +108,4 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         private static long ZigZagDecode(ulong d, int bytes) => (long)(((d << (bytes * 8 - 1)) & 1) | (d >> 1));
     }
 }
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member

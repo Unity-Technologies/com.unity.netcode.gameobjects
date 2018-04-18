@@ -1,4 +1,5 @@
-﻿namespace MLAPI.NetworkingManagerComponents.Binary
+﻿#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+namespace MLAPI.NetworkingManagerComponents.Binary
 {
     public static class BinaryHelpers
     {
@@ -15,3 +16,4 @@
             ((value << 8)  & (0xFFUL << 32)) ;
     }
 }
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member

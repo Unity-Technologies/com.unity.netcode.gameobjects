@@ -1,4 +1,5 @@
-﻿using System;
+﻿#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -113,6 +114,10 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             foreach (T t1 in t) Push(signed ? (object)ZigZagEncode(t1 as long? ?? t1 as int? ?? t1 as short? ?? t1 as sbyte? ?? 0, size) : (object)t1);
         }
 
+        /// <summary>
+        /// Serializes data, allocates an array and returns it
+        /// </summary>
+        /// <returns>Allocated array with written data</returns>
         public byte[] Finalize()
         {
             long bitCount = 0;
@@ -133,6 +138,11 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         }
 
         //The ref is not needed. It's purley there to indicate that it's treated as a reference inside the method.
+        /// <summary>
+        /// Writes data to the given buffer
+        /// </summary>
+        /// <param name="buffer"></param>
+        /// <returns>The amount of bytes written</returns>
         public long Finalize(ref byte[] buffer)
         {
             if(buffer == null)
@@ -161,6 +171,10 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             return (bitCount / 8) + (bitCount % 8 == 0 ? 0 : 1);
         }
 
+        /// <summary>
+        /// Gets the size in bytes if you were to serialize now
+        /// </summary>
+        /// <returns>The size in bytes</returns>
         public long GetFinalizeSize()
         {
             long bitCount = 0;
@@ -391,3 +405,4 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         }
     }
 }
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
