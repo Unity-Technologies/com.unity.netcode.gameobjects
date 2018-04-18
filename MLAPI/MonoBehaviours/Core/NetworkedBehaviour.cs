@@ -923,7 +923,12 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="data">The binary data to send</param>
         protected void SendToServer(string messageType, string channelName, byte[] data)
         {
-            if(MessageManager.messageTypes[messageType] < 32)
+            if (!MessageManager.messageTypes.ContainsKey(messageType))
+            {
+                Debug.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"");
+                return;
+            }
+            if (MessageManager.messageTypes[messageType] < 32)
             {
                 Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
                 return;
@@ -956,6 +961,11 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="data">The binary data to send</param>
         protected void SendToServerTarget(string messageType, string channelName, byte[] data)
         {
+            if (!MessageManager.messageTypes.ContainsKey(messageType))
+            {
+                Debug.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"");
+                return;
+            }
             if (MessageManager.messageTypes[messageType] < 32)
             {
                 Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
@@ -989,6 +999,11 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="data">The binary data to send</param>
         protected void SendToLocalClient(string messageType, string channelName, byte[] data)
         {
+            if (!MessageManager.messageTypes.ContainsKey(messageType))
+            {
+                Debug.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"");
+                return;
+            }
             if (MessageManager.messageTypes[messageType] < 32)
             {
                 Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
@@ -1022,6 +1037,11 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="data">The binary data to send</param>
         protected void SendToLocalClientTarget(string messageType, string channelName, byte[] data)
         {
+            if (!MessageManager.messageTypes.ContainsKey(messageType))
+            {
+                Debug.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"");
+                return;
+            }
             if (MessageManager.messageTypes[messageType] < 32)
             {
                 Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
@@ -1055,6 +1075,11 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="data">The binary data to send</param>
         protected void SendToNonLocalClients(string messageType, string channelName, byte[] data)
         {
+            if (!MessageManager.messageTypes.ContainsKey(messageType))
+            {
+                Debug.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"");
+                return;
+            }
             if (MessageManager.messageTypes[messageType] < 32)
             {
                 Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
@@ -1088,6 +1113,11 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="data">The binary data to send</param>
         protected void SendToNonLocalClientsTarget(string messageType, string channelName, byte[] data)
         {
+            if (!MessageManager.messageTypes.ContainsKey(messageType))
+            {
+                Debug.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"");
+                return;
+            }
             if (MessageManager.messageTypes[messageType] < 32)
             {
                 Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
@@ -1122,6 +1152,11 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="data">The binary data to send</param>
         protected void SendToClient(uint clientId, string messageType, string channelName, byte[] data)
         {
+            if (!MessageManager.messageTypes.ContainsKey(messageType))
+            {
+                Debug.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"");
+                return;
+            }
             if (MessageManager.messageTypes[messageType] < 32)
             {
                 Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
@@ -1157,6 +1192,11 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="data">The binary data to send</param>
         protected void SendToClientTarget(uint clientId, string messageType, string channelName, byte[] data)
         {
+            if (!MessageManager.messageTypes.ContainsKey(messageType))
+            {
+                Debug.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"");
+                return;
+            }
             if (MessageManager.messageTypes[messageType] < 32)
             {
                 Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
@@ -1192,6 +1232,11 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="data">The binary data to send</param>
         protected void SendToClients(uint[] clientIds, string messageType, string channelName, byte[] data)
         {
+            if (!MessageManager.messageTypes.ContainsKey(messageType))
+            {
+                Debug.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"");
+                return;
+            }
             if (MessageManager.messageTypes[messageType] < 32)
             {
                 Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
@@ -1227,6 +1272,11 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="data">The binary data to send</param>
         protected void SendToClientsTarget(uint[] clientIds, string messageType, string channelName, byte[] data)
         {
+            if (!MessageManager.messageTypes.ContainsKey(messageType))
+            {
+                Debug.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"");
+                return;
+            }
             if (MessageManager.messageTypes[messageType] < 32)
             {
                 Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
@@ -1262,6 +1312,11 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="data">The binary data to send</param>
         protected void SendToClients(List<uint> clientIds, string messageType, string channelName, byte[] data)
         {
+            if (!MessageManager.messageTypes.ContainsKey(messageType))
+            {
+                Debug.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"");
+                return;
+            }
             if (MessageManager.messageTypes[messageType] < 32)
             {
                 Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
@@ -1297,6 +1352,11 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="data">The binary data to send</param>
         protected void SendToClientsTarget(List<uint> clientIds, string messageType, string channelName, byte[] data)
         {
+            if (!MessageManager.messageTypes.ContainsKey(messageType))
+            {
+                Debug.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"");
+                return;
+            }
             if (MessageManager.messageTypes[messageType] < 32)
             {
                 Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
@@ -1331,6 +1391,11 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="data">The binary data to send</param>
         protected void SendToClients(string messageType, string channelName, byte[] data)
         {
+            if (!MessageManager.messageTypes.ContainsKey(messageType))
+            {
+                Debug.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"");
+                return;
+            }
             if (MessageManager.messageTypes[messageType] < 32)
             {
                 Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
@@ -1364,6 +1429,11 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="data">The binary data to send</param>
         protected void SendToClientsTarget(string messageType, string channelName, byte[] data)
         {
+            if (!MessageManager.messageTypes.ContainsKey(messageType))
+            {
+                Debug.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"");
+                return;
+            }
             if (MessageManager.messageTypes[messageType] < 32)
             {
                 Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
