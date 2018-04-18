@@ -105,7 +105,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         public void WriteIntArray(int[] i, bool known = false)          => PushArray(i, known);
         public void WriteLongArray(long[] l, bool known = false)        => PushArray(l, known);
 
-        public void PushArray<T>(T[] t, bool knownSize = false)
+        private void PushArray<T>(T[] t, bool knownSize = false)
         {
             if (!knownSize) Push((uint)t.Length);
             bool signed = IsSigned(t.GetType().GetElementType());
