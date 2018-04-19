@@ -113,7 +113,7 @@ public class MLAPIEditor : EditorWindow
             File.WriteAllBytes(Application.dataPath + "/MLAPI/Lib/" + releases[index].assets[i].name, www.bytes);
 
             if (releases[index].assets[i].name.EndsWith(".unitypackage"))
-                AssetDatabase.ImportPackage(Application.dataPath + "/MLAPI/Lib/" + releases[index].assets[i].name, true);
+                AssetDatabase.ImportPackage(Application.dataPath + "/MLAPI/Lib/" + releases[index].assets[i].name, false);
         }
 
         EditorPrefs.SetString("MLAPI_version", releases[index].tag_name);
