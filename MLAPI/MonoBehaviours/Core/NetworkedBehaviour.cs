@@ -213,24 +213,24 @@ namespace MLAPI.MonoBehaviours.Core
             {
                 if(sortedFields[i].IsDefined(typeof(SyncedVar), true))
                 {
-                    object[] syncedVarAttributes = sortedFields[i].GetCustomAttributes(typeof(SyncedVar), true);
-                    MethodInfo method = null;
-                    if (!string.IsNullOrEmpty(((SyncedVar)syncedVarAttributes[0]).hook))
-                    {
-                        method = GetType().GetMethod(((SyncedVar)syncedVarAttributes[0]).hook, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-                        break;
-                    }
+                    SyncedVar attribute = ((SyncedVar)sortedFields[i].GetCustomAttributes(typeof(SyncedVar), true)[0]);
+
+                    MethodInfo hookMethod = null;
+
+                    if (!string.IsNullOrEmpty(attribute.hookMethodName))
+                        hookMethod = GetType().GetMethod(attribute.hookMethodName, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+                    
                     FieldType fieldType = FieldTypeHelper.GetFieldType(sortedFields[i].FieldType);
                     if (fieldType != FieldType.Invalid)
                     {
                         syncedVarFields.Add(new SyncedVarField()
                         {
                             Dirty = false,
-                            Target = ((SyncedVar)sortedFields[i].GetCustomAttributes(typeof(SyncedVar), true)[0]).target,
+                            Target = attribute.target,
                             FieldInfo = sortedFields[i],
                             FieldType = fieldType,
                             FieldValue = sortedFields[i].GetValue(this),
-                            HookMethod = method
+                            HookMethod = hookMethod
                         });
                     }
                     else
