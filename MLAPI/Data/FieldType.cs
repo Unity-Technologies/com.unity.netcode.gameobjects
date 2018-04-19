@@ -23,7 +23,21 @@ namespace MLAPI.Data
         Vector3,
         Vector2,
         Quaternion,
+        BoolArray,
         ByteArray,
+        DoubleArray,
+        SingleArray,
+        IntArray,
+        LongArray,
+        SByteArray,
+        ShortArray,
+        UIntArray,
+        ULongArray,
+        UShortArray,
+        StringArray,
+        Vector3Array,
+        Vector2Array,
+        QuaternionArray,
         Invalid
     }
 
@@ -61,8 +75,36 @@ namespace MLAPI.Data
                 return FieldType.Vector2;
             else if (type == typeof(Quaternion))
                 return FieldType.Quaternion;
+            else if (type == typeof(bool[]))
+                return FieldType.BoolArray;
             else if (type == typeof(byte[]))
                 return FieldType.ByteArray;
+            else if (type == typeof(double[]))
+                return FieldType.DoubleArray;
+            else if (type == typeof(float[]))
+                return FieldType.SingleArray;
+            else if (type == typeof(int[]))
+                return FieldType.IntArray;
+            else if (type == typeof(long[]))
+                return FieldType.LongArray;
+            else if (type == typeof(sbyte[]))
+                return FieldType.SByteArray;
+            else if (type == typeof(short[]))
+                return FieldType.ShortArray;
+            else if (type == typeof(uint[]))
+                return FieldType.UIntArray;
+            else if (type == typeof(ulong[]))
+                return FieldType.ULongArray;
+            else if (type == typeof(ushort[]))
+                return FieldType.UShortArray;
+            else if (type == typeof(string[]))
+                return FieldType.StringArray;
+            else if (type == typeof(Vector3[]))
+                return FieldType.Vector3Array;
+            else if (type == typeof(Vector2[]))
+                return FieldType.Vector2Array;
+            else if (type == typeof(Quaternion[]))
+                return FieldType.QuaternionArray;
             else
                 return FieldType.Invalid;
         }
