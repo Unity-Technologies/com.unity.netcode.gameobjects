@@ -81,7 +81,7 @@ namespace MLAPI.Data
         /// <returns>The client identifier.</returns>
         public uint GetClientId()
         {
-            return (uint)HostId | (ushort)((uint)(byte)(ConnectionId & 0xFF) << 8) | (ushort)((uint)(byte)((ConnectionId >> 8) & 0xFF) << 16) | (ushort)((uint)Meta << 24);
+            return HostId | (uint)((ConnectionId & 0xFF) << 8) | (uint)(((ConnectionId >> 8) & 0xFF) << 16) | (uint)(Meta << 24);
         }
         // Rider generated vvv
         /// <summary>
