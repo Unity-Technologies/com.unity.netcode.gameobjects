@@ -153,7 +153,7 @@
   <HelpKINode Title="HandleObjectSpawning field" Url="html/F_MLAPI_Data_NetworkConfig_HandleObjectSpawning.htm" />
   <HelpKINode Title="HasDuplicates method" Url="html/M_MLAPI_NetworkingManagerComponents_Binary_MessageChunker_HasDuplicates.htm" />
   <HelpKINode Title="HasMissingParts method" Url="html/M_MLAPI_NetworkingManagerComponents_Binary_MessageChunker_HasMissingParts.htm" />
-  <HelpKINode Title="hook field" Url="html/F_MLAPI_Attributes_SyncedVar_hook.htm" />
+  <HelpKINode Title="hookMethodName field" Url="html/F_MLAPI_Attributes_SyncedVar_hookMethodName.htm" />
   <HelpKINode Title="HostId field" Url="html/F_MLAPI_Data_NetId_HostId.htm" />
   <HelpKINode Title="Inequality operator" Url="html/M_MLAPI_Data_NetId_op_Inequality.htm" />
   <HelpKINode Title="InterpolatePosition field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedTransform_InterpolatePosition.htm" />
@@ -443,8 +443,8 @@
   <HelpKINode Title="NetworkedTransform.ProximityRange field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedTransform_ProximityRange.htm" />
   <HelpKINode Title="NetworkedTransform.SendsPerSecond field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedTransform_SendsPerSecond.htm" />
   <HelpKINode Title="NetworkedTransform.SnapDistance field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedTransform_SnapDistance.htm" />
-  <HelpKINode Title="networkId property" Url="html/P_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_networkId.htm" />
   <HelpKINode Title="NetworkId property" Url="html/P_MLAPI_MonoBehaviours_Core_NetworkedObject_NetworkId.htm" />
+  <HelpKINode Title="networkId property" Url="html/P_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_networkId.htm" />
   <HelpKINode Title="NetworkingManager class">
     <HelpKINode Title="NetworkingManager Class" Url="html/T_MLAPI_MonoBehaviours_Core_NetworkingManager.htm" />
     <HelpKINode Title="constructor" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkingManager__ctor.htm" />
@@ -597,7 +597,7 @@
     <HelpKINode Title="methods" Url="html/Methods_T_MLAPI_Attributes_SyncedVar.htm" />
     <HelpKINode Title="properties" Url="html/Properties_T_MLAPI_Attributes_SyncedVar.htm" />
   </HelpKINode>
-  <HelpKINode Title="SyncedVar.hook field" Url="html/F_MLAPI_Attributes_SyncedVar_hook.htm" />
+  <HelpKINode Title="SyncedVar.hookMethodName field" Url="html/F_MLAPI_Attributes_SyncedVar_hookMethodName.htm" />
   <HelpKINode Title="SyncedVar.SyncedVar constructor" Url="html/M_MLAPI_Attributes_SyncedVar__ctor.htm" />
   <HelpKINode Title="SyncedVar.target field" Url="html/F_MLAPI_Attributes_SyncedVar_target.htm" />
   <HelpKINode Title="SyncVarSyncDelay field" Url="html/F_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SyncVarSyncDelay.htm" />
