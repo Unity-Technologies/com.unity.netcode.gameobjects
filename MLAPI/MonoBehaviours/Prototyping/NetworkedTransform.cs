@@ -94,6 +94,15 @@ namespace MLAPI.MonoBehaviours.Prototyping
             {
                 timeForLerp = 1f / SendsPerSecond;
             }
+
+            lastSentRot = transform.rotation;
+            lastSentPos = transform.position;
+
+            lerpStartPos = transform.position;
+            lerpStartRot = transform.rotation;
+
+            lerpEndPos = transform.position;
+            lerpStartRot = transform.rotation;
         }
 
         private void Update()
