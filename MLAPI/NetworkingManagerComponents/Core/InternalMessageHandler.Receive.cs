@@ -78,7 +78,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 msDelay = 0;
             netManager.networkTime = netTime + (msDelay / 1000f);
 
-            netManager.connectedClients.Add(clientId, new NetworkedClient() { ClientId = clientId });
+            netManager.connectedClients.Add(netManager.MyClientId, new NetworkedClient() { ClientId = netManager.MyClientId });
             int clientCount = reader.ReadInt();
             for (int i = 0; i < clientCount; i++)
             {
@@ -128,7 +128,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
             netManager._isClientConnected = true;
             if (netManager.OnClientConnectedCallback != null)
-                netManager.OnClientConnectedCallback.Invoke(clientId);
+                netManager.OnClientConnectedCallback.Invoke(netManager.MyClientId);
         }
 
         internal static void HandleAddObject(uint clientId, byte[] incommingData, int channelId)
