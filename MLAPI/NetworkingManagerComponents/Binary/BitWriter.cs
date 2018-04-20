@@ -10,6 +10,19 @@ namespace MLAPI.NetworkingManagerComponents.Binary
 {
     public sealed class BitWriter : IDisposable
     {
+        private struct Partial
+        {
+            public byte value;
+            public byte count;
+            public static readonly FieldInfo value_info = typeof(Partial).GetField("value");
+            public static readonly FieldInfo count_info = typeof(Partial).GetField("count");
+
+            public Partial(byte value, byte count)
+            {
+                this.value = value;
+                this.count = count;
+            }
+        }
         private static readonly Queue<List<object>> listPool = new Queue<List<object>>();
         
         private static readonly float[] holder_f = new float[1];
@@ -105,10 +118,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         public void WriteShortArray(short[] s, bool known = false)      => PushArray(s, known);
         public void WriteIntArray(int[] i, bool known = false)          => PushArray(i, known);
         public void WriteLongArray(long[] l, bool known = false)        => PushArray(l, known);
-        public void WriteBits(byte value, int bits)
-        {
-            for (int i = 0; i < bits; ++i) WriteBool((value & (1 << i)) != 0);
-        }
+        public void WriteBits(byte value, int bits) => Push(new Partial(ReadNBits(value, 0, bits % 8), (byte)(bits%8))); // Suggestion: store (bits % 8) result?
 
         private void PushArray<T>(T[] t, bool knownSize = false)
         {
@@ -197,6 +207,14 @@ namespace MLAPI.NetworkingManagerComponents.Binary
                 foreach (var element in array)
                     Serialize(element, writeTo, ref bitOffset, ref isAligned);
             }
+            else if (type == typeof(Partial))
+            {
+                byte count;
+                WriteByte(writeTo, (byte)Partial.value_info.GetValue(t), bitOffset, isAligned, count = (byte)Partial.count_info.GetValue(t));
+                bitOffset += count;
+                isAligned = bitOffset % 8 == 0;
+                return;
+            }
             else if (IsSupportedType(type))
             {
                 long offset = t is bool ? 1 : BytesToRead(t) * 8;
@@ -230,7 +248,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
 
                             // Since floating point flag bits are seemingly the highest bytes of the floating point values
                             // and even very small values have them, we swap the endianness in the hopes of reducing the size
-                            if(size) Serialize(BinaryHelpers.SwapEndian((uint)result_holder.GetValue(0)), writeTo, ref bitOffset, ref isAligned);
+                            if (size) Serialize(BinaryHelpers.SwapEndian((uint)result_holder.GetValue(0)), writeTo, ref bitOffset, ref isAligned);
                             else Serialize(BinaryHelpers.SwapEndian((ulong)result_holder.GetValue(0)), writeTo, ref bitOffset, ref isAligned);
                         }
                 }
@@ -338,7 +356,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         private static void WriteBit(byte[] b, bool bit, long index)
             => b[index / 8] = (byte)((b[index / 8] & ~(1 << (int)(index % 8))) | (bit ? 1 << (int)(index % 8) : 0));
         private static void WriteByte(byte[] b, ulong value, long index, bool isAligned) => WriteByte(b, (byte)value, index, isAligned);
-        private static void WriteByte(byte[] b, byte value, long index, bool isAligned)
+        private static void WriteByte(byte[] b, byte value, long index, bool isAligned, byte bits = 8)
         {
             if (isAligned) b[index / 8] = value;
             else
@@ -348,7 +366,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
                 byte upper_mask = (byte)(0xFF << shift);
 
                 b[byteIndex] = (byte)((b[byteIndex] & (byte)~upper_mask) | (value << shift));
-                b[byteIndex + 1] = (byte)((b[byteIndex + 1] & upper_mask) | (value >> (8 - shift)));
+                if((8-shift)<bits) b[byteIndex + 1] = (byte)((b[byteIndex + 1] & upper_mask) | (value >> (8 - shift)));
             }
         }
         private static void WriteDynamic(byte[] b, int value, int byteCount, long index, bool isAligned)
