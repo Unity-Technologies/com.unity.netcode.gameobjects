@@ -1,5 +1,4 @@
 ﻿using MLAPI.MonoBehaviours.Core;
-using System;
 
 namespace MLAPI.Data
 {
@@ -66,20 +65,15 @@ namespace MLAPI.Data
             else
                 Meta = 0;
         }
-
-
-        private static byte[] tempUIntBytes = new byte[4];
-        private static byte[] tempUShortBytes = new byte[2];
         /// <summary>
         /// Initializes a new instance of the netId struct from a clientId
         /// </summary>
         /// <param name="clientId">Client identifier.</param>
         public NetId(uint clientId)
         {
-            tempUIntBytes = BitConverter.GetBytes(clientId);
-            HostId = tempUIntBytes[0];
-            ConnectionId = BitConverter.ToUInt16(tempUIntBytes, 1);
-            Meta = tempUIntBytes[3];
+            HostId = (byte)(clientId & 0xFF);
+            ConnectionId = (ushort)((byte)((clientId >> 8) & 0xFF) | (ushort)(((clientId >> 16) & 0xFF) << 8));
+            Meta = (byte)((clientId >> 24) & 0xFF);
         }
         /// <summary>
         /// Gets the clientId.
@@ -87,12 +81,7 @@ namespace MLAPI.Data
         /// <returns>The client identifier.</returns>
         public uint GetClientId()
         {
-            tempUShortBytes = BitConverter.GetBytes(ConnectionId);
-            tempUIntBytes[0] = HostId;
-            tempUIntBytes[1] = tempUShortBytes[0];
-            tempUIntBytes[2] = tempUShortBytes[1];
-            tempUIntBytes[3] = Meta;
-            return BitConverter.ToUInt32(tempUIntBytes, 0);
+            return HostId | (uint)((ConnectionId & 0xFF) << 8) | (uint)(((ConnectionId >> 8) & 0xFF) << 16) | (uint)(Meta << 24);
         }
         // Rider generated vvv
         /// <summary>

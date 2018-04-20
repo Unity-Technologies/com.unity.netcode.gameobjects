@@ -4,7 +4,6 @@ using UnityEngine;
 using System.Reflection;
 using MLAPI.Attributes;
 using System.Linq;
-using System.IO;
 using MLAPI.Data;
 using MLAPI.NetworkingManagerComponents.Binary;
 using MLAPI.NetworkingManagerComponents.Core;
@@ -77,7 +76,7 @@ namespace MLAPI.MonoBehaviours.Core
         {
             get
             {
-                if(_networkedObject == null)
+                if (_networkedObject == null)
                 {
                     _networkedObject = GetComponentInParent<NetworkedObject>();
                 }
@@ -112,9 +111,9 @@ namespace MLAPI.MonoBehaviours.Core
         private void OnEnable()
         {
             if (_networkedObject == null)
-            {
                 _networkedObject = GetComponentInParent<NetworkedObject>();
-            }
+
+            CacheAttributedMethods();
             NetworkedObject.NetworkedBehaviours.Add(this);
         }
 
@@ -139,6 +138,121 @@ namespace MLAPI.MonoBehaviours.Core
         public virtual void OnLostOwnership()
         {
 
+        }
+
+        internal Dictionary<string, MethodInfo> cachedMethods = new Dictionary<string, MethodInfo>();
+
+        private void CacheAttributedMethods()
+        {
+            MethodInfo[] methods = GetType().GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.FlattenHierarchy);
+            for (int i = 0; i < methods.Length; i++)
+            {
+                if (methods[i].IsDefined(typeof(Command), true) || methods[i].IsDefined(typeof(ClientRpc), true) || methods[i].IsDefined(typeof(TargetRpc), true))
+                {
+                    Data.Cache.RegisterMessageAttributeName(methods[i].Name);
+                    if (!cachedMethods.ContainsKey(methods[i].Name))
+                        cachedMethods.Add(methods[i].Name, methods[i]);
+                }
+            }
+        }
+
+        protected void InvokeCommand(string methodName, params object[] methodParams)
+        {
+            if (NetworkingManager.singleton.isServer)
+            {
+                Debug.LogWarning("MLAPI: Cannot invoke commands from server");
+                return;
+            }
+            if (ownerClientId != NetworkingManager.singleton.MyClientId)
+            {
+                Debug.LogWarning("MLAPI: Cannot invoke command for object without ownership");
+                return;
+            }
+            if (!methodName.StartsWith("Cmd"))
+            {
+                Debug.LogWarning("MLAPI: Invalid Command name. Command methods have to start with Cmd");
+                return;
+            }
+
+            ulong hash = Data.Cache.GetMessageAttributeHash(methodName);
+            using (BitWriter writer = new BitWriter())
+            {
+                writer.WriteUInt(networkId);
+                writer.WriteUShort(networkedObject.GetOrderIndex(this));
+                writer.WriteULong(hash);
+                writer.WriteBits((byte)methodParams.Length, 5);
+                for (int i = 0; i < methodParams.Length; i++)
+                {
+                    FieldType fieldType = FieldTypeHelper.GetFieldType(methodParams[i].GetType());
+                    writer.WriteBits((byte)fieldType, 5);
+                    FieldTypeHelper.WriteFieldType(writer, methodParams[i], fieldType);
+                }
+
+                InternalMessageHandler.Send(NetId.ServerNetId.GetClientId(), "MLAPI_COMMAND", "MLAPI_INTERNAL", writer.Finalize());
+            }
+        }
+
+        protected void InvokeClientRpc(string methodName, params object[] methodParams)
+        {
+            if (!NetworkingManager.singleton.isServer)
+            {
+                Debug.LogWarning("MLAPI: Cannot invoke ClientRpc from client");
+                return;
+            }
+            if (!methodName.StartsWith("Rpc"))
+            {
+                Debug.LogWarning("MLAPI: Invalid Command name. Command methods have to start with Cmd");
+                return;
+            }
+
+            ulong hash = Data.Cache.GetMessageAttributeHash(methodName);
+            using (BitWriter writer = new BitWriter())
+            {
+                writer.WriteUInt(networkId);
+                writer.WriteUShort(networkedObject.GetOrderIndex(this));
+                writer.WriteULong(hash);
+                writer.WriteBits((byte)methodParams.Length, 5);
+
+                for (int i = 0; i < methodParams.Length; i++)
+                {
+                    FieldType fieldType = FieldTypeHelper.GetFieldType(methodParams[i].GetType());
+                    writer.WriteBits((byte)fieldType, 5);
+                    FieldTypeHelper.WriteFieldType(writer, methodParams[i], fieldType);
+                }
+
+                InternalMessageHandler.Send("MLAPI_RPC", "MLAPI_INTERNAL", writer.Finalize());
+            }
+        }
+
+        protected void InvokeTargetRpc(string methodName, params object[] methodParams)
+        {
+            if (!NetworkingManager.singleton.isServer)
+            {
+                Debug.LogWarning("MLAPI: Cannot invoke ClientRpc from client");
+                return;
+            }
+            if (!methodName.StartsWith("Target"))
+            {
+                Debug.LogWarning("MLAPI: Invalid Command name. Command methods have to start with Cmd");
+                return;
+            }
+
+            ulong hash = Data.Cache.GetMessageAttributeHash(methodName);
+            using (BitWriter writer = new BitWriter())
+            {
+                writer.WriteUInt(networkId);
+                writer.WriteUShort(networkedObject.GetOrderIndex(this));
+                writer.WriteULong(hash);
+                writer.WriteBits((byte)methodParams.Length, 5);
+                for (int i = 0; i < methodParams.Length; i++)
+                {
+                    FieldType fieldType = FieldTypeHelper.GetFieldType(methodParams[i].GetType());
+                    writer.WriteBits((byte)fieldType, 5);
+                    FieldTypeHelper.WriteFieldType(writer, methodParams[i], fieldType);
+                }
+
+                InternalMessageHandler.Send(ownerClientId, "MLAPI_RPC", "MLAPI_INTERNAL", writer.Finalize());
+            }
         }
         /// <summary>
         /// Registers a message handler
@@ -202,13 +316,8 @@ namespace MLAPI.MonoBehaviours.Core
         }
 
         #region SYNC_VAR
-        private List<FieldInfo> syncedFields = new List<FieldInfo>();
-        internal List<FieldType> syncedFieldTypes = new List<FieldType>();
-        private List<object> syncedFieldValues = new List<object>();
-        private List<MethodInfo> syncedVarHooks = new List<MethodInfo>();
+        internal List<SyncedVarField> syncedVarFields = new List<SyncedVarField>();
         private bool syncVarInit = false;
-        //A dirty field is a field that's not synced.
-        private bool[] dirtyFields;
         internal void SyncVarInit()
         {
             if (syncVarInit)
@@ -219,134 +328,25 @@ namespace MLAPI.MonoBehaviours.Core
             {
                 if(sortedFields[i].IsDefined(typeof(SyncedVar), true))
                 {
-                    object[] syncedVarAttributes = sortedFields[i].GetCustomAttributes(typeof(SyncedVar), true);
-                    MethodInfo method = null;
-                    for (int j = 0; j < syncedVarAttributes.Length; j++)
+                    SyncedVar attribute = ((SyncedVar)sortedFields[i].GetCustomAttributes(typeof(SyncedVar), true)[0]);
+
+                    MethodInfo hookMethod = null;
+
+                    if (!string.IsNullOrEmpty(attribute.hookMethodName))
+                        hookMethod = GetType().GetMethod(attribute.hookMethodName, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+                    
+                    FieldType fieldType = FieldTypeHelper.GetFieldType(sortedFields[i].FieldType);
+                    if (fieldType != FieldType.Invalid)
                     {
-                        if(!string.IsNullOrEmpty(((SyncedVar)syncedVarAttributes[j]).hook))
+                        syncedVarFields.Add(new SyncedVarField()
                         {
-                            method = GetType().GetMethod(((SyncedVar)syncedVarAttributes[j]).hook, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-                            break;
-                        }
-                    }
-                    if (sortedFields[i].FieldType == typeof(bool))
-                    {
-                        syncedFields.Add(sortedFields[i]);
-                        syncedFieldValues.Add(sortedFields[i].GetValue(this));
-                        syncedFieldTypes.Add(FieldType.Bool);
-                        syncedVarHooks.Add(method);
-                    }
-                    else if(sortedFields[i].FieldType == typeof(byte))
-                    {
-                        syncedFields.Add(sortedFields[i]);
-                        syncedFieldValues.Add(sortedFields[i].GetValue(this));
-                        syncedFieldTypes.Add(FieldType.Byte);
-                        syncedVarHooks.Add(method);
-                    }
-                    else if (sortedFields[i].FieldType == typeof(char))
-                    {
-                        syncedFields.Add(sortedFields[i]);
-                        syncedFieldValues.Add(sortedFields[i].GetValue(this));
-                        syncedFieldTypes.Add(FieldType.Char);
-                        syncedVarHooks.Add(method);
-                    }
-                    else if (sortedFields[i].FieldType == typeof(double))
-                    {
-                        syncedFields.Add(sortedFields[i]);
-                        syncedFieldValues.Add(sortedFields[i].GetValue(this));
-                        syncedFieldTypes.Add(FieldType.Double);
-                        syncedVarHooks.Add(method);
-                    }
-                    else if (sortedFields[i].FieldType == typeof(float))
-                    {
-                        syncedFields.Add(sortedFields[i]);
-                        syncedFieldValues.Add(sortedFields[i].GetValue(this));
-                        syncedFieldTypes.Add(FieldType.Single);
-                        syncedVarHooks.Add(method);
-                    }
-                    else if (sortedFields[i].FieldType == typeof(int))
-                    {
-                        syncedFields.Add(sortedFields[i]);
-                        syncedFieldValues.Add(sortedFields[i].GetValue(this));
-                        syncedFieldTypes.Add(FieldType.Int);
-                        syncedVarHooks.Add(method);
-                    }
-                    else if (sortedFields[i].FieldType == typeof(long))
-                    {
-                        syncedFields.Add(sortedFields[i]);
-                        syncedFieldValues.Add(sortedFields[i].GetValue(this));
-                        syncedFieldTypes.Add(FieldType.Long);
-                        syncedVarHooks.Add(method);
-                    }
-                    else if (sortedFields[i].FieldType == typeof(sbyte))
-                    {
-                        syncedFields.Add(sortedFields[i]);
-                        syncedFieldValues.Add(sortedFields[i].GetValue(this));
-                        syncedFieldTypes.Add(FieldType.SByte);
-                        syncedVarHooks.Add(method);
-                    }
-                    else if (sortedFields[i].FieldType == typeof(short))
-                    {
-                        syncedFields.Add(sortedFields[i]);
-                        syncedFieldValues.Add(sortedFields[i].GetValue(this));
-                        syncedFieldTypes.Add(FieldType.Short);
-                        syncedVarHooks.Add(method);
-                    }
-                    else if (sortedFields[i].FieldType == typeof(uint))
-                    {
-                        syncedFields.Add(sortedFields[i]);
-                        syncedFieldValues.Add(sortedFields[i].GetValue(this));
-                        syncedFieldTypes.Add(FieldType.UInt);
-                        syncedVarHooks.Add(method);
-                    }
-                    else if (sortedFields[i].FieldType == typeof(ulong))
-                    {
-                        syncedFields.Add(sortedFields[i]);
-                        syncedFieldValues.Add(sortedFields[i].GetValue(this));
-                        syncedFieldTypes.Add(FieldType.ULong);
-                        syncedVarHooks.Add(method);
-                    }
-                    else if (sortedFields[i].FieldType == typeof(ushort))
-                    {
-                        syncedFields.Add(sortedFields[i]);
-                        syncedFieldValues.Add(sortedFields[i].GetValue(this));
-                        syncedFieldTypes.Add(FieldType.UShort);
-                        syncedVarHooks.Add(method);
-                    }
-                    else if(sortedFields[i].FieldType == typeof(string))
-                    {
-                        syncedFields.Add(sortedFields[i]);
-                        syncedFieldValues.Add(sortedFields[i].GetValue(this));
-                        syncedFieldTypes.Add(FieldType.String);
-                        syncedVarHooks.Add(method);
-                    }
-                    else if(sortedFields[i].FieldType == typeof(Vector3))
-                    {
-                        syncedFields.Add(sortedFields[i]);
-                        syncedFieldValues.Add(sortedFields[i].GetValue(this));
-                        syncedFieldTypes.Add(FieldType.Vector3);
-                        syncedVarHooks.Add(method);
-                    }
-                    else if(sortedFields[i].FieldType == typeof(Vector2))
-                    {
-                        syncedFields.Add(sortedFields[i]);
-                        syncedFieldValues.Add(sortedFields[i].GetValue(this));
-                        syncedFieldTypes.Add(FieldType.Vector2);
-                        syncedVarHooks.Add(method);
-                    }
-                    else if (sortedFields[i].FieldType == typeof(Quaternion))
-                    {
-                        syncedFields.Add(sortedFields[i]);
-                        syncedFieldValues.Add(sortedFields[i].GetValue(this));
-                        syncedFieldTypes.Add(FieldType.Quaternion);
-                        syncedVarHooks.Add(method);
-                    }
-                    else if(sortedFields[i].FieldType == typeof(byte[]))
-                    {
-                        syncedFields.Add(sortedFields[i]);
-                        syncedFieldValues.Add(sortedFields[i].GetValue(this));
-                        syncedFieldTypes.Add(FieldType.ByteArray);
-                        syncedVarHooks.Add(method);
+                            Dirty = false,
+                            Target = attribute.target,
+                            FieldInfo = sortedFields[i],
+                            FieldType = fieldType,
+                            FieldValue = sortedFields[i].GetValue(this),
+                            HookMethod = hookMethod
+                        });
                     }
                     else
                     {
@@ -354,8 +354,7 @@ namespace MLAPI.MonoBehaviours.Core
                     }
                 }
             }
-            dirtyFields = new bool[syncedFields.Count];
-            if (dirtyFields.Length > 255)
+            if (syncedVarFields.Count > 255)
             {
                 Debug.LogError("MLAPI: You can not have more than 255 SyncVar's per NetworkedBehaviour!");
             }
@@ -363,94 +362,41 @@ namespace MLAPI.MonoBehaviours.Core
 
         internal void OnSyncVarUpdate(object value, byte fieldIndex)
         {
-            syncedFields[fieldIndex].SetValue(this, value);
-            if (syncedVarHooks[fieldIndex] != null)
-                syncedVarHooks[fieldIndex].Invoke(this, null);
+            syncedVarFields[fieldIndex].FieldInfo.SetValue(this, value);
+            if (syncedVarFields[fieldIndex].HookMethod != null)
+                syncedVarFields[fieldIndex].HookMethod.Invoke(this, null);
         }
 
         internal void FlushToClient(uint clientId)
         {
             //This NetworkedBehaviour has no SyncVars
-            if (dirtyFields.Length == 0)
+            if (syncedVarFields.Count == 0)
                 return;
 
-            using (MemoryStream stream = new MemoryStream())
+            using (BitWriter writer = new BitWriter())
             {
-                using (BinaryWriter writer = new BinaryWriter(stream))
+                //Write all indexes
+                int syncCount = 0;
+                for (int i = 0; i < syncedVarFields.Count; i++)
                 {
-                    //Write all indexes
-                    writer.Write((byte)dirtyFields.Length);
-                    writer.Write(networkId); //NetId
-                    writer.Write(networkedObject.GetOrderIndex(this)); //Behaviour OrderIndex
-                    for (byte i = 0; i < dirtyFields.Length; i++)
-                    {
-                        writer.Write(i); //FieldIndex
-                        switch (syncedFieldTypes[i])
-                        {
-                            case FieldType.Bool:
-                                writer.Write((bool)syncedFields[i].GetValue(this));
-                                break;
-                            case FieldType.Byte:
-                                writer.Write((byte)syncedFields[i].GetValue(this));
-                                break;
-                            case FieldType.Char:
-                                writer.Write((char)syncedFields[i].GetValue(this));
-                                break;
-                            case FieldType.Double:
-                                writer.Write((double)syncedFields[i].GetValue(this));
-                                break;
-                            case FieldType.Single:
-                                writer.Write((float)syncedFields[i].GetValue(this));
-                                break;
-                            case FieldType.Int:
-                                writer.Write((int)syncedFields[i].GetValue(this));
-                                break;
-                            case FieldType.Long:
-                                writer.Write((long)syncedFields[i].GetValue(this));
-                                break;
-                            case FieldType.SByte:
-                                writer.Write((sbyte)syncedFields[i].GetValue(this));
-                                break;
-                            case FieldType.Short:
-                                writer.Write((short)syncedFields[i].GetValue(this));
-                                break;
-                            case FieldType.UInt:
-                                writer.Write((uint)syncedFields[i].GetValue(this));
-                                break;
-                            case FieldType.ULong:
-                                writer.Write((ulong)syncedFields[i].GetValue(this));
-                                break;
-                            case FieldType.UShort:
-                                writer.Write((ushort)syncedFields[i].GetValue(this));
-                                break;
-                            case FieldType.String:
-                                writer.Write((string)syncedFields[i].GetValue(this));
-                                break;
-                            case FieldType.Vector3:
-                                Vector3 vector3 = (Vector3)syncedFields[i].GetValue(this);
-                                writer.Write(vector3.x);
-                                writer.Write(vector3.y);
-                                writer.Write(vector3.z);
-                                break;
-                            case FieldType.Vector2:
-                                Vector2 vector2 = (Vector2)syncedFields[i].GetValue(this);
-                                writer.Write(vector2.x);
-                                writer.Write(vector2.y);
-                                break;
-                            case FieldType.Quaternion:
-                                Vector3 euler = ((Quaternion)syncedFields[i].GetValue(this)).eulerAngles;
-                                writer.Write(euler.x);
-                                writer.Write(euler.y);
-                                writer.Write(euler.z);
-                                break;
-                            case FieldType.ByteArray:
-                                writer.Write((ushort)((byte[])syncedFields[i].GetValue(this)).Length);
-                                writer.Write((byte[])syncedFields[i].GetValue(this));
-                                break;
-                        }
-                    }
+                    if (!syncedVarFields[i].Target)
+                        syncCount++;
+                    else if (syncedVarFields[i].Target && ownerClientId == clientId)
+                        syncCount++;
                 }
-                NetworkingManager.singleton.Send(clientId, "MLAPI_SYNC_VAR_UPDATE", "MLAPI_INTERNAL", stream.ToArray());
+                if (syncCount == 0)
+                    return;
+                writer.WriteByte((byte)syncCount);
+                writer.WriteUInt(networkId); //NetId
+                writer.WriteUShort(networkedObject.GetOrderIndex(this)); //Behaviour OrderIndex
+                for (byte i = 0; i < syncedVarFields.Count; i++)
+                {
+                    if (syncedVarFields[i].Target && clientId != ownerClientId)
+                        continue;
+                    writer.WriteByte(i); //FieldIndex
+                    FieldTypeHelper.WriteFieldType(writer, syncedVarFields[i].FieldInfo, this, syncedVarFields[i].FieldType);
+                }
+                InternalMessageHandler.Send(clientId, "MLAPI_SYNC_VAR_UPDATE", "MLAPI_INTERNAL", writer.Finalize());
             }
         }
 
@@ -462,100 +408,100 @@ namespace MLAPI.MonoBehaviours.Core
             SetDirtyness();
             if(NetworkingManager.singleton.NetworkTime - lastSyncTime >= SyncVarSyncDelay)
             {
-                byte dirtyCount = 0;
-                for (byte i = 0; i < dirtyFields.Length; i++)
+                byte nonTargetDirtyCount = 0;
+                byte totalDirtyCount = 0;
+                byte dirtyTargets = 0;
+                for (byte i = 0; i < syncedVarFields.Count; i++)
                 {
-                    if (dirtyFields[i])
-                        dirtyCount++;
+                    if (syncedVarFields[i].Dirty)
+                        totalDirtyCount++;
+                    if (syncedVarFields[i].Target && syncedVarFields[i].Dirty)
+                        dirtyTargets++;
+                    if (syncedVarFields[i].Dirty && !syncedVarFields[i].Target)
+                        nonTargetDirtyCount++;
                 }
 
-                if (dirtyCount == 0)
+                if (totalDirtyCount == 0)
                     return; //All up to date!
-                //It's sync time!
-                using (MemoryStream stream = new MemoryStream())
+
+                // If we don't have targets. We can send one big message, 
+                // thus only serializing it once. Otherwise, we have to create two messages. One for the non targets and one for the target
+                if (dirtyTargets == 0)
                 {
-                    using(BinaryWriter writer = new BinaryWriter(stream))
+                    //It's sync time!
+                    using (BitWriter writer = new BitWriter())
                     {
                         //Write all indexes
-                        writer.Write(dirtyCount);
-                        writer.Write(networkId); //NetId
-                        writer.Write(networkedObject.GetOrderIndex(this)); //Behaviour OrderIndex
-                        for (byte i = 0; i < dirtyFields.Length; i++)
+                        writer.WriteByte(totalDirtyCount);
+                        writer.WriteUInt(networkId); //NetId
+                        writer.WriteUShort(networkedObject.GetOrderIndex(this)); //Behaviour OrderIndex
+                        for (byte i = 0; i < syncedVarFields.Count; i++)
                         {
                             //Writes all the indexes of the dirty syncvars.
-                            if (dirtyFields[i] == true)
+                            if (syncedVarFields[i].Dirty == true)
                             {
-                                writer.Write(i); //FieldIndex
-                                switch (syncedFieldTypes[i])
-                                {
-                                    case FieldType.Bool:
-                                        writer.Write((bool)syncedFields[i].GetValue(this));
-                                        break;
-                                    case FieldType.Byte:
-                                        writer.Write((byte)syncedFields[i].GetValue(this));
-                                        break;
-                                    case FieldType.Char:
-                                        writer.Write((char)syncedFields[i].GetValue(this));
-                                        break;
-                                    case FieldType.Double:
-                                        writer.Write((double)syncedFields[i].GetValue(this));
-                                        break;
-                                    case FieldType.Single:
-                                        writer.Write((float)syncedFields[i].GetValue(this));
-                                        break;
-                                    case FieldType.Int:
-                                        writer.Write((int)syncedFields[i].GetValue(this));
-                                        break;
-                                    case FieldType.Long:
-                                        writer.Write((long)syncedFields[i].GetValue(this));
-                                        break;
-                                    case FieldType.SByte:
-                                        writer.Write((sbyte)syncedFields[i].GetValue(this));
-                                        break;
-                                    case FieldType.Short:
-                                        writer.Write((short)syncedFields[i].GetValue(this));
-                                        break;
-                                    case FieldType.UInt:
-                                        writer.Write((uint)syncedFields[i].GetValue(this));
-                                        break;
-                                    case FieldType.ULong:
-                                        writer.Write((ulong)syncedFields[i].GetValue(this));
-                                        break;
-                                    case FieldType.UShort:
-                                        writer.Write((ushort)syncedFields[i].GetValue(this));
-                                        break;
-                                    case FieldType.String:
-                                        writer.Write((string)syncedFields[i].GetValue(this));
-                                        break;
-                                    case FieldType.Vector3:
-                                        Vector3 vector3 = (Vector3)syncedFields[i].GetValue(this);
-                                        writer.Write(vector3.x);
-                                        writer.Write(vector3.y);
-                                        writer.Write(vector3.z);
-                                        break;
-                                    case FieldType.Vector2:
-                                        Vector2 vector2 = (Vector2)syncedFields[i].GetValue(this);
-                                        writer.Write(vector2.x);
-                                        writer.Write(vector2.y);
-                                        break;
-                                    case FieldType.Quaternion:
-                                        Vector3 euler = ((Quaternion)syncedFields[i].GetValue(this)).eulerAngles;
-                                        writer.Write(euler.x);
-                                        writer.Write(euler.y);
-                                        writer.Write(euler.z);
-                                        break;
-                                    case FieldType.ByteArray:
-                                        writer.Write((ushort)((byte[])syncedFields[i].GetValue(this)).Length);
-                                        writer.Write((byte[])syncedFields[i].GetValue(this));
-                                        break;
-
-                                }
-                                syncedFieldValues[i] = syncedFields[i].GetValue(this);
-                                dirtyFields[i] = false;
+                                writer.WriteByte(i); //FieldIndex
+                                FieldTypeHelper.WriteFieldType(writer, syncedVarFields[i].FieldInfo, this, syncedVarFields[i].FieldType);
+                                syncedVarFields[i].FieldValue = syncedVarFields[i].FieldInfo.GetValue(this);
+                                syncedVarFields[i].Dirty = false;
                             }
                         }
+                        InternalMessageHandler.Send("MLAPI_SYNC_VAR_UPDATE", "MLAPI_INTERNAL", writer.Finalize());
                     }
-                    NetworkingManager.singleton.Send("MLAPI_SYNC_VAR_UPDATE", "MLAPI_INTERNAL", stream.ToArray());
+                }
+                else
+                {
+                    if (!(isHost && new NetId(ownerClientId).IsHost()))
+                    {
+                        //It's sync time. This is the target receivers packet.
+                        using (BitWriter writer = new BitWriter())
+                        {
+                            //Write all indexes
+                            writer.WriteByte(totalDirtyCount);
+                            writer.WriteUInt(networkId); //NetId
+                            writer.WriteUShort(networkedObject.GetOrderIndex(this)); //Behaviour OrderIndex
+                            for (byte i = 0; i < syncedVarFields.Count; i++)
+                            {
+                                //Writes all the indexes of the dirty syncvars.
+                                if (syncedVarFields[i].Dirty == true)
+                                {
+                                    writer.WriteByte(i); //FieldIndex
+                                    FieldTypeHelper.WriteFieldType(writer, syncedVarFields[i].FieldInfo, this, syncedVarFields[i].FieldType);
+                                    if (nonTargetDirtyCount == 0)
+                                    {
+                                        //Only targeted SyncedVars were changed. Thus we need to set them as non dirty here since it wont be done by the next loop.
+                                        syncedVarFields[i].FieldValue = syncedVarFields[i].FieldInfo.GetValue(this);
+                                        syncedVarFields[i].Dirty = false;
+                                    }
+                                }
+                            }
+                            InternalMessageHandler.Send(ownerClientId, "MLAPI_SYNC_VAR_UPDATE", "MLAPI_INTERNAL", writer.Finalize()); //Send only to target
+                        }
+                    }
+
+                    if (nonTargetDirtyCount == 0)
+                        return;
+
+                    //It's sync time. This is the NON target receivers packet.
+                    using (BitWriter writer = new BitWriter())
+                    {
+                        //Write all indexes
+                        writer.WriteByte(nonTargetDirtyCount);
+                        writer.WriteUInt(networkId); //NetId
+                        writer.WriteUShort(networkedObject.GetOrderIndex(this)); //Behaviour OrderIndex
+                        for (byte i = 0; i < syncedVarFields.Count; i++)
+                        {
+                            //Writes all the indexes of the dirty syncvars.
+                            if (syncedVarFields[i].Dirty == true && !syncedVarFields[i].Target)
+                            {
+                                writer.WriteByte(i); //FieldIndex
+                                FieldTypeHelper.WriteFieldType(writer, syncedVarFields[i].FieldInfo, this, syncedVarFields[i].FieldType);
+                                syncedVarFields[i].FieldValue = syncedVarFields[i].FieldInfo.GetValue(this);
+                                syncedVarFields[i].Dirty = false;
+                            }
+                        }
+                        InternalMessageHandler.Send("MLAPI_SYNC_VAR_UPDATE", "MLAPI_INTERNAL", writer.Finalize(), ownerClientId); // Send to everyone except target.
+                    }
                 }
                 lastSyncTime = NetworkingManager.singleton.NetworkTime;
             }
@@ -565,113 +511,12 @@ namespace MLAPI.MonoBehaviours.Core
         {
             if (!isServer)
                 return;
-            for (int i = 0; i < syncedFields.Count; i++)
+            for (int i = 0; i < syncedVarFields.Count; i++)
             {
-                switch (syncedFieldTypes[i])
-                {
-                    case FieldType.Bool:
-                        if ((bool)syncedFields[i].GetValue(this) != (bool)syncedFieldValues[i])
-                            dirtyFields[i] = true; //This fields value is out of sync!
-                        else
-                            dirtyFields[i] = false; //Up to date
-                        break;
-                    case FieldType.Byte:
-                        if ((byte)syncedFields[i].GetValue(this) != (byte)syncedFieldValues[i])
-                            dirtyFields[i] = true; //This fields value is out of sync!
-                        else
-                            dirtyFields[i] = false; //Up to date
-                        break;
-                    case FieldType.Char:
-                        if ((char)syncedFields[i].GetValue(this) != (char)syncedFieldValues[i])
-                            dirtyFields[i] = true; //This fields value is out of sync!
-                        else
-                            dirtyFields[i] = false; //Up to date
-                        break;
-                    case FieldType.Double:
-                        if ((double)syncedFields[i].GetValue(this) != (double)syncedFieldValues[i])
-                            dirtyFields[i] = true; //This fields value is out of sync!
-                        else
-                            dirtyFields[i] = false; //Up to date
-                        break;
-                    case FieldType.Single:
-                        if ((float)syncedFields[i].GetValue(this) != (float)syncedFieldValues[i])
-                            dirtyFields[i] = true; //This fields value is out of sync!
-                        else
-                            dirtyFields[i] = false; //Up to date
-                        break;
-                    case FieldType.Int:
-                        if ((int)syncedFields[i].GetValue(this) != (int)syncedFieldValues[i])
-                            dirtyFields[i] = true; //This fields value is out of sync!
-                        else
-                            dirtyFields[i] = false; //Up to date
-                        break;
-                    case FieldType.Long:
-                        if ((long)syncedFields[i].GetValue(this) != (long)syncedFieldValues[i])
-                            dirtyFields[i] = true; //This fields value is out of sync!
-                        else
-                            dirtyFields[i] = false; //Up to date
-                        break;
-                    case FieldType.SByte:
-                        if ((sbyte)syncedFields[i].GetValue(this) != (sbyte)syncedFieldValues[i])
-                            dirtyFields[i] = true; //This fields value is out of sync!
-                        else
-                            dirtyFields[i] = false; //Up to date
-                        break;
-                    case FieldType.Short:
-                        if ((short)syncedFields[i].GetValue(this) != (short)syncedFieldValues[i])
-                            dirtyFields[i] = true; //This fields value is out of sync!
-                        else
-                            dirtyFields[i] = false; //Up to date
-                        break;
-                    case FieldType.UInt:
-                        if ((uint)syncedFields[i].GetValue(this) != (uint)syncedFieldValues[i])
-                            dirtyFields[i] = true; //This fields value is out of sync!
-                        else
-                            dirtyFields[i] = false; //Up to date
-                        break;
-                    case FieldType.ULong:
-                        if ((ulong)syncedFields[i].GetValue(this) != (ulong)syncedFieldValues[i])
-                            dirtyFields[i] = true; //This fields value is out of sync!
-                        else
-                            dirtyFields[i] = false; //Up to date
-                        break;
-                    case FieldType.UShort:
-                        if ((ushort)syncedFields[i].GetValue(this) != (ushort)syncedFieldValues[i])
-                            dirtyFields[i] = true; //This fields value is out of sync!
-                        else
-                            dirtyFields[i] = false; //Up to date
-                        break;
-                    case FieldType.String:
-                        if ((string)syncedFields[i].GetValue(this) != (string)syncedFieldValues[i])
-                            dirtyFields[i] = true; //This fields value is out of sync!
-                        else
-                            dirtyFields[i] = false; //Up to date
-                        break;
-                    case FieldType.Vector3:
-                        if ((Vector3)syncedFields[i].GetValue(this) != (Vector3)syncedFieldValues[i])
-                            dirtyFields[i] = true; //This fields value is out of sync!
-                        else
-                            dirtyFields[i] = false; //Up to date
-                        break;
-                    case FieldType.Vector2:
-                        if ((Vector2)syncedFields[i].GetValue(this) != (Vector2)syncedFieldValues[i])
-                            dirtyFields[i] = true; //This fields value is out of sync!
-                        else
-                            dirtyFields[i] = false; //Up to date
-                        break;
-                    case FieldType.Quaternion:
-                        if ((Quaternion)syncedFields[i].GetValue(this) != (Quaternion)syncedFieldValues[i])
-                            dirtyFields[i] = true; //This fields value is out of sync!
-                        else
-                            dirtyFields[i] = false; //Up to date
-                        break;
-                    case FieldType.ByteArray:
-                        if(((byte[])syncedFields[i].GetValue(this)).SequenceEqual(((byte[])syncedFieldValues[i])))
-                            dirtyFields[i] = true; //This fields value is out of sync!
-                        else
-                            dirtyFields[i] = false; //Up to date
-                        break;
-                }
+                if (!syncedVarFields[i].FieldInfo.GetValue(this).Equals(syncedVarFields[i].FieldValue))
+                    syncedVarFields[i].Dirty = true; //This fields value is out of sync!
+                else
+                    syncedVarFields[i].Dirty = false; //Up to date;
             }
         }
         #endregion
@@ -685,7 +530,12 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="data">The binary data to send</param>
         protected void SendToServer(string messageType, string channelName, byte[] data)
         {
-            if(MessageManager.messageTypes[messageType] < 32)
+            if (!MessageManager.messageTypes.ContainsKey(messageType))
+            {
+                Debug.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"");
+                return;
+            }
+            if (MessageManager.messageTypes[messageType] < 32)
             {
                 Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
                 return;
@@ -695,7 +545,7 @@ namespace MLAPI.MonoBehaviours.Core
                 Debug.LogWarning("MLAPI: Server can not send messages to server.");
                 return;
             }
-            NetworkingManager.singleton.Send(NetId.ServerNetId.GetClientId(), messageType, channelName, data);
+            InternalMessageHandler.Send(NetId.ServerNetId.GetClientId(), messageType, channelName, data);
         }
 
         /// <summary>
@@ -718,6 +568,11 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="data">The binary data to send</param>
         protected void SendToServerTarget(string messageType, string channelName, byte[] data)
         {
+            if (!MessageManager.messageTypes.ContainsKey(messageType))
+            {
+                Debug.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"");
+                return;
+            }
             if (MessageManager.messageTypes[messageType] < 32)
             {
                 Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
@@ -728,7 +583,7 @@ namespace MLAPI.MonoBehaviours.Core
                 Debug.LogWarning("MLAPI: Server can not send messages to server.");
                 return;
             }
-            NetworkingManager.singleton.Send(NetId.ServerNetId.GetClientId(), messageType, channelName, data, networkId, networkedObject.GetOrderIndex(this));            
+            InternalMessageHandler.Send(NetId.ServerNetId.GetClientId(), messageType, channelName, data, networkId, networkedObject.GetOrderIndex(this));            
         }
 
         /// <summary>
@@ -751,6 +606,11 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="data">The binary data to send</param>
         protected void SendToLocalClient(string messageType, string channelName, byte[] data)
         {
+            if (!MessageManager.messageTypes.ContainsKey(messageType))
+            {
+                Debug.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"");
+                return;
+            }
             if (MessageManager.messageTypes[messageType] < 32)
             {
                 Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
@@ -761,7 +621,7 @@ namespace MLAPI.MonoBehaviours.Core
                 Debug.LogWarning("MLAPI: Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
                 return;
             }
-            NetworkingManager.singleton.Send(ownerClientId, messageType, channelName, data);
+            InternalMessageHandler.Send(ownerClientId, messageType, channelName, data);
         }
 
         /// <summary>
@@ -784,6 +644,11 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="data">The binary data to send</param>
         protected void SendToLocalClientTarget(string messageType, string channelName, byte[] data)
         {
+            if (!MessageManager.messageTypes.ContainsKey(messageType))
+            {
+                Debug.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"");
+                return;
+            }
             if (MessageManager.messageTypes[messageType] < 32)
             {
                 Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
@@ -794,7 +659,7 @@ namespace MLAPI.MonoBehaviours.Core
                 Debug.LogWarning("MLAPI: Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
                 return;
             }
-            NetworkingManager.singleton.Send(ownerClientId, messageType, channelName, data, networkId, networkedObject.GetOrderIndex(this));
+            InternalMessageHandler.Send(ownerClientId, messageType, channelName, data, networkId, networkedObject.GetOrderIndex(this));
         }
 
         /// <summary>
@@ -817,6 +682,11 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="data">The binary data to send</param>
         protected void SendToNonLocalClients(string messageType, string channelName, byte[] data)
         {
+            if (!MessageManager.messageTypes.ContainsKey(messageType))
+            {
+                Debug.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"");
+                return;
+            }
             if (MessageManager.messageTypes[messageType] < 32)
             {
                 Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
@@ -827,7 +697,7 @@ namespace MLAPI.MonoBehaviours.Core
                 Debug.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported");
                 return;
             }
-            NetworkingManager.singleton.Send(messageType, channelName, data, ownerClientId);
+            InternalMessageHandler.Send(messageType, channelName, data, ownerClientId);
         }
 
         /// <summary>
@@ -850,6 +720,11 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="data">The binary data to send</param>
         protected void SendToNonLocalClientsTarget(string messageType, string channelName, byte[] data)
         {
+            if (!MessageManager.messageTypes.ContainsKey(messageType))
+            {
+                Debug.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"");
+                return;
+            }
             if (MessageManager.messageTypes[messageType] < 32)
             {
                 Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
@@ -860,7 +735,7 @@ namespace MLAPI.MonoBehaviours.Core
                 Debug.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported");
                 return;
             }
-            NetworkingManager.singleton.Send(messageType, channelName, data, ownerClientId, networkId, networkedObject.GetOrderIndex(this));
+            InternalMessageHandler.Send(messageType, channelName, data, ownerClientId, networkId, networkedObject.GetOrderIndex(this));
         }
 
         /// <summary>
@@ -884,6 +759,11 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="data">The binary data to send</param>
         protected void SendToClient(uint clientId, string messageType, string channelName, byte[] data)
         {
+            if (!MessageManager.messageTypes.ContainsKey(messageType))
+            {
+                Debug.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"");
+                return;
+            }
             if (MessageManager.messageTypes[messageType] < 32)
             {
                 Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
@@ -894,7 +774,7 @@ namespace MLAPI.MonoBehaviours.Core
                 Debug.LogWarning("MLAPI: Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
                 return;
             }
-            NetworkingManager.singleton.Send(clientId, messageType, channelName, data);
+            InternalMessageHandler.Send(clientId, messageType, channelName, data);
         }
 
         /// <summary>
@@ -919,6 +799,11 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="data">The binary data to send</param>
         protected void SendToClientTarget(uint clientId, string messageType, string channelName, byte[] data)
         {
+            if (!MessageManager.messageTypes.ContainsKey(messageType))
+            {
+                Debug.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"");
+                return;
+            }
             if (MessageManager.messageTypes[messageType] < 32)
             {
                 Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
@@ -929,7 +814,7 @@ namespace MLAPI.MonoBehaviours.Core
                 Debug.LogWarning("MLAPI: Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
                 return;
             }
-            NetworkingManager.singleton.Send(clientId, messageType, channelName, data, networkId, networkedObject.GetOrderIndex(this));
+            InternalMessageHandler.Send(clientId, messageType, channelName, data, networkId, networkedObject.GetOrderIndex(this));
         }
 
         /// <summary>
@@ -954,6 +839,11 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="data">The binary data to send</param>
         protected void SendToClients(uint[] clientIds, string messageType, string channelName, byte[] data)
         {
+            if (!MessageManager.messageTypes.ContainsKey(messageType))
+            {
+                Debug.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"");
+                return;
+            }
             if (MessageManager.messageTypes[messageType] < 32)
             {
                 Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
@@ -964,7 +854,7 @@ namespace MLAPI.MonoBehaviours.Core
                 Debug.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported");
                 return;
             }
-            NetworkingManager.singleton.Send(clientIds, messageType, channelName, data);
+            InternalMessageHandler.Send(clientIds, messageType, channelName, data);
         }
 
         /// <summary>
@@ -989,6 +879,11 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="data">The binary data to send</param>
         protected void SendToClientsTarget(uint[] clientIds, string messageType, string channelName, byte[] data)
         {
+            if (!MessageManager.messageTypes.ContainsKey(messageType))
+            {
+                Debug.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"");
+                return;
+            }
             if (MessageManager.messageTypes[messageType] < 32)
             {
                 Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
@@ -999,7 +894,7 @@ namespace MLAPI.MonoBehaviours.Core
                 Debug.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported");
                 return;
             }
-            NetworkingManager.singleton.Send(clientIds, messageType, channelName, data, networkId, networkedObject.GetOrderIndex(this));
+            InternalMessageHandler.Send(clientIds, messageType, channelName, data, networkId, networkedObject.GetOrderIndex(this));
         }
 
         /// <summary>
@@ -1024,6 +919,11 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="data">The binary data to send</param>
         protected void SendToClients(List<uint> clientIds, string messageType, string channelName, byte[] data)
         {
+            if (!MessageManager.messageTypes.ContainsKey(messageType))
+            {
+                Debug.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"");
+                return;
+            }
             if (MessageManager.messageTypes[messageType] < 32)
             {
                 Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
@@ -1034,7 +934,7 @@ namespace MLAPI.MonoBehaviours.Core
                 Debug.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported");
                 return;
             }
-            NetworkingManager.singleton.Send(clientIds, messageType, channelName, data);
+            InternalMessageHandler.Send(clientIds, messageType, channelName, data);
         }
 
         /// <summary>
@@ -1059,6 +959,11 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="data">The binary data to send</param>
         protected void SendToClientsTarget(List<uint> clientIds, string messageType, string channelName, byte[] data)
         {
+            if (!MessageManager.messageTypes.ContainsKey(messageType))
+            {
+                Debug.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"");
+                return;
+            }
             if (MessageManager.messageTypes[messageType] < 32)
             {
                 Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
@@ -1069,7 +974,7 @@ namespace MLAPI.MonoBehaviours.Core
                 Debug.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported");
                 return;
             }
-            NetworkingManager.singleton.Send(clientIds, messageType, channelName, data, networkId, networkedObject.GetOrderIndex(this));
+            InternalMessageHandler.Send(clientIds, messageType, channelName, data, networkId, networkedObject.GetOrderIndex(this));
         }
 
         /// <summary>
@@ -1093,6 +998,11 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="data">The binary data to send</param>
         protected void SendToClients(string messageType, string channelName, byte[] data)
         {
+            if (!MessageManager.messageTypes.ContainsKey(messageType))
+            {
+                Debug.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"");
+                return;
+            }
             if (MessageManager.messageTypes[messageType] < 32)
             {
                 Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
@@ -1103,7 +1013,7 @@ namespace MLAPI.MonoBehaviours.Core
                 Debug.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported");
                 return;
             }
-            NetworkingManager.singleton.Send(messageType, channelName, data);
+            InternalMessageHandler.Send(messageType, channelName, data);
         }
 
         /// <summary>
@@ -1126,6 +1036,11 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="data">The binary data to send</param>
         protected void SendToClientsTarget(string messageType, string channelName, byte[] data)
         {
+            if (!MessageManager.messageTypes.ContainsKey(messageType))
+            {
+                Debug.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"");
+                return;
+            }
             if (MessageManager.messageTypes[messageType] < 32)
             {
                 Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
@@ -1136,7 +1051,7 @@ namespace MLAPI.MonoBehaviours.Core
                 Debug.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported");
                 return;
             }
-            NetworkingManager.singleton.Send(messageType, channelName, data, networkId, networkedObject.GetOrderIndex(this));
+            InternalMessageHandler.Send(messageType, channelName, data, networkId, networkedObject.GetOrderIndex(this));
         }
 
         /// <summary>

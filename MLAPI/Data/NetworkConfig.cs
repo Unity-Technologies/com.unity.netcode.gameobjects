@@ -1,12 +1,8 @@
-﻿using MLAPI.MonoBehaviours.Core;
+﻿using MLAPI.NetworkingManagerComponents.Binary;
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Security.Cryptography;
-using System.Text;
 using UnityEngine;
-using UnityEngine.Networking;
 
 namespace MLAPI.Data
 {
@@ -50,13 +46,16 @@ namespace MLAPI.Data
         /// <summary>
         /// A list of spawnable prefabs
         /// </summary>
+        [HideInInspector]
         public List<NetworkedPrefab> NetworkedPrefabs = new List<NetworkedPrefab>();
         internal Dictionary<string, int> NetworkPrefabIds;
         internal Dictionary<int, string> NetworkPrefabNames;
         /// <summary>
         /// The default player prefab
         /// </summary>
-        public string PlayerPrefabName;
+        [SerializeField]
+        [HideInInspector]
+        internal string PlayerPrefabName;
         /// <summary>
         /// The size of the receive message buffer. This is the max message size.
         /// </summary>
@@ -100,6 +99,7 @@ namespace MLAPI.Data
         /// <summary>
         /// The data to send during connection which can be used to decide on if a client should get accepted
         /// </summary>
+        [HideInInspector]
         public byte[] ConnectionData = new byte[0];
         /// <summary>
         /// The amount of seconds to keep a lag compensation position history
@@ -151,53 +151,51 @@ namespace MLAPI.Data
             if (ConfigHash != null && cache)
                 return ConfigHash;
 
-            using (MemoryStream writeStream = new MemoryStream())
+            using (BitWriter writer = new BitWriter())
             {
-                using (BinaryWriter writer = new BinaryWriter(writeStream))
+                writer.WriteUShort(ProtocolVersion);
+                for (int i = 0; i < Channels.Count; i++)
                 {
-                    writer.Write(ProtocolVersion);
-                    for (int i = 0; i < Channels.Count; i++)
-                    {
-                        writer.Write(Channels[i].Name);
-                        writer.Write((byte)Channels[i].Type);
-                        if (EnableEncryption)
-                            writer.Write(Channels[i].Encrypted);
-                    }
-                    for (int i = 0; i < MessageTypes.Count; i++)
-                    {
-                        writer.Write(MessageTypes[i].Name);
-                        if (AllowPassthroughMessages)
-                            writer.Write(MessageTypes[i].Passthrough);
-                    }
-                    if (EnableSceneSwitching)
-                    {
-                        for (int i = 0; i < RegisteredScenes.Count; i++)
-                        {
-                            writer.Write(RegisteredScenes[i]);
-                        }
-                    }
-                    if(HandleObjectSpawning)
-                    {
-                        for (int i = 0; i < NetworkedPrefabs.Count; i++)
-                        {
-                            writer.Write(NetworkedPrefabs[i].name);
-                        }
-                    }
-                    writer.Write(HandleObjectSpawning);
-                    writer.Write(EnableEncryption);
-                    writer.Write(AllowPassthroughMessages);
-                    writer.Write(EnableSceneSwitching);
-                    writer.Write(SignKeyExchange);
+                    writer.WriteString(Channels[i].Name);
+                    writer.WriteByte((byte)Channels[i].Type);
+                    if (EnableEncryption)
+                        writer.WriteBool(Channels[i].Encrypted);
                 }
+                for (int i = 0; i < MessageTypes.Count; i++)
+                {
+                    writer.WriteString(MessageTypes[i].Name);
+                    if (AllowPassthroughMessages)
+                        writer.WriteBool(MessageTypes[i].Passthrough);
+                }
+                if (EnableSceneSwitching)
+                {
+                    for (int i = 0; i < RegisteredScenes.Count; i++)
+                    {
+                        writer.WriteString(RegisteredScenes[i]);
+                    }
+                }
+                if (HandleObjectSpawning)
+                {
+                    for (int i = 0; i < NetworkedPrefabs.Count; i++)
+                    {
+                        writer.WriteString(NetworkedPrefabs[i].name);
+                    }
+                }
+                writer.WriteBool(HandleObjectSpawning);
+                writer.WriteBool(EnableEncryption);
+                writer.WriteBool(AllowPassthroughMessages);
+                writer.WriteBool(EnableSceneSwitching);
+                writer.WriteBool(SignKeyExchange);
+
                 using (SHA256Managed sha256 = new SHA256Managed())
                 {
                     //Returns a 256 bit / 32 byte long checksum of the config
                     if (cache)
                     {
-                        ConfigHash = sha256.ComputeHash(writeStream.ToArray());
+                        ConfigHash = sha256.ComputeHash(writer.Finalize());
                         return ConfigHash;
                     }
-                    return sha256.ComputeHash(writeStream.ToArray());
+                    return sha256.ComputeHash(writer.Finalize());
                 }
             }
         }

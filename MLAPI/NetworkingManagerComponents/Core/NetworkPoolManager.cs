@@ -1,7 +1,7 @@
 ﻿using MLAPI.Data;
 using MLAPI.MonoBehaviours.Core;
+using MLAPI.NetworkingManagerComponents.Binary;
 using System.Collections.Generic;
-using System.IO;
 using UnityEngine;
 
 namespace MLAPI.NetworkingManagerComponents.Core
@@ -66,19 +66,19 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 return null;
             }
             GameObject go = Pools[PoolNamesToIndexes[poolName]].SpawnObject(position, rotation);
-            using (MemoryStream stream = new MemoryStream(28))
+            using (BitWriter writer = new BitWriter())
             {
-                using (BinaryWriter writer = new BinaryWriter(stream))
-                {
-                    writer.Write(go.GetComponent<NetworkedObject>().NetworkId);
-                    writer.Write(position.x);
-                    writer.Write(position.y);
-                    writer.Write(position.z);
-                    writer.Write(rotation.eulerAngles.x);
-                    writer.Write(rotation.eulerAngles.y);
-                    writer.Write(rotation.eulerAngles.z);
-                }
-                NetworkingManager.singleton.Send("MLAPI_SPAWN_POOL_OBJECT", "MLAPI_INTERNAL", stream.GetBuffer());
+                writer.WriteUInt(go.GetComponent<NetworkedObject>().NetworkId);
+
+                writer.WriteFloat(position.x);
+                writer.WriteFloat(position.y);
+                writer.WriteFloat(position.z);
+
+                writer.WriteFloat(rotation.eulerAngles.x);
+                writer.WriteFloat(rotation.eulerAngles.y);
+                writer.WriteFloat(rotation.eulerAngles.z);
+
+                InternalMessageHandler.Send("MLAPI_SPAWN_POOL_OBJECT", "MLAPI_INTERNAL", writer.Finalize());
             }
             return go;
         }
@@ -95,13 +95,11 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 return;
             }
             netObject.gameObject.SetActive(false);
-            using (MemoryStream stream = new MemoryStream(4))
+            using (BitWriter writer = new BitWriter())
             {
-                using (BinaryWriter writer = new BinaryWriter(stream))
-                {
-                    writer.Write(netObject.NetworkId);
-                }
-                NetworkingManager.singleton.Send("MLAPI_DESTROY_POOL_OBJECT", "MLAPI_INTERNAL", stream.GetBuffer());
+                writer.WriteUInt(netObject.NetworkId);
+
+                InternalMessageHandler.Send("MLAPI_DESTROY_POOL_OBJECT", "MLAPI_INTERNAL", writer.Finalize());
             }
         }
     }

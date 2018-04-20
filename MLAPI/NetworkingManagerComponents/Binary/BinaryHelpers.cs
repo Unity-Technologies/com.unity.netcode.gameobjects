@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
+﻿#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 namespace MLAPI.NetworkingManagerComponents.Binary
 {
     public static class BinaryHelpers
@@ -20,3 +16,4 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             ((value << 8)  & (0xFFUL << 32)) ;
     }
 }
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
