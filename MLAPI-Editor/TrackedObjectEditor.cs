@@ -27,6 +27,7 @@ namespace UnityEditor
             {
                 EditorGUILayout.LabelField("Total points: ", trackedObject.TotalPoints.ToString(), EditorStyles.label);
                 EditorGUILayout.LabelField("Avg time between points: ", trackedObject.AvgTimeBetweenPointsMs.ToString() + " ms", EditorStyles.label);
+                EditorGUILayout.LabelField("Total history: ", trackedObject.TotalTimeHistory.ToString() + " seconds", EditorStyles.label);
             }
             Repaint();
         }
