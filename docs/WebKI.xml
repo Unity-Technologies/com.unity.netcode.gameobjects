@@ -32,6 +32,7 @@
     <HelpKINode Title="methods" Url="html/Methods_T_MLAPI_NetworkingManagerComponents_Binary_BitReader.htm" />
   </HelpKINode>
   <HelpKINode Title="BitReader.BitReader constructor" Url="html/M_MLAPI_NetworkingManagerComponents_Binary_BitReader__ctor.htm" />
+  <HelpKINode Title="BitReader.ReadBits method" Url="html/M_MLAPI_NetworkingManagerComponents_Binary_BitReader_ReadBits.htm" />
   <HelpKINode Title="BitReader.ReadBool method" Url="html/M_MLAPI_NetworkingManagerComponents_Binary_BitReader_ReadBool.htm" />
   <HelpKINode Title="BitReader.ReadByte method" Url="html/M_MLAPI_NetworkingManagerComponents_Binary_BitReader_ReadByte.htm" />
   <HelpKINode Title="BitReader.ReadByteArray method" Url="html/M_MLAPI_NetworkingManagerComponents_Binary_BitReader_ReadByteArray.htm" />
@@ -65,6 +66,7 @@
   <HelpKINode Title="BitWriter.Finalize method" Url="html/Overload_MLAPI_NetworkingManagerComponents_Binary_BitWriter_Finalize.htm" />
   <HelpKINode Title="BitWriter.GetFinalizeSize method" Url="html/M_MLAPI_NetworkingManagerComponents_Binary_BitWriter_GetFinalizeSize.htm" />
   <HelpKINode Title="BitWriter.WriteAlignBits method" Url="html/M_MLAPI_NetworkingManagerComponents_Binary_BitWriter_WriteAlignBits.htm" />
+  <HelpKINode Title="BitWriter.WriteBits method" Url="html/M_MLAPI_NetworkingManagerComponents_Binary_BitWriter_WriteBits.htm" />
   <HelpKINode Title="BitWriter.WriteBool method" Url="html/M_MLAPI_NetworkingManagerComponents_Binary_BitWriter_WriteBool.htm" />
   <HelpKINode Title="BitWriter.WriteByte method" Url="html/M_MLAPI_NetworkingManagerComponents_Binary_BitWriter_WriteByte.htm" />
   <HelpKINode Title="BitWriter.WriteByteArray method" Url="html/M_MLAPI_NetworkingManagerComponents_Binary_BitWriter_WriteByteArray.htm" />
@@ -102,6 +104,20 @@
   <HelpKINode Title="ClearCache method" Url="html/M_MLAPI_NetworkingManagerComponents_Binary_BinarySerializer_ClearCache.htm" />
   <HelpKINode Title="ClientConnectionBufferTimeout field" Url="html/F_MLAPI_Data_NetworkConfig_ClientConnectionBufferTimeout.htm" />
   <HelpKINode Title="ClientId field" Url="html/F_MLAPI_Data_NetworkedClient_ClientId.htm" />
+  <HelpKINode Title="ClientRpc class">
+    <HelpKINode Title="ClientRpc Class" Url="html/T_MLAPI_Attributes_ClientRpc.htm" />
+    <HelpKINode Title="constructor" Url="html/M_MLAPI_Attributes_ClientRpc__ctor.htm" />
+    <HelpKINode Title="methods" Url="html/Methods_T_MLAPI_Attributes_ClientRpc.htm" />
+    <HelpKINode Title="properties" Url="html/Properties_T_MLAPI_Attributes_ClientRpc.htm" />
+  </HelpKINode>
+  <HelpKINode Title="ClientRpc.ClientRpc constructor" Url="html/M_MLAPI_Attributes_ClientRpc__ctor.htm" />
+  <HelpKINode Title="Command class">
+    <HelpKINode Title="Command Class" Url="html/T_MLAPI_Attributes_Command.htm" />
+    <HelpKINode Title="constructor" Url="html/M_MLAPI_Attributes_Command__ctor.htm" />
+    <HelpKINode Title="methods" Url="html/Methods_T_MLAPI_Attributes_Command.htm" />
+    <HelpKINode Title="properties" Url="html/Properties_T_MLAPI_Attributes_Command.htm" />
+  </HelpKINode>
+  <HelpKINode Title="Command.Command constructor" Url="html/M_MLAPI_Attributes_Command__ctor.htm" />
   <HelpKINode Title="CompareConfig method" Url="html/M_MLAPI_Data_NetworkConfig_CompareConfig.htm" />
   <HelpKINode Title="ConnectAddress field" Url="html/F_MLAPI_Data_NetworkConfig_ConnectAddress.htm" />
   <HelpKINode Title="ConnectedClients property" Url="html/P_MLAPI_MonoBehaviours_Core_NetworkingManager_ConnectedClients.htm" />
@@ -158,6 +174,9 @@
   <HelpKINode Title="Inequality operator" Url="html/M_MLAPI_Data_NetId_op_Inequality.htm" />
   <HelpKINode Title="InterpolatePosition field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedTransform_InterpolatePosition.htm" />
   <HelpKINode Title="InterpolateServer field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedTransform_InterpolateServer.htm" />
+  <HelpKINode Title="InvokeClientRpc method" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_InvokeClientRpc.htm" />
+  <HelpKINode Title="InvokeCommand method" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_InvokeCommand.htm" />
+  <HelpKINode Title="InvokeTargetRpc method" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_InvokeTargetRpc.htm" />
   <HelpKINode Title="isClient property">
     <HelpKINode Title="NetworkedBehaviour.isClient Property " Url="html/P_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_isClient.htm" />
     <HelpKINode Title="NetworkingManager.isClient Property " Url="html/P_MLAPI_MonoBehaviours_Core_NetworkingManager_isClient.htm" />
@@ -220,7 +239,10 @@
   <HelpKINode Title="MinMeters field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedTransform_MinMeters.htm" />
   <HelpKINode Title="MLAPI.Attributes namespace" Url="html/N_MLAPI_Attributes.htm" />
   <HelpKINode Title="MLAPI.Attributes.BinaryIgnore class" Url="html/T_MLAPI_Attributes_BinaryIgnore.htm" />
+  <HelpKINode Title="MLAPI.Attributes.ClientRpc class" Url="html/T_MLAPI_Attributes_ClientRpc.htm" />
+  <HelpKINode Title="MLAPI.Attributes.Command class" Url="html/T_MLAPI_Attributes_Command.htm" />
   <HelpKINode Title="MLAPI.Attributes.SyncedVar class" Url="html/T_MLAPI_Attributes_SyncedVar.htm" />
+  <HelpKINode Title="MLAPI.Attributes.TargetRpc class" Url="html/T_MLAPI_Attributes_TargetRpc.htm" />
   <HelpKINode Title="MLAPI.Data namespace" Url="html/N_MLAPI_Data.htm" />
   <HelpKINode Title="MLAPI.Data.Channel class" Url="html/T_MLAPI_Data_Channel.htm" />
   <HelpKINode Title="MLAPI.Data.MessageType class" Url="html/T_MLAPI_Data_MessageType.htm" />
@@ -343,6 +365,9 @@
   </HelpKINode>
   <HelpKINode Title="NetworkedBehaviour.DeregisterMessageHandler method" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_DeregisterMessageHandler.htm" />
   <HelpKINode Title="NetworkedBehaviour.GetNetworkedObject method" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_GetNetworkedObject.htm" />
+  <HelpKINode Title="NetworkedBehaviour.InvokeClientRpc method" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_InvokeClientRpc.htm" />
+  <HelpKINode Title="NetworkedBehaviour.InvokeCommand method" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_InvokeCommand.htm" />
+  <HelpKINode Title="NetworkedBehaviour.InvokeTargetRpc method" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_InvokeTargetRpc.htm" />
   <HelpKINode Title="NetworkedBehaviour.isClient property" Url="html/P_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_isClient.htm" />
   <HelpKINode Title="NetworkedBehaviour.isHost property" Url="html/P_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_isHost.htm" />
   <HelpKINode Title="NetworkedBehaviour.isLocalPlayer property" Url="html/P_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_isLocalPlayer.htm" />
@@ -522,6 +547,7 @@
     <HelpKINode Title="NetworkedNavMeshAgent.ProximityRange Field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedNavMeshAgent_ProximityRange.htm" />
     <HelpKINode Title="NetworkedTransform.ProximityRange Field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedTransform_ProximityRange.htm" />
   </HelpKINode>
+  <HelpKINode Title="ReadBits method" Url="html/M_MLAPI_NetworkingManagerComponents_Binary_BitReader_ReadBits.htm" />
   <HelpKINode Title="ReadBool method" Url="html/M_MLAPI_NetworkingManagerComponents_Binary_BitReader_ReadBool.htm" />
   <HelpKINode Title="ReadByte method" Url="html/M_MLAPI_NetworkingManagerComponents_Binary_BitReader_ReadByte.htm" />
   <HelpKINode Title="ReadByteArray method" Url="html/M_MLAPI_NetworkingManagerComponents_Binary_BitReader_ReadByteArray.htm" />
@@ -602,6 +628,13 @@
   <HelpKINode Title="SyncedVar.target field" Url="html/F_MLAPI_Attributes_SyncedVar_target.htm" />
   <HelpKINode Title="SyncVarSyncDelay field" Url="html/F_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SyncVarSyncDelay.htm" />
   <HelpKINode Title="target field" Url="html/F_MLAPI_Attributes_SyncedVar_target.htm" />
+  <HelpKINode Title="TargetRpc class">
+    <HelpKINode Title="TargetRpc Class" Url="html/T_MLAPI_Attributes_TargetRpc.htm" />
+    <HelpKINode Title="constructor" Url="html/M_MLAPI_Attributes_TargetRpc__ctor.htm" />
+    <HelpKINode Title="methods" Url="html/Methods_T_MLAPI_Attributes_TargetRpc.htm" />
+    <HelpKINode Title="properties" Url="html/Properties_T_MLAPI_Attributes_TargetRpc.htm" />
+  </HelpKINode>
+  <HelpKINode Title="TargetRpc.TargetRpc constructor" Url="html/M_MLAPI_Attributes_TargetRpc__ctor.htm" />
   <HelpKINode Title="TotalPoints property" Url="html/P_MLAPI_MonoBehaviours_Core_TrackedObject_TotalPoints.htm" />
   <HelpKINode Title="TrackedObject class">
     <HelpKINode Title="TrackedObject Class" Url="html/T_MLAPI_MonoBehaviours_Core_TrackedObject.htm" />
@@ -626,6 +659,7 @@
   <HelpKINode Title="WarpOnDestinationChange field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedNavMeshAgent_WarpOnDestinationChange.htm" />
   <HelpKINode Title="Websockets field" Url="html/F_MLAPI_Data_TransportHost_Websockets.htm" />
   <HelpKINode Title="WriteAlignBits method" Url="html/M_MLAPI_NetworkingManagerComponents_Binary_BitWriter_WriteAlignBits.htm" />
+  <HelpKINode Title="WriteBits method" Url="html/M_MLAPI_NetworkingManagerComponents_Binary_BitWriter_WriteBits.htm" />
   <HelpKINode Title="WriteBool method" Url="html/M_MLAPI_NetworkingManagerComponents_Binary_BitWriter_WriteBool.htm" />
   <HelpKINode Title="WriteByte method" Url="html/M_MLAPI_NetworkingManagerComponents_Binary_BitWriter_WriteByte.htm" />
   <HelpKINode Title="WriteByteArray method" Url="html/M_MLAPI_NetworkingManagerComponents_Binary_BitWriter_WriteByteArray.htm" />
