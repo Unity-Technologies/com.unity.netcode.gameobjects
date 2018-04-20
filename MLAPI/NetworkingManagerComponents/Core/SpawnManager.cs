@@ -91,7 +91,10 @@ namespace MLAPI.NetworkingManagerComponents.Core
             for (int i = 0; i < netObjects.Length; i++)
             {
                 if (netObjects[i].sceneObject == null)
+                {
+                    netObjects[i].InvokeBehaviourNetworkSpawn();
                     netObjects[i].sceneObject = true;
+                }
             }
         }
 
