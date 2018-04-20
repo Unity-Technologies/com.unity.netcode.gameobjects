@@ -219,6 +219,8 @@ namespace MLAPI.MonoBehaviours.Core
             connectedClients = new Dictionary<uint, NetworkedClient>();
             messageBuffer = new byte[NetworkConfig.MessageBufferSize];
             diffieHellmanPublicKeys = new Dictionary<uint, byte[]>();
+            Data.Cache.messageAttributeHashes = new Dictionary<string, ulong>();
+            Data.Cache.messageAttributeNames = new Dictionary<ulong, string>();
             MessageManager.channels = new Dictionary<string, int>();
             MessageManager.messageTypes = new Dictionary<string, ushort>();
             MessageManager.messageCallbacks = new Dictionary<ushort, Dictionary<int, Action<uint, byte[]>>>();
@@ -378,6 +380,9 @@ namespace MLAPI.MonoBehaviours.Core
             MessageManager.messageTypes.Add("MLAPI_SYNC_VAR_UPDATE", 9);
             MessageManager.messageTypes.Add("MLAPI_ADD_OBJECTS", 10);
             MessageManager.messageTypes.Add("MLAPI_TIME_SYNC", 11);
+            MessageManager.messageTypes.Add("MLAPI_COMMAND", 12);
+            MessageManager.messageTypes.Add("MLAPI_RPC", 13);
+            MessageManager.messageTypes.Add("MLAPI_TARGET", 14);
 
             List<MessageType> messageTypes = new List<MessageType>(NetworkConfig.MessageTypes)
             {
@@ -998,6 +1003,24 @@ namespace MLAPI.MonoBehaviours.Core
                         if (isClient)
                         {
                             InternalMessageHandler.HandleTimeSync(clientId, incommingData, channelId);
+                        }
+                        break;
+                    case 12:
+                        if (isServer)
+                        {
+                            InternalMessageHandler.HandleCommand(clientId, incommingData, channelId);
+                        }
+                        break;
+                    case 13:
+                        if (isClient)
+                        {
+                            InternalMessageHandler.HandleRpc(clientId, incommingData, channelId);
+                        }
+                        break;
+                    case 14:
+                        if (isClient)
+                        {
+                            InternalMessageHandler.HandleTargetRpc(clientId, incommingData, channelId);
                         }
                         break;
                 }

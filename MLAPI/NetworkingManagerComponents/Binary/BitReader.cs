@@ -54,6 +54,13 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         public int[] ReadIntArray(int known = -1) => ReadArray(ReadInt, known);
         public long[] ReadLongArray(int known = -1) => ReadArray(ReadLong, known);
         public string ReadString() => Encoding.UTF8.GetString(ReadByteArray());
+        public byte ReadBits(int bits)
+        {
+            byte b = 0;
+            for (int i = 0; --bits >= 0; ++i)
+                b |= (byte)((ReadBool() ? 1 : 0) << i);
+            return b;
+        }
 
         public ulong ReadULong()
         {

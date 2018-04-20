@@ -1,4 +1,5 @@
-﻿using System.Security.Cryptography;
+﻿using System.Reflection;
+using System.Security.Cryptography;
 using MLAPI.Data;
 using MLAPI.MonoBehaviours.Core;
 using MLAPI.NetworkingManagerComponents.Binary;
@@ -384,6 +385,54 @@ namespace MLAPI.NetworkingManagerComponents.Core
             if ((NetworkError)error != NetworkError.Ok)
                 msDelay = 0;
             netManager.networkTime = netTime + (msDelay / 1000f);
-        }  
+        }
+
+        internal static void HandleCommand(uint clientId, byte[] incommingData, int channelId)
+        {
+            BitReader reader = new BitReader(incommingData);
+            uint networkId = reader.ReadUInt();
+            ushort orderId = reader.ReadUShort();
+            ulong hash = reader.ReadULong();
+            NetworkedBehaviour behaviour = SpawnManager.spawnedObjects[networkId].GetBehaviourAtOrderIndex(orderId);
+            if (clientId != behaviour.ownerClientId)
+                return; // Not owner
+            MethodInfo targetMethod = null;
+            if (behaviour.cachedMethods.ContainsKey(Data.Cache.GetAttributeMethodName(hash)))
+                targetMethod = behaviour.cachedMethods[Data.Cache.GetAttributeMethodName(hash)];
+            byte paramCount = reader.ReadBits(5);
+            object[] methodParams = FieldTypeHelper.ReadObjects(reader, paramCount);
+            targetMethod.Invoke(behaviour, methodParams);
+        }
+
+        internal static void HandleRpc(uint clientId, byte[] incommingData, int channelId)
+        {
+            Debug.LogError("RPC inc");
+            BitReader reader = new BitReader(incommingData);
+            uint networkId = reader.ReadUInt();
+            ushort orderId = reader.ReadUShort();
+            ulong hash = reader.ReadULong();
+            NetworkedBehaviour behaviour = SpawnManager.spawnedObjects[networkId].GetBehaviourAtOrderIndex(orderId);
+            MethodInfo targetMethod = null;
+            if (behaviour.cachedMethods.ContainsKey(Data.Cache.GetAttributeMethodName(hash)))
+                targetMethod = behaviour.cachedMethods[Data.Cache.GetAttributeMethodName(hash)];
+            byte paramCount = reader.ReadBits(5);
+            object[] methodParams = FieldTypeHelper.ReadObjects(reader, paramCount);
+            targetMethod.Invoke(behaviour, methodParams);
+        }
+
+        internal static void HandleTargetRpc(uint clientId, byte[] incommingData, int channelId)
+        {
+            BitReader reader = new BitReader(incommingData);
+            uint networkId = reader.ReadUInt();
+            ushort orderId = reader.ReadUShort();
+            ulong hash = reader.ReadULong();
+            NetworkedBehaviour behaviour = SpawnManager.spawnedObjects[networkId].GetBehaviourAtOrderIndex(orderId);
+            MethodInfo targetMethod = null;
+            if (behaviour.cachedMethods.ContainsKey(Data.Cache.GetAttributeMethodName(hash)))
+                targetMethod = behaviour.cachedMethods[Data.Cache.GetAttributeMethodName(hash)];
+            byte paramCount = reader.ReadBits(5);
+            object[] methodParams = FieldTypeHelper.ReadObjects(reader, paramCount);
+            targetMethod.Invoke(behaviour, methodParams);
+        }
     }
 }

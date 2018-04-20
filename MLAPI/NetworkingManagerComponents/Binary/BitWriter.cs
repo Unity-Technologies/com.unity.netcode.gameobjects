@@ -105,6 +105,10 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         public void WriteShortArray(short[] s, bool known = false)      => PushArray(s, known);
         public void WriteIntArray(int[] i, bool known = false)          => PushArray(i, known);
         public void WriteLongArray(long[] l, bool known = false)        => PushArray(l, known);
+        public void WriteBits(byte value, int bits)
+        {
+            for (int i = 0; i < bits; ++i) WriteBool((value & (1 << i)) != 0);
+        }
 
         private void PushArray<T>(T[] t, bool knownSize = false)
         {
@@ -268,7 +272,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
                                 WriteByte(writeTo, (value >> 32) & 255, bitOffset + 40, isAligned);
                                 if (value > 1099511627775)
                                 {
-                                    WriteByte(writeTo, (value >> 40) & 55, bitOffset + 48, isAligned);
+                                    WriteByte(writeTo, (value >> 40) & 255, bitOffset + 48, isAligned);
                                     if (value > 281474976710655)
                                     {
                                         WriteByte(writeTo, (value >> 48) & 255, bitOffset + 56, isAligned);
