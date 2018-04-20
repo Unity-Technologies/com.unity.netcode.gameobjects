@@ -43,7 +43,8 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             typeof(ulong),
             typeof(float),
             typeof(double),
-            typeof(decimal)
+            typeof(decimal),
+            typeof(Partial)
         };
 
         private static readonly FieldInfo
