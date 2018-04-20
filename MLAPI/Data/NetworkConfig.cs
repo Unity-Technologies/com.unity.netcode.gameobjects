@@ -104,7 +104,7 @@ namespace MLAPI.Data
         /// <summary>
         /// The amount of seconds to keep a lag compensation position history
         /// </summary>
-        public float SecondsHistory = 5;
+        public int SecondsHistory = 5;
         /// <summary>
         /// Wheter or not to make the library handle object spawning
         /// </summary>

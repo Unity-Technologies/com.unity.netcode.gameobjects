@@ -212,9 +212,10 @@ namespace MLAPI.MonoBehaviours.Core
         private ConnectionConfig Init(bool server)
         {
             networkTime = 0f;
-            lastSendTickTime = 0;
-            lastEventTickTime = 0;
-            lastReceiveTickTime = 0;
+            lastSendTickTime = 0f;
+            lastEventTickTime = 0f;
+            lastReceiveTickTime = 0f;
+            eventOvershootCounter = 0f;
             pendingClients = new HashSet<uint>();
             connectedClients = new Dictionary<uint, NetworkedClient>();
             messageBuffer = new byte[NetworkConfig.MessageBufferSize];
@@ -679,6 +680,7 @@ namespace MLAPI.MonoBehaviours.Core
         private float lastReceiveTickTime;
         private float lastSendTickTime;
         private float lastEventTickTime;
+        private float eventOvershootCounter;
         private float lastTimeSyncTime;
         private void Update()
         {
@@ -781,11 +783,18 @@ namespace MLAPI.MonoBehaviours.Core
                     lastReceiveTickTime = NetworkTime;
                 }
 
-                if (isServer && ((NetworkTime - lastEventTickTime >= (1f / NetworkConfig.EventTickrate)) || NetworkConfig.EventTickrate <= 0))
+                if (isServer && ((NetworkTime - lastEventTickTime >= (1f / NetworkConfig.EventTickrate))))
                 {
+                    eventOvershootCounter += ((NetworkTime - lastEventTickTime) - (1f / NetworkConfig.EventTickrate));
                     LagCompensationManager.AddFrames();
                     NetworkedObject.InvokeSyncvarUpdate();
                     lastEventTickTime = NetworkTime;
+                }
+                else if (isServer && eventOvershootCounter >= ((1f / NetworkConfig.EventTickrate)))
+                {
+                    //We run this one to compensate for previous update overshoots.
+                    eventOvershootCounter -= (1f / NetworkConfig.EventTickrate);
+                    LagCompensationManager.AddFrames();
                 }
 
                 if (NetworkConfig.EnableTimeResync && NetworkTime - lastTimeSyncTime >= 30)

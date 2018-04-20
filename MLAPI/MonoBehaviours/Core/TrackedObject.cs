@@ -1,5 +1,6 @@
 ﻿using MLAPI.Data;
 using MLAPI.NetworkingManagerComponents.Core;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -15,7 +16,7 @@ namespace MLAPI.MonoBehaviours.Core
     public class TrackedObject : MonoBehaviour
     {
         internal Dictionary<float, TrackedPointData> FrameData = new Dictionary<float, TrackedPointData>();
-        internal LinkedList<float> Framekeys = new LinkedList<float>();
+        internal FixedQueue<float> Framekeys;
         private Vector3 savedPosition;
         private Quaternion savedRotation;
 
@@ -37,10 +38,26 @@ namespace MLAPI.MonoBehaviours.Core
         {
             get
             {
-                if (Framekeys.First == null || Framekeys.Last == null)
+                if (Framekeys.Count < 2)
                     return 0;
-                float totalSpan = Framekeys.Last.Value - Framekeys.First.Value;
+                float totalSpan = Framekeys.ElementAt(Framekeys.Count - 1) - Framekeys.ElementAt(0);
                 return (totalSpan / Framekeys.Count) * 1000f;
+            }
+        }
+
+        public float TotalTimeHistory
+        {
+            get
+            {
+                return Framekeys.ElementAt(Framekeys.Count - 1) - Framekeys.ElementAt(0);
+            }
+        }
+
+        private int maxPoints
+        {
+            get
+            {
+                return (int)(NetworkingManager.singleton.NetworkConfig.SecondsHistory / (1f / NetworkingManager.singleton.NetworkConfig.EventTickrate));
             }
         }
 
@@ -48,27 +65,22 @@ namespace MLAPI.MonoBehaviours.Core
         {
             savedPosition = transform.position;
             savedRotation = transform.rotation;
+
             float currentTime = NetworkingManager.singleton.NetworkTime;
             float targetTime = currentTime - secondsAgo;
-            float previousTime = 0;
-            float nextTime = 0;
-            LinkedListNode<float> node = Framekeys.First;
-            float previousValue = 0f;
-            while(node != null)
+
+            float previousTime = 0f;
+            float nextTime = 0f;
+            for (int i = 0; i < Framekeys.Count; i++)
             {
-                if(previousValue <= targetTime && node.Value >= targetTime)
+                if (previousTime <= targetTime && Framekeys.ElementAt(i) >= targetTime)
                 {
-                    previousTime = previousValue;
-                    nextTime = node.Value;
+                    nextTime = Framekeys.ElementAt(i);
                     break;
                 }
                 else
-                {
-                    previousValue = node.Value;
-                    node = node.Next;
-                }
+                    previousTime = Framekeys.ElementAt(i);
             }
-
             float timeBetweenFrames = nextTime - previousTime;
             float timeAwayFromPrevious = currentTime - previousTime;
             float lerpProgress = timeAwayFromPrevious / timeBetweenFrames;
@@ -84,35 +96,27 @@ namespace MLAPI.MonoBehaviours.Core
 
         void Start()
         {
-            Framekeys.AddFirst(0);
+            Framekeys = new FixedQueue<float>(maxPoints);
+            Framekeys.Enqueue(0);
             LagCompensationManager.simulationObjects.Add(this);
         }
 
         void OnDestroy()
         {
-            Framekeys.Clear();
-            FrameData.Clear();
             LagCompensationManager.simulationObjects.Remove(this);
         }
 
         internal void AddFrame()
         {
-            float currentTime = NetworkingManager.singleton.NetworkTime;
-            LinkedListNode<float> node = Framekeys.First;
-            LinkedListNode<float> nextNode = node.Next;
-            while (node != null && currentTime - node.Value >= NetworkingManager.singleton.NetworkConfig.SecondsHistory)
-            {
-                nextNode = node.Next;
-                FrameData.Remove(node.Value);
-                Framekeys.RemoveFirst();
-                node = nextNode;
-            }
+            if (Framekeys.Count == maxPoints)
+                FrameData.Remove(Framekeys.Dequeue());
+
             FrameData.Add(NetworkingManager.singleton.NetworkTime, new TrackedPointData()
             {
                 position = transform.position,
                 rotation = transform.rotation
             });
-            Framekeys.AddLast(NetworkingManager.singleton.NetworkTime);
+            Framekeys.Enqueue(NetworkingManager.singleton.NetworkTime);
         }
     }
 }

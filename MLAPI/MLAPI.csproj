@@ -74,6 +74,7 @@
     <Compile Include="Data\Channel.cs" />
     <Compile Include="Data\FieldType.cs" />
     <Compile Include="Attributes\SyncedVar.cs" />
+    <Compile Include="Data\FixedQueue.cs" />
     <Compile Include="Data\NetworkConfig.cs" />
     <Compile Include="Data\NetworkedPrefab.cs" />
     <Compile Include="Data\NetworkPool.cs" />
