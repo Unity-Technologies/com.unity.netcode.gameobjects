@@ -378,8 +378,8 @@ namespace MLAPI.Data
             object[] returnVal = new object[paramCount];
             for (int i = 0; i < paramCount; i++)
             {
-                //FieldType fieldType = (FieldType)reader.ReadBits(5);
-                FieldType fieldType = (FieldType)reader.ReadByte();
+                FieldType fieldType = (FieldType)reader.ReadBits(5);
+
                 switch (fieldType)
                 {
                     case FieldType.Bool:

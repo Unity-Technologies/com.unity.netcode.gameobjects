@@ -174,28 +174,6 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
 
-            /* This would not allow for cross projects.
-            MethodInfo method = null;
-            if (cachedMethods.ContainsKey(methodName))
-                method = cachedMethods[methodName];
-            else
-                method = GetType().GetMethod(methodName, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.NonPublic);
-
-            if (method.GetParameters().Length != methodParams.Length)
-            {
-                Debug.LogWarning("MLAPI: The parameter amounts are not matching.");
-                return;
-            }
-
-            for (int i = 0; i < method.GetParameters().Length; i++)
-            {
-                if (method.GetParameters()[i].GetType() != methodParams[i].GetType())
-                {
-                    Debug.LogWarning("MLAPI: The " + (i + 1) + "th parameter has the wrong type");
-                    return;
-                }
-            }
-            */
             ulong hash = Data.Cache.GetMessageAttributeHash(methodName);
             using (BitWriter writer = new BitWriter())
             {
@@ -210,7 +188,6 @@ namespace MLAPI.MonoBehaviours.Core
                     FieldTypeHelper.WriteFieldType(writer, methodParams[i], fieldType);
                 }
 
-                //SendToServerTarget("MLAPI_COMMAND", "MLAPI_INTERNAL", writer.Finalize());
                 InternalMessageHandler.Send(NetId.ServerNetId.GetClientId(), "MLAPI_COMMAND", "MLAPI_INTERNAL", writer.Finalize());
             }
         }
