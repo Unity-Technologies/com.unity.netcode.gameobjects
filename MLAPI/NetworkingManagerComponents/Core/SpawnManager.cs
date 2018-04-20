@@ -142,7 +142,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 return null;
             }
 
-            GameObject go = MonoBehaviour.Instantiate(netManager.NetworkConfig.NetworkedPrefabs[networkedPrefabId].prefab);
+            GameObject go = MonoBehaviour.Instantiate(netManager.NetworkConfig.NetworkedPrefabs[networkedPrefabId].prefab, position, rotation);
             NetworkedObject netObject = go.GetComponent<NetworkedObject>();
             if (netObject == null)
             {
