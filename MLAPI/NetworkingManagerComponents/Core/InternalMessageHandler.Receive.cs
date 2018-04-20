@@ -406,7 +406,6 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
         internal static void HandleRpc(uint clientId, byte[] incommingData, int channelId)
         {
-            Debug.LogError("RPC inc");
             BitReader reader = new BitReader(incommingData);
             uint networkId = reader.ReadUInt();
             ushort orderId = reader.ReadUShort();

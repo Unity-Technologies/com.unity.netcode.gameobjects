@@ -194,7 +194,6 @@ namespace MLAPI.MonoBehaviours.Core
 
         protected void InvokeClientRpc(string methodName, params object[] methodParams)
         {
-            Debug.LogError("InvokeRPc");
             if (!NetworkingManager.singleton.isServer)
             {
                 Debug.LogWarning("MLAPI: Cannot invoke ClientRpc from client");
