@@ -76,7 +76,7 @@ namespace MLAPI.MonoBehaviours.Core
         {
             get
             {
-                if(_networkedObject == null)
+                if (_networkedObject == null)
                 {
                     _networkedObject = GetComponentInParent<NetworkedObject>();
                 }
@@ -111,9 +111,9 @@ namespace MLAPI.MonoBehaviours.Core
         private void OnEnable()
         {
             if (_networkedObject == null)
-            {
                 _networkedObject = GetComponentInParent<NetworkedObject>();
-            }
+
+            CacheAttributedMethods();
             NetworkedObject.NetworkedBehaviours.Add(this);
         }
 
@@ -138,6 +138,121 @@ namespace MLAPI.MonoBehaviours.Core
         public virtual void OnLostOwnership()
         {
 
+        }
+
+        internal Dictionary<string, MethodInfo> cachedMethods = new Dictionary<string, MethodInfo>();
+
+        private void CacheAttributedMethods()
+        {
+            MethodInfo[] methods = GetType().GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.FlattenHierarchy);
+            for (int i = 0; i < methods.Length; i++)
+            {
+                if (methods[i].IsDefined(typeof(Command), true) || methods[i].IsDefined(typeof(ClientRpc), true) || methods[i].IsDefined(typeof(TargetRpc), true))
+                {
+                    Data.Cache.RegisterMessageAttributeName(methods[i].Name);
+                    if (!cachedMethods.ContainsKey(methods[i].Name))
+                        cachedMethods.Add(methods[i].Name, methods[i]);
+                }
+            }
+        }
+
+        protected void InvokeCommand(string methodName, params object[] methodParams)
+        {
+            if (NetworkingManager.singleton.isServer)
+            {
+                Debug.LogWarning("MLAPI: Cannot invoke commands from server");
+                return;
+            }
+            if (ownerClientId != NetworkingManager.singleton.MyClientId)
+            {
+                Debug.LogWarning("MLAPI: Cannot invoke command for object without ownership");
+                return;
+            }
+            if (!methodName.StartsWith("Cmd"))
+            {
+                Debug.LogWarning("MLAPI: Invalid Command name. Command methods have to start with Cmd");
+                return;
+            }
+
+            ulong hash = Data.Cache.GetMessageAttributeHash(methodName);
+            using (BitWriter writer = new BitWriter())
+            {
+                writer.WriteUInt(networkId);
+                writer.WriteUShort(networkedObject.GetOrderIndex(this));
+                writer.WriteULong(hash);
+                writer.WriteBits((byte)methodParams.Length, 5);
+                for (int i = 0; i < methodParams.Length; i++)
+                {
+                    FieldType fieldType = FieldTypeHelper.GetFieldType(methodParams[i].GetType());
+                    writer.WriteBits((byte)fieldType, 5);
+                    FieldTypeHelper.WriteFieldType(writer, methodParams[i], fieldType);
+                }
+
+                InternalMessageHandler.Send(NetId.ServerNetId.GetClientId(), "MLAPI_COMMAND", "MLAPI_INTERNAL", writer.Finalize());
+            }
+        }
+
+        protected void InvokeClientRpc(string methodName, params object[] methodParams)
+        {
+            if (!NetworkingManager.singleton.isServer)
+            {
+                Debug.LogWarning("MLAPI: Cannot invoke ClientRpc from client");
+                return;
+            }
+            if (!methodName.StartsWith("Rpc"))
+            {
+                Debug.LogWarning("MLAPI: Invalid Command name. Command methods have to start with Cmd");
+                return;
+            }
+
+            ulong hash = Data.Cache.GetMessageAttributeHash(methodName);
+            using (BitWriter writer = new BitWriter())
+            {
+                writer.WriteUInt(networkId);
+                writer.WriteUShort(networkedObject.GetOrderIndex(this));
+                writer.WriteULong(hash);
+                writer.WriteBits((byte)methodParams.Length, 5);
+
+                for (int i = 0; i < methodParams.Length; i++)
+                {
+                    FieldType fieldType = FieldTypeHelper.GetFieldType(methodParams[i].GetType());
+                    writer.WriteBits((byte)fieldType, 5);
+                    FieldTypeHelper.WriteFieldType(writer, methodParams[i], fieldType);
+                }
+
+                InternalMessageHandler.Send("MLAPI_RPC", "MLAPI_INTERNAL", writer.Finalize());
+            }
+        }
+
+        protected void InvokeTargetRpc(string methodName, params object[] methodParams)
+        {
+            if (!NetworkingManager.singleton.isServer)
+            {
+                Debug.LogWarning("MLAPI: Cannot invoke ClientRpc from client");
+                return;
+            }
+            if (!methodName.StartsWith("Target"))
+            {
+                Debug.LogWarning("MLAPI: Invalid Command name. Command methods have to start with Cmd");
+                return;
+            }
+
+            ulong hash = Data.Cache.GetMessageAttributeHash(methodName);
+            using (BitWriter writer = new BitWriter())
+            {
+                writer.WriteUInt(networkId);
+                writer.WriteUShort(networkedObject.GetOrderIndex(this));
+                writer.WriteULong(hash);
+                writer.WriteBits((byte)methodParams.Length, 5);
+                for (int i = 0; i < methodParams.Length; i++)
+                {
+                    FieldType fieldType = FieldTypeHelper.GetFieldType(methodParams[i].GetType());
+                    writer.WriteBits((byte)fieldType, 5);
+                    FieldTypeHelper.WriteFieldType(writer, methodParams[i], fieldType);
+                }
+
+                InternalMessageHandler.Send(ownerClientId, "MLAPI_RPC", "MLAPI_INTERNAL", writer.Finalize());
+            }
         }
         /// <summary>
         /// Registers a message handler
