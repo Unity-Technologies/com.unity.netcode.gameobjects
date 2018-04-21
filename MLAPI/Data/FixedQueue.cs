@@ -2,20 +2,36 @@
 
 namespace MLAPI.Data
 {
-    public class FixedQueue<T>
+    /// <summary>
+    /// Queue with a fixed size
+    /// </summary>
+    /// <typeparam name="T">The type of the queue</typeparam>
+    public sealed class FixedQueue<T>
     {
-        protected readonly T[] queue;
-        protected int queueCount = 0;
-        protected int queueStart;
+        private readonly T[] queue;
+        private int queueCount = 0;
+        private int queueStart;
 
+        /// <summary>
+        /// The amount of enqueued objects
+        /// </summary>
         public int Count { get => queueCount; }
 
+        /// <summary>
+        /// Creates a new FixedQueue with a given size
+        /// </summary>
+        /// <param name="maxSize">The size of the queue</param>
         public FixedQueue(int maxSize)
         {
             queue = new T[maxSize];
             queueStart = 0;
         }
 
+        /// <summary>
+        /// Enqueues an object
+        /// </summary>
+        /// <param name="t"></param>
+        /// <returns></returns>
         public bool Enqueue(T t)
         {
             queue[(queueStart + queueCount) % queue.Length] = t;
@@ -27,6 +43,10 @@ namespace MLAPI.Data
             return false;
         }
 
+        /// <summary>
+        /// Dequeues an object
+        /// </summary>
+        /// <returns></returns>
         public T Dequeue()
         {
             if (--queueCount == -1) throw new IndexOutOfRangeException("Cannot dequeue empty queue!");
@@ -35,6 +55,11 @@ namespace MLAPI.Data
             return res;
         }
 
+        /// <summary>
+        /// Gets the element at a given virtual index
+        /// </summary>
+        /// <param name="index"></param>
+        /// <returns></returns>
         public T ElementAt(int index) => queue[(queueStart + index) % queue.Length];
     }
 }

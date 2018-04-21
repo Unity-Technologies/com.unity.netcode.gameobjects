@@ -156,6 +156,11 @@ namespace MLAPI.MonoBehaviours.Core
             }
         }
 
+        /// <summary>
+        /// Calls a Command method on server
+        /// </summary>
+        /// <param name="methodName">Method name to invoke</param>
+        /// <param name="methodParams">Method parameters to send</param>
         protected void InvokeCommand(string methodName, params object[] methodParams)
         {
             if (NetworkingManager.singleton.isServer)
@@ -192,6 +197,11 @@ namespace MLAPI.MonoBehaviours.Core
             }
         }
 
+        /// <summary>
+        /// Calls a ClientRpc method on all clients
+        /// </summary>
+        /// <param name="methodName">Method name to invoke</param>
+        /// <param name="methodParams">Method parameters to send</param>
         protected void InvokeClientRpc(string methodName, params object[] methodParams)
         {
             if (!NetworkingManager.singleton.isServer)
@@ -224,6 +234,11 @@ namespace MLAPI.MonoBehaviours.Core
             }
         }
 
+        /// <summary>
+        /// Calls a TargetRpc method on the owner client
+        /// </summary>
+        /// <param name="methodName">Method name to invoke</param>
+        /// <param name="methodParams">Method parameters to send</param>
         protected void InvokeTargetRpc(string methodName, params object[] methodParams)
         {
             if (!NetworkingManager.singleton.isServer)
@@ -673,7 +688,7 @@ namespace MLAPI.MonoBehaviours.Core
             InternalMessageHandler.Send(ownerClientId, messageType, channelName, data, networkId, networkedObject.GetOrderIndex(this));
         }
 
-        /// <summary>
+        /// <summary>gh
         /// Sends a buffer to the client that owns this object from the server. Only handlers on this NetworkedBehaviour will get invoked
         /// </summary>
         /// <typeparam name="T">The class type to send</typeparam>

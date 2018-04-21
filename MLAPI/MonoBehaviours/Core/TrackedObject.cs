@@ -45,6 +45,9 @@ namespace MLAPI.MonoBehaviours.Core
             }
         }
 
+        /// <summary>
+        /// Gets the total time history we have for this object
+        /// </summary>
         public float TotalTimeHistory
         {
             get
