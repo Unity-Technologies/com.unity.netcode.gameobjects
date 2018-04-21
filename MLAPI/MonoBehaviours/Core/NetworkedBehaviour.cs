@@ -285,6 +285,17 @@ namespace MLAPI.MonoBehaviours.Core
         }
 
         /// <summary>
+        /// Deserializes a message that has been serialized by the BinarySerializer. This is the same as calling BinarySerializer.Deserialize
+        /// </summary>
+        /// <typeparam name="T">The type</typeparam>
+        /// <param name="binary">The serialized version</param>
+        /// <returns>Instance of type</returns>
+        protected T DeserializeMessage<T>(byte[] binary) where T : new()
+        {
+            return BinarySerializer.Deserialize<T>(binary);
+        }
+
+        /// <summary>
         /// Deregisters a given message handler
         /// </summary>
         /// <param name="name">The MessageType to deregister</param>

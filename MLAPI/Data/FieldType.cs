@@ -45,6 +45,124 @@ namespace MLAPI.Data
 
     internal static class FieldTypeHelper
     {
+        internal static object ReadFieldType(BitReader reader, FieldType fieldType)
+        {
+            switch (fieldType)
+            {
+                case FieldType.Bool:
+                    return reader.ReadBool();
+                case FieldType.Byte:
+                    return reader.ReadByte();
+                case FieldType.Double:
+                    return reader.ReadDouble();
+                case FieldType.Single:
+                    return reader.ReadFloat();
+                case FieldType.Int:
+                    return reader.ReadInt();
+                case FieldType.Long:
+                    return reader.ReadLong();
+                case FieldType.SByte:
+                    return reader.ReadSByte();
+                case FieldType.Short:
+                    return reader.ReadShort();
+                case FieldType.UInt:
+                    return reader.ReadUInt();
+                case FieldType.ULong:
+                    return reader.ReadULong();
+                case FieldType.UShort:
+                    return reader.ReadUShort();
+                case FieldType.String:
+                    return reader.ReadString();
+                case FieldType.Vector3:
+                    Vector3 vector3 = Vector3.zero;
+                    vector3.x = reader.ReadFloat();
+                    vector3.y = reader.ReadFloat();
+                    vector3.z = reader.ReadFloat();
+                    return vector3;
+                case FieldType.Vector2:
+                    Vector2 vector2 = Vector2.zero;
+                    vector2.x = reader.ReadFloat();
+                    vector2.y = reader.ReadFloat();
+                    return vector2;
+                case FieldType.Quaternion:
+                    Vector3 eulerAngle = Vector3.zero;
+                    eulerAngle.x = reader.ReadFloat();
+                    eulerAngle.y = reader.ReadFloat();
+                    eulerAngle.z = reader.ReadFloat();
+                    return Quaternion.Euler(eulerAngle);
+                case FieldType.BoolArray:
+                    ushort boolCount = reader.ReadUShort();
+                    bool[] bools = new bool[boolCount];
+                    for (int j = 0; j < boolCount; j++)
+                        bools[j] =  reader.ReadBool();
+                    return bools;
+                case FieldType.ByteArray:
+                    return reader.ReadByteArray();
+                case FieldType.DoubleArray:
+                    return reader.ReadDoubleArray();
+                case FieldType.SingleArray:
+                    return reader.ReadFloatArray();
+                case FieldType.IntArray:
+                    return reader.ReadIntArray();
+                case FieldType.LongArray:
+                    return reader.ReadLongArray();
+                case FieldType.SByteArray:
+                    return reader.ReadSByteArray();
+                case FieldType.ShortArray:
+                    return reader.ReadShortArray();
+                case FieldType.UIntArray:
+                    return reader.ReadUIntArray();
+                case FieldType.ULongArray:
+                    return reader.ReadULongArray();
+                case FieldType.UShortArray:
+                    return reader.ReadUShortArray();
+                case FieldType.StringArray:
+                    ushort stringCount = reader.ReadUShort();
+                    string[] strings = new string[stringCount];
+                    for (int j = 0; j < stringCount; j++)
+                        strings[j] = reader.ReadString();
+                    return strings;
+                case FieldType.Vector3Array:
+                    ushort vector3Count = reader.ReadUShort();
+                    Vector3[] vector3s = new Vector3[vector3Count];
+                    for (int j = 0; j < vector3Count; j++)
+                    {
+                        Vector3 vec3 = Vector3.zero;
+                        vec3.x = reader.ReadFloat();
+                        vec3.y = reader.ReadFloat();
+                        vec3.z = reader.ReadFloat();
+                        vector3s[j] = vec3;
+                    }
+                    return vector3s;
+                case FieldType.Vector2Array:
+                    ushort vector2Count = reader.ReadUShort();
+                    Vector2[] vector2s = new Vector2[vector2Count];
+                    for (int j = 0; j < vector2Count; j++)
+                    {
+                        Vector2 vec2 = Vector2.zero;
+                        vec2.x = reader.ReadFloat();
+                        vec2.y = reader.ReadFloat();
+                        vector2s[j] = vec2;
+                    }
+                    return vector2s;
+                case FieldType.QuaternionArray:
+                    ushort quaternionCount = reader.ReadUShort();
+                    Quaternion[] quaternions = new Quaternion[quaternionCount];
+                    for (int j = 0; j < quaternionCount; j++)
+                    {
+                        Vector3 vec3 = Vector3.zero;
+                        vec3.x = reader.ReadFloat();
+                        vec3.y = reader.ReadFloat();
+                        vec3.z = reader.ReadFloat();
+                        quaternions[j] = Quaternion.Euler(vec3);
+                    }
+                    return quaternions;
+                case FieldType.Invalid:
+                    return null;
+            }
+            return null;
+        }
+
         internal static void WriteFieldType(BitWriter writer, object value, FieldType fieldType)
         {
             switch (fieldType)
@@ -440,8 +558,10 @@ namespace MLAPI.Data
                         break;
                     case FieldType.BoolArray:
                         ushort boolCount = reader.ReadUShort();
+                        bool[] bools = new bool[boolCount];
                         for (int j = 0; j < boolCount; j++)
-                            returnVal[i] = reader.ReadBool();
+                            bools[j] = reader.ReadBool();
+                        returnVal[i] = bools;
                         break;
                     case FieldType.ByteArray:
                         returnVal[i] = reader.ReadByteArray();
