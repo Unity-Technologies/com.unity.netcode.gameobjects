@@ -344,6 +344,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
                     foreach (var element in t as Array)
                         count += GetBitCount(element);
             }
+            else if (type == typeof(Partial)) return (byte)Partial.count_info.GetValue(t);
             else if (IsSupportedType(type))
             {
                 long ba = t is bool ? 1 : BytesToRead(t)*8;
