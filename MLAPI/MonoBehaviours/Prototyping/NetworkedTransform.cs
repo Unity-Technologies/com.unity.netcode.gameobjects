@@ -122,12 +122,13 @@ namespace MLAPI.MonoBehaviours.Prototyping
                             writer.Write(transform.position.x);
                             writer.Write(transform.position.y);
                             writer.Write(transform.position.z);
+
                             writer.Write(transform.rotation.eulerAngles.x);
                             writer.Write(transform.rotation.eulerAngles.y);
                             writer.Write(transform.rotation.eulerAngles.z);
                         }
                         if (isServer)
-                            SendToClientsTarget("MLAPI_OnRecieveTransformFromServer", "MLAPI_POSITION_UPDATE", positionUpdateBuffer);
+                            SendToClientsTarget("MLAPI_OnRecieveTransformFromServer", "MLAPI_POSITION_UPDATE", positionUpdateBuffer, true);
                         else
                             SendToServerTarget("MLAPI_OnRecieveTransformFromClient", "MLAPI_POSITION_UPDATE", positionUpdateBuffer);
                     }
@@ -160,9 +161,11 @@ namespace MLAPI.MonoBehaviours.Prototyping
                     float xPos = reader.ReadSingle();
                     float yPos = reader.ReadSingle();
                     float zPos = reader.ReadSingle();
+
                     float xRot = reader.ReadSingle();
                     float yRot = reader.ReadSingle();
                     float zRot = reader.ReadSingle();
+
                     lerpStartPos = transform.position;
                     lerpStartRot = transform.rotation;
                     lerpEndPos = new Vector3(xPos, yPos, zPos);
@@ -181,9 +184,11 @@ namespace MLAPI.MonoBehaviours.Prototyping
                     float xPos = reader.ReadSingle();
                     float yPos = reader.ReadSingle();
                     float zPos = reader.ReadSingle();
+
                     float xRot = reader.ReadSingle();
                     float yRot = reader.ReadSingle();
                     float zRot = reader.ReadSingle();
+
                     if (InterpolateServer)
                     {
                         lerpStartPos = transform.position;
@@ -215,13 +220,13 @@ namespace MLAPI.MonoBehaviours.Prototyping
                             {
                                 if (Vector3.Distance(NetworkingManager.singleton.connectedClients[i].PlayerObject.transform.position, transform.position) <= ProximityRange)
                                 {
-                                    SendToClientTarget(NetworkingManager.singleton.connectedClients[i].ClientId, "MLAPI_OnRecieveTransformFromServer", "MLAPI_POSITION_UPDATE", positionUpdateBuffer);
+                                    SendToClientTarget(NetworkingManager.singleton.connectedClients[i].ClientId, "MLAPI_OnRecieveTransformFromServer", "MLAPI_POSITION_UPDATE", positionUpdateBuffer, true);
                                 }
                             }
                         }
                         else
                         {
-                            SendToNonLocalClientsTarget("MLAPI_OnRecieveTransformFromServer", "MLAPI_POSITION_UPDATE", positionUpdateBuffer);
+                            SendToNonLocalClientsTarget("MLAPI_OnRecieveTransformFromServer", "MLAPI_POSITION_UPDATE", positionUpdateBuffer, true);
                         }
                     }
                 }

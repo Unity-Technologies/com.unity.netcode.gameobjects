@@ -78,7 +78,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 writer.WriteFloat(rotation.eulerAngles.y);
                 writer.WriteFloat(rotation.eulerAngles.z);
 
-                InternalMessageHandler.Send("MLAPI_SPAWN_POOL_OBJECT", "MLAPI_INTERNAL", writer.Finalize());
+                InternalMessageHandler.Send("MLAPI_SPAWN_POOL_OBJECT", "MLAPI_INTERNAL", writer.Finalize(), null);
             }
             return go;
         }
@@ -99,7 +99,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             {
                 writer.WriteUInt(netObject.NetworkId);
 
-                InternalMessageHandler.Send("MLAPI_DESTROY_POOL_OBJECT", "MLAPI_INTERNAL", writer.Finalize());
+                InternalMessageHandler.Send("MLAPI_DESTROY_POOL_OBJECT", "MLAPI_INTERNAL", writer.Finalize(), null);
             }
         }
     }

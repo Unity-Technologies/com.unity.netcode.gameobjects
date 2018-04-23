@@ -1,4 +1,5 @@
 ﻿using MLAPI.Data;
+using MLAPI.NetworkingManagerComponents.Binary;
 using MLAPI.NetworkingManagerComponents.Core;
 using System;
 using System.Collections.Generic;
@@ -113,6 +114,73 @@ namespace MLAPI.MonoBehaviours.Core
         }
         internal bool _isSpawned = false;
         internal bool? sceneObject = null;
+
+        public HashSet<uint> observers = new HashSet<uint>();
+
+        internal void RebuildObservers(uint? clientId = null)
+        {
+            bool initial = clientId != null;
+            if (initial)
+            {
+                bool shouldBeAdded = true;
+                for (int i = 0; i < childNetworkedBehaviours.Count; i++)
+                {
+                    bool state = childNetworkedBehaviours[i].OnCheckObserver(clientId.Value);
+                    if (state == false)
+                    {
+                        shouldBeAdded = false;
+                        break;
+                    }
+                }
+                if (shouldBeAdded)
+                    observers.Add(clientId.Value);
+            }
+            else
+            {
+                HashSet<uint> previousObservers = new HashSet<uint>(observers);
+                HashSet<uint> newObservers = new HashSet<uint>();
+                bool update = false;
+                for (int i = 0; i < childNetworkedBehaviours.Count; i++)
+                {
+                    bool changed = childNetworkedBehaviours[i].OnRebuildObservers(newObservers);
+                    if (changed)
+                    {
+                        observers = newObservers;
+                        update = true;
+                        break;
+                    }
+                }
+                if (update)
+                {
+                    foreach (KeyValuePair<uint, NetworkedClient> pair in NetworkingManager.singleton.connectedClients)
+                    {
+                        if (new NetId(pair.Key).IsHost())
+                            continue;
+                        if ((previousObservers.Contains(pair.Key) && !newObservers.Contains(pair.Key)) ||
+                            (!previousObservers.Contains(pair.Key) && newObservers.Contains(pair.Key)))
+                        {
+                            //Something changed for this client.
+                            using (BitWriter writer = new BitWriter())
+                            {
+                                writer.WriteUInt(networkId);
+                                writer.WriteBool(observers.Contains(pair.Key));
+
+                                InternalMessageHandler.Send(pair.Key, "MLAPI_SET_VISIBILITY", "MLAPI_INTERNAL", writer.Finalize(), null);
+                            }
+                            FlushToClient(pair.Key);
+                        }
+                    }
+                }
+            }
+        }
+
+        internal void SetLocalVisibility(bool visibility)
+        {
+            for (int i = 0; i < childNetworkedBehaviours.Count; i++)
+            {
+                childNetworkedBehaviours[i].OnSetLocalVisibility(visibility);
+            }
+        }
 
         private void OnDestroy()
         {

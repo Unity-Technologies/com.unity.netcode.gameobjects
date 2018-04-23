@@ -43,7 +43,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 writer.WriteUInt(netId);
                 writer.WriteUInt(netObject.ownerClientId);
 
-                InternalMessageHandler.Send("MLAPI_CHANGE_OWNER", "MLAPI_INTERNAL", writer.Finalize());
+                InternalMessageHandler.Send("MLAPI_CHANGE_OWNER", "MLAPI_INTERNAL", writer.Finalize(), null);
             }
         }
 
@@ -59,7 +59,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 writer.WriteUInt(netId);
                 writer.WriteUInt(clientId);
 
-                InternalMessageHandler.Send("MLAPI_CHANGE_OWNER", "MLAPI_INTERNAL", writer.Finalize());
+                InternalMessageHandler.Send("MLAPI_CHANGE_OWNER", "MLAPI_INTERNAL", writer.Finalize(), null);
             }
         }
   
@@ -130,7 +130,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                     writer.WriteFloat(sceneObjectsToSync[i].transform.rotation.eulerAngles.z);
                 }
 
-                InternalMessageHandler.Send("MLAPI_ADD_OBJECTS", "MLAPI_INTERNAL", writer.Finalize());
+                InternalMessageHandler.Send("MLAPI_ADD_OBJECTS", "MLAPI_INTERNAL", writer.Finalize(), null);
             }
         }
 
@@ -211,7 +211,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 writer.WriteFloat(netObject.transform.rotation.eulerAngles.z);
 
 
-                InternalMessageHandler.Send("MLAPI_ADD_OBJECT", "MLAPI_INTERNAL", writer.Finalize());
+                InternalMessageHandler.Send("MLAPI_ADD_OBJECT", "MLAPI_INTERNAL", writer.Finalize(), null);
             }
         }
 
@@ -265,7 +265,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                     {
                         writer.WriteUInt(networkId);
 
-                        InternalMessageHandler.Send("MLAPI_DESTROY_OBJECT", "MLAPI_INTERNAL", writer.Finalize());
+                        InternalMessageHandler.Send("MLAPI_DESTROY_OBJECT", "MLAPI_INTERNAL", writer.Finalize(), null);
                     }
                 }
             }

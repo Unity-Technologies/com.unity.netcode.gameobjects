@@ -84,6 +84,7 @@
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="MonoBehaviours\Prototyping\NetworkedAnimator.cs" />
     <Compile Include="MonoBehaviours\Prototyping\NetworkedNavMeshAgent.cs" />
+    <Compile Include="MonoBehaviours\Prototyping\NetworkedProximity.cs" />
     <Compile Include="NetworkingManagerComponents\Binary\BitWriter.cs" />
     <Compile Include="NetworkingManagerComponents\Binary\BitReader.cs" />
     <Compile Include="NetworkingManagerComponents\Binary\BinaryHelpers.cs" />

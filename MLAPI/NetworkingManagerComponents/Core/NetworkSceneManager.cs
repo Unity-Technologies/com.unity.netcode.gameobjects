@@ -62,7 +62,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             {
                 writer.WriteUInt(sceneNameToIndex[sceneName]);
 
-                InternalMessageHandler.Send("MLAPI_SWITCH_SCENE", "MLAPI_INTERNAL", writer.Finalize());
+                InternalMessageHandler.Send("MLAPI_SWITCH_SCENE", "MLAPI_INTERNAL", writer.Finalize(), null);
             }
         }
 

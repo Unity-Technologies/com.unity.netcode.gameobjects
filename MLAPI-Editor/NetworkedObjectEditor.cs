@@ -9,6 +9,7 @@ namespace UnityEditor
     {
         private bool initialized;
         private NetworkedObject networkedObject;
+        private bool showObservers;
 
         private void Init()
         {
@@ -44,7 +45,23 @@ namespace UnityEditor
                 EditorGUILayout.LabelField("isOwner: ", networkedObject.isOwner.ToString(), EditorStyles.label);
                 EditorGUILayout.LabelField("isPoolObject: ", networkedObject.isPlayerObject.ToString(), EditorStyles.label);
                 EditorGUILayout.LabelField("isPlayerObject: ", networkedObject.isPlayerObject.ToString(), EditorStyles.label);
-                //EditorGUILayout.LabelField("ServerOnly: ", networkedObject.ServerOnly.ToString(), EditorStyles.label);
+
+                if (networkedObject.observers != null && networkedObject.observers.Count > 0)
+                {
+                    showObservers = EditorGUILayout.Foldout(showObservers, "Observers");
+                    if (showObservers)
+                    {
+                        EditorGUI.indentLevel += 1;
+                        foreach (var o in networkedObject.observers)
+                        {
+                            if (NetworkingManager.singleton.ConnectedClients[o].PlayerObject != null)
+                                EditorGUILayout.ObjectField("ClientId: " + o, NetworkingManager.singleton.ConnectedClients[o].PlayerObject, typeof(GameObject), false);
+                            else
+                                EditorGUILayout.TextField("ClientId: " + o, EditorStyles.label);
+                        }
+                        EditorGUI.indentLevel -= 1;
+                    }
+                }
             }
         }
     }
