@@ -28,7 +28,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         public static ulong GetUIntHash(string input, bool cache = false)
         {
             if (cache && uintCachedHashes.ContainsKey(input))
-                return ulongCachedHashes[input];
+                return uintCachedHashes[input];
 
             using (SHA256Managed sha = new SHA256Managed())
             {
