@@ -89,6 +89,7 @@
     <Compile Include="NetworkingManagerComponents\Binary\BitReader.cs" />
     <Compile Include="NetworkingManagerComponents\Binary\BinaryHelpers.cs" />
     <Compile Include="NetworkingManagerComponents\Binary\BinarySerializer.cs" />
+    <Compile Include="NetworkingManagerComponents\Binary\PrimitiveHasher.cs" />
     <Compile Include="NetworkingManagerComponents\Cryptography\CryptographyHelper.cs" />
     <Compile Include="NetworkingManagerComponents\Cryptography\DiffieHellman.cs" />
     <Compile Include="NetworkingManagerComponents\Cryptography\EllipticCurve.cs" />

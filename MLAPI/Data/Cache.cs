@@ -1,6 +1,5 @@
-﻿using System.Collections.Generic;
-using System.Security.Cryptography;
-using System.Text;
+﻿using MLAPI.NetworkingManagerComponents.Binary;
+using System.Collections.Generic;
 
 namespace MLAPI.Data
 {
@@ -14,15 +13,10 @@ namespace MLAPI.Data
             if (messageAttributeHashes.ContainsKey(name))
                 return messageAttributeHashes[name];
 
-            using (SHA256Managed sha = new SHA256Managed())
-            {
-                byte[] hash = sha.ComputeHash(Encoding.UTF8.GetBytes(name));
-                ulong value = hash[0] | ((ulong)hash[1] << 8) | ((ulong)hash[2] << 16) | ((ulong)hash[3] << 24) | ((ulong)hash[4] << 32) | ((ulong)hash[5] << 40) | ((ulong)hash[6] << 48) | ((ulong)hash[7] << 56);
-                //ulong value = hash[0] | ((uint)hash[1] << 8) | ((uint)hash[2] << 16) | ((uint)hash[3] << 24);
-                messageAttributeHashes.Add(name, value);
-                messageAttributeNames.Add(value, name);
-                return value;
-            }
+            ulong value = PrimitiveHasher.GetULongHash(name);
+            messageAttributeHashes.Add(name, value);
+            messageAttributeNames.Add(value, name);
+            return value;
         }
 
         internal static string GetAttributeMethodName(ulong hash)
@@ -38,14 +32,9 @@ namespace MLAPI.Data
             if (messageAttributeHashes.ContainsKey(name))
                 return;
 
-            using (SHA256Managed sha = new SHA256Managed())
-            {
-                byte[] hash = sha.ComputeHash(Encoding.UTF8.GetBytes(name));
-                ulong value = hash[0] | ((ulong)hash[1] << 8) | ((ulong)hash[2] << 16) | ((ulong)hash[3] << 24) | ((ulong)hash[4] << 32) | ((ulong)hash[5] << 40) | ((ulong)hash[6] << 48) | ((ulong)hash[7] << 56);
-                //ulong value = hash[0] | ((uint)hash[1] << 8) | ((uint)hash[2] << 16) | ((uint)hash[3] << 24);
-                messageAttributeHashes.Add(name, value);
-                messageAttributeNames.Add(value, name);
-            }
+            ulong value = PrimitiveHasher.GetULongHash(name);
+            messageAttributeHashes.Add(name, value);
+            messageAttributeNames.Add(value, name);
         }
     }
 }
