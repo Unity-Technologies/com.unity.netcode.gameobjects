@@ -939,105 +939,73 @@ namespace MLAPI.MonoBehaviours.Core
                 {
                     case 0: //Client to server > sends connection buffer
                         if (isServer)
-                        {
                             InternalMessageHandler.HandleConnectionRequest(clientId, incommingData, channelId);
-                        }
                         break;
                     case 1: //Server informs client it has been approved:
                         if (isClient)
-                        {
                             InternalMessageHandler.HandleConnectionApproved(clientId, incommingData, channelId);
-                        }
                         break;
                     case 2:
                         //Server informs client another client connected
                         //MLAPI_ADD_OBJECT
                         if (isClient)
-                        {
                             InternalMessageHandler.HandleAddObject(clientId, incommingData, channelId);
-                        }
                         break;
                     case 3:
                         //Server informs client another client disconnected
                         //MLAPI_CLIENT_DISCONNECT
                         if (isClient)
-                        {
                             InternalMessageHandler.HandleClientDisconnect(clientId, incommingData, channelId);
-                        }
                         break;
                     case 4:
                         //Server infroms clients to destroy an object
                         if (isClient)
-                        {
                             InternalMessageHandler.HandleDestroyObject(clientId, incommingData, channelId);
-                        }
                         break;
                     case 5:
                         //Scene switch
                         if (isClient)
-                        {
                             InternalMessageHandler.HandleSwitchScene(clientId, incommingData, channelId);
-                        }
                         break;
                     case 6: //Spawn pool object
                         if (isClient)
-                        {
                             InternalMessageHandler.HandleSpawnPoolObject(clientId, incommingData, channelId);
-                        }
                         break;
                     case 7: //Destroy pool object
                         if (isClient)
-                        {
                             InternalMessageHandler.HandleDestroyPoolObject(clientId, incommingData, channelId);
-                        }
                         break;
                     case 8: //Change owner
                         if (isClient)
-                        {
                             InternalMessageHandler.HandleChangeOwner(clientId, incommingData, channelId);
-                        }
                         break;
                     case 9: //Syncvar
                         if (isClient)
-                        {
                             InternalMessageHandler.HandleSyncVarUpdate(clientId, incommingData, channelId);
-                        }
                         break;
                     case 10:
                         if (isClient) //MLAPI_ADD_OBJECTS (plural)
-                        {
                             InternalMessageHandler.HandleAddObjects(clientId, incommingData, channelId);
-                        }
                         break;
                     case 11:
                         if (isClient)
-                        {
                             InternalMessageHandler.HandleTimeSync(clientId, incommingData, channelId);
-                        }
                         break;
                     case 12:
                         if (isServer)
-                        {
                             InternalMessageHandler.HandleCommand(clientId, incommingData, channelId);
-                        }
                         break;
                     case 13:
                         if (isClient)
-                        {
                             InternalMessageHandler.HandleRpc(clientId, incommingData, channelId);
-                        }
                         break;
                     case 14:
                         if (isClient)
-                        {
                             InternalMessageHandler.HandleTargetRpc(clientId, incommingData, channelId);
-                        }
                         break;
                     case 15:
                         if (isClient)
-                        {
                             InternalMessageHandler.HandleSetVisibility(clientId, incommingData, channelId);
-                        }
                         break;
                 }
                 #endregion
