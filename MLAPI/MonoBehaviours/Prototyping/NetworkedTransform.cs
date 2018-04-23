@@ -102,7 +102,7 @@ namespace MLAPI.MonoBehaviours.Prototyping
             lerpStartRot = transform.rotation;
 
             lerpEndPos = transform.position;
-            lerpStartRot = transform.rotation;
+            lerpEndRot = transform.rotation;
         }
 
         private void Update()
