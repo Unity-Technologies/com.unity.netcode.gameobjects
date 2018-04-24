@@ -107,7 +107,7 @@ namespace MLAPI.MonoBehaviours.Prototyping
 
         private void Update()
         {
-            if(isOwner || isLocalPlayer || (new NetId(ownerClientId).IsInvalid() && isServer))
+            if(isOwner || isLocalPlayer || (ownerClientId == NetworkingManager.singleton.NetworkConfig.NetworkTransport.InvalidDummyId && isServer))
             {
                 //We own the object OR we are server and the object is not owned by anyone OR we are the object.
                 if(NetworkingManager.singleton.NetworkTime - lastSendTime >= timeForLerp && (Vector3.Distance(transform.position, lastSentPos) > MinMeters || Quaternion.Angle(transform.rotation, lastSentRot) > MinDegrees))

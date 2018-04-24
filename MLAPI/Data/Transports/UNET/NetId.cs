@@ -1,6 +1,4 @@
-﻿using MLAPI.MonoBehaviours.Core;
-
-namespace MLAPI.Data
+﻿namespace MLAPI.Data.Transports.UNET
 {
     /// <summary>
     /// Represents a ClientId structure
@@ -35,17 +33,6 @@ namespace MLAPI.Data
         public bool IsInvalid()
         {
             return Meta == 2;
-        }
-        /// <summary>
-        /// Static ServerNetId for comparison
-        /// </summary>
-        /// <value>The server net identifier.</value>
-        public static NetId ServerNetId
-        {
-            get
-            {
-                return new NetId((byte)NetworkingManager.singleton.serverHostId, (ushort)NetworkingManager.singleton.serverConnectionId, false, false);
-            }
         }
         /// <summary>
         /// Initializes a new instance of the netId struct from transport values
