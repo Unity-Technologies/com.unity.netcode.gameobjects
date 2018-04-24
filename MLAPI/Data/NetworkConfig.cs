@@ -1,4 +1,5 @@
-﻿using MLAPI.NetworkingManagerComponents.Binary;
+﻿using MLAPI.Data.Transports.UNET;
+using MLAPI.NetworkingManagerComponents.Binary;
 using System;
 using System.Collections.Generic;
 using System.Security.Cryptography;
@@ -19,15 +20,7 @@ namespace MLAPI.Data
         /// <summary>
         /// The transport hosts the sever uses
         /// </summary>
-        public List<TransportHost> ServerTransports = new List<TransportHost>()
-        {
-            new TransportHost()
-            {
-                Name = "UDP Socket",
-                Port = 7777,
-                Websockets = false
-            }
-        };
+        public IUDPTransport NetworkTransport = new UnetTransport();
         /// <summary>
         /// Channels used by the NetworkedTransport
         /// </summary>

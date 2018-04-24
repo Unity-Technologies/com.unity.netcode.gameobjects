@@ -4,7 +4,6 @@ using MLAPI.Data;
 using MLAPI.MonoBehaviours.Core;
 using MLAPI.NetworkingManagerComponents.Binary;
 using UnityEngine;
-using UnityEngine.Networking;
 
 namespace MLAPI.NetworkingManagerComponents.Core
 {
@@ -73,10 +72,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             float netTime = reader.ReadFloat();
             int remoteStamp = reader.ReadInt();
             byte error;
-            NetId netId = new NetId(clientId);
-            int msDelay = NetworkTransport.GetRemoteDelayTimeMS(netId.HostId, netId.ConnectionId, remoteStamp, out error);
-            if ((NetworkError)error != NetworkError.Ok)
-                msDelay = 0;
+            int msDelay = NetworkingManager.singleton.NetworkConfig.NetworkTransport.GetRemoteDelayTimeMS(clientId, remoteStamp, out error);
             netManager.networkTime = netTime + (msDelay / 1000f);
 
             netManager.connectedClients.Add(netManager.MyClientId, new NetworkedClient() { ClientId = netManager.MyClientId });
@@ -391,11 +387,8 @@ namespace MLAPI.NetworkingManagerComponents.Core
             float netTime = reader.ReadFloat();
             int timestamp = reader.ReadInt();
 
-            NetId netId = new NetId(clientId);
             byte error;
-            int msDelay = NetworkTransport.GetRemoteDelayTimeMS(netId.HostId, netId.ConnectionId, timestamp, out error);
-            if ((NetworkError)error != NetworkError.Ok)
-                msDelay = 0;
+            int msDelay = NetworkingManager.singleton.NetworkConfig.NetworkTransport.GetRemoteDelayTimeMS(clientId, timestamp, out error);
             netManager.networkTime = netTime + (msDelay / 1000f);
         }
 

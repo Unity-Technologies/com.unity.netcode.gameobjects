@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace MLAPI.Data
+namespace MLAPI.Data.Transports.UNET
 {
     /// <summary>
     /// Represents a Transport host

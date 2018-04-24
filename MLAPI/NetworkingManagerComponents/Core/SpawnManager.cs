@@ -36,7 +36,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
         {
             NetworkedObject netObject = SpawnManager.spawnedObjects[netId];
             NetworkingManager.singleton.connectedClients[netObject.OwnerClientId].OwnedObjects.RemoveAll(x => x.NetworkId == netId);
-            netObject.ownerClientId = new NetId(0, 0, false, true).GetClientId();
+            netObject.ownerClientId = NetworkingManager.singleton.NetworkConfig.NetworkTransport.InvalidDummyId;
 
             using (BitWriter writer = new BitWriter())
             {
@@ -250,7 +250,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
         {
             if (!spawnedObjects.ContainsKey(networkId) || (netManager != null && !netManager.NetworkConfig.HandleObjectSpawning))
                 return;
-            if (!new NetId(spawnedObjects[networkId].OwnerClientId).IsInvalid() && !spawnedObjects[networkId].isPlayerObject)
+            if (spawnedObjects[networkId].OwnerClientId != NetworkingManager.singleton.NetworkConfig.NetworkTransport.InvalidDummyId && !spawnedObjects[networkId].isPlayerObject)
             {
                 //Someone owns it.
                 NetworkingManager.singleton.connectedClients[spawnedObjects[networkId].OwnerClientId].OwnedObjects.RemoveAll(x => x.NetworkId == networkId);

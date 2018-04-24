@@ -215,7 +215,7 @@ namespace MLAPI.MonoBehaviours.Core
                     FieldTypeHelper.WriteFieldType(writer, methodParams[i], fieldType);
                 }
 
-                InternalMessageHandler.Send(NetId.ServerNetId.GetClientId(), "MLAPI_COMMAND", "MLAPI_INTERNAL", writer.Finalize(), null);
+                InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerNetId, "MLAPI_COMMAND", "MLAPI_INTERNAL", writer.Finalize(), null);
             }
         }
 
@@ -505,7 +505,7 @@ namespace MLAPI.MonoBehaviours.Core
                 }
                 else
                 {
-                    if (!(isHost && new NetId(ownerClientId).IsHost()))
+                    if (!(isHost && ownerClientId == NetworkingManager.singleton.NetworkConfig.NetworkTransport.HostDummyId))
                     {
                         //It's sync time. This is the target receivers packet.
                         using (BitWriter writer = new BitWriter())
@@ -606,7 +606,7 @@ namespace MLAPI.MonoBehaviours.Core
                 Debug.LogWarning("MLAPI: Server can not send messages to server.");
                 return;
             }
-            InternalMessageHandler.Send(NetId.ServerNetId.GetClientId(), messageType, channelName, data, null);
+            InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerNetId, messageType, channelName, data, null);
         }
 
         /// <summary>
@@ -644,7 +644,7 @@ namespace MLAPI.MonoBehaviours.Core
                 Debug.LogWarning("MLAPI: Server can not send messages to server.");
                 return;
             }
-            InternalMessageHandler.Send(NetId.ServerNetId.GetClientId(), messageType, channelName, data, null, networkId, networkedObject.GetOrderIndex(this));            
+            InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerNetId, messageType, channelName, data, null, networkId, networkedObject.GetOrderIndex(this));            
         }
 
         /// <summary>

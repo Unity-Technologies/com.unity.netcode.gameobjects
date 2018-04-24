@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
 using MLAPI.Data;
+using MLAPI.MonoBehaviours.Core;
 using MLAPI.NetworkingManagerComponents.Binary;
 using MLAPI.NetworkingManagerComponents.Cryptography;
 using UnityEngine;
-using UnityEngine.Networking;
 
 namespace MLAPI.NetworkingManagerComponents.Core
 {
@@ -12,8 +12,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
         internal static byte[] FinalMessageBuffer;
         internal static void PassthroughSend(uint targetId, uint sourceId, ushort messageType, int channelId, byte[] data, uint? networkId = null, ushort? orderId = null)
         {
-            NetId targetNetId = new NetId(targetId);
-            if (netManager.isHost && targetNetId.IsHost())
+            if (netManager.isHost && targetId == netManager.NetworkConfig.NetworkTransport.HostDummyId)
             {
                 //Host trying to send data to it's own client
                 Debug.LogWarning("MLAPI: Send method got message aimed at server from the server?");
@@ -44,30 +43,30 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 writer.Finalize(ref FinalMessageBuffer);
 
                 byte error;
-                NetworkTransport.QueueMessageForSending(targetNetId.HostId, targetNetId.ConnectionId, channelId, FinalMessageBuffer, (int)writer.GetFinalizeSize(), out error);
+                netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(targetId, ref FinalMessageBuffer, (int)writer.GetFinalizeSize(), channelId, false, out error);
             }
         }
 
         //RETURNS IF IT SUCCEDED OR FAILED BECAUSE OF NON-OBSERVER. ANY OTHER FAIL WILL RETURN TRUE
         internal static bool Send(uint clientId, string messageType, string channelName, byte[] data, uint? fromNetId, uint? networkId = null, ushort? orderId = null, bool skipQueue = false)
         {
-            NetId netId = new NetId(clientId);
-            if (netManager.isHost && netId.IsHost())
+            uint targetClientId = clientId;
+            if (netManager.isHost && targetClientId == netManager.NetworkConfig.NetworkTransport.HostDummyId)
             {
                 //Don't invoke the message on our own machine. Instant stack overflow.
                 Debug.LogWarning("MLAPI: Cannot send message to own client");
                 return true;
             }
-            else if (netId.IsHost())
+            else if (targetClientId == netManager.NetworkConfig.NetworkTransport.HostDummyId)
             {
                 //Client trying to send data to host
-                netId = NetId.ServerNetId;
+                targetClientId = netManager.NetworkConfig.NetworkTransport.ServerNetId;
             }
             //If we respect the observers, and the message is targeted (networkId != null) and the targetedNetworkId isnt observing the receiver. Then we return
             if (netManager.isServer && fromNetId != null && !SpawnManager.spawnedObjects[fromNetId.Value].observers.Contains(clientId))
                 return false;
 
-            bool isPassthrough = (!netManager.isServer && clientId != NetId.ServerNetId.GetClientId() && netManager.NetworkConfig.AllowPassthroughMessages);
+            bool isPassthrough = (!netManager.isServer && clientId != netManager.NetworkConfig.NetworkTransport.ServerNetId && netManager.NetworkConfig.AllowPassthroughMessages);
             if (isPassthrough && !netManager.NetworkConfig.PassthroughMessageHashSet.Contains(MessageManager.messageTypes[messageType]))
             {
                 Debug.LogWarning("MLAPI: The The MessageType " + messageType + " is not registered as an allowed passthrough message type.");
@@ -106,16 +105,16 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 else
                     writer.WriteByteArray(data);
 
-                byte error;
                 if (isPassthrough)
-                    netId = NetId.ServerNetId;
+                    targetClientId = netManager.NetworkConfig.NetworkTransport.ServerNetId;
 
                 writer.Finalize(ref FinalMessageBuffer);
 
+                byte error;
                 if (skipQueue)
-                    NetworkTransport.Send(netId.HostId, netId.ConnectionId, MessageManager.channels[channelName], FinalMessageBuffer, (int)writer.GetFinalizeSize(), out error);
+                    netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(targetClientId, ref FinalMessageBuffer, (int)writer.GetFinalizeSize(), MessageManager.channels[channelName], true, out error);
                 else
-                    NetworkTransport.QueueMessageForSending(netId.HostId, netId.ConnectionId, MessageManager.channels[channelName], FinalMessageBuffer, (int)writer.GetFinalizeSize(), out error);
+                    netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(targetClientId, ref FinalMessageBuffer, (int)writer.GetFinalizeSize(), MessageManager.channels[channelName], false, out error);
 
                 return true;
             }
@@ -149,16 +148,16 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 int channel = MessageManager.channels[channelName];
                 for (int i = 0; i < clientIds.Length; i++)
                 {
-                    NetId netId = new NetId(clientIds[i]);
-                    if (netManager.isHost && netId.IsHost())
+                    uint targetClientId = clientIds[i];
+                    if (netManager.isHost && targetClientId == netManager.NetworkConfig.NetworkTransport.HostDummyId)
                     {
                         //Don't invoke the message on our own machine. Instant stack overflow.
                         continue;
                     }
-                    else if (netId.IsHost())
+                    else if (targetClientId == netManager.NetworkConfig.NetworkTransport.HostDummyId)
                     {
                         //Client trying to send data to host
-                        netId = NetId.ServerNetId;
+                        targetClientId = netManager.NetworkConfig.NetworkTransport.ServerNetId;
                     }
 
                     //If we respect the observers, and the message is targeted (networkId != null) and the targetedNetworkId isnt observing the receiver. Then we continue
@@ -168,7 +167,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                     writer.Finalize(ref FinalMessageBuffer);
 
                     byte error;
-                    NetworkTransport.QueueMessageForSending(netId.HostId, netId.ConnectionId, channel, FinalMessageBuffer, (int)writer.GetFinalizeSize(), out error);
+                    netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(targetClientId, ref FinalMessageBuffer, (int)writer.GetFinalizeSize(), channel, false, out error);
                 }
             }
         }
@@ -201,16 +200,16 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 int channel = MessageManager.channels[channelName];
                 for (int i = 0; i < clientIds.Count; i++)
                 {
-                    NetId netId = new NetId(clientIds[i]);
-                    if (netManager.isHost && netId.IsHost())
+                    uint targetClientId = clientIds[i];
+                    if (netManager.isHost && targetClientId == netManager.NetworkConfig.NetworkTransport.HostDummyId)
                     {
                         //Don't invoke the message on our own machine. Instant stack overflow.
                         continue;
                     }
-                    else if (netId.IsHost())
+                    else if (targetClientId == netManager.NetworkConfig.NetworkTransport.HostDummyId)
                     {
                         //Client trying to send data to host
-                        netId = NetId.ServerNetId;
+                        targetClientId = netManager.NetworkConfig.NetworkTransport.ServerNetId;
                     }
 
                     //If we respect the observers, and the message is targeted (networkId != null) and the targetedNetworkId isnt observing the receiver. Then we continue
@@ -219,8 +218,8 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
                     writer.Finalize(ref FinalMessageBuffer);
 
-                    byte error;
-                    NetworkTransport.QueueMessageForSending(netId.HostId, netId.ConnectionId, channel, FinalMessageBuffer, (int)writer.GetFinalizeSize(), out error);
+                     byte error;
+                    netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(targetClientId, ref FinalMessageBuffer, (int)writer.GetFinalizeSize(), channel, false, out error);
                 }
             }
         }
@@ -258,16 +257,16 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 int channel = MessageManager.channels[channelName];
                 foreach (KeyValuePair<uint, NetworkedClient> pair in netManager.connectedClients)
                 {
-                    NetId netId = new NetId(pair.Key);
-                    if (netManager.isHost && netId.IsHost())
+                    uint targetClientId = pair.Key;
+                    if (netManager.isHost && targetClientId == netManager.NetworkConfig.NetworkTransport.HostDummyId)
                     {
                         //Don't invoke the message on our own machine. Instant stack overflow.
                         continue;
                     }
-                    else if (netId.IsHost())
+                    else if (targetClientId == netManager.NetworkConfig.NetworkTransport.HostDummyId)
                     {
                         //Client trying to send data to host
-                        netId = NetId.ServerNetId;
+                        targetClientId = netManager.NetworkConfig.NetworkTransport.ServerNetId;
                     }
 
                     //If we respect the observers, and the message is targeted (networkId != null) and the targetedNetworkId isnt observing the receiver. Then we continue
@@ -280,7 +279,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                     writer.Finalize(ref FinalMessageBuffer);
 
                     byte error;
-                    NetworkTransport.QueueMessageForSending(netId.HostId, netId.ConnectionId, channel, FinalMessageBuffer, (int)writer.GetFinalizeSize(), out error);
+                    netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(targetClientId, ref FinalMessageBuffer, (int)writer.GetFinalizeSize(), channel, false, out error);
                 }
                 return nonObservedIds;
             }
@@ -320,16 +319,16 @@ namespace MLAPI.NetworkingManagerComponents.Core
                     if (pair.Key == clientIdToIgnore)
                         continue;
 
-                    NetId netId = new NetId(pair.Key);
-                    if (netManager.isHost && netId.IsHost())
+                    uint targetClientId = pair.Key;
+                    if (netManager.isHost && targetClientId == netManager.NetworkConfig.NetworkTransport.HostDummyId)
                     {
                         //Don't invoke the message on our own machine. Instant stack overflow.
                         continue;
                     }
-                    else if (netId.IsHost())
+                    else if (targetClientId == netManager.NetworkConfig.NetworkTransport.HostDummyId)
                     {
                         //Client trying to send data to host
-                        netId = NetId.ServerNetId;
+                        targetClientId = netManager.NetworkConfig.NetworkTransport.ServerNetId;
                     }
 
                     //If we respect the observers, and the message is targeted (networkId != null) and the targetedNetworkId isnt observing the receiver. Then we continue
@@ -342,7 +341,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                     writer.Finalize(ref FinalMessageBuffer);
 
                     byte error;
-                    NetworkTransport.QueueMessageForSending(netId.HostId, netId.ConnectionId, channel, FinalMessageBuffer, (int)writer.GetFinalizeSize(), out error);
+                    netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(targetClientId, ref FinalMessageBuffer, (int)writer.GetFinalizeSize(), channel, false, out error);
                 }
                 return nonObservedIds;
             }
