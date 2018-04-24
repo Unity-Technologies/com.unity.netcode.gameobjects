@@ -3,7 +3,6 @@ using MLAPI.NetworkingManagerComponents.Cryptography;
 ﻿using MLAPI.Data.Transports.UNET;
 using System;
 using System.Collections.Generic;
-using System.Security.Cryptography;
 using UnityEngine;
 
 namespace MLAPI.Data

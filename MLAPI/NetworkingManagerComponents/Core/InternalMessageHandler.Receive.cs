@@ -13,7 +13,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
         {
             BitReader reader = new BitReader(incommingData);
 
-            byte[] configHash = reader.ReadByteArray(32);
+            byte[] configHash = reader.ReadByteArray(20);
             if (!netManager.NetworkConfig.CompareConfig(configHash))
             {
                 Debug.LogWarning("MLAPI: NetworkConfiguration missmatch. The configuration between the server and client does not match.");
