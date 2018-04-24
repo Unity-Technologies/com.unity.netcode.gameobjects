@@ -1096,6 +1096,8 @@ namespace MLAPI.MonoBehaviours.Core
                             writer.WriteFloat(pair.Value.transform.rotation.eulerAngles.x);
                             writer.WriteFloat(pair.Value.transform.rotation.eulerAngles.y);
                             writer.WriteFloat(pair.Value.transform.rotation.eulerAngles.z);
+
+                            pair.Value.WriteFormattedSyncedVarData(writer);
                         }
                     }
 
@@ -1125,6 +1127,8 @@ namespace MLAPI.MonoBehaviours.Core
                         writer.WriteFloat(connectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.x);
                         writer.WriteFloat(connectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.y);
                         writer.WriteFloat(connectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.z);
+
+                        connectedClients[clientId].PlayerObject.GetComponent<NetworkedObject>().WriteFormattedSyncedVarData(writer);
                     }
                     else
                     {
@@ -1132,11 +1136,6 @@ namespace MLAPI.MonoBehaviours.Core
                     }
 
                     InternalMessageHandler.Send("MLAPI_ADD_OBJECT", "MLAPI_INTERNAL", writer.Finalize(), clientId, null);
-                }
-                //Flush syncvars:
-                foreach (KeyValuePair<uint, NetworkedObject> networkedObject in SpawnManager.spawnedObjects)
-                {
-                    networkedObject.Value.FlushToClient(clientId);
                 }
             }
             else

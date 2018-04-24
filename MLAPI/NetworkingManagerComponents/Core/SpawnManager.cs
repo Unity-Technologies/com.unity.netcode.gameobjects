@@ -113,6 +113,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             using (BitWriter writer = new BitWriter())
             {
                 writer.WriteUShort((ushort)sceneObjectsToSync.Count);
+
                 for (int i = 0; i < sceneObjectsToSync.Count; i++)
                 {
                     writer.WriteBool(false); //isLocalPlayer
@@ -128,13 +129,14 @@ namespace MLAPI.NetworkingManagerComponents.Core
                     writer.WriteFloat(sceneObjectsToSync[i].transform.rotation.eulerAngles.x);
                     writer.WriteFloat(sceneObjectsToSync[i].transform.rotation.eulerAngles.y);
                     writer.WriteFloat(sceneObjectsToSync[i].transform.rotation.eulerAngles.z);
-                }
 
+                    sceneObjectsToSync[i].WriteFormattedSyncedVarData(writer);
+                }
                 InternalMessageHandler.Send("MLAPI_ADD_OBJECTS", "MLAPI_INTERNAL", writer.Finalize(), null);
             }
         }
 
-        internal static GameObject SpawnPrefabIndexClient(int networkedPrefabId, uint networkId, uint owner, Vector3 position, Quaternion rotation)
+        internal static GameObject SpawnPrefabIndexClient(int networkedPrefabId, uint networkId, uint owner, Vector3 position, Quaternion rotation, BitReader reader = null)
         {
             if (!netManager.NetworkConfig.NetworkPrefabNames.ContainsKey(networkedPrefabId))
             {
@@ -149,6 +151,10 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 Debug.LogWarning("MLAPI: Please add a NetworkedObject component to the root of all spawnable objects");
                 netObject = go.AddComponent<NetworkedObject>();
             }
+
+            if (reader != null)
+                netObject.SetFormattedSyncedVarData(reader);
+
             netObject.NetworkedPrefabName = netManager.NetworkConfig.NetworkPrefabNames[networkedPrefabId];
             netObject._isSpawned = true;
             netObject._isPooledObject = false;
@@ -210,12 +216,13 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 writer.WriteFloat(netObject.transform.rotation.eulerAngles.y);
                 writer.WriteFloat(netObject.transform.rotation.eulerAngles.z);
 
+                netObject.WriteFormattedSyncedVarData(writer);
 
                 InternalMessageHandler.Send("MLAPI_ADD_OBJECT", "MLAPI_INTERNAL", writer.Finalize(), null);
             }
         }
 
-        internal static GameObject SpawnPlayerObject(uint clientId, uint networkId, Vector3 position, Quaternion rotation)
+        internal static GameObject SpawnPlayerObject(uint clientId, uint networkId, Vector3 position, Quaternion rotation, BitReader reader = null)
         {
             if (string.IsNullOrEmpty(netManager.NetworkConfig.PlayerPrefabName) || !netManager.NetworkConfig.NetworkPrefabIds.ContainsKey(netManager.NetworkConfig.PlayerPrefabName))
             {
@@ -234,6 +241,9 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 netObject.networkId = GetNetworkObjectId();
             else
                 netObject.networkId = networkId;
+
+            if (reader != null)
+                netObject.SetFormattedSyncedVarData(reader);
 
             netObject._isPooledObject = false;
             netObject.ownerClientId = clientId;

@@ -297,6 +297,38 @@ namespace MLAPI.MonoBehaviours.Core
             }
         }
 
+        internal void WriteFormattedSyncedVarData(BitWriter writer)
+        {
+            for (int i = 0; i < childNetworkedBehaviours.Count; i++)
+            {
+                childNetworkedBehaviours[i].SyncVarInit();
+                if (childNetworkedBehaviours[i].syncedVarFields.Count == 0)
+                    continue;
+                writer.WriteUShort(GetOrderIndex(childNetworkedBehaviours[i])); //Write the behaviourId
+                for (int j = 0; j < childNetworkedBehaviours[i].syncedVarFields.Count; j++)
+                {
+                    FieldTypeHelper.WriteFieldType(writer, childNetworkedBehaviours[i].syncedVarFields[j].FieldValue,
+                        childNetworkedBehaviours[i].syncedVarFields[j].FieldType);
+                }
+            }
+        }
+
+        internal void SetFormattedSyncedVarData(BitReader reader)
+        {
+            for (int i = 0; i < childNetworkedBehaviours.Count; i++)
+            {
+                childNetworkedBehaviours[i].SyncVarInit();
+                if (childNetworkedBehaviours[i].syncedVarFields.Count == 0)
+                    continue;
+                NetworkedBehaviour behaviour = GetBehaviourAtOrderIndex(reader.ReadUShort());
+                for (int j = 0; j < childNetworkedBehaviours[i].syncedVarFields.Count; j++)
+                {
+                    childNetworkedBehaviours[i].syncedVarFields[j].FieldInfo.SetValue(behaviour, 
+                        FieldTypeHelper.ReadFieldType(reader, childNetworkedBehaviours[i].syncedVarFields[j].FieldType));
+                }
+            }
+        }
+
         //Flushes all syncVars to client
         internal void FlushToClient(uint clientId)
         {
