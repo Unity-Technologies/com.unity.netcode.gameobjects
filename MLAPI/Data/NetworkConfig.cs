@@ -1,5 +1,6 @@
+﻿using MLAPI.NetworkingManagerComponents.Binary;
+using MLAPI.NetworkingManagerComponents.Cryptography;
 ﻿using MLAPI.Data.Transports.UNET;
-using MLAPI.NetworkingManagerComponents.Binary;
 using System;
 using System.Collections.Generic;
 using System.Security.Cryptography;
@@ -180,16 +181,16 @@ namespace MLAPI.Data
                 writer.WriteBool(EnableSceneSwitching);
                 writer.WriteBool(SignKeyExchange);
 
-                using (SHA256Managed sha256 = new SHA256Managed())
-                {
-                    //Returns a 256 bit / 32 byte long checksum of the config
+                //using (SHA256Managed sha256 = new SHA256Managed())
+                //{
+                    // Returns a 160 bit / 20 byte / 5 int checksum of the config
                     if (cache)
                     {
-                        ConfigHash = sha256.ComputeHash(writer.Finalize());
+                        ConfigHash = MessageDigest.SHA1_Opt(writer.Finalize()).ToArray(); //sha256.ComputeHash(writer.Finalize());
                         return ConfigHash;
                     }
-                    return sha256.ComputeHash(writer.Finalize());
-                }
+                    return MessageDigest.SHA1_Opt(writer.Finalize()).ToArray(); //sha256.ComputeHash(writer.Finalize());
+                //}
             }
         }
 

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using MLAPI.NetworkingManagerComponents.Cryptography;
+using System.Collections.Generic;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -15,14 +16,14 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             if (cache && ulongCachedHashes.ContainsKey(input))
                 return ulongCachedHashes[input];
 
-            using (SHA256Managed sha = new SHA256Managed())
-            {
-                byte[] hash = sha.ComputeHash(Encoding.UTF8.GetBytes(input));
-                ulong value =  hash[0] | ((ulong)hash[1] << 8) | ((ulong)hash[2] << 16) | ((ulong)hash[3] << 24) | ((ulong)hash[4] << 32) | ((ulong)hash[5] << 40) | ((ulong)hash[6] << 48) | ((ulong)hash[7] << 56);
+            //using (SHA256Managed sha = new SHA256Managed())
+            //{
+                //byte[] hash = sha.ComputeHash(Encoding.UTF8.GetBytes(input));
+                ulong value = MessageDigest.SHA1_Opt(Encoding.UTF8.GetBytes(input)).CastULong(); //hash[0] | ((ulong)hash[1] << 8) | ((ulong)hash[2] << 16) | ((ulong)hash[3] << 24) | ((ulong)hash[4] << 32) | ((ulong)hash[5] << 40) | ((ulong)hash[6] << 48) | ((ulong)hash[7] << 56);
                 if (cache)
                     ulongCachedHashes.Add(input, value);
                 return value;
-            }
+            //}
         }
 
         public static ulong GetUIntHash(string input, bool cache = false)
@@ -30,14 +31,14 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             if (cache && uintCachedHashes.ContainsKey(input))
                 return uintCachedHashes[input];
 
-            using (SHA256Managed sha = new SHA256Managed())
-            {
-                byte[] hash = sha.ComputeHash(Encoding.UTF8.GetBytes(input));
-                uint value = hash[0] | ((uint)hash[1] << 8) | ((uint)hash[2] << 16) | ((uint)hash[3] << 24);
+            //using (SHA256Managed sha = new SHA256Managed())
+            //{
+                //byte[] hash = sha.ComputeHash(Encoding.UTF8.GetBytes(input));
+                uint value = MessageDigest.SHA1_Opt(Encoding.UTF8.GetBytes(input)).CastUInt(); //hash[0] | ((uint)hash[1] << 8) | ((uint)hash[2] << 16) | ((uint)hash[3] << 24);
                 if (cache)
                     uintCachedHashes.Add(input, value);
                 return value;
-            }
+            //}
         }
 
         public static ushort GetUShortHash(string input, bool cache = false)
@@ -45,14 +46,14 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             if (cache && ushortCachedHashes.ContainsKey(input))
                 return ushortCachedHashes[input];
 
-            using (SHA256Managed sha = new SHA256Managed())
-            {
-                byte[] hash = sha.ComputeHash(Encoding.UTF8.GetBytes(input));
-                ushort value = (ushort)(hash[0] | (ushort)(hash[1] << 8));
+            //using (SHA256Managed sha = new SHA256Managed())
+            //{
+            //byte[] hash = sha.ComputeHash(Encoding.UTF8.GetBytes(input));
+                ushort value = MessageDigest.SHA1_Opt(Encoding.UTF8.GetBytes(input)).CastUShort(); //(ushort)(hash[0] | (ushort)(hash[1] << 8));
                 if (cache)
                     ushortCachedHashes.Add(input, value);
                 return value;
-            }
+            //}
         }
     }
 }
