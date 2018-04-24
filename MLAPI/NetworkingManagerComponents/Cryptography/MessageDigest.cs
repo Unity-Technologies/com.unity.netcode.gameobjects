@@ -11,6 +11,22 @@ namespace MLAPI.NetworkingManagerComponents.Cryptography
         {
             public uint i0, i1, i2, i3, i4;
             public byte Get(int idx) => (byte)((idx < 4 ? i0 : idx < 8 ? i1 : idx < 12 ? i2 : idx < 16 ? i3 : i4) >> (8 * (idx % 4)));
+            public byte[] ToArray()
+            {
+                byte[] b = new byte[20];
+                for (int i = 0; i < 20; ++i) b[i] = Get(i);
+                return b;
+            }
+            private ulong Collect(int bytes)
+            {
+                ulong u = 0;
+                for (int i = 0; i < bytes; ++i) u |= (ulong)Get(i) << (8*i);
+                return u;
+            }
+            public byte CastByte() => Get(0);
+            public ushort CastUShort() => (ushort)Collect(2);
+            public uint CastUInt() => (uint)Collect(4);
+            public ulong CastULong() => (ulong)Collect(8);
         }
         public static SHA1Result SHA1_Opt(byte[] message)
         {
