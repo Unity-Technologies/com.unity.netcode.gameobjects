@@ -454,9 +454,9 @@ namespace MLAPI.MonoBehaviours.Core
         {
             if (!syncVarInit)
                 SyncVarInit();
-            SetDirtyness();
             if (NetworkingManager.singleton.NetworkTime - lastSyncTime >= SyncVarSyncDelay)
             {
+                SetDirtyness();
                 byte nonTargetDirtyCount = 0;
                 byte totalDirtyCount = 0;
                 byte dirtyTargets = 0;
