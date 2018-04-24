@@ -43,7 +43,25 @@ namespace MLAPI.MonoBehaviours.Core
                 return ownerClientId;
             }
         }
-        internal uint ownerClientId = new NetId(0, 0, false, true).GetClientId();
+        private uint? _ownerClientId = null;
+        //internal uint ownerClientId = new NetId(0, 0, false, true).GetClientId();
+        internal uint ownerClientId
+        {
+            get
+            {
+                if (_ownerClientId == null)
+                    return NetworkingManager.singleton.NetworkConfig.NetworkTransport.InvalidDummyId;
+                else
+                    return _ownerClientId.Value;
+            }
+            set
+            {
+                if (value == NetworkingManager.singleton.NetworkConfig.NetworkTransport.InvalidDummyId)
+                    _ownerClientId = null;
+                else
+                    _ownerClientId = value;
+            }
+        }
         /// <summary>
         /// The name of the NetworkedPrefab
         /// </summary>
@@ -88,7 +106,7 @@ namespace MLAPI.MonoBehaviours.Core
         {
             get
             {
-                return isPlayerObject && (OwnerClientId == NetworkingManager.singleton.MyClientId || (new NetId(ownerClientId).IsHost() && NetworkingManager.singleton.isHost));
+                return isPlayerObject && (OwnerClientId == NetworkingManager.singleton.MyClientId || (ownerClientId == NetworkingManager.singleton.NetworkConfig.NetworkTransport.HostDummyId && NetworkingManager.singleton.isHost));
             }
         }
         /// <summary>
@@ -98,7 +116,7 @@ namespace MLAPI.MonoBehaviours.Core
         {
             get
             {
-                return !isPlayerObject && (OwnerClientId == NetworkingManager.singleton.MyClientId || (new NetId(ownerClientId).IsHost() && NetworkingManager.singleton.isHost));
+                return !isPlayerObject && (OwnerClientId == NetworkingManager.singleton.MyClientId || (ownerClientId == NetworkingManager.singleton.NetworkConfig.NetworkTransport.HostDummyId && NetworkingManager.singleton.isHost));
             }
         }
 
@@ -154,7 +172,7 @@ namespace MLAPI.MonoBehaviours.Core
                 {
                     foreach (KeyValuePair<uint, NetworkedClient> pair in NetworkingManager.singleton.connectedClients)
                     {
-                        if (new NetId(pair.Key).IsHost())
+                        if (pair.Key == NetworkingManager.singleton.NetworkConfig.NetworkTransport.HostDummyId)
                             continue;
                         if ((previousObservers.Contains(pair.Key) && !newObservers.Contains(pair.Key)) ||
                             (!previousObservers.Contains(pair.Key) && newObservers.Contains(pair.Key)))

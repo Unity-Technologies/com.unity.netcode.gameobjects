@@ -1,5 +1,4 @@
 ﻿using System;
-using UnityEngine.Networking;
 
 namespace MLAPI.Data
 {
@@ -16,7 +15,7 @@ namespace MLAPI.Data
         /// <summary>
         /// The Transport QOS type
         /// </summary>
-        public QosType Type;
+        public ChannelType Type;
         /// <summary>
         /// Wheter or not the channel should be encrypted
         /// </summary>

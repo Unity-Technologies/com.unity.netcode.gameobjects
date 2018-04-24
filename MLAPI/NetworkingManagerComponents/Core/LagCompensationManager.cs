@@ -1,9 +1,7 @@
-﻿using MLAPI.Data;
-using MLAPI.MonoBehaviours.Core;
+﻿using MLAPI.MonoBehaviours.Core;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Networking;
 
 namespace MLAPI.NetworkingManagerComponents.Core
 {
@@ -62,8 +60,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 Debug.LogWarning("MLAPI: Lag compensation simulations are only to be ran on the server.");
                 return;
             }
-            NetId netId = new NetId(clientId);
-            float milisecondsDelay = NetworkTransport.GetCurrentRTT(netId.HostId, netId.ConnectionId, out error) / 2f;
+            float milisecondsDelay = NetworkingManager.singleton.NetworkConfig.NetworkTransport.GetCurrentRTT(clientId, out error) / 2f;
             Simulate(milisecondsDelay * 1000f, action);
         }
 
