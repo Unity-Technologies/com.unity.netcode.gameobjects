@@ -9,6 +9,9 @@ using MLAPI.NetworkingManagerComponents.Cryptography;
 using MLAPI.NetworkingManagerComponents.Core;
 using UnityEngine.SceneManagement;
 using MLAPI.NetworkingManagerComponents.Binary;
+using MLAPI.Data.Transports;
+using MLAPI.Data.Transports.UNET;
+using MLAPI.Data.Transports.LiteNetLib;
 
 namespace MLAPI.MonoBehaviours.Core
 {
@@ -234,6 +237,14 @@ namespace MLAPI.MonoBehaviours.Core
             NetworkSceneManager.sceneIndexToString = new Dictionary<uint, string>();
             NetworkSceneManager.sceneNameToIndex = new Dictionary<string, uint>();
             InternalMessageHandler.FinalMessageBuffer = new byte[NetworkConfig.MessageBufferSize];
+
+            if (NetworkConfig.Transport == DefaultTransport.UNET)
+                NetworkConfig.NetworkTransport = new UnetTransport();
+            else if (NetworkConfig.Transport == DefaultTransport.LiteNetLib)
+                NetworkConfig.NetworkTransport = new LiteNetLibTransport();
+            else if (NetworkConfig.Transport == DefaultTransport.Custom && NetworkConfig.NetworkTransport == null)
+                throw new NullReferenceException("The current NetworkTransport is null");
+
             object settings = NetworkConfig.NetworkTransport.GetSettings(); //Gets a new "settings" object for the transport currently used.
 
             if(NetworkConfig.HandleObjectSpawning)

@@ -54,6 +54,9 @@
     <Reference Include="IntXLib, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1744b76c74eaee1e, processorArchitecture=MSIL">
       <HintPath>..\packages\IntX.1.0.1.0\lib\net20\IntXLib.dll</HintPath>
     </Reference>
+    <Reference Include="LiteNetLib, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\LiteNetLib.0.7.7.1\lib\net35\LiteNetLib.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -76,7 +79,9 @@
     <Compile Include="Data\FieldType.cs" />
     <Compile Include="Attributes\SyncedVar.cs" />
     <Compile Include="Data\FixedQueue.cs" />
+    <Compile Include="Data\Transports\DefaultTransport.cs" />
     <Compile Include="Data\Transports\IUDPTransport.cs" />
+    <Compile Include="Data\Transports\LiteNetLib\LiteNetLibTransport.cs" />
     <Compile Include="Data\Transports\NetEventType.cs" />
     <Compile Include="Data\NetworkConfig.cs" />
     <Compile Include="Data\NetworkedPrefab.cs" />

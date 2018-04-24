@@ -1,9 +1,9 @@
 ﻿using MLAPI.NetworkingManagerComponents.Binary;
 using MLAPI.NetworkingManagerComponents.Cryptography;
-﻿using MLAPI.Data.Transports.UNET;
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using MLAPI.Data.Transports;
 
 namespace MLAPI.Data
 {
@@ -18,9 +18,13 @@ namespace MLAPI.Data
         /// </summary>
         public ushort ProtocolVersion = 0;
         /// <summary>
+        /// The transport to be used
+        /// </summary>
+        public DefaultTransport Transport = DefaultTransport.UNET;
+        /// <summary>
         /// The transport hosts the sever uses
         /// </summary>
-        public IUDPTransport NetworkTransport = new UnetTransport();
+        public IUDPTransport NetworkTransport = null;
         /// <summary>
         /// Channels used by the NetworkedTransport
         /// </summary>
