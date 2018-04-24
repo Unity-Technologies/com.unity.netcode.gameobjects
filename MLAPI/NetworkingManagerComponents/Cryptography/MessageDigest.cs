@@ -1,4 +1,5 @@
-﻿using System;
+﻿using MLAPI.NetworkingManagerComponents.Binary;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -97,11 +98,11 @@ namespace MLAPI.NetworkingManagerComponents.Cryptography
                 result.i3 += d;
                 result.i4 += e;
             }
-            result.i0 = Support.SwapEndian(result.i0);
-            result.i1 = Support.SwapEndian(result.i1);
-            result.i2 = Support.SwapEndian(result.i2);
-            result.i3 = Support.SwapEndian(result.i3);
-            result.i4 = Support.SwapEndian(result.i4);
+            result.i0 = BinaryHelpers.SwapEndian(result.i0);
+            result.i1 = BinaryHelpers.SwapEndian(result.i1);
+            result.i2 = BinaryHelpers.SwapEndian(result.i2);
+            result.i3 = BinaryHelpers.SwapEndian(result.i3);
+            result.i4 = BinaryHelpers.SwapEndian(result.i4);
             return result;
         }
 
