@@ -9,7 +9,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
     internal static partial class InternalMessageHandler
     {
         internal static byte[] FinalMessageBuffer;
-        internal static void PassthroughSend(uint targetId, uint sourceId, ushort messageType, int channelId, byte[] data, uint? networkId = null, ushort? orderId = null)
+        internal static void PassthroughSend(uint targetId, uint sourceId, ushort messageType, int channelId, BitReader reader, uint? networkId = null, ushort? orderId = null)
         {
             if (netManager.isHost && targetId == netManager.NetworkConfig.NetworkTransport.HostDummyId)
             {
@@ -35,9 +35,9 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 writer.WriteAlignBits();
 
                 if (netManager.NetworkConfig.EncryptedChannelsHashSet.Contains(MessageManager.reverseChannels[channelId]))
-                    writer.WriteByteArray(CryptographyHelper.Encrypt(data, netManager.connectedClients[targetId].AesKey));
+                    writer.WriteByteArray(CryptographyHelper.Encrypt(reader.ReadByteArray(), netManager.connectedClients[targetId].AesKey));
                 else
-                    writer.WriteByteArray(data);
+                    writer.WriteByteArray(reader.ReadByteArray());
 
                 writer.Finalize(ref FinalMessageBuffer);
 

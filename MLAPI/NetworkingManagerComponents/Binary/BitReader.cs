@@ -1,11 +1,12 @@
 ﻿#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
 
 namespace MLAPI.NetworkingManagerComponents.Binary
 {
-    public class BitReader
+    public class BitReader : IDisposable
     {
         private delegate T Getter<T>();
         private static readonly float[] holder_f = new float[1];
@@ -13,9 +14,30 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         private static readonly ulong[] holder_u = new ulong[1];
         private static readonly uint[] holder_i = new uint[1];
 
-        private readonly byte[] readFrom;
+        private byte[] readFrom;
         private long bitCount = 0;
-        public BitReader(byte[] readFrom) => this.readFrom = readFrom;
+
+        private static readonly Queue<BitReader> readerPool = new Queue<BitReader>();
+
+        private BitReader(byte[] readFrom)
+        {
+            this.readFrom = readFrom;
+        }
+
+        public static BitReader Get(byte[] readFrom)
+        {
+            if (readerPool.Count == 0)
+            {
+                BitReader reader = new BitReader(readFrom);
+                return reader;
+            }
+            else
+            {
+                BitReader reader = readerPool.Dequeue();
+                reader.readFrom = readFrom;
+                return reader;
+            }
+        }
 
         public bool ReadBool()
         {
@@ -113,6 +135,12 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             return result;
         }
         private static long ZigZagDecode(ulong d, int bytes) => (long)(((d << (bytes * 8 - 1)) & 1) | (d >> 1));
+
+        public void Dispose()
+        {
+            bitCount = 0;
+            readerPool.Enqueue(this);
+        }
     }
 }
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member

@@ -76,7 +76,42 @@ namespace MLAPI.NetworkingManagerComponents.Binary
                 cachedFields.Add(instance.GetType().FullName, sortedFields);
             }
 
-            BitReader reader = new BitReader(binary);
+            using (BitReader reader = BitReader.Get(binary))
+            {
+                for (int i = 0; i < sortedFields.Length; i++)
+                {
+                    FieldType fieldType = FieldTypeHelper.GetFieldType(sortedFields[i].FieldType);
+                    if (fieldType == FieldType.Invalid)
+                    {
+                        Debug.LogWarning("MLAPI: The field " + sortedFields[i].Name + " will not be deserialized as it's not of a supported type. Add the BinaryIgnore attribute to prevent this message from shwoing up.");
+                        continue;
+                    }
+                    sortedFields[i].SetValue(instance, FieldTypeHelper.ReadFieldType(reader, fieldType));
+                }
+                return instance;
+            }
+        }
+
+        /// <summary>
+        /// Deserializes binary and turns it back into the original class
+        /// </summary>
+        /// <typeparam name="T">The type to return</typeparam>
+        /// <param name="reader">The reader to deserialize</param>
+        /// <returns>An instance of T</returns>
+        public static T Deserialize<T>(BitReader reader) where T : new()
+        {
+            T instance = new T();
+
+            FieldInfo[] sortedFields;
+
+            if (cachedFields.ContainsKey(instance.GetType().FullName))
+                sortedFields = cachedFields[instance.GetType().FullName];
+            else
+            {
+                sortedFields = instance.GetType().GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).OrderBy(x => x.Name).Where(x => !x.IsDefined(typeof(BinaryIgnore), true)).ToArray();
+                cachedFields.Add(instance.GetType().FullName, sortedFields);
+            }
+
             for (int i = 0; i < sortedFields.Length; i++)
             {
                 FieldType fieldType = FieldTypeHelper.GetFieldType(sortedFields[i].FieldType);
