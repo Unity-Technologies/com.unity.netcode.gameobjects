@@ -1,4 +1,5 @@
-﻿using MLAPI.MonoBehaviours.Core;
+﻿#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+using MLAPI.MonoBehaviours.Core;
 using System;
 using System.Collections.Generic;
 using UnityEngine.Networking;
@@ -181,3 +182,4 @@ namespace MLAPI.Data.Transports.UNET
         }
     }
 }
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member

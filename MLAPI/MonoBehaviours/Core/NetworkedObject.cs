@@ -133,6 +133,9 @@ namespace MLAPI.MonoBehaviours.Core
         internal bool _isSpawned = false;
         internal bool? sceneObject = null;
 
+        /// <summary>
+        /// The current clients observing the object
+        /// </summary>
         public HashSet<uint> observers = new HashSet<uint>();
         private HashSet<uint> previousObservers = new HashSet<uint>();
 

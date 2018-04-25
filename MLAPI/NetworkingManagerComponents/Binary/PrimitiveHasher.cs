@@ -1,59 +1,67 @@
 ﻿using MLAPI.NetworkingManagerComponents.Cryptography;
 using System.Collections.Generic;
-using System.Security.Cryptography;
 using System.Text;
 
 namespace MLAPI.NetworkingManagerComponents.Binary
 {
+    /// <summary>
+    /// A helper class for hashing strings to primitive types
+    /// </summary>
     public static class PrimitiveHasher
     {
         private static Dictionary<string, ulong> ulongCachedHashes = new Dictionary<string, ulong>();
         private static Dictionary<string, ushort> ushortCachedHashes = new Dictionary<string, ushort>();
         private static Dictionary<string, uint> uintCachedHashes = new Dictionary<string, uint>();
 
+        /// <summary>
+        /// Gets a ulong hash from a string
+        /// </summary>
+        /// <param name="input">Input data</param>
+        /// <param name="cache">Wheter or not cache the hash</param>
+        /// <returns>The hash result</returns>
         public static ulong GetULongHash(string input, bool cache = false)
         {
             if (cache && ulongCachedHashes.ContainsKey(input))
                 return ulongCachedHashes[input];
 
-            //using (SHA256Managed sha = new SHA256Managed())
-            //{
-                //byte[] hash = sha.ComputeHash(Encoding.UTF8.GetBytes(input));
-                ulong value = MessageDigest.SHA1_Opt(Encoding.UTF8.GetBytes(input)).CastULong(); //hash[0] | ((ulong)hash[1] << 8) | ((ulong)hash[2] << 16) | ((ulong)hash[3] << 24) | ((ulong)hash[4] << 32) | ((ulong)hash[5] << 40) | ((ulong)hash[6] << 48) | ((ulong)hash[7] << 56);
-                if (cache)
-                    ulongCachedHashes.Add(input, value);
-                return value;
-            //}
+            ulong value = MessageDigest.SHA1_Opt(Encoding.UTF8.GetBytes(input)).CastULong();
+            if (cache)
+                ulongCachedHashes.Add(input, value);
+            return value;
         }
 
+        /// <summary>
+        /// Gets a uint hash from a string
+        /// </summary>
+        /// <param name="input">Input data</param>
+        /// <param name="cache">Wheter or not cache the hash</param>
+        /// <returns>The hash result</returns>
         public static ulong GetUIntHash(string input, bool cache = false)
         {
             if (cache && uintCachedHashes.ContainsKey(input))
                 return uintCachedHashes[input];
 
-            //using (SHA256Managed sha = new SHA256Managed())
-            //{
-                //byte[] hash = sha.ComputeHash(Encoding.UTF8.GetBytes(input));
-                uint value = MessageDigest.SHA1_Opt(Encoding.UTF8.GetBytes(input)).CastUInt(); //hash[0] | ((uint)hash[1] << 8) | ((uint)hash[2] << 16) | ((uint)hash[3] << 24);
-                if (cache)
-                    uintCachedHashes.Add(input, value);
-                return value;
-            //}
+            uint value = MessageDigest.SHA1_Opt(Encoding.UTF8.GetBytes(input)).CastUInt();
+            if (cache)
+                uintCachedHashes.Add(input, value);
+            return value;
         }
 
+        /// <summary>
+        /// Gets a ushort hash from a string
+        /// </summary>
+        /// <param name="input">Input data</param>
+        /// <param name="cache">Wheter or not cache the hash</param>
+        /// <returns>The hash result</returns>
         public static ushort GetUShortHash(string input, bool cache = false)
         {
             if (cache && ushortCachedHashes.ContainsKey(input))
                 return ushortCachedHashes[input];
 
-            //using (SHA256Managed sha = new SHA256Managed())
-            //{
-            //byte[] hash = sha.ComputeHash(Encoding.UTF8.GetBytes(input));
-                ushort value = MessageDigest.SHA1_Opt(Encoding.UTF8.GetBytes(input)).CastUShort(); //(ushort)(hash[0] | (ushort)(hash[1] << 8));
-                if (cache)
-                    ushortCachedHashes.Add(input, value);
-                return value;
-            //}
+            ushort value = MessageDigest.SHA1_Opt(Encoding.UTF8.GetBytes(input)).CastUShort();
+            if (cache)
+                ushortCachedHashes.Add(input, value);
+            return value;
         }
     }
 }

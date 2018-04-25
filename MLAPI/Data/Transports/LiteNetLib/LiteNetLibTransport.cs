@@ -1,4 +1,5 @@
-﻿using LiteNetLib;
+﻿#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+using LiteNetLib;
 using LiteNetLib.Utils;
 using MLAPI.MonoBehaviours.Core;
 using System.Collections.Generic;
@@ -230,3 +231,4 @@ namespace MLAPI.Data.Transports.LiteNetLib
         }
     }
 }
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member

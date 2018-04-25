@@ -70,13 +70,11 @@
         {
             return HostId | (uint)((ConnectionId & 0xFF) << 8) | (uint)(((ConnectionId >> 8) & 0xFF) << 16) | (uint)(Meta << 24);
         }
-        // Rider generated vvv
         /// <summary>
-        /// Determines whether the specified <see cref="object"/> is equal to the current <see cref="T:MLAPI.Data.NetId"/>.
+        /// Checks if two NetId's are equal
         /// </summary>
-        /// <param name="obj">The <see cref="object"/> to compare with the current <see cref="T:MLAPI.Data.NetId"/>.</param>
-        /// <returns><c>true</c> if the specified <see cref="object"/> is equal to the current <see cref="T:MLAPI.Data.NetId"/>;
-        /// otherwise, <c>false</c>.</returns>
+        /// <param name="obj">NetId to compare to</param>
+        /// <returns>Wheter or not the two NetIds are equal</returns>
         public override bool Equals (object obj)
         {
             if (obj == null || GetType() != obj.GetType())
@@ -85,34 +83,30 @@
             NetId key = (NetId)obj;
             return (HostId == key.HostId) && (ConnectionId == key.ConnectionId);
         }
-        // Rider generated vvv
         /// <summary>
-        /// Serves as a hash function for a <see cref="T:MLAPI.Data.NetId"/> object.
+        /// Returns a hash code for the instance
         /// </summary>
-        /// <returns>A hash code for this instance that is suitable for use in hashing algorithms and data structures such as a
-        /// hash table.</returns>
+        /// <returns>Returns a hash code for the instance</returns>
         public override int GetHashCode()
         {
             return (int)GetClientId();
         }
-        // Rider generated vvv
         /// <summary>
-        /// Determines whether a specified instance of <see cref="MLAPI.Data.NetId"/> is equal to another specified <see cref="MLAPI.Data.NetId"/>.
+        /// Checks if two NetId's are equal
         /// </summary>
-        /// <param name="client1">The first <see cref="MLAPI.Data.NetId"/> to compare.</param>
-        /// <param name="client2">The second <see cref="MLAPI.Data.NetId"/> to compare.</param>
-        /// <returns><c>true</c> if <c>client1</c> and <c>client2</c> are equal; otherwise, <c>false</c>.</returns>
+        /// <param name="client1">First netId</param>
+        /// <param name="client2">Second netId</param>
+        /// <returns>Wheter or not the two NetIds are equal</returns>
         public static bool operator ==(NetId client1, NetId client2)
         {
             return (client1.HostId == client2.HostId && client1.ConnectionId == client2.ConnectionId) || (client1.IsHost() == client2.IsHost());
         }
-        // Rider generated vvv
         /// <summary>
-        /// Determines whether a specified instance of <see cref="MLAPI.Data.NetId"/> is not equal to another specified <see cref="MLAPI.Data.NetId"/>.
+        /// Checks if two NetId's are not equal
         /// </summary>
-        /// <param name="client1">The first <see cref="MLAPI.Data.NetId"/> to compare.</param>
-        /// <param name="client2">The second <see cref="MLAPI.Data.NetId"/> to compare.</param>
-        /// <returns><c>true</c> if <c>client1</c> and <c>client2</c> are not equal; otherwise, <c>false</c>.</returns>
+        /// <param name="client1">First netId</param>
+        /// <param name="client2">Second netId</param>
+        /// <returns>Wheter or not the two NetIds are not equal</returns>
         public static bool operator !=(NetId client1, NetId client2)
         {
             return !(client1 == client2);

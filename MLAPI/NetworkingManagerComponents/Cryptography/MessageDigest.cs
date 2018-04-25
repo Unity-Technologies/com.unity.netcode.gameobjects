@@ -1,14 +1,10 @@
 ﻿using MLAPI.NetworkingManagerComponents.Binary;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 namespace MLAPI.NetworkingManagerComponents.Cryptography
 {
-    public static class MessageDigest
+    internal static class MessageDigest
     {
-        public struct SHA1Result
+        internal struct SHA1Result
         {
             public uint i0, i1, i2, i3, i4;
             public byte Get(int idx) => (byte)((idx < 4 ? i0 : idx < 8 ? i1 : idx < 12 ? i2 : idx < 16 ? i3 : i4) >> (8 * (idx % 4)));
