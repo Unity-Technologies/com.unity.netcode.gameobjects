@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using MLAPI.Data;
-using MLAPI.MonoBehaviours.Core;
 using MLAPI.NetworkingManagerComponents.Binary;
 using MLAPI.NetworkingManagerComponents.Cryptography;
 using UnityEngine;
@@ -48,7 +47,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
         }
 
         //RETURNS IF IT SUCCEDED OR FAILED BECAUSE OF NON-OBSERVER. ANY OTHER FAIL WILL RETURN TRUE
-        internal static bool Send(uint clientId, string messageType, string channelName, byte[] data, uint? fromNetId, uint? networkId = null, ushort? orderId = null, bool skipQueue = false)
+        internal static bool Send(uint clientId, string messageType, string channelName, BitWriter messageWriter, uint? fromNetId, uint? networkId = null, ushort? orderId = null, bool skipQueue = false)
         {
             uint targetClientId = clientId;
             if (netManager.isHost && targetClientId == netManager.NetworkConfig.NetworkTransport.HostDummyId)
@@ -96,14 +95,14 @@ namespace MLAPI.NetworkingManagerComponents.Core
                     //This is an encrypted message.
                     byte[] encrypted;
                     if (netManager.isServer)
-                        encrypted = CryptographyHelper.Encrypt(data, netManager.connectedClients[clientId].AesKey);
+                        encrypted = CryptographyHelper.Encrypt(messageWriter.Finalize(), netManager.connectedClients[clientId].AesKey);
                     else
-                        encrypted = CryptographyHelper.Encrypt(data, netManager.clientAesKey);
+                        encrypted = CryptographyHelper.Encrypt(messageWriter.Finalize(), netManager.clientAesKey);
 
                     writer.WriteByteArray(encrypted);
                 }
                 else
-                    writer.WriteByteArray(data);
+                    writer.WriteWriter(messageWriter);
 
                 if (isPassthrough)
                     targetClientId = netManager.NetworkConfig.NetworkTransport.ServerNetId;
@@ -120,7 +119,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             }
         }
 
-        internal static void Send(uint[] clientIds, string messageType, string channelName, byte[] data, uint? fromNetId, uint? networkId = null, ushort? orderId = null)
+        internal static void Send(uint[] clientIds, string messageType, string channelName, BitWriter messageWriter, uint? fromNetId, uint? networkId = null, ushort? orderId = null)
         {
             if (netManager.NetworkConfig.EncryptedChannelsHashSet.Contains(channelName))
             {
@@ -143,7 +142,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
                 writer.WriteAlignBits();
 
-                writer.WriteByteArray(data);
+                writer.WriteWriter(messageWriter);
 
                 int channel = MessageManager.channels[channelName];
                 for (int i = 0; i < clientIds.Length; i++)
@@ -172,7 +171,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             }
         }
 
-        internal static void Send(List<uint> clientIds, string messageType, string channelName, byte[] data, uint? fromNetId, uint? networkId = null, ushort? orderId = null)
+        internal static void Send(List<uint> clientIds, string messageType, string channelName, BitWriter messageWriter, uint? fromNetId, uint? networkId = null, ushort? orderId = null)
         {
             if (netManager.NetworkConfig.EncryptedChannelsHashSet.Contains(channelName))
             {
@@ -195,7 +194,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
                 writer.WriteAlignBits();
 
-                writer.WriteByteArray(data);
+                writer.WriteWriter(messageWriter);
 
                 int channel = MessageManager.channels[channelName];
                 for (int i = 0; i < clientIds.Count; i++)
@@ -226,7 +225,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
         private static List<uint> failedObservers = new List<uint>();
         //RETURNS THE CLIENTIDS WHICH WAS NOT BEING OBSERVED
-        internal static ref List<uint> Send(string messageType, string channelName, byte[] data, uint? fromNetId,  uint? networkId = null, ushort? orderId = null)
+        internal static ref List<uint> Send(string messageType, string channelName, BitWriter messageWriter, uint? fromNetId,  uint? networkId = null, ushort? orderId = null)
         {
             failedObservers.Clear();
             if (netManager.connectedClients.Count == 0)
@@ -252,7 +251,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
                 writer.WriteAlignBits();
 
-                writer.WriteByteArray(data);
+                writer.WriteWriter(messageWriter);
 
                 int channel = MessageManager.channels[channelName];
                 foreach (KeyValuePair<uint, NetworkedClient> pair in netManager.connectedClients)
@@ -286,7 +285,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
         }
 
         //RETURNS THE CLIENTIDS WHICH WAS NOT BEING OBSERVED
-        internal static ref List<uint> Send(string messageType, string channelName, byte[] data, uint clientIdToIgnore, uint? fromNetId, uint? networkId = null, ushort? orderId = null)
+        internal static ref List<uint> Send(string messageType, string channelName, BitWriter messageWriter, uint clientIdToIgnore, uint? fromNetId, uint? networkId = null, ushort? orderId = null)
         {
             failedObservers.Clear();
             if (netManager.NetworkConfig.EncryptedChannels.Contains(channelName))
@@ -310,7 +309,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
                 writer.WriteAlignBits();
 
-                writer.WriteByteArray(data);
+                writer.WriteWriter(messageWriter);
 
                 int channel = MessageManager.channels[channelName];
                 foreach (KeyValuePair<uint, NetworkedClient> pair in netManager.connectedClients)

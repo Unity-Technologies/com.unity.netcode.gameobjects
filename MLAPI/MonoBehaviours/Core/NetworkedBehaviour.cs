@@ -215,7 +215,7 @@ namespace MLAPI.MonoBehaviours.Core
                     FieldTypeHelper.WriteFieldType(writer, methodParams[i], fieldType);
                 }
 
-                InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerNetId, "MLAPI_COMMAND", "MLAPI_INTERNAL", writer.Finalize(), null);
+                InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerNetId, "MLAPI_COMMAND", "MLAPI_INTERNAL", writer, null);
             }
         }
 
@@ -251,7 +251,7 @@ namespace MLAPI.MonoBehaviours.Core
                     writer.WriteBits((byte)fieldType, 5);
                     FieldTypeHelper.WriteFieldType(writer, methodParams[i], fieldType);
                 }
-                InternalMessageHandler.Send("MLAPI_RPC", "MLAPI_INTERNAL", writer.Finalize(), networkId);
+                InternalMessageHandler.Send("MLAPI_RPC", "MLAPI_INTERNAL", writer, networkId);
             }
         }
 
@@ -286,9 +286,40 @@ namespace MLAPI.MonoBehaviours.Core
                     writer.WriteBits((byte)fieldType, 5);
                     FieldTypeHelper.WriteFieldType(writer, methodParams[i], fieldType);
                 }
-                InternalMessageHandler.Send(ownerClientId, "MLAPI_RPC", "MLAPI_INTERNAL", writer.Finalize(), networkId);
+                InternalMessageHandler.Send(ownerClientId, "MLAPI_RPC", "MLAPI_INTERNAL", writer, networkId);
             }
         }
+
+        /// <summary>
+        /// Registers a message handler
+        /// </summary>
+        /// <param name="name">The MessageType to register</param>
+        /// <param name="action">The callback to get invoked whenever a message is received</param>
+        /// <returns>HandlerId for the messageHandler that can be used to deregister the messageHandler</returns>
+        protected int RegisterMessageHandler(string name, Action<uint, BitReader> action)
+        {
+            if (!MessageManager.messageTypes.ContainsKey(name))
+            {
+                Debug.LogWarning("MLAPI: The messageType " + name + " is not registered");
+                return -1;
+            }
+            ushort messageType = MessageManager.messageTypes[name];
+            ushort behaviourOrder = networkedObject.GetOrderIndex(this);
+
+            if (!networkedObject.targetMessageActions.ContainsKey(behaviourOrder))
+                networkedObject.targetMessageActions.Add(behaviourOrder, new Dictionary<ushort, Action<uint, BitReader>>());
+            if (networkedObject.targetMessageActions[behaviourOrder].ContainsKey(messageType))
+            {
+                Debug.LogWarning("MLAPI: Each NetworkedBehaviour can only register one callback per instance per message type");
+                return -1;
+            }
+
+            networkedObject.targetMessageActions[behaviourOrder].Add(messageType, action);
+            int counter = MessageManager.AddIncomingMessageHandler(name, action, networkId);
+            registeredMessageHandlers.Add(name, counter);
+            return counter;
+        }
+
         /// <summary>
         /// Registers a message handler
         /// </summary>
@@ -306,15 +337,20 @@ namespace MLAPI.MonoBehaviours.Core
             ushort behaviourOrder = networkedObject.GetOrderIndex(this);
 
             if (!networkedObject.targetMessageActions.ContainsKey(behaviourOrder))
-                networkedObject.targetMessageActions.Add(behaviourOrder, new Dictionary<ushort, Action<uint, byte[]>>());
+                networkedObject.targetMessageActions.Add(behaviourOrder, new Dictionary<ushort, Action<uint, BitReader>>());
             if (networkedObject.targetMessageActions[behaviourOrder].ContainsKey(messageType))
             {
                 Debug.LogWarning("MLAPI: Each NetworkedBehaviour can only register one callback per instance per message type");
                 return -1;
             }
 
-            networkedObject.targetMessageActions[behaviourOrder].Add(messageType, action);
-            int counter = MessageManager.AddIncomingMessageHandler(name, action, networkId);
+            Action<uint, BitReader> convertedAction = (clientId, reader) =>
+            {
+                action.Invoke(clientId, reader.ReadByteArray());
+            };
+
+            networkedObject.targetMessageActions[behaviourOrder].Add(messageType, convertedAction);
+            int counter = MessageManager.AddIncomingMessageHandler(name, convertedAction, networkId);
             registeredMessageHandlers.Add(name, counter);
             return counter;
         }
@@ -443,7 +479,7 @@ namespace MLAPI.MonoBehaviours.Core
                     writer.WriteByte(i); //FieldIndex
                     FieldTypeHelper.WriteFieldType(writer, syncedVarFields[i].FieldInfo, this, syncedVarFields[i].FieldType);
                 }
-                bool observed = InternalMessageHandler.Send(clientId, "MLAPI_SYNC_VAR_UPDATE", "MLAPI_INTERNAL", writer.Finalize(), networkId);
+                bool observed = InternalMessageHandler.Send(clientId, "MLAPI_SYNC_VAR_UPDATE", "MLAPI_INTERNAL", writer, networkId);
                 if (observed)
                     OutOfSyncClients.Remove(clientId);
             }
@@ -494,7 +530,7 @@ namespace MLAPI.MonoBehaviours.Core
                                 syncedVarFields[i].Dirty = false;
                             }
                         }
-                        List<uint> stillDirtyIds = InternalMessageHandler.Send("MLAPI_SYNC_VAR_UPDATE", "MLAPI_INTERNAL", writer.Finalize(), networkId);
+                        List<uint> stillDirtyIds = InternalMessageHandler.Send("MLAPI_SYNC_VAR_UPDATE", "MLAPI_INTERNAL", writer, networkId);
                         if (stillDirtyIds != null)
                         {
                             for (int i = 0; i < stillDirtyIds.Count; i++)
@@ -528,7 +564,7 @@ namespace MLAPI.MonoBehaviours.Core
                                     }
                                 }
                             }
-                            bool observing = !InternalMessageHandler.Send(ownerClientId, "MLAPI_SYNC_VAR_UPDATE", "MLAPI_INTERNAL", writer.Finalize(), networkId); //Send only to target
+                            bool observing = !InternalMessageHandler.Send(ownerClientId, "MLAPI_SYNC_VAR_UPDATE", "MLAPI_INTERNAL", writer, networkId); //Send only to target
                             if (!observing)
                                 OutOfSyncClients.Add(ownerClientId);
                         }
@@ -555,7 +591,7 @@ namespace MLAPI.MonoBehaviours.Core
                                 syncedVarFields[i].Dirty = false;
                             }
                         }
-                        List<uint> stillDirtyIds = InternalMessageHandler.Send("MLAPI_SYNC_VAR_UPDATE", "MLAPI_INTERNAL", writer.Finalize(), ownerClientId, networkId, null, null); // Send to everyone except target.
+                        List<uint> stillDirtyIds = InternalMessageHandler.Send("MLAPI_SYNC_VAR_UPDATE", "MLAPI_INTERNAL", writer, ownerClientId, networkId, null, null); // Send to everyone except target.
                         if (stillDirtyIds != null)
                         {
                             for (int i = 0; i < stillDirtyIds.Count; i++)
@@ -611,7 +647,37 @@ namespace MLAPI.MonoBehaviours.Core
                 Debug.LogWarning("MLAPI: Server can not send messages to server.");
                 return;
             }
-            InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerNetId, messageType, channelName, data, null);
+            using (BitWriter writer = new BitWriter())
+            {
+                writer.WriteByteArray(data);
+                InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerNetId, messageType, channelName, writer, null);
+            }
+        }
+
+        /// <summary>
+        /// Sends a buffer to the server from client
+        /// </summary>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="data">The binary data to send</param>
+        protected void SendToServer(string messageType, string channelName, BitWriter writer)
+        {
+            if (!MessageManager.messageTypes.ContainsKey(messageType))
+            {
+                Debug.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"");
+                return;
+            }
+            if (MessageManager.messageTypes[messageType] < 32)
+            {
+                Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
+                return;
+            }
+            if (isServer)
+            {
+                Debug.LogWarning("MLAPI: Server can not send messages to server.");
+                return;
+            }
+            InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerNetId, messageType, channelName, writer, null);
         }
 
         /// <summary>
@@ -649,7 +715,37 @@ namespace MLAPI.MonoBehaviours.Core
                 Debug.LogWarning("MLAPI: Server can not send messages to server.");
                 return;
             }
-            InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerNetId, messageType, channelName, data, null, networkId, networkedObject.GetOrderIndex(this));            
+            using (BitWriter writer = new BitWriter())
+            {
+                writer.WriteByteArray(data);
+                InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerNetId, messageType, channelName, writer, null, networkId, networkedObject.GetOrderIndex(this));
+            }
+        }
+
+        /// <summary>
+        /// Sends a buffer to the server from client. Only handlers on this NetworkedBehaviour will get invoked
+        /// </summary>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="data">The binary data to send</param>
+        protected void SendToServerTarget(string messageType, string channelName, BitWriter writer)
+        {
+            if (!MessageManager.messageTypes.ContainsKey(messageType))
+            {
+                Debug.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"");
+                return;
+            }
+            if (MessageManager.messageTypes[messageType] < 32)
+            {
+                Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
+                return;
+            }
+            if (isServer)
+            {
+                Debug.LogWarning("MLAPI: Server can not send messages to server.");
+                return;
+            }
+            InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerNetId, messageType, channelName, writer, null, networkId, networkedObject.GetOrderIndex(this));
         }
 
         /// <summary>
@@ -688,7 +784,38 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
             uint? fromNetId = respectObservers ? (uint?)networkId : null;
-            InternalMessageHandler.Send(ownerClientId, messageType, channelName, data, fromNetId);
+            using (BitWriter writer = new BitWriter())
+            {
+                writer.WriteByteArray(data);
+                InternalMessageHandler.Send(ownerClientId, messageType, channelName, writer, fromNetId);
+            }
+        }
+
+        /// <summary>
+        /// Sends a buffer to the server from client
+        /// </summary>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="data">The binary data to send</param>
+        protected void SendToLocalClient(string messageType, string channelName, BitWriter writer, bool respectObservers = false)
+        {
+            if (!MessageManager.messageTypes.ContainsKey(messageType))
+            {
+                Debug.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"");
+                return;
+            }
+            if (MessageManager.messageTypes[messageType] < 32)
+            {
+                Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
+                return;
+            }
+            if (!isServer && (!NetworkingManager.singleton.NetworkConfig.AllowPassthroughMessages || !NetworkingManager.singleton.NetworkConfig.PassthroughMessageHashSet.Contains(MessageManager.messageTypes[messageType])))
+            {
+                Debug.LogWarning("MLAPI: Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
+                return;
+            }
+            uint? fromNetId = respectObservers ? (uint?)networkId : null;
+            InternalMessageHandler.Send(ownerClientId, messageType, channelName, writer, fromNetId);
         }
 
         /// <summary>
@@ -726,7 +853,37 @@ namespace MLAPI.MonoBehaviours.Core
                 Debug.LogWarning("MLAPI: Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
                 return;
             }
-            InternalMessageHandler.Send(ownerClientId, messageType, channelName, data, null, networkId, networkedObject.GetOrderIndex(this));
+            using (BitWriter writer = new BitWriter())
+            {
+                writer.WriteByteArray(data);
+                InternalMessageHandler.Send(ownerClientId, messageType, channelName, writer, null, networkId, networkedObject.GetOrderIndex(this));
+            }
+        }
+
+        /// <summary>
+        /// Sends a buffer to the client that owns this object from the server. Only handlers on this NetworkedBehaviour will get invoked
+        /// </summary>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="data">The binary data to send</param>
+        protected void SendToLocalClientTarget(string messageType, string channelName, BitWriter writer)
+        {
+            if (!MessageManager.messageTypes.ContainsKey(messageType))
+            {
+                Debug.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"");
+                return;
+            }
+            if (MessageManager.messageTypes[messageType] < 32)
+            {
+                Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
+                return;
+            }
+            if (!isServer && (!NetworkingManager.singleton.NetworkConfig.AllowPassthroughMessages || !NetworkingManager.singleton.NetworkConfig.PassthroughMessageHashSet.Contains(MessageManager.messageTypes[messageType])))
+            {
+                Debug.LogWarning("MLAPI: Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
+                return;
+            }
+            InternalMessageHandler.Send(ownerClientId, messageType, channelName, writer, null, networkId, networkedObject.GetOrderIndex(this));
         }
 
         /// <summary>gh
@@ -765,7 +922,38 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
             uint? fromNetId = respectObservers ? (uint?)networkId : null;
-            InternalMessageHandler.Send(messageType, channelName, data, ownerClientId, fromNetId, null, null);
+            using (BitWriter writer = new BitWriter())
+            {
+                writer.WriteByteArray(data);
+                InternalMessageHandler.Send(messageType, channelName, writer, ownerClientId, fromNetId, null, null);
+            }
+        }
+
+        /// <summary>
+        /// Sends a buffer to all clients except to the owner object from the server
+        /// </summary>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="data">The binary data to send</param>
+        protected void SendToNonLocalClients(string messageType, string channelName, BitWriter writer, bool respectObservers = false)
+        {
+            if (!MessageManager.messageTypes.ContainsKey(messageType))
+            {
+                Debug.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"");
+                return;
+            }
+            if (MessageManager.messageTypes[messageType] < 32)
+            {
+                Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
+                return;
+            }
+            if (!isServer)
+            {
+                Debug.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported");
+                return;
+            }
+            uint? fromNetId = respectObservers ? (uint?)networkId : null;
+            InternalMessageHandler.Send(messageType, channelName, writer, ownerClientId, fromNetId, null, null);
         }
 
         /// <summary>
@@ -804,7 +992,38 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
             uint? fromNetId = respectObservers ? (uint?)networkId : null;
-            InternalMessageHandler.Send(messageType, channelName, data, ownerClientId, fromNetId, networkId, networkedObject.GetOrderIndex(this));
+            using (BitWriter writer = new BitWriter())
+            {
+                writer.WriteByteArray(data);
+                InternalMessageHandler.Send(messageType, channelName, writer, ownerClientId, fromNetId, networkId, networkedObject.GetOrderIndex(this));
+            }
+        }
+
+        /// <summary>
+        /// Sends a buffer to all clients except to the owner object from the server. Only handlers on this NetworkedBehaviour will get invoked
+        /// </summary>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="data">The binary data to send</param>
+        protected void SendToNonLocalClientsTarget(string messageType, string channelName, BitWriter writer, bool respectObservers = false)
+        {
+            if (!MessageManager.messageTypes.ContainsKey(messageType))
+            {
+                Debug.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"");
+                return;
+            }
+            if (MessageManager.messageTypes[messageType] < 32)
+            {
+                Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
+                return;
+            }
+            if (!isServer)
+            {
+                Debug.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported");
+                return;
+            }
+            uint? fromNetId = respectObservers ? (uint?)networkId : null;
+            InternalMessageHandler.Send(messageType, channelName, writer, ownerClientId, fromNetId, networkId, networkedObject.GetOrderIndex(this));
         }
 
         /// <summary>
@@ -844,7 +1063,40 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
             uint? fromNetId = respectObservers ? (uint?)networkId : null;
-            InternalMessageHandler.Send(clientId, messageType, channelName, data, fromNetId);
+            using (BitWriter writer = new BitWriter())
+            {
+                writer.WriteByteArray(data);
+                InternalMessageHandler.Send(clientId, messageType, channelName, writer, fromNetId);
+            }
+        }
+
+
+        /// <summary>
+        /// Sends a buffer to a client with a given clientId from Server
+        /// </summary>
+        /// <param name="clientId">The clientId to send the message to</param>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="data">The binary data to send</param>
+        protected void SendToClient(uint clientId, string messageType, string channelName, BitWriter writer, bool respectObservers = false)
+        {
+            if (!MessageManager.messageTypes.ContainsKey(messageType))
+            {
+                Debug.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"");
+                return;
+            }
+            if (MessageManager.messageTypes[messageType] < 32)
+            {
+                Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
+                return;
+            }
+            if (!isServer && (!NetworkingManager.singleton.NetworkConfig.AllowPassthroughMessages || !NetworkingManager.singleton.NetworkConfig.PassthroughMessageHashSet.Contains(MessageManager.messageTypes[messageType])))
+            {
+                Debug.LogWarning("MLAPI: Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
+                return;
+            }
+            uint? fromNetId = respectObservers ? (uint?)networkId : null;
+            InternalMessageHandler.Send(clientId, messageType, channelName, writer, fromNetId);
         }
 
         /// <summary>
@@ -885,7 +1137,39 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
             uint? fromNetId = respectObservers ? (uint?)networkId : null;
-            InternalMessageHandler.Send(clientId, messageType, channelName, data, fromNetId, networkId, networkedObject.GetOrderIndex(this));
+            using (BitWriter writer = new BitWriter())
+            {
+                writer.WriteByteArray(data);
+                InternalMessageHandler.Send(clientId, messageType, channelName, writer, fromNetId, networkId, networkedObject.GetOrderIndex(this));
+            }
+        }
+
+        /// <summary>
+        /// Sends a buffer to a client with a given clientId from Server. Only handlers on this NetworkedBehaviour gets invoked
+        /// </summary>
+        /// <param name="clientId">The clientId to send the message to</param>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="data">The binary data to send</param>
+        protected void SendToClientTarget(uint clientId, string messageType, string channelName, BitWriter writer, bool respectObservers = false)
+        {
+            if (!MessageManager.messageTypes.ContainsKey(messageType))
+            {
+                Debug.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"");
+                return;
+            }
+            if (MessageManager.messageTypes[messageType] < 32)
+            {
+                Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
+                return;
+            }
+            if (!isServer && (!NetworkingManager.singleton.NetworkConfig.AllowPassthroughMessages || !NetworkingManager.singleton.NetworkConfig.PassthroughMessageHashSet.Contains(MessageManager.messageTypes[messageType])))
+            {
+                Debug.LogWarning("MLAPI: Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
+                return;
+            }
+            uint? fromNetId = respectObservers ? (uint?)networkId : null;
+            InternalMessageHandler.Send(clientId, messageType, channelName, writer, fromNetId, networkId, networkedObject.GetOrderIndex(this));
         }
 
         /// <summary>
@@ -926,7 +1210,39 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
             uint? fromNetId = respectObservers ? (uint?)networkId : null;
-            InternalMessageHandler.Send(clientIds, messageType, channelName, data, fromNetId);
+            using (BitWriter writer = new BitWriter())
+            {
+                writer.WriteByteArray(data);
+                InternalMessageHandler.Send(clientIds, messageType, channelName, writer, fromNetId);
+            }
+        }
+
+        /// <summary>
+        /// Sends a buffer to multiple clients from the server
+        /// </summary>
+        /// <param name="clientIds">The clientId's to send to</param>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="data">The binary data to send</param>
+        protected void SendToClients(uint[] clientIds, string messageType, string channelName, BitWriter writer, bool respectObservers = false)
+        {
+            if (!MessageManager.messageTypes.ContainsKey(messageType))
+            {
+                Debug.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"");
+                return;
+            }
+            if (MessageManager.messageTypes[messageType] < 32)
+            {
+                Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
+                return;
+            }
+            if (!isServer)
+            {
+                Debug.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported");
+                return;
+            }
+            uint? fromNetId = respectObservers ? (uint?)networkId : null;
+            InternalMessageHandler.Send(clientIds, messageType, channelName, writer, fromNetId);
         }
 
         /// <summary>
@@ -967,7 +1283,39 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
             uint? fromNetId = respectObservers ? (uint?)networkId : null;
-            InternalMessageHandler.Send(clientIds, messageType, channelName, data, fromNetId, networkId, networkedObject.GetOrderIndex(this));
+            using (BitWriter writer = new BitWriter())
+            {
+                writer.WriteByteArray(data);
+                InternalMessageHandler.Send(clientIds, messageType, channelName, writer, fromNetId, networkId, networkedObject.GetOrderIndex(this));
+            }
+        }
+
+        /// <summary>
+        /// Sends a buffer to multiple clients from the server. Only handlers on this NetworkedBehaviour gets invoked
+        /// </summary>
+        /// <param name="clientIds">The clientId's to send to</param>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="data">The binary data to send</param>
+        protected void SendToClientsTarget(uint[] clientIds, string messageType, string channelName, BitWriter writer, bool respectObservers = false)
+        {
+            if (!MessageManager.messageTypes.ContainsKey(messageType))
+            {
+                Debug.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"");
+                return;
+            }
+            if (MessageManager.messageTypes[messageType] < 32)
+            {
+                Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
+                return;
+            }
+            if (!isServer)
+            {
+                Debug.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported");
+                return;
+            }
+            uint? fromNetId = respectObservers ? (uint?)networkId : null;
+            InternalMessageHandler.Send(clientIds, messageType, channelName, writer, fromNetId, networkId, networkedObject.GetOrderIndex(this));
         }
 
         /// <summary>
@@ -1008,7 +1356,39 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
             uint? fromNetId = respectObservers ? (uint?)networkId : null;
-            InternalMessageHandler.Send(clientIds, messageType, channelName, data, fromNetId);
+            using (BitWriter writer = new BitWriter())
+            {
+                writer.WriteByteArray(data);
+                InternalMessageHandler.Send(clientIds, messageType, channelName, writer, fromNetId);
+            }
+        }
+
+        /// <summary>
+        /// Sends a buffer to multiple clients from the server
+        /// </summary>
+        /// <param name="clientIds">The clientId's to send to</param>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="data">The binary data to send</param>
+        protected void SendToClients(List<uint> clientIds, string messageType, string channelName, BitWriter writer, bool respectObservers = false)
+        {
+            if (!MessageManager.messageTypes.ContainsKey(messageType))
+            {
+                Debug.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"");
+                return;
+            }
+            if (MessageManager.messageTypes[messageType] < 32)
+            {
+                Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
+                return;
+            }
+            if (!isServer)
+            {
+                Debug.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported");
+                return;
+            }
+            uint? fromNetId = respectObservers ? (uint?)networkId : null;
+            InternalMessageHandler.Send(clientIds, messageType, channelName, writer, fromNetId);
         }
 
         /// <summary>
@@ -1049,7 +1429,39 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
             uint? fromNetId = respectObservers ? (uint?)networkId : null;
-            InternalMessageHandler.Send(clientIds, messageType, channelName, data, fromNetId, networkId, networkedObject.GetOrderIndex(this));
+            using (BitWriter writer = new BitWriter())
+            {
+                writer.WriteByteArray(data);
+                InternalMessageHandler.Send(clientIds, messageType, channelName, writer, fromNetId, networkId, networkedObject.GetOrderIndex(this));
+            }
+        }
+
+        /// <summary>
+        /// Sends a buffer to multiple clients from the server. Only handlers on this NetworkedBehaviour gets invoked
+        /// </summary>
+        /// <param name="clientIds">The clientId's to send to</param>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="data">The binary data to send</param>
+        protected void SendToClientsTarget(List<uint> clientIds, string messageType, string channelName, BitWriter writer, bool respectObservers = false)
+        {
+            if (!MessageManager.messageTypes.ContainsKey(messageType))
+            {
+                Debug.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"");
+                return;
+            }
+            if (MessageManager.messageTypes[messageType] < 32)
+            {
+                Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
+                return;
+            }
+            if (!isServer)
+            {
+                Debug.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported");
+                return;
+            }
+            uint? fromNetId = respectObservers ? (uint?)networkId : null;
+            InternalMessageHandler.Send(clientIds, messageType, channelName, writer, fromNetId, networkId, networkedObject.GetOrderIndex(this));
         }
 
         /// <summary>
@@ -1089,7 +1501,38 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
             uint? fromNetId = respectObservers ? (uint?)networkId : null;
-            InternalMessageHandler.Send(messageType, channelName, data, fromNetId);
+            using (BitWriter writer = new BitWriter())
+            {
+                writer.WriteByteArray(data);
+                InternalMessageHandler.Send(messageType, channelName, writer, fromNetId);
+            }
+        }
+
+        /// <summary>
+        /// Sends a buffer to all clients from the server
+        /// </summary>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="data">The binary data to send</param>
+        protected void SendToClients(string messageType, string channelName, BitWriter writer, bool respectObservers = false)
+        {
+            if (!MessageManager.messageTypes.ContainsKey(messageType))
+            {
+                Debug.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"");
+                return;
+            }
+            if (MessageManager.messageTypes[messageType] < 32)
+            {
+                Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
+                return;
+            }
+            if (!isServer)
+            {
+                Debug.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported");
+                return;
+            }
+            uint? fromNetId = respectObservers ? (uint?)networkId : null;
+            InternalMessageHandler.Send(messageType, channelName, writer, fromNetId);
         }
 
         /// <summary>
@@ -1128,7 +1571,38 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
             uint? fromNetId = respectObservers ? (uint?)networkId : null;
-            InternalMessageHandler.Send(messageType, channelName, data, fromNetId, networkId, networkedObject.GetOrderIndex(this));
+            using (BitWriter writer = new BitWriter())
+            {
+                writer.WriteByteArray(data);
+                InternalMessageHandler.Send(messageType, channelName, writer, fromNetId, networkId, networkedObject.GetOrderIndex(this));
+            }
+        }
+
+        /// <summary>
+        /// Sends a buffer to all clients from the server. Only handlers on this NetworkedBehaviour will get invoked
+        /// </summary>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="data">The binary data to send</param>
+        protected void SendToClientsTarget(string messageType, string channelName, BitWriter writer, bool respectObservers = false)
+        {
+            if (!MessageManager.messageTypes.ContainsKey(messageType))
+            {
+                Debug.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"");
+                return;
+            }
+            if (MessageManager.messageTypes[messageType] < 32)
+            {
+                Debug.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!");
+                return;
+            }
+            if (!isServer)
+            {
+                Debug.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported");
+                return;
+            }
+            uint? fromNetId = respectObservers ? (uint?)networkId : null;
+            InternalMessageHandler.Send(messageType, channelName, writer, fromNetId, networkId, networkedObject.GetOrderIndex(this));
         }
 
         /// <summary>

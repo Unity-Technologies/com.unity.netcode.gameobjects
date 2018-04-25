@@ -185,7 +185,7 @@ namespace MLAPI.MonoBehaviours.Core
                                 writer.WriteUInt(networkId);
                                 writer.WriteBool(observers.Contains(pair.Key));
 
-                                InternalMessageHandler.Send(pair.Key, "MLAPI_SET_VISIBILITY", "MLAPI_INTERNAL", writer.Finalize(), null);
+                                InternalMessageHandler.Send(pair.Key, "MLAPI_SET_VISIBILITY", "MLAPI_INTERNAL", writer, null);
                             }
                             FlushToClient(pair.Key);
                         }
@@ -362,6 +362,6 @@ namespace MLAPI.MonoBehaviours.Core
         }
 
         //Key: behaviourOrderId, value key: messageType, value value callback 
-        internal Dictionary<ushort, Dictionary<ushort, Action<uint, byte[]>>> targetMessageActions = new Dictionary<ushort, Dictionary<ushort, Action<uint, byte[]>>>();
+        internal Dictionary<ushort, Dictionary<ushort, Action<uint, BitReader>>> targetMessageActions = new Dictionary<ushort, Dictionary<ushort, Action<uint, BitReader>>>();
     }
 }

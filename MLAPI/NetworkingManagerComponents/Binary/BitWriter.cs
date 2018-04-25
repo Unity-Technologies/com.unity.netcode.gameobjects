@@ -23,6 +23,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
                 this.count = count;
             }
         }
+
         private static readonly Queue<List<object>> listPool = new Queue<List<object>>();
         
         private static readonly float[] holder_f = new float[1];
@@ -120,6 +121,13 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         public void WriteIntArray(int[] i, bool known = false)          => PushArray(i, known);
         public void WriteLongArray(long[] l, bool known = false)        => PushArray(l, known);
         public void WriteBits(byte value, int bits) => Push(new Partial(ReadNBits(value, 0, bits % 8), (byte)(bits%8))); // Suggestion: store (bits % 8) result?
+        public void WriteWriter(BitWriter writer)
+        {
+            for (int i = 0; i < writer.collect.Count; i++)
+            {
+                Push(writer.collect[i]);
+            }
+        }
 
         private void PushArray<T>(T[] t, bool knownSize = false)
         {
