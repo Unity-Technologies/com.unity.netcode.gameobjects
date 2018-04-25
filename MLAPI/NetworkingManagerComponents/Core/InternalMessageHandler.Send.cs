@@ -224,18 +224,18 @@ namespace MLAPI.NetworkingManagerComponents.Core
             }
         }
 
+        private static List<uint> failedObservers = new List<uint>();
         //RETURNS THE CLIENTIDS WHICH WAS NOT BEING OBSERVED
-        internal static List<uint> Send(string messageType, string channelName, byte[] data, uint? fromNetId,  uint? networkId = null, ushort? orderId = null)
+        internal static ref List<uint> Send(string messageType, string channelName, byte[] data, uint? fromNetId,  uint? networkId = null, ushort? orderId = null)
         {
+            failedObservers.Clear();
             if (netManager.connectedClients.Count == 0)
-                return null;
+                return ref failedObservers;
             if (netManager.NetworkConfig.EncryptedChannels.Contains(channelName))
             {
                 Debug.LogWarning("MLAPI: Cannot send messages over encrypted channel to multiple clients.");
-                return null;
+                return ref failedObservers;
             }
-
-            List<uint> nonObservedIds = new List<uint>();
 
             using (BitWriter writer = new BitWriter())
             {
@@ -272,7 +272,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                     //If we respect the observers, and the message is targeted (networkId != null) and the targetedNetworkId isnt observing the receiver. Then we continue
                     if (netManager.isServer && fromNetId != null && !SpawnManager.spawnedObjects[fromNetId.Value].observers.Contains(pair.Key))
                     {
-                        nonObservedIds.Add(pair.Key);
+                        failedObservers.Add(pair.Key);
                         continue;
                     }
 
@@ -281,20 +281,19 @@ namespace MLAPI.NetworkingManagerComponents.Core
                     byte error;
                     netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(targetClientId, ref FinalMessageBuffer, (int)writer.GetFinalizeSize(), channel, false, out error);
                 }
-                return nonObservedIds;
+                return ref failedObservers;
             }
         }
 
         //RETURNS THE CLIENTIDS WHICH WAS NOT BEING OBSERVED
-        internal static List<uint> Send(string messageType, string channelName, byte[] data, uint clientIdToIgnore, uint? fromNetId, uint? networkId = null, ushort? orderId = null)
+        internal static ref List<uint> Send(string messageType, string channelName, byte[] data, uint clientIdToIgnore, uint? fromNetId, uint? networkId = null, ushort? orderId = null)
         {
+            failedObservers.Clear();
             if (netManager.NetworkConfig.EncryptedChannels.Contains(channelName))
             {
                 Debug.LogWarning("MLAPI: Cannot send messages over encrypted channel to multiple clients.");
-                return null;
+                return ref failedObservers;
             }
-
-            List<uint> nonObservedIds = new List<uint>();
 
             using (BitWriter writer = new BitWriter())
             {
@@ -334,7 +333,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                     //If we respect the observers, and the message is targeted (networkId != null) and the targetedNetworkId isnt observing the receiver. Then we continue
                     if (netManager.isServer && fromNetId != null && !SpawnManager.spawnedObjects[fromNetId.Value].observers.Contains(pair.Key))
                     {
-                        nonObservedIds.Add(pair.Key);
+                        failedObservers.Add(pair.Key);
                         continue;
                     }
 
@@ -343,7 +342,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                     byte error;
                     netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(targetClientId, ref FinalMessageBuffer, (int)writer.GetFinalizeSize(), channel, false, out error);
                 }
-                return nonObservedIds;
+                return ref failedObservers;
             }
         }
     }
