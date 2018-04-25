@@ -1,4 +1,4 @@
-﻿namespace MLAPI.Data
+﻿namespace MLAPI.Data.Transports
 {
     /// <summary>
     /// Represents a netEvent when polling
