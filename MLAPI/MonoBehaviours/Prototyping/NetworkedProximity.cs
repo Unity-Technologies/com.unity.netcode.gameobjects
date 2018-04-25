@@ -47,6 +47,8 @@ namespace MLAPI.MonoBehaviours.Prototyping
             return (pos - transform.position).magnitude < Range;
         }
 
+        private Collider[] colliders = new Collider[32];
+        private Collider2D[] colliders2d = new Collider2D[32];
         public override bool OnRebuildObservers(HashSet<uint> observers)
         {
             if (ForceHidden)
@@ -61,10 +63,17 @@ namespace MLAPI.MonoBehaviours.Prototyping
             {
                 case CheckMethod.Physics3D:
                     {
-                        var hits = Physics.OverlapSphere(transform.position, Range);
-                        for (int i = 0; i < hits.Length; i++)
+                        int hits = Physics.OverlapSphereNonAlloc(transform.position, Range, colliders);
+                        //We check if it's equal to since the OverlapSphereNonAlloc only returns what it actually wrote, not what it found.
+                        if (hits >= colliders.Length)
                         {
-                            var uv = hits[i].GetComponent<NetworkedObject>();
+                            //Resize colliders array
+                            colliders = new Collider[(int)((hits + 2)* 1.3f)];
+                            hits = Physics.OverlapSphereNonAlloc(transform.position, Range, colliders);
+                        }
+                        for (int i = 0; i < hits; i++)
+                        {
+                            var uv = colliders[i].GetComponent<NetworkedObject>();
                             if (uv != null && uv.isPlayerObject)
                                 observers.Add(uv.OwnerClientId);
                         }
@@ -72,10 +81,17 @@ namespace MLAPI.MonoBehaviours.Prototyping
                     }
                 case CheckMethod.Physics2D:
                     {
-                        var hits = Physics2D.OverlapCircleAll(transform.position, Range);
-                        for (int i = 0; i < hits.Length; i++)
+                        int hits = Physics2D.OverlapCircleNonAlloc(transform.position, Range, colliders2d);
+                        //We check if it's equal to since the OverlapSphereNonAlloc only returns what it actually wrote, not what it found.
+                        if (hits >= colliders.Length)
                         {
-                            var uv = hits[i].GetComponent<NetworkedObject>();
+                            //Resize colliders array
+                            colliders2d = new Collider2D[(int)((hits + 2) * 1.3f)];
+                            hits = Physics2D.OverlapCircleNonAlloc(transform.position, Range, colliders2d);
+                        }
+                        for (int i = 0; i < hits; i++)
+                        {
+                            var uv = colliders2d[i].GetComponent<NetworkedObject>();
                             if (uv != null && (uv.isPlayerObject))
                                 observers.Add(uv.OwnerClientId);
                         }

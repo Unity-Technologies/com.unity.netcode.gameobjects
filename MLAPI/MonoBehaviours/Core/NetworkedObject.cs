@@ -134,6 +134,7 @@ namespace MLAPI.MonoBehaviours.Core
         internal bool? sceneObject = null;
 
         public HashSet<uint> observers = new HashSet<uint>();
+        private HashSet<uint> previousObservers = new HashSet<uint>();
 
         internal void RebuildObservers(uint? clientId = null)
         {
@@ -155,15 +156,16 @@ namespace MLAPI.MonoBehaviours.Core
             }
             else
             {
-                HashSet<uint> previousObservers = new HashSet<uint>(observers);
-                HashSet<uint> newObservers = new HashSet<uint>();
+                previousObservers.Clear();
+                foreach (var item in observers)
+                    previousObservers.Add(item);
+                observers.Clear();
                 bool update = false;
                 for (int i = 0; i < childNetworkedBehaviours.Count; i++)
                 {
-                    bool changed = childNetworkedBehaviours[i].OnRebuildObservers(newObservers);
+                    bool changed = childNetworkedBehaviours[i].OnRebuildObservers(observers);
                     if (changed)
                     {
-                        observers = newObservers;
                         update = true;
                         break;
                     }
@@ -174,8 +176,8 @@ namespace MLAPI.MonoBehaviours.Core
                     {
                         if (pair.Key == NetworkingManager.singleton.NetworkConfig.NetworkTransport.HostDummyId)
                             continue;
-                        if ((previousObservers.Contains(pair.Key) && !newObservers.Contains(pair.Key)) ||
-                            (!previousObservers.Contains(pair.Key) && newObservers.Contains(pair.Key)))
+                        if ((previousObservers.Contains(pair.Key) && !observers.Contains(pair.Key)) ||
+                            (!previousObservers.Contains(pair.Key) && observers.Contains(pair.Key)))
                         {
                             //Something changed for this client.
                             using (BitWriter writer = new BitWriter())
@@ -188,6 +190,11 @@ namespace MLAPI.MonoBehaviours.Core
                             FlushToClient(pair.Key);
                         }
                     }
+                }
+                else
+                {
+                    foreach (var item in previousObservers)
+                        observers.Add(item);
                 }
             }
         }
