@@ -326,6 +326,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="name">The MessageType to register</param>
         /// <param name="action">The callback to get invoked whenever a message is received</param>
         /// <returns>HandlerId for the messageHandler that can be used to deregister the messageHandler</returns>
+        [Obsolete("The overload (uint, byte[]) for RegisterMessageHandler is obsolete, use (uint, BitReader) instead")]
         protected int RegisterMessageHandler(string name, Action<uint, byte[]> action)
         {
             if (!MessageManager.messageTypes.ContainsKey(name))
