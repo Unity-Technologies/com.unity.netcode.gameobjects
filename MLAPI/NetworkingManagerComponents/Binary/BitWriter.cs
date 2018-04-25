@@ -24,7 +24,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             }
         }
 
-        private static readonly Queue<List<object>> listPool = new Queue<List<object>>();
+        private static readonly Queue<BitWriter> writerPool = new Queue<BitWriter>();
         
         private static readonly float[] holder_f = new float[1];
         private static readonly double[] holder_d = new double[1];
@@ -63,28 +63,34 @@ namespace MLAPI.NetworkingManagerComponents.Binary
 
             for (int i = 0; i < 10; i++)
             {
-                listPool.Enqueue(new List<object>());
+                writerPool.Enqueue(new BitWriter());
             }
         }
 
-        private List<object> collect = null;
-        private bool tempAlloc = false;
+        private readonly List<object> collect = new List<object>();
+        private bool outsidePool = false;
 
         /// <summary>
-        /// Allocates a new binary collector.
+        /// Allocates a new binary collector. This is only used when there are no more writers in the pool
         /// </summary>
-        public BitWriter()
+        private BitWriter()
         {
-            if (listPool.Count == 0)
+
+        }
+
+        /// <summary>
+        /// Returns a BitWriter from the pool
+        /// </summary>
+        /// <returns></returns>
+        public static BitWriter Get()
+        {
+            if (writerPool.Count == 0)
             {
                 Debug.LogWarning("MLAPI: There can be no more than 10 BitWriters. Have you forgotten do dispose? (It will still work with worse performance)");
-                collect = new List<object>();
-                tempAlloc = true;
+                return new BitWriter() { outsidePool = true };
             }
             else
-            {
-                collect = listPool.Dequeue();
-            }
+                return writerPool.Dequeue();
         }
 
         private void Push<T>(T b)
@@ -425,15 +431,13 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         // Supported datatypes for serialization
         private static bool IsSupportedType(Type t) => supportedTypes.Contains(t);
         
-        // Creates a weak reference to the allocated collector so that reuse may be possible
         public void Dispose()
         {
-            if (!tempAlloc)
+            if (!outsidePool)
             {
                 collect.Clear();
-                listPool.Enqueue(collect);
+                writerPool.Enqueue(this);
             }
-            collect = null; //GC picks this
         }
     }
 }

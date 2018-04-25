@@ -66,7 +66,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 return null;
             }
             GameObject go = Pools[PoolNamesToIndexes[poolName]].SpawnObject(position, rotation);
-            using (BitWriter writer = new BitWriter())
+            using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteUInt(go.GetComponent<NetworkedObject>().NetworkId);
 
@@ -95,7 +95,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 return;
             }
             netObject.gameObject.SetActive(false);
-            using (BitWriter writer = new BitWriter())
+            using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteUInt(netObject.NetworkId);
 

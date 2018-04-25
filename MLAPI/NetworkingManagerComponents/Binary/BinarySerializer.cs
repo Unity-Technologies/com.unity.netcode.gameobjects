@@ -40,7 +40,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
                 cachedFields.Add(instance.GetType().FullName, sortedFields);
             }
 
-            using (BitWriter writer = new BitWriter())
+            using (BitWriter writer = BitWriter.Get())
             {
                 for (int i = 0; i < sortedFields.Length; i++)
                 {

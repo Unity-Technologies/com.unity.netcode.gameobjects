@@ -687,7 +687,7 @@ namespace MLAPI.MonoBehaviours.Core
                                         diffiePublic = clientDiffieHellman.GetPublicKey();
                                     }
 
-                                    using (BitWriter writer = new BitWriter())
+                                    using (BitWriter writer = BitWriter.Get())
                                     {
                                         writer.WriteByteArray(NetworkConfig.GetConfig(), true);
 
@@ -999,7 +999,7 @@ namespace MLAPI.MonoBehaviours.Core
                 foreach (KeyValuePair<uint, NetworkedObject> pair in SpawnManager.spawnedObjects)
                     pair.Value.observers.Remove(clientId);
 
-                using (BitWriter writer = new BitWriter())
+                using (BitWriter writer = BitWriter.Get())
                 {
                     writer.WriteUInt(clientId);
                     InternalMessageHandler.Send("MLAPI_CLIENT_DISCONNECT", "MLAPI_INTERNAL", writer, clientId, null);
@@ -1009,7 +1009,7 @@ namespace MLAPI.MonoBehaviours.Core
 
         private void SyncTime()
         {
-            using (BitWriter writer = new BitWriter())
+            using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteFloat(NetworkTime);
                 int timestamp = NetworkConfig.NetworkTransport.GetNetworkTimestamp();
@@ -1065,7 +1065,7 @@ namespace MLAPI.MonoBehaviours.Core
 
                 int amountOfObjectsToSend = SpawnManager.spawnedObjects.Values.Count;
 
-                using (BitWriter writer = new BitWriter())
+                using (BitWriter writer = BitWriter.Get())
                 {
                     writer.WriteUInt(clientId);
                     if (NetworkConfig.EnableSceneSwitching)
@@ -1125,7 +1125,7 @@ namespace MLAPI.MonoBehaviours.Core
 
                 //Inform old clients of the new player
 
-                using (BitWriter writer = new BitWriter())
+                using (BitWriter writer = BitWriter.Get())
                 {
                     if (NetworkConfig.HandleObjectSpawning)
                     {

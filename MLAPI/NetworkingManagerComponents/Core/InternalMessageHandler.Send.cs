@@ -18,7 +18,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 return;
             }
 
-            using (BitWriter writer = new BitWriter())
+            using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteUShort(messageType);
                 writer.WriteBool(networkId != null);
@@ -72,7 +72,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 return true;
             }
 
-            using (BitWriter writer = new BitWriter())
+            using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteUShort(MessageManager.messageTypes[messageType]);
                 writer.WriteBool(networkId != null);
@@ -127,7 +127,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 return;
             }
 
-            using (BitWriter writer = new BitWriter())
+            using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteUShort(MessageManager.messageTypes[messageType]);
                 writer.WriteBool(networkId != null);
@@ -179,7 +179,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 return;
             }
 
-            using (BitWriter writer = new BitWriter())
+            using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteUShort(MessageManager.messageTypes[messageType]);
                 writer.WriteBool(networkId != null);
@@ -236,7 +236,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 return ref failedObservers;
             }
 
-            using (BitWriter writer = new BitWriter())
+            using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteUShort(MessageManager.messageTypes[messageType]);
                 writer.WriteBool(networkId != null);
@@ -294,7 +294,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 return ref failedObservers;
             }
 
-            using (BitWriter writer = new BitWriter())
+            using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteUShort(MessageManager.messageTypes[messageType]);
                 writer.WriteBool(networkId != null);

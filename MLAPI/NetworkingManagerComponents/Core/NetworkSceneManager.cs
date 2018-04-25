@@ -58,7 +58,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             AsyncOperation sceneLoad = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
             sceneLoad.completed += OnSceneLoaded;
 
-            using (BitWriter writer = new BitWriter())
+            using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteUInt(sceneNameToIndex[sceneName]);
 

@@ -219,7 +219,7 @@ namespace MLAPI.MonoBehaviours.Core
             }
 
             ulong hash = Data.Cache.GetMessageAttributeHash(methodName);
-            using (BitWriter writer = new BitWriter())
+            using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteUInt(networkId);
                 writer.WriteUShort(networkedObject.GetOrderIndex(this));
@@ -255,7 +255,7 @@ namespace MLAPI.MonoBehaviours.Core
             }
 
             ulong hash = Data.Cache.GetMessageAttributeHash(methodName);
-            using (BitWriter writer = new BitWriter())
+            using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteUInt(networkId);
                 writer.WriteUShort(networkedObject.GetOrderIndex(this));
@@ -291,7 +291,7 @@ namespace MLAPI.MonoBehaviours.Core
             }
 
             ulong hash = Data.Cache.GetMessageAttributeHash(methodName);
-            using (BitWriter writer = new BitWriter())
+            using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteUInt(networkId);
                 writer.WriteUShort(networkedObject.GetOrderIndex(this));
@@ -474,7 +474,7 @@ namespace MLAPI.MonoBehaviours.Core
             if (syncedVarFields.Count == 0)
                 return;
 
-            using (BitWriter writer = new BitWriter())
+            using (BitWriter writer = BitWriter.Get())
             {
                 //Write all indexes
                 int syncCount = 0;
@@ -531,7 +531,7 @@ namespace MLAPI.MonoBehaviours.Core
                 if (dirtyTargets == 0)
                 {
                     //It's sync time!
-                    using (BitWriter writer = new BitWriter())
+                    using (BitWriter writer = BitWriter.Get())
                     {
                         //Write all indexes
                         writer.WriteByte(totalDirtyCount);
@@ -561,7 +561,7 @@ namespace MLAPI.MonoBehaviours.Core
                     if (!(isHost && ownerClientId == NetworkingManager.singleton.NetworkConfig.NetworkTransport.HostDummyId))
                     {
                         //It's sync time. This is the target receivers packet.
-                        using (BitWriter writer = new BitWriter())
+                        using (BitWriter writer = BitWriter.Get())
                         {
                             //Write all indexes
                             writer.WriteByte(totalDirtyCount);
@@ -592,7 +592,7 @@ namespace MLAPI.MonoBehaviours.Core
                         return;
 
                     //It's sync time. This is the NON target receivers packet.
-                    using (BitWriter writer = new BitWriter())
+                    using (BitWriter writer = BitWriter.Get())
                     {
                         //Write all indexes
                         writer.WriteByte(nonTargetDirtyCount);
@@ -665,7 +665,7 @@ namespace MLAPI.MonoBehaviours.Core
                 Debug.LogWarning("MLAPI: Server can not send messages to server.");
                 return;
             }
-            using (BitWriter writer = new BitWriter())
+            using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteByteArray(data);
                 InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerNetId, messageType, channelName, writer, null);
@@ -733,7 +733,7 @@ namespace MLAPI.MonoBehaviours.Core
                 Debug.LogWarning("MLAPI: Server can not send messages to server.");
                 return;
             }
-            using (BitWriter writer = new BitWriter())
+            using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteByteArray(data);
                 InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerNetId, messageType, channelName, writer, null, networkId, networkedObject.GetOrderIndex(this));
@@ -803,7 +803,7 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
             uint? fromNetId = respectObservers ? (uint?)networkId : null;
-            using (BitWriter writer = new BitWriter())
+            using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteByteArray(data);
                 InternalMessageHandler.Send(ownerClientId, messageType, channelName, writer, fromNetId);
@@ -874,7 +874,7 @@ namespace MLAPI.MonoBehaviours.Core
                 Debug.LogWarning("MLAPI: Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
                 return;
             }
-            using (BitWriter writer = new BitWriter())
+            using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteByteArray(data);
                 InternalMessageHandler.Send(ownerClientId, messageType, channelName, writer, null, networkId, networkedObject.GetOrderIndex(this));
@@ -944,7 +944,7 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
             uint? fromNetId = respectObservers ? (uint?)networkId : null;
-            using (BitWriter writer = new BitWriter())
+            using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteByteArray(data);
                 InternalMessageHandler.Send(messageType, channelName, writer, ownerClientId, fromNetId, null, null);
@@ -1017,7 +1017,7 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
             uint? fromNetId = respectObservers ? (uint?)networkId : null;
-            using (BitWriter writer = new BitWriter())
+            using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteByteArray(data);
                 InternalMessageHandler.Send(messageType, channelName, writer, ownerClientId, fromNetId, networkId, networkedObject.GetOrderIndex(this));
@@ -1091,7 +1091,7 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
             uint? fromNetId = respectObservers ? (uint?)networkId : null;
-            using (BitWriter writer = new BitWriter())
+            using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteByteArray(data);
                 InternalMessageHandler.Send(clientId, messageType, channelName, writer, fromNetId);
@@ -1168,7 +1168,7 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
             uint? fromNetId = respectObservers ? (uint?)networkId : null;
-            using (BitWriter writer = new BitWriter())
+            using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteByteArray(data);
                 InternalMessageHandler.Send(clientId, messageType, channelName, writer, fromNetId, networkId, networkedObject.GetOrderIndex(this));
@@ -1244,7 +1244,7 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
             uint? fromNetId = respectObservers ? (uint?)networkId : null;
-            using (BitWriter writer = new BitWriter())
+            using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteByteArray(data);
                 InternalMessageHandler.Send(clientIds, messageType, channelName, writer, fromNetId);
@@ -1320,7 +1320,7 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
             uint? fromNetId = respectObservers ? (uint?)networkId : null;
-            using (BitWriter writer = new BitWriter())
+            using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteByteArray(data);
                 InternalMessageHandler.Send(clientIds, messageType, channelName, writer, fromNetId, networkId, networkedObject.GetOrderIndex(this));
@@ -1396,7 +1396,7 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
             uint? fromNetId = respectObservers ? (uint?)networkId : null;
-            using (BitWriter writer = new BitWriter())
+            using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteByteArray(data);
                 InternalMessageHandler.Send(clientIds, messageType, channelName, writer, fromNetId);
@@ -1472,7 +1472,7 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
             uint? fromNetId = respectObservers ? (uint?)networkId : null;
-            using (BitWriter writer = new BitWriter())
+            using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteByteArray(data);
                 InternalMessageHandler.Send(clientIds, messageType, channelName, writer, fromNetId, networkId, networkedObject.GetOrderIndex(this));
@@ -1547,7 +1547,7 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
             uint? fromNetId = respectObservers ? (uint?)networkId : null;
-            using (BitWriter writer = new BitWriter())
+            using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteByteArray(data);
                 InternalMessageHandler.Send(messageType, channelName, writer, fromNetId);
@@ -1620,7 +1620,7 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
             uint? fromNetId = respectObservers ? (uint?)networkId : null;
-            using (BitWriter writer = new BitWriter())
+            using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteByteArray(data);
                 InternalMessageHandler.Send(messageType, channelName, writer, fromNetId, networkId, networkedObject.GetOrderIndex(this));

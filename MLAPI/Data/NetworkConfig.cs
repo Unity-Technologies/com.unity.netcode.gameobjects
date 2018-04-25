@@ -148,7 +148,7 @@ namespace MLAPI.Data
             if (ConfigHash != null && cache)
                 return ConfigHash;
 
-            using (BitWriter writer = new BitWriter())
+            using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteUShort(ProtocolVersion);
                 for (int i = 0; i < Channels.Count; i++)

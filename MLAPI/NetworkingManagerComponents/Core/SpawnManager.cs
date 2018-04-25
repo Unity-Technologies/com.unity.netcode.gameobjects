@@ -38,7 +38,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             NetworkingManager.singleton.connectedClients[netObject.OwnerClientId].OwnedObjects.RemoveAll(x => x.NetworkId == netId);
             netObject.ownerClientId = NetworkingManager.singleton.NetworkConfig.NetworkTransport.InvalidDummyId;
 
-            using (BitWriter writer = new BitWriter())
+            using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteUInt(netId);
                 writer.WriteUInt(netObject.ownerClientId);
@@ -54,7 +54,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             NetworkingManager.singleton.connectedClients[clientId].OwnedObjects.Add(netObject);
             netObject.ownerClientId = clientId;
 
-            using (BitWriter writer = new BitWriter())
+            using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteUInt(netId);
                 writer.WriteUInt(clientId);
@@ -110,7 +110,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                     sceneObjectsToSync.Add(pair.Value);
             }
 
-            using (BitWriter writer = new BitWriter())
+            using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteUShort((ushort)sceneObjectsToSync.Count);
 
@@ -200,7 +200,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 netObject.ownerClientId = clientOwnerId.Value;
                 NetworkingManager.singleton.connectedClients[clientOwnerId.Value].OwnedObjects.Add(netObject);
             }
-            using (BitWriter writer = new BitWriter())
+            using (BitWriter writer = BitWriter.Get())
             { 
                 writer.WriteBool(false);
                 writer.WriteUInt(netObject.NetworkId);
@@ -271,7 +271,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 releasedNetworkObjectIds.Push(networkId);
                 if (spawnedObjects[networkId] != null)
                 {
-                    using (BitWriter writer = new BitWriter())
+                    using (BitWriter writer = BitWriter.Get())
                     {
                         writer.WriteUInt(networkId);
 

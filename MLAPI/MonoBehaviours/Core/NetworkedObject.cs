@@ -183,7 +183,7 @@ namespace MLAPI.MonoBehaviours.Core
                             (!previousObservers.Contains(pair.Key) && observers.Contains(pair.Key)))
                         {
                             //Something changed for this client.
-                            using (BitWriter writer = new BitWriter())
+                            using (BitWriter writer = BitWriter.Get())
                             {
                                 writer.WriteUInt(networkId);
                                 writer.WriteBool(observers.Contains(pair.Key));
