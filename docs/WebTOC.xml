@@ -1,87 +1,98 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <HelpTOC>
 
-  <HelpTOCNode Id="0161c0c0-46c3-4819-8b9d-7a30af9c27d5" Title="MLAPI.Attributes" Url="html/N_MLAPI_Attributes.htm">
-    <HelpTOCNode Id="10581d5e-88f9-4495-8ec9-72386cc2f33f" Title="BinaryIgnore Class" Url="html/T_MLAPI_Attributes_BinaryIgnore.htm">
+  <HelpTOCNode Id="9c171389-db6d-4af6-b445-e28df786455e" Title="MLAPI.Attributes" Url="html/N_MLAPI_Attributes.htm">
+    <HelpTOCNode Id="0b9518e6-dcec-40e8-9dfd-ac55ee0fa5a1" Title="BinaryIgnore Class" Url="html/T_MLAPI_Attributes_BinaryIgnore.htm">
       <HelpTOCNode Title="BinaryIgnore Constructor " Url="html/M_MLAPI_Attributes_BinaryIgnore__ctor.htm" />
       <HelpTOCNode Title="BinaryIgnore Properties" Url="html/Properties_T_MLAPI_Attributes_BinaryIgnore.htm" />
       <HelpTOCNode Title="BinaryIgnore Methods" Url="html/Methods_T_MLAPI_Attributes_BinaryIgnore.htm" />
     </HelpTOCNode>
-    <HelpTOCNode Id="362876d1-3be5-445f-bf46-037ad7411fcf" Title="ClientRpc Class" Url="html/T_MLAPI_Attributes_ClientRpc.htm">
+    <HelpTOCNode Id="aa17c821-d346-49f1-8c10-5cf98f89eae9" Title="ClientRpc Class" Url="html/T_MLAPI_Attributes_ClientRpc.htm">
       <HelpTOCNode Title="ClientRpc Constructor " Url="html/M_MLAPI_Attributes_ClientRpc__ctor.htm" />
       <HelpTOCNode Title="ClientRpc Properties" Url="html/Properties_T_MLAPI_Attributes_ClientRpc.htm" />
       <HelpTOCNode Title="ClientRpc Methods" Url="html/Methods_T_MLAPI_Attributes_ClientRpc.htm" />
     </HelpTOCNode>
-    <HelpTOCNode Id="fb4cdb9f-e3f0-4d07-b4f4-699c14f48b22" Title="Command Class" Url="html/T_MLAPI_Attributes_Command.htm">
+    <HelpTOCNode Id="e960fbe7-ccc6-4727-acc2-4e4a2cbe7704" Title="Command Class" Url="html/T_MLAPI_Attributes_Command.htm">
       <HelpTOCNode Title="Command Constructor " Url="html/M_MLAPI_Attributes_Command__ctor.htm" />
       <HelpTOCNode Title="Command Properties" Url="html/Properties_T_MLAPI_Attributes_Command.htm" />
       <HelpTOCNode Title="Command Methods" Url="html/Methods_T_MLAPI_Attributes_Command.htm" />
     </HelpTOCNode>
-    <HelpTOCNode Id="a9ad7120-12b1-4193-8bf3-8aac24651aa4" Title="SyncedVar Class" Url="html/T_MLAPI_Attributes_SyncedVar.htm">
+    <HelpTOCNode Id="2e0310ca-5f62-43d5-8b27-681284a0f97e" Title="SyncedVar Class" Url="html/T_MLAPI_Attributes_SyncedVar.htm">
       <HelpTOCNode Title="SyncedVar Constructor " Url="html/M_MLAPI_Attributes_SyncedVar__ctor.htm" />
       <HelpTOCNode Title="SyncedVar Properties" Url="html/Properties_T_MLAPI_Attributes_SyncedVar.htm" />
       <HelpTOCNode Title="SyncedVar Methods" Url="html/Methods_T_MLAPI_Attributes_SyncedVar.htm" />
-      <HelpTOCNode Id="58ef3cb5-9bcd-409c-a6c9-82a07bea7034" Title="SyncedVar Fields" Url="html/Fields_T_MLAPI_Attributes_SyncedVar.htm">
+      <HelpTOCNode Id="e78451fa-45b5-43b6-9a85-67a178ddbd81" Title="SyncedVar Fields" Url="html/Fields_T_MLAPI_Attributes_SyncedVar.htm">
         <HelpTOCNode Title="hookMethodName Field" Url="html/F_MLAPI_Attributes_SyncedVar_hookMethodName.htm" />
         <HelpTOCNode Title="target Field" Url="html/F_MLAPI_Attributes_SyncedVar_target.htm" />
       </HelpTOCNode>
     </HelpTOCNode>
-    <HelpTOCNode Id="d0b66898-c8cd-4d44-9f18-1a9382a82779" Title="TargetRpc Class" Url="html/T_MLAPI_Attributes_TargetRpc.htm">
+    <HelpTOCNode Id="e4b27a17-bc90-4cfb-8fd2-53a8417ad254" Title="TargetRpc Class" Url="html/T_MLAPI_Attributes_TargetRpc.htm">
       <HelpTOCNode Title="TargetRpc Constructor " Url="html/M_MLAPI_Attributes_TargetRpc__ctor.htm" />
       <HelpTOCNode Title="TargetRpc Properties" Url="html/Properties_T_MLAPI_Attributes_TargetRpc.htm" />
       <HelpTOCNode Title="TargetRpc Methods" Url="html/Methods_T_MLAPI_Attributes_TargetRpc.htm" />
     </HelpTOCNode>
   </HelpTOCNode>
-  <HelpTOCNode Id="e63d4c1c-5f5c-462d-b54b-e517ffd2bda1" Title="MLAPI.Data" Url="html/N_MLAPI_Data.htm">
-    <HelpTOCNode Id="0c676ff1-4a8b-4feb-916e-a5be3d64a202" Title="Channel Class" Url="html/T_MLAPI_Data_Channel.htm">
+  <HelpTOCNode Id="2321f2fb-c63c-455f-a5fb-5c13915436d3" Title="MLAPI.Data" Url="html/N_MLAPI_Data.htm">
+    <HelpTOCNode Id="995d7490-638d-449e-8fb5-00b577d1576a" Title="Channel Class" Url="html/T_MLAPI_Data_Channel.htm">
       <HelpTOCNode Title="Channel Constructor " Url="html/M_MLAPI_Data_Channel__ctor.htm" />
       <HelpTOCNode Title="Channel Methods" Url="html/Methods_T_MLAPI_Data_Channel.htm" />
-      <HelpTOCNode Id="6bc7bec7-e47b-4e67-88e0-f764bb9aa61e" Title="Channel Fields" Url="html/Fields_T_MLAPI_Data_Channel.htm">
+      <HelpTOCNode Id="36943f69-5837-4ca9-80fe-a0ff94a5f04e" Title="Channel Fields" Url="html/Fields_T_MLAPI_Data_Channel.htm">
         <HelpTOCNode Title="Encrypted Field" Url="html/F_MLAPI_Data_Channel_Encrypted.htm" />
         <HelpTOCNode Title="Name Field" Url="html/F_MLAPI_Data_Channel_Name.htm" />
         <HelpTOCNode Title="Type Field" Url="html/F_MLAPI_Data_Channel_Type.htm" />
       </HelpTOCNode>
     </HelpTOCNode>
-    <HelpTOCNode Id="87ef9f6c-f08f-493f-a940-1d78bb05757a" Title="MessageType Class" Url="html/T_MLAPI_Data_MessageType.htm">
+    <HelpTOCNode Title="ChannelType Enumeration" Url="html/T_MLAPI_Data_ChannelType.htm" />
+    <HelpTOCNode Id="d5a8161a-99ac-4ccc-a274-5f6caa924e9b" Title="FixedQueue(T) Class" Url="html/T_MLAPI_Data_FixedQueue_1.htm">
+      <HelpTOCNode Title="FixedQueue(T) Constructor " Url="html/M_MLAPI_Data_FixedQueue_1__ctor.htm" />
+      <HelpTOCNode Id="48b58fe5-3451-4489-85cb-fed9c90adf7f" Title="FixedQueue(T) Properties" Url="html/Properties_T_MLAPI_Data_FixedQueue_1.htm">
+        <HelpTOCNode Title="Count Property " Url="html/P_MLAPI_Data_FixedQueue_1_Count.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="d219e0d5-3970-4650-b1a4-540d0238909c" Title="FixedQueue(T) Methods" Url="html/Methods_T_MLAPI_Data_FixedQueue_1.htm">
+        <HelpTOCNode Title="Dequeue Method " Url="html/M_MLAPI_Data_FixedQueue_1_Dequeue.htm" />
+        <HelpTOCNode Title="ElementAt Method " Url="html/M_MLAPI_Data_FixedQueue_1_ElementAt.htm" />
+        <HelpTOCNode Title="Enqueue Method " Url="html/M_MLAPI_Data_FixedQueue_1_Enqueue.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Id="6f7020a9-0323-4f78-af36-5a5b8f2a0a6e" Title="IUDPTransport Interface" Url="html/T_MLAPI_Data_IUDPTransport.htm">
+      <HelpTOCNode Id="8ebe7407-e4f8-4c4b-b49f-b9cd5adb7a69" Title="IUDPTransport Properties" Url="html/Properties_T_MLAPI_Data_IUDPTransport.htm">
+        <HelpTOCNode Title="HostDummyId Property " Url="html/P_MLAPI_Data_IUDPTransport_HostDummyId.htm" />
+        <HelpTOCNode Title="InternalChannel Property " Url="html/P_MLAPI_Data_IUDPTransport_InternalChannel.htm" />
+        <HelpTOCNode Title="InvalidDummyId Property " Url="html/P_MLAPI_Data_IUDPTransport_InvalidDummyId.htm" />
+        <HelpTOCNode Title="ServerNetId Property " Url="html/P_MLAPI_Data_IUDPTransport_ServerNetId.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="0d9f5870-f6e4-46c1-a857-e3d70f5fa526" Title="IUDPTransport Methods" Url="html/Methods_T_MLAPI_Data_IUDPTransport.htm">
+        <HelpTOCNode Title="AddChannel Method " Url="html/M_MLAPI_Data_IUDPTransport_AddChannel.htm" />
+        <HelpTOCNode Title="Connect Method " Url="html/M_MLAPI_Data_IUDPTransport_Connect.htm" />
+        <HelpTOCNode Title="DisconnectClient Method " Url="html/M_MLAPI_Data_IUDPTransport_DisconnectClient.htm" />
+        <HelpTOCNode Title="DisconnectFromServer Method " Url="html/M_MLAPI_Data_IUDPTransport_DisconnectFromServer.htm" />
+        <HelpTOCNode Title="GetCurrentRTT Method " Url="html/M_MLAPI_Data_IUDPTransport_GetCurrentRTT.htm" />
+        <HelpTOCNode Title="GetNetworkTimestamp Method " Url="html/M_MLAPI_Data_IUDPTransport_GetNetworkTimestamp.htm" />
+        <HelpTOCNode Title="GetRemoteDelayTimeMS Method " Url="html/M_MLAPI_Data_IUDPTransport_GetRemoteDelayTimeMS.htm" />
+        <HelpTOCNode Title="GetSettings Method " Url="html/M_MLAPI_Data_IUDPTransport_GetSettings.htm" />
+        <HelpTOCNode Title="PollReceive Method " Url="html/M_MLAPI_Data_IUDPTransport_PollReceive.htm" />
+        <HelpTOCNode Title="QueueMessageForSending Method " Url="html/M_MLAPI_Data_IUDPTransport_QueueMessageForSending.htm" />
+        <HelpTOCNode Title="RegisterServerListenSocket Method " Url="html/M_MLAPI_Data_IUDPTransport_RegisterServerListenSocket.htm" />
+        <HelpTOCNode Title="SendQueue Method " Url="html/M_MLAPI_Data_IUDPTransport_SendQueue.htm" />
+        <HelpTOCNode Title="Shutdown Method " Url="html/M_MLAPI_Data_IUDPTransport_Shutdown.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Id="e9acd309-1bbf-49ad-8525-fb7ac68f7d61" Title="MessageType Class" Url="html/T_MLAPI_Data_MessageType.htm">
       <HelpTOCNode Title="MessageType Constructor " Url="html/M_MLAPI_Data_MessageType__ctor.htm" />
       <HelpTOCNode Title="MessageType Methods" Url="html/Methods_T_MLAPI_Data_MessageType.htm" />
-      <HelpTOCNode Id="e0a979ec-a3c6-4908-97db-8b4c58340c0c" Title="MessageType Fields" Url="html/Fields_T_MLAPI_Data_MessageType.htm">
+      <HelpTOCNode Id="f3878070-5291-4353-8a56-5a056a63d3dd" Title="MessageType Fields" Url="html/Fields_T_MLAPI_Data_MessageType.htm">
         <HelpTOCNode Title="Name Field" Url="html/F_MLAPI_Data_MessageType_Name.htm" />
         <HelpTOCNode Title="Passthrough Field" Url="html/F_MLAPI_Data_MessageType_Passthrough.htm" />
       </HelpTOCNode>
     </HelpTOCNode>
-    <HelpTOCNode Id="151e085c-a440-4335-96f7-93dd8ddfb1a2" Title="NetId Structure" Url="html/T_MLAPI_Data_NetId.htm">
-      <HelpTOCNode Id="8e021207-0e6b-48e1-829e-753fbce76208" Title="NetId Constructor " Url="html/Overload_MLAPI_Data_NetId__ctor.htm">
-        <HelpTOCNode Title="NetId Constructor (UInt32)" Url="html/M_MLAPI_Data_NetId__ctor_1.htm" />
-        <HelpTOCNode Title="NetId Constructor (Byte, UInt16, Boolean, Boolean)" Url="html/M_MLAPI_Data_NetId__ctor.htm" />
-      </HelpTOCNode>
-      <HelpTOCNode Id="f79698ce-0b9b-4e33-a40d-494887d53be9" Title="NetId Properties" Url="html/Properties_T_MLAPI_Data_NetId.htm">
-        <HelpTOCNode Title="ServerNetId Property " Url="html/P_MLAPI_Data_NetId_ServerNetId.htm" />
-      </HelpTOCNode>
-      <HelpTOCNode Id="7219b61b-7923-492e-bf04-ddb743c7c84f" Title="NetId Methods" Url="html/Methods_T_MLAPI_Data_NetId.htm">
-        <HelpTOCNode Title="Equals Method " Url="html/M_MLAPI_Data_NetId_Equals.htm" />
-        <HelpTOCNode Title="GetClientId Method " Url="html/M_MLAPI_Data_NetId_GetClientId.htm" />
-        <HelpTOCNode Title="GetHashCode Method " Url="html/M_MLAPI_Data_NetId_GetHashCode.htm" />
-        <HelpTOCNode Title="IsHost Method " Url="html/M_MLAPI_Data_NetId_IsHost.htm" />
-        <HelpTOCNode Title="IsInvalid Method " Url="html/M_MLAPI_Data_NetId_IsInvalid.htm" />
-      </HelpTOCNode>
-      <HelpTOCNode Id="ef58468d-e021-4c5e-9ff2-ba059f86a2f4" Title="NetId Operators" Url="html/Operators_T_MLAPI_Data_NetId.htm">
-        <HelpTOCNode Title="Equality Operator " Url="html/M_MLAPI_Data_NetId_op_Equality.htm" />
-        <HelpTOCNode Title="Inequality Operator " Url="html/M_MLAPI_Data_NetId_op_Inequality.htm" />
-      </HelpTOCNode>
-      <HelpTOCNode Id="66157c1e-5253-466d-a34d-9386d2ffe13d" Title="NetId Fields" Url="html/Fields_T_MLAPI_Data_NetId.htm">
-        <HelpTOCNode Title="ConnectionId Field" Url="html/F_MLAPI_Data_NetId_ConnectionId.htm" />
-        <HelpTOCNode Title="HostId Field" Url="html/F_MLAPI_Data_NetId_HostId.htm" />
-        <HelpTOCNode Title="Meta Field" Url="html/F_MLAPI_Data_NetId_Meta.htm" />
-      </HelpTOCNode>
-    </HelpTOCNode>
-    <HelpTOCNode Id="74dc2563-2661-4d72-87ae-b7b2bbd4154b" Title="NetworkConfig Class" Url="html/T_MLAPI_Data_NetworkConfig.htm">
+    <HelpTOCNode Title="NetEventType Enumeration" Url="html/T_MLAPI_Data_NetEventType.htm" />
+    <HelpTOCNode Id="03c98101-98b1-4d32-885d-5d95dbb6ad45" Title="NetworkConfig Class" Url="html/T_MLAPI_Data_NetworkConfig.htm">
       <HelpTOCNode Title="NetworkConfig Constructor " Url="html/M_MLAPI_Data_NetworkConfig__ctor.htm" />
-      <HelpTOCNode Id="9ea30dfb-4279-4e57-a408-79ff4833000c" Title="NetworkConfig Methods" Url="html/Methods_T_MLAPI_Data_NetworkConfig.htm">
+      <HelpTOCNode Id="dad6ac5c-b4bc-4a9e-b187-0fb11ea027c9" Title="NetworkConfig Methods" Url="html/Methods_T_MLAPI_Data_NetworkConfig.htm">
         <HelpTOCNode Title="CompareConfig Method " Url="html/M_MLAPI_Data_NetworkConfig_CompareConfig.htm" />
         <HelpTOCNode Title="GetConfig Method " Url="html/M_MLAPI_Data_NetworkConfig_GetConfig.htm" />
       </HelpTOCNode>
-      <HelpTOCNode Id="3292384e-7fd1-46d7-af47-c36af240943c" Title="NetworkConfig Fields" Url="html/Fields_T_MLAPI_Data_NetworkConfig.htm">
+      <HelpTOCNode Id="9402a90a-25ee-4462-878d-1023458bec57" Title="NetworkConfig Fields" Url="html/Fields_T_MLAPI_Data_NetworkConfig.htm">
         <HelpTOCNode Title="AllowPassthroughMessages Field" Url="html/F_MLAPI_Data_NetworkConfig_AllowPassthroughMessages.htm" />
         <HelpTOCNode Title="Channels Field" Url="html/F_MLAPI_Data_NetworkConfig_Channels.htm" />
         <HelpTOCNode Title="ClientConnectionBufferTimeout Field" Url="html/F_MLAPI_Data_NetworkConfig_ClientConnectionBufferTimeout.htm" />
@@ -99,6 +110,7 @@
         <HelpTOCNode Title="MessageBufferSize Field" Url="html/F_MLAPI_Data_NetworkConfig_MessageBufferSize.htm" />
         <HelpTOCNode Title="MessageTypes Field" Url="html/F_MLAPI_Data_NetworkConfig_MessageTypes.htm" />
         <HelpTOCNode Title="NetworkedPrefabs Field" Url="html/F_MLAPI_Data_NetworkConfig_NetworkedPrefabs.htm" />
+        <HelpTOCNode Title="NetworkTransport Field" Url="html/F_MLAPI_Data_NetworkConfig_NetworkTransport.htm" />
         <HelpTOCNode Title="ProtocolVersion Field" Url="html/F_MLAPI_Data_NetworkConfig_ProtocolVersion.htm" />
         <HelpTOCNode Title="ReceiveTickrate Field" Url="html/F_MLAPI_Data_NetworkConfig_ReceiveTickrate.htm" />
         <HelpTOCNode Title="RegisteredScenes Field" Url="html/F_MLAPI_Data_NetworkConfig_RegisteredScenes.htm" />
@@ -106,42 +118,133 @@
         <HelpTOCNode Title="RSAPublicKey Field" Url="html/F_MLAPI_Data_NetworkConfig_RSAPublicKey.htm" />
         <HelpTOCNode Title="SecondsHistory Field" Url="html/F_MLAPI_Data_NetworkConfig_SecondsHistory.htm" />
         <HelpTOCNode Title="SendTickrate Field" Url="html/F_MLAPI_Data_NetworkConfig_SendTickrate.htm" />
-        <HelpTOCNode Title="ServerTransports Field" Url="html/F_MLAPI_Data_NetworkConfig_ServerTransports.htm" />
         <HelpTOCNode Title="SignKeyExchange Field" Url="html/F_MLAPI_Data_NetworkConfig_SignKeyExchange.htm" />
+        <HelpTOCNode Title="Transport Field" Url="html/F_MLAPI_Data_NetworkConfig_Transport.htm" />
       </HelpTOCNode>
     </HelpTOCNode>
-    <HelpTOCNode Id="f72761d2-701a-473c-8655-d48e95a49004" Title="NetworkedClient Class" Url="html/T_MLAPI_Data_NetworkedClient.htm">
+    <HelpTOCNode Id="0fe2c0a1-f163-49ce-96a3-7acb01a18a32" Title="NetworkedClient Class" Url="html/T_MLAPI_Data_NetworkedClient.htm">
       <HelpTOCNode Title="NetworkedClient Constructor " Url="html/M_MLAPI_Data_NetworkedClient__ctor.htm" />
       <HelpTOCNode Title="NetworkedClient Methods" Url="html/Methods_T_MLAPI_Data_NetworkedClient.htm" />
-      <HelpTOCNode Id="46a9ca1d-a55a-4060-b54f-1a555251c014" Title="NetworkedClient Fields" Url="html/Fields_T_MLAPI_Data_NetworkedClient.htm">
+      <HelpTOCNode Id="4b9bea2b-b654-4b72-9956-1265cc12f6b5" Title="NetworkedClient Fields" Url="html/Fields_T_MLAPI_Data_NetworkedClient.htm">
         <HelpTOCNode Title="AesKey Field" Url="html/F_MLAPI_Data_NetworkedClient_AesKey.htm" />
         <HelpTOCNode Title="ClientId Field" Url="html/F_MLAPI_Data_NetworkedClient_ClientId.htm" />
         <HelpTOCNode Title="OwnedObjects Field" Url="html/F_MLAPI_Data_NetworkedClient_OwnedObjects.htm" />
         <HelpTOCNode Title="PlayerObject Field" Url="html/F_MLAPI_Data_NetworkedClient_PlayerObject.htm" />
       </HelpTOCNode>
     </HelpTOCNode>
-    <HelpTOCNode Id="40dfa748-6eb6-4ceb-ac4c-556ffe4e5dd6" Title="NetworkedPrefab Class" Url="html/T_MLAPI_Data_NetworkedPrefab.htm">
+    <HelpTOCNode Id="490063a8-8b08-4a76-bd05-338fde750ddf" Title="NetworkedPrefab Class" Url="html/T_MLAPI_Data_NetworkedPrefab.htm">
       <HelpTOCNode Title="NetworkedPrefab Constructor " Url="html/M_MLAPI_Data_NetworkedPrefab__ctor.htm" />
       <HelpTOCNode Title="NetworkedPrefab Methods" Url="html/Methods_T_MLAPI_Data_NetworkedPrefab.htm" />
-      <HelpTOCNode Id="a3e6b48a-5477-4732-bafb-d916f66cff04" Title="NetworkedPrefab Fields" Url="html/Fields_T_MLAPI_Data_NetworkedPrefab.htm">
+      <HelpTOCNode Id="ac1fa248-fa2e-4d1d-84fc-37168df0fce9" Title="NetworkedPrefab Fields" Url="html/Fields_T_MLAPI_Data_NetworkedPrefab.htm">
         <HelpTOCNode Title="playerPrefab Field" Url="html/F_MLAPI_Data_NetworkedPrefab_playerPrefab.htm" />
         <HelpTOCNode Title="prefab Field" Url="html/F_MLAPI_Data_NetworkedPrefab_prefab.htm" />
       </HelpTOCNode>
     </HelpTOCNode>
-    <HelpTOCNode Id="bb42c23a-5480-47cd-b714-07679ad7894b" Title="TransportHost Class" Url="html/T_MLAPI_Data_TransportHost.htm">
-      <HelpTOCNode Title="TransportHost Constructor " Url="html/M_MLAPI_Data_TransportHost__ctor.htm" />
-      <HelpTOCNode Title="TransportHost Methods" Url="html/Methods_T_MLAPI_Data_TransportHost.htm" />
-      <HelpTOCNode Id="0c8aa163-7b7e-48d1-9425-70c83a81f13b" Title="TransportHost Fields" Url="html/Fields_T_MLAPI_Data_TransportHost.htm">
-        <HelpTOCNode Title="Name Field" Url="html/F_MLAPI_Data_TransportHost_Name.htm" />
-        <HelpTOCNode Title="Port Field" Url="html/F_MLAPI_Data_TransportHost_Port.htm" />
-        <HelpTOCNode Title="Websockets Field" Url="html/F_MLAPI_Data_TransportHost_Websockets.htm" />
+  </HelpTOCNode>
+  <HelpTOCNode Id="7b23de5c-6575-49cf-81a3-b3a4afaefad3" Title="MLAPI.Data.Transports" Url="html/N_MLAPI_Data_Transports.htm">
+    <HelpTOCNode Title="DefaultTransport Enumeration" Url="html/T_MLAPI_Data_Transports_DefaultTransport.htm" />
+  </HelpTOCNode>
+  <HelpTOCNode Id="d62097a4-3de9-4fb4-8028-6334031650f0" Title="MLAPI.Data.Transports.LiteNetLib" Url="html/N_MLAPI_Data_Transports_LiteNetLib.htm">
+    <HelpTOCNode Id="28f3f24b-3e1e-4c21-8dc4-5465ed04353d" Title="LiteNetLibTransport Class" Url="html/T_MLAPI_Data_Transports_LiteNetLib_LiteNetLibTransport.htm">
+      <HelpTOCNode Title="LiteNetLibTransport Constructor " Url="html/M_MLAPI_Data_Transports_LiteNetLib_LiteNetLibTransport__ctor.htm" />
+      <HelpTOCNode Id="a921554e-8805-41b1-ba09-36c1c308290f" Title="LiteNetLibTransport Properties" Url="html/Properties_T_MLAPI_Data_Transports_LiteNetLib_LiteNetLibTransport.htm">
+        <HelpTOCNode Title="HostDummyId Property " Url="html/P_MLAPI_Data_Transports_LiteNetLib_LiteNetLibTransport_HostDummyId.htm" />
+        <HelpTOCNode Title="InternalChannel Property " Url="html/P_MLAPI_Data_Transports_LiteNetLib_LiteNetLibTransport_InternalChannel.htm" />
+        <HelpTOCNode Title="InvalidDummyId Property " Url="html/P_MLAPI_Data_Transports_LiteNetLib_LiteNetLibTransport_InvalidDummyId.htm" />
+        <HelpTOCNode Title="ServerNetId Property " Url="html/P_MLAPI_Data_Transports_LiteNetLib_LiteNetLibTransport_ServerNetId.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="b518535c-a6c0-4b3f-8787-7e7d208ed41d" Title="LiteNetLibTransport Methods" Url="html/Methods_T_MLAPI_Data_Transports_LiteNetLib_LiteNetLibTransport.htm">
+        <HelpTOCNode Title="AddChannel Method " Url="html/M_MLAPI_Data_Transports_LiteNetLib_LiteNetLibTransport_AddChannel.htm" />
+        <HelpTOCNode Title="Connect Method " Url="html/M_MLAPI_Data_Transports_LiteNetLib_LiteNetLibTransport_Connect.htm" />
+        <HelpTOCNode Title="DisconnectClient Method " Url="html/M_MLAPI_Data_Transports_LiteNetLib_LiteNetLibTransport_DisconnectClient.htm" />
+        <HelpTOCNode Title="DisconnectFromServer Method " Url="html/M_MLAPI_Data_Transports_LiteNetLib_LiteNetLibTransport_DisconnectFromServer.htm" />
+        <HelpTOCNode Title="GetCurrentRTT Method " Url="html/M_MLAPI_Data_Transports_LiteNetLib_LiteNetLibTransport_GetCurrentRTT.htm" />
+        <HelpTOCNode Title="GetNetworkTimestamp Method " Url="html/M_MLAPI_Data_Transports_LiteNetLib_LiteNetLibTransport_GetNetworkTimestamp.htm" />
+        <HelpTOCNode Title="GetRemoteDelayTimeMS Method " Url="html/M_MLAPI_Data_Transports_LiteNetLib_LiteNetLibTransport_GetRemoteDelayTimeMS.htm" />
+        <HelpTOCNode Title="GetSettings Method " Url="html/M_MLAPI_Data_Transports_LiteNetLib_LiteNetLibTransport_GetSettings.htm" />
+        <HelpTOCNode Title="OnNetworkError Method " Url="html/M_MLAPI_Data_Transports_LiteNetLib_LiteNetLibTransport_OnNetworkError.htm" />
+        <HelpTOCNode Title="OnNetworkLatencyUpdate Method " Url="html/M_MLAPI_Data_Transports_LiteNetLib_LiteNetLibTransport_OnNetworkLatencyUpdate.htm" />
+        <HelpTOCNode Title="OnNetworkReceive Method " Url="html/M_MLAPI_Data_Transports_LiteNetLib_LiteNetLibTransport_OnNetworkReceive.htm" />
+        <HelpTOCNode Title="OnNetworkReceiveUnconnected Method " Url="html/M_MLAPI_Data_Transports_LiteNetLib_LiteNetLibTransport_OnNetworkReceiveUnconnected.htm" />
+        <HelpTOCNode Title="OnPeerConnected Method " Url="html/M_MLAPI_Data_Transports_LiteNetLib_LiteNetLibTransport_OnPeerConnected.htm" />
+        <HelpTOCNode Title="OnPeerDisconnected Method " Url="html/M_MLAPI_Data_Transports_LiteNetLib_LiteNetLibTransport_OnPeerDisconnected.htm" />
+        <HelpTOCNode Title="PollReceive Method " Url="html/M_MLAPI_Data_Transports_LiteNetLib_LiteNetLibTransport_PollReceive.htm" />
+        <HelpTOCNode Title="QueueMessageForSending Method " Url="html/M_MLAPI_Data_Transports_LiteNetLib_LiteNetLibTransport_QueueMessageForSending.htm" />
+        <HelpTOCNode Title="RegisterServerListenSocket Method " Url="html/M_MLAPI_Data_Transports_LiteNetLib_LiteNetLibTransport_RegisterServerListenSocket.htm" />
+        <HelpTOCNode Title="SendQueue Method " Url="html/M_MLAPI_Data_Transports_LiteNetLib_LiteNetLibTransport_SendQueue.htm" />
+        <HelpTOCNode Title="Shutdown Method " Url="html/M_MLAPI_Data_Transports_LiteNetLib_LiteNetLibTransport_Shutdown.htm" />
       </HelpTOCNode>
     </HelpTOCNode>
   </HelpTOCNode>
-  <HelpTOCNode Id="2b78a972-4df2-4dfa-912e-c250ded047ab" Title="MLAPI.MonoBehaviours.Core" Url="html/N_MLAPI_MonoBehaviours_Core.htm">
-    <HelpTOCNode Id="a7378dfd-d06a-437d-9a68-c834c90ec934" Title="NetworkedBehaviour Class" Url="html/T_MLAPI_MonoBehaviours_Core_NetworkedBehaviour.htm">
+  <HelpTOCNode Id="bef9430b-90b8-479a-91af-3127ac0b092a" Title="MLAPI.Data.Transports.UNET" Url="html/N_MLAPI_Data_Transports_UNET.htm">
+    <HelpTOCNode Id="ce6c061e-bee1-4c46-a2e6-6cef2496b6c2" Title="NetId Structure" Url="html/T_MLAPI_Data_Transports_UNET_NetId.htm">
+      <HelpTOCNode Id="261ab002-767a-4fa3-ae4f-d7d25524e6e0" Title="NetId Constructor " Url="html/Overload_MLAPI_Data_Transports_UNET_NetId__ctor.htm">
+        <HelpTOCNode Title="NetId Constructor (UInt32)" Url="html/M_MLAPI_Data_Transports_UNET_NetId__ctor_1.htm" />
+        <HelpTOCNode Title="NetId Constructor (Byte, UInt16, Boolean, Boolean)" Url="html/M_MLAPI_Data_Transports_UNET_NetId__ctor.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="0116bf86-3eea-4b4b-8191-119a80fd5b1b" Title="NetId Methods" Url="html/Methods_T_MLAPI_Data_Transports_UNET_NetId.htm">
+        <HelpTOCNode Title="Equals Method " Url="html/M_MLAPI_Data_Transports_UNET_NetId_Equals.htm" />
+        <HelpTOCNode Title="GetClientId Method " Url="html/M_MLAPI_Data_Transports_UNET_NetId_GetClientId.htm" />
+        <HelpTOCNode Title="GetHashCode Method " Url="html/M_MLAPI_Data_Transports_UNET_NetId_GetHashCode.htm" />
+        <HelpTOCNode Title="IsHost Method " Url="html/M_MLAPI_Data_Transports_UNET_NetId_IsHost.htm" />
+        <HelpTOCNode Title="IsInvalid Method " Url="html/M_MLAPI_Data_Transports_UNET_NetId_IsInvalid.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="d260b90f-ac20-489c-b3e6-e06b5b5fec49" Title="NetId Operators" Url="html/Operators_T_MLAPI_Data_Transports_UNET_NetId.htm">
+        <HelpTOCNode Title="Equality Operator " Url="html/M_MLAPI_Data_Transports_UNET_NetId_op_Equality.htm" />
+        <HelpTOCNode Title="Inequality Operator " Url="html/M_MLAPI_Data_Transports_UNET_NetId_op_Inequality.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="0ff11d21-5221-4618-9e0f-c54faec950fa" Title="NetId Fields" Url="html/Fields_T_MLAPI_Data_Transports_UNET_NetId.htm">
+        <HelpTOCNode Title="ConnectionId Field" Url="html/F_MLAPI_Data_Transports_UNET_NetId_ConnectionId.htm" />
+        <HelpTOCNode Title="HostId Field" Url="html/F_MLAPI_Data_Transports_UNET_NetId_HostId.htm" />
+        <HelpTOCNode Title="Meta Field" Url="html/F_MLAPI_Data_Transports_UNET_NetId_Meta.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Id="9ae1c326-9e74-4a3f-8ee3-4622357b64dd" Title="TransportHost Class" Url="html/T_MLAPI_Data_Transports_UNET_TransportHost.htm">
+      <HelpTOCNode Title="TransportHost Constructor " Url="html/M_MLAPI_Data_Transports_UNET_TransportHost__ctor.htm" />
+      <HelpTOCNode Title="TransportHost Methods" Url="html/Methods_T_MLAPI_Data_Transports_UNET_TransportHost.htm" />
+      <HelpTOCNode Id="94c4abdd-4f6b-4a6a-91fb-90e16f796ff7" Title="TransportHost Fields" Url="html/Fields_T_MLAPI_Data_Transports_UNET_TransportHost.htm">
+        <HelpTOCNode Title="Name Field" Url="html/F_MLAPI_Data_Transports_UNET_TransportHost_Name.htm" />
+        <HelpTOCNode Title="Port Field" Url="html/F_MLAPI_Data_Transports_UNET_TransportHost_Port.htm" />
+        <HelpTOCNode Title="Websockets Field" Url="html/F_MLAPI_Data_Transports_UNET_TransportHost_Websockets.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Id="5f409add-4b3c-4643-a02f-e9270dc7b83c" Title="UnetTransport Class" Url="html/T_MLAPI_Data_Transports_UNET_UnetTransport.htm">
+      <HelpTOCNode Title="UnetTransport Constructor " Url="html/M_MLAPI_Data_Transports_UNET_UnetTransport__ctor.htm" />
+      <HelpTOCNode Id="34025fd9-80eb-48f2-abed-0f0d86031c65" Title="UnetTransport Properties" Url="html/Properties_T_MLAPI_Data_Transports_UNET_UnetTransport.htm">
+        <HelpTOCNode Title="HostDummyId Property " Url="html/P_MLAPI_Data_Transports_UNET_UnetTransport_HostDummyId.htm" />
+        <HelpTOCNode Title="InternalChannel Property " Url="html/P_MLAPI_Data_Transports_UNET_UnetTransport_InternalChannel.htm" />
+        <HelpTOCNode Title="InvalidDummyId Property " Url="html/P_MLAPI_Data_Transports_UNET_UnetTransport_InvalidDummyId.htm" />
+        <HelpTOCNode Title="ServerNetId Property " Url="html/P_MLAPI_Data_Transports_UNET_UnetTransport_ServerNetId.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="38ac50f4-23a8-4db0-91ab-b8ad0c5b3bab" Title="UnetTransport Methods" Url="html/Methods_T_MLAPI_Data_Transports_UNET_UnetTransport.htm">
+        <HelpTOCNode Title="AddChannel Method " Url="html/M_MLAPI_Data_Transports_UNET_UnetTransport_AddChannel.htm" />
+        <HelpTOCNode Id="cda88396-8226-4860-91fc-4108497b200c" Title="Connect Method " Url="html/Overload_MLAPI_Data_Transports_UNET_UnetTransport_Connect.htm">
+          <HelpTOCNode Title="Connect Method (String, Int32, Object, Byte)" Url="html/M_MLAPI_Data_Transports_UNET_UnetTransport_Connect_1.htm" />
+          <HelpTOCNode Title="Connect Method (String, Int32, Object, Boolean, Byte)" Url="html/M_MLAPI_Data_Transports_UNET_UnetTransport_Connect.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Title="DisconnectClient Method " Url="html/M_MLAPI_Data_Transports_UNET_UnetTransport_DisconnectClient.htm" />
+        <HelpTOCNode Title="DisconnectFromServer Method " Url="html/M_MLAPI_Data_Transports_UNET_UnetTransport_DisconnectFromServer.htm" />
+        <HelpTOCNode Title="GetCurrentRTT Method " Url="html/M_MLAPI_Data_Transports_UNET_UnetTransport_GetCurrentRTT.htm" />
+        <HelpTOCNode Title="GetNetworkTimestamp Method " Url="html/M_MLAPI_Data_Transports_UNET_UnetTransport_GetNetworkTimestamp.htm" />
+        <HelpTOCNode Title="GetRemoteDelayTimeMS Method " Url="html/M_MLAPI_Data_Transports_UNET_UnetTransport_GetRemoteDelayTimeMS.htm" />
+        <HelpTOCNode Title="GetSettings Method " Url="html/M_MLAPI_Data_Transports_UNET_UnetTransport_GetSettings.htm" />
+        <HelpTOCNode Title="PollReceive Method " Url="html/M_MLAPI_Data_Transports_UNET_UnetTransport_PollReceive.htm" />
+        <HelpTOCNode Title="QueueMessageForSending Method " Url="html/M_MLAPI_Data_Transports_UNET_UnetTransport_QueueMessageForSending.htm" />
+        <HelpTOCNode Title="RegisterServerListenSocket Method " Url="html/M_MLAPI_Data_Transports_UNET_UnetTransport_RegisterServerListenSocket.htm" />
+        <HelpTOCNode Title="SendQueue Method " Url="html/M_MLAPI_Data_Transports_UNET_UnetTransport_SendQueue.htm" />
+        <HelpTOCNode Title="Shutdown Method " Url="html/M_MLAPI_Data_Transports_UNET_UnetTransport_Shutdown.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="622c756c-39a5-4cd3-9fec-c332f83e7cf6" Title="UnetTransport Fields" Url="html/Fields_T_MLAPI_Data_Transports_UNET_UnetTransport.htm">
+        <HelpTOCNode Title="serverConnectionId Field" Url="html/F_MLAPI_Data_Transports_UNET_UnetTransport_serverConnectionId.htm" />
+        <HelpTOCNode Title="serverHostId Field" Url="html/F_MLAPI_Data_Transports_UNET_UnetTransport_serverHostId.htm" />
+        <HelpTOCNode Title="ServerTransports Field" Url="html/F_MLAPI_Data_Transports_UNET_UnetTransport_ServerTransports.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+  </HelpTOCNode>
+  <HelpTOCNode Id="1be2363f-0a37-4ff3-b6d3-e5417863f4c6" Title="MLAPI.MonoBehaviours.Core" Url="html/N_MLAPI_MonoBehaviours_Core.htm">
+    <HelpTOCNode Id="215dd3fe-8f88-4734-b382-873112fef707" Title="NetworkedBehaviour Class" Url="html/T_MLAPI_MonoBehaviours_Core_NetworkedBehaviour.htm">
       <HelpTOCNode Title="NetworkedBehaviour Constructor " Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour__ctor.htm" />
-      <HelpTOCNode Id="fec3295c-94e5-44f6-973a-5529ec7c96c2" Title="NetworkedBehaviour Properties" Url="html/Properties_T_MLAPI_MonoBehaviours_Core_NetworkedBehaviour.htm">
+      <HelpTOCNode Id="6b357344-ce3c-47bb-a8f6-6b40bf21096c" Title="NetworkedBehaviour Properties" Url="html/Properties_T_MLAPI_MonoBehaviours_Core_NetworkedBehaviour.htm">
         <HelpTOCNode Title="isClient Property " Url="html/P_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_isClient.htm" />
         <HelpTOCNode Title="isHost Property " Url="html/P_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_isHost.htm" />
         <HelpTOCNode Title="isLocalPlayer Property " Url="html/P_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_isLocalPlayer.htm" />
@@ -151,72 +254,94 @@
         <HelpTOCNode Title="networkId Property " Url="html/P_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_networkId.htm" />
         <HelpTOCNode Title="ownerClientId Property " Url="html/P_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_ownerClientId.htm" />
       </HelpTOCNode>
-      <HelpTOCNode Id="fc2206d6-a21a-4e90-b34c-d9302252c4e5" Title="NetworkedBehaviour Methods" Url="html/Methods_T_MLAPI_MonoBehaviours_Core_NetworkedBehaviour.htm">
+      <HelpTOCNode Id="0b4633b4-1d2a-47fb-b222-b42bfc289316" Title="NetworkedBehaviour Methods" Url="html/Methods_T_MLAPI_MonoBehaviours_Core_NetworkedBehaviour.htm">
         <HelpTOCNode Title="DeregisterMessageHandler Method " Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_DeregisterMessageHandler.htm" />
+        <HelpTOCNode Title="DeserializeMessage(T) Method " Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_DeserializeMessage__1.htm" />
         <HelpTOCNode Title="GetNetworkedObject Method " Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_GetNetworkedObject.htm" />
         <HelpTOCNode Title="InvokeClientRpc Method " Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_InvokeClientRpc.htm" />
         <HelpTOCNode Title="InvokeCommand Method " Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_InvokeCommand.htm" />
         <HelpTOCNode Title="InvokeTargetRpc Method " Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_InvokeTargetRpc.htm" />
         <HelpTOCNode Title="NetworkStart Method " Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_NetworkStart.htm" />
+        <HelpTOCNode Title="OnCheckObserver Method " Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_OnCheckObserver.htm" />
         <HelpTOCNode Title="OnGainedOwnership Method " Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_OnGainedOwnership.htm" />
         <HelpTOCNode Title="OnLostOwnership Method " Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_OnLostOwnership.htm" />
-        <HelpTOCNode Title="RegisterMessageHandler Method " Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_RegisterMessageHandler.htm" />
-        <HelpTOCNode Id="75420319-ea50-4d92-9480-00f81fc95132" Title="SendToClient Method " Url="html/Overload_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToClient.htm">
-          <HelpTOCNode Title="SendToClient(T) Method (Int32, String, String, T)" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToClient__1.htm" />
-          <HelpTOCNode Title="SendToClient Method (UInt32, String, String, Byte[])" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToClient.htm" />
+        <HelpTOCNode Title="OnRebuildObservers Method " Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_OnRebuildObservers.htm" />
+        <HelpTOCNode Title="OnSetLocalVisibility Method " Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_OnSetLocalVisibility.htm" />
+        <HelpTOCNode Title="RebuildObservers Method " Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_RebuildObservers.htm" />
+        <HelpTOCNode Id="1729c34e-a7be-47f4-a210-5fb95af5b1c3" Title="RegisterMessageHandler Method " Url="html/Overload_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_RegisterMessageHandler.htm">
+          <HelpTOCNode Title="RegisterMessageHandler Method (String, Action(UInt32, BitReader))" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_RegisterMessageHandler.htm" />
+          <HelpTOCNode Title="RegisterMessageHandler Method (String, Action(UInt32, Byte[]))" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_RegisterMessageHandler_1.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="1a760020-66e7-4ffe-9350-401d26ccb05e" Title="SendToClients Method " Url="html/Overload_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToClients.htm">
-          <HelpTOCNode Title="SendToClients Method (String, String, Byte[])" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToClients_1.htm" />
-          <HelpTOCNode Title="SendToClients(T) Method (String, String, T)" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToClients__1_2.htm" />
-          <HelpTOCNode Title="SendToClients(T) Method (List(Int32), String, String, T)" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToClients__1.htm" />
-          <HelpTOCNode Title="SendToClients Method (List(UInt32), String, String, Byte[])" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToClients.htm" />
-          <HelpTOCNode Title="SendToClients(T) Method (Int32[], String, String, T)" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToClients__1_1.htm" />
-          <HelpTOCNode Title="SendToClients Method (UInt32[], String, String, Byte[])" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToClients_2.htm" />
+        <HelpTOCNode Id="2b73cd46-304f-4a78-ba24-9653f5dcbaa9" Title="SendToClient Method " Url="html/Overload_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToClient.htm">
+          <HelpTOCNode Title="SendToClient(T) Method (Int32, String, String, T, Boolean)" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToClient__1.htm" />
+          <HelpTOCNode Title="SendToClient Method (UInt32, String, String, BitWriter, Boolean)" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToClient.htm" />
+          <HelpTOCNode Title="SendToClient Method (UInt32, String, String, Byte[], Boolean)" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToClient_1.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="7954a49a-f2ce-4ab1-9286-564a22825290" Title="SendToClientsTarget Method " Url="html/Overload_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToClientsTarget.htm">
-          <HelpTOCNode Title="SendToClientsTarget Method (String, String, Byte[])" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToClientsTarget_1.htm" />
-          <HelpTOCNode Title="SendToClientsTarget(T) Method (String, String, T)" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToClientsTarget__1_2.htm" />
-          <HelpTOCNode Title="SendToClientsTarget Method (List(UInt32), String, String, Byte[])" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToClientsTarget.htm" />
-          <HelpTOCNode Title="SendToClientsTarget(T) Method (List(UInt32), String, String, T)" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToClientsTarget__1.htm" />
-          <HelpTOCNode Title="SendToClientsTarget(T) Method (Int32[], String, String, T)" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToClientsTarget__1_1.htm" />
-          <HelpTOCNode Title="SendToClientsTarget Method (UInt32[], String, String, Byte[])" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToClientsTarget_2.htm" />
+        <HelpTOCNode Id="2e7d77f4-9634-4f69-9394-070ffaef5c14" Title="SendToClients Method " Url="html/Overload_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToClients.htm">
+          <HelpTOCNode Title="SendToClients Method (String, String, BitWriter, Boolean)" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToClients_2.htm" />
+          <HelpTOCNode Title="SendToClients Method (String, String, Byte[], Boolean)" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToClients_3.htm" />
+          <HelpTOCNode Title="SendToClients(T) Method (String, String, T, Boolean)" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToClients__1_2.htm" />
+          <HelpTOCNode Title="SendToClients(T) Method (List(Int32), String, String, T, Boolean)" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToClients__1.htm" />
+          <HelpTOCNode Title="SendToClients Method (List(UInt32), String, String, BitWriter, Boolean)" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToClients.htm" />
+          <HelpTOCNode Title="SendToClients Method (List(UInt32), String, String, Byte[], Boolean)" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToClients_1.htm" />
+          <HelpTOCNode Title="SendToClients(T) Method (Int32[], String, String, T, Boolean)" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToClients__1_1.htm" />
+          <HelpTOCNode Title="SendToClients Method (UInt32[], String, String, BitWriter, Boolean)" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToClients_4.htm" />
+          <HelpTOCNode Title="SendToClients Method (UInt32[], String, String, Byte[], Boolean)" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToClients_5.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="f02d3c1a-622f-41d9-8ff9-df63e36f3503" Title="SendToClientTarget Method " Url="html/Overload_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToClientTarget.htm">
-          <HelpTOCNode Title="SendToClientTarget(T) Method (Int32, String, String, T)" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToClientTarget__1.htm" />
-          <HelpTOCNode Title="SendToClientTarget Method (UInt32, String, String, Byte[])" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToClientTarget.htm" />
+        <HelpTOCNode Id="b587cfac-bb6f-427d-97e3-c9a85d79e255" Title="SendToClientsTarget Method " Url="html/Overload_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToClientsTarget.htm">
+          <HelpTOCNode Title="SendToClientsTarget Method (String, String, BitWriter, Boolean)" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToClientsTarget_2.htm" />
+          <HelpTOCNode Title="SendToClientsTarget Method (String, String, Byte[], Boolean)" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToClientsTarget_3.htm" />
+          <HelpTOCNode Title="SendToClientsTarget(T) Method (String, String, T, Boolean)" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToClientsTarget__1_2.htm" />
+          <HelpTOCNode Title="SendToClientsTarget Method (List(UInt32), String, String, BitWriter, Boolean)" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToClientsTarget.htm" />
+          <HelpTOCNode Title="SendToClientsTarget Method (List(UInt32), String, String, Byte[], Boolean)" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToClientsTarget_1.htm" />
+          <HelpTOCNode Title="SendToClientsTarget(T) Method (List(UInt32), String, String, T, Boolean)" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToClientsTarget__1.htm" />
+          <HelpTOCNode Title="SendToClientsTarget(T) Method (Int32[], String, String, T, Boolean)" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToClientsTarget__1_1.htm" />
+          <HelpTOCNode Title="SendToClientsTarget Method (UInt32[], String, String, BitWriter, Boolean)" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToClientsTarget_4.htm" />
+          <HelpTOCNode Title="SendToClientsTarget Method (UInt32[], String, String, Byte[], Boolean)" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToClientsTarget_5.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="d5649bd9-a344-4e6b-a1bb-c9ee2e080fde" Title="SendToLocalClient Method " Url="html/Overload_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToLocalClient.htm">
-          <HelpTOCNode Title="SendToLocalClient Method (String, String, Byte[])" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToLocalClient.htm" />
-          <HelpTOCNode Title="SendToLocalClient(T) Method (String, String, T)" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToLocalClient__1.htm" />
+        <HelpTOCNode Id="f7ccd29b-913f-4aaa-a32e-738ccf263c8d" Title="SendToClientTarget Method " Url="html/Overload_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToClientTarget.htm">
+          <HelpTOCNode Title="SendToClientTarget(T) Method (Int32, String, String, T, Boolean)" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToClientTarget__1.htm" />
+          <HelpTOCNode Title="SendToClientTarget Method (UInt32, String, String, BitWriter, Boolean)" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToClientTarget.htm" />
+          <HelpTOCNode Title="SendToClientTarget Method (UInt32, String, String, Byte[], Boolean)" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToClientTarget_1.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="6284da67-5a20-403a-937e-b6404aaa3259" Title="SendToLocalClientTarget Method " Url="html/Overload_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToLocalClientTarget.htm">
-          <HelpTOCNode Title="SendToLocalClientTarget Method (String, String, Byte[])" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToLocalClientTarget.htm" />
+        <HelpTOCNode Id="e4c9fbe5-e705-4c80-a277-462fdc5e5541" Title="SendToLocalClient Method " Url="html/Overload_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToLocalClient.htm">
+          <HelpTOCNode Title="SendToLocalClient Method (String, String, BitWriter, Boolean)" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToLocalClient.htm" />
+          <HelpTOCNode Title="SendToLocalClient Method (String, String, Byte[], Boolean)" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToLocalClient_1.htm" />
+          <HelpTOCNode Title="SendToLocalClient(T) Method (String, String, T, Boolean)" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToLocalClient__1.htm" />
+        </HelpTOCNode>
+        <HelpTOCNode Id="fe2b21e5-3f1f-4ac6-94ca-9f1d1376d6d1" Title="SendToLocalClientTarget Method " Url="html/Overload_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToLocalClientTarget.htm">
+          <HelpTOCNode Title="SendToLocalClientTarget Method (String, String, BitWriter)" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToLocalClientTarget.htm" />
+          <HelpTOCNode Title="SendToLocalClientTarget Method (String, String, Byte[])" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToLocalClientTarget_1.htm" />
           <HelpTOCNode Title="SendToLocalClientTarget(T) Method (String, String, T)" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToLocalClientTarget__1.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="d57cf1be-d549-488b-9690-3052ea9da814" Title="SendToNonLocalClients Method " Url="html/Overload_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToNonLocalClients.htm">
-          <HelpTOCNode Title="SendToNonLocalClients Method (String, String, Byte[])" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToNonLocalClients.htm" />
-          <HelpTOCNode Title="SendToNonLocalClients(T) Method (String, String, T)" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToNonLocalClients__1.htm" />
+        <HelpTOCNode Id="0b97bb06-9e65-4b83-94c9-9ec103878940" Title="SendToNonLocalClients Method " Url="html/Overload_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToNonLocalClients.htm">
+          <HelpTOCNode Title="SendToNonLocalClients Method (String, String, BitWriter, Boolean)" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToNonLocalClients.htm" />
+          <HelpTOCNode Title="SendToNonLocalClients Method (String, String, Byte[], Boolean)" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToNonLocalClients_1.htm" />
+          <HelpTOCNode Title="SendToNonLocalClients(T) Method (String, String, T, Boolean)" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToNonLocalClients__1.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="2cdf6dbb-1912-40e1-80f3-daa985c0d5dd" Title="SendToNonLocalClientsTarget Method " Url="html/Overload_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToNonLocalClientsTarget.htm">
-          <HelpTOCNode Title="SendToNonLocalClientsTarget Method (String, String, Byte[])" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToNonLocalClientsTarget.htm" />
-          <HelpTOCNode Title="SendToNonLocalClientsTarget(T) Method (String, String, T)" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToNonLocalClientsTarget__1.htm" />
+        <HelpTOCNode Id="b063fba4-0cf2-4103-a871-02a248397752" Title="SendToNonLocalClientsTarget Method " Url="html/Overload_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToNonLocalClientsTarget.htm">
+          <HelpTOCNode Title="SendToNonLocalClientsTarget Method (String, String, BitWriter, Boolean)" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToNonLocalClientsTarget.htm" />
+          <HelpTOCNode Title="SendToNonLocalClientsTarget Method (String, String, Byte[], Boolean)" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToNonLocalClientsTarget_1.htm" />
+          <HelpTOCNode Title="SendToNonLocalClientsTarget(T) Method (String, String, T, Boolean)" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToNonLocalClientsTarget__1.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="c0ebeea4-d36d-4456-a929-6217eac1ab5a" Title="SendToServer Method " Url="html/Overload_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToServer.htm">
-          <HelpTOCNode Title="SendToServer Method (String, String, Byte[])" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToServer.htm" />
+        <HelpTOCNode Id="e2997f18-e87f-45bf-a0b4-5d2c1c843b5b" Title="SendToServer Method " Url="html/Overload_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToServer.htm">
+          <HelpTOCNode Title="SendToServer Method (String, String, BitWriter)" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToServer.htm" />
+          <HelpTOCNode Title="SendToServer Method (String, String, Byte[])" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToServer_1.htm" />
           <HelpTOCNode Title="SendToServer(T) Method (String, String, T)" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToServer__1.htm" />
         </HelpTOCNode>
-        <HelpTOCNode Id="6e0bf34a-57ea-4d13-a48b-bcb8d4a26ae4" Title="SendToServerTarget Method " Url="html/Overload_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToServerTarget.htm">
-          <HelpTOCNode Title="SendToServerTarget Method (String, String, Byte[])" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToServerTarget.htm" />
+        <HelpTOCNode Id="faaea30e-8b74-4fee-b2cc-dc9c44c7f500" Title="SendToServerTarget Method " Url="html/Overload_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToServerTarget.htm">
+          <HelpTOCNode Title="SendToServerTarget Method (String, String, BitWriter)" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToServerTarget.htm" />
+          <HelpTOCNode Title="SendToServerTarget Method (String, String, Byte[])" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToServerTarget_1.htm" />
           <HelpTOCNode Title="SendToServerTarget(T) Method (String, String, T)" Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SendToServerTarget__1.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="001c1eb0-91b4-4cc9-99ff-5c814b47f852" Title="NetworkedBehaviour Fields" Url="html/Fields_T_MLAPI_MonoBehaviours_Core_NetworkedBehaviour.htm">
+      <HelpTOCNode Id="4cc5af0f-802a-46af-839b-272998ffeabe" Title="NetworkedBehaviour Fields" Url="html/Fields_T_MLAPI_MonoBehaviours_Core_NetworkedBehaviour.htm">
         <HelpTOCNode Title="SyncVarSyncDelay Field" Url="html/F_MLAPI_MonoBehaviours_Core_NetworkedBehaviour_SyncVarSyncDelay.htm" />
       </HelpTOCNode>
     </HelpTOCNode>
-    <HelpTOCNode Id="73ede72c-67cd-4e3a-a92b-f024864716d0" Title="NetworkedObject Class" Url="html/T_MLAPI_MonoBehaviours_Core_NetworkedObject.htm">
+    <HelpTOCNode Id="f6cf7a7c-cffb-418f-ad5c-b92b105ebb51" Title="NetworkedObject Class" Url="html/T_MLAPI_MonoBehaviours_Core_NetworkedObject.htm">
       <HelpTOCNode Title="NetworkedObject Constructor " Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedObject__ctor.htm" />
-      <HelpTOCNode Id="0997cab9-ae18-4db6-9a83-1427f3166dbc" Title="NetworkedObject Properties" Url="html/Properties_T_MLAPI_MonoBehaviours_Core_NetworkedObject.htm">
+      <HelpTOCNode Id="7dd014a9-72e4-4fa3-82a2-cbb5534a7923" Title="NetworkedObject Properties" Url="html/Properties_T_MLAPI_MonoBehaviours_Core_NetworkedObject.htm">
         <HelpTOCNode Title="isLocalPlayer Property " Url="html/P_MLAPI_MonoBehaviours_Core_NetworkedObject_isLocalPlayer.htm" />
         <HelpTOCNode Title="isOwner Property " Url="html/P_MLAPI_MonoBehaviours_Core_NetworkedObject_isOwner.htm" />
         <HelpTOCNode Title="isPlayerObject Property " Url="html/P_MLAPI_MonoBehaviours_Core_NetworkedObject_isPlayerObject.htm" />
@@ -226,19 +351,20 @@
         <HelpTOCNode Title="OwnerClientId Property " Url="html/P_MLAPI_MonoBehaviours_Core_NetworkedObject_OwnerClientId.htm" />
         <HelpTOCNode Title="PoolId Property " Url="html/P_MLAPI_MonoBehaviours_Core_NetworkedObject_PoolId.htm" />
       </HelpTOCNode>
-      <HelpTOCNode Id="9fb4134f-e0a8-409f-90dd-1d2ba32482c5" Title="NetworkedObject Methods" Url="html/Methods_T_MLAPI_MonoBehaviours_Core_NetworkedObject.htm">
+      <HelpTOCNode Id="70b7384d-96b1-45f3-94d8-21f4fca0ab00" Title="NetworkedObject Methods" Url="html/Methods_T_MLAPI_MonoBehaviours_Core_NetworkedObject.htm">
         <HelpTOCNode Title="ChangeOwnership Method " Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedObject_ChangeOwnership.htm" />
         <HelpTOCNode Title="RemoveOwnership Method " Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedObject_RemoveOwnership.htm" />
         <HelpTOCNode Title="Spawn Method " Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedObject_Spawn.htm" />
         <HelpTOCNode Title="SpawnWithOwnership Method " Url="html/M_MLAPI_MonoBehaviours_Core_NetworkedObject_SpawnWithOwnership.htm" />
       </HelpTOCNode>
-      <HelpTOCNode Id="d964f1f0-0a3b-45f1-86fd-b6a3aac155c7" Title="NetworkedObject Fields" Url="html/Fields_T_MLAPI_MonoBehaviours_Core_NetworkedObject.htm">
+      <HelpTOCNode Id="6bf02d98-15e3-4957-92aa-65d3bda053ff" Title="NetworkedObject Fields" Url="html/Fields_T_MLAPI_MonoBehaviours_Core_NetworkedObject.htm">
         <HelpTOCNode Title="NetworkedPrefabName Field" Url="html/F_MLAPI_MonoBehaviours_Core_NetworkedObject_NetworkedPrefabName.htm" />
+        <HelpTOCNode Title="observers Field" Url="html/F_MLAPI_MonoBehaviours_Core_NetworkedObject_observers.htm" />
       </HelpTOCNode>
     </HelpTOCNode>
-    <HelpTOCNode Id="8fe2f9db-3fa9-4c96-aaad-923c33a0b219" Title="NetworkingManager Class" Url="html/T_MLAPI_MonoBehaviours_Core_NetworkingManager.htm">
+    <HelpTOCNode Id="be5a547c-de43-42ae-b094-fe458852ef6c" Title="NetworkingManager Class" Url="html/T_MLAPI_MonoBehaviours_Core_NetworkingManager.htm">
       <HelpTOCNode Title="NetworkingManager Constructor " Url="html/M_MLAPI_MonoBehaviours_Core_NetworkingManager__ctor.htm" />
-      <HelpTOCNode Id="3a114f27-0ddd-49d3-9289-8e38cbf5cc70" Title="NetworkingManager Properties" Url="html/Properties_T_MLAPI_MonoBehaviours_Core_NetworkingManager.htm">
+      <HelpTOCNode Id="129d9a7d-b3d8-4947-acab-d65182b2a978" Title="NetworkingManager Properties" Url="html/Properties_T_MLAPI_MonoBehaviours_Core_NetworkingManager.htm">
         <HelpTOCNode Title="ConnectedClients Property " Url="html/P_MLAPI_MonoBehaviours_Core_NetworkingManager_ConnectedClients.htm" />
         <HelpTOCNode Title="isClient Property " Url="html/P_MLAPI_MonoBehaviours_Core_NetworkingManager_isClient.htm" />
         <HelpTOCNode Title="IsClientConnected Property " Url="html/P_MLAPI_MonoBehaviours_Core_NetworkingManager_IsClientConnected.htm" />
@@ -248,16 +374,15 @@
         <HelpTOCNode Title="NetworkTime Property " Url="html/P_MLAPI_MonoBehaviours_Core_NetworkingManager_NetworkTime.htm" />
         <HelpTOCNode Title="singleton Property " Url="html/P_MLAPI_MonoBehaviours_Core_NetworkingManager_singleton.htm" />
       </HelpTOCNode>
-      <HelpTOCNode Id="75b0a333-495d-4325-919d-d1cae33d24a2" Title="NetworkingManager Methods" Url="html/Methods_T_MLAPI_MonoBehaviours_Core_NetworkingManager.htm">
+      <HelpTOCNode Id="f01fe96d-c43b-42ce-93c1-19eb11ea2447" Title="NetworkingManager Methods" Url="html/Methods_T_MLAPI_MonoBehaviours_Core_NetworkingManager.htm">
         <HelpTOCNode Title="StartClient Method " Url="html/M_MLAPI_MonoBehaviours_Core_NetworkingManager_StartClient.htm" />
-        <HelpTOCNode Title="StartClientWebsocket Method " Url="html/M_MLAPI_MonoBehaviours_Core_NetworkingManager_StartClientWebsocket.htm" />
         <HelpTOCNode Title="StartHost Method " Url="html/M_MLAPI_MonoBehaviours_Core_NetworkingManager_StartHost.htm" />
         <HelpTOCNode Title="StartServer Method " Url="html/M_MLAPI_MonoBehaviours_Core_NetworkingManager_StartServer.htm" />
         <HelpTOCNode Title="StopClient Method " Url="html/M_MLAPI_MonoBehaviours_Core_NetworkingManager_StopClient.htm" />
         <HelpTOCNode Title="StopHost Method " Url="html/M_MLAPI_MonoBehaviours_Core_NetworkingManager_StopHost.htm" />
         <HelpTOCNode Title="StopServer Method " Url="html/M_MLAPI_MonoBehaviours_Core_NetworkingManager_StopServer.htm" />
       </HelpTOCNode>
-      <HelpTOCNode Id="f7bf3a6e-6b45-47a2-9806-4a0aa7efb179" Title="NetworkingManager Fields" Url="html/Fields_T_MLAPI_MonoBehaviours_Core_NetworkingManager.htm">
+      <HelpTOCNode Id="eb91eef4-1726-4fdb-b3b3-667f19731766" Title="NetworkingManager Fields" Url="html/Fields_T_MLAPI_MonoBehaviours_Core_NetworkingManager.htm">
         <HelpTOCNode Title="ConnectionApprovalCallback Field" Url="html/F_MLAPI_MonoBehaviours_Core_NetworkingManager_ConnectionApprovalCallback.htm" />
         <HelpTOCNode Title="DontDestroy Field" Url="html/F_MLAPI_MonoBehaviours_Core_NetworkingManager_DontDestroy.htm" />
         <HelpTOCNode Title="NetworkConfig Field" Url="html/F_MLAPI_MonoBehaviours_Core_NetworkingManager_NetworkConfig.htm" />
@@ -268,32 +393,33 @@
         <HelpTOCNode Title="RunInBackground Field" Url="html/F_MLAPI_MonoBehaviours_Core_NetworkingManager_RunInBackground.htm" />
       </HelpTOCNode>
     </HelpTOCNode>
-    <HelpTOCNode Id="ce37a000-186b-4c0d-8fdb-a78cf450c85b" Title="TrackedObject Class" Url="html/T_MLAPI_MonoBehaviours_Core_TrackedObject.htm">
+    <HelpTOCNode Id="e4042be7-f0ea-4592-8afb-cc84fa2db3c3" Title="TrackedObject Class" Url="html/T_MLAPI_MonoBehaviours_Core_TrackedObject.htm">
       <HelpTOCNode Title="TrackedObject Constructor " Url="html/M_MLAPI_MonoBehaviours_Core_TrackedObject__ctor.htm" />
-      <HelpTOCNode Id="5f99e0ad-788d-4b2e-ab2a-a46ddf9d408f" Title="TrackedObject Properties" Url="html/Properties_T_MLAPI_MonoBehaviours_Core_TrackedObject.htm">
+      <HelpTOCNode Id="9fbea4c1-cf0e-4d67-b6d8-79144c32fc90" Title="TrackedObject Properties" Url="html/Properties_T_MLAPI_MonoBehaviours_Core_TrackedObject.htm">
         <HelpTOCNode Title="AvgTimeBetweenPointsMs Property " Url="html/P_MLAPI_MonoBehaviours_Core_TrackedObject_AvgTimeBetweenPointsMs.htm" />
         <HelpTOCNode Title="TotalPoints Property " Url="html/P_MLAPI_MonoBehaviours_Core_TrackedObject_TotalPoints.htm" />
+        <HelpTOCNode Title="TotalTimeHistory Property " Url="html/P_MLAPI_MonoBehaviours_Core_TrackedObject_TotalTimeHistory.htm" />
       </HelpTOCNode>
       <HelpTOCNode Title="TrackedObject Methods" Url="html/Methods_T_MLAPI_MonoBehaviours_Core_TrackedObject.htm" />
     </HelpTOCNode>
   </HelpTOCNode>
-  <HelpTOCNode Id="46992f5e-f570-40f4-ba78-3b2fe5e318ff" Title="MLAPI.MonoBehaviours.Prototyping" Url="html/N_MLAPI_MonoBehaviours_Prototyping.htm">
-    <HelpTOCNode Id="608f7234-28e5-41d1-890c-bed7f270c84f" Title="NetworkedAnimator Class" Url="html/T_MLAPI_MonoBehaviours_Prototyping_NetworkedAnimator.htm">
+  <HelpTOCNode Id="79a76854-1c5e-45f2-8f09-162a655d4876" Title="MLAPI.MonoBehaviours.Prototyping" Url="html/N_MLAPI_MonoBehaviours_Prototyping.htm">
+    <HelpTOCNode Id="642e2a06-718c-4eb6-b1ae-545d54c16aae" Title="NetworkedAnimator Class" Url="html/T_MLAPI_MonoBehaviours_Prototyping_NetworkedAnimator.htm">
       <HelpTOCNode Title="NetworkedAnimator Constructor " Url="html/M_MLAPI_MonoBehaviours_Prototyping_NetworkedAnimator__ctor.htm" />
-      <HelpTOCNode Id="dd0f3f94-6dbb-4420-8f1b-76cc15a19890" Title="NetworkedAnimator Properties" Url="html/Properties_T_MLAPI_MonoBehaviours_Prototyping_NetworkedAnimator.htm">
+      <HelpTOCNode Id="5d26725c-b31e-44d0-95b7-bc296436ecf0" Title="NetworkedAnimator Properties" Url="html/Properties_T_MLAPI_MonoBehaviours_Prototyping_NetworkedAnimator.htm">
         <HelpTOCNode Title="animator Property " Url="html/P_MLAPI_MonoBehaviours_Prototyping_NetworkedAnimator_animator.htm" />
       </HelpTOCNode>
-      <HelpTOCNode Id="3823ad08-4fdd-40c2-8e31-6e57bbc78955" Title="NetworkedAnimator Methods" Url="html/Methods_T_MLAPI_MonoBehaviours_Prototyping_NetworkedAnimator.htm">
+      <HelpTOCNode Id="e7120b63-7095-4161-b33c-1dd9dd9d639d" Title="NetworkedAnimator Methods" Url="html/Methods_T_MLAPI_MonoBehaviours_Prototyping_NetworkedAnimator.htm">
         <HelpTOCNode Title="GetParameterAutoSend Method " Url="html/M_MLAPI_MonoBehaviours_Prototyping_NetworkedAnimator_GetParameterAutoSend.htm" />
         <HelpTOCNode Title="NetworkStart Method " Url="html/M_MLAPI_MonoBehaviours_Prototyping_NetworkedAnimator_NetworkStart.htm" />
         <HelpTOCNode Title="ResetParameterOptions Method " Url="html/M_MLAPI_MonoBehaviours_Prototyping_NetworkedAnimator_ResetParameterOptions.htm" />
         <HelpTOCNode Title="SetParameterAutoSend Method " Url="html/M_MLAPI_MonoBehaviours_Prototyping_NetworkedAnimator_SetParameterAutoSend.htm" />
-        <HelpTOCNode Id="eb90a014-3cdd-47c4-ab18-e8fac9ee1690" Title="SetTrigger Method " Url="html/Overload_MLAPI_MonoBehaviours_Prototyping_NetworkedAnimator_SetTrigger.htm">
+        <HelpTOCNode Id="eb875239-1df7-4882-8037-0a600d3c3d54" Title="SetTrigger Method " Url="html/Overload_MLAPI_MonoBehaviours_Prototyping_NetworkedAnimator_SetTrigger.htm">
           <HelpTOCNode Title="SetTrigger Method (Int32)" Url="html/M_MLAPI_MonoBehaviours_Prototyping_NetworkedAnimator_SetTrigger.htm" />
           <HelpTOCNode Title="SetTrigger Method (String)" Url="html/M_MLAPI_MonoBehaviours_Prototyping_NetworkedAnimator_SetTrigger_1.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
-      <HelpTOCNode Id="cb332f52-cfac-423d-9bc5-168ce5aa815a" Title="NetworkedAnimator Fields" Url="html/Fields_T_MLAPI_MonoBehaviours_Prototyping_NetworkedAnimator.htm">
+      <HelpTOCNode Id="a82e2987-53f9-44d1-be88-a798c85ca9eb" Title="NetworkedAnimator Fields" Url="html/Fields_T_MLAPI_MonoBehaviours_Prototyping_NetworkedAnimator.htm">
         <HelpTOCNode Title="EnableProximity Field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedAnimator_EnableProximity.htm" />
         <HelpTOCNode Title="param0 Field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedAnimator_param0.htm" />
         <HelpTOCNode Title="param1 Field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedAnimator_param1.htm" />
@@ -304,13 +430,13 @@
         <HelpTOCNode Title="ProximityRange Field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedAnimator_ProximityRange.htm" />
       </HelpTOCNode>
     </HelpTOCNode>
-    <HelpTOCNode Id="4565e34b-5397-4e2a-8c43-13514c26f2da" Title="NetworkedNavMeshAgent Class" Url="html/T_MLAPI_MonoBehaviours_Prototyping_NetworkedNavMeshAgent.htm">
+    <HelpTOCNode Id="2419c2d9-82e8-4455-80fe-d99aed723ab0" Title="NetworkedNavMeshAgent Class" Url="html/T_MLAPI_MonoBehaviours_Prototyping_NetworkedNavMeshAgent.htm">
       <HelpTOCNode Title="NetworkedNavMeshAgent Constructor " Url="html/M_MLAPI_MonoBehaviours_Prototyping_NetworkedNavMeshAgent__ctor.htm" />
       <HelpTOCNode Title="NetworkedNavMeshAgent Properties" Url="html/Properties_T_MLAPI_MonoBehaviours_Prototyping_NetworkedNavMeshAgent.htm" />
-      <HelpTOCNode Id="4e0c30e8-2253-4cf4-b0a9-3301de5b72a2" Title="NetworkedNavMeshAgent Methods" Url="html/Methods_T_MLAPI_MonoBehaviours_Prototyping_NetworkedNavMeshAgent.htm">
+      <HelpTOCNode Id="f8c1dfcf-b4d0-47b9-a1b8-a925300c32a1" Title="NetworkedNavMeshAgent Methods" Url="html/Methods_T_MLAPI_MonoBehaviours_Prototyping_NetworkedNavMeshAgent.htm">
         <HelpTOCNode Title="NetworkStart Method " Url="html/M_MLAPI_MonoBehaviours_Prototyping_NetworkedNavMeshAgent_NetworkStart.htm" />
       </HelpTOCNode>
-      <HelpTOCNode Id="5ea3a976-2fd7-43a2-9c04-df365272408f" Title="NetworkedNavMeshAgent Fields" Url="html/Fields_T_MLAPI_MonoBehaviours_Prototyping_NetworkedNavMeshAgent.htm">
+      <HelpTOCNode Id="b36746c8-644b-41c7-948d-15abbe0a6f87" Title="NetworkedNavMeshAgent Fields" Url="html/Fields_T_MLAPI_MonoBehaviours_Prototyping_NetworkedNavMeshAgent.htm">
         <HelpTOCNode Title="CorrectionDelay Field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedNavMeshAgent_CorrectionDelay.htm" />
         <HelpTOCNode Title="DriftCorrectionPercentage Field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedNavMeshAgent_DriftCorrectionPercentage.htm" />
         <HelpTOCNode Title="EnableProximity Field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedNavMeshAgent_EnableProximity.htm" />
@@ -318,13 +444,28 @@
         <HelpTOCNode Title="WarpOnDestinationChange Field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedNavMeshAgent_WarpOnDestinationChange.htm" />
       </HelpTOCNode>
     </HelpTOCNode>
-    <HelpTOCNode Id="9e9d266b-237e-40bb-88bd-8c7a874a7ecf" Title="NetworkedTransform Class" Url="html/T_MLAPI_MonoBehaviours_Prototyping_NetworkedTransform.htm">
+    <HelpTOCNode Id="95f1149d-dd94-4114-8fda-4bf3b5b1bb20" Title="NetworkedProximity Class" Url="html/T_MLAPI_MonoBehaviours_Prototyping_NetworkedProximity.htm">
+      <HelpTOCNode Title="NetworkedProximity Constructor " Url="html/M_MLAPI_MonoBehaviours_Prototyping_NetworkedProximity__ctor.htm" />
+      <HelpTOCNode Title="NetworkedProximity Properties" Url="html/Properties_T_MLAPI_MonoBehaviours_Prototyping_NetworkedProximity.htm" />
+      <HelpTOCNode Id="d433ce38-e250-43fc-8cd2-22bb6f1e282f" Title="NetworkedProximity Methods" Url="html/Methods_T_MLAPI_MonoBehaviours_Prototyping_NetworkedProximity.htm">
+        <HelpTOCNode Title="OnCheckObserver Method " Url="html/M_MLAPI_MonoBehaviours_Prototyping_NetworkedProximity_OnCheckObserver.htm" />
+        <HelpTOCNode Title="OnRebuildObservers Method " Url="html/M_MLAPI_MonoBehaviours_Prototyping_NetworkedProximity_OnRebuildObservers.htm" />
+      </HelpTOCNode>
+      <HelpTOCNode Id="350f5973-f811-4ea2-8b16-32d730eba0d9" Title="NetworkedProximity Fields" Url="html/Fields_T_MLAPI_MonoBehaviours_Prototyping_NetworkedProximity.htm">
+        <HelpTOCNode Title="CheckType Field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedProximity_CheckType.htm" />
+        <HelpTOCNode Title="ForceHidden Field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedProximity_ForceHidden.htm" />
+        <HelpTOCNode Title="Range Field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedProximity_Range.htm" />
+        <HelpTOCNode Title="VisibilityUpdateInterval Field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedProximity_VisibilityUpdateInterval.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
+    <HelpTOCNode Title="NetworkedProximity.CheckMethod Enumeration" Url="html/T_MLAPI_MonoBehaviours_Prototyping_NetworkedProximity_CheckMethod.htm" />
+    <HelpTOCNode Id="f4f8f04c-48b2-4201-aa74-65553cc6e7fa" Title="NetworkedTransform Class" Url="html/T_MLAPI_MonoBehaviours_Prototyping_NetworkedTransform.htm">
       <HelpTOCNode Title="NetworkedTransform Constructor " Url="html/M_MLAPI_MonoBehaviours_Prototyping_NetworkedTransform__ctor.htm" />
       <HelpTOCNode Title="NetworkedTransform Properties" Url="html/Properties_T_MLAPI_MonoBehaviours_Prototyping_NetworkedTransform.htm" />
-      <HelpTOCNode Id="433f25c1-8c0b-41e6-8383-82824025262a" Title="NetworkedTransform Methods" Url="html/Methods_T_MLAPI_MonoBehaviours_Prototyping_NetworkedTransform.htm">
+      <HelpTOCNode Id="e6cdf81d-b704-4799-b873-388c27af6375" Title="NetworkedTransform Methods" Url="html/Methods_T_MLAPI_MonoBehaviours_Prototyping_NetworkedTransform.htm">
         <HelpTOCNode Title="NetworkStart Method " Url="html/M_MLAPI_MonoBehaviours_Prototyping_NetworkedTransform_NetworkStart.htm" />
       </HelpTOCNode>
-      <HelpTOCNode Id="326c641f-8d2f-4342-a125-b6ddc6b5133b" Title="NetworkedTransform Fields" Url="html/Fields_T_MLAPI_MonoBehaviours_Prototyping_NetworkedTransform.htm">
+      <HelpTOCNode Id="ad513c36-4ffb-4440-b955-6d62fac91d5e" Title="NetworkedTransform Fields" Url="html/Fields_T_MLAPI_MonoBehaviours_Prototyping_NetworkedTransform.htm">
         <HelpTOCNode Title="AssumeSyncedSends Field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedTransform_AssumeSyncedSends.htm" />
         <HelpTOCNode Title="EnableProximity Field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedTransform_EnableProximity.htm" />
         <HelpTOCNode Title="InterpolatePosition Field" Url="html/F_MLAPI_MonoBehaviours_Prototyping_NetworkedTransform_InterpolatePosition.htm" />
@@ -337,25 +478,25 @@
       </HelpTOCNode>
     </HelpTOCNode>
   </HelpTOCNode>
-  <HelpTOCNode Id="45906398-d599-44f8-a564-00f14f453f42" Title="MLAPI.NetworkingManagerComponents.Binary" Url="html/N_MLAPI_NetworkingManagerComponents_Binary.htm">
-    <HelpTOCNode Id="d2697f96-631d-4d11-915a-e67e9cac62e9" Title="BinaryHelpers Class" Url="html/T_MLAPI_NetworkingManagerComponents_Binary_BinaryHelpers.htm">
-      <HelpTOCNode Id="e37e74cd-d689-4652-bafc-1f7abd795c57" Title="BinaryHelpers Methods" Url="html/Methods_T_MLAPI_NetworkingManagerComponents_Binary_BinaryHelpers.htm">
-        <HelpTOCNode Id="55dddd48-9049-4788-873c-4e529464e533" Title="SwapEndian Method " Url="html/Overload_MLAPI_NetworkingManagerComponents_Binary_BinaryHelpers_SwapEndian.htm">
+  <HelpTOCNode Id="1a4dd20a-3443-43fb-a9ff-46a1e2c2fbcd" Title="MLAPI.NetworkingManagerComponents.Binary" Url="html/N_MLAPI_NetworkingManagerComponents_Binary.htm">
+    <HelpTOCNode Id="bec41c9f-5097-473f-87aa-05345261f5db" Title="BinaryHelpers Class" Url="html/T_MLAPI_NetworkingManagerComponents_Binary_BinaryHelpers.htm">
+      <HelpTOCNode Id="ef3c09fb-59f5-408d-8411-ca93a9c4862a" Title="BinaryHelpers Methods" Url="html/Methods_T_MLAPI_NetworkingManagerComponents_Binary_BinaryHelpers.htm">
+        <HelpTOCNode Id="ff8b7645-c0b2-4a3a-9c4a-b6c45f15e48f" Title="SwapEndian Method " Url="html/Overload_MLAPI_NetworkingManagerComponents_Binary_BinaryHelpers_SwapEndian.htm">
           <HelpTOCNode Title="SwapEndian Method (UInt32)" Url="html/M_MLAPI_NetworkingManagerComponents_Binary_BinaryHelpers_SwapEndian.htm" />
           <HelpTOCNode Title="SwapEndian Method (UInt64)" Url="html/M_MLAPI_NetworkingManagerComponents_Binary_BinaryHelpers_SwapEndian_1.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
     </HelpTOCNode>
-    <HelpTOCNode Id="039e6ae9-2f10-4683-ba54-c3d5138ea63c" Title="BinarySerializer Class" Url="html/T_MLAPI_NetworkingManagerComponents_Binary_BinarySerializer.htm">
-      <HelpTOCNode Id="990f33f2-70db-4fea-b6cf-6b0ffe3148ae" Title="BinarySerializer Methods" Url="html/Methods_T_MLAPI_NetworkingManagerComponents_Binary_BinarySerializer.htm">
+    <HelpTOCNode Id="d67b0a36-3f4a-4604-9123-e0549522cfb0" Title="BinarySerializer Class" Url="html/T_MLAPI_NetworkingManagerComponents_Binary_BinarySerializer.htm">
+      <HelpTOCNode Id="f49a1c83-549c-4746-af47-4f5d3620e137" Title="BinarySerializer Methods" Url="html/Methods_T_MLAPI_NetworkingManagerComponents_Binary_BinarySerializer.htm">
         <HelpTOCNode Title="ClearCache Method " Url="html/M_MLAPI_NetworkingManagerComponents_Binary_BinarySerializer_ClearCache.htm" />
         <HelpTOCNode Title="Deserialize(T) Method " Url="html/M_MLAPI_NetworkingManagerComponents_Binary_BinarySerializer_Deserialize__1.htm" />
         <HelpTOCNode Title="Serialize(T) Method " Url="html/M_MLAPI_NetworkingManagerComponents_Binary_BinarySerializer_Serialize__1.htm" />
       </HelpTOCNode>
     </HelpTOCNode>
-    <HelpTOCNode Id="2f50c96c-1f99-4875-a1c5-ff7d0ace510a" Title="BitReader Class" Url="html/T_MLAPI_NetworkingManagerComponents_Binary_BitReader.htm">
+    <HelpTOCNode Id="65d8ee73-3171-468b-b4aa-05f3e8527039" Title="BitReader Class" Url="html/T_MLAPI_NetworkingManagerComponents_Binary_BitReader.htm">
       <HelpTOCNode Title="BitReader Constructor " Url="html/M_MLAPI_NetworkingManagerComponents_Binary_BitReader__ctor.htm" />
-      <HelpTOCNode Id="cb8a380d-4dcc-4a68-b078-feb5c23117c6" Title="BitReader Methods" Url="html/Methods_T_MLAPI_NetworkingManagerComponents_Binary_BitReader.htm">
+      <HelpTOCNode Id="56a45f9e-98ab-45ff-9d95-d82850f90e9b" Title="BitReader Methods" Url="html/Methods_T_MLAPI_NetworkingManagerComponents_Binary_BitReader.htm">
         <HelpTOCNode Title="ReadBits Method " Url="html/M_MLAPI_NetworkingManagerComponents_Binary_BitReader_ReadBits.htm" />
         <HelpTOCNode Title="ReadBool Method " Url="html/M_MLAPI_NetworkingManagerComponents_Binary_BitReader_ReadBool.htm" />
         <HelpTOCNode Title="ReadByte Method " Url="html/M_MLAPI_NetworkingManagerComponents_Binary_BitReader_ReadByte.htm" />
@@ -382,11 +523,11 @@
         <HelpTOCNode Title="SkipPadded Method " Url="html/M_MLAPI_NetworkingManagerComponents_Binary_BitReader_SkipPadded.htm" />
       </HelpTOCNode>
     </HelpTOCNode>
-    <HelpTOCNode Id="0566c26b-eb90-417c-b554-e8261f93f387" Title="BitWriter Class" Url="html/T_MLAPI_NetworkingManagerComponents_Binary_BitWriter.htm">
+    <HelpTOCNode Id="11c88ced-e022-40b6-be09-54a7cb4f4675" Title="BitWriter Class" Url="html/T_MLAPI_NetworkingManagerComponents_Binary_BitWriter.htm">
       <HelpTOCNode Title="BitWriter Constructor " Url="html/M_MLAPI_NetworkingManagerComponents_Binary_BitWriter__ctor.htm" />
-      <HelpTOCNode Id="5b1f546c-17e8-417b-895e-393d4f825860" Title="BitWriter Methods" Url="html/Methods_T_MLAPI_NetworkingManagerComponents_Binary_BitWriter.htm">
+      <HelpTOCNode Id="aacf61df-f45a-42b5-bf47-b7c14f815f0e" Title="BitWriter Methods" Url="html/Methods_T_MLAPI_NetworkingManagerComponents_Binary_BitWriter.htm">
         <HelpTOCNode Title="Dispose Method " Url="html/M_MLAPI_NetworkingManagerComponents_Binary_BitWriter_Dispose.htm" />
-        <HelpTOCNode Id="25ae43e5-0e9d-406a-8760-4141e3e23092" Title="Finalize Method " Url="html/Overload_MLAPI_NetworkingManagerComponents_Binary_BitWriter_Finalize.htm">
+        <HelpTOCNode Id="824cae48-7109-4068-856b-92b2cce63035" Title="Finalize Method " Url="html/Overload_MLAPI_NetworkingManagerComponents_Binary_BitWriter_Finalize.htm">
           <HelpTOCNode Title="Finalize Method " Url="html/M_MLAPI_NetworkingManagerComponents_Binary_BitWriter_Finalize.htm" />
           <HelpTOCNode Title="Finalize Method (Byte[])" Url="html/M_MLAPI_NetworkingManagerComponents_Binary_BitWriter_Finalize_1.htm" />
         </HelpTOCNode>
@@ -415,10 +556,11 @@
         <HelpTOCNode Title="WriteULongArray Method " Url="html/M_MLAPI_NetworkingManagerComponents_Binary_BitWriter_WriteULongArray.htm" />
         <HelpTOCNode Title="WriteUShort Method " Url="html/M_MLAPI_NetworkingManagerComponents_Binary_BitWriter_WriteUShort.htm" />
         <HelpTOCNode Title="WriteUShortArray Method " Url="html/M_MLAPI_NetworkingManagerComponents_Binary_BitWriter_WriteUShortArray.htm" />
+        <HelpTOCNode Title="WriteWriter Method " Url="html/M_MLAPI_NetworkingManagerComponents_Binary_BitWriter_WriteWriter.htm" />
       </HelpTOCNode>
     </HelpTOCNode>
-    <HelpTOCNode Id="15deab02-9c2e-4521-849a-96457b913f9a" Title="MessageChunker Class" Url="html/T_MLAPI_NetworkingManagerComponents_Binary_MessageChunker.htm">
-      <HelpTOCNode Id="05a7ad68-a7e4-46f1-8374-d7fc33f9e741" Title="MessageChunker Methods" Url="html/Methods_T_MLAPI_NetworkingManagerComponents_Binary_MessageChunker.htm">
+    <HelpTOCNode Id="b3985002-09c3-440a-b01e-2c3905896635" Title="MessageChunker Class" Url="html/T_MLAPI_NetworkingManagerComponents_Binary_MessageChunker.htm">
+      <HelpTOCNode Id="349a5da3-b6ce-4005-b6ee-6811886afae6" Title="MessageChunker Methods" Url="html/Methods_T_MLAPI_NetworkingManagerComponents_Binary_MessageChunker.htm">
         <HelpTOCNode Title="GetChunkedMessage Method " Url="html/M_MLAPI_NetworkingManagerComponents_Binary_MessageChunker_GetChunkedMessage.htm" />
         <HelpTOCNode Title="GetMessageOrdered Method " Url="html/M_MLAPI_NetworkingManagerComponents_Binary_MessageChunker_GetMessageOrdered.htm" />
         <HelpTOCNode Title="GetMessageUnordered Method " Url="html/M_MLAPI_NetworkingManagerComponents_Binary_MessageChunker_GetMessageUnordered.htm" />
@@ -427,36 +569,43 @@
         <HelpTOCNode Title="IsOrdered Method " Url="html/M_MLAPI_NetworkingManagerComponents_Binary_MessageChunker_IsOrdered.htm" />
       </HelpTOCNode>
     </HelpTOCNode>
+    <HelpTOCNode Id="16a627e6-5718-4742-a9b0-1cc677820798" Title="PrimitiveHasher Class" Url="html/T_MLAPI_NetworkingManagerComponents_Binary_PrimitiveHasher.htm">
+      <HelpTOCNode Id="2206d449-1bce-4825-a17b-ae74ec5758e7" Title="PrimitiveHasher Methods" Url="html/Methods_T_MLAPI_NetworkingManagerComponents_Binary_PrimitiveHasher.htm">
+        <HelpTOCNode Title="GetUIntHash Method " Url="html/M_MLAPI_NetworkingManagerComponents_Binary_PrimitiveHasher_GetUIntHash.htm" />
+        <HelpTOCNode Title="GetULongHash Method " Url="html/M_MLAPI_NetworkingManagerComponents_Binary_PrimitiveHasher_GetULongHash.htm" />
+        <HelpTOCNode Title="GetUShortHash Method " Url="html/M_MLAPI_NetworkingManagerComponents_Binary_PrimitiveHasher_GetUShortHash.htm" />
+      </HelpTOCNode>
+    </HelpTOCNode>
   </HelpTOCNode>
-  <HelpTOCNode Id="49a9bcd4-7110-4aaf-8f6c-d722ff810434" Title="MLAPI.NetworkingManagerComponents.Core" Url="html/N_MLAPI_NetworkingManagerComponents_Core.htm">
-    <HelpTOCNode Id="9dc011d0-59cf-455c-90b8-f13342d8d657" Title="LagCompensationManager Class" Url="html/T_MLAPI_NetworkingManagerComponents_Core_LagCompensationManager.htm">
-      <HelpTOCNode Id="d85f118a-1eed-45c0-95a7-d02bfd3b19ba" Title="LagCompensationManager Properties" Url="html/Properties_T_MLAPI_NetworkingManagerComponents_Core_LagCompensationManager.htm">
+  <HelpTOCNode Id="799ec851-7c21-4f73-bb5c-43870e00f87e" Title="MLAPI.NetworkingManagerComponents.Core" Url="html/N_MLAPI_NetworkingManagerComponents_Core.htm">
+    <HelpTOCNode Id="9eb89a70-2a87-441c-aef9-a2d9234a3754" Title="LagCompensationManager Class" Url="html/T_MLAPI_NetworkingManagerComponents_Core_LagCompensationManager.htm">
+      <HelpTOCNode Id="013cac6b-fee3-4325-8716-7c142a2ca20f" Title="LagCompensationManager Properties" Url="html/Properties_T_MLAPI_NetworkingManagerComponents_Core_LagCompensationManager.htm">
         <HelpTOCNode Title="SimulationObjects Property " Url="html/P_MLAPI_NetworkingManagerComponents_Core_LagCompensationManager_SimulationObjects.htm" />
       </HelpTOCNode>
-      <HelpTOCNode Id="faab6a75-3bea-4718-b6a3-795962bd5764" Title="LagCompensationManager Methods" Url="html/Methods_T_MLAPI_NetworkingManagerComponents_Core_LagCompensationManager.htm">
-        <HelpTOCNode Id="045d4910-f505-4653-9ffa-b7e13c559091" Title="Simulate Method " Url="html/Overload_MLAPI_NetworkingManagerComponents_Core_LagCompensationManager_Simulate.htm">
+      <HelpTOCNode Id="4cadf35e-7caf-4c2d-96cb-ce92ec61d25c" Title="LagCompensationManager Methods" Url="html/Methods_T_MLAPI_NetworkingManagerComponents_Core_LagCompensationManager.htm">
+        <HelpTOCNode Id="da49f95a-f7f3-4752-8eb5-644683cb31bc" Title="Simulate Method " Url="html/Overload_MLAPI_NetworkingManagerComponents_Core_LagCompensationManager_Simulate.htm">
           <HelpTOCNode Title="Simulate Method (Single, Action)" Url="html/M_MLAPI_NetworkingManagerComponents_Core_LagCompensationManager_Simulate.htm" />
           <HelpTOCNode Title="Simulate Method (UInt32, Action)" Url="html/M_MLAPI_NetworkingManagerComponents_Core_LagCompensationManager_Simulate_1.htm" />
         </HelpTOCNode>
       </HelpTOCNode>
     </HelpTOCNode>
-    <HelpTOCNode Id="3d56ee61-c383-43fe-b03b-bb53c6965137" Title="NetworkPoolManager Class" Url="html/T_MLAPI_NetworkingManagerComponents_Core_NetworkPoolManager.htm">
-      <HelpTOCNode Id="25dda867-685d-49b1-9913-912381bcb9f2" Title="NetworkPoolManager Methods" Url="html/Methods_T_MLAPI_NetworkingManagerComponents_Core_NetworkPoolManager.htm">
+    <HelpTOCNode Id="8a8050ec-bfdc-4591-bb11-37c702a92bbb" Title="NetworkPoolManager Class" Url="html/T_MLAPI_NetworkingManagerComponents_Core_NetworkPoolManager.htm">
+      <HelpTOCNode Id="2e39d46f-e253-4813-af6d-dca6f1e1e993" Title="NetworkPoolManager Methods" Url="html/Methods_T_MLAPI_NetworkingManagerComponents_Core_NetworkPoolManager.htm">
         <HelpTOCNode Title="CreatePool Method " Url="html/M_MLAPI_NetworkingManagerComponents_Core_NetworkPoolManager_CreatePool.htm" />
         <HelpTOCNode Title="DestroyPool Method " Url="html/M_MLAPI_NetworkingManagerComponents_Core_NetworkPoolManager_DestroyPool.htm" />
         <HelpTOCNode Title="DestroyPoolObject Method " Url="html/M_MLAPI_NetworkingManagerComponents_Core_NetworkPoolManager_DestroyPoolObject.htm" />
         <HelpTOCNode Title="SpawnPoolObject Method " Url="html/M_MLAPI_NetworkingManagerComponents_Core_NetworkPoolManager_SpawnPoolObject.htm" />
       </HelpTOCNode>
     </HelpTOCNode>
-    <HelpTOCNode Id="8a99b52c-9fcf-402a-a878-25cde910f2ce" Title="NetworkSceneManager Class" Url="html/T_MLAPI_NetworkingManagerComponents_Core_NetworkSceneManager.htm">
-      <HelpTOCNode Id="69a13892-bd40-409a-97f7-b360afe01a07" Title="NetworkSceneManager Methods" Url="html/Methods_T_MLAPI_NetworkingManagerComponents_Core_NetworkSceneManager.htm">
+    <HelpTOCNode Id="9332736b-26d9-4e00-b4f6-bc94b3762608" Title="NetworkSceneManager Class" Url="html/T_MLAPI_NetworkingManagerComponents_Core_NetworkSceneManager.htm">
+      <HelpTOCNode Id="39a4d0f3-1491-4106-88c3-d57ea892ad8c" Title="NetworkSceneManager Methods" Url="html/Methods_T_MLAPI_NetworkingManagerComponents_Core_NetworkSceneManager.htm">
         <HelpTOCNode Title="SwitchScene Method " Url="html/M_MLAPI_NetworkingManagerComponents_Core_NetworkSceneManager_SwitchScene.htm" />
       </HelpTOCNode>
     </HelpTOCNode>
   </HelpTOCNode>
-  <HelpTOCNode Id="9b2c257a-d866-4660-a03b-8a83fe4eae51" Title="MLAPI.NetworkingManagerComponents.Cryptography" Url="html/N_MLAPI_NetworkingManagerComponents_Cryptography.htm">
-    <HelpTOCNode Id="e985be53-c814-49d3-a546-73147883fe92" Title="CryptographyHelper Class" Url="html/T_MLAPI_NetworkingManagerComponents_Cryptography_CryptographyHelper.htm">
-      <HelpTOCNode Id="77035f4a-9681-4dd4-bf62-2731266f105c" Title="CryptographyHelper Methods" Url="html/Methods_T_MLAPI_NetworkingManagerComponents_Cryptography_CryptographyHelper.htm">
+  <HelpTOCNode Id="1cae61a2-5993-4087-9d41-f5a9b7bf7107" Title="MLAPI.NetworkingManagerComponents.Cryptography" Url="html/N_MLAPI_NetworkingManagerComponents_Cryptography.htm">
+    <HelpTOCNode Id="77752f01-f45a-48f6-9687-23ca2fb2f4c7" Title="CryptographyHelper Class" Url="html/T_MLAPI_NetworkingManagerComponents_Cryptography_CryptographyHelper.htm">
+      <HelpTOCNode Id="621f5291-92a4-4f34-ae3f-daeba63f7be6" Title="CryptographyHelper Methods" Url="html/Methods_T_MLAPI_NetworkingManagerComponents_Cryptography_CryptographyHelper.htm">
         <HelpTOCNode Title="Decrypt Method " Url="html/M_MLAPI_NetworkingManagerComponents_Cryptography_CryptographyHelper_Decrypt.htm" />
         <HelpTOCNode Title="Encrypt Method " Url="html/M_MLAPI_NetworkingManagerComponents_Cryptography_CryptographyHelper_Encrypt.htm" />
       </HelpTOCNode>
