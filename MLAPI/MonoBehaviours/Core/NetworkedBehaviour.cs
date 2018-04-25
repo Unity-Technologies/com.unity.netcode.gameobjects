@@ -454,9 +454,8 @@ namespace MLAPI.MonoBehaviours.Core
         {
             if (!syncVarInit)
                 SyncVarInit();
-            if (SyncVarSyncDelay > 0 && NetworkingManager.singleton.NetworkTime - lastSyncTime >= SyncVarSyncDelay)
+            if (SyncVarSyncDelay > 0 && NetworkingManager.singleton.NetworkTime - lastSyncTime >= SyncVarSyncDelay && SetDirtyness())
             {
-                SetDirtyness();
                 byte nonTargetDirtyCount = 0;
                 byte totalDirtyCount = 0;
                 byte dirtyTargets = 0;
@@ -568,17 +567,23 @@ namespace MLAPI.MonoBehaviours.Core
             }
         }
 
-        private void SetDirtyness()
+        private bool SetDirtyness()
         {
             if (!isServer)
-                return;
+                return false;
+
+            bool dirty = false;
             for (int i = 0; i < syncedVarFields.Count; i++)
             {
                 if (!syncedVarFields[i].FieldInfo.GetValue(this).Equals(syncedVarFields[i].FieldValue))
+                {
                     syncedVarFields[i].Dirty = true; //This fields value is out of sync!
+                    dirty = true;
+                }
                 else
                     syncedVarFields[i].Dirty = false; //Up to date;
             }
+            return dirty;
         }
         #endregion
 
