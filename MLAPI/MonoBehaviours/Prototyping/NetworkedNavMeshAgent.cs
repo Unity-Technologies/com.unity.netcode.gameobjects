@@ -1,5 +1,6 @@
 ﻿using MLAPI.Data;
 using MLAPI.MonoBehaviours.Core;
+using MLAPI.NetworkingManagerComponents.Binary;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
@@ -134,23 +135,24 @@ namespace MLAPI.MonoBehaviours.Prototyping
             }
         }
 
-        private void OnNavMeshStateUpdate(uint clientId, byte[] data)
+        private void OnNavMeshStateUpdate(uint clientId, BitReader reader)
         {
+            byte[] data = reader.ReadByteArray();
             using (MemoryStream stream = new MemoryStream(data))
             {
-                using (BinaryReader reader = new BinaryReader(stream))
+                using (BinaryReader bReader = new BinaryReader(stream))
                 {
-                    float xDestination = reader.ReadSingle();
-                    float yDestination = reader.ReadSingle();
-                    float zDestination = reader.ReadSingle();
+                    float xDestination = bReader.ReadSingle();
+                    float yDestination = bReader.ReadSingle();
+                    float zDestination = bReader.ReadSingle();
 
-                    float xVel = reader.ReadSingle();
-                    float yVel = reader.ReadSingle();
-                    float zVel = reader.ReadSingle();
+                    float xVel = bReader.ReadSingle();
+                    float yVel = bReader.ReadSingle();
+                    float zVel = bReader.ReadSingle();
 
-                    float xPos = reader.ReadSingle();
-                    float yPos = reader.ReadSingle();
-                    float zPos = reader.ReadSingle();
+                    float xPos = bReader.ReadSingle();
+                    float yPos = bReader.ReadSingle();
+                    float zPos = bReader.ReadSingle();
 
                     Vector3 destination = new Vector3(xDestination, yDestination, zDestination);
                     Vector3 velocity = new Vector3(xVel, yVel, zVel);
@@ -166,19 +168,20 @@ namespace MLAPI.MonoBehaviours.Prototyping
             }
         }
 
-        private void OnNavMeshCorrectionUpdate(uint clientId, byte[] data)
+        private void OnNavMeshCorrectionUpdate(uint clientId, BitReader reader)
         {
+            byte[] data = reader.ReadByteArray();
             using (MemoryStream stream = new MemoryStream(data))
             {
-                using (BinaryReader reader = new BinaryReader(stream))
+                using (BinaryReader bReader = new BinaryReader(stream))
                 {
-                    float xVel = reader.ReadSingle();
-                    float yVel = reader.ReadSingle();
-                    float zVel = reader.ReadSingle();
+                    float xVel = bReader.ReadSingle();
+                    float yVel = bReader.ReadSingle();
+                    float zVel = bReader.ReadSingle();
 
-                    float xPos = reader.ReadSingle();
-                    float yPos = reader.ReadSingle();
-                    float zPos = reader.ReadSingle();
+                    float xPos = bReader.ReadSingle();
+                    float yPos = bReader.ReadSingle();
+                    float zPos = bReader.ReadSingle();
 
                     Vector3 velocity = new Vector3(xVel, yVel, zVel);
                     Vector3 position = new Vector3(xPos, yPos, zPos);

@@ -1,5 +1,6 @@
 ﻿using MLAPI.Data;
 using MLAPI.MonoBehaviours.Core;
+using MLAPI.NetworkingManagerComponents.Binary;
 using System.IO;
 using UnityEngine;
 
@@ -152,19 +153,20 @@ namespace MLAPI.MonoBehaviours.Prototyping
             }
         }
 
-        private void OnRecieveTransformFromServer(uint clientId, byte[] data)
+        private void OnRecieveTransformFromServer(uint clientId, BitReader reader)
         {
+            byte[] data = reader.ReadByteArray();
             using (MemoryStream stream = new MemoryStream(data))
             {
-                using (BinaryReader reader = new BinaryReader(stream))
+                using (BinaryReader bReader = new BinaryReader(stream))
                 {
-                    float xPos = reader.ReadSingle();
-                    float yPos = reader.ReadSingle();
-                    float zPos = reader.ReadSingle();
+                    float xPos = bReader.ReadSingle();
+                    float yPos = bReader.ReadSingle();
+                    float zPos = bReader.ReadSingle();
 
-                    float xRot = reader.ReadSingle();
-                    float yRot = reader.ReadSingle();
-                    float zRot = reader.ReadSingle();
+                    float xRot = bReader.ReadSingle();
+                    float yRot = bReader.ReadSingle();
+                    float zRot = bReader.ReadSingle();
 
                     lerpStartPos = transform.position;
                     lerpStartRot = transform.rotation;
@@ -175,19 +177,20 @@ namespace MLAPI.MonoBehaviours.Prototyping
             }
         }
 
-        private void OnRecieveTransformFromClient(uint clientId, byte[] data)
+        private void OnRecieveTransformFromClient(uint clientId, BitReader reader)
         {
+            byte[] data = reader.ReadByteArray();
             using (MemoryStream readStream = new MemoryStream(data))
             {
-                using(BinaryReader reader = new BinaryReader(readStream))
+                using (BinaryReader bReader = new BinaryReader(readStream))
                 {
-                    float xPos = reader.ReadSingle();
-                    float yPos = reader.ReadSingle();
-                    float zPos = reader.ReadSingle();
+                    float xPos = bReader.ReadSingle();
+                    float yPos = bReader.ReadSingle();
+                    float zPos = bReader.ReadSingle();
 
-                    float xRot = reader.ReadSingle();
-                    float yRot = reader.ReadSingle();
-                    float zRot = reader.ReadSingle();
+                    float xRot = bReader.ReadSingle();
+                    float yRot = bReader.ReadSingle();
+                    float zRot = bReader.ReadSingle();
 
                     if (InterpolateServer)
                     {
@@ -204,7 +207,7 @@ namespace MLAPI.MonoBehaviours.Prototyping
                     }
                     using (MemoryStream writeStream = new MemoryStream(positionUpdateBuffer))
                     {
-                        using(BinaryWriter writer = new BinaryWriter(writeStream))
+                        using (BinaryWriter writer = new BinaryWriter(writeStream))
                         {
                             writer.Write(xPos);
                             writer.Write(yPos);
@@ -213,7 +216,7 @@ namespace MLAPI.MonoBehaviours.Prototyping
                             writer.Write(yRot);
                             writer.Write(zRot);
                         }
-                        if(EnableProximity)
+                        if (EnableProximity)
                         {
                             // For instead of Foreach?! TODO!!!
                             for (uint i = 0; i < NetworkingManager.singleton.connectedClients.Count; i++)

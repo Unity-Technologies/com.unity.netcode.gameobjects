@@ -1,5 +1,6 @@
 ﻿using MLAPI.Data;
 using MLAPI.MonoBehaviours.Core;
+using MLAPI.NetworkingManagerComponents.Binary;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
@@ -248,11 +249,12 @@ namespace MLAPI.MonoBehaviours.Prototyping
             if (i == 5) param5 = p;
         }
 
-        private void HandleAnimMsg(uint clientId, byte[] data)
+        private void HandleAnimMsg(uint clientId, BitReader reader)
         {
             // usually transitions will be triggered by parameters, if not, play anims directly.
             // NOTE: this plays "animations", not transitions, so any transitions will be skipped.
             // NOTE: there is no API to play a transition(?)
+            byte[] data = reader.ReadByteArray();
 
             if(isServer)
             {
@@ -269,23 +271,24 @@ namespace MLAPI.MonoBehaviours.Prototyping
                 else
                     SendToNonLocalClientsTarget("MLAPI_HandleAnimationMessage", "MLAPI_ANIMATION_UPDATE", data);
             }
-            using(MemoryStream stream = new MemoryStream(data))
+            using (MemoryStream stream = new MemoryStream(data))
             {
-                using(BinaryReader reader = new BinaryReader(stream))
+                using (BinaryReader bReader = new BinaryReader(stream))
                 {
-                    int stateHash = reader.ReadInt32();
-                    float normalizedTime = reader.ReadSingle();
+                    int stateHash = bReader.ReadInt32();
+                    float normalizedTime = bReader.ReadSingle();
                     if(stateHash != 0)
                     {
                         animator.Play(stateHash, 0, normalizedTime);
                     }
-                    ReadParameters(reader, false);
+                    ReadParameters(bReader, false);
                 }
             }
         }
 
-        private void HandleAnimParamsMsg(uint clientId, byte[] data)
+        private void HandleAnimParamsMsg(uint clientId, BitReader reader)
         {
+            byte[] data = reader.ReadByteArray();
             if (isServer)
             {
                 if (EnableProximity)
@@ -303,15 +306,16 @@ namespace MLAPI.MonoBehaviours.Prototyping
             }
             using (MemoryStream stream = new MemoryStream(data))
             {
-                using (BinaryReader reader = new BinaryReader(stream))
+                using (BinaryReader bReader = new BinaryReader(stream))
                 {
-                    ReadParameters(reader, true);
+                    ReadParameters(bReader, true);
                 }
             }
         }
 
-        private void HandleAnimTriggerMsg(uint clientId, byte[] data)
+        private void HandleAnimTriggerMsg(uint clientId, BitReader reader)
         {
+            byte[] data = reader.ReadByteArray();
             if (isServer)
             {
                 if (EnableProximity)
@@ -329,9 +333,9 @@ namespace MLAPI.MonoBehaviours.Prototyping
             }
             using (MemoryStream stream = new MemoryStream(data))
             {
-                using(BinaryReader reader = new BinaryReader(stream))
+                using (BinaryReader bReader = new BinaryReader(stream))
                 {
-                    animator.SetTrigger(reader.ReadInt32());
+                    animator.SetTrigger(bReader.ReadInt32());
                 }
             }
         }
