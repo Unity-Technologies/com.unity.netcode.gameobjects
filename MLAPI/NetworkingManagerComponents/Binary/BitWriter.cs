@@ -86,7 +86,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         {
             if (writerPool.Count == 0)
             {
-                Debug.LogWarning("MLAPI: There can be no more than 10 BitWriters. Have you forgotten do dispose? (It will still work with worse performance)");
+                Debug.LogWarning("MLAPI: There are more than 10 BitWriters. Have you forgotten do dispose? (It will still work with worse performance)");
                 return new BitWriter() { outsidePool = true };
             }
             else
