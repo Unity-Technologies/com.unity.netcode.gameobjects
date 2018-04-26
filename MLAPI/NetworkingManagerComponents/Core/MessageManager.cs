@@ -65,7 +65,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             }
             else
             {
-                Debug.LogWarning("MLAPI: The message type " + name + " has not been registered. Please define it in the netConfig");
+                LogHelper.LogWarning("MLAPI: The message type " + name + " has not been registered. Please define it in the netConfig", LogLevel.Normal);
                 return -1;
             }
         }

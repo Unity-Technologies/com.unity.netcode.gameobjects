@@ -1,4 +1,5 @@
 ﻿#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+using MLAPI.NetworkingManagerComponents.Core;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -86,7 +87,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         {
             if (writerPool.Count == 0)
             {
-                Debug.LogWarning("MLAPI: There are more than 10 BitWriters. Have you forgotten do dispose? (It will still work with worse performance)");
+                LogHelper.LogWarning("MLAPI: There are more than 10 BitWriters. Have you forgotten do dispose? (It will still work with worse performance)", LogLevel.Normal);
                 return new BitWriter() { outsidePool = true };
             }
             else
@@ -99,7 +100,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             else if (b is string || b.GetType().IsArray || IsSupportedType(b.GetType()))
                 collect.Add(b is string ? Encoding.UTF8.GetBytes(b as string) : b as object);
             else
-                Debug.LogWarning("MLAPI: The type \"" + b.GetType() + "\" is not supported by the Binary Serializer. It will be ignored");
+                LogHelper.LogWarning("MLAPI: The type \"" + b.GetType() + "\" is not supported by the Binary Serializer. It will be ignored", LogLevel.Normal);
         }
 
 
@@ -176,7 +177,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         {
             if(buffer == null)
             {
-                Debug.LogWarning("MLAPI: no buffer provided");
+                LogHelper.LogWarning("MLAPI: no buffer provided", LogLevel.Normal);
                 return 0;
             }
             long bitCount = 0;
@@ -184,7 +185,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
 
             if (buffer.Length < ((bitCount / 8) + (bitCount % 8 == 0 ? 0 : 1)))
             {
-                Debug.LogWarning("MLAPI: The buffer size is not large enough");
+                LogHelper.LogWarning("MLAPI: The buffer size is not large enough", LogLevel.Normal);
                 return 0;
             }
             long bitOffset = 0;

@@ -140,7 +140,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
         {
             if (!netManager.NetworkConfig.NetworkPrefabNames.ContainsKey(networkedPrefabId))
             {
-                Debug.LogWarning("MLAPI: Cannot spawn the object, invalid prefabIndex");
+                LogHelper.LogWarning("MLAPI: Cannot spawn the object, invalid prefabIndex", LogLevel.Normal);
                 return null;
             }
 
@@ -148,7 +148,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             NetworkedObject netObject = go.GetComponent<NetworkedObject>();
             if (netObject == null)
             {
-                Debug.LogWarning("MLAPI: Please add a NetworkedObject component to the root of all spawnable objects");
+                LogHelper.LogWarning("MLAPI: Please add a NetworkedObject component to the root of all spawnable objects", LogLevel.Normal);
                 netObject = go.AddComponent<NetworkedObject>();
             }
 
@@ -171,22 +171,22 @@ namespace MLAPI.NetworkingManagerComponents.Core
         {
             if (netObject.isSpawned)
             {
-                Debug.LogWarning("MLAPI: Object already spawned");
+                LogHelper.LogWarning("MLAPI: Object already spawned", LogLevel.Normal);
                 return;
             }
             else if (!netManager.isServer)
             {
-                Debug.LogWarning("MLAPI: Only server can spawn objects");
+                LogHelper.LogWarning("MLAPI: Only server can spawn objects", LogLevel.Normal);
                 return;
             }
             else if (!netManager.NetworkConfig.NetworkPrefabIds.ContainsKey(netObject.NetworkedPrefabName))
             {
-                Debug.LogWarning("MLAPI: The prefab name " + netObject.NetworkedPrefabName + " does not exist as a networkedPrefab");
+                LogHelper.LogWarning("MLAPI: The prefab name " + netObject.NetworkedPrefabName + " does not exist as a networkedPrefab", LogLevel.Normal);
                 return;
             }
             else if (!netManager.NetworkConfig.HandleObjectSpawning)
             {
-                Debug.LogWarning("MLAPI: NetworkConfig is set to not handle object spawning");
+                LogHelper.LogWarning("MLAPI: NetworkConfig is set to not handle object spawning", LogLevel.Normal);
                 return;
             }
             uint netId = GetNetworkObjectId();
@@ -226,14 +226,14 @@ namespace MLAPI.NetworkingManagerComponents.Core
         {
             if (string.IsNullOrEmpty(netManager.NetworkConfig.PlayerPrefabName) || !netManager.NetworkConfig.NetworkPrefabIds.ContainsKey(netManager.NetworkConfig.PlayerPrefabName))
             {
-                Debug.LogWarning("MLAPI: There is no player prefab in the NetworkConfig, or it's not registered at as a spawnable prefab");
+                LogHelper.LogWarning("MLAPI: There is no player prefab in the NetworkConfig, or it's not registered at as a spawnable prefab", LogLevel.Normal);
                 return null;
             }
             GameObject go = MonoBehaviour.Instantiate(netManager.NetworkConfig.NetworkedPrefabs[netManager.NetworkConfig.NetworkPrefabIds[netManager.NetworkConfig.PlayerPrefabName]].prefab, position, rotation);
             NetworkedObject netObject = go.GetComponent<NetworkedObject>();
             if (netObject == null)
             {
-                Debug.LogWarning("MLAPI: Please add a NetworkedObject component to the root of the player prefab");
+                LogHelper.LogWarning("MLAPI: Please add a NetworkedObject component to the root of the player prefab", LogLevel.Normal);
                 netObject = go.AddComponent<NetworkedObject>();
             }
 

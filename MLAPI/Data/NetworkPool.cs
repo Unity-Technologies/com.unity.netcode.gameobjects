@@ -1,4 +1,5 @@
 ﻿using MLAPI.MonoBehaviours.Core;
+using MLAPI.NetworkingManagerComponents.Core;
 using UnityEngine;
 
 namespace MLAPI.Data
@@ -35,7 +36,7 @@ namespace MLAPI.Data
                     go.SetActive(true);
                 }
             }
-            Debug.LogWarning("MLAPI: The pool " + poolId + " has ran out of space");
+            LogHelper.LogWarning("MLAPI: The pool " + poolId + " has ran out of space", LogLevel.Normal);
             return null;
         }
     }

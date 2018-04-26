@@ -25,7 +25,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
         {
             if(!NetworkingManager.singleton.isServer)
             {
-                Debug.LogWarning("MLAPI: Pools can only be created on the server");
+                LogHelper.LogWarning("MLAPI: Pools can only be created on the server", LogLevel.Normal);
                 return;
             }
             NetworkPool pool = new NetworkPool(spawnablePrefabIndex, size, PoolIndex);
@@ -41,7 +41,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
         {
             if (!NetworkingManager.singleton.isServer)
             {
-                Debug.LogWarning("MLAPI: Pools can only be destroyed on the server");
+                LogHelper.LogWarning("MLAPI: Pools can only be destroyed on the server", LogLevel.Normal);
                 return;
             }
             for (int i = 0; i < Pools[PoolNamesToIndexes[poolName]].objects.Length; i++)
@@ -62,7 +62,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
         {
             if (!NetworkingManager.singleton.isServer)
             {
-                Debug.LogWarning("MLAPI: Object spawning can only occur on server");
+                LogHelper.LogWarning("MLAPI: Object spawning can only occur on server", LogLevel.Normal);
                 return null;
             }
             GameObject go = Pools[PoolNamesToIndexes[poolName]].SpawnObject(position, rotation);
@@ -91,7 +91,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
         {
             if (!NetworkingManager.singleton.isServer)
             {
-                Debug.LogWarning("MLAPI: Objects can only be destroyed on the server");
+                LogHelper.LogWarning("MLAPI: Objects can only be destroyed on the server", LogLevel.Normal);
                 return;
             }
             netObject.gameObject.SetActive(false);

@@ -1,6 +1,7 @@
 ﻿using MLAPI.Data;
 using MLAPI.MonoBehaviours.Core;
 using MLAPI.NetworkingManagerComponents.Binary;
+using MLAPI.NetworkingManagerComponents.Core;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
@@ -106,7 +107,7 @@ namespace MLAPI.MonoBehaviours.Prototyping
         /// </summary>
         public void ResetParameterOptions()
         {
-            Debug.Log("ResetParameterOptions");
+            LogHelper.LogInfo("ResetParameterOptions", LogLevel.Normal);
             parameterSendBits = 0;
             animatorParameters = null;
         }

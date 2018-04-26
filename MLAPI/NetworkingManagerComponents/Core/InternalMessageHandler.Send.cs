@@ -14,7 +14,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             if (netManager.isHost && targetId == netManager.NetworkConfig.NetworkTransport.HostDummyId)
             {
                 //Host trying to send data to it's own client
-                Debug.LogWarning("MLAPI: Send method got message aimed at server from the server?");
+                LogHelper.LogWarning("MLAPI: Send method got message aimed at server from the server?", LogLevel.Normal);
                 return;
             }
 
@@ -53,7 +53,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             if (netManager.isHost && targetClientId == netManager.NetworkConfig.NetworkTransport.HostDummyId)
             {
                 //Don't invoke the message on our own machine. Instant stack overflow.
-                Debug.LogWarning("MLAPI: Cannot send message to own client");
+                LogHelper.LogWarning("MLAPI: Cannot send message to own client", LogLevel.Normal);
                 return true;
             }
             else if (targetClientId == netManager.NetworkConfig.NetworkTransport.HostDummyId)
@@ -68,7 +68,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             bool isPassthrough = (!netManager.isServer && clientId != netManager.NetworkConfig.NetworkTransport.ServerNetId && netManager.NetworkConfig.AllowPassthroughMessages);
             if (isPassthrough && !netManager.NetworkConfig.PassthroughMessageHashSet.Contains(MessageManager.messageTypes[messageType]))
             {
-                Debug.LogWarning("MLAPI: The The MessageType " + messageType + " is not registered as an allowed passthrough message type.");
+                LogHelper.LogWarning("MLAPI: The The MessageType " + messageType + " is not registered as an allowed passthrough message type", LogLevel.Normal);
                 return true;
             }
 
@@ -123,7 +123,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
         {
             if (netManager.NetworkConfig.EncryptedChannelsHashSet.Contains(channelName))
             {
-                Debug.LogWarning("MLAPI: Cannot send messages over encrypted channel to multiple clients.");
+                LogHelper.LogWarning("MLAPI: Cannot send messages over encrypted channel to multiple clients", LogLevel.Normal);
                 return;
             }
 
@@ -175,7 +175,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
         {
             if (netManager.NetworkConfig.EncryptedChannelsHashSet.Contains(channelName))
             {
-                Debug.LogWarning("MLAPI: Cannot send messages over encrypted channel to multiple clients.");
+                LogHelper.LogWarning("MLAPI: Cannot send messages over encrypted channel to multiple clients", LogLevel.Normal);
                 return;
             }
 
@@ -232,7 +232,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 return ref failedObservers;
             if (netManager.NetworkConfig.EncryptedChannels.Contains(channelName))
             {
-                Debug.LogWarning("MLAPI: Cannot send messages over encrypted channel to multiple clients.");
+                LogHelper.LogWarning("MLAPI: Cannot send messages over encrypted channel to multiple clients", LogLevel.Normal);
                 return ref failedObservers;
             }
 
@@ -290,7 +290,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             failedObservers.Clear();
             if (netManager.NetworkConfig.EncryptedChannels.Contains(channelName))
             {
-                Debug.LogWarning("MLAPI: Cannot send messages over encrypted channel to multiple clients.");
+                LogHelper.LogWarning("MLAPI: Cannot send messages over encrypted channel to multiple clients", LogLevel.Normal);
                 return ref failedObservers;
             }
 

@@ -1,4 +1,5 @@
 ﻿#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+using MLAPI.NetworkingManagerComponents.Core;
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
@@ -31,7 +32,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             if (readerPool.Count == 0)
             {
                 if (pools > 10)
-                    Debug.LogWarning("MLAPI: There are more than 10 BitReaders. Have you forgotten do dispose? (More readers hurt performance)");
+                    LogHelper.LogWarning("MLAPI: There are more than 10 BitReaders. Have you forgotten do dispose? (More readers hurt performance)", LogLevel.Normal);
                 BitReader reader = new BitReader(readFrom);
                 pools++;
                 return reader;

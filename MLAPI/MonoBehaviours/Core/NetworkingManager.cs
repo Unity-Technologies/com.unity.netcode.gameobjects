@@ -41,6 +41,10 @@ namespace MLAPI.MonoBehaviours.Core
         /// </summary>
         public bool RunInBackground = true;
         /// <summary>
+        /// The log level to use
+        /// </summary>
+        public LogLevel LogLevel = LogLevel.Normal;
+        /// <summary>
         /// The singleton instance of the NetworkingManager
         /// </summary>
         public static NetworkingManager singleton
@@ -153,18 +157,21 @@ namespace MLAPI.MonoBehaviours.Core
 
         private void OnValidate()
         {
+            if (!Application.isPlaying)
+                _singleton = this;
             if (NetworkConfig == null)
                 return; //May occur when the component is added
+                
 
             if(NetworkConfig.EnableSceneSwitching && !NetworkConfig.RegisteredScenes.Contains(SceneManager.GetActiveScene().name))
             {
-                Debug.LogWarning("MLAPI: The active scene is not registered as a networked scene. The MLAPI has added it");
+                LogHelper.LogWarning("MLAPI: The active scene is not registered as a networked scene. The MLAPI has added it", LogLevel.Normal);
                 NetworkConfig.RegisteredScenes.Add(SceneManager.GetActiveScene().name);
             }
 
             if(!NetworkConfig.EnableSceneSwitching && NetworkConfig.HandleObjectSpawning)
             {
-                Debug.LogWarning("MLAPI: Please be aware that Scene objects are NOT supported if SceneManagement is turned on, even if HandleObjectSpawning is turned on");
+                LogHelper.LogWarning("MLAPI: Please be aware that Scene objects are NOT supported if SceneManagement is turned on, even if HandleObjectSpawning is turned on", LogLevel.Normal);
             }
 
             if(NetworkConfig.HandleObjectSpawning)
@@ -173,17 +180,17 @@ namespace MLAPI.MonoBehaviours.Core
                 {
                     if (string.IsNullOrEmpty(NetworkConfig.NetworkedPrefabs[i].name))
                     {
-                        Debug.LogWarning("MLAPI: The NetworkedPrefab " + NetworkConfig.NetworkedPrefabs[i].prefab.name + " does not have a NetworkedPrefabName.");
+                        LogHelper.LogWarning("MLAPI: The NetworkedPrefab " + NetworkConfig.NetworkedPrefabs[i].prefab.name + " does not have a NetworkedPrefabName.", LogLevel.Normal);
                     }
                 }
                 int playerPrefabCount = NetworkConfig.NetworkedPrefabs.Count(x => x.playerPrefab == true);
                 if (playerPrefabCount == 0)
                 {
-                    Debug.LogWarning("MLAPI: There is no NetworkedPrefab marked as a PlayerPrefab");
+                    LogHelper.LogWarning("MLAPI: There is no NetworkedPrefab marked as a PlayerPrefab", LogLevel.Normal);
                 }
                 else if (playerPrefabCount > 1)
                 {
-                    Debug.LogWarning("MLAPI: Only one networked prefab can be marked as a player prefab");
+                    LogHelper.LogWarning("MLAPI: Only one networked prefab can be marked as a player prefab", LogLevel.Normal);
                 }
                 else
                     NetworkConfig.PlayerPrefabName =  NetworkConfig.NetworkedPrefabs.Find(x => x.playerPrefab == true).name;
@@ -257,7 +264,7 @@ namespace MLAPI.MonoBehaviours.Core
                 {
                     if (networkedPrefabName.Contains(NetworkConfig.NetworkedPrefabs[i].name))
                     {
-                        Debug.LogWarning("MLAPI: Duplicate NetworkedPrefabName " + NetworkConfig.NetworkedPrefabs[i].name);
+                        LogHelper.LogWarning("MLAPI: Duplicate NetworkedPrefabName " + NetworkConfig.NetworkedPrefabs[i].name, LogLevel.Normal);
                         continue;
                     }
                     NetworkConfig.NetworkPrefabIds.Add(NetworkConfig.NetworkedPrefabs[i].name, i);
@@ -327,7 +334,7 @@ namespace MLAPI.MonoBehaviours.Core
                 {
                     if (addedEncryptedChannels.Contains(NetworkConfig.Channels[i].Name))
                     {
-                        Debug.LogWarning("MLAPI: Duplicate encrypted channel name " + NetworkConfig.Channels[i].Name);
+                        LogHelper.LogWarning("MLAPI: Duplicate encrypted channel name " + NetworkConfig.Channels[i].Name, LogLevel.Normal);
                         continue;
                     }
                     if (NetworkConfig.Channels[i].Encrypted)
@@ -346,7 +353,7 @@ namespace MLAPI.MonoBehaviours.Core
                 {
                     if (addedPassthroughMessages.Contains(NetworkConfig.MessageTypes[i].Name))
                     {
-                        Debug.LogWarning("MLAPI: Duplicate passthrough message type " + NetworkConfig.MessageTypes[i].Name);
+                        LogHelper.LogWarning("MLAPI: Duplicate passthrough message type " + NetworkConfig.MessageTypes[i].Name, LogLevel.Normal);
                         continue;
                     }
                     if (NetworkConfig.MessageTypes[i].Passthrough)
@@ -363,7 +370,7 @@ namespace MLAPI.MonoBehaviours.Core
             {
                 if (channelNames.Contains(internalChannels[i].Name))
                 {
-                    Debug.LogWarning("MLAPI: Duplicate channel name: " + NetworkConfig.Channels[i].Name);
+                    LogHelper.LogWarning("MLAPI: Duplicate channel name: " + NetworkConfig.Channels[i].Name, LogLevel.Normal);
                     continue;
                 }
                 int channelId = NetworkConfig.NetworkTransport.AddChannel(internalChannels[i].Type, settings);
@@ -445,7 +452,7 @@ namespace MLAPI.MonoBehaviours.Core
             {
                 if(channelNames.Contains(NetworkConfig.Channels[i].Name))
                 {
-                    Debug.LogWarning("MLAPI: Duplicate channel name: " + NetworkConfig.Channels[i].Name);
+                    LogHelper.LogWarning("MLAPI: Duplicate channel name: " + NetworkConfig.Channels[i].Name, LogLevel.Normal);
                     continue;
                 }
                 int channelId = NetworkConfig.NetworkTransport.AddChannel(NetworkConfig.Channels[i].Type, settings);
@@ -472,7 +479,7 @@ namespace MLAPI.MonoBehaviours.Core
         {
             if (isServer || isClient)
             {
-                Debug.LogWarning("MLAPI: Cannot start server while an instance is already running");
+                LogHelper.LogWarning("MLAPI: Cannot start server while an instance is already running", LogLevel.Normal);
                 return;
             }
 
@@ -480,7 +487,7 @@ namespace MLAPI.MonoBehaviours.Core
             {
                 if (ConnectionApprovalCallback == null)
                 {
-                    Debug.LogWarning("MLAPI: No ConnectionApproval callback defined. Connection approval will timeout");
+                    LogHelper.LogWarning("MLAPI: No ConnectionApproval callback defined. Connection approval will timeout", LogLevel.Normal);
                 }
             }
 
@@ -502,7 +509,7 @@ namespace MLAPI.MonoBehaviours.Core
         {
             if (isServer || isClient)
             {
-                Debug.LogWarning("MLAPI: Cannot start client while an instance is already running");
+                LogHelper.LogWarning("MLAPI: Cannot start client while an instance is already running", LogLevel.Normal);
                 return;
             }
 
@@ -576,7 +583,7 @@ namespace MLAPI.MonoBehaviours.Core
         {
             if (isServer || isClient)
             {
-                Debug.LogWarning("MLAPI: Cannot start host while an instance is already running");
+                LogHelper.LogWarning("MLAPI: Cannot start host while an instance is already running", LogLevel.Normal);
                 return;
             }
 
@@ -584,7 +591,7 @@ namespace MLAPI.MonoBehaviours.Core
             {
                 if (ConnectionApprovalCallback == null)
                 {
-                    Debug.LogWarning("MLAPI: No ConnectionApproval callback defined. Connection approval will timeout");
+                    LogHelper.LogWarning("MLAPI: No ConnectionApproval callback defined. Connection approval will timeout", LogLevel.Normal);
                 }
             }
             object settings = Init(true);
@@ -613,7 +620,7 @@ namespace MLAPI.MonoBehaviours.Core
         {
             if (singleton != null)
             {
-                Debug.LogWarning("MLAPI: Multiple NetworkingManagers");
+                LogHelper.LogWarning("MLAPI: Multiple NetworkingManagers", LogLevel.Normal);
                 Destroy(this);
                 return;
             }
@@ -785,7 +792,7 @@ namespace MLAPI.MonoBehaviours.Core
                 //Client tried to send a network message that was not the connection request before he was accepted.
                 if (isServer && pendingClients.Contains(clientId) && messageType != 0)
                 {
-                    Debug.LogWarning("MLAPI: Message recieved from clientId " + clientId + " before it has been accepted");
+                    LogHelper.LogWarning("MLAPI: Message recieved from clientId " + clientId + " before it has been accepted", LogLevel.Normal);
                     return;
                 }
 
@@ -804,13 +811,13 @@ namespace MLAPI.MonoBehaviours.Core
                 {
                     if (isServer && isPassthrough && !NetworkConfig.PassthroughMessageHashSet.Contains(messageType))
                     {
-                        Debug.LogWarning("MLAPI: Client " + clientId + " tried to send a passthrough message for a messageType not registered as passthrough");
+                        LogHelper.LogWarning("MLAPI: Client " + clientId + " tried to send a passthrough message for a messageType not registered as passthrough", LogLevel.Normal);
                         messageReader.Dispose();
                         return;
                     }
                     else if (isClient && isPassthrough && !NetworkConfig.PassthroughMessageHashSet.Contains(messageType))
                     {
-                        Debug.LogWarning("MLAPI: Server tried to send a passthrough message for a messageType not registered as passthrough");
+                        LogHelper.LogWarning("MLAPI: Server tried to send a passthrough message for a messageType not registered as passthrough", LogLevel.Normal);
                         messageReader.Dispose();
                         return;
                     }
@@ -818,7 +825,7 @@ namespace MLAPI.MonoBehaviours.Core
                     {
                         if (!connectedClients.ContainsKey(passthroughTarget))
                         {
-                            Debug.LogWarning("MLAPI: Passthrough message was sent with invalid target: " + passthroughTarget + " from client " + clientId);
+                            LogHelper.LogWarning("MLAPI: Passthrough message was sent with invalid target: " + passthroughTarget + " from client " + clientId, LogLevel.Normal);
                             messageReader.Dispose();
                             return;
                         }
@@ -841,19 +848,19 @@ namespace MLAPI.MonoBehaviours.Core
                         {
                             if (!SpawnManager.spawnedObjects.ContainsKey(targetNetworkId))
                             {
-                                Debug.LogWarning("MLAPI: No target for message found");
+                                LogHelper.LogWarning("MLAPI: No target for message found", LogLevel.Normal);
                                 messageReader.Dispose();
                                 return;
                             }
                             else if (!SpawnManager.spawnedObjects[targetNetworkId].targetMessageActions.ContainsKey(networkOrderId))
                             {
-                                Debug.LogWarning("MLAPI: No target messageType for message found");
+                                LogHelper.LogWarning("MLAPI: No target messageType for message found", LogLevel.Normal);
                                 messageReader.Dispose();
                                 return;
                             }
                             else if (!SpawnManager.spawnedObjects[targetNetworkId].targetMessageActions[networkOrderId].ContainsKey(messageType))
                             {
-                                Debug.LogWarning("MLAPI: No target found with the given messageType");
+                                LogHelper.LogWarning("MLAPI: No target found with the given messageType", LogLevel.Normal);
                                 messageReader.Dispose();
                                 return;
                             }
