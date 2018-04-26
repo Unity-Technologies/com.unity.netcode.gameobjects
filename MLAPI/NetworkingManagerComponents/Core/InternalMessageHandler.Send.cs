@@ -2,7 +2,6 @@
 using MLAPI.Data;
 using MLAPI.NetworkingManagerComponents.Binary;
 using MLAPI.NetworkingManagerComponents.Cryptography;
-using UnityEngine;
 
 namespace MLAPI.NetworkingManagerComponents.Core
 {

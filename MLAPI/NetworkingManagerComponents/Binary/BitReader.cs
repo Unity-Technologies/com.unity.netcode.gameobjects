@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
-using UnityEngine;
 
 namespace MLAPI.NetworkingManagerComponents.Binary
 {
@@ -64,34 +63,35 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             bitCount += 8;
             return result;
         }
-        public void SkipPadded() => bitCount += (8 - (bitCount % 8)) % 8;
-        public ushort ReadUShort() => (ushort)ReadULong();
-        public uint ReadUInt() => (uint)ReadULong();
-        public sbyte ReadSByte() => (sbyte)ZigZagDecode(ReadByte(), 1);
-        public short ReadShort() => (short)ZigZagDecode(ReadUShort(), 2);
-        public int ReadInt() => (int)ZigZagDecode(ReadUInt(), 4);
-        public long ReadLong() => ZigZagDecode(ReadULong(), 8);
-        public float[] ReadFloatArray(int known = -1) => ReadArray(ReadFloat, known);
-        public uint ReadFloatArray(float[] buffer, int known = -1) => ReadArray(ReadFloat, buffer, known);
-        public double[] ReadDoubleArray(int known = -1) => ReadArray(ReadDouble, known);
-        public uint ReadDoubleArray(double[] buffer, int known = -1) => ReadArray(ReadDouble, buffer, known);
-        public byte[] ReadByteArray(int known = -1) => ReadArray(ReadByte, known);
-        public uint ReadByteArray(byte[] buffer, int known = -1) => ReadArray(ReadByte, buffer, known);
-        public ushort[] ReadUShortArray(int known = -1) => ReadArray(ReadUShort, known);
-        public uint ReadUShortArray(ushort[] buffer, int known = -1) => ReadArray(ReadUShort, buffer, known);
-        public uint[] ReadUIntArray(int known = -1) => ReadArray(ReadUInt, known);
-        public uint ReadUIntArray(uint[] buffer, int known = -1) => ReadArray(ReadUInt, buffer, known);
-        public ulong[] ReadULongArray(int known = -1) => ReadArray(ReadULong, known);
-        public uint ReadULongArray(ulong[] buffer, int known = -1) => ReadArray(ReadULong, buffer, known);
-        public sbyte[] ReadSByteArray(int known = -1) => ReadArray(ReadSByte, known);
-        public uint ReadSByteArray(sbyte[] buffer, int known = -1) => ReadArray(ReadSByte, buffer, known);
-        public short[] ReadShortArray(int known = -1) => ReadArray(ReadShort, known);
-        public uint ReadShortArray(short[] buffer, int known = -1) => ReadArray(ReadShort, buffer, known);
-        public int[] ReadIntArray(int known = -1) => ReadArray(ReadInt, known);
-        public uint ReadIntArray(int[] buffer, int known = -1) => ReadArray(ReadInt, buffer, known);
-        public long[] ReadLongArray(int known = -1) => ReadArray(ReadLong, known);
-        public uint ReadLongArray(long[] buffer, int known = -1) => ReadArray(ReadLong, buffer, known);
-        public string ReadString() => Encoding.UTF8.GetString(ReadByteArray());
+        public void SkipPadded()     => bitCount += (8 - (bitCount % 8)) % 8;
+        public ushort ReadUShort()   => (ushort)ReadULong();
+        public uint ReadUInt()       => (uint)ReadULong();
+        public sbyte ReadSByte()     => (sbyte)ZigZagDecode(ReadByte(), 1);
+        public short ReadShort()     => (short)ZigZagDecode(ReadUShort(), 2);
+        public int ReadInt()         => (int)ZigZagDecode(ReadUInt(), 4);
+        public long ReadLong()       => ZigZagDecode(ReadULong(), 8);
+
+        public float[] ReadFloatArray(int known = -1)                   => ReadArray(ReadFloat, known);
+        public uint ReadFloatArray(float[] buffer, int known = -1)      => ReadArray(ReadFloat, buffer, known);
+        public double[] ReadDoubleArray(int known = -1)                 => ReadArray(ReadDouble, known);
+        public uint ReadDoubleArray(double[] buffer, int known = -1)    => ReadArray(ReadDouble, buffer, known);
+        public byte[] ReadByteArray(int known = -1)                     => ReadArray(ReadByte, known);
+        public uint ReadByteArray(byte[] buffer, int known = -1)        => ReadArray(ReadByte, buffer, known);
+        public ushort[] ReadUShortArray(int known = -1)                 => ReadArray(ReadUShort, known);
+        public uint ReadUShortArray(ushort[] buffer, int known = -1)    => ReadArray(ReadUShort, buffer, known);
+        public uint[] ReadUIntArray(int known = -1)                     => ReadArray(ReadUInt, known);
+        public uint ReadUIntArray(uint[] buffer, int known = -1)        => ReadArray(ReadUInt, buffer, known);
+        public ulong[] ReadULongArray(int known = -1)                   => ReadArray(ReadULong, known);
+        public uint ReadULongArray(ulong[] buffer, int known = -1)      => ReadArray(ReadULong, buffer, known);
+        public sbyte[] ReadSByteArray(int known = -1)                   => ReadArray(ReadSByte, known);
+        public uint ReadSByteArray(sbyte[] buffer, int known = -1)      => ReadArray(ReadSByte, buffer, known);
+        public short[] ReadShortArray(int known = -1)                   => ReadArray(ReadShort, known);
+        public uint ReadShortArray(short[] buffer, int known = -1)      => ReadArray(ReadShort, buffer, known);
+        public int[] ReadIntArray(int known = -1)                       => ReadArray(ReadInt, known);
+        public uint ReadIntArray(int[] buffer, int known = -1)          => ReadArray(ReadInt, buffer, known);
+        public long[] ReadLongArray(int known = -1)                     => ReadArray(ReadLong, known);
+        public uint ReadLongArray(long[] buffer, int known = -1)        => ReadArray(ReadLong, buffer, known);
+        public string ReadString()                                      => Encoding.UTF8.GetString(ReadByteArray());
         public byte ReadBits(int bits)
         {
             byte b = 0;

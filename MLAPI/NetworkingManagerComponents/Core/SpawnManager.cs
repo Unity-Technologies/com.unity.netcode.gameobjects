@@ -1,5 +1,4 @@
-﻿using MLAPI.Data;
-using MLAPI.MonoBehaviours.Core;
+﻿using MLAPI.MonoBehaviours.Core;
 using MLAPI.NetworkingManagerComponents.Binary;
 using System.Collections.Generic;
 using UnityEngine;

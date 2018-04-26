@@ -2,7 +2,6 @@
 using MLAPI.NetworkingManagerComponents.Binary;
 using System;
 using System.Collections.Generic;
-using UnityEngine;
 
 namespace MLAPI.NetworkingManagerComponents.Core
 {

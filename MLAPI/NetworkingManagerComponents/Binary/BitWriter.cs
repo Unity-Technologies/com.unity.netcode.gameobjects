@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
-using UnityEngine;
 
 namespace MLAPI.NetworkingManagerComponents.Binary
 {

@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using MLAPI.Data.Transports;
-using MLAPI.NetworkingManagerComponents.Core;
 using MLAPI.MonoBehaviours.Core;
 
 namespace MLAPI.Data
