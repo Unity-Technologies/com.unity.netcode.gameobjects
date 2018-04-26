@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using MLAPI.Data.Transports;
 using MLAPI.NetworkingManagerComponents.Core;
+using MLAPI.MonoBehaviours.Core;
 
 namespace MLAPI.Data
 {
@@ -137,6 +138,143 @@ namespace MLAPI.Data
         /// If your logic uses the NetwokrTime, this should probably be turned off. If however it's needed to maximize accuracy, this is recommended to be turned on
         /// </summary>
         public bool EnableTimeResync = false;
+        [TextArea]
+        public string ConfigData = string.Empty;
+
+        internal string ToBase64()
+        {
+            using (BitWriter writer = BitWriter.Get())
+            {
+                writer.WriteUShort(ProtocolVersion);
+                writer.WriteBits((byte)Transport, 5);
+
+                writer.WriteUShort((ushort)Channels.Count);
+                for (int i = 0; i < Channels.Count; i++)
+                {
+                    writer.WriteString(Channels[i].Name);
+                    writer.WriteBool(Channels[i].Encrypted);
+                    writer.WriteBits((byte)Channels[i].Type, 5);
+                }
+
+                writer.WriteUShort((ushort)MessageTypes.Count);
+                for (int i = 0; i < MessageTypes.Count; i++)
+                {
+                    writer.WriteString(MessageTypes[i].Name);
+                    writer.WriteBool(MessageTypes[i].Passthrough);
+                }
+
+                writer.WriteUShort((ushort)RegisteredScenes.Count);
+                for (int i = 0; i < RegisteredScenes.Count; i++)
+                {
+                    writer.WriteString(RegisteredScenes[i]);
+                }
+
+                writer.WriteUShort((ushort)NetworkedPrefabs.Count);
+                for (int i = 0; i < NetworkedPrefabs.Count; i++)
+                {
+                    writer.WriteBool(NetworkedPrefabs[i].playerPrefab);
+                    writer.WriteString(NetworkedPrefabs[i].name);
+                }
+
+                writer.WriteInt(MessageBufferSize);
+                writer.WriteInt(ReceiveTickrate);
+                writer.WriteInt(MaxReceiveEventsPerTickRate);
+                writer.WriteInt(SendTickrate);
+                writer.WriteInt(EventTickrate);
+                writer.WriteInt(MaxConnections);
+                writer.WriteInt(ConnectPort);
+                writer.WriteString(ConnectAddress);
+                writer.WriteInt(ClientConnectionBufferTimeout);
+                writer.WriteBool(ConnectionApproval);
+                writer.WriteInt(SecondsHistory);
+                writer.WriteBool(HandleObjectSpawning);
+                writer.WriteBool(EnableEncryption);
+                writer.WriteBool(SignKeyExchange);
+                writer.WriteBool(AllowPassthroughMessages);
+                writer.WriteBool(EnableSceneSwitching);
+                writer.WriteBool(EnableTimeResync);
+
+                return Convert.ToBase64String(writer.Finalize());
+            }
+        }
+
+        internal void FromBase64(string base64)
+        {
+            byte[] binary = Convert.FromBase64String(base64);
+            using (BitReader reader = BitReader.Get(binary))
+            {
+                ProtocolVersion = reader.ReadUShort();
+                Transport = (DefaultTransport)reader.ReadBits(5);
+
+                ushort channelCount = reader.ReadUShort();
+                Channels.Clear();
+                for (int i = 0; i < channelCount; i++)
+                {
+                    Channel channel = new Channel()
+                    {
+                        Name = reader.ReadString(),
+                        Encrypted = reader.ReadBool(),
+                        Type = (ChannelType)reader.ReadBits(5)
+                    };
+                    Channels.Add(channel);
+                }
+
+                ushort messageTypeCount = reader.ReadUShort();
+                MessageTypes.Clear();
+                for (int i = 0; i < messageTypeCount; i++)
+                {
+                    MessageType messageType = new MessageType()
+                    {
+                        Name = reader.ReadString(),
+                        Passthrough = reader.ReadBool()
+                    };
+                    MessageTypes.Add(messageType);
+                }
+
+                ushort sceneCount = reader.ReadUShort();
+                RegisteredScenes.Clear();
+                for (int i = 0; i < sceneCount; i++)
+                {
+                    RegisteredScenes.Add(reader.ReadString());
+                }
+
+                ushort networkedPrefabsCount = reader.ReadUShort();
+                NetworkedPrefabs.Clear();
+                GameObject root = new GameObject("MLAPI: Dummy prefabs");
+                for (int i = 0; i < networkedPrefabsCount; i++)
+                {
+                    bool playerPrefab = reader.ReadBool();
+                    string prefabName = reader.ReadString();
+                    GameObject dummyPrefab = new GameObject("REPLACEME: " + prefabName + "(Dummy prefab)", typeof(NetworkedObject));
+                    dummyPrefab.GetComponent<NetworkedObject>().NetworkedPrefabName = prefabName;
+                    dummyPrefab.transform.SetParent(root.transform); //This is just here to not ruin your hierarchy
+                    NetworkedPrefab networkedPrefab = new NetworkedPrefab()
+                    {
+                        playerPrefab = playerPrefab,
+                        prefab = dummyPrefab
+                    };
+                    NetworkedPrefabs.Add(networkedPrefab);
+                }
+
+                MessageBufferSize = reader.ReadInt();
+                ReceiveTickrate = reader.ReadInt();
+                MaxReceiveEventsPerTickRate = reader.ReadInt();
+                SendTickrate = reader.ReadInt();
+                EventTickrate = reader.ReadInt();
+                MaxConnections = reader.ReadInt();
+                ConnectPort = reader.ReadInt();
+                ConnectAddress = reader.ReadString();
+                ClientConnectionBufferTimeout = reader.ReadInt();
+                ConnectionApproval = reader.ReadBool();
+                SecondsHistory = reader.ReadInt();
+                HandleObjectSpawning = reader.ReadBool();
+                EnableEncryption = reader.ReadBool();
+                SignKeyExchange = reader.ReadBool();
+                AllowPassthroughMessages = reader.ReadBool();
+                EnableSceneSwitching = reader.ReadBool();
+                EnableTimeResync = reader.ReadBool();
+            }
+        }
 
         private byte[] ConfigHash = null;
         /// <summary>
