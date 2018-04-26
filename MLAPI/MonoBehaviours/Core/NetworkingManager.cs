@@ -1043,7 +1043,7 @@ namespace MLAPI.MonoBehaviours.Core
 
         private void SyncTime()
         {
-            if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("");
+            if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Syncing Time To Clients");
             using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteFloat(NetworkTime);
