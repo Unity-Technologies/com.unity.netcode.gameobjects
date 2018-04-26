@@ -116,16 +116,26 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         public void WriteLong(long l)               => Push(ZigZagEncode(l, 8));
         public void WriteString(string s)           => Push(s);
         public void WriteAlignBits()                => Push<object>(null);
-        public void WriteFloatArray(float[] f, bool known = false)      => PushArray(f, known);
-        public void WriteDoubleArray(double[] d, bool known = false)    => PushArray(d, known);
-        public void WriteByteArray(byte[] b, bool known = false)        => PushArray(b, known);
-        public void WriteUShortArray(ushort[] s, bool known = false)    => PushArray(s, known);
-        public void WriteUIntArray(uint[] i, bool known = false)        => PushArray(i, known);
-        public void WriteULongArray(ulong[] l, bool known = false)      => PushArray(l, known);
-        public void WriteSByteArray(sbyte[] b, bool known = false)      => PushArray(b, known);
-        public void WriteShortArray(short[] s, bool known = false)      => PushArray(s, known);
-        public void WriteIntArray(int[] i, bool known = false)          => PushArray(i, known);
-        public void WriteLongArray(long[] l, bool known = false)        => PushArray(l, known);
+        public void WriteFloatArray(float[] f, bool known = false)                                  => PushArray(f, known);
+        public void WriteFloatArray(float[] f, int startIndex, int length, bool known = false)      => PushArray(f, startIndex, length, known);
+        public void WriteDoubleArray(double[] d, bool known = false)                                => PushArray(d, known);
+        public void WriteDoubleArray(double[] d, int startIndex, int length, bool known = false)    => PushArray(d, startIndex, length, known);
+        public void WriteByteArray(byte[] b, bool known = false)                                    => PushArray(b, known);
+        public void WriteByteArray(byte[] b, int startIndex, int length, bool known = false)        => PushArray(b, startIndex, length, known);
+        public void WriteUShortArray(ushort[] s, bool known = false)                                => PushArray(s, known);
+        public void WriteUShortArray(ushort[] s, int startIndex, int length, bool known = false)    => PushArray(s, startIndex, length, known);
+        public void WriteUIntArray(uint[] i, bool known = false)                                    => PushArray(i, known);
+        public void WriteUIntArray(uint[] i, int startIndex, int length, bool known = false)        => PushArray(i, startIndex, length, known);
+        public void WriteULongArray(ulong[] l, bool known = false)                                  => PushArray(l, known);
+        public void WriteULongArray(ulong[] l, int startIndex, int length, bool known = false)      => PushArray(l, startIndex, length, known);
+        public void WriteSByteArray(sbyte[] b, bool known = false)                                  => PushArray(b, known);
+        public void WriteSByteArray(sbyte[] b, int startIndex, int length, bool known = false)      => PushArray(b, startIndex, length, known);
+        public void WriteShortArray(short[] s, bool known = false)                                  => PushArray(s, known);
+        public void WriteShortArray(short[] s, int startIndex, int length, bool known = false)      => PushArray(s, startIndex, length, known);
+        public void WriteIntArray(int[] i, bool known = false)                                      => PushArray(i, known);
+        public void WriteIntArray(int[] i, int startIndex, int length, bool known = false)          => PushArray(i, startIndex, length, known);
+        public void WriteLongArray(long[] l, bool known = false)                                    => PushArray(l, known);
+        public void WriteLongArray(long[] l, int startIndex, int length, bool known = false)        => PushArray(l, startIndex, length, known);
         public void WriteBits(byte value, int bits) => Push(new Partial(ReadNBits(value, 0, bits % 8), (byte)(bits%8))); // Suggestion: store (bits % 8) result?
         public void WriteWriter(BitWriter writer)
         {
@@ -141,6 +151,14 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             bool signed = IsSigned(t.GetType().GetElementType());
             int size = Marshal.SizeOf(t.GetType().GetElementType());
             foreach (T t1 in t) Push(signed ? (object)ZigZagEncode(t1 as long? ?? t1 as int? ?? t1 as short? ?? t1 as sbyte? ?? 0, size) : (object)t1);
+        }
+
+        private void PushArray<T>(T[] t, int startIndex, int length, bool knownSize = false)
+        {
+            if (!knownSize) Push((uint)t.Length);
+            bool signed = IsSigned(t.GetType().GetElementType());
+            int size = Marshal.SizeOf(t.GetType().GetElementType());
+            for (int i = startIndex; i < length; i++) Push(signed ? (object)ZigZagEncode(t[i] as long? ?? t[i] as int? ?? t[i] as short? ?? t[i] as sbyte? ?? 0, size) : (object)t[i]);
         }
 
         /// <summary>
