@@ -157,11 +157,8 @@ namespace MLAPI.MonoBehaviours.Core
 
         private void OnValidate()
         {
-            if (!Application.isPlaying)
-                _singleton = this;
             if (NetworkConfig == null)
-                return; //May occur when the component is added
-                
+                return; //May occur when the component is added            
 
             if(NetworkConfig.EnableSceneSwitching && !NetworkConfig.RegisteredScenes.Contains(SceneManager.GetActiveScene().name))
             {
@@ -218,6 +215,7 @@ namespace MLAPI.MonoBehaviours.Core
 
         private object Init(bool server)
         {
+            if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Init()");
             networkTime = 0f;
             lastSendTickTime = 0f;
             lastEventTickTime = 0f;
@@ -238,7 +236,7 @@ namespace MLAPI.MonoBehaviours.Core
             MessageManager.reverseMessageTypes = new Dictionary<ushort, string>();
             SpawnManager.spawnedObjects = new Dictionary<uint, NetworkedObject>();
             SpawnManager.releasedNetworkObjectIds = new Stack<uint>();
-            NetworkPoolManager.Pools = new Dictionary<ushort, Data.NetworkPool>();
+            NetworkPoolManager.Pools = new Dictionary<ushort, NetworkPool>();
             NetworkPoolManager.PoolNamesToIndexes = new Dictionary<string, ushort>();
             NetworkSceneManager.registeredSceneNames = new HashSet<string>();
             NetworkSceneManager.sceneIndexToString = new Dictionary<uint, string>();
@@ -477,6 +475,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// </summary>
         public void StartServer()
         {
+            if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("StartServer()");
             if (isServer || isClient)
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot start server while an instance is already running");
@@ -507,6 +506,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// </summary>
         public void StartClient()
         {
+            if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("StartClient()");
             if (isServer || isClient)
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot start client while an instance is already running");
@@ -526,6 +526,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// </summary>
         public void StopServer()
         {
+            if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("StopServer()");
             HashSet<uint> disconnectedIds = new HashSet<uint>();
             //Don't know if I have to disconnect the clients. I'm assuming the NetworkTransport does all the cleaning on shtudown. But this way the clients get a disconnect message from server (so long it does't get lost)
             foreach (KeyValuePair<uint, NetworkedClient> pair in connectedClients)
@@ -560,6 +561,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// </summary>
         public void StopHost()
         {
+            if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("StopHost()");
             _isClient = false;
             _isServer = false;
             StopServer();
@@ -571,6 +573,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// </summary>
         public void StopClient()
         {
+            if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("StopClient()");
             _isClient = false;
             NetworkConfig.NetworkTransport.DisconnectFromServer();
             Shutdown();
@@ -581,6 +584,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// </summary>
         public void StartHost(Vector3? pos = null, Quaternion? rot = null)
         {
+            if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("StartHost()");
             if (isServer || isClient)
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot start host while an instance is already running");
@@ -639,11 +643,14 @@ namespace MLAPI.MonoBehaviours.Core
 
         private void Shutdown()
         {
+            if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Shutdown()");
             isListening = false;
             _isClient = false;
             _isServer = false;
             SpawnManager.DestroyNonSceneObjects();
-            NetworkConfig.NetworkTransport.Shutdown();
+
+            if (NetworkConfig != null && NetworkConfig.NetworkTransport != null) //The Transport is set during Init time, thus it is possible for the Transport to be null
+                NetworkConfig.NetworkTransport.Shutdown();
         }
 
         private float lastReceiveTickTime;
@@ -661,6 +668,7 @@ namespace MLAPI.MonoBehaviours.Core
                     {
                         byte error;
                         NetworkConfig.NetworkTransport.SendQueue(pair.Key, out error);
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Send Pending Queue: " + pair.Key);
                     }
                     lastSendTickTime = NetworkTime;
                 }
@@ -682,11 +690,13 @@ namespace MLAPI.MonoBehaviours.Core
                             case NetEventType.Connect:
                                 if (isServer)
                                 {
+                                    if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Client Connected");
                                     pendingClients.Add(clientId);
                                     StartCoroutine(ApprovalTimeout(clientId));
                                 }
                                 else
                                 {
+                                    if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Connected");
                                     byte[] diffiePublic = new byte[0];
                                     if(NetworkConfig.EnableEncryption)
                                     {
@@ -709,9 +719,13 @@ namespace MLAPI.MonoBehaviours.Core
                                 }
                                 break;
                             case NetEventType.Data:
+                                if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Incomming Data From " + clientId + " : " + receivedSize + " bytes");
+
                                 HandleIncomingData(clientId, messageBuffer, channelId);
                                 break;
                             case NetEventType.Disconnect:
+                                if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Disconnect Event From " + clientId);
+
                                 if (isServer)
                                     OnClientDisconnect(clientId);
                                 else
@@ -761,12 +775,14 @@ namespace MLAPI.MonoBehaviours.Core
             if(pendingClients.Contains(clientId) && !connectedClients.ContainsKey(clientId))
             {
                 //Timeout
+                if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Client " + clientId + " Handshake Timed Out");
                 DisconnectClient(clientId);
             }
         }
 
         private void HandleIncomingData(uint clientId, byte[] data, int channelId)
         {
+            if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Unwrapping Data Header");
             using (BitReader reader = BitReader.Get(data))
             {
                 ushort messageType = reader.ReadUShort();
@@ -788,6 +804,14 @@ namespace MLAPI.MonoBehaviours.Core
                 else if (isPassthrough && !isServer)
                     passthroughOrigin = reader.ReadUInt();
 
+                if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Data Header" + 
+                    ":messageHeader=" + messageType + 
+                    ":targeted=" + targeted + 
+                    ":targetNetworkId=" + targetNetworkId + 
+                    ":targetBehaviourIndex=" + networkOrderId + 
+                    ":passthrough=" + isPassthrough + 
+                    ":passthroughOrigin=" + passthroughOrigin +
+                    ":passthroughTarget=" + passthroughTarget);
 
                 //Client tried to send a network message that was not the connection request before he was accepted.
                 if (isServer && pendingClients.Contains(clientId) && messageType != 0)
@@ -800,6 +824,7 @@ namespace MLAPI.MonoBehaviours.Core
                 byte[] readBuffer = null;
                 if (NetworkConfig.EncryptedChannelsHashSet.Contains(MessageManager.reverseChannels[channelId]))
                 {
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Decrypting message body");
                     //Encrypted message
                     if (isServer)
                         readBuffer = CryptographyHelper.Decrypt(reader.ReadByteArray(), connectedClients[clientId].AesKey);
@@ -1018,6 +1043,7 @@ namespace MLAPI.MonoBehaviours.Core
 
         private void SyncTime()
         {
+            if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("");
             using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteFloat(NetworkTime);

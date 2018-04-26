@@ -137,8 +137,6 @@ namespace MLAPI.Data
         /// If your logic uses the NetwokrTime, this should probably be turned off. If however it's needed to maximize accuracy, this is recommended to be turned on
         /// </summary>
         public bool EnableTimeResync = false;
-        [TextArea]
-        public string ConfigData = string.Empty;
 
         internal string ToBase64()
         {
