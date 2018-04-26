@@ -72,15 +72,25 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         public int ReadInt() => (int)ZigZagDecode(ReadUInt(), 4);
         public long ReadLong() => ZigZagDecode(ReadULong(), 8);
         public float[] ReadFloatArray(int known = -1) => ReadArray(ReadFloat, known);
+        public uint ReadFloatArray(float[] buffer, int known = -1) => ReadArray(ReadFloat, buffer, known);
         public double[] ReadDoubleArray(int known = -1) => ReadArray(ReadDouble, known);
+        public uint ReadDoubleArray(double[] buffer, int known = -1) => ReadArray(ReadDouble, buffer, known);
         public byte[] ReadByteArray(int known = -1) => ReadArray(ReadByte, known);
+        public uint ReadByteArray(byte[] buffer, int known = -1) => ReadArray(ReadByte, buffer, known);
         public ushort[] ReadUShortArray(int known = -1) => ReadArray(ReadUShort, known);
+        public uint ReadUShortArray(ushort[] buffer, int known = -1) => ReadArray(ReadUShort, buffer, known);
         public uint[] ReadUIntArray(int known = -1) => ReadArray(ReadUInt, known);
+        public uint ReadUIntArray(uint[] buffer, int known = -1) => ReadArray(ReadUInt, buffer, known);
         public ulong[] ReadULongArray(int known = -1) => ReadArray(ReadULong, known);
+        public uint ReadULongArray(ulong[] buffer, int known = -1) => ReadArray(ReadULong, buffer, known);
         public sbyte[] ReadSByteArray(int known = -1) => ReadArray(ReadSByte, known);
+        public uint ReadSByteArray(sbyte[] buffer, int known = -1) => ReadArray(ReadSByte, buffer, known);
         public short[] ReadShortArray(int known = -1) => ReadArray(ReadShort, known);
+        public uint ReadShortArray(short[] buffer, int known = -1) => ReadArray(ReadShort, buffer, known);
         public int[] ReadIntArray(int known = -1) => ReadArray(ReadInt, known);
+        public uint ReadIntArray(int[] buffer, int known = -1) => ReadArray(ReadInt, buffer, known);
         public long[] ReadLongArray(int known = -1) => ReadArray(ReadLong, known);
+        public uint ReadLongArray(long[] buffer, int known = -1) => ReadArray(ReadLong, buffer, known);
         public string ReadString() => Encoding.UTF8.GetString(ReadByteArray());
         public byte ReadBits(int bits)
         {
@@ -116,12 +126,29 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             }
             return res;
         }
+
         private T[] ReadArray<T>(Getter<T> g, int knownSize = -1)
         {
             T[] result = new T[knownSize > 0 ? (uint)knownSize : ReadUInt()];
             for (ushort s = 0; s < result.Length; ++s)
                 result[s] = g();
             return result;
+        }
+
+        private uint ReadArray<T>(Getter<T> g, T[] buffer, int knownSize = -1)
+        {
+            uint size = knownSize > 0 ? (uint)knownSize : ReadUInt();
+            /*
+            if (buffer.Length < size)
+                throw new ArgumentException("Buffer size is too small");
+                */
+            for (ushort s = 0; s < size; ++s)
+            {
+                if (s > buffer.Length)
+                    break; //The buffer is too small. We still give the correct size so it can be re-read
+                buffer[s] = g();   
+            }
+            return size;
         }
 
         private T ReadFloating<T>()
@@ -144,6 +171,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
 
         public void Dispose()
         {
+            readFrom = null; //Give to GC
             bitCount = 0;
             readerPool.Enqueue(this);
         }
