@@ -170,6 +170,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
 
         public void Dispose()
         {
+            readFrom = null; //Give to GC
             bitCount = 0;
             readerPool.Enqueue(this);
         }
