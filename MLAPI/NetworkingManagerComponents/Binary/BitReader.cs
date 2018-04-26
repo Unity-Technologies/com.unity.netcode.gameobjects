@@ -31,7 +31,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             if (readerPool.Count == 0)
             {
                 if (pools > 10)
-                    LogHelper.LogWarning("MLAPI: There are more than 10 BitReaders. Have you forgotten do dispose? (More readers hurt performance)", LogLevel.Normal);
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("There are more than 10 BitReaders. Have you forgotten do dispose? (More readers hurt performance)");
                 BitReader reader = new BitReader(readFrom);
                 pools++;
                 return reader;

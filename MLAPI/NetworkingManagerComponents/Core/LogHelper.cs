@@ -23,22 +23,8 @@ namespace MLAPI.NetworkingManagerComponents.Core
             }
         }
 
-        internal static void LogInfo(string message, LogLevel level)
-        {
-            if (CurrentLogLevel <= level && CurrentLogLevel != LogLevel.Nothing)
-                Debug.Log(message);
-        }
-
-        internal static void LogWarning(string message, LogLevel level)
-        {
-            if (CurrentLogLevel <= level && CurrentLogLevel != LogLevel.Nothing)
-                Debug.LogWarning(message);
-        }
-
-        internal static void LogError(string message, LogLevel level)
-        {
-            if (CurrentLogLevel <= level && CurrentLogLevel != LogLevel.Nothing)
-                Debug.LogError(message);
-        }
+        internal static void LogInfo(string message) => Debug.Log("[MLAPI] " + message);
+        internal static void LogWarning(string message) => Debug.LogWarning("[MLAPI] " + message);
+        internal static void LogError(string message) => Debug.LogError("[MLAPI] " + message);
     }
 }

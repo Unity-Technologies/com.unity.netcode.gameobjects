@@ -64,7 +64,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             }
             else
             {
-                LogHelper.LogWarning("MLAPI: The message type " + name + " has not been registered. Please define it in the netConfig", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The message type " + name + " has not been registered. Please define it in the netConfig");
                 return -1;
             }
         }

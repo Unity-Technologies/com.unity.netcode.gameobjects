@@ -139,7 +139,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
         {
             if (!netManager.NetworkConfig.NetworkPrefabNames.ContainsKey(networkedPrefabId))
             {
-                LogHelper.LogWarning("MLAPI: Cannot spawn the object, invalid prefabIndex", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot spawn the object, invalid prefabIndex");
                 return null;
             }
 
@@ -147,7 +147,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             NetworkedObject netObject = go.GetComponent<NetworkedObject>();
             if (netObject == null)
             {
-                LogHelper.LogWarning("MLAPI: Please add a NetworkedObject component to the root of all spawnable objects", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Please add a NetworkedObject component to the root of all spawnable objects");
                 netObject = go.AddComponent<NetworkedObject>();
             }
 
@@ -170,22 +170,22 @@ namespace MLAPI.NetworkingManagerComponents.Core
         {
             if (netObject.isSpawned)
             {
-                LogHelper.LogWarning("MLAPI: Object already spawned", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Object already spawned");
                 return;
             }
             else if (!netManager.isServer)
             {
-                LogHelper.LogWarning("MLAPI: Only server can spawn objects", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Only server can spawn objects");
                 return;
             }
             else if (!netManager.NetworkConfig.NetworkPrefabIds.ContainsKey(netObject.NetworkedPrefabName))
             {
-                LogHelper.LogWarning("MLAPI: The prefab name " + netObject.NetworkedPrefabName + " does not exist as a networkedPrefab", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The prefab name " + netObject.NetworkedPrefabName + " does not exist as a networkedPrefab");
                 return;
             }
             else if (!netManager.NetworkConfig.HandleObjectSpawning)
             {
-                LogHelper.LogWarning("MLAPI: NetworkConfig is set to not handle object spawning", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkConfig is set to not handle object spawning");
                 return;
             }
             uint netId = GetNetworkObjectId();
@@ -225,14 +225,14 @@ namespace MLAPI.NetworkingManagerComponents.Core
         {
             if (string.IsNullOrEmpty(netManager.NetworkConfig.PlayerPrefabName) || !netManager.NetworkConfig.NetworkPrefabIds.ContainsKey(netManager.NetworkConfig.PlayerPrefabName))
             {
-                LogHelper.LogWarning("MLAPI: There is no player prefab in the NetworkConfig, or it's not registered at as a spawnable prefab", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("There is no player prefab in the NetworkConfig, or it's not registered at as a spawnable prefab");
                 return null;
             }
             GameObject go = MonoBehaviour.Instantiate(netManager.NetworkConfig.NetworkedPrefabs[netManager.NetworkConfig.NetworkPrefabIds[netManager.NetworkConfig.PlayerPrefabName]].prefab, position, rotation);
             NetworkedObject netObject = go.GetComponent<NetworkedObject>();
             if (netObject == null)
             {
-                LogHelper.LogWarning("MLAPI: Please add a NetworkedObject component to the root of the player prefab", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Please add a NetworkedObject component to the root of the player prefab");
                 netObject = go.AddComponent<NetworkedObject>();
             }
 

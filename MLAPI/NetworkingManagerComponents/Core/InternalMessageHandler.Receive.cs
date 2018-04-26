@@ -14,7 +14,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             byte[] configHash = reader.ReadByteArray(20);
             if (!netManager.NetworkConfig.CompareConfig(configHash))
             {
-                LogHelper.LogWarning("MLAPI: NetworkConfiguration missmatch. The configuration between the server and client does not match", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkConfiguration missmatch. The configuration between the server and client does not match");
                 netManager.DisconnectClient(clientId);
                 return;
             }
@@ -57,7 +57,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                         if (!rsa.VerifyData(serverPublicKey, new SHA512CryptoServiceProvider(), publicKeySignature))
                         {
                             //Man in the middle.
-                            LogHelper.LogWarning("MLAPI: Signature doesnt match for the key exchange public part. Disconnecting", LogLevel.Normal);
+                            if (LogHelper.CurrentLogLevel <= LogLevel.Normal) if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Signature doesnt match for the key exchange public part. Disconnecting");
                             netManager.StopClient();
                             return;
                         }
@@ -237,17 +237,17 @@ namespace MLAPI.NetworkingManagerComponents.Core
                     byte fieldIndex = reader.ReadByte();
                     if (!SpawnManager.spawnedObjects.ContainsKey(netId))
                     {
-                        LogHelper.LogWarning("MLAPI: Sync message recieved for a non existant object with id: " + netId, LogLevel.Normal);
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sync message recieved for a non existant object with id: " + netId);
                         return;
                     }
                     else if (SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex) == null)
                     {
-                        LogHelper.LogWarning("MLAPI: Sync message recieved for a non existant behaviour", LogLevel.Normal);
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sync message recieved for a non existant behaviour");
                         return;
                     }
                     else if (fieldIndex > (SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).syncedVarFields.Count - 1))
                     {
-                        LogHelper.LogWarning("MLAPI: Sync message recieved for field out of bounds", LogLevel.Normal);
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sync message recieved for field out of bounds");
                         return;
                     }
                     FieldType type = SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).syncedVarFields[fieldIndex].FieldType;

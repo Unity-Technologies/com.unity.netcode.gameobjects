@@ -31,7 +31,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
         {
             if(!NetworkingManager.singleton.isServer)
             {
-                LogHelper.LogWarning("MLAPI: Lag compensation simulations are only to be ran on the server", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Lag compensation simulations are only to be ran on the server");
                 return;
             }
             for (int i = 0; i < simulationObjects.Count; i++)
@@ -57,7 +57,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
         {
             if (!NetworkingManager.singleton.isServer)
             {
-                LogHelper.LogWarning("MLAPI: Lag compensation simulations are only to be ran on the server", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Lag compensation simulations are only to be ran on the server");
                 return;
             }
             float milisecondsDelay = NetworkingManager.singleton.NetworkConfig.NetworkTransport.GetCurrentRTT(clientId, out error) / 2f;

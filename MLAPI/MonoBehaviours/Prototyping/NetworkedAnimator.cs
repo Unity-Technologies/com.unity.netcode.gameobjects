@@ -107,7 +107,7 @@ namespace MLAPI.MonoBehaviours.Prototyping
         /// </summary>
         public void ResetParameterOptions()
         {
-            LogHelper.LogInfo("ResetParameterOptions", LogLevel.Normal);
+            if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogInfo("ResetParameterOptions");
             parameterSendBits = 0;
             animatorParameters = null;
         }

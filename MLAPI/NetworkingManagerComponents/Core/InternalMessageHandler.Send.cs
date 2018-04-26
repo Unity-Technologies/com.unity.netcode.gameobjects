@@ -13,7 +13,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             if (netManager.isHost && targetId == netManager.NetworkConfig.NetworkTransport.HostDummyId)
             {
                 //Host trying to send data to it's own client
-                LogHelper.LogWarning("MLAPI: Send method got message aimed at server from the server?", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Send method got message aimed at server from the server?");
                 return;
             }
 
@@ -52,7 +52,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             if (netManager.isHost && targetClientId == netManager.NetworkConfig.NetworkTransport.HostDummyId)
             {
                 //Don't invoke the message on our own machine. Instant stack overflow.
-                LogHelper.LogWarning("MLAPI: Cannot send message to own client", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot send message to own client");
                 return true;
             }
             else if (targetClientId == netManager.NetworkConfig.NetworkTransport.HostDummyId)
@@ -67,7 +67,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             bool isPassthrough = (!netManager.isServer && clientId != netManager.NetworkConfig.NetworkTransport.ServerNetId && netManager.NetworkConfig.AllowPassthroughMessages);
             if (isPassthrough && !netManager.NetworkConfig.PassthroughMessageHashSet.Contains(MessageManager.messageTypes[messageType]))
             {
-                LogHelper.LogWarning("MLAPI: The The MessageType " + messageType + " is not registered as an allowed passthrough message type", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The The MessageType " + messageType + " is not registered as an allowed passthrough message type");
                 return true;
             }
 
@@ -122,7 +122,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
         {
             if (netManager.NetworkConfig.EncryptedChannelsHashSet.Contains(channelName))
             {
-                LogHelper.LogWarning("MLAPI: Cannot send messages over encrypted channel to multiple clients", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot send messages over encrypted channel to multiple clients");
                 return;
             }
 
@@ -174,7 +174,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
         {
             if (netManager.NetworkConfig.EncryptedChannelsHashSet.Contains(channelName))
             {
-                LogHelper.LogWarning("MLAPI: Cannot send messages over encrypted channel to multiple clients", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot send messages over encrypted channel to multiple clients");
                 return;
             }
 
@@ -231,7 +231,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 return ref failedObservers;
             if (netManager.NetworkConfig.EncryptedChannels.Contains(channelName))
             {
-                LogHelper.LogWarning("MLAPI: Cannot send messages over encrypted channel to multiple clients", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot send messages over encrypted channel to multiple clients");
                 return ref failedObservers;
             }
 
@@ -289,7 +289,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             failedObservers.Clear();
             if (netManager.NetworkConfig.EncryptedChannels.Contains(channelName))
             {
-                LogHelper.LogWarning("MLAPI: Cannot send messages over encrypted channel to multiple clients", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot send messages over encrypted channel to multiple clients");
                 return ref failedObservers;
             }
 

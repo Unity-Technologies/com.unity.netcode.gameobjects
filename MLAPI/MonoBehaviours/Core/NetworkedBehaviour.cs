@@ -204,17 +204,17 @@ namespace MLAPI.MonoBehaviours.Core
         {
             if (NetworkingManager.singleton.isServer)
             {
-                LogHelper.LogWarning("MLAPI: Cannot invoke commands from server", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot invoke commands from server");
                 return;
             }
             if (ownerClientId != NetworkingManager.singleton.MyClientId)
             {
-                LogHelper.LogWarning("MLAPI: Cannot invoke command for object without ownership", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot invoke command for object without ownership");
                 return;
             }
             if (!methodName.StartsWith("Cmd"))
             {
-                LogHelper.LogWarning("MLAPI: Invalid Command name. Command methods have to start with Cmd", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid Command name. Command methods have to start with Cmd");
                 return;
             }
 
@@ -245,12 +245,12 @@ namespace MLAPI.MonoBehaviours.Core
         {
             if (!NetworkingManager.singleton.isServer)
             {
-                LogHelper.LogWarning("MLAPI: Cannot invoke ClientRpc from client", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot invoke ClientRpc from client");
                 return;
             }
             if (!methodName.StartsWith("Rpc"))
             {
-                LogHelper.LogWarning("MLAPI: Invalid Command name. Command methods have to start with Cmd", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid Command name. Command methods have to start with Cmd");
                 return;
             }
 
@@ -281,12 +281,12 @@ namespace MLAPI.MonoBehaviours.Core
         {
             if (!NetworkingManager.singleton.isServer)
             {
-                LogHelper.LogWarning("MLAPI: Cannot invoke ClientRpc from client", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot invoke ClientRpc from client");
                 return;
             }
             if (!methodName.StartsWith("Target"))
             {
-                LogHelper.LogWarning("MLAPI: Invalid Command name. Command methods have to start with Cmd", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid Command name. Command methods have to start with Cmd");
                 return;
             }
 
@@ -317,7 +317,7 @@ namespace MLAPI.MonoBehaviours.Core
         {
             if (!MessageManager.messageTypes.ContainsKey(name))
             {
-                LogHelper.LogWarning("MLAPI: The messageType " + name + " is not registered", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The messageType " + name + " is not registered");
                 return -1;
             }
             ushort messageType = MessageManager.messageTypes[name];
@@ -327,7 +327,7 @@ namespace MLAPI.MonoBehaviours.Core
                 networkedObject.targetMessageActions.Add(behaviourOrder, new Dictionary<ushort, Action<uint, BitReader>>());
             if (networkedObject.targetMessageActions[behaviourOrder].ContainsKey(messageType))
             {
-                LogHelper.LogWarning("MLAPI: Each NetworkedBehaviour can only register one callback per instance per message type", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Each NetworkedBehaviour can only register one callback per instance per message type");
                 return -1;
             }
 
@@ -348,7 +348,7 @@ namespace MLAPI.MonoBehaviours.Core
         {
             if (!MessageManager.messageTypes.ContainsKey(name))
             {
-                LogHelper.LogWarning("MLAPI: The messageType " + name + " is not registered", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The messageType " + name + " is not registered");
                 return -1;
             }
             ushort messageType = MessageManager.messageTypes[name];
@@ -358,7 +358,7 @@ namespace MLAPI.MonoBehaviours.Core
                 networkedObject.targetMessageActions.Add(behaviourOrder, new Dictionary<ushort, Action<uint, BitReader>>());
             if (networkedObject.targetMessageActions[behaviourOrder].ContainsKey(messageType))
             {
-                LogHelper.LogWarning("MLAPI: Each NetworkedBehaviour can only register one callback per instance per message type", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Each NetworkedBehaviour can only register one callback per instance per message type");
                 return -1;
             }
 
@@ -451,13 +451,13 @@ namespace MLAPI.MonoBehaviours.Core
                     }
                     else
                     {
-                        LogHelper.LogError("MLAPI: The type " + sortedFields[i].FieldType.ToString() + " can not be used as a syncvar", LogLevel.Normal);
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogError("MLAPI: The type " + sortedFields[i].FieldType.ToString() + " can not be used as a syncvar");
                     }
                 }
             }
             if (syncedVarFields.Count > 255)
             {
-                LogHelper.LogError("MLAPI: You can not have more than 255 SyncVar's per NetworkedBehaviour!", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogError("MLAPI: You can not have more than 255 SyncVar's per NetworkedBehaviour!");
             }
         }
 
@@ -652,17 +652,17 @@ namespace MLAPI.MonoBehaviours.Core
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
-                LogHelper.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
                 return;
             }
             if (MessageManager.messageTypes[messageType] < 32)
             {
-                LogHelper.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
                 return;
             }
             if (isServer)
             {
-                LogHelper.LogWarning("MLAPI: Server can not send messages to server", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Server can not send messages to server");
                 return;
             }
             using (BitWriter writer = BitWriter.Get())
@@ -682,17 +682,17 @@ namespace MLAPI.MonoBehaviours.Core
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
-                LogHelper.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
                 return;
             }
             if (MessageManager.messageTypes[messageType] < 32)
             {
-                LogHelper.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
                 return;
             }
             if (isServer)
             {
-                LogHelper.LogWarning("MLAPI: Server can not send messages to server", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Server can not send messages to server");
                 return;
             }
             InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerNetId, messageType, channelName, writer, null);
@@ -720,17 +720,17 @@ namespace MLAPI.MonoBehaviours.Core
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
-                LogHelper.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
                 return;
             }
             if (MessageManager.messageTypes[messageType] < 32)
             {
-                LogHelper.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
                 return;
             }
             if (isServer)
             {
-                LogHelper.LogWarning("MLAPI: Server can not send messages to server", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Server can not send messages to server");
                 return;
             }
             using (BitWriter writer = BitWriter.Get())
@@ -750,17 +750,17 @@ namespace MLAPI.MonoBehaviours.Core
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
-                LogHelper.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
                 return;
             }
             if (MessageManager.messageTypes[messageType] < 32)
             {
-                LogHelper.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
                 return;
             }
             if (isServer)
             {
-                LogHelper.LogWarning("MLAPI: Server can not send messages to server", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Server can not send messages to server");
                 return;
             }
             InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerNetId, messageType, channelName, writer, null, networkId, networkedObject.GetOrderIndex(this));
@@ -789,17 +789,17 @@ namespace MLAPI.MonoBehaviours.Core
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
-                LogHelper.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
                 return;
             }
             if (MessageManager.messageTypes[messageType] < 32)
             {
-                LogHelper.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
                 return;
             }
             if (!isServer && (!NetworkingManager.singleton.NetworkConfig.AllowPassthroughMessages || !NetworkingManager.singleton.NetworkConfig.PassthroughMessageHashSet.Contains(MessageManager.messageTypes[messageType])))
             {
-                LogHelper.LogWarning("MLAPI: Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
                 return;
             }
             uint? fromNetId = respectObservers ? (uint?)networkId : null;
@@ -821,17 +821,17 @@ namespace MLAPI.MonoBehaviours.Core
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
-                LogHelper.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
                 return;
             }
             if (MessageManager.messageTypes[messageType] < 32)
             {
-                LogHelper.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
                 return;
             }
             if (!isServer && (!NetworkingManager.singleton.NetworkConfig.AllowPassthroughMessages || !NetworkingManager.singleton.NetworkConfig.PassthroughMessageHashSet.Contains(MessageManager.messageTypes[messageType])))
             {
-                LogHelper.LogWarning("MLAPI: Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
                 return;
             }
             uint? fromNetId = respectObservers ? (uint?)networkId : null;
@@ -861,17 +861,17 @@ namespace MLAPI.MonoBehaviours.Core
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
-                LogHelper.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
                 return;
             }
             if (MessageManager.messageTypes[messageType] < 32)
             {
-                LogHelper.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
                 return;
             }
             if (!isServer && (!NetworkingManager.singleton.NetworkConfig.AllowPassthroughMessages || !NetworkingManager.singleton.NetworkConfig.PassthroughMessageHashSet.Contains(MessageManager.messageTypes[messageType])))
             {
-                LogHelper.LogWarning("MLAPI: Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
                 return;
             }
             using (BitWriter writer = BitWriter.Get())
@@ -891,17 +891,17 @@ namespace MLAPI.MonoBehaviours.Core
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
-                LogHelper.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
                 return;
             }
             if (MessageManager.messageTypes[messageType] < 32)
             {
-                LogHelper.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
                 return;
             }
             if (!isServer && (!NetworkingManager.singleton.NetworkConfig.AllowPassthroughMessages || !NetworkingManager.singleton.NetworkConfig.PassthroughMessageHashSet.Contains(MessageManager.messageTypes[messageType])))
             {
-                LogHelper.LogWarning("MLAPI: Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
                 return;
             }
             InternalMessageHandler.Send(ownerClientId, messageType, channelName, writer, null, networkId, networkedObject.GetOrderIndex(this));
@@ -930,17 +930,17 @@ namespace MLAPI.MonoBehaviours.Core
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
-                LogHelper.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
                 return;
             }
             if (MessageManager.messageTypes[messageType] < 32)
             {
-                LogHelper.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
                 return;
             }
             if (!isServer)
             {
-                LogHelper.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
                 return;
             }
             uint? fromNetId = respectObservers ? (uint?)networkId : null;
@@ -962,17 +962,17 @@ namespace MLAPI.MonoBehaviours.Core
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
-                LogHelper.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
                 return;
             }
             if (MessageManager.messageTypes[messageType] < 32)
             {
-                LogHelper.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
                 return;
             }
             if (!isServer)
             {
-                LogHelper.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
                 return;
             }
             uint? fromNetId = respectObservers ? (uint?)networkId : null;
@@ -1003,17 +1003,17 @@ namespace MLAPI.MonoBehaviours.Core
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
-                LogHelper.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
                 return;
             }
             if (MessageManager.messageTypes[messageType] < 32)
             {
-                LogHelper.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
                 return;
             }
             if (!isServer)
             {
-                LogHelper.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
                 return;
             }
             uint? fromNetId = respectObservers ? (uint?)networkId : null;
@@ -1035,17 +1035,17 @@ namespace MLAPI.MonoBehaviours.Core
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
-                LogHelper.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
                 return;
             }
             if (MessageManager.messageTypes[messageType] < 32)
             {
-                LogHelper.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
                 return;
             }
             if (!isServer)
             {
-                LogHelper.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
                 return;
             }
             uint? fromNetId = respectObservers ? (uint?)networkId : null;
@@ -1077,17 +1077,17 @@ namespace MLAPI.MonoBehaviours.Core
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
-                LogHelper.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
                 return;
             }
             if (MessageManager.messageTypes[messageType] < 32)
             {
-                LogHelper.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
                 return;
             }
             if (!isServer && (!NetworkingManager.singleton.NetworkConfig.AllowPassthroughMessages || !NetworkingManager.singleton.NetworkConfig.PassthroughMessageHashSet.Contains(MessageManager.messageTypes[messageType])))
             {
-                LogHelper.LogWarning("MLAPI: Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
                 return;
             }
             uint? fromNetId = respectObservers ? (uint?)networkId : null;
@@ -1111,17 +1111,17 @@ namespace MLAPI.MonoBehaviours.Core
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
-                LogHelper.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
                 return;
             }
             if (MessageManager.messageTypes[messageType] < 32)
             {
-                LogHelper.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
                 return;
             }
             if (!isServer && (!NetworkingManager.singleton.NetworkConfig.AllowPassthroughMessages || !NetworkingManager.singleton.NetworkConfig.PassthroughMessageHashSet.Contains(MessageManager.messageTypes[messageType])))
             {
-                LogHelper.LogWarning("MLAPI: Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
                 return;
             }
             uint? fromNetId = respectObservers ? (uint?)networkId : null;
@@ -1154,17 +1154,17 @@ namespace MLAPI.MonoBehaviours.Core
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
-                LogHelper.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
                 return;
             }
             if (MessageManager.messageTypes[messageType] < 32)
             {
-                LogHelper.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
                 return;
             }
             if (!isServer && (!NetworkingManager.singleton.NetworkConfig.AllowPassthroughMessages || !NetworkingManager.singleton.NetworkConfig.PassthroughMessageHashSet.Contains(MessageManager.messageTypes[messageType])))
             {
-                LogHelper.LogWarning("MLAPI: Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
                 return;
             }
             uint? fromNetId = respectObservers ? (uint?)networkId : null;
@@ -1187,17 +1187,17 @@ namespace MLAPI.MonoBehaviours.Core
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
-                LogHelper.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
                 return;
             }
             if (MessageManager.messageTypes[messageType] < 32)
             {
-                LogHelper.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
                 return;
             }
             if (!isServer && (!NetworkingManager.singleton.NetworkConfig.AllowPassthroughMessages || !NetworkingManager.singleton.NetworkConfig.PassthroughMessageHashSet.Contains(MessageManager.messageTypes[messageType])))
             {
-                LogHelper.LogWarning("MLAPI: Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
                 return;
             }
             uint? fromNetId = respectObservers ? (uint?)networkId : null;
@@ -1230,17 +1230,17 @@ namespace MLAPI.MonoBehaviours.Core
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
-                LogHelper.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
                 return;
             }
             if (MessageManager.messageTypes[messageType] < 32)
             {
-                LogHelper.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
                 return;
             }
             if (!isServer)
             {
-                LogHelper.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
                 return;
             }
             uint? fromNetId = respectObservers ? (uint?)networkId : null;
@@ -1263,17 +1263,17 @@ namespace MLAPI.MonoBehaviours.Core
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
-                LogHelper.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
                 return;
             }
             if (MessageManager.messageTypes[messageType] < 32)
             {
-                LogHelper.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
                 return;
             }
             if (!isServer)
             {
-                LogHelper.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
                 return;
             }
             uint? fromNetId = respectObservers ? (uint?)networkId : null;
@@ -1306,17 +1306,17 @@ namespace MLAPI.MonoBehaviours.Core
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
-                LogHelper.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
                 return;
             }
             if (MessageManager.messageTypes[messageType] < 32)
             {
-                LogHelper.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
                 return;
             }
             if (!isServer)
             {
-                LogHelper.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
                 return;
             }
             uint? fromNetId = respectObservers ? (uint?)networkId : null;
@@ -1339,17 +1339,17 @@ namespace MLAPI.MonoBehaviours.Core
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
-                LogHelper.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
                 return;
             }
             if (MessageManager.messageTypes[messageType] < 32)
             {
-                LogHelper.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
                 return;
             }
             if (!isServer)
             {
-                LogHelper.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
                 return;
             }
             uint? fromNetId = respectObservers ? (uint?)networkId : null;
@@ -1382,17 +1382,17 @@ namespace MLAPI.MonoBehaviours.Core
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
-                LogHelper.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
                 return;
             }
             if (MessageManager.messageTypes[messageType] < 32)
             {
-                LogHelper.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
                 return;
             }
             if (!isServer)
             {
-                LogHelper.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
                 return;
             }
             uint? fromNetId = respectObservers ? (uint?)networkId : null;
@@ -1415,17 +1415,17 @@ namespace MLAPI.MonoBehaviours.Core
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
-                LogHelper.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
                 return;
             }
             if (MessageManager.messageTypes[messageType] < 32)
             {
-                LogHelper.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
                 return;
             }
             if (!isServer)
             {
-                LogHelper.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
                 return;
             }
             uint? fromNetId = respectObservers ? (uint?)networkId : null;
@@ -1458,17 +1458,17 @@ namespace MLAPI.MonoBehaviours.Core
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
-                LogHelper.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
                 return;
             }
             if (MessageManager.messageTypes[messageType] < 32)
             {
-                LogHelper.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
                 return;
             }
             if (!isServer)
             {
-                LogHelper.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
                 return;
             }
             uint? fromNetId = respectObservers ? (uint?)networkId : null;
@@ -1491,17 +1491,17 @@ namespace MLAPI.MonoBehaviours.Core
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
-                LogHelper.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
                 return;
             }
             if (MessageManager.messageTypes[messageType] < 32)
             {
-                LogHelper.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
                 return;
             }
             if (!isServer)
             {
-                LogHelper.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
                 return;
             }
             uint? fromNetId = respectObservers ? (uint?)networkId : null;
@@ -1533,17 +1533,17 @@ namespace MLAPI.MonoBehaviours.Core
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
-                LogHelper.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
                 return;
             }
             if (MessageManager.messageTypes[messageType] < 32)
             {
-                LogHelper.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
                 return;
             }
             if (!isServer)
             {
-                LogHelper.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
                 return;
             }
             uint? fromNetId = respectObservers ? (uint?)networkId : null;
@@ -1565,17 +1565,17 @@ namespace MLAPI.MonoBehaviours.Core
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
-                LogHelper.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
                 return;
             }
             if (MessageManager.messageTypes[messageType] < 32)
             {
-                LogHelper.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
                 return;
             }
             if (!isServer)
             {
-                LogHelper.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
                 return;
             }
             uint? fromNetId = respectObservers ? (uint?)networkId : null;
@@ -1606,17 +1606,17 @@ namespace MLAPI.MonoBehaviours.Core
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
-                LogHelper.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
                 return;
             }
             if (MessageManager.messageTypes[messageType] < 32)
             {
-                LogHelper.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
                 return;
             }
             if (!isServer)
             {
-                LogHelper.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
                 return;
             }
             uint? fromNetId = respectObservers ? (uint?)networkId : null;
@@ -1638,17 +1638,17 @@ namespace MLAPI.MonoBehaviours.Core
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
-                LogHelper.LogWarning("MLAPI: Invalid message type \"" + channelName + "\"", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
                 return;
             }
             if (MessageManager.messageTypes[messageType] < 32)
             {
-                LogHelper.LogWarning("MLAPI: Sending messages on the internal MLAPI channels is not allowed!", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
                 return;
             }
             if (!isServer)
             {
-                LogHelper.LogWarning("MLAPI: Sending messages from client to other clients is not yet supported", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
                 return;
             }
             uint? fromNetId = respectObservers ? (uint?)networkId : null;

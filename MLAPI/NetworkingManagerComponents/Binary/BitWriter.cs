@@ -86,7 +86,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         {
             if (writerPool.Count == 0)
             {
-                LogHelper.LogWarning("MLAPI: There are more than 10 BitWriters. Have you forgotten do dispose? (It will still work with worse performance)", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("There are more than 10 BitWriters. Have you forgotten do dispose? (It will still work with worse performance)");
                 return new BitWriter() { outsidePool = true };
             }
             else
@@ -99,7 +99,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             else if (b is string || b.GetType().IsArray || IsSupportedType(b.GetType()))
                 collect.Add(b is string ? Encoding.UTF8.GetBytes(b as string) : b as object);
             else
-                LogHelper.LogWarning("MLAPI: The type \"" + b.GetType() + "\" is not supported by the Binary Serializer. It will be ignored", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The type \"" + b.GetType() + "\" is not supported by the Binary Serializer. It will be ignored");
         }
 
 
@@ -194,7 +194,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         {
             if(buffer == null)
             {
-                LogHelper.LogWarning("MLAPI: no buffer provided", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("no buffer provided");
                 return 0;
             }
             long bitCount = 0;
@@ -202,7 +202,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
 
             if (buffer.Length < ((bitCount / 8) + (bitCount % 8 == 0 ? 0 : 1)))
             {
-                LogHelper.LogWarning("MLAPI: The buffer size is not large enough", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The buffer size is not large enough");
                 return 0;
             }
             long bitOffset = 0;

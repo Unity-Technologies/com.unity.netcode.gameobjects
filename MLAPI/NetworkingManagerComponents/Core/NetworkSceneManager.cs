@@ -24,7 +24,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
         {
             if(!sceneNameToIndex.ContainsKey(SceneManager.GetActiveScene().name))
             {
-                LogHelper.LogWarning("MLAPI: Scene switching is enabled but the current scene (" + SceneManager.GetActiveScene().name + ") is not regisered as a network scene.", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Scene switching is enabled but the current scene (" + SceneManager.GetActiveScene().name + ") is not regisered as a network scene.");
                 return;
             }
             CurrentSceneIndex = sceneNameToIndex[SceneManager.GetActiveScene().name];
@@ -38,17 +38,17 @@ namespace MLAPI.NetworkingManagerComponents.Core
         {
             if(!NetworkingManager.singleton.NetworkConfig.EnableSceneSwitching)
             {
-                LogHelper.LogWarning("MLAPI: Scene switching is not enabled", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Scene switching is not enabled");
                 return;
             }
             else if (isSwitching)
             {
-                LogHelper.LogWarning("MLAPI: Scene switch already in progress", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Scene switch already in progress");
                 return;
             }
             else if(!registeredSceneNames.Contains(sceneName))
             {
-                LogHelper.LogWarning("MLAPI: The scene " + sceneName + " is not registered as a switchable scene.", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The scene " + sceneName + " is not registered as a switchable scene.");
                 return;
             }
             SpawnManager.DestroySceneObjects(); //Destroy current scene objects before switching.
@@ -74,12 +74,12 @@ namespace MLAPI.NetworkingManagerComponents.Core
         {
             if (!NetworkingManager.singleton.NetworkConfig.EnableSceneSwitching)
             {
-                LogHelper.LogWarning("MLAPI: Scene switching is not enabled but was requested by the server", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Scene switching is not enabled but was requested by the server");
                 return;
             }
             else if (!sceneIndexToString.ContainsKey(sceneIndex) || !registeredSceneNames.Contains(sceneIndexToString[sceneIndex]))
             {
-                LogHelper.LogWarning("MLAPI: Server requested a scene switch to a non registered scene", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Server requested a scene switch to a non registered scene");
                 return;
             }
             else if(SceneManager.GetActiveScene().name == sceneIndexToString[sceneIndex])
@@ -115,7 +115,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             }
             else
             {
-                LogHelper.LogError("DESTROING OBJECTS", LogLevel.Normal);
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogError("DESTROING OBJECTS");
                 SpawnManager.DestroySceneObjects();
             }
         }

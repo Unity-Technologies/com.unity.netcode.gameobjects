@@ -47,7 +47,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
                     FieldType fieldType = FieldTypeHelper.GetFieldType(sortedFields[i].FieldType);
                     if (fieldType == FieldType.Invalid)
                     {
-                        LogHelper.LogWarning("MLAPI: The field " + sortedFields[i].Name + " will not be serialized as it's not of a supported type. Add the BinaryIgnore attribute to prevent this message from shwoing up.", LogLevel.Normal);
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The field " + sortedFields[i].Name + " will not be serialized as it's not of a supported type. Add the BinaryIgnore attribute to prevent this message from shwoing up.");
                         continue;
                     }
                     FieldTypeHelper.WriteFieldType(writer, sortedFields[i].GetValue(instance), fieldType);
@@ -83,7 +83,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
                     FieldType fieldType = FieldTypeHelper.GetFieldType(sortedFields[i].FieldType);
                     if (fieldType == FieldType.Invalid)
                     {
-                        LogHelper.LogWarning("MLAPI: The field " + sortedFields[i].Name + " will not be deserialized as it's not of a supported type. Add the BinaryIgnore attribute to prevent this message from shwoing up.", LogLevel.Normal);
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The field " + sortedFields[i].Name + " will not be deserialized as it's not of a supported type. Add the BinaryIgnore attribute to prevent this message from shwoing up.");
                         continue;
                     }
                     sortedFields[i].SetValue(instance, FieldTypeHelper.ReadFieldType(reader, fieldType));
@@ -117,7 +117,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
                 FieldType fieldType = FieldTypeHelper.GetFieldType(sortedFields[i].FieldType);
                 if (fieldType == FieldType.Invalid)
                 {
-                    LogHelper.LogWarning("MLAPI: The field " + sortedFields[i].Name + " will not be deserialized as it's not of a supported type. Add the BinaryIgnore attribute to prevent this message from shwoing up.", LogLevel.Normal);
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The field " + sortedFields[i].Name + " will not be deserialized as it's not of a supported type. Add the BinaryIgnore attribute to prevent this message from shwoing up.");
                     continue;
                 }
                 sortedFields[i].SetValue(instance, FieldTypeHelper.ReadFieldType(reader, fieldType));

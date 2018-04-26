@@ -36,7 +36,7 @@ namespace MLAPI.Data
                     go.SetActive(true);
                 }
             }
-            LogHelper.LogWarning("MLAPI: The pool " + poolId + " has ran out of space", LogLevel.Normal);
+            if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The pool " + poolId + " has ran out of space");
             return null;
         }
     }
