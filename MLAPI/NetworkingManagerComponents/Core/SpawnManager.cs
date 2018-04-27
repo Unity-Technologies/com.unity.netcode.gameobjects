@@ -33,6 +33,11 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
         internal static void RemoveOwnership(uint netId)
         {
+            if (!netManager.isServer)
+            {
+                LogHelper.LogWarning("You can only remove ownership from Server");
+                return;
+            }
             NetworkedObject netObject = SpawnManager.spawnedObjects[netId];
             NetworkingManager.singleton.connectedClients[netObject.OwnerClientId].OwnedObjects.RemoveAll(x => x.NetworkId == netId);
             netObject.ownerClientId = NetworkingManager.singleton.NetworkConfig.NetworkTransport.InvalidDummyId;
@@ -48,6 +53,11 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
         internal static void ChangeOwnership(uint netId, uint clientId)
         {
+            if (!netManager.isServer)
+            {
+                LogHelper.LogWarning("You can only change ownership from Server");
+                return;
+            }
             NetworkedObject netObject = SpawnManager.spawnedObjects[netId];
             NetworkingManager.singleton.connectedClients[netObject.OwnerClientId].OwnedObjects.RemoveAll(x => x.NetworkId == netId);
             NetworkingManager.singleton.connectedClients[clientId].OwnedObjects.Add(netObject);
