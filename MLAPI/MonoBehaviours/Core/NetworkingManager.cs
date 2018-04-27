@@ -11,7 +11,6 @@ using UnityEngine.SceneManagement;
 using MLAPI.NetworkingManagerComponents.Binary;
 using MLAPI.Data.Transports;
 using MLAPI.Data.Transports.UNET;
-using MLAPI.Data.Transports.LiteNetLib;
 
 namespace MLAPI.MonoBehaviours.Core
 {
@@ -245,8 +244,6 @@ namespace MLAPI.MonoBehaviours.Core
 
             if (NetworkConfig.Transport == DefaultTransport.UNET)
                 NetworkConfig.NetworkTransport = new UnetTransport();
-            else if (NetworkConfig.Transport == DefaultTransport.LiteNetLib)
-                NetworkConfig.NetworkTransport = new LiteNetLibTransport();
             else if (NetworkConfig.Transport == DefaultTransport.Custom && NetworkConfig.NetworkTransport == null)
                 throw new NullReferenceException("The current NetworkTransport is null");
 

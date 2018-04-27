@@ -12,10 +12,6 @@
         /// <summary>
         /// LiteNetLib transport
         /// </summary>
-        LiteNetLib,
-        /// <summary>
-        /// A custom transport
-        /// </summary>
         Custom
     }
 }

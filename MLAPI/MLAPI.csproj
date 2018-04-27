@@ -81,7 +81,6 @@
     <Compile Include="Data\FixedQueue.cs" />
     <Compile Include="Data\Transports\DefaultTransport.cs" />
     <Compile Include="Data\Transports\IUDPTransport.cs" />
-    <Compile Include="Data\Transports\LiteNetLib\LiteNetLibTransport.cs" />
     <Compile Include="Data\Transports\NetEventType.cs" />
     <Compile Include="Data\NetworkConfig.cs" />
     <Compile Include="Data\NetworkedPrefab.cs" />
