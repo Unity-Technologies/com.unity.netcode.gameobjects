@@ -35,7 +35,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
         {
             if (!netManager.isServer)
             {
-                LogHelper.LogWarning("You can only remove ownership from Server");
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("You can only remove ownership from Server");
                 return;
             }
             NetworkedObject netObject = SpawnManager.spawnedObjects[netId];
@@ -55,7 +55,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
         {
             if (!netManager.isServer)
             {
-                LogHelper.LogWarning("You can only change ownership from Server");
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("You can only change ownership from Server");
                 return;
             }
             NetworkedObject netObject = SpawnManager.spawnedObjects[netId];
