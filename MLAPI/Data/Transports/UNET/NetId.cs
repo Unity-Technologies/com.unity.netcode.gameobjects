@@ -5,6 +5,9 @@
     /// </summary>
     public struct NetId
     {
+        //The NetId uses a ushort as connectionId and byte as hostId. Explanation: https://blogs.unity3d.com/2014/06/11/all-about-the-unity-networking-transport-layer/#comment-167515
+
+
         /// <summary>
         /// The hostId this client is on
         /// </summary>
