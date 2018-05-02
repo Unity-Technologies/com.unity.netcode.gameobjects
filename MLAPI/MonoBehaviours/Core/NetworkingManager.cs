@@ -1157,33 +1157,39 @@ namespace MLAPI.MonoBehaviours.Core
 
                 //Inform old clients of the new player
 
-                using (BitWriter writer = BitWriter.Get())
+                foreach (var clientPair in connectedClients)
                 {
-                    if (NetworkConfig.HandleObjectSpawning)
+                    if (clientPair.Key == clientId)
+                        continue; //The new client.
+
+                    using (BitWriter writer = BitWriter.Get())
                     {
-                        writer.WriteBool(true);
-                        writer.WriteUInt(connectedClients[clientId].PlayerObject.GetComponent<NetworkedObject>().NetworkId);
-                        writer.WriteUInt(clientId);
-                        writer.WriteInt(-1);
-                        writer.WriteBool(false);
-                        writer.WriteBool(connectedClients[clientId].PlayerObject.GetComponent<NetworkedObject>().observers.Contains(clientId));
+                        if (NetworkConfig.HandleObjectSpawning)
+                        {
+                            writer.WriteBool(true);
+                            writer.WriteUInt(connectedClients[clientId].PlayerObject.GetComponent<NetworkedObject>().NetworkId);
+                            writer.WriteUInt(clientId);
+                            writer.WriteInt(-1);
+                            writer.WriteBool(false);
+                            writer.WriteBool(connectedClients[clientId].PlayerObject.GetComponent<NetworkedObject>().observers.Contains(clientPair.Key));
 
-                        writer.WriteFloat(connectedClients[clientId].PlayerObject.transform.position.x);
-                        writer.WriteFloat(connectedClients[clientId].PlayerObject.transform.position.y);
-                        writer.WriteFloat(connectedClients[clientId].PlayerObject.transform.position.z);
+                            writer.WriteFloat(connectedClients[clientId].PlayerObject.transform.position.x);
+                            writer.WriteFloat(connectedClients[clientId].PlayerObject.transform.position.y);
+                            writer.WriteFloat(connectedClients[clientId].PlayerObject.transform.position.z);
 
-                        writer.WriteFloat(connectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.x);
-                        writer.WriteFloat(connectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.y);
-                        writer.WriteFloat(connectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.z);
+                            writer.WriteFloat(connectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.x);
+                            writer.WriteFloat(connectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.y);
+                            writer.WriteFloat(connectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.z);
 
-                        connectedClients[clientId].PlayerObject.GetComponent<NetworkedObject>().WriteFormattedSyncedVarData(writer);
+                            connectedClients[clientId].PlayerObject.GetComponent<NetworkedObject>().WriteFormattedSyncedVarData(writer);
+                        }
+                        else
+                        {
+                            writer.WriteUInt(clientId);
+                        }
+
+                        InternalMessageHandler.Send(clientPair.Key, "MLAPI_ADD_OBJECT", "MLAPI_INTERNAL", writer, null);
                     }
-                    else
-                    {
-                        writer.WriteUInt(clientId);
-                    }
-
-                    InternalMessageHandler.Send("MLAPI_ADD_OBJECT", "MLAPI_INTERNAL", writer, clientId, null);
                 }
             }
             else
