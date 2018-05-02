@@ -8,6 +8,6 @@ namespace MLAPI.Attributes
     [AttributeUsage(AttributeTargets.Method)]
     public class TargetRpc : Attribute
     {
-
+        public string channelName = "MLAPI_INTERNAL";
     }
 }

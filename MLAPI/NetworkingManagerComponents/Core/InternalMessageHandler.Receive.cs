@@ -370,6 +370,9 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
         internal static void HandleCommand(uint clientId, BitReader reader, int channelId)
         {
+            if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.Disabled)
+                return;
+
             uint networkId = reader.ReadUInt();
             ushort orderId = reader.ReadUShort();
             ulong hash = reader.ReadULong();
@@ -386,6 +389,9 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
         internal static void HandleRpc(uint clientId, BitReader reader, int channelId)
         {
+            if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.Disabled)     
+                return;
+
             uint networkId = reader.ReadUInt();
             ushort orderId = reader.ReadUShort();
             ulong hash = reader.ReadULong();
@@ -400,6 +406,9 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
         internal static void HandleTargetRpc(uint clientId, BitReader reader, int channelId)
         {
+            if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.Disabled)
+                return;
+
             uint networkId = reader.ReadUInt();
             ushort orderId = reader.ReadUShort();
             ulong hash = reader.ReadULong();

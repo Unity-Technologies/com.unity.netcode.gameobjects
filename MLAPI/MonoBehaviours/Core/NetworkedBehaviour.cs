@@ -141,6 +141,7 @@ namespace MLAPI.MonoBehaviours.Core
         }
 
         internal Dictionary<string, MethodInfo> cachedMethods = new Dictionary<string, MethodInfo>();
+        internal Dictionary<string, string> messageChannelName = new Dictionary<string, string>();
 
         /// <summary>
         /// Called when a new client connects
@@ -183,15 +184,24 @@ namespace MLAPI.MonoBehaviours.Core
 
         private void CacheAttributedMethods()
         {
+            if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.Disabled)
+                return;
+
             MethodInfo[] methods = GetType().GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.FlattenHierarchy);
             for (int i = 0; i < methods.Length; i++)
             {
                 if (methods[i].IsDefined(typeof(Command), true) || methods[i].IsDefined(typeof(ClientRpc), true) || methods[i].IsDefined(typeof(TargetRpc), true))
                 {
-                    Data.Cache.RegisterMessageAttributeName(methods[i].Name);
+                    Data.Cache.RegisterMessageAttributeName(methods[i].Name, NetworkingManager.singleton.NetworkConfig.AttributeMessageMode);
                     if (!cachedMethods.ContainsKey(methods[i].Name))
                         cachedMethods.Add(methods[i].Name, methods[i]);
                 }
+                if (methods[i].IsDefined(typeof(Command), true) && !messageChannelName.ContainsKey(methods[i].Name))
+                    messageChannelName.Add(methods[i].Name, ((Command[])methods[i].GetCustomAttributes(typeof(Command), true))[0].channelName);
+                if (methods[i].IsDefined(typeof(ClientRpc), true) && !messageChannelName.ContainsKey(methods[i].Name))
+                    messageChannelName.Add(methods[i].Name, ((ClientRpc[])methods[i].GetCustomAttributes(typeof(ClientRpc), true))[0].channelName);
+                if (methods[i].IsDefined(typeof(TargetRpc), true) && !messageChannelName.ContainsKey(methods[i].Name))
+                    messageChannelName.Add(methods[i].Name, ((TargetRpc[])methods[i].GetCustomAttributes(typeof(TargetRpc), true))[0].channelName);
             }
         }
 
@@ -217,8 +227,13 @@ namespace MLAPI.MonoBehaviours.Core
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid Command name. Command methods have to start with Cmd");
                 return;
             }
+            if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.Disabled)
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Calling InvokeCommand is not allowed when AttributeMessageMode is set to disabled");
+                return;
+            }
 
-            ulong hash = Data.Cache.GetMessageAttributeHash(methodName);
+            ulong hash = Data.Cache.GetMessageAttributeHash(methodName, NetworkingManager.singleton.NetworkConfig.AttributeMessageMode);
             using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteUInt(networkId);
@@ -232,7 +247,7 @@ namespace MLAPI.MonoBehaviours.Core
                     FieldTypeHelper.WriteFieldType(writer, methodParams[i], fieldType);
                 }
 
-                InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerNetId, "MLAPI_COMMAND", "MLAPI_INTERNAL", writer, null);
+                InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerNetId, "MLAPI_COMMAND", messageChannelName[methodName], writer, null);
             }
         }
 
@@ -253,8 +268,13 @@ namespace MLAPI.MonoBehaviours.Core
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid Command name. Command methods have to start with Cmd");
                 return;
             }
+            if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.Disabled)
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Calling InvokeClientRpc is not allowed when AttributeMessageMode is set to disabled");
+                return;
+            }
 
-            ulong hash = Data.Cache.GetMessageAttributeHash(methodName);
+            ulong hash = Data.Cache.GetMessageAttributeHash(methodName, NetworkingManager.singleton.NetworkConfig.AttributeMessageMode);
             using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteUInt(networkId);
@@ -268,7 +288,7 @@ namespace MLAPI.MonoBehaviours.Core
                     writer.WriteBits((byte)fieldType, 5);
                     FieldTypeHelper.WriteFieldType(writer, methodParams[i], fieldType);
                 }
-                InternalMessageHandler.Send("MLAPI_RPC", "MLAPI_INTERNAL", writer, networkId);
+                InternalMessageHandler.Send("MLAPI_RPC", messageChannelName[methodName], writer, networkId);
             }
         }
 
@@ -289,8 +309,13 @@ namespace MLAPI.MonoBehaviours.Core
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid Command name. Command methods have to start with Cmd");
                 return;
             }
+            if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.Disabled)
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Calling InvokeTargetRpc is not allowed when AttributeMessageMode is set to disabled");
+                return;
+            }
 
-            ulong hash = Data.Cache.GetMessageAttributeHash(methodName);
+            ulong hash = Data.Cache.GetMessageAttributeHash(methodName, NetworkingManager.singleton.NetworkConfig.AttributeMessageMode);
             using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteUInt(networkId);
@@ -303,7 +328,7 @@ namespace MLAPI.MonoBehaviours.Core
                     writer.WriteBits((byte)fieldType, 5);
                     FieldTypeHelper.WriteFieldType(writer, methodParams[i], fieldType);
                 }
-                InternalMessageHandler.Send(ownerClientId, "MLAPI_RPC", "MLAPI_INTERNAL", writer, networkId);
+                InternalMessageHandler.Send(ownerClientId, "MLAPI_RPC", messageChannelName[methodName], writer, networkId);
             }
         }
 

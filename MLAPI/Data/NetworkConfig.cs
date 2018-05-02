@@ -137,6 +137,10 @@ namespace MLAPI.Data
         /// If your logic uses the NetwokrTime, this should probably be turned off. If however it's needed to maximize accuracy, this is recommended to be turned on
         /// </summary>
         public bool EnableTimeResync = false;
+        /// <summary>
+        /// Decides how many bytes to use for Attribute messaging. Leave this to 2 bytes unless you are facing hash collisions
+        /// </summary>
+        public AttributeMessageMode AttributeMessageMode = AttributeMessageMode.Disabled;
 
         internal string ToBase64()
         {
@@ -190,6 +194,7 @@ namespace MLAPI.Data
                 writer.WriteBool(AllowPassthroughMessages);
                 writer.WriteBool(EnableSceneSwitching);
                 writer.WriteBool(EnableTimeResync);
+                writer.WriteBits((byte)AttributeMessageMode, 3);
 
                 return Convert.ToBase64String(writer.Finalize());
             }
@@ -270,6 +275,7 @@ namespace MLAPI.Data
                 AllowPassthroughMessages = reader.ReadBool();
                 EnableSceneSwitching = reader.ReadBool();
                 EnableTimeResync = reader.ReadBool();
+                AttributeMessageMode = (AttributeMessageMode)reader.ReadBits(3);
             }
         }
 
@@ -319,17 +325,15 @@ namespace MLAPI.Data
                 writer.WriteBool(AllowPassthroughMessages);
                 writer.WriteBool(EnableSceneSwitching);
                 writer.WriteBool(SignKeyExchange);
+                writer.WriteBits((byte)AttributeMessageMode, 3);
 
-                //using (SHA256Managed sha256 = new SHA256Managed())
-                //{
-                    // Returns a 160 bit / 20 byte / 5 int checksum of the config
-                    if (cache)
-                    {
-                        ConfigHash = MessageDigest.SHA1_Opt(writer.Finalize()).ToArray(); //sha256.ComputeHash(writer.Finalize());
-                        return ConfigHash;
-                    }
-                    return MessageDigest.SHA1_Opt(writer.Finalize()).ToArray(); //sha256.ComputeHash(writer.Finalize());
-                //}
+                // Returns a 160 bit / 20 byte / 5 int checksum of the config
+                if (cache)
+                {
+                    ConfigHash = MessageDigest.SHA1_Opt(writer.Finalize()).ToArray();
+                    return ConfigHash;
+                }
+                return MessageDigest.SHA1_Opt(writer.Finalize()).ToArray();
             }
         }
 
