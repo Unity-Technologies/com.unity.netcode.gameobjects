@@ -7,6 +7,7 @@ namespace MLAPI.MonoBehaviours.Prototyping
     /// <summary>
     /// A prototype component to set observers based on distance
     /// </summary>
+    [AddComponentMenu("MLAPI/NetworkedProximity")]
     public class NetworkedProximity : NetworkedBehaviour
     {
         /// <summary>
