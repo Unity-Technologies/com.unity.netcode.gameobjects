@@ -13,7 +13,6 @@ namespace MLAPI.NetworkingManagerComponents.Core
             if (netManager.isHost && targetId == netManager.NetworkConfig.NetworkTransport.HostDummyId)
             {
                 //Host trying to send data to it's own client
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Send method got message aimed at server from the server?");
                 return;
             }
 
@@ -52,7 +51,6 @@ namespace MLAPI.NetworkingManagerComponents.Core
             if (netManager.isHost && targetClientId == netManager.NetworkConfig.NetworkTransport.HostDummyId)
             {
                 //Don't invoke the message on our own machine. Instant stack overflow.
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot send message to own client");
                 return true;
             }
             else if (targetClientId == netManager.NetworkConfig.NetworkTransport.HostDummyId)
