@@ -227,92 +227,87 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
         internal static void HandleSyncVarUpdate(uint clientId, BitReader reader, int channelId)
         {
-            byte dirtyCount = reader.ReadByte();
             uint netId = reader.ReadUInt();
             ushort orderIndex = reader.ReadUShort();
-            if (dirtyCount > 0)
+
+            if (!SpawnManager.spawnedObjects.ContainsKey(netId))
             {
-                for (int i = 0; i < dirtyCount; i++)
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sync message recieved for a non existant object with id: " + netId);
+                return;
+            }
+            else if (SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex) == null)
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sync message recieved for a non existant behaviour");
+                return;
+            }
+
+            for (int i = 0; i < SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).syncedVarFields.Count; i++)
+            {
+                if (!reader.ReadBool())
+                    continue;
+                
+                FieldType type = SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).syncedVarFields[i].FieldType;
+                switch (type)
                 {
-                    byte fieldIndex = reader.ReadByte();
-                    if (!SpawnManager.spawnedObjects.ContainsKey(netId))
-                    {
-                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sync message recieved for a non existant object with id: " + netId);
-                        return;
-                    }
-                    else if (SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex) == null)
-                    {
-                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sync message recieved for a non existant behaviour");
-                        return;
-                    }
-                    else if (fieldIndex > (SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).syncedVarFields.Count - 1))
-                    {
-                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sync message recieved for field out of bounds");
-                        return;
-                    }
-                    FieldType type = SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).syncedVarFields[fieldIndex].FieldType;
-                    switch (type)
-                    {
-                        case FieldType.Bool:
-                            SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(reader.ReadBool(), fieldIndex);
-                            break;
-                        case FieldType.Byte:
-                            SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(reader.ReadByte(), fieldIndex);
-                            break;
-                        case FieldType.Double:
-                            SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(reader.ReadDouble(), fieldIndex);
-                            break;
-                        case FieldType.Single:
-                            SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(reader.ReadFloat(), fieldIndex);
-                            break;
-                        case FieldType.Int:
-                            SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(reader.ReadInt(), fieldIndex);
-                            break;
-                        case FieldType.Long:
-                            SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(reader.ReadLong(), fieldIndex);
-                            break;
-                        case FieldType.SByte:
-                            SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(reader.ReadSByte(), fieldIndex);
-                            break;
-                        case FieldType.Short:
-                            SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(reader.ReadShort(), fieldIndex);
-                            break;
-                        case FieldType.UInt:
-                            SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(reader.ReadUInt(), fieldIndex);
-                            break;
-                        case FieldType.ULong:
-                            SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(reader.ReadULong(), fieldIndex);
-                            break;
-                        case FieldType.UShort:
-                            SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(reader.ReadUShort(), fieldIndex);
-                            break;
-                        case FieldType.String:
-                            SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(reader.ReadString(), fieldIndex);
-                            break;
-                        case FieldType.Vector3:
-                            {   //Cases aren't their own scope. Therefor we create a scope for them as they share the X,Y,Z local variables otherwise.
-                                float x = reader.ReadFloat();
-                                float y = reader.ReadFloat();
-                                float z = reader.ReadFloat();
-                                SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(new Vector3(x, y, z), fieldIndex);
-                            }
-                            break;
-                        case FieldType.Vector2:
-                            {
-                                float x = reader.ReadFloat();
-                                float y = reader.ReadFloat();
-                                SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(new Vector2(x, y), fieldIndex);
-                            }
-                            break;
-                        case FieldType.Quaternion:
-                            {
-                                float x = reader.ReadFloat();
-                                float y = reader.ReadFloat();
-                                float z = reader.ReadFloat();
-                                SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(Quaternion.Euler(x, y, z), fieldIndex);
-                            }
-                            break;
-                    }
+                    case FieldType.Bool:
+                        SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(reader.ReadBool(), i);
+                        break;
+                    case FieldType.Byte:
+                        SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(reader.ReadByte(), i);
+                        break;
+                    case FieldType.Double:
+                        SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(reader.ReadDouble(), i);
+                        break;
+                    case FieldType.Single:
+                        SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(reader.ReadFloat(), i);
+                        break;
+                    case FieldType.Int:
+                        SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(reader.ReadInt(), i);
+                        break;
+                    case FieldType.Long:
+                        SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(reader.ReadLong(), i);
+                        break;
+                    case FieldType.SByte:
+                        SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(reader.ReadSByte(), i);
+                        break;
+                    case FieldType.Short:
+                        SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(reader.ReadShort(), i);
+                        break;
+                    case FieldType.UInt:
+                        SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(reader.ReadUInt(), i);
+                        break;
+                    case FieldType.ULong:
+                        SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(reader.ReadULong(), i);
+                        break;
+                    case FieldType.UShort:
+                        SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(reader.ReadUShort(), i);
+                        break;
+                    case FieldType.String:
+                        SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(reader.ReadString(), i);
+                        break;
+                    case FieldType.Vector3:
+                        {   //Cases aren't their own scope. Therefor we create a scope for them as they share the X,Y,Z local variables otherwise.
+                            float x = reader.ReadFloat();
+                            float y = reader.ReadFloat();
+                            float z = reader.ReadFloat();
+                            SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(new Vector3(x, y, z), i);
+                        }
+                        break;
+                    case FieldType.Vector2:
+                        {
+                            float x = reader.ReadFloat();
+                            float y = reader.ReadFloat();
+                            SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(new Vector2(x, y), i);
+                        }
+                        break;
+                    case FieldType.Quaternion:
+                        {
+                            float x = reader.ReadFloat();
+                            float y = reader.ReadFloat();
+                            float z = reader.ReadFloat();
+                            SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(Quaternion.Euler(x, y, z), i);
+                        }
+                        break;
                 }
             }
         }

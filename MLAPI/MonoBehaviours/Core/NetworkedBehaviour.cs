@@ -7,6 +7,7 @@ using System.Linq;
 using MLAPI.Data;
 using MLAPI.NetworkingManagerComponents.Binary;
 using MLAPI.NetworkingManagerComponents.Core;
+using System.Collections;
 
 namespace MLAPI.MonoBehaviours.Core
 {
@@ -440,13 +441,14 @@ namespace MLAPI.MonoBehaviours.Core
         internal List<SyncedVarField> syncedVarFields = new List<SyncedVarField>();
         private HashSet<uint> OutOfSyncClients = new HashSet<uint>();
         private bool syncVarInit = false;
+        internal bool[] syncMask;
         internal void SyncVarInit()
         {
             if (syncVarInit)
                 return;
             syncVarInit = true;
             FieldInfo[] sortedFields = GetType().GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy | BindingFlags.Instance).OrderBy(x => x.Name).ToArray();
-            for (byte i = 0; i < sortedFields.Length; i++)
+            for (int i = 0; i < sortedFields.Length; i++)
             {
                 if(sortedFields[i].IsDefined(typeof(SyncedVar), true))
                 {
@@ -477,13 +479,10 @@ namespace MLAPI.MonoBehaviours.Core
                     }
                 }
             }
-            if (syncedVarFields.Count > 255)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogError("MLAPI: You can not have more than 255 SyncVar's per NetworkedBehaviour!");
-            }
+            syncMask = new bool[syncedVarFields.Count];
         }
 
-        internal void OnSyncVarUpdate(object value, byte fieldIndex)
+        internal void OnSyncVarUpdate(object value, int fieldIndex)
         {
             syncedVarFields[fieldIndex].FieldInfo.SetValue(this, value);
             if (syncedVarFields[fieldIndex].HookMethod != null)
@@ -509,20 +508,33 @@ namespace MLAPI.MonoBehaviours.Core
                 }
                 if (syncCount == 0)
                     return;
-                writer.WriteByte((byte)syncCount);
+                
                 writer.WriteUInt(networkId); //NetId
                 writer.WriteUShort(networkedObject.GetOrderIndex(this)); //Behaviour OrderIndex
-                for (byte i = 0; i < syncedVarFields.Count; i++)
+
+                bool[] mask = GetDirtyMask(false, clientId);
+                for (int i = 0; i < mask.Length; i++) writer.WriteBool(mask[i]);
+
+                for (int i = 0; i < syncedVarFields.Count; i++)
                 {
                     if (syncedVarFields[i].Target && clientId != ownerClientId)
                         continue;
-                    writer.WriteByte(i); //FieldIndex
                     FieldTypeHelper.WriteFieldType(writer, syncedVarFields[i].FieldInfo, this, syncedVarFields[i].FieldType);
                 }
                 bool observed = InternalMessageHandler.Send(clientId, "MLAPI_SYNC_VAR_UPDATE", "MLAPI_INTERNAL", writer, networkId);
                 if (observed)
                     OutOfSyncClients.Remove(clientId);
             }
+        }
+
+        private ref bool[] GetDirtyMask(bool ignoreTarget, uint? clientId = null)
+        {
+            for (int i = 0; i < syncedVarFields.Count; i++)
+                syncMask[i] = (clientId == null && ignoreTarget && syncedVarFields[i].Dirty && !syncedVarFields[i].Target) ||
+                               (clientId == null && !ignoreTarget && syncedVarFields[i].Dirty) || 
+                                (clientId != null && !syncedVarFields[i].Target) || 
+                                 (clientId != null && syncedVarFields[i].Target && ownerClientId == clientId.Value);
+            return ref syncMask;
         }
 
         internal void SyncVarUpdate()
@@ -533,10 +545,10 @@ namespace MLAPI.MonoBehaviours.Core
             if (!SetDirtyness())
                 return;
 
-            byte nonTargetDirtyCount = 0;
-            byte totalDirtyCount = 0;
-            byte dirtyTargets = 0;
-            for (byte i = 0; i < syncedVarFields.Count; i++)
+            int nonTargetDirtyCount = 0;
+            int totalDirtyCount = 0;
+            int dirtyTargets = 0;
+            for (int i = 0; i < syncedVarFields.Count; i++)
             {
                 if (syncedVarFields[i].Dirty)
                     totalDirtyCount++;
@@ -557,15 +569,17 @@ namespace MLAPI.MonoBehaviours.Core
                 using (BitWriter writer = BitWriter.Get())
                 {
                     //Write all indexes
-                    writer.WriteByte(totalDirtyCount);
                     writer.WriteUInt(networkId); //NetId
                     writer.WriteUShort(networkedObject.GetOrderIndex(this)); //Behaviour OrderIndex
-                    for (byte i = 0; i < syncedVarFields.Count; i++)
+
+                    bool[] mask = GetDirtyMask(false);
+                    for (int i = 0; i < mask.Length; i++) writer.WriteBool(mask[i]);
+
+                    for (int i = 0; i < syncedVarFields.Count; i++)
                     {
                         //Writes all the indexes of the dirty syncvars.
                         if (syncedVarFields[i].Dirty == true)
                         {
-                            writer.WriteByte(i); //FieldIndex
                             FieldTypeHelper.WriteFieldType(writer, syncedVarFields[i].FieldInfo, this, syncedVarFields[i].FieldType);
                             syncedVarFields[i].FieldValue = syncedVarFields[i].FieldInfo.GetValue(this);
                             syncedVarFields[i].Dirty = false;
@@ -587,15 +601,17 @@ namespace MLAPI.MonoBehaviours.Core
                     using (BitWriter writer = BitWriter.Get())
                     {
                         //Write all indexes
-                        writer.WriteByte(totalDirtyCount);
                         writer.WriteUInt(networkId); //NetId
                         writer.WriteUShort(networkedObject.GetOrderIndex(this)); //Behaviour OrderIndex
-                        for (byte i = 0; i < syncedVarFields.Count; i++)
+
+                        bool[] mask = GetDirtyMask(false);
+                        for (int i = 0; i < mask.Length; i++) writer.WriteBool(mask[i]);
+
+                        for (int i = 0; i < syncedVarFields.Count; i++)
                         {
                             //Writes all the indexes of the dirty syncvars.
                             if (syncedVarFields[i].Dirty == true)
                             {
-                                writer.WriteByte(i); //FieldIndex
                                 FieldTypeHelper.WriteFieldType(writer, syncedVarFields[i].FieldInfo, this, syncedVarFields[i].FieldType);
                                 if (nonTargetDirtyCount == 0)
                                 {
@@ -618,15 +634,17 @@ namespace MLAPI.MonoBehaviours.Core
                 using (BitWriter writer = BitWriter.Get())
                 {
                     //Write all indexes
-                    writer.WriteByte(nonTargetDirtyCount);
                     writer.WriteUInt(networkId); //NetId
                     writer.WriteUShort(networkedObject.GetOrderIndex(this)); //Behaviour OrderIndex
-                    for (byte i = 0; i < syncedVarFields.Count; i++)
+
+                    bool[] mask = GetDirtyMask(true);
+                    for (int i = 0; i < mask.Length; i++) writer.WriteBool(mask[i]);
+
+                    for (int i = 0; i < syncedVarFields.Count; i++)
                     {
                         //Writes all the indexes of the dirty syncvars.
                         if (syncedVarFields[i].Dirty == true && !syncedVarFields[i].Target)
                         {
-                            writer.WriteByte(i); //FieldIndex
                             FieldTypeHelper.WriteFieldType(writer, syncedVarFields[i].FieldInfo, this, syncedVarFields[i].FieldType);
                             syncedVarFields[i].FieldValue = syncedVarFields[i].FieldInfo.GetValue(this);
                             syncedVarFields[i].Dirty = false;
