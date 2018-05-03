@@ -16,10 +16,6 @@ namespace MLAPI.MonoBehaviours.Core
     public abstract class NetworkedBehaviour : MonoBehaviour
     {
         /// <summary>
-        /// The minimum delay in seconds between SyncedVar sends
-        /// </summary>
-        public float SyncVarSyncDelay = 0.1f;
-        /// <summary>
         /// Gets if the object is the the personal clients player object
         /// </summary>
         public bool isLocalPlayer
@@ -471,7 +467,8 @@ namespace MLAPI.MonoBehaviours.Core
                             FieldInfo = sortedFields[i],
                             FieldType = fieldType,
                             FieldValue = sortedFields[i].GetValue(this),
-                            HookMethod = hookMethod
+                            HookMethod = hookMethod,
+                            Attribute = attribute
                         });
                     }
                     else
@@ -528,34 +525,65 @@ namespace MLAPI.MonoBehaviours.Core
             }
         }
 
-        private float lastSyncTime = 0f;
         internal void SyncVarUpdate()
         {
             if (!syncVarInit)
                 SyncVarInit();
-            if (SyncVarSyncDelay > 0 && NetworkingManager.singleton.NetworkTime - lastSyncTime >= SyncVarSyncDelay && SetDirtyness())
+            
+            if (!SetDirtyness())
+                return;
+
+            byte nonTargetDirtyCount = 0;
+            byte totalDirtyCount = 0;
+            byte dirtyTargets = 0;
+            for (byte i = 0; i < syncedVarFields.Count; i++)
             {
-                byte nonTargetDirtyCount = 0;
-                byte totalDirtyCount = 0;
-                byte dirtyTargets = 0;
-                for (byte i = 0; i < syncedVarFields.Count; i++)
+                if (syncedVarFields[i].Dirty)
+                    totalDirtyCount++;
+                if (syncedVarFields[i].Target && syncedVarFields[i].Dirty)
+                    dirtyTargets++;
+                if (syncedVarFields[i].Dirty && !syncedVarFields[i].Target)
+                    nonTargetDirtyCount++;
+            }
+
+            if (totalDirtyCount == 0)
+                return; //All up to date!
+
+            // If we don't have targets. We can send one big message, 
+            // thus only serializing it once. Otherwise, we have to create two messages. One for the non targets and one for the target
+            if (dirtyTargets == 0)
+            {
+                //It's sync time!
+                using (BitWriter writer = BitWriter.Get())
                 {
-                    if (syncedVarFields[i].Dirty)
-                        totalDirtyCount++;
-                    if (syncedVarFields[i].Target && syncedVarFields[i].Dirty)
-                        dirtyTargets++;
-                    if (syncedVarFields[i].Dirty && !syncedVarFields[i].Target)
-                        nonTargetDirtyCount++;
+                    //Write all indexes
+                    writer.WriteByte(totalDirtyCount);
+                    writer.WriteUInt(networkId); //NetId
+                    writer.WriteUShort(networkedObject.GetOrderIndex(this)); //Behaviour OrderIndex
+                    for (byte i = 0; i < syncedVarFields.Count; i++)
+                    {
+                        //Writes all the indexes of the dirty syncvars.
+                        if (syncedVarFields[i].Dirty == true)
+                        {
+                            writer.WriteByte(i); //FieldIndex
+                            FieldTypeHelper.WriteFieldType(writer, syncedVarFields[i].FieldInfo, this, syncedVarFields[i].FieldType);
+                            syncedVarFields[i].FieldValue = syncedVarFields[i].FieldInfo.GetValue(this);
+                            syncedVarFields[i].Dirty = false;
+                        }
+                    }
+                    List<uint> stillDirtyIds = InternalMessageHandler.Send("MLAPI_SYNC_VAR_UPDATE", "MLAPI_INTERNAL", writer, networkId);
+                    if (stillDirtyIds != null)
+                    {
+                        for (int i = 0; i < stillDirtyIds.Count; i++)
+                            OutOfSyncClients.Add(stillDirtyIds[i]);
+                    }
                 }
-
-                if (totalDirtyCount == 0)
-                    return; //All up to date!
-
-                // If we don't have targets. We can send one big message, 
-                // thus only serializing it once. Otherwise, we have to create two messages. One for the non targets and one for the target
-                if (dirtyTargets == 0)
+            }
+            else
+            {
+                if (!(isHost && ownerClientId == NetworkingManager.singleton.NetworkConfig.NetworkTransport.HostDummyId))
                 {
-                    //It's sync time!
+                    //It's sync time. This is the target receivers packet.
                     using (BitWriter writer = BitWriter.Get())
                     {
                         //Write all indexes
@@ -569,80 +597,48 @@ namespace MLAPI.MonoBehaviours.Core
                             {
                                 writer.WriteByte(i); //FieldIndex
                                 FieldTypeHelper.WriteFieldType(writer, syncedVarFields[i].FieldInfo, this, syncedVarFields[i].FieldType);
-                                syncedVarFields[i].FieldValue = syncedVarFields[i].FieldInfo.GetValue(this);
-                                syncedVarFields[i].Dirty = false;
-                            }
-                        }
-                        List<uint> stillDirtyIds = InternalMessageHandler.Send("MLAPI_SYNC_VAR_UPDATE", "MLAPI_INTERNAL", writer, networkId);
-                        if (stillDirtyIds != null)
-                        {
-                            for (int i = 0; i < stillDirtyIds.Count; i++)
-                                OutOfSyncClients.Add(stillDirtyIds[i]);
-                        }
-                    }
-                }
-                else
-                {
-                    if (!(isHost && ownerClientId == NetworkingManager.singleton.NetworkConfig.NetworkTransport.HostDummyId))
-                    {
-                        //It's sync time. This is the target receivers packet.
-                        using (BitWriter writer = BitWriter.Get())
-                        {
-                            //Write all indexes
-                            writer.WriteByte(totalDirtyCount);
-                            writer.WriteUInt(networkId); //NetId
-                            writer.WriteUShort(networkedObject.GetOrderIndex(this)); //Behaviour OrderIndex
-                            for (byte i = 0; i < syncedVarFields.Count; i++)
-                            {
-                                //Writes all the indexes of the dirty syncvars.
-                                if (syncedVarFields[i].Dirty == true)
+                                if (nonTargetDirtyCount == 0)
                                 {
-                                    writer.WriteByte(i); //FieldIndex
-                                    FieldTypeHelper.WriteFieldType(writer, syncedVarFields[i].FieldInfo, this, syncedVarFields[i].FieldType);
-                                    if (nonTargetDirtyCount == 0)
-                                    {
-                                        //Only targeted SyncedVars were changed. Thus we need to set them as non dirty here since it wont be done by the next loop.
-                                        syncedVarFields[i].FieldValue = syncedVarFields[i].FieldInfo.GetValue(this);
-                                        syncedVarFields[i].Dirty = false;
-                                    }
+                                    //Only targeted SyncedVars were changed. Thus we need to set them as non dirty here since it wont be done by the next loop.
+                                    syncedVarFields[i].FieldValue = syncedVarFields[i].FieldInfo.GetValue(this);
+                                    syncedVarFields[i].Dirty = false;
                                 }
                             }
-                            bool observing = !InternalMessageHandler.Send(ownerClientId, "MLAPI_SYNC_VAR_UPDATE", "MLAPI_INTERNAL", writer, networkId); //Send only to target
-                            if (!observing)
-                                OutOfSyncClients.Add(ownerClientId);
                         }
-                    }
-
-                    if (nonTargetDirtyCount == 0)
-                        return;
-
-                    //It's sync time. This is the NON target receivers packet.
-                    using (BitWriter writer = BitWriter.Get())
-                    {
-                        //Write all indexes
-                        writer.WriteByte(nonTargetDirtyCount);
-                        writer.WriteUInt(networkId); //NetId
-                        writer.WriteUShort(networkedObject.GetOrderIndex(this)); //Behaviour OrderIndex
-                        for (byte i = 0; i < syncedVarFields.Count; i++)
-                        {
-                            //Writes all the indexes of the dirty syncvars.
-                            if (syncedVarFields[i].Dirty == true && !syncedVarFields[i].Target)
-                            {
-                                writer.WriteByte(i); //FieldIndex
-                                FieldTypeHelper.WriteFieldType(writer, syncedVarFields[i].FieldInfo, this, syncedVarFields[i].FieldType);
-                                syncedVarFields[i].FieldValue = syncedVarFields[i].FieldInfo.GetValue(this);
-                                syncedVarFields[i].Dirty = false;
-                            }
-                        }
-                        List<uint> stillDirtyIds = InternalMessageHandler.Send("MLAPI_SYNC_VAR_UPDATE", "MLAPI_INTERNAL", writer, ownerClientId, networkId, null, null); // Send to everyone except target.
-                        if (stillDirtyIds != null)
-                        {
-                            for (int i = 0; i < stillDirtyIds.Count; i++)
-                                OutOfSyncClients.Add(stillDirtyIds[i]);
-                        }
+                        bool observing = !InternalMessageHandler.Send(ownerClientId, "MLAPI_SYNC_VAR_UPDATE", "MLAPI_INTERNAL", writer, networkId); //Send only to target
+                        if (!observing)
+                            OutOfSyncClients.Add(ownerClientId);
                     }
                 }
-                lastSyncTime = NetworkingManager.singleton.NetworkTime;
+
+                if (nonTargetDirtyCount == 0)
+                    return;
+
+                //It's sync time. This is the NON target receivers packet.
+                using (BitWriter writer = BitWriter.Get())
+                {
+                    //Write all indexes
+                    writer.WriteByte(nonTargetDirtyCount);
+                    writer.WriteUInt(networkId); //NetId
+                    writer.WriteUShort(networkedObject.GetOrderIndex(this)); //Behaviour OrderIndex
+                    for (byte i = 0; i < syncedVarFields.Count; i++)
+                    {
+                        //Writes all the indexes of the dirty syncvars.
+                        if (syncedVarFields[i].Dirty == true && !syncedVarFields[i].Target)
+                        {
+                            writer.WriteByte(i); //FieldIndex
+                            FieldTypeHelper.WriteFieldType(writer, syncedVarFields[i].FieldInfo, this, syncedVarFields[i].FieldType);
+                            syncedVarFields[i].FieldValue = syncedVarFields[i].FieldInfo.GetValue(this);
+                            syncedVarFields[i].Dirty = false;
+                        }
+                    }
+                    List<uint> stillDirtyIds = InternalMessageHandler.Send("MLAPI_SYNC_VAR_UPDATE", "MLAPI_INTERNAL", writer, ownerClientId, networkId, null, null); // Send to everyone except target.
+                    if (stillDirtyIds != null)
+                    {
+                        for (int i = 0; i < stillDirtyIds.Count; i++)
+                            OutOfSyncClients.Add(stillDirtyIds[i]);
+                    }
+                }
             }
         }
 
@@ -654,13 +650,19 @@ namespace MLAPI.MonoBehaviours.Core
             bool dirty = false;
             for (int i = 0; i < syncedVarFields.Count; i++)
             {
+                if (NetworkingManager.singleton.NetworkTime - syncedVarFields[i].Attribute.lastSyncTime < syncedVarFields[i].Attribute.syncDelay)
+                    continue;
                 if (!syncedVarFields[i].FieldInfo.GetValue(this).Equals(syncedVarFields[i].FieldValue))
                 {
                     syncedVarFields[i].Dirty = true; //This fields value is out of sync!
+                    syncedVarFields[i].Attribute.lastSyncTime = NetworkingManager.singleton.NetworkTime;
                     dirty = true;
                 }
                 else
+                {
+                    syncedVarFields[i].Attribute.lastSyncTime = NetworkingManager.singleton.NetworkTime;
                     syncedVarFields[i].Dirty = false; //Up to date;
+                }
             }
             return dirty;
         }

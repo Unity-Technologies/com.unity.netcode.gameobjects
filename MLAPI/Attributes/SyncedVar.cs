@@ -11,10 +11,15 @@ namespace MLAPI.Attributes
         /// <summary>
         /// The method name to invoke when the SyncVar get's updated.
         /// </summary>
-        public string hookMethodName;
+        public string hookMethodName = string.Empty;
         /// <summary>
         /// If true, the syncedVar will only be synced to the owner.
         /// </summary>
-        public bool target;
+        public bool target = false;
+        /// <summary>
+        /// The delay for syncing this variable.
+        /// </summary>
+        public float syncDelay = 0.1f;
+        internal float lastSyncTime = 0f;
     }
 }

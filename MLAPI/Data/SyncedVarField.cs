@@ -1,5 +1,5 @@
-﻿using System.Collections.Generic;
-using System.Reflection;
+﻿using System.Reflection;
+using MLAPI.Attributes;
 
 namespace MLAPI.Data
 {
@@ -11,5 +11,6 @@ namespace MLAPI.Data
         internal MethodInfo HookMethod;
         internal bool Dirty;
         internal bool Target;
+        internal SyncedVar Attribute;
     }
 }
