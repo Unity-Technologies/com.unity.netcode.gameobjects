@@ -424,6 +424,25 @@ namespace MLAPI.MonoBehaviours.Core
             }
         }
 
+        /// <summary>
+        /// Gets behaviourId for this NetworkedBehaviour on this NetworkedObject
+        /// </summary>
+        /// <returns>The behaviourId for the current NetworkedBehaviour</returns>
+        public ushort GetBehaviourId()
+        {
+            return networkedObject.GetOrderIndex(this);
+        }
+
+        /// <summary>
+        /// Returns a the NetworkedBehaviour with a given behaviourId for the current networkedObject
+        /// </summary>
+        /// <param name="id">The behaviourId to return</param>
+        /// <returns>Returns NetworkedBehaviour with given behaviourId</returns>
+        protected NetworkedBehaviour GetBehaviour(ushort id)
+        {
+            return networkedObject.GetBehaviourAtOrderIndex(id);
+        }
+
         private void OnDisable()
         {
             NetworkedObject.NetworkedBehaviours.Remove(this);
