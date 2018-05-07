@@ -158,12 +158,13 @@ namespace MLAPI.MonoBehaviours.Prototyping
                     Vector3 velocity = new Vector3(xVel, yVel, zVel);
                     Vector3 position = new Vector3(xPos, yPos, zPos);
 
-                    agent.SetDestination(destination);
-                    agent.velocity = velocity;
                     if (WarpOnDestinationChange)
                         agent.Warp(position);
                     else
                         agent.Warp(Vector3.Lerp(transform.position, position, DriftCorrectionPercentage));
+
+                    agent.SetDestination(destination);
+                    agent.velocity = velocity;
                 }
             }
         }
@@ -186,8 +187,8 @@ namespace MLAPI.MonoBehaviours.Prototyping
                     Vector3 velocity = new Vector3(xVel, yVel, zVel);
                     Vector3 position = new Vector3(xPos, yPos, zPos);
 
-                    agent.velocity = velocity;
                     agent.Warp(Vector3.Lerp(transform.position, position, DriftCorrectionPercentage));
+                    agent.velocity = velocity;
                 }
             }
         }
