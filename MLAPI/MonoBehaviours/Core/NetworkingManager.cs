@@ -66,14 +66,15 @@ namespace MLAPI.MonoBehaviours.Core
         }
         internal uint myClientId;
         internal readonly Dictionary<uint, NetworkedClient> connectedClients = new Dictionary<uint, NetworkedClient>();
+        internal readonly List<NetworkedClient> connectedClientsList = new List<NetworkedClient>();
         /// <summary>
-        /// Gets a dictionary of connected clients
+        /// Gets a list of connected clients
         /// </summary>
-        public Dictionary<uint, NetworkedClient> ConnectedClients
+        public List<NetworkedClient> ConnectedClients
         {
             get
             {
-                return connectedClients;
+                return connectedClientsList;
             }
         }
         internal readonly HashSet<uint> pendingClients = new HashSet<uint>();
@@ -222,6 +223,7 @@ namespace MLAPI.MonoBehaviours.Core
             eventOvershootCounter = 0f;
             pendingClients.Clear();
             connectedClients.Clear();
+            connectedClientsList.Clear();
             messageBuffer = new byte[NetworkConfig.MessageBufferSize];
             diffieHellmanPublicKeys.Clear();
             Data.Cache.messageAttributeHashes.Clear();
@@ -607,6 +609,7 @@ namespace MLAPI.MonoBehaviours.Core
             {
                 ClientId = hostClientId
             });
+            connectedClientsList.Add(connectedClients[hostClientId]);
 
             if (NetworkConfig.HandleObjectSpawning)
             {
@@ -996,6 +999,8 @@ namespace MLAPI.MonoBehaviours.Core
 
             if (connectedClients.ContainsKey(clientId))
                 connectedClients.Remove(clientId);
+      
+            connectedClientsList.RemoveAll(x => x.ClientId == clientId); // :(
 
             if (diffieHellmanPublicKeys.ContainsKey(clientId))
                 diffieHellmanPublicKeys.Remove(clientId);
@@ -1022,6 +1027,7 @@ namespace MLAPI.MonoBehaviours.Core
                             Destroy(connectedClients[clientId].OwnedObjects[i].gameObject);
                     }
                 }
+                connectedClientsList.RemoveAll(x => x.ClientId == clientId);
                 connectedClients.Remove(clientId);
             }
 
@@ -1087,6 +1093,7 @@ namespace MLAPI.MonoBehaviours.Core
                     AesKey = aesKey
                 };
                 connectedClients.Add(clientId, client);
+                connectedClientsList.Add(client);
                 
                 if(NetworkConfig.HandleObjectSpawning)
                 {

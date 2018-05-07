@@ -7,7 +7,6 @@ using System.Linq;
 using MLAPI.Data;
 using MLAPI.NetworkingManagerComponents.Binary;
 using MLAPI.NetworkingManagerComponents.Core;
-using System.Collections;
 
 namespace MLAPI.MonoBehaviours.Core
 {

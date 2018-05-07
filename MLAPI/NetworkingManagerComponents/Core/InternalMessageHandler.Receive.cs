@@ -77,6 +77,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             {
                 uint _clientId = reader.ReadUInt();
                 netManager.connectedClients.Add(_clientId, new NetworkedClient() { ClientId = _clientId });
+                netManager.connectedClientsList.Add(netManager.connectedClients[_clientId]);
             }
             if (netManager.NetworkConfig.HandleObjectSpawning)
             {
@@ -149,6 +150,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 if (isPlayerObject)
                 {
                     netManager.connectedClients.Add(ownerId, new NetworkedClient() { ClientId = ownerId });
+                    netManager.connectedClientsList.Add(netManager.connectedClients[ownerId]);
                     GameObject go = SpawnManager.SpawnPlayerObject(ownerId, networkId, new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), reader);
                     go.GetComponent<NetworkedObject>().SetLocalVisibility(visible);
                 }
@@ -337,6 +339,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                     if (isPlayerObject)
                     {
                         netManager.connectedClients.Add(ownerId, new NetworkedClient() { ClientId = ownerId });
+                        netManager.connectedClientsList.Add(netManager.connectedClients[ownerId]);
                         GameObject go = SpawnManager.SpawnPlayerObject(ownerId, networkId, new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), reader);
 
                         go.GetComponent<NetworkedObject>().SetLocalVisibility(visible);
