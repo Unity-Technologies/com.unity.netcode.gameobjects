@@ -70,11 +70,21 @@ namespace MLAPI.MonoBehaviours.Core
         /// <summary>
         /// Gets a list of connected clients
         /// </summary>
-        public List<NetworkedClient> ConnectedClients
+        public List<NetworkedClient> ConnectedClientsList
         {
             get
             {
                 return connectedClientsList;
+            }
+        }
+        /// <summary>
+        /// Gets a dictionary of connected clients
+        /// </summary>
+        public Dictionary<uint, NetworkedClient> ConnectedClients
+        {
+            get
+            {
+                return connectedClients;
             }
         }
         internal readonly HashSet<uint> pendingClients = new HashSet<uint>();
