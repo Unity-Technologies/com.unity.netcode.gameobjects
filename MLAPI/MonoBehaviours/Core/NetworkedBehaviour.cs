@@ -181,7 +181,7 @@ namespace MLAPI.MonoBehaviours.Core
 
         private void CacheAttributedMethods()
         {
-            if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.Disabled)
+            if (NetworkingManager.singleton.NetworkConfig != null && NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.Disabled)
                 return;
 
             MethodInfo[] methods = GetType().GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.FlattenHierarchy);
