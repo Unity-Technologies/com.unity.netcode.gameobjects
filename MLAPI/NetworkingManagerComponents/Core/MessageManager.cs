@@ -7,14 +7,14 @@ namespace MLAPI.NetworkingManagerComponents.Core
 {
     internal static class MessageManager
     {
-        internal static Dictionary<string, int> channels;
-        internal static Dictionary<int, string> reverseChannels;
-        internal static Dictionary<string, ushort> messageTypes;
-        internal static Dictionary<ushort, string> reverseMessageTypes;
-        
-        internal static Dictionary<ushort, Dictionary<int, Action<uint, BitReader>>> messageCallbacks;
-        internal static Dictionary<ushort, int> messageHandlerCounter;
-        internal static Dictionary<ushort, Stack<int>> releasedMessageHandlerCounters;
+        internal static readonly Dictionary<string, int> channels = new Dictionary<string, int>();
+        internal static readonly Dictionary<int, string> reverseChannels = new Dictionary<int, string>();
+        internal static readonly Dictionary<string, ushort> messageTypes = new Dictionary<string, ushort>();
+        internal static readonly Dictionary<ushort, string> reverseMessageTypes = new Dictionary<ushort, string>();
+
+        internal static readonly Dictionary<ushort, Dictionary<int, Action<uint, BitReader>>> messageCallbacks = new Dictionary<ushort, Dictionary<int, Action<uint, BitReader>>>();
+        internal static readonly Dictionary<ushort, int> messageHandlerCounter = new Dictionary<ushort, int>();
+        internal static readonly Dictionary<ushort, Stack<int>> releasedMessageHandlerCounters = new Dictionary<ushort, Stack<int>>();
 
         private static NetworkingManager netManager
         {

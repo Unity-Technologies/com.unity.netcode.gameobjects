@@ -8,8 +8,8 @@ namespace MLAPI.NetworkingManagerComponents.Core
 {
     internal static class SpawnManager
     {
-        internal static Dictionary<uint, NetworkedObject> spawnedObjects;
-        internal static Stack<uint> releasedNetworkObjectIds;
+        internal static readonly Dictionary<uint, NetworkedObject> spawnedObjects = new Dictionary<uint, NetworkedObject>();
+        internal static readonly Stack<uint> releasedNetworkObjectIds = new Stack<uint>();
         private static uint networkObjectIdCounter;
         internal static uint GetNetworkObjectId()
         {

@@ -65,7 +65,7 @@ namespace MLAPI.MonoBehaviours.Core
             }
         }
         internal uint myClientId;
-        internal Dictionary<uint, NetworkedClient> connectedClients;
+        internal readonly Dictionary<uint, NetworkedClient> connectedClients = new Dictionary<uint, NetworkedClient>();
         /// <summary>
         /// Gets a dictionary of connected clients
         /// </summary>
@@ -76,7 +76,7 @@ namespace MLAPI.MonoBehaviours.Core
                 return connectedClients;
             }
         }
-        internal HashSet<uint> pendingClients;
+        internal readonly HashSet<uint> pendingClients = new HashSet<uint>();
         internal bool _isServer;
         internal bool _isClient;
         /// <summary>
@@ -146,7 +146,7 @@ namespace MLAPI.MonoBehaviours.Core
         public NetworkConfig NetworkConfig;
 
         internal EllipticDiffieHellman clientDiffieHellman;
-        internal Dictionary<uint, byte[]> diffieHellmanPublicKeys;
+        internal readonly Dictionary<uint, byte[]> diffieHellmanPublicKeys = new Dictionary<uint, byte[]>();
         internal byte[] clientAesKey;
 
         /// <summary>
@@ -220,26 +220,26 @@ namespace MLAPI.MonoBehaviours.Core
             lastEventTickTime = 0f;
             lastReceiveTickTime = 0f;
             eventOvershootCounter = 0f;
-            pendingClients = new HashSet<uint>();
-            connectedClients = new Dictionary<uint, NetworkedClient>();
+            pendingClients.Clear();
+            connectedClients.Clear();
             messageBuffer = new byte[NetworkConfig.MessageBufferSize];
-            diffieHellmanPublicKeys = new Dictionary<uint, byte[]>();
-            Data.Cache.messageAttributeHashes = new Dictionary<string, ulong>();
-            Data.Cache.messageAttributeNames = new Dictionary<ulong, string>();
-            MessageManager.channels = new Dictionary<string, int>();
-            MessageManager.messageTypes = new Dictionary<string, ushort>();
-            MessageManager.messageCallbacks = new Dictionary<ushort, Dictionary<int, Action<uint, BitReader>>>();
-            MessageManager.messageHandlerCounter = new Dictionary<ushort, int>();
-            MessageManager.releasedMessageHandlerCounters = new Dictionary<ushort, Stack<int>>();
-            MessageManager.reverseChannels = new Dictionary<int, string>();
-            MessageManager.reverseMessageTypes = new Dictionary<ushort, string>();
-            SpawnManager.spawnedObjects = new Dictionary<uint, NetworkedObject>();
-            SpawnManager.releasedNetworkObjectIds = new Stack<uint>();
-            NetworkPoolManager.Pools = new Dictionary<ushort, NetworkPool>();
-            NetworkPoolManager.PoolNamesToIndexes = new Dictionary<string, ushort>();
-            NetworkSceneManager.registeredSceneNames = new HashSet<string>();
-            NetworkSceneManager.sceneIndexToString = new Dictionary<uint, string>();
-            NetworkSceneManager.sceneNameToIndex = new Dictionary<string, uint>();
+            diffieHellmanPublicKeys.Clear();
+            Data.Cache.messageAttributeHashes.Clear();
+            Data.Cache.messageAttributeNames.Clear();
+            MessageManager.channels.Clear();
+            MessageManager.messageTypes.Clear();
+            MessageManager.messageCallbacks.Clear();
+            MessageManager.messageHandlerCounter.Clear();
+            MessageManager.releasedMessageHandlerCounters.Clear();
+            MessageManager.reverseChannels.Clear();
+            MessageManager.reverseMessageTypes.Clear();
+            SpawnManager.spawnedObjects.Clear();
+            SpawnManager.releasedNetworkObjectIds.Clear();
+            NetworkPoolManager.Pools.Clear();
+            NetworkPoolManager.PoolNamesToIndexes.Clear();
+            NetworkSceneManager.registeredSceneNames.Clear();
+            NetworkSceneManager.sceneIndexToString.Clear();
+            NetworkSceneManager.sceneNameToIndex.Clear();
             InternalMessageHandler.FinalMessageBuffer = new byte[NetworkConfig.MessageBufferSize];
 
             if (NetworkConfig.Transport == DefaultTransport.UNET)

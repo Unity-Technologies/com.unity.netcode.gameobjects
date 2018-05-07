@@ -11,9 +11,9 @@ namespace MLAPI.NetworkingManagerComponents.Core
     /// </summary>
     public static class NetworkPoolManager
     {
-        internal static Dictionary<ushort, NetworkPool> Pools;
+        internal static readonly Dictionary<ushort, NetworkPool> Pools = new Dictionary<ushort, NetworkPool>();
         private static ushort PoolIndex = 0;
-        internal static Dictionary<string, ushort> PoolNamesToIndexes;
+        internal static readonly Dictionary<string, ushort> PoolNamesToIndexes = new Dictionary<string, ushort>();
 
         /// <summary>
         /// Creates a networked object pool. Can only be called from the server

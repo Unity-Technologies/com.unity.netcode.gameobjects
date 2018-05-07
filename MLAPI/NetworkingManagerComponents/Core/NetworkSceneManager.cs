@@ -12,9 +12,9 @@ namespace MLAPI.NetworkingManagerComponents.Core
     /// </summary>
     public static class NetworkSceneManager
     {
-        internal static HashSet<string> registeredSceneNames;
-        internal static Dictionary<string, uint> sceneNameToIndex;
-        internal static Dictionary<uint, string> sceneIndexToString;
+        internal static readonly HashSet<string> registeredSceneNames = new HashSet<string>();
+        internal static readonly Dictionary<string, uint> sceneNameToIndex = new Dictionary<string, uint>();
+        internal static readonly Dictionary<uint, string> sceneIndexToString = new Dictionary<uint, string>();
         private static Scene lastScene;
         private static Scene nextScene;
         private static bool isSwitching = false;

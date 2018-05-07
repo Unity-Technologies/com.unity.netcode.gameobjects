@@ -5,8 +5,8 @@ namespace MLAPI.Data
 {
     internal static class Cache
     {
-        internal static Dictionary<string, ulong> messageAttributeHashes = new Dictionary<string, ulong>();
-        internal static Dictionary<ulong, string> messageAttributeNames = new Dictionary<ulong, string>();
+        internal static readonly Dictionary<string, ulong> messageAttributeHashes = new Dictionary<string, ulong>();
+        internal static readonly Dictionary<ulong, string> messageAttributeNames = new Dictionary<ulong, string>();
 
         internal static ulong GetMessageAttributeHash(string name, AttributeMessageMode mode)
         {
