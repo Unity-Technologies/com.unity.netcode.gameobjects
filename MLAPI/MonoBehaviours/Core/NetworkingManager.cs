@@ -1162,8 +1162,7 @@ namespace MLAPI.MonoBehaviours.Core
                             writer.WriteFloat(pair.Value.transform.rotation.eulerAngles.y);
                             writer.WriteFloat(pair.Value.transform.rotation.eulerAngles.z);
 
-                            if (pair.Value.observers.Contains(clientId))
-                                pair.Value.WriteFormattedSyncedVarData(writer);
+                            pair.Value.WriteFormattedSyncedVarData(writer);
                         }
                     }
 
