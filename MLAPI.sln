@@ -9,28 +9,28 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MLAPI-Editor", "MLAPI-Edito
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		CI|Any CPU = CI|Any CPU
 		Debug|Any CPU = Debug|Any CPU
 		Development|Any CPU = Development|Any CPU
 		Release|Any CPU = Release|Any CPU
-		CI|Any CPU = CI|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{EE431720-A9ED-43DC-9E74-10B693816D38}.CI|Any CPU.ActiveCfg = CI|Any CPU
+		{EE431720-A9ED-43DC-9E74-10B693816D38}.CI|Any CPU.Build.0 = CI|Any CPU
 		{EE431720-A9ED-43DC-9E74-10B693816D38}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{EE431720-A9ED-43DC-9E74-10B693816D38}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EE431720-A9ED-43DC-9E74-10B693816D38}.Development|Any CPU.ActiveCfg = Development|Any CPU
 		{EE431720-A9ED-43DC-9E74-10B693816D38}.Development|Any CPU.Build.0 = Development|Any CPU
 		{EE431720-A9ED-43DC-9E74-10B693816D38}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EE431720-A9ED-43DC-9E74-10B693816D38}.Release|Any CPU.Build.0 = Release|Any CPU
-		{EE431720-A9ED-43DC-9E74-10B693816D38}.CI|Any CPU.ActiveCfg = CI|Any CPU
-		{EE431720-A9ED-43DC-9E74-10B693816D38}.CI|Any CPU.Build.0 = CI|Any CPU
+		{A45DBD43-D640-4562-9F24-6745269CEDF7}.CI|Any CPU.ActiveCfg = Release|Any CPU
+		{A45DBD43-D640-4562-9F24-6745269CEDF7}.CI|Any CPU.Build.0 = Release|Any CPU
 		{A45DBD43-D640-4562-9F24-6745269CEDF7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{A45DBD43-D640-4562-9F24-6745269CEDF7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A45DBD43-D640-4562-9F24-6745269CEDF7}.Development|Any CPU.ActiveCfg = Debug|Any CPU
 		{A45DBD43-D640-4562-9F24-6745269CEDF7}.Development|Any CPU.Build.0 = Debug|Any CPU
 		{A45DBD43-D640-4562-9F24-6745269CEDF7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A45DBD43-D640-4562-9F24-6745269CEDF7}.Release|Any CPU.Build.0 = Release|Any CPU
-		{A45DBD43-D640-4562-9F24-6745269CEDF7}.CI|Any CPU.ActiveCfg = CI|Any CPU
-		{A45DBD43-D640-4562-9F24-6745269CEDF7}.CI|Any CPU.Build.0 = CI|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
