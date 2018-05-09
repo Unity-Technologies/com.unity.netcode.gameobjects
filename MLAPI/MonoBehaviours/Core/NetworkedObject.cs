@@ -136,8 +136,8 @@ namespace MLAPI.MonoBehaviours.Core
         /// <summary>
         /// The current clients observing the object
         /// </summary>
-        public HashSet<uint> observers = new HashSet<uint>();
-        private HashSet<uint> previousObservers = new HashSet<uint>();
+        public readonly HashSet<uint> observers = new HashSet<uint>();
+        private readonly HashSet<uint> previousObservers = new HashSet<uint>();
 
         internal void RebuildObservers(uint? clientId = null)
         {
@@ -162,7 +162,6 @@ namespace MLAPI.MonoBehaviours.Core
                 previousObservers.Clear();
                 foreach (var item in observers)
                     previousObservers.Add(item);
-                observers.Clear();
                 bool update = false;
                 for (int i = 0; i < childNetworkedBehaviours.Count; i++)
                 {
@@ -199,6 +198,7 @@ namespace MLAPI.MonoBehaviours.Core
                     foreach (var item in previousObservers)
                         observers.Add(item);
                 }
+                previousObservers.Clear();
             }
         }
 

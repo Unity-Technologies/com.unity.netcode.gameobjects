@@ -86,6 +86,13 @@ namespace MLAPI.MonoBehaviours.Prototyping
         /// <returns>Wheter or not we changed anything</returns>
         public override bool OnRebuildObservers(HashSet<uint> observers)
         {
+            // This implementation is an example. 
+            // Not efficient. We remove all old observers as the API doesn't clear them for us.
+            // The reason it's not cleared is so that you don't have to iterate over your things if you simply
+            // Have an event driven system where you want to remove a player. Ex if they leave a zone
+            observers.Clear();
+            observers = new HashSet<uint>();
+
             if (ForceHidden)
             {
                 // ensure player can still see themself
