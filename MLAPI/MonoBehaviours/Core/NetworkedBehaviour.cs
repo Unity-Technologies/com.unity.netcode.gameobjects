@@ -109,7 +109,11 @@ namespace MLAPI.MonoBehaviours.Core
             if (_networkedObject == null)
                 _networkedObject = GetComponentInParent<NetworkedObject>();
 
-            CacheAttributedMethods();
+            if (NetworkingManager.singleton != null)
+                CacheAttributedMethods();
+            else
+                NetworkingManager.onSingletonSet += CacheAttributedMethods;
+
             NetworkedObject.NetworkedBehaviours.Add(this);
         }
 
@@ -187,7 +191,7 @@ namespace MLAPI.MonoBehaviours.Core
 
         private void CacheAttributedMethods()
         {
-            if (NetworkingManager.singleton.NetworkConfig != null && NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.Disabled)
+            if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.Disabled)
                 return;
 
             MethodInfo[] methods = GetType().GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.FlattenHierarchy);
