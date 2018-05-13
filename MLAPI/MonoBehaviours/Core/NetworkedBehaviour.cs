@@ -109,11 +109,6 @@ namespace MLAPI.MonoBehaviours.Core
             if (_networkedObject == null)
                 _networkedObject = GetComponentInParent<NetworkedObject>();
 
-            if (NetworkingManager.singleton != null)
-                CacheAttributedMethods();
-            else
-                NetworkingManager.onSingletonSet += CacheAttributedMethods;
-
             NetworkedObject.NetworkedBehaviours.Add(this);
         }
 
@@ -124,6 +119,10 @@ namespace MLAPI.MonoBehaviours.Core
         public virtual void NetworkStart()
         {
 
+        }
+        internal void InternalNetworkStart()
+        {
+            CacheAttributedMethods();
         }
         /// <summary>
         /// Gets called when SyncedVars gets updated

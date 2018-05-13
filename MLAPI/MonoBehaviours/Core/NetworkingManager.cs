@@ -164,7 +164,6 @@ namespace MLAPI.MonoBehaviours.Core
         /// An inspector bool that acts as a Trigger for regenerating RSA keys. Should not be used outside Unity editor.
         /// </summary>
         public bool RegenerateRSAKeys = false;
-        internal static Action onSingletonSet;
 
         private void OnValidate()
         {
@@ -644,8 +643,6 @@ namespace MLAPI.MonoBehaviours.Core
                 DontDestroyOnLoad(gameObject);
             if (RunInBackground)
                 Application.runInBackground = true;
-
-            onSingletonSet();
         }
         
         private void OnDestroy()

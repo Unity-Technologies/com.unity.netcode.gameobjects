@@ -91,7 +91,6 @@ namespace MLAPI.MonoBehaviours.Prototyping
             // The reason it's not cleared is so that you don't have to iterate over your things if you simply
             // Have an event driven system where you want to remove a player. Ex if they leave a zone
             observers.Clear();
-            observers = new HashSet<uint>();
 
             if (ForceHidden)
             {

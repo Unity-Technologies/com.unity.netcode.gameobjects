@@ -274,6 +274,7 @@ namespace MLAPI.MonoBehaviours.Core
                 //We check if we are it's networkedObject owner incase a networkedObject exists as a child of our networkedObject.
                 if(!childNetworkedBehaviours[i].networkedStartInvoked)
                 {
+                    childNetworkedBehaviours[i].InternalNetworkStart();
                     childNetworkedBehaviours[i].NetworkStart();
                     childNetworkedBehaviours[i].SyncVarInit();
                     childNetworkedBehaviours[i].networkedStartInvoked = true;
