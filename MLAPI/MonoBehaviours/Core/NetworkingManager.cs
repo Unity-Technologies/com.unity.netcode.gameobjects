@@ -1220,5 +1220,373 @@ namespace MLAPI.MonoBehaviours.Core
                 NetworkConfig.NetworkTransport.DisconnectClient(clientId);
             }
         }
+        #region SEND METHODS
+        /// <summary>
+        /// Sends a buffer to the server from client
+        /// </summary>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="data">The binary data to send</param>
+        public void SendToServer(string messageType, string channelName, byte[] data)
+        {
+            if (!MessageManager.messageTypes.ContainsKey(messageType))
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
+                return;
+            }
+            if (MessageManager.messageTypes[messageType] < 32)
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
+                return;
+            }
+            if (isServer)
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Server can not send messages to server");
+                return;
+            }
+            using (BitWriter writer = BitWriter.Get())
+            {
+                writer.WriteByteArray(data);
+                InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerNetId, messageType, channelName, writer, null);
+            }
+        }
+
+        /// <summary>
+        /// Sends a buffer to the server from client
+        /// </summary>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="writer">The binary data to send</param>
+        public void SendToServer(string messageType, string channelName, BitWriter writer)
+        {
+            if (!MessageManager.messageTypes.ContainsKey(messageType))
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
+                return;
+            }
+            if (MessageManager.messageTypes[messageType] < 32)
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
+                return;
+            }
+            if (isServer)
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Server can not send messages to server");
+                return;
+            }
+            InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerNetId, messageType, channelName, writer, null);
+        }
+
+        /// <summary>
+        /// Sends a binary serialized class to the server from client 
+        /// </summary>
+        /// <typeparam name="T">The class type to send</typeparam>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="instance">The instance to send</param>
+        public void SendToServer<T>(string messageType, string channelName, T instance)
+        {
+            SendToServer(messageType, channelName, BinarySerializer.Serialize<T>(instance));
+        }
+
+        /// <summary>
+        /// Sends a buffer to a client with a given clientId from Server
+        /// </summary>
+        /// <param name="clientId">The clientId to send the message to</param>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="data">The binary data to send</param>
+        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
+        public void SendToClient(uint clientId, string messageType, string channelName, byte[] data)
+        {
+            if (!MessageManager.messageTypes.ContainsKey(messageType))
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
+                return;
+            }
+            if (MessageManager.messageTypes[messageType] < 32)
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
+                return;
+            }
+            if (!isServer && (!NetworkingManager.singleton.NetworkConfig.AllowPassthroughMessages || !NetworkingManager.singleton.NetworkConfig.PassthroughMessageHashSet.Contains(MessageManager.messageTypes[messageType])))
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
+                return;
+            }
+            using (BitWriter writer = BitWriter.Get())
+            {
+                writer.WriteByteArray(data);
+                InternalMessageHandler.Send(clientId, messageType, channelName, writer, null);
+            }
+        }
+
+
+        /// <summary>
+        /// Sends a buffer to a client with a given clientId from Server
+        /// </summary>
+        /// <param name="clientId">The clientId to send the message to</param>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="writer">The binary data to send</param>
+        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
+        public void SendToClient(uint clientId, string messageType, string channelName, BitWriter writer)
+        {
+            if (!MessageManager.messageTypes.ContainsKey(messageType))
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
+                return;
+            }
+            if (MessageManager.messageTypes[messageType] < 32)
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
+                return;
+            }
+            if (!isServer && (!NetworkingManager.singleton.NetworkConfig.AllowPassthroughMessages || !NetworkingManager.singleton.NetworkConfig.PassthroughMessageHashSet.Contains(MessageManager.messageTypes[messageType])))
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
+                return;
+            }
+            InternalMessageHandler.Send(clientId, messageType, channelName, writer, null);
+        }
+
+        /// <summary>
+        /// Sends a binary serialized class to a client with a given clientId from Server
+        /// </summary>
+        /// <typeparam name="T">The class type to send</typeparam>
+        /// <param name="clientId">The clientId to send the message to</param>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>	
+        /// <param name="instance">The instance to send</param>
+        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
+        public void SendToClient<T>(int clientId, string messageType, string channelName, T instance)
+        {
+            SendToClient(clientId, messageType, channelName, BinarySerializer.Serialize<T>(instance));
+        }
+
+        /// <summary>
+        /// Sends a buffer to multiple clients from the server
+        /// </summary>
+        /// <param name="clientIds">The clientId's to send to</param>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="data">The binary data to send</param>
+        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
+        public void SendToClients(uint[] clientIds, string messageType, string channelName, byte[] data)
+        {
+            if (!MessageManager.messageTypes.ContainsKey(messageType))
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
+                return;
+            }
+            if (MessageManager.messageTypes[messageType] < 32)
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
+                return;
+            }
+            if (!isServer)
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
+                return;
+            }
+            using (BitWriter writer = BitWriter.Get())
+            {
+                writer.WriteByteArray(data);
+                InternalMessageHandler.Send(clientIds, messageType, channelName, writer, null);
+            }
+        }
+
+        /// <summary>
+        /// Sends a buffer to multiple clients from the server
+        /// </summary>
+        /// <param name="clientIds">The clientId's to send to</param>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="writer">The binary data to send</param>
+        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
+        public void SendToClients(uint[] clientIds, string messageType, string channelName, BitWriter writer)
+        {
+            if (!MessageManager.messageTypes.ContainsKey(messageType))
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
+                return;
+            }
+            if (MessageManager.messageTypes[messageType] < 32)
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
+                return;
+            }
+            if (!isServer)
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
+                return;
+            }
+            InternalMessageHandler.Send(clientIds, messageType, channelName, writer, null);
+        }
+
+        /// <summary>
+        /// Sends a binary serialized class to multiple clients from the server
+        /// </summary>
+        /// <typeparam name="T">The class type to send</typeparam>
+        /// <param name="clientIds">The clientId's to send to</param>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>	
+        /// <param name="instance">The instance to send</param>
+        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
+        public void SendToClients<T>(int[] clientIds, string messageType, string channelName, T instance)
+        {
+            SendToClients(clientIds, messageType, channelName, BinarySerializer.Serialize<T>(instance));
+        }
+
+        /// <summary>
+        /// Sends a buffer to multiple clients from the server
+        /// </summary>
+        /// <param name="clientIds">The clientId's to send to</param>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="data">The binary data to send</param>
+        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
+        public void SendToClients(List<uint> clientIds, string messageType, string channelName, byte[] data)
+        {
+            if (!MessageManager.messageTypes.ContainsKey(messageType))
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
+                return;
+            }
+            if (MessageManager.messageTypes[messageType] < 32)
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
+                return;
+            }
+            if (!isServer)
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
+                return;
+            }
+            using (BitWriter writer = BitWriter.Get())
+            {
+                writer.WriteByteArray(data);
+                InternalMessageHandler.Send(clientIds, messageType, channelName, writer, null);
+            }
+        }
+
+        /// <summary>
+        /// Sends a buffer to multiple clients from the server
+        /// </summary>
+        /// <param name="clientIds">The clientId's to send to</param>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="writer">The binary data to send</param>
+        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
+        public void SendToClients(List<uint> clientIds, string messageType, string channelName, BitWriter writer)
+        {
+            if (!MessageManager.messageTypes.ContainsKey(messageType))
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
+                return;
+            }
+            if (MessageManager.messageTypes[messageType] < 32)
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
+                return;
+            }
+            if (!isServer)
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
+                return;
+            }
+            InternalMessageHandler.Send(clientIds, messageType, channelName, writer, null);
+        }
+
+        /// <summary>
+        /// Sends a binary serialized class to multiple clients from the server
+        /// </summary>
+        /// <typeparam name="T">The class type to send</typeparam>
+        /// <param name="clientIds">The clientId's to send to</param>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>	
+        /// <param name="instance">The instance to send</param>
+        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
+        public void SendToClients<T>(List<int> clientIds, string messageType, string channelName, T instance)
+        {
+            SendToClients(clientIds, messageType, channelName, BinarySerializer.Serialize<T>(instance));
+        }
+
+        /// <summary>
+        /// Sends a buffer to all clients from the server
+        /// </summary>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="data">The binary data to send</param>
+        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
+        public void SendToClients(string messageType, string channelName, byte[] data)
+        {
+            if (!MessageManager.messageTypes.ContainsKey(messageType))
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
+                return;
+            }
+            if (MessageManager.messageTypes[messageType] < 32)
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
+                return;
+            }
+            if (!isServer)
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
+                return;
+            }
+            using (BitWriter writer = BitWriter.Get())
+            {
+                writer.WriteByteArray(data);
+                InternalMessageHandler.Send(messageType, channelName, writer, null);
+            }
+        }
+
+        /// <summary>
+        /// Sends a buffer to all clients from the server
+        /// </summary>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>
+        /// <param name="writer">The binary data to send</param>
+        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
+        public void SendToClients(string messageType, string channelName, BitWriter writer)
+        {
+            if (!MessageManager.messageTypes.ContainsKey(messageType))
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
+                return;
+            }
+            if (MessageManager.messageTypes[messageType] < 32)
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
+                return;
+            }
+            if (!isServer)
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
+                return;
+            }
+            InternalMessageHandler.Send(messageType, channelName, writer, null);
+        }
+
+        /// <summary>
+        /// Sends a buffer to all clients from the server
+        /// </summary>
+        /// <typeparam name="T">The class type to send</typeparam>
+        /// <param name="messageType">User defined messageType</param>
+        /// <param name="channelName">User defined channelName</param>	
+        /// <param name="instance">The instance to send</param>
+        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
+        public void SendToClients<T>(string messageType, string channelName, T instance, bool respectObservers = false)
+        {
+            SendToClients(messageType, channelName, BinarySerializer.Serialize<T>(instance), respectObservers);
+        }
+
+        public NetworkedObject GetNetworkedObject(uint networkId)
+        {
+            return SpawnManager.spawnedObjects[networkId];
+        }
+        #endregion
     }
 }
