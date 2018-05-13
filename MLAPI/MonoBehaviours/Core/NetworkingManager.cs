@@ -1327,7 +1327,6 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="messageType">User defined messageType</param>
         /// <param name="channelName">User defined channelName</param>
         /// <param name="data">The binary data to send</param>
-        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
         public void SendToClient(uint clientId, string messageType, string channelName, byte[] data)
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
@@ -1360,7 +1359,6 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="messageType">User defined messageType</param>
         /// <param name="channelName">User defined channelName</param>
         /// <param name="writer">The binary data to send</param>
-        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
         public void SendToClient(uint clientId, string messageType, string channelName, BitWriter writer)
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
@@ -1389,7 +1387,6 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="messageType">User defined messageType</param>
         /// <param name="channelName">User defined channelName</param>	
         /// <param name="instance">The instance to send</param>
-        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
         public void SendToClient<T>(int clientId, string messageType, string channelName, T instance)
         {
             SendToClient(clientId, messageType, channelName, BinarySerializer.Serialize<T>(instance));
@@ -1402,7 +1399,6 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="messageType">User defined messageType</param>
         /// <param name="channelName">User defined channelName</param>
         /// <param name="data">The binary data to send</param>
-        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
         public void SendToClients(uint[] clientIds, string messageType, string channelName, byte[] data)
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
@@ -1434,7 +1430,6 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="messageType">User defined messageType</param>
         /// <param name="channelName">User defined channelName</param>
         /// <param name="writer">The binary data to send</param>
-        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
         public void SendToClients(uint[] clientIds, string messageType, string channelName, BitWriter writer)
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
@@ -1463,7 +1458,6 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="messageType">User defined messageType</param>
         /// <param name="channelName">User defined channelName</param>	
         /// <param name="instance">The instance to send</param>
-        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
         public void SendToClients<T>(int[] clientIds, string messageType, string channelName, T instance)
         {
             SendToClients(clientIds, messageType, channelName, BinarySerializer.Serialize<T>(instance));
@@ -1476,7 +1470,6 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="messageType">User defined messageType</param>
         /// <param name="channelName">User defined channelName</param>
         /// <param name="data">The binary data to send</param>
-        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
         public void SendToClients(List<uint> clientIds, string messageType, string channelName, byte[] data)
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
@@ -1508,7 +1501,6 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="messageType">User defined messageType</param>
         /// <param name="channelName">User defined channelName</param>
         /// <param name="writer">The binary data to send</param>
-        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
         public void SendToClients(List<uint> clientIds, string messageType, string channelName, BitWriter writer)
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
@@ -1537,7 +1529,6 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="messageType">User defined messageType</param>
         /// <param name="channelName">User defined channelName</param>	
         /// <param name="instance">The instance to send</param>
-        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
         public void SendToClients<T>(List<int> clientIds, string messageType, string channelName, T instance)
         {
             SendToClients(clientIds, messageType, channelName, BinarySerializer.Serialize<T>(instance));
@@ -1549,7 +1540,6 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="messageType">User defined messageType</param>
         /// <param name="channelName">User defined channelName</param>
         /// <param name="data">The binary data to send</param>
-        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
         public void SendToClients(string messageType, string channelName, byte[] data)
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
@@ -1580,7 +1570,6 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="messageType">User defined messageType</param>
         /// <param name="channelName">User defined channelName</param>
         /// <param name="writer">The binary data to send</param>
-        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
         public void SendToClients(string messageType, string channelName, BitWriter writer)
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
@@ -1608,12 +1597,16 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="messageType">User defined messageType</param>
         /// <param name="channelName">User defined channelName</param>	
         /// <param name="instance">The instance to send</param>
-        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        public void SendToClients<T>(string messageType, string channelName, T instance, bool respectObservers = false)
+        public void SendToClients<T>(string messageType, string channelName, T instance)
         {
-            SendToClients(messageType, channelName, BinarySerializer.Serialize<T>(instance), respectObservers);
+            SendToClients(messageType, channelName, BinarySerializer.Serialize<T>(instance));
         }
 
+        /// <summary>
+        /// Returns the NetworkedObject with a given NetworkId
+        /// </summary>
+        /// <param name="networkId">The NetworkId</param>
+        /// <returns>Returns the NetworkedObject</returns>
         public NetworkedObject GetNetworkedObject(uint networkId)
         {
             return SpawnManager.spawnedObjects[networkId];

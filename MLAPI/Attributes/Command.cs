@@ -8,6 +8,9 @@ namespace MLAPI.Attributes
     [AttributeUsage(AttributeTargets.Method)]
     public class Command : Attribute
     {
+        /// <summary>
+        /// The channelName to send this Command
+        /// </summary>
         public string channelName = "MLAPI_INTERNAL";
     }
 }

@@ -3,12 +3,14 @@ using UnityEngine;
 
 namespace MLAPI.NetworkingManagerComponents.Core
 {
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
     public enum LogLevel
     {
         Developer,
         Normal,
         Nothing
     }
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 
     internal static class LogHelper
     {

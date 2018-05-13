@@ -8,6 +8,9 @@ namespace MLAPI.Attributes
     [AttributeUsage(AttributeTargets.Method)]
     public class ClientRpc : Attribute
     {
+        /// <summary>
+        /// The channelName to send this Rpc
+        /// </summary>
         public string channelName = "MLAPI_INTERNAL";
     }
 }
