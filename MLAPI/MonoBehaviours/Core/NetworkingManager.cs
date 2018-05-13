@@ -1222,6 +1222,32 @@ namespace MLAPI.MonoBehaviours.Core
         }
         #region SEND METHODS
         /// <summary>
+        /// Registers a message handler
+        /// </summary>
+        /// <param name="name">The MessageType to register</param>
+        /// <param name="action">The callback to get invoked whenever a message is received</param>
+        /// <returns>HandlerId for the messageHandler that can be used to deregister the messageHandler</returns>
+        public int RegisterMessageHandler(string name, Action<uint, BitReader> action)
+        {
+            if (!MessageManager.messageTypes.ContainsKey(name))
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The messageType " + name + " is not registered");
+                return -1;
+            }
+            return MessageManager.AddIncomingMessageHandler(name, action);
+        }
+
+        /// <summary>
+        /// Deregisters a given message handler
+        /// </summary>
+        /// <param name="name">The MessageType to deregister</param>
+        /// <param name="counter">The messageHandlerId to deregister</param>
+        public void DeregisterMessageHandler(string name, int counter)
+        {
+            MessageManager.RemoveIncomingMessageHandler(name, counter);
+        }
+
+        /// <summary>
         /// Sends a buffer to the server from client
         /// </summary>
         /// <param name="messageType">User defined messageType</param>

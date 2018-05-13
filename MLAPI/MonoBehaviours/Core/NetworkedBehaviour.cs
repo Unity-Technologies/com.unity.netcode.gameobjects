@@ -353,7 +353,7 @@ namespace MLAPI.MonoBehaviours.Core
             }
 
             networkedObject.targetMessageActions[behaviourOrder].Add(messageType, action);
-            int counter = MessageManager.AddIncomingMessageHandler(name, action, networkId);
+            int counter = MessageManager.AddIncomingMessageHandler(name, action);
             registeredMessageHandlers.Add(name, counter);
             return counter;
         }
@@ -389,7 +389,7 @@ namespace MLAPI.MonoBehaviours.Core
             };
 
             networkedObject.targetMessageActions[behaviourOrder].Add(messageType, convertedAction);
-            int counter = MessageManager.AddIncomingMessageHandler(name, convertedAction, networkId);
+            int counter = MessageManager.AddIncomingMessageHandler(name, convertedAction);
             registeredMessageHandlers.Add(name, counter);
             return counter;
         }

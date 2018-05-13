@@ -25,7 +25,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
         }
 
         
-        internal static int AddIncomingMessageHandler(string name, Action<uint, BitReader> action, uint networkId)
+        internal static int AddIncomingMessageHandler(string name, Action<uint, BitReader> action)
         {
             if (messageTypes.ContainsKey(name))
             {
@@ -69,7 +69,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             }
         }
 
-        internal static void RemoveIncomingMessageHandler(string name, int counter, uint networkId)
+        internal static void RemoveIncomingMessageHandler(string name, int counter)
         {
             if (counter == -1)
                 return;
