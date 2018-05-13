@@ -2,11 +2,7 @@
 <!-- If it's not applicable, leave the {Please write here} tag to indicate that it does not apply -->
 
 ### Issue Type
-<!-- Please place an x in the type that applies -->
-* [x] Bug
-* [ ] Enhancement / Feature
-* [ ] Question
-* [ ] Other
+<!-- Example: Feature, Bug, Question etc -->
 
 ### Description
 
