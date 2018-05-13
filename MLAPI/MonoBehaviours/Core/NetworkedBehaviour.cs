@@ -412,7 +412,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="counter">The messageHandlerId to deregister</param>
         protected void DeregisterMessageHandler(string name, int counter)
         {
-            MessageManager.RemoveIncomingMessageHandler(name, counter, networkId);
+            MessageManager.RemoveIncomingMessageHandler(name, counter);
             ushort messageType = MessageManager.messageTypes[name];
             ushort behaviourOrder = networkedObject.GetOrderIndex(this);
 
