@@ -187,9 +187,11 @@ namespace MLAPI.MonoBehaviours.Core
                                 writer.WriteUInt(networkId);
                                 writer.WriteBool(observers.Contains(pair.Key));
 
+                                if (observers.Contains(pair.Key))
+                                    WriteFormattedSyncedVarData(writer);
+
                                 InternalMessageHandler.Send(pair.Key, "MLAPI_SET_VISIBILITY", "MLAPI_INTERNAL", writer, null);
                             }
-                            FlushToClient(pair.Key);
                         }
                     }
                 }
@@ -336,6 +338,7 @@ namespace MLAPI.MonoBehaviours.Core
                     childNetworkedBehaviours[i].syncedVarFields[j].FieldInfo.SetValue(behaviour, 
                         FieldTypeHelper.ReadFieldType(reader, childNetworkedBehaviours[i].syncedVarFields[j].FieldType));
                 }
+                behaviour.OnSyncVarUpdate();
             }
         }
 

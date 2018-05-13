@@ -122,6 +122,13 @@ namespace MLAPI.MonoBehaviours.Core
 
         }
         /// <summary>
+        /// Gets called when SyncedVars gets updated
+        /// </summary>
+        public virtual void OnSyncVarUpdate()
+        {
+
+        }
+        /// <summary>
         /// Gets called when the local client gains ownership of this object
         /// </summary>
         public virtual void OnGainedOwnership()

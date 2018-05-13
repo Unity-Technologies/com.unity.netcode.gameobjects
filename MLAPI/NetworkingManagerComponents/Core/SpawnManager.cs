@@ -143,7 +143,8 @@ namespace MLAPI.NetworkingManagerComponents.Core
                             writer.WriteFloat(netObject.Value.transform.rotation.eulerAngles.y);
                             writer.WriteFloat(netObject.Value.transform.rotation.eulerAngles.z);
 
-                            netObject.Value.WriteFormattedSyncedVarData(writer);
+                            if (netObject.Value.observers.Contains(client.Key))
+                                netObject.Value.WriteFormattedSyncedVarData(writer);
                         }
                     }
                     InternalMessageHandler.Send(client.Key, "MLAPI_ADD_OBJECTS", "MLAPI_INTERNAL", writer, null);
@@ -234,7 +235,8 @@ namespace MLAPI.NetworkingManagerComponents.Core
                     writer.WriteFloat(netObject.transform.rotation.eulerAngles.y);
                     writer.WriteFloat(netObject.transform.rotation.eulerAngles.z);
 
-                    netObject.WriteFormattedSyncedVarData(writer);
+                    if (netObject.observers.Contains(client.Key))
+                        netObject.WriteFormattedSyncedVarData(writer);
 
                     InternalMessageHandler.Send(client.Key, "MLAPI_ADD_OBJECT", "MLAPI_INTERNAL", writer, null);
                 }

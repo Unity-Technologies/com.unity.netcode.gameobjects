@@ -1162,7 +1162,8 @@ namespace MLAPI.MonoBehaviours.Core
                             writer.WriteFloat(pair.Value.transform.rotation.eulerAngles.y);
                             writer.WriteFloat(pair.Value.transform.rotation.eulerAngles.z);
 
-                            pair.Value.WriteFormattedSyncedVarData(writer);
+                            if (pair.Value.observers.Contains(clientId))
+                                pair.Value.WriteFormattedSyncedVarData(writer);
                         }
                     }
 
@@ -1198,7 +1199,8 @@ namespace MLAPI.MonoBehaviours.Core
                             writer.WriteFloat(connectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.y);
                             writer.WriteFloat(connectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.z);
 
-                            connectedClients[clientId].PlayerObject.GetComponent<NetworkedObject>().WriteFormattedSyncedVarData(writer);
+                            if (connectedClients[clientId].PlayerObject.GetComponent<NetworkedObject>().observers.Contains(clientPair.Key))
+                                connectedClients[clientId].PlayerObject.GetComponent<NetworkedObject>().WriteFormattedSyncedVarData(writer);
                         }
                         else
                         {
