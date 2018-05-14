@@ -1,6 +1,12 @@
 ![](https://i.imgur.com/d0amtqs.png)
 
 MLAPI (Mid level API) is a framework that hopefully simplifies building networked games in Unity. It is built on the LLAPI and is similar to the HLAPI in many ways. It does not however integrate into the compiler and it's meant to offer much greater flexibility than the HLAPI while keeping some of it's simplicity. It offers greater performance over the HLAPI.
+
+[![Github All Releases](https://img.shields.io/github/downloads/TwoTenPvP/MLAPI/total.svg)](https://github.com/TwoTenPvP/MLAPI/releases)
+[![GitHub Release](https://img.shields.io/github/release/TwoTenPvP/MLAPI.svg)](https://github.com/TwoTenPvP/MLAPI/releases)
+[![AppVeyor](https://img.shields.io/appveyor/ci/TwoTenPvP/MLAPI.svg)](https://ci.appveyor.com/project/TwoTenPvP/mlapi/build/artifacts)
+[![Licence](https://img.shields.io/github/license/TwoTenPvP/MLAPI.svg)](https://github.com/TwoTenPvP/MLAPI/blob/master/LICENCE)
+
 ### Documentation
 To get started, check the [Wiki](https://github.com/TwoTenPvP/MLAPI/wiki).
 This is also where most documentation lies.
