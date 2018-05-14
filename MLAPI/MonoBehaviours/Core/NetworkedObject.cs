@@ -320,8 +320,7 @@ namespace MLAPI.MonoBehaviours.Core
                 writer.WriteUShort(GetOrderIndex(childNetworkedBehaviours[i])); //Write the behaviourId
                 for (int j = 0; j < childNetworkedBehaviours[i].syncedVarFields.Count; j++)
                 {
-                    FieldTypeHelper.WriteFieldType(writer, childNetworkedBehaviours[i].syncedVarFields[j].FieldValue,
-                        childNetworkedBehaviours[i].syncedVarFields[j].FieldType);
+                    FieldTypeHelper.WriteFieldType(writer, childNetworkedBehaviours[i].syncedVarFields[j].FieldValue);
                 }
             }
         }
@@ -337,7 +336,7 @@ namespace MLAPI.MonoBehaviours.Core
                 for (int j = 0; j < childNetworkedBehaviours[i].syncedVarFields.Count; j++)
                 {
                     childNetworkedBehaviours[i].syncedVarFields[j].FieldInfo.SetValue(behaviour, 
-                        FieldTypeHelper.ReadFieldType(reader, childNetworkedBehaviours[i].syncedVarFields[j].FieldType));
+                        FieldTypeHelper.ReadFieldType(reader, childNetworkedBehaviours[i].syncedVarFields[j].FieldInfo.FieldType));
                 }
                 behaviour.OnSyncVarUpdate();
             }

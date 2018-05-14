@@ -245,12 +245,10 @@ namespace MLAPI.MonoBehaviours.Core
                 writer.WriteUInt(networkId);
                 writer.WriteUShort(networkedObject.GetOrderIndex(this));
                 writer.WriteULong(hash);
-                writer.WriteBits((byte)methodParams.Length, 5);
                 for (int i = 0; i < methodParams.Length; i++)
                 {
-                    FieldType fieldType = FieldTypeHelper.GetFieldType(methodParams[i].GetType());
-                    writer.WriteBits((byte)fieldType, 5);
-                    FieldTypeHelper.WriteFieldType(writer, methodParams[i], fieldType);
+                    Type type = methodParams[i].GetType();
+                    FieldTypeHelper.WriteFieldType(writer, methodParams[i]);
                 }
 
                 InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerNetId, "MLAPI_COMMAND", messageChannelName[methodName], writer, null);
@@ -286,13 +284,10 @@ namespace MLAPI.MonoBehaviours.Core
                 writer.WriteUInt(networkId);
                 writer.WriteUShort(networkedObject.GetOrderIndex(this));
                 writer.WriteULong(hash);
-                writer.WriteBits((byte)methodParams.Length, 5);
 
                 for (int i = 0; i < methodParams.Length; i++)
                 {
-                    FieldType fieldType = FieldTypeHelper.GetFieldType(methodParams[i].GetType());
-                    writer.WriteBits((byte)fieldType, 5);
-                    FieldTypeHelper.WriteFieldType(writer, methodParams[i], fieldType);
+                    FieldTypeHelper.WriteFieldType(writer, methodParams[i]);
                 }
                 InternalMessageHandler.Send("MLAPI_RPC", messageChannelName[methodName], writer, networkId);
             }
@@ -327,12 +322,9 @@ namespace MLAPI.MonoBehaviours.Core
                 writer.WriteUInt(networkId);
                 writer.WriteUShort(networkedObject.GetOrderIndex(this));
                 writer.WriteULong(hash);
-                writer.WriteBits((byte)methodParams.Length, 5);
                 for (int i = 0; i < methodParams.Length; i++)
                 {
-                    FieldType fieldType = FieldTypeHelper.GetFieldType(methodParams[i].GetType());
-                    writer.WriteBits((byte)fieldType, 5);
-                    FieldTypeHelper.WriteFieldType(writer, methodParams[i], fieldType);
+                    FieldTypeHelper.WriteFieldType(writer, methodParams[i]);
                 }
                 InternalMessageHandler.Send(ownerClientId, "MLAPI_RPC", messageChannelName[methodName], writer, networkId);
             }
@@ -486,25 +478,16 @@ namespace MLAPI.MonoBehaviours.Core
 
                     if (!string.IsNullOrEmpty(attribute.hookMethodName))
                         hookMethod = GetType().GetMethod(attribute.hookMethodName, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-                    
-                    FieldType fieldType = FieldTypeHelper.GetFieldType(sortedFields[i].FieldType);
-                    if (fieldType != FieldType.Invalid)
+
+                    syncedVarFields.Add(new SyncedVarField()
                     {
-                        syncedVarFields.Add(new SyncedVarField()
-                        {
-                            Dirty = false,
-                            Target = attribute.target,
-                            FieldInfo = sortedFields[i],
-                            FieldType = fieldType,
-                            FieldValue = sortedFields[i].GetValue(this),
-                            HookMethod = hookMethod,
-                            Attribute = attribute
-                        });
-                    }
-                    else
-                    {
-                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogError("MLAPI: The type " + sortedFields[i].FieldType.ToString() + " can not be used as a syncvar");
-                    }
+                        Dirty = false,
+                        Target = attribute.target,
+                        FieldInfo = sortedFields[i],
+                        FieldValue = sortedFields[i].GetValue(this),
+                        HookMethod = hookMethod,
+                        Attribute = attribute
+                    });
                 }
             }
             syncMask = new bool[syncedVarFields.Count];
@@ -547,7 +530,7 @@ namespace MLAPI.MonoBehaviours.Core
                 {
                     if (syncedVarFields[i].Target && clientId != ownerClientId)
                         continue;
-                    FieldTypeHelper.WriteFieldType(writer, syncedVarFields[i].FieldInfo, this, syncedVarFields[i].FieldType);
+                    FieldTypeHelper.WriteFieldType(writer, syncedVarFields[i].FieldInfo.GetValue(this));
                 }
                 bool observed = InternalMessageHandler.Send(clientId, "MLAPI_SYNC_VAR_UPDATE", "MLAPI_INTERNAL", writer, networkId);
                 if (observed)
@@ -608,7 +591,7 @@ namespace MLAPI.MonoBehaviours.Core
                         //Writes all the indexes of the dirty syncvars.
                         if (syncedVarFields[i].Dirty == true)
                         {
-                            FieldTypeHelper.WriteFieldType(writer, syncedVarFields[i].FieldInfo, this, syncedVarFields[i].FieldType);
+                            FieldTypeHelper.WriteFieldType(writer, syncedVarFields[i].FieldInfo.GetValue(this));
                             syncedVarFields[i].FieldValue = syncedVarFields[i].FieldInfo.GetValue(this);
                             syncedVarFields[i].Dirty = false;
                         }
@@ -640,7 +623,7 @@ namespace MLAPI.MonoBehaviours.Core
                             //Writes all the indexes of the dirty syncvars.
                             if (syncedVarFields[i].Dirty == true)
                             {
-                                FieldTypeHelper.WriteFieldType(writer, syncedVarFields[i].FieldInfo, this, syncedVarFields[i].FieldType);
+                                FieldTypeHelper.WriteFieldType(writer, syncedVarFields[i].FieldInfo.GetValue(this));
                                 if (nonTargetDirtyCount == 0)
                                 {
                                     //Only targeted SyncedVars were changed. Thus we need to set them as non dirty here since it wont be done by the next loop.
@@ -673,7 +656,7 @@ namespace MLAPI.MonoBehaviours.Core
                         //Writes all the indexes of the dirty syncvars.
                         if (syncedVarFields[i].Dirty == true && !syncedVarFields[i].Target)
                         {
-                            FieldTypeHelper.WriteFieldType(writer, syncedVarFields[i].FieldInfo, this, syncedVarFields[i].FieldType);
+                            FieldTypeHelper.WriteFieldType(writer, syncedVarFields[i].FieldInfo.GetValue(this));
                             syncedVarFields[i].FieldValue = syncedVarFields[i].FieldInfo.GetValue(this);
                             syncedVarFields[i].Dirty = false;
                         }
@@ -698,6 +681,7 @@ namespace MLAPI.MonoBehaviours.Core
             {
                 if (NetworkingManager.singleton.NetworkTime - syncedVarFields[i].Attribute.lastSyncTime < syncedVarFields[i].Attribute.syncDelay)
                     continue;
+                //Big TODO. This will return true for reference objects. This NEEDS to be fixed. a better compare
                 if (!syncedVarFields[i].FieldInfo.GetValue(this).Equals(syncedVarFields[i].FieldValue))
                 {
                     syncedVarFields[i].Dirty = true; //This fields value is out of sync!

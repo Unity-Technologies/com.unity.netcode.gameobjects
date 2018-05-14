@@ -247,70 +247,8 @@ namespace MLAPI.NetworkingManagerComponents.Core
             {
                 if (!reader.ReadBool())
                     continue;
-                
-                FieldType type = SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).syncedVarFields[i].FieldType;
-                switch (type)
-                {
-                    case FieldType.Bool:
-                        SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(reader.ReadBool(), i);
-                        break;
-                    case FieldType.Byte:
-                        SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(reader.ReadByte(), i);
-                        break;
-                    case FieldType.Double:
-                        SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(reader.ReadDouble(), i);
-                        break;
-                    case FieldType.Single:
-                        SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(reader.ReadFloat(), i);
-                        break;
-                    case FieldType.Int:
-                        SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(reader.ReadInt(), i);
-                        break;
-                    case FieldType.Long:
-                        SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(reader.ReadLong(), i);
-                        break;
-                    case FieldType.SByte:
-                        SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(reader.ReadSByte(), i);
-                        break;
-                    case FieldType.Short:
-                        SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(reader.ReadShort(), i);
-                        break;
-                    case FieldType.UInt:
-                        SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(reader.ReadUInt(), i);
-                        break;
-                    case FieldType.ULong:
-                        SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(reader.ReadULong(), i);
-                        break;
-                    case FieldType.UShort:
-                        SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(reader.ReadUShort(), i);
-                        break;
-                    case FieldType.String:
-                        SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(reader.ReadString(), i);
-                        break;
-                    case FieldType.Vector3:
-                        {   //Cases aren't their own scope. Therefor we create a scope for them as they share the X,Y,Z local variables otherwise.
-                            float x = reader.ReadFloat();
-                            float y = reader.ReadFloat();
-                            float z = reader.ReadFloat();
-                            SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(new Vector3(x, y, z), i);
-                        }
-                        break;
-                    case FieldType.Vector2:
-                        {
-                            float x = reader.ReadFloat();
-                            float y = reader.ReadFloat();
-                            SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(new Vector2(x, y), i);
-                        }
-                        break;
-                    case FieldType.Quaternion:
-                        {
-                            float x = reader.ReadFloat();
-                            float y = reader.ReadFloat();
-                            float z = reader.ReadFloat();
-                            SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(Quaternion.Euler(x, y, z), i);
-                        }
-                        break;
-                }
+                SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(FieldTypeHelper.ReadFieldType(reader, 
+                    SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).syncedVarFields[i].FieldInfo.FieldType), i);
             }
         }
 
@@ -380,8 +318,11 @@ namespace MLAPI.NetworkingManagerComponents.Core
             MethodInfo targetMethod = null;
             if (behaviour.cachedMethods.ContainsKey(Data.Cache.GetAttributeMethodName(hash)))
                 targetMethod = behaviour.cachedMethods[Data.Cache.GetAttributeMethodName(hash)];
-            byte paramCount = reader.ReadBits(5);
-            object[] methodParams = FieldTypeHelper.ReadObjects(reader, paramCount);
+
+            ParameterInfo[] parameters = targetMethod.GetParameters();
+            object[] methodParams = new object[parameters.Length];
+            for (int i = 0; i < parameters.Length; i++)
+                methodParams[i] = FieldTypeHelper.ReadFieldType(reader, parameters[i].ParameterType);
             targetMethod.Invoke(behaviour, methodParams);
         }
 
@@ -397,8 +338,10 @@ namespace MLAPI.NetworkingManagerComponents.Core
             MethodInfo targetMethod = null;
             if (behaviour.cachedMethods.ContainsKey(Data.Cache.GetAttributeMethodName(hash)))
                 targetMethod = behaviour.cachedMethods[Data.Cache.GetAttributeMethodName(hash)];
-            byte paramCount = reader.ReadBits(5);
-            object[] methodParams = FieldTypeHelper.ReadObjects(reader, paramCount);
+            ParameterInfo[] parameters = targetMethod.GetParameters();
+            object[] methodParams = new object[parameters.Length];
+            for (int i = 0; i < parameters.Length; i++)
+                methodParams[i] = FieldTypeHelper.ReadFieldType(reader, parameters[i].ParameterType);
             targetMethod.Invoke(behaviour, methodParams);
         }
 
@@ -414,8 +357,10 @@ namespace MLAPI.NetworkingManagerComponents.Core
             MethodInfo targetMethod = null;
             if (behaviour.cachedMethods.ContainsKey(Data.Cache.GetAttributeMethodName(hash)))
                 targetMethod = behaviour.cachedMethods[Data.Cache.GetAttributeMethodName(hash)];
-            byte paramCount = reader.ReadBits(5);
-            object[] methodParams = FieldTypeHelper.ReadObjects(reader, paramCount);
+            ParameterInfo[] parameters = targetMethod.GetParameters();
+            object[] methodParams = new object[parameters.Length];
+            for (int i = 0; i < parameters.Length; i++)
+                methodParams[i] = FieldTypeHelper.ReadFieldType(reader, parameters[i].ParameterType);
             targetMethod.Invoke(behaviour, methodParams);
         }
 

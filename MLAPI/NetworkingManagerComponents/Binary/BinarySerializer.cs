@@ -1,6 +1,7 @@
 ﻿using MLAPI.Attributes;
 using MLAPI.Data;
 using MLAPI.NetworkingManagerComponents.Core;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -44,15 +45,32 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             {
                 for (int i = 0; i < sortedFields.Length; i++)
                 {
-                    FieldType fieldType = FieldTypeHelper.GetFieldType(sortedFields[i].FieldType);
-                    if (fieldType == FieldType.Invalid)
-                    {
-                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The field " + sortedFields[i].Name + " will not be serialized as it's not of a supported type. Add the BinaryIgnore attribute to prevent this message from shwoing up.");
-                        continue;
-                    }
-                    FieldTypeHelper.WriteFieldType(writer, sortedFields[i].GetValue(instance), fieldType);
+                    FieldTypeHelper.WriteFieldType(writer, sortedFields[i].GetValue(instance));
                 }
                 return writer.Finalize();
+            }
+        }
+
+        /// <summary>
+        /// Serializes a class instance and writes it to a writer
+        /// </summary>
+        /// <typeparam name="T">The class type to serialize</typeparam>
+        /// <param name="instance">The instance to serialize</param>
+        /// <param name="writer">The writer to write to</param>
+        public static void Serialize(object instance, BitWriter writer)
+        {
+            FieldInfo[] sortedFields;
+
+            if (cachedFields.ContainsKey(instance.GetType().FullName))
+                sortedFields = cachedFields[instance.GetType().FullName];
+            else
+            {
+                sortedFields = instance.GetType().GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).OrderBy(x => x.Name).Where(x => !x.IsDefined(typeof(BinaryIgnore), true)).ToArray();
+                cachedFields.Add(instance.GetType().FullName, sortedFields);
+            }
+            for (int i = 0; i < sortedFields.Length; i++)
+            {
+                FieldTypeHelper.WriteFieldType(writer, sortedFields[i].GetValue(instance));
             }
         }
 
@@ -80,16 +98,36 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             {
                 for (int i = 0; i < sortedFields.Length; i++)
                 {
-                    FieldType fieldType = FieldTypeHelper.GetFieldType(sortedFields[i].FieldType);
-                    if (fieldType == FieldType.Invalid)
-                    {
-                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The field " + sortedFields[i].Name + " will not be deserialized as it's not of a supported type. Add the BinaryIgnore attribute to prevent this message from shwoing up.");
-                        continue;
-                    }
-                    sortedFields[i].SetValue(instance, FieldTypeHelper.ReadFieldType(reader, fieldType));
+                    sortedFields[i].SetValue(instance, FieldTypeHelper.ReadFieldType(reader, sortedFields[i].FieldType));
                 }
                 return instance;
             }
+        }
+
+        /// <summary>
+        /// Deserializes binary and turns it back into the original class
+        /// </summary>
+        /// <typeparam name="T">The type to return</typeparam>
+        /// <param name="reader">The reader to deserialize</param>
+        /// <returns>An instance of T</returns>
+        public static object Deserialize(BitReader reader, Type type)
+        {
+            object instance = Activator.CreateInstance(type);
+            FieldInfo[] sortedFields;
+
+            if (cachedFields.ContainsKey(type.FullName))
+                sortedFields = cachedFields[instance.GetType().FullName];
+            else
+            {
+                sortedFields = instance.GetType().GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).OrderBy(x => x.Name).Where(x => !x.IsDefined(typeof(BinaryIgnore), true)).ToArray();
+                cachedFields.Add(instance.GetType().FullName, sortedFields);
+            }
+
+            for (int i = 0; i < sortedFields.Length; i++)
+            {
+                sortedFields[i].SetValue(instance, FieldTypeHelper.ReadFieldType(reader, sortedFields[i].FieldType));
+            }
+            return instance;
         }
 
         /// <summary>
@@ -114,13 +152,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
 
             for (int i = 0; i < sortedFields.Length; i++)
             {
-                FieldType fieldType = FieldTypeHelper.GetFieldType(sortedFields[i].FieldType);
-                if (fieldType == FieldType.Invalid)
-                {
-                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The field " + sortedFields[i].Name + " will not be deserialized as it's not of a supported type. Add the BinaryIgnore attribute to prevent this message from shwoing up.");
-                    continue;
-                }
-                sortedFields[i].SetValue(instance, FieldTypeHelper.ReadFieldType(reader, fieldType));
+                sortedFields[i].SetValue(instance, FieldTypeHelper.ReadFieldType(reader, sortedFields[i].FieldType));
             }
             return instance;
         }
