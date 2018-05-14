@@ -74,9 +74,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             using (BitReader reader = BitReader.Get(binary))
             {
                 for (int i = 0; i < sortedFields.Length; i++)
-                {
                     sortedFields[i].SetValue(instance, FieldTypeHelper.ReadFieldType(reader, sortedFields[i].FieldType));
-                }
                 return instance;
             }
         }
@@ -120,9 +118,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
                 cachedFields.Add(instance.GetType().FullName, sortedFields);
             }
             for (int i = 0; i < sortedFields.Length; i++)
-            {
                 FieldTypeHelper.WriteFieldType(writer, sortedFields[i].GetValue(instance));
-            }
         }
 
         internal static object Deserialize(BitReader reader, Type type)

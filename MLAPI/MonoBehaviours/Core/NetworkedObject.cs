@@ -324,9 +324,7 @@ namespace MLAPI.MonoBehaviours.Core
                     continue;
                 writer.WriteUShort(GetOrderIndex(childNetworkedBehaviours[i])); //Write the behaviourId
                 for (int j = 0; j < childNetworkedBehaviours[i].syncedVarFields.Count; j++)
-                {
                     FieldTypeHelper.WriteFieldType(writer, childNetworkedBehaviours[i].syncedVarFields[j].FieldValue);
-                }
             }
         }
 

@@ -251,8 +251,9 @@ namespace MLAPI.NetworkingManagerComponents.Core
             {
                 if (!reader.ReadBool())
                     continue;
-                SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(FieldTypeHelper.ReadFieldType(reader, 
-                    SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).syncedVarFields[i].FieldInfo.FieldType), i);
+                SyncedVarField field = SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).syncedVarFields[i];
+                SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(FieldTypeHelper.ReadFieldType(reader,
+                    field.FieldInfo.FieldType, ref field.FieldValue), i);
             }
         }
 

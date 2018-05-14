@@ -246,10 +246,7 @@ namespace MLAPI.MonoBehaviours.Core
                 writer.WriteUShort(networkedObject.GetOrderIndex(this));
                 writer.WriteULong(hash);
                 for (int i = 0; i < methodParams.Length; i++)
-                {
-                    Type type = methodParams[i].GetType();
                     FieldTypeHelper.WriteFieldType(writer, methodParams[i]);
-                }
 
                 InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerNetId, "MLAPI_COMMAND", messageChannelName[methodName], writer, null);
             }
@@ -286,9 +283,7 @@ namespace MLAPI.MonoBehaviours.Core
                 writer.WriteULong(hash);
 
                 for (int i = 0; i < methodParams.Length; i++)
-                {
                     FieldTypeHelper.WriteFieldType(writer, methodParams[i]);
-                }
                 InternalMessageHandler.Send("MLAPI_RPC", messageChannelName[methodName], writer, networkId);
             }
         }
@@ -323,9 +318,7 @@ namespace MLAPI.MonoBehaviours.Core
                 writer.WriteUShort(networkedObject.GetOrderIndex(this));
                 writer.WriteULong(hash);
                 for (int i = 0; i < methodParams.Length; i++)
-                {
                     FieldTypeHelper.WriteFieldType(writer, methodParams[i]);
-                }
                 InternalMessageHandler.Send(ownerClientId, "MLAPI_RPC", messageChannelName[methodName], writer, networkId);
             }
         }
@@ -484,7 +477,7 @@ namespace MLAPI.MonoBehaviours.Core
                         Dirty = false,
                         Target = attribute.target,
                         FieldInfo = sortedFields[i],
-                        FieldValue = sortedFields[i].GetValue(this),
+                        FieldValue = FieldTypeHelper.GetReferenceArrayValue(sortedFields[i].GetValue(this), null),
                         HookMethod = hookMethod,
                         Attribute = attribute
                     });
@@ -530,7 +523,7 @@ namespace MLAPI.MonoBehaviours.Core
                     writer.WriteBool(mask[i]);
                     if (syncedVarFields[i].Target && clientId != ownerClientId)
                         continue;
-                    FieldTypeHelper.WriteFieldType(writer, syncedVarFields[i].FieldInfo.GetValue(this));
+                    FieldTypeHelper.WriteFieldType(writer, syncedVarFields[i].FieldInfo.GetValue(this), null);
                 }
                 bool observed = InternalMessageHandler.Send(clientId, "MLAPI_SYNC_VAR_UPDATE", "MLAPI_INTERNAL", writer, networkId);
                 if (observed)
@@ -591,8 +584,8 @@ namespace MLAPI.MonoBehaviours.Core
                         //Writes all the indexes of the dirty syncvars.
                         if (syncedVarFields[i].Dirty == true)
                         {
-                            FieldTypeHelper.WriteFieldType(writer, syncedVarFields[i].FieldInfo.GetValue(this));
-                            syncedVarFields[i].FieldValue = syncedVarFields[i].FieldInfo.GetValue(this);
+                            FieldTypeHelper.WriteFieldType(writer, syncedVarFields[i].FieldInfo.GetValue(this), syncedVarFields[i].FieldValue);
+                            syncedVarFields[i].FieldValue = FieldTypeHelper.GetReferenceArrayValue(syncedVarFields[i].FieldInfo.GetValue(this), syncedVarFields[i].FieldValue);
                             syncedVarFields[i].Dirty = false;
                         }
                     }
@@ -623,11 +616,11 @@ namespace MLAPI.MonoBehaviours.Core
                             //Writes all the indexes of the dirty syncvars.
                             if (syncedVarFields[i].Dirty == true)
                             {
-                                FieldTypeHelper.WriteFieldType(writer, syncedVarFields[i].FieldInfo.GetValue(this));
+                                FieldTypeHelper.WriteFieldType(writer, syncedVarFields[i].FieldInfo.GetValue(this), syncedVarFields[i].FieldValue);
                                 if (nonTargetDirtyCount == 0)
                                 {
                                     //Only targeted SyncedVars were changed. Thus we need to set them as non dirty here since it wont be done by the next loop.
-                                    syncedVarFields[i].FieldValue = syncedVarFields[i].FieldInfo.GetValue(this);
+                                    syncedVarFields[i].FieldValue = FieldTypeHelper.GetReferenceArrayValue(syncedVarFields[i].FieldInfo.GetValue(this), syncedVarFields[i].FieldValue);
                                     syncedVarFields[i].Dirty = false;
                                 }
                             }
@@ -656,8 +649,8 @@ namespace MLAPI.MonoBehaviours.Core
                         //Writes all the indexes of the dirty syncvars.
                         if (syncedVarFields[i].Dirty == true && !syncedVarFields[i].Target)
                         {
-                            FieldTypeHelper.WriteFieldType(writer, syncedVarFields[i].FieldInfo.GetValue(this));
-                            syncedVarFields[i].FieldValue = syncedVarFields[i].FieldInfo.GetValue(this);
+                            FieldTypeHelper.WriteFieldType(writer, syncedVarFields[i].FieldInfo.GetValue(this), syncedVarFields[i].FieldValue);
+                            syncedVarFields[i].FieldValue = FieldTypeHelper.GetReferenceArrayValue(syncedVarFields[i].FieldInfo.GetValue(this), syncedVarFields[i].FieldValue);
                             syncedVarFields[i].Dirty = false;
                         }
                     }
@@ -682,7 +675,7 @@ namespace MLAPI.MonoBehaviours.Core
                 if (NetworkingManager.singleton.NetworkTime - syncedVarFields[i].Attribute.lastSyncTime < syncedVarFields[i].Attribute.syncDelay)
                     continue;
                 //Big TODO. This will return true for reference objects. This NEEDS to be fixed. a better compare
-                if (!FieldTypeHelper.ObjectEqual(syncedVarFields[i].FieldInfo.GetValue(this).GetHashCode(), syncedVarFields[i].FieldValue))
+                if (!FieldTypeHelper.ObjectEqual(syncedVarFields[i].FieldInfo.GetValue(this), syncedVarFields[i].FieldValue))
                 {
                     syncedVarFields[i].Dirty = true; //This fields value is out of sync!
                     syncedVarFields[i].Attribute.lastSyncTime = NetworkingManager.singleton.NetworkTime;
