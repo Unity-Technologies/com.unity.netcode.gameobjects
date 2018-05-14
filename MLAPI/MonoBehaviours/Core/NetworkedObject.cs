@@ -310,6 +310,11 @@ namespace MLAPI.MonoBehaviours.Core
             }
         }
 
+        //Writes SyncedVar data in a formatted way so taht the SetFormattedSyncedVarData method can read it.
+        //The format doesn't NECCECARLY correspond with the "general syncedVar message layout" 
+        //as this should only be used for reading SyncedVar data that is to be read by the SetFormattedData method
+        //*
+        //The data contains every syncedvar on every behaviour that belongs to this object
         internal void WriteFormattedSyncedVarData(BitWriter writer)
         {
             for (int i = 0; i < childNetworkedBehaviours.Count; i++)
@@ -325,6 +330,7 @@ namespace MLAPI.MonoBehaviours.Core
             }
         }
 
+        //Reads formatted data that the "WriteFormattedSyncedVarData" has written and applies the values to SyncedVar fields
         internal void SetFormattedSyncedVarData(BitReader reader)
         {
             for (int i = 0; i < childNetworkedBehaviours.Count; i++)
@@ -342,7 +348,7 @@ namespace MLAPI.MonoBehaviours.Core
             }
         }
 
-        //Flushes all syncVars to client
+        //Forces a SycnedVar update to a specific client.
         internal void FlushSyncedVarsToClient(uint clientId)
         {
             for (int i = 0; i < childNetworkedBehaviours.Count; i++)
