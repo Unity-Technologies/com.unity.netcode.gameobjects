@@ -1,21 +1,47 @@
 ﻿using MLAPI.NetworkingManagerComponents.Binary;
 using System;
-using System.Collections.Generic;
-using System.Reflection;
 using UnityEngine;
 
 namespace MLAPI.Data
 {
     internal static class FieldTypeHelper
     {
+        internal static bool ObjectEqual(object o1, object o2)
+        {
+            if (o1.GetType() != o2.GetType())
+                return false;
+            if (o1.GetType().IsArray != o2.GetType().IsArray)
+                return false;
+            if (o1.GetType().IsArray && o1.GetType().GetElementType() != o2.GetType().GetElementType())
+                return false;
+
+            if (o1.GetType().IsArray)
+            {
+                Array ar1 = (Array)o1;
+                Array ar2 = (Array)o2;
+                if (ar1.Length != ar2.Length)
+                    return false;
+
+                int i = 0;
+                foreach (object item in ar1)
+                {
+                    if (item != ar2.GetValue(i))
+                        return false;
+                    i++;
+                }
+                return true;
+            }
+            return o1.Equals(o2);
+        }
+
         internal static void WriteFieldType(BitWriter writer, object value)
         {
             Type type = value.GetType();
             if (type.IsArray)
             {
-                ushort arrayLength = (ushort)((Array)value).Length;
+                Array array = (Array)value;
+                ushort arrayLength = (ushort)array.Length;
                 writer.WriteUShort(arrayLength);
-                IEnumerable<object> array = (IEnumerable<object>)value;
                 foreach (object element in array) WriteFieldType(writer, element);
             }
             else

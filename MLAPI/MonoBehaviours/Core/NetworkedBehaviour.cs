@@ -524,10 +524,10 @@ namespace MLAPI.MonoBehaviours.Core
                 writer.WriteUShort(networkedObject.GetOrderIndex(this)); //Behaviour OrderIndex
 
                 bool[] mask = GetDirtyMask(false, clientId);
-                for (int i = 0; i < mask.Length; i++) writer.WriteBool(mask[i]);
 
                 for (int i = 0; i < syncedVarFields.Count; i++)
                 {
+                    writer.WriteBool(mask[i]);
                     if (syncedVarFields[i].Target && clientId != ownerClientId)
                         continue;
                     FieldTypeHelper.WriteFieldType(writer, syncedVarFields[i].FieldInfo.GetValue(this));
@@ -584,10 +584,10 @@ namespace MLAPI.MonoBehaviours.Core
                     writer.WriteUShort(networkedObject.GetOrderIndex(this)); //Behaviour OrderIndex
 
                     bool[] mask = GetDirtyMask(false);
-                    for (int i = 0; i < mask.Length; i++) writer.WriteBool(mask[i]);
 
                     for (int i = 0; i < syncedVarFields.Count; i++)
                     {
+                        writer.WriteBool(mask[i]);
                         //Writes all the indexes of the dirty syncvars.
                         if (syncedVarFields[i].Dirty == true)
                         {
@@ -616,10 +616,10 @@ namespace MLAPI.MonoBehaviours.Core
                         writer.WriteUShort(networkedObject.GetOrderIndex(this)); //Behaviour OrderIndex
 
                         bool[] mask = GetDirtyMask(false);
-                        for (int i = 0; i < mask.Length; i++) writer.WriteBool(mask[i]);
 
                         for (int i = 0; i < syncedVarFields.Count; i++)
                         {
+                            writer.WriteBool(mask[i]);
                             //Writes all the indexes of the dirty syncvars.
                             if (syncedVarFields[i].Dirty == true)
                             {
@@ -649,10 +649,10 @@ namespace MLAPI.MonoBehaviours.Core
                     writer.WriteUShort(networkedObject.GetOrderIndex(this)); //Behaviour OrderIndex
 
                     bool[] mask = GetDirtyMask(true);
-                    for (int i = 0; i < mask.Length; i++) writer.WriteBool(mask[i]);
 
                     for (int i = 0; i < syncedVarFields.Count; i++)
                     {
+                        writer.WriteBool(mask[i]);
                         //Writes all the indexes of the dirty syncvars.
                         if (syncedVarFields[i].Dirty == true && !syncedVarFields[i].Target)
                         {
@@ -682,7 +682,7 @@ namespace MLAPI.MonoBehaviours.Core
                 if (NetworkingManager.singleton.NetworkTime - syncedVarFields[i].Attribute.lastSyncTime < syncedVarFields[i].Attribute.syncDelay)
                     continue;
                 //Big TODO. This will return true for reference objects. This NEEDS to be fixed. a better compare
-                if (!syncedVarFields[i].FieldInfo.GetValue(this).Equals(syncedVarFields[i].FieldValue))
+                if (!FieldTypeHelper.ObjectEqual(syncedVarFields[i].FieldInfo.GetValue(this).GetHashCode(), syncedVarFields[i].FieldValue))
                 {
                     syncedVarFields[i].Dirty = true; //This fields value is out of sync!
                     syncedVarFields[i].Attribute.lastSyncTime = NetworkingManager.singleton.NetworkTime;
