@@ -500,7 +500,7 @@ namespace MLAPI.MonoBehaviours.Core
                 syncedVarFields[fieldIndex].HookMethod.Invoke(this, null);
         }
 
-        internal void FlushToClient(uint clientId)
+        internal void FlushSyncedVarsToClient(uint clientId)
         {
             //This NetworkedBehaviour has no SyncVars
             if (syncedVarFields.Count == 0)

@@ -343,11 +343,11 @@ namespace MLAPI.MonoBehaviours.Core
         }
 
         //Flushes all syncVars to client
-        internal void FlushToClient(uint clientId)
+        internal void FlushSyncedVarsToClient(uint clientId)
         {
             for (int i = 0; i < childNetworkedBehaviours.Count; i++)
             {
-                childNetworkedBehaviours[i].FlushToClient(clientId);
+                childNetworkedBehaviours[i].FlushSyncedVarsToClient(clientId);
             }
         }
 
