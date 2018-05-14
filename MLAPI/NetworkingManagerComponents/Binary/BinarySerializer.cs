@@ -52,29 +52,6 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         }
 
         /// <summary>
-        /// Serializes a class instance and writes it to a writer
-        /// </summary>
-        /// <typeparam name="T">The class type to serialize</typeparam>
-        /// <param name="instance">The instance to serialize</param>
-        /// <param name="writer">The writer to write to</param>
-        public static void Serialize(object instance, BitWriter writer)
-        {
-            FieldInfo[] sortedFields;
-
-            if (cachedFields.ContainsKey(instance.GetType().FullName))
-                sortedFields = cachedFields[instance.GetType().FullName];
-            else
-            {
-                sortedFields = instance.GetType().GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).OrderBy(x => x.Name).Where(x => !x.IsDefined(typeof(BinaryIgnore), true)).ToArray();
-                cachedFields.Add(instance.GetType().FullName, sortedFields);
-            }
-            for (int i = 0; i < sortedFields.Length; i++)
-            {
-                FieldTypeHelper.WriteFieldType(writer, sortedFields[i].GetValue(instance));
-            }
-        }
-
-        /// <summary>
         /// Deserializes binary and turns it back into the original class
         /// </summary>
         /// <typeparam name="T">The type to return</typeparam>
@@ -110,12 +87,13 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// <typeparam name="T">The type to return</typeparam>
         /// <param name="reader">The reader to deserialize</param>
         /// <returns>An instance of T</returns>
-        public static object Deserialize(BitReader reader, Type type)
+        public static T Deserialize<T>(BitReader reader) where T : new()
         {
-            object instance = Activator.CreateInstance(type);
+            T instance = new T();
+
             FieldInfo[] sortedFields;
 
-            if (cachedFields.ContainsKey(type.FullName))
+            if (cachedFields.ContainsKey(instance.GetType().FullName))
                 sortedFields = cachedFields[instance.GetType().FullName];
             else
             {
@@ -130,19 +108,29 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             return instance;
         }
 
-        /// <summary>
-        /// Deserializes binary and turns it back into the original class
-        /// </summary>
-        /// <typeparam name="T">The type to return</typeparam>
-        /// <param name="reader">The reader to deserialize</param>
-        /// <returns>An instance of T</returns>
-        public static T Deserialize<T>(BitReader reader) where T : new()
+        internal static void Serialize(object instance, BitWriter writer)
         {
-            T instance = new T();
-
             FieldInfo[] sortedFields;
 
             if (cachedFields.ContainsKey(instance.GetType().FullName))
+                sortedFields = cachedFields[instance.GetType().FullName];
+            else
+            {
+                sortedFields = instance.GetType().GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).OrderBy(x => x.Name).Where(x => !x.IsDefined(typeof(BinaryIgnore), true)).ToArray();
+                cachedFields.Add(instance.GetType().FullName, sortedFields);
+            }
+            for (int i = 0; i < sortedFields.Length; i++)
+            {
+                FieldTypeHelper.WriteFieldType(writer, sortedFields[i].GetValue(instance));
+            }
+        }
+
+        internal static object Deserialize(BitReader reader, Type type)
+        {
+            object instance = Activator.CreateInstance(type);
+            FieldInfo[] sortedFields;
+
+            if (cachedFields.ContainsKey(type.FullName))
                 sortedFields = cachedFields[instance.GetType().FullName];
             else
             {
