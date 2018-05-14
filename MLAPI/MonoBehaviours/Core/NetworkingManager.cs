@@ -156,9 +156,11 @@ namespace MLAPI.MonoBehaviours.Core
         /// </summary>
         public NetworkConfig NetworkConfig;
 
+#if !DISABLE_CRYPTOGRAPHY
         internal EllipticDiffieHellman clientDiffieHellman;
         internal readonly Dictionary<uint, byte[]> diffieHellmanPublicKeys = new Dictionary<uint, byte[]>();
         internal byte[] clientAesKey;
+#endif
 
         /// <summary>
         /// An inspector bool that acts as a Trigger for regenerating RSA keys. Should not be used outside Unity editor.
@@ -235,7 +237,9 @@ namespace MLAPI.MonoBehaviours.Core
             connectedClients.Clear();
             connectedClientsList.Clear();
             messageBuffer = new byte[NetworkConfig.MessageBufferSize];
+#if !DISABLE_CRYPTOGRAPHY
             diffieHellmanPublicKeys.Clear();
+#endif
             Data.Cache.messageAttributeHashes.Clear();
             Data.Cache.messageAttributeNames.Clear();
             MessageManager.channels.Clear();
@@ -707,19 +711,22 @@ namespace MLAPI.MonoBehaviours.Core
                                 else
                                 {
                                     if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Connected");
+#if !DISABLE_CRYPTOGRAPHY
                                     byte[] diffiePublic = new byte[0];
                                     if(NetworkConfig.EnableEncryption)
                                     {
                                         clientDiffieHellman = new EllipticDiffieHellman(EllipticDiffieHellman.DEFAULT_CURVE, EllipticDiffieHellman.DEFAULT_GENERATOR, EllipticDiffieHellman.DEFAULT_ORDER);
                                         diffiePublic = clientDiffieHellman.GetPublicKey();
                                     }
+#endif
 
                                     using (BitWriter writer = BitWriter.Get())
                                     {
                                         writer.WriteByteArray(NetworkConfig.GetConfig(), true);
-
+#if !DISABLE_CRYPTOGRAPHY
                                         if (NetworkConfig.EnableEncryption)      
                                             writer.WriteByteArray(diffiePublic);
+#endif
 
                                         if (NetworkConfig.ConnectionApproval)
                                             writer.WriteByteArray(NetworkConfig.ConnectionData);
@@ -831,6 +838,7 @@ namespace MLAPI.MonoBehaviours.Core
                 }
 
                 reader.SkipPadded();
+#if !DISABLE_CRYPTOGRAPHY
                 byte[] readBuffer = null;
                 if (NetworkConfig.EncryptedChannelsHashSet.Contains(MessageManager.reverseChannels[channelId]))
                 {
@@ -843,6 +851,9 @@ namespace MLAPI.MonoBehaviours.Core
                 }
 
                 using (BitReader messageReader = readBuffer == null ? reader : BitReader.Get(readBuffer))
+#else
+                using (BitReader messageReader = reader)
+#endif
                 {
                     if (isServer && isPassthrough && !NetworkConfig.PassthroughMessageHashSet.Contains(messageType))
                     {
@@ -1012,8 +1023,10 @@ namespace MLAPI.MonoBehaviours.Core
       
             connectedClientsList.RemoveAll(x => x.ClientId == clientId); // :(
 
+#if !DISABLE_CRYPTOGRAPHY
             if (diffieHellmanPublicKeys.ContainsKey(clientId))
                 diffieHellmanPublicKeys.Remove(clientId);
+#endif
 
             foreach (KeyValuePair<uint, NetworkedObject> pair in SpawnManager.spawnedObjects)
                 pair.Value.observers.Remove(clientId);
@@ -1074,6 +1087,7 @@ namespace MLAPI.MonoBehaviours.Core
                 if (pendingClients.Contains(clientId))
                     pendingClients.Remove(clientId);
 
+#if !DISABLE_CRYPTOGRAPHY
                 byte[] aesKey = new byte[0];
                 byte[] publicKey = new byte[0];
                 byte[] publicKeySignature = new byte[0];
@@ -1096,11 +1110,14 @@ namespace MLAPI.MonoBehaviours.Core
                         }
                     }
                 }
+#endif
 
                 NetworkedClient client = new NetworkedClient()
                 {
                     ClientId = clientId,
+#if !DISABLE_CRYPTOGRAPHY
                     AesKey = aesKey
+#endif
                 };
                 connectedClients.Add(clientId, client);
                 connectedClientsList.Add(client);
@@ -1120,12 +1137,14 @@ namespace MLAPI.MonoBehaviours.Core
                     if (NetworkConfig.EnableSceneSwitching)
                         writer.WriteUInt(NetworkSceneManager.CurrentSceneIndex);
 
+#if !DISABLE_CRYPTOGRAPHY
                     if (NetworkConfig.EnableEncryption)
                     {
                         writer.WriteByteArray(publicKey);
                         if (NetworkConfig.SignKeyExchange)
                             writer.WriteByteArray(publicKeySignature);
                     }
+#endif
 
                     writer.WriteFloat(NetworkTime);
                     writer.WriteInt(NetworkConfig.NetworkTransport.GetNetworkTimestamp());
@@ -1216,13 +1235,15 @@ namespace MLAPI.MonoBehaviours.Core
                 if (pendingClients.Contains(clientId))
                     pendingClients.Remove(clientId);
 
+#if !DISABLE_CRYPTOGRAPHY
                 if (diffieHellmanPublicKeys.ContainsKey(clientId))
                     diffieHellmanPublicKeys.Remove(clientId);
+#endif
 
                 NetworkConfig.NetworkTransport.DisconnectClient(clientId);
             }
         }
-        #region SEND METHODS
+#region SEND METHODS
         /// <summary>
         /// Registers a message handler
         /// </summary>
@@ -1608,6 +1629,6 @@ namespace MLAPI.MonoBehaviours.Core
         {
             return SpawnManager.spawnedObjects[networkId];
         }
-        #endregion
+#endregion
     }
 }

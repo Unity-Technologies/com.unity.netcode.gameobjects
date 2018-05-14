@@ -19,12 +19,14 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 return;
             }
 
+#if !DISABLE_CRYPTOGRAPHY
             if (netManager.NetworkConfig.EnableEncryption)
             {
                 byte[] diffiePublic = reader.ReadByteArray();
                 netManager.diffieHellmanPublicKeys.Add(clientId, diffiePublic);
 
             }
+#endif
             if (netManager.NetworkConfig.ConnectionApproval)
             {
                 byte[] connectionBuffer = reader.ReadByteArray();
@@ -43,6 +45,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             if (netManager.NetworkConfig.EnableSceneSwitching)
                 sceneIndex = reader.ReadUInt();
 
+#if !DISABLE_CRYPTOGRAPHY
             if (netManager.NetworkConfig.EnableEncryption)
             {
                 byte[] serverPublicKey = reader.ReadByteArray();
@@ -64,6 +67,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                     }
                 }
             }
+#endif
 
             float netTime = reader.ReadFloat();
             int remoteStamp = reader.ReadInt();

@@ -1,4 +1,5 @@
-﻿using System;
+﻿#if !DISABLE_CRYPTOGRAPHY
+using System;
 using IntXLib;
 using System.Text;
 using System.Security.Cryptography;
@@ -102,3 +103,4 @@ namespace MLAPI.NetworkingManagerComponents.Cryptography
         internal static IntX Abs(this IntX i) => i < 0 ? -i : i;
     }
 }
+#endif

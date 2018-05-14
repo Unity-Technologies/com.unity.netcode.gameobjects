@@ -1,4 +1,5 @@
-﻿using System;
+﻿#if !DISABLE_CRYPTOGRAPHY
+using System;
 using System.Security.Cryptography;
 using System.IO;
 
@@ -63,3 +64,4 @@ namespace MLAPI.NetworkingManagerComponents.Cryptography
         }
     }
 }
+#endif

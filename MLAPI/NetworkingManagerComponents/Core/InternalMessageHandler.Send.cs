@@ -32,9 +32,11 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
                 writer.WriteAlignBits();
 
+#if !DISABLE_CRYPTOGRAPHY
                 if (netManager.NetworkConfig.EncryptedChannelsHashSet.Contains(MessageManager.reverseChannels[channelId]))
                     writer.WriteByteArray(CryptographyHelper.Encrypt(reader.ReadByteArray(), netManager.connectedClients[targetId].AesKey));
                 else
+#endif
                     writer.WriteByteArray(reader.ReadByteArray());
 
                 writer.Finalize(ref FinalMessageBuffer);
@@ -87,6 +89,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
                 writer.WriteAlignBits();
 
+#if !DISABLE_CRYPTOGRAPHY
                 if (netManager.NetworkConfig.EncryptedChannelsHashSet.Contains(channelName))
                 {
                     //This is an encrypted message.
@@ -99,6 +102,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                     writer.WriteByteArray(encrypted);
                 }
                 else
+#endif
                     writer.WriteWriter(messageWriter);
 
                 if (isPassthrough)
