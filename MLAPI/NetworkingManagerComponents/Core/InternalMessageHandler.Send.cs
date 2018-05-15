@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using MLAPI.Data;
+using MLAPI.Data.NetworkProfiler;
 using MLAPI.NetworkingManagerComponents.Binary;
 using MLAPI.NetworkingManagerComponents.Cryptography;
 
@@ -110,11 +111,13 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
                 writer.Finalize(ref FinalMessageBuffer);
 
+                NetworkProfiler.StartEvent(TickType.Send, (uint)messageWriter.GetFinalizeSize(), channelName, messageType);
                 byte error;
                 if (skipQueue)
                     netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(targetClientId, ref FinalMessageBuffer, (int)writer.GetFinalizeSize(), MessageManager.channels[channelName], true, out error);
                 else
                     netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(targetClientId, ref FinalMessageBuffer, (int)writer.GetFinalizeSize(), MessageManager.channels[channelName], false, out error);
+                NetworkProfiler.EndEvent();
 
                 return true;
             }
@@ -166,8 +169,10 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
                     writer.Finalize(ref FinalMessageBuffer);
 
+                    NetworkProfiler.StartEvent(TickType.Send, (uint)messageWriter.GetFinalizeSize(), channelName, messageType);
                     byte error;
                     netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(targetClientId, ref FinalMessageBuffer, (int)writer.GetFinalizeSize(), channel, false, out error);
+                    NetworkProfiler.EndEvent();
                 }
             }
         }
@@ -218,8 +223,10 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
                     writer.Finalize(ref FinalMessageBuffer);
 
+                    NetworkProfiler.StartEvent(TickType.Send, (uint)messageWriter.GetFinalizeSize(), channelName, messageType);
                      byte error;
                     netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(targetClientId, ref FinalMessageBuffer, (int)writer.GetFinalizeSize(), channel, false, out error);
+                    NetworkProfiler.EndEvent();
                 }
             }
         }
@@ -278,8 +285,10 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
                     writer.Finalize(ref FinalMessageBuffer);
 
+                    NetworkProfiler.StartEvent(TickType.Send, (uint)messageWriter.GetFinalizeSize(), channelName, messageType);
                     byte error;
                     netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(targetClientId, ref FinalMessageBuffer, (int)writer.GetFinalizeSize(), channel, false, out error);
+                    NetworkProfiler.EndEvent();
                 }
                 return ref failedObservers;
             }
@@ -339,8 +348,10 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
                     writer.Finalize(ref FinalMessageBuffer);
 
+                    NetworkProfiler.StartEvent(TickType.Send, (uint)messageWriter.GetFinalizeSize(), channelName, messageType);
                     byte error;
                     netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(targetClientId, ref FinalMessageBuffer, (int)writer.GetFinalizeSize(), channel, false, out error);
+                    NetworkProfiler.EndEvent();
                 }
                 return ref failedObservers;
             }

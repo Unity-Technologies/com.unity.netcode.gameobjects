@@ -1,24 +1,50 @@
-﻿using System;
+﻿using MLAPI.NetworkingManagerComponents.Core;
 using UnityEngine;
 
 namespace MLAPI.Data.NetworkProfiler
 {
     public static class NetworkProfiler
     {
-        const int tickCount = 1024;
-        public static readonly FixedQueue<ProfilerTick> Ticks = new FixedQueue<ProfilerTick>(tickCount);
+        public static FixedQueue<ProfilerTick> Ticks = null;
+        private static int tickHistory = 1024;
+        private static bool isRunning = false;
         private static ProfilerTick CurrentTick;
+
+        public static void Start(int historyLength)
+        {
+            if (isRunning)
+                return;
+            Ticks = new FixedQueue<ProfilerTick>(historyLength);
+            tickHistory = historyLength;
+            CurrentTick = null;
+            isRunning = true;
+        }
+
+        public static ProfilerTick[] Stop()
+        {
+            if (!isRunning)
+                return new ProfilerTick[0];
+            ProfilerTick[] ticks = new ProfilerTick[Ticks.Count];
+            for (int i = 0; i < Ticks.Count; i++)
+                ticks[i] = Ticks.ElementAt(i);
+            
+            Ticks = null; //leave to GC
+            CurrentTick = null; //leave to GC
+            isRunning = false;
+            return ticks;
+        }
 
         internal static void StartTick(TickType type)
         {
-            if (Ticks.Count == tickCount)
+            if (!isRunning)
+                return;
+            if (Ticks.Count == tickHistory)
                 Ticks.Dequeue();
-            
+
             ProfilerTick tick = new ProfilerTick()
             {
-                StartTime = Time.unscaledTime,
-                EndTime = -1,
-                Type = type
+                Type = type,
+                Frame = Time.frameCount
             };
             Ticks.Enqueue(tick);
             CurrentTick = tick;
@@ -26,21 +52,39 @@ namespace MLAPI.Data.NetworkProfiler
 
         internal static void EndTick()
         {
+            if (!isRunning)
+                return;
             if (CurrentTick == null)
                 return;
-            CurrentTick.EndTime = Time.unscaledTime;
             CurrentTick = null;
         }
-
-        internal static void StartEvent(TickType eventType, uint bytes, string channelName, string messageType)
+        
+        internal static void StartEvent(TickType eventType, uint bytes, int channelId, ushort messageId)
         {
+            if (!isRunning)
+                return;
             if (CurrentTick == null)
                 return;
-            CurrentTick.StartEvent(eventType, bytes, channelName, messageType);
+            string channelName = MessageManager.reverseChannels.ContainsKey(channelId) ? MessageManager.reverseChannels[channelId] : "INVALID_CHANNEL";
+            string messageName = MessageManager.reverseMessageTypes.ContainsKey(messageId) ? MessageManager.reverseMessageTypes[messageId] : "INVALID_MESSAGE_TYPE";
+
+            CurrentTick.StartEvent(eventType, bytes, channelName, messageName);
+        }
+
+        internal static void StartEvent(TickType eventType, uint bytes, string channelName, string messageName)
+        {
+            if (!isRunning)
+                return;
+            if (CurrentTick == null)
+                return;
+            
+            CurrentTick.StartEvent(eventType, bytes, channelName, messageName);
         }
 
         internal static void EndEvent()
         {
+            if (!isRunning)
+                return;
             if (CurrentTick == null)
                 return;
             CurrentTick.EndEvent();

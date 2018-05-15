@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using System.Collections.Generic;
 
 namespace MLAPI.Data.NetworkProfiler
 {
@@ -18,9 +16,9 @@ namespace MLAPI.Data.NetworkProfiler
         {
             for (int i = Events.Count - 1; i >= 0; i--)
             {
-                if (Events[i].EndTime == -1)
+                if (!Events[i].Closed)
                 {
-                    Events[i].EndTime = Time.unscaledTime;
+                    Events[i].Closed = true;
                     return;
                 }
             }
@@ -33,16 +31,14 @@ namespace MLAPI.Data.NetworkProfiler
                 Bytes = bytes,
                 ChannelName = string.IsNullOrEmpty(channelName) ? "NONE" : channelName,
                 MessageType = string.IsNullOrEmpty(messageType) ? "NONE" : messageType,
-                EndTime = -1,
-                StartTime = Time.unscaledTime,
-                EventType = type
+                EventType = type,
+                Closed = false
             };
             Events.Add(tickEvent);
         }
 
         public TickType Type;
-        public float StartTime;
-        public float EndTime;
+        public int Frame;
     }
 
     public class TickEvent
@@ -51,7 +47,6 @@ namespace MLAPI.Data.NetworkProfiler
         public uint Bytes;
         public string ChannelName;
         public string MessageType;
-        public float StartTime = -1;
-        public float EndTime = -1;
+        public bool Closed;
     }
 }
