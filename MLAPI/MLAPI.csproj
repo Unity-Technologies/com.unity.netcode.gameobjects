@@ -129,9 +129,14 @@
     <Compile Include="NetworkingManagerComponents\Core\InternalMessageHandler.Send.cs" />
     <Compile Include="NetworkingManagerComponents\Core\InternalMessageHandler.Receive.cs" />
     <Compile Include="NetworkingManagerComponents\Core\InternalMessageHandler.cs" />
+    <Compile Include="Data\NetworkProfiler\ProfilerTickData.cs" />
+    <Compile Include="Data\NetworkProfiler\NetworkProfiler.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Data\NetworkProfiler\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
