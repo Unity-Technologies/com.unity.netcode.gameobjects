@@ -172,18 +172,18 @@ namespace MLAPI.MonoBehaviours.Core
             if (NetworkConfig == null)
                 return; //May occur when the component is added            
 
-            if(NetworkConfig.EnableSceneSwitching && !NetworkConfig.RegisteredScenes.Contains(SceneManager.GetActiveScene().name))
+            if (NetworkConfig.EnableSceneSwitching && !NetworkConfig.RegisteredScenes.Contains(SceneManager.GetActiveScene().name))
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The active scene is not registered as a networked scene. The MLAPI has added it");
                 NetworkConfig.RegisteredScenes.Add(SceneManager.GetActiveScene().name);
             }
 
-            if(!NetworkConfig.EnableSceneSwitching && NetworkConfig.HandleObjectSpawning)
+            if (!NetworkConfig.EnableSceneSwitching && NetworkConfig.HandleObjectSpawning)
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Please be aware that Scene objects are NOT supported if SceneManagement is turned on, even if HandleObjectSpawning is turned on");
             }
 
-            if(NetworkConfig.HandleObjectSpawning)
+            if (NetworkConfig.HandleObjectSpawning)
             {
                 for (int i = 0; i < NetworkConfig.NetworkedPrefabs.Count; i++)
                 {
@@ -202,7 +202,7 @@ namespace MLAPI.MonoBehaviours.Core
                     if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Only one networked prefab can be marked as a player prefab");
                 }
                 else
-                    NetworkConfig.PlayerPrefabName =  NetworkConfig.NetworkedPrefabs.Find(x => x.playerPrefab == true).name;
+                    NetworkConfig.PlayerPrefabName = NetworkConfig.NetworkedPrefabs.Find(x => x.playerPrefab == true).name;
 
             }
 
@@ -212,14 +212,16 @@ namespace MLAPI.MonoBehaviours.Core
             }
             else
             {
-                if(RegenerateRSAKeys)
+                if (RegenerateRSAKeys)
                 {
+#if !DISABLE_CRYPTOGRAPHY
                     using (RSACryptoServiceProvider rsa = new RSACryptoServiceProvider())
                     {
                         rsa.PersistKeyInCsp = false;
                         NetworkConfig.RSAPrivateKey = rsa.ToXmlString(true);
                         NetworkConfig.RSAPublicKey = rsa.ToXmlString(false);
                     }
+#endif
                     RegenerateRSAKeys = false;
                 }
             }
