@@ -7,13 +7,22 @@ namespace MLAPI.Data.NetworkProfiler
     {
         public static FixedQueue<ProfilerTick> Ticks = null;
         private static int tickHistory = 1024;
+        private static int EventIdCounter = 0;
         private static bool isRunning = false;
+        public static bool IsRunning
+        {
+            get
+            {
+                return isRunning;
+            }
+        }
         private static ProfilerTick CurrentTick;
 
         public static void Start(int historyLength)
         {
             if (isRunning)
                 return;
+            EventIdCounter = 0;
             Ticks = new FixedQueue<ProfilerTick>(historyLength);
             tickHistory = historyLength;
             CurrentTick = null;
@@ -44,8 +53,10 @@ namespace MLAPI.Data.NetworkProfiler
             ProfilerTick tick = new ProfilerTick()
             {
                 Type = type,
-                Frame = Time.frameCount
+                Frame = Time.frameCount,
+                EventId = EventIdCounter
             };
+            EventIdCounter++;
             Ticks.Enqueue(tick);
             CurrentTick = tick;
         }

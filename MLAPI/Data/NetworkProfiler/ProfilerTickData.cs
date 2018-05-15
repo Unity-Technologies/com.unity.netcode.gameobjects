@@ -10,7 +10,7 @@ namespace MLAPI.Data.NetworkProfiler
     }
     public class ProfilerTick
     {
-        private readonly List<TickEvent> Events = new List<TickEvent>();
+        public readonly List<TickEvent> Events = new List<TickEvent>();
 
         internal void EndEvent()
         {
@@ -39,6 +39,7 @@ namespace MLAPI.Data.NetworkProfiler
 
         public TickType Type;
         public int Frame;
+        public int EventId;
     }
 
     public class TickEvent
