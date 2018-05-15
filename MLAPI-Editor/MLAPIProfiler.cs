@@ -1,5 +1,7 @@
 ﻿using MLAPI.Data.NetworkProfiler;
+using MLAPI.NetworkingManagerComponents.Binary;
 using System.Collections.Generic;
+using System.IO;
 using UnityEditor;
 using UnityEngine;
 
@@ -32,7 +34,7 @@ public class MLAPIProfiler : EditorWindow
     float lastDrawn = 0;
     struct ProfilerContainer
     {
-        ProfilerTick[] ticks;
+        public ProfilerTick[] ticks;
     }
     private void OnGUI()
     {
@@ -46,16 +48,38 @@ public class MLAPIProfiler : EditorWindow
             lastDrawn = 0;
             NetworkProfiler.Start(captureCount);
         }
+
         //Draw top bar
         EditorGUILayout.BeginVertical();
         EditorGUILayout.BeginHorizontal();
         bool prevRec = record;
         record = EditorGUILayout.Toggle("Record", record);
+
         if (GUILayout.Button("Import datafile"))
         {
-            string path = EditorUtility.OpenFilePanel("Choose a NetworkProfilerFile", "", "");
+            ProfilerTick[] ticks = BinarySerializer.Deserialize<ProfilerContainer>(File.ReadAllBytes(EditorUtility.OpenFilePanel("Choose a NetworkProfiler file", "", ""))).ticks;
+            if (ticks.Length >= 2)
+                curve = AnimationCurve.Constant(ticks[0].EventId, ticks[(ticks.Length - 1)].EventId, 0);
+            else
+                curve = AnimationCurve.Constant(0, 1, 0);
+            currentTicks.Clear();
+            for (int i = 0; i < ticks.Length; i++)
+            {
+                currentTicks.Add(ticks[i]);
 
+                uint bytes = 0;
+                if (ticks[i].Events.Count > 0)
+                {
+                    for (int j = 0; j < ticks[i].Events.Count; j++)
+                    {
+                        TickEvent tickEvent = ticks[i].Events[j];
+                        bytes += tickEvent.Bytes;
+                    }
+                }
+                curve.AddKey(ticks[i].EventId, bytes);
+            }
         }
+
         EditorGUILayout.EndHorizontal();
         float prevHis = captureCount;
         captureCount = EditorGUILayout.DelayedIntField("History count", captureCount);
