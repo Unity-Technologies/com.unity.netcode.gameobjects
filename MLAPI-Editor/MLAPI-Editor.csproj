@@ -9,8 +9,9 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>MLAPI_Editor</RootNamespace>
     <AssemblyName>MLAPI-Editor</AssemblyName>
-    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -49,6 +50,7 @@
     <Compile Include="GithubAsset.cs" />
     <Compile Include="GithubRelease.cs" />
     <Compile Include="MLAPIEditor.cs" />
+    <Compile Include="MLAPIProfiler.cs" />
     <Compile Include="NetworkedAnimatorEditor.cs" />
     <Compile Include="NetworkedBehaviourEditor.cs" />
     <Compile Include="NetworkedObjectEditor.cs" />
