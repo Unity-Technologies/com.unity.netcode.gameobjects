@@ -11,6 +11,7 @@ using UnityEngine.SceneManagement;
 using MLAPI.NetworkingManagerComponents.Binary;
 using MLAPI.Data.Transports;
 using MLAPI.Data.Transports.UNET;
+using MLAPI.Data.NetworkProfiler;
 
 namespace MLAPI.MonoBehaviours.Core
 {
@@ -680,6 +681,7 @@ namespace MLAPI.MonoBehaviours.Core
             {
                 if((NetworkTime - lastSendTickTime >= (1f / NetworkConfig.SendTickrate)) || NetworkConfig.SendTickrate <= 0)
                 {
+                    NetworkProfiler.StartTick(TickType.Send);
                     foreach (KeyValuePair<uint, NetworkedClient> pair in connectedClients)
                     {
                         byte error;
@@ -687,9 +689,11 @@ namespace MLAPI.MonoBehaviours.Core
                         if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Send Pending Queue: " + pair.Key);
                     }
                     lastSendTickTime = NetworkTime;
+                    NetworkProfiler.EndTick();
                 }
                 if((NetworkTime - lastReceiveTickTime >= (1f / NetworkConfig.ReceiveTickrate)) || NetworkConfig.ReceiveTickrate <= 0)
                 {
+                    NetworkProfiler.StartTick(TickType.Receive);
                     NetEventType eventType;
                     int processedEvents = 0;
                     do
@@ -704,6 +708,7 @@ namespace MLAPI.MonoBehaviours.Core
                         switch (eventType)
                         {
                             case NetEventType.Connect:
+                                NetworkProfiler.StartEvent(TickType.Receive, (uint)receivedSize, MessageManager.reverseChannels[channelId], "TRANSPORT_CONNECT");
                                 if (isServer)
                                 {
                                     if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Client Connected");
@@ -736,13 +741,15 @@ namespace MLAPI.MonoBehaviours.Core
                                         InternalMessageHandler.Send(clientId, "MLAPI_CONNECTION_REQUEST", "MLAPI_INTERNAL", writer, null, null, null, true);
                                     }
                                 }
+                                NetworkProfiler.EndEvent();
                                 break;
                             case NetEventType.Data:
                                 if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Incomming Data From " + clientId + " : " + receivedSize + " bytes");
 
-                                HandleIncomingData(clientId, messageBuffer, channelId);
+                                HandleIncomingData(clientId, messageBuffer, channelId, (uint)receivedSize);
                                 break;
                             case NetEventType.Disconnect:
+                                NetworkProfiler.StartEvent(TickType.Receive, 0, "NONE", "TRANSPORT_DISCONNECT");
                                 if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Disconnect Event From " + clientId);
 
                                 if (isServer)
@@ -752,31 +759,39 @@ namespace MLAPI.MonoBehaviours.Core
 
                                 if (OnClientDisconnectCallback != null)
                                     OnClientDisconnectCallback.Invoke(clientId);
+                                NetworkProfiler.EndEvent();
                                 break;
                         }
                         // Only do another iteration if: there are no more messages AND (there is no limit to max events or we have processed less than the maximum)
                     } while (eventType != NetEventType.Nothing && (NetworkConfig.MaxReceiveEventsPerTickRate <= 0 || processedEvents < NetworkConfig.MaxReceiveEventsPerTickRate));
                     lastReceiveTickTime = NetworkTime;
+                    NetworkProfiler.EndTick();
                 }
 
                 if (isServer && ((NetworkTime - lastEventTickTime >= (1f / NetworkConfig.EventTickrate))))
                 {
+                    NetworkProfiler.StartTick(TickType.Event);
                     eventOvershootCounter += ((NetworkTime - lastEventTickTime) - (1f / NetworkConfig.EventTickrate));
                     LagCompensationManager.AddFrames();
                     NetworkedObject.InvokeSyncvarUpdate();
                     lastEventTickTime = NetworkTime;
+                    NetworkProfiler.EndTick();
                 }
                 else if (isServer && eventOvershootCounter >= ((1f / NetworkConfig.EventTickrate)))
                 {
+                    NetworkProfiler.StartTick(TickType.Event);
                     //We run this one to compensate for previous update overshoots.
                     eventOvershootCounter -= (1f / NetworkConfig.EventTickrate);
                     LagCompensationManager.AddFrames();
+                    NetworkProfiler.EndTick();
                 }
 
                 if (NetworkConfig.EnableTimeResync && NetworkTime - lastTimeSyncTime >= 30)
                 {
+                    NetworkProfiler.StartTick(TickType.Event);
                     SyncTime();
                     lastTimeSyncTime = NetworkTime;
+                    NetworkProfiler.EndTick();
                 }
 
                 networkTime += Time.unscaledDeltaTime;
@@ -799,7 +814,7 @@ namespace MLAPI.MonoBehaviours.Core
             }
         }
 
-        private void HandleIncomingData(uint clientId, byte[] data, int channelId)
+        private void HandleIncomingData(uint clientId, byte[] data, int channelId, uint totalSize)
         {
             if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Unwrapping Data Header");
             using (BitReader reader = BitReader.Get(data))
@@ -822,6 +837,9 @@ namespace MLAPI.MonoBehaviours.Core
                     passthroughTarget = reader.ReadUInt();
                 else if (isPassthrough && !isServer)
                     passthroughOrigin = reader.ReadUInt();
+
+                byte headerSize = 0; //TODO
+                NetworkProfiler.StartEvent(TickType.Receive, totalSize - headerSize, channelId, messageType);
 
                 if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Data Header" + 
                     ":messageHeader=" + messageType + 
@@ -1009,6 +1027,7 @@ namespace MLAPI.MonoBehaviours.Core
                         #endregion
                     }
                 }
+                NetworkProfiler.EndEvent();
             }
         }
 
@@ -1187,7 +1206,6 @@ namespace MLAPI.MonoBehaviours.Core
                                 pair.Value.WriteFormattedSyncedVarData(writer);
                         }
                     }
-
                     InternalMessageHandler.Send(clientId, "MLAPI_CONNECTION_APPROVED", "MLAPI_INTERNAL", writer, null, null, null, true);
 
                     if (OnClientConnectedCallback != null)
@@ -1227,7 +1245,6 @@ namespace MLAPI.MonoBehaviours.Core
                         {
                             writer.WriteUInt(clientId);
                         }
-
                         InternalMessageHandler.Send(clientPair.Key, "MLAPI_ADD_OBJECT", "MLAPI_INTERNAL", writer, null);
                     }
                 }
