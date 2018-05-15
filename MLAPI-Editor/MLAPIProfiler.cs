@@ -27,6 +27,7 @@ namespace UnityEditor
         }
         float updateDelay = 1f;
         int captureCount = 100;
+        TickEvent eventHover = null;
         float showMax = 0;
         float showMin = 0;
         bool record = false;
@@ -37,7 +38,6 @@ namespace UnityEditor
         {
             public ProfilerTick[] ticks;
         }
-
         private void OnGUI()
         {
             if (!NetworkProfiler.IsRunning && record)
@@ -212,14 +212,20 @@ namespace UnityEditor
                     {
                         TickEvent tickEvent = tick.Events[j];
                         Rect dataRect = new Rect(currentX, currentY, widthPerTick, heightPerEvent);
+
+                        if (dataRect.Contains(Event.current.mousePosition)) eventHover = tickEvent;
+                        else if (eventHover == tickEvent) eventHover = null;
+
                         if (j == tick.Events.Count - 1)
                             dataRect.height -= 45f;
                         EditorGUI.DrawRect(dataRect, TickTypeToColor(tickEvent.EventType));
                         float heightPerField = heightPerEvent / 12f;
                         EditorGUI.LabelField(new Rect(dataRect.x, dataRect.y + heightPerField * -3f, dataRect.width, dataRect.height), "EventType: " + tickEvent.EventType.ToString(), wrapStyle);
                         EditorGUI.LabelField(new Rect(dataRect.x, dataRect.y + heightPerField * -1f, dataRect.width, dataRect.height), "Size: " + tickEvent.Bytes + "B", wrapStyle);
-                        EditorGUI.LabelField(new Rect(dataRect.x, dataRect.y + heightPerField * 1f, dataRect.width, dataRect.height), "Channel: " + tickEvent.ChannelName, wrapStyle);
-                        EditorGUI.LabelField(new Rect(dataRect.x, dataRect.y + heightPerField * 3f, dataRect.width, dataRect.height), "MessageType: " + tickEvent.MessageType, wrapStyle);
+                        string channelName = tickEvent.ChannelName.Length > 5 ? tickEvent.ChannelName.Remove(5, tickEvent.ChannelName.Length - 5) + "..." : tickEvent.ChannelName;
+                        EditorGUI.LabelField(new Rect(dataRect.x, dataRect.y + heightPerField * 1f, dataRect.width, dataRect.height), "Channel: " + channelName, wrapStyle);
+                        string messageType = tickEvent.MessageType.Length > 5 ? tickEvent.MessageType.Remove(5, tickEvent.MessageType.Length - 5) + "..." : tickEvent.MessageType;
+                        EditorGUI.LabelField(new Rect(dataRect.x, dataRect.y + heightPerField * 3f, dataRect.width, dataRect.height), "MessageType: " + messageType, wrapStyle);
 
                         currentY += heightPerEvent + 5f;
                     }
@@ -230,10 +236,23 @@ namespace UnityEditor
                 currentX += widthPerTick;
             }
 
+            //Draw hover thingy
+            if (eventHover != null)
+            {
+                Rect rect = new Rect(Event.current.mousePosition, new Vector2(500, 100));
+                EditorGUI.DrawRect(rect, EditorColor);
+
+                float heightPerField = (rect.height - 5) / 4;
+                EditorGUI.LabelField(new Rect(rect.x + 5, rect.y + 5, rect.width, rect.height), "EventType: " + eventHover.EventType.ToString());
+                EditorGUI.LabelField(new Rect(rect.x + 5, rect.y + heightPerField * 1 + 5, rect.width, rect.height), "Size: " + eventHover.Bytes + "B");
+                EditorGUI.LabelField(new Rect(rect.x + 5, rect.y + heightPerField * 2 + 5, rect.width, rect.height), "Channel: " + eventHover.ChannelName);
+                EditorGUI.LabelField(new Rect(rect.x + 5, rect.y + heightPerField * 3 + 5, rect.width, rect.height), "MessageType: " + eventHover.MessageType);
+            }
+
             Repaint();
         }
 
-        private static Color TickTypeToColor(TickType type)
+        private Color TickTypeToColor(TickType type)
         {
             switch (type)
             {
@@ -243,8 +262,18 @@ namespace UnityEditor
                     return new Color(0f, 0.85f, 0.85f, 0.28f);
                 case TickType.Send:
                     return new Color(0, 0.55f, 1f, 0.06f);
+                default:
+                    return Color.clear;
             }
-            return EditorGUIUtility.isProSkin ? new Color32(70, 70, 70, 255) : new Color32(200, 200, 200, 255);
+        }
+
+        private Color EditorColor
+        {
+            get
+            {
+                return EditorGUIUtility.isProSkin ? new Color32(56, 56, 56, 255) : new Color32(194, 194, 194, 255);
+            }
         }
     }
+
 }
