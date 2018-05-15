@@ -82,6 +82,11 @@ namespace UnityEditor
                 }
             }
 
+            if (GUILayout.Button("Export datafile"))
+            {
+                File.WriteAllBytes(EditorUtility.SaveFilePanel("Save NetworkProfiler data", "", "networkProfilerData", ""), BinarySerializer.Serialize(new ProfilerContainer() { ticks = currentTicks.ToArray() }));
+            }
+
             EditorGUILayout.EndHorizontal();
             float prevHis = captureCount;
             captureCount = EditorGUILayout.DelayedIntField("History count", captureCount);
