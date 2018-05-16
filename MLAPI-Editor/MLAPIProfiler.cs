@@ -27,7 +27,6 @@ namespace UnityEditor
         }
         float updateDelay = 1f;
         int captureCount = 100;
-        TickEvent eventHover = null;
         float showMax = 0;
         float showMin = 0;
         bool record = false;
@@ -169,6 +168,7 @@ namespace UnityEditor
             }
 
             //Draw main board
+            TickEvent eventHover = null;
             int nonEmptyTicks = 0;
             int largestTickCount = 0;
             int totalTicks = ((int)showMax - (int)showMin);
@@ -214,7 +214,6 @@ namespace UnityEditor
                         Rect dataRect = new Rect(currentX, currentY, widthPerTick, heightPerEvent);
 
                         if (dataRect.Contains(Event.current.mousePosition)) eventHover = tickEvent;
-                        else if (eventHover == tickEvent) eventHover = null;
 
                         if (j == tick.Events.Count - 1)
                             dataRect.height -= 45f;
