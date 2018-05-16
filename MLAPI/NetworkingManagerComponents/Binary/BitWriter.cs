@@ -359,9 +359,9 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             t == typeof(long) ? typeof(ulong) :
             null;
 
-        private static ulong ZigZagEncode(long d, int bytes) => (ulong)(((d >> (bytes * 8 - 1))&1) | (d << 1));
+        public static ulong ZigZagEncode(long d, int bytes) => (ulong)(((d >> (bytes * 8 - 1))&1) | (d << 1));
 
-        private static long GetBitCount<T>(T t)
+        public static long GetBitCount<T>(T t)
         {
             Type type = t.GetType();
             long count = 0;

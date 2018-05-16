@@ -681,7 +681,6 @@ namespace MLAPI.MonoBehaviours.Core
             {
                 if((NetworkTime - lastSendTickTime >= (1f / NetworkConfig.SendTickrate)) || NetworkConfig.SendTickrate <= 0)
                 {
-                    NetworkProfiler.StartTick(TickType.Send);
                     foreach (KeyValuePair<uint, NetworkedClient> pair in connectedClients)
                     {
                         byte error;
@@ -689,7 +688,6 @@ namespace MLAPI.MonoBehaviours.Core
                         if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Send Pending Queue: " + pair.Key);
                     }
                     lastSendTickTime = NetworkTime;
-                    NetworkProfiler.EndTick();
                 }
                 if((NetworkTime - lastReceiveTickTime >= (1f / NetworkConfig.ReceiveTickrate)) || NetworkConfig.ReceiveTickrate <= 0)
                 {
@@ -838,8 +836,16 @@ namespace MLAPI.MonoBehaviours.Core
                 else if (isPassthrough && !isServer)
                     passthroughOrigin = reader.ReadUInt();
 
-                byte headerSize = 0; //TODO
-                NetworkProfiler.StartEvent(TickType.Receive, totalSize - headerSize, channelId, messageType);
+                long headerBitSize = BitWriter.GetBitCount(messageType) + BitWriter.GetBitCount(targeted);
+                if (targeted) headerBitSize += BitWriter.GetBitCount(targetNetworkId) + BitWriter.GetBitCount(networkOrderId);
+                headerBitSize += BitWriter.GetBitCount(isPassthrough);
+                if (isPassthrough && isServer)
+                    headerBitSize += BitWriter.GetBitCount(passthroughTarget);
+                else if (isPassthrough && !isServer)
+                    headerBitSize += BitWriter.GetBitCount(passthroughOrigin);
+                
+                uint headerByteSize = (uint)Math.Ceiling(headerBitSize / 8d);
+                NetworkProfiler.StartEvent(TickType.Receive, totalSize - headerByteSize, channelId, messageType);
 
                 if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Data Header" + 
                     ":messageHeader=" + messageType + 
