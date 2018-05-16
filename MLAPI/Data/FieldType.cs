@@ -1,6 +1,7 @@
 ﻿using MLAPI.NetworkingManagerComponents.Binary;
 using System;
 using UnityEngine;
+using System.Collections.Generic;
 
 namespace MLAPI.Data
 {
@@ -8,6 +9,10 @@ namespace MLAPI.Data
     {
         internal static bool ObjectEqual(object o1, object o2)
         {
+            if (o1 == null && o2 == null)
+                return true;
+            if (o1 == null && o2 != null || o1 != null && o2 == null)
+                return false;
             if (o1.GetType() != o2.GetType())
                 return false;
             if (o1.GetType().IsArray != o2.GetType().IsArray)

@@ -14,6 +14,8 @@ namespace MLAPI.NetworkingManagerComponents.Binary
     public static class BinarySerializer
     {
         private static Dictionary<string, FieldInfo[]> cachedFields = new Dictionary<string, FieldInfo[]>();
+        private static Dictionary<string, MethodInfo> preSerialize = new Dictionary<string, MethodInfo>();
+        private static Dictionary<string, MethodInfo> postDeserialize = new Dictionary<string, MethodInfo>();
 
         /// <summary>
         /// Clears the cache of the serializer
@@ -21,6 +23,8 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         public static void ClearCache()
         {
             cachedFields.Clear();
+            preSerialize.Clear();
+            postDeserialize.Clear();
         }
 
         /// <summary>
@@ -32,6 +36,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         public static byte[] Serialize<T>(T instance)
         {
             FieldInfo[] sortedFields;
+            MethodInfo preMethod;
 
             if (cachedFields.ContainsKey(instance.GetType().FullName))
                 sortedFields = cachedFields[instance.GetType().FullName];
@@ -40,6 +45,17 @@ namespace MLAPI.NetworkingManagerComponents.Binary
                 sortedFields = instance.GetType().GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).OrderBy(x => x.Name).Where(x => !x.IsDefined(typeof(BinaryIgnore), true)).ToArray();
                 cachedFields.Add(instance.GetType().FullName, sortedFields);
             }
+
+            if (preSerialize.ContainsKey(instance.GetType().FullName))
+                preMethod = preSerialize[instance.GetType().FullName];
+            else
+            {
+                preMethod = instance.GetType().GetMethod("PreSerialize", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                preSerialize.Add(instance.GetType().FullName, preMethod);
+            }
+
+            if (preMethod != null)
+                preMethod.Invoke(instance, null);
 
             using (BitWriter writer = BitWriter.Get())
             {
@@ -62,6 +78,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             T instance = new T();
 
             FieldInfo[] sortedFields;
+            MethodInfo postMethod;
 
             if (cachedFields.ContainsKey(instance.GetType().FullName))
                 sortedFields = cachedFields[instance.GetType().FullName];
@@ -71,10 +88,22 @@ namespace MLAPI.NetworkingManagerComponents.Binary
                 cachedFields.Add(instance.GetType().FullName, sortedFields);
             }
 
+            if (postDeserialize.ContainsKey(instance.GetType().FullName))
+                postMethod = postDeserialize[instance.GetType().FullName];
+            else
+            {
+                postMethod = instance.GetType().GetMethod("PostDeserialize", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                postDeserialize.Add(instance.GetType().FullName, postMethod);
+            }
+
             using (BitReader reader = BitReader.Get(binary))
             {
                 for (int i = 0; i < sortedFields.Length; i++)
                     sortedFields[i].SetValue(instance, FieldTypeHelper.ReadFieldType(reader, sortedFields[i].FieldType));
+
+                if (postMethod != null)
+                    postMethod.Invoke(instance, null);
+                
                 return instance;
             }
         }
@@ -90,6 +119,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             T instance = new T();
 
             FieldInfo[] sortedFields;
+            MethodInfo postMethod;
 
             if (cachedFields.ContainsKey(instance.GetType().FullName))
                 sortedFields = cachedFields[instance.GetType().FullName];
@@ -97,18 +127,31 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             {
                 sortedFields = instance.GetType().GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).OrderBy(x => x.Name).Where(x => !x.IsDefined(typeof(BinaryIgnore), true)).ToArray();
                 cachedFields.Add(instance.GetType().FullName, sortedFields);
+            }
+
+            if (postDeserialize.ContainsKey(instance.GetType().FullName))
+                postMethod = postDeserialize[instance.GetType().FullName];
+            else
+            {
+                postMethod = instance.GetType().GetMethod("PostDeserialize", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                postDeserialize.Add(instance.GetType().FullName, postMethod);
             }
 
             for (int i = 0; i < sortedFields.Length; i++)
             {
                 sortedFields[i].SetValue(instance, FieldTypeHelper.ReadFieldType(reader, sortedFields[i].FieldType));
             }
+
+            if (postMethod != null)
+                postMethod.Invoke(instance, null);
+            
             return instance;
         }
 
         internal static void Serialize(object instance, BitWriter writer)
         {
             FieldInfo[] sortedFields;
+            MethodInfo preMethod;
 
             if (cachedFields.ContainsKey(instance.GetType().FullName))
                 sortedFields = cachedFields[instance.GetType().FullName];
@@ -117,6 +160,18 @@ namespace MLAPI.NetworkingManagerComponents.Binary
                 sortedFields = instance.GetType().GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).OrderBy(x => x.Name).Where(x => !x.IsDefined(typeof(BinaryIgnore), true)).ToArray();
                 cachedFields.Add(instance.GetType().FullName, sortedFields);
             }
+
+            if (preSerialize.ContainsKey(instance.GetType().FullName))
+                preMethod = preSerialize[instance.GetType().FullName];
+            else
+            {
+                preMethod = instance.GetType().GetMethod("PreSerialize", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                preSerialize.Add(instance.GetType().FullName, preMethod);
+            }
+
+            if (preMethod != null)
+                preMethod.Invoke(instance, null);
+            
             for (int i = 0; i < sortedFields.Length; i++)
                 FieldTypeHelper.WriteFieldType(writer, sortedFields[i].GetValue(instance));
         }
@@ -125,6 +180,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         {
             object instance = Activator.CreateInstance(type);
             FieldInfo[] sortedFields;
+            MethodInfo postMethod;
 
             if (cachedFields.ContainsKey(type.FullName))
                 sortedFields = cachedFields[instance.GetType().FullName];
@@ -134,10 +190,22 @@ namespace MLAPI.NetworkingManagerComponents.Binary
                 cachedFields.Add(instance.GetType().FullName, sortedFields);
             }
 
+            if (postDeserialize.ContainsKey(instance.GetType().FullName))
+                postMethod = postDeserialize[instance.GetType().FullName];
+            else
+            {
+                postMethod = instance.GetType().GetMethod("PostDeserialize", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                postDeserialize.Add(instance.GetType().FullName, postMethod);
+            }
+
             for (int i = 0; i < sortedFields.Length; i++)
             {
                 sortedFields[i].SetValue(instance, FieldTypeHelper.ReadFieldType(reader, sortedFields[i].FieldType));
             }
+
+            if (postMethod != null)
+                postMethod.Invoke(instance, null);
+
             return instance;
         }
     }

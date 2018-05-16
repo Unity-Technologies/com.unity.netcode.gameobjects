@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using MLAPI.Attributes;
 
 namespace MLAPI.Data.NetworkProfiler
 {
@@ -10,7 +11,9 @@ namespace MLAPI.Data.NetworkProfiler
     }
     public class ProfilerTick
     {
+        [BinaryIgnore]
         public readonly List<TickEvent> Events = new List<TickEvent>();
+        private TickEvent[] events;
 
         internal void EndEvent()
         {
@@ -22,6 +25,20 @@ namespace MLAPI.Data.NetworkProfiler
                     return;
                 }
             }
+        }
+
+        internal void PreSerialize()
+        {
+            events = new TickEvent[Events.Count];
+            for (int i = 0; i < events.Length; i++)
+                events[i] = Events[i];
+        }
+
+        internal void PostDeserialize()
+        {
+            Events.Clear();
+            for (int i = 0; i < events.Length; i++)
+                Events.Add(events[i]);
         }
 
         internal void StartEvent(TickType type, uint bytes, string channelName, string messageType)
