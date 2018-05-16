@@ -25,6 +25,8 @@ namespace UnityEditor
                 return style;
             }
         }
+
+        float hoverAlpha = 0f;
         float updateDelay = 1f;
         int captureCount = 100;
         float showMax = 0;
@@ -32,7 +34,7 @@ namespace UnityEditor
         AnimationCurve curve = AnimationCurve.Constant(0, 1, 0);
         readonly List<ProfilerTick> currentTicks = new List<ProfilerTick>();
         float lastDrawn = 0;
-        struct ProfilerContainer
+        class ProfilerContainer
         {
             public ProfilerTick[] ticks;
         }
@@ -46,7 +48,7 @@ namespace UnityEditor
         {
             if (NetworkProfiler.IsRunning)
                 StopRecording();
-            
+
             if (NetworkProfiler.Ticks != null && NetworkProfiler.Ticks.Count >= 2)
                 curve = AnimationCurve.Constant(NetworkProfiler.Ticks.ElementAt(0).Frame, NetworkProfiler.Ticks.ElementAt(NetworkProfiler.Ticks.Count - 1).Frame, 0);
             else
@@ -56,57 +58,78 @@ namespace UnityEditor
             NetworkProfiler.Start(captureCount);
         }
 
+        private void ClearDrawing()
+        {
+            curve = AnimationCurve.Constant(0, 1, 0);
+            lastDrawn = 0;
+        }
+
         private void ChangeRecordState()
         {
             if (NetworkProfiler.IsRunning) StopRecording();
             else StartRecording();
         }
 
+        TickEvent eventHover = null;
+        double lastSetup = 0;
         private void OnGUI()
         {
             bool recording = NetworkProfiler.IsRunning;
+            float deltaTime = (float)(EditorApplication.timeSinceStartup - lastSetup);
+            lastSetup = EditorApplication.timeSinceStartup;
 
             //Draw top bar
             EditorGUILayout.BeginVertical();
             EditorGUILayout.BeginHorizontal();
             if (GUILayout.Button(recording ? "Stop" : "Capture")) ChangeRecordState();
 
+            if (GUILayout.Button("Clear")) ClearDrawing();
+            EditorGUILayout.Space();
+            EditorGUILayout.Space();
+            EditorGUILayout.Space();
+
             if (GUILayout.Button("Import datafile"))
             {
-                ProfilerTick[] ticks = BinarySerializer.Deserialize<ProfilerContainer>(File.ReadAllBytes(EditorUtility.OpenFilePanel("Choose a NetworkProfiler file", "", ""))).ticks;
-                if (ticks.Length >= 2)
+                string path = EditorUtility.OpenFilePanel("Choose a NetworkProfiler file", "", "");
+                if (!string.IsNullOrEmpty(path))
                 {
-                    curve = AnimationCurve.Constant(ticks[0].EventId, ticks[(ticks.Length - 1)].EventId, 0);
-                    showMax = ticks.Length;
-                    showMin = ticks.Length - Mathf.Clamp(100, 0, ticks.Length);
-                }
-                else
-                    curve = AnimationCurve.Constant(0, 1, 0);
-                currentTicks.Clear();
-                for (int i = 0; i < ticks.Length; i++)
-                {
-                    currentTicks.Add(ticks[i]);
-
-                    uint bytes = 0;
-                    if (ticks[i].Events.Count > 0)
+                    ProfilerTick[] ticks = BinarySerializer.Deserialize<ProfilerContainer>(File.ReadAllBytes(path)).ticks;
+                    if (ticks.Length >= 2)
                     {
-                        for (int j = 0; j < ticks[i].Events.Count; j++)
-                        {
-                            TickEvent tickEvent = ticks[i].Events[j];
-                            bytes += tickEvent.Bytes;
-                        }
+                        curve = AnimationCurve.Constant(ticks[0].EventId, ticks[(ticks.Length - 1)].EventId, 0);
+                        showMax = ticks.Length;
+                        showMin = ticks.Length - Mathf.Clamp(100, 0, ticks.Length);
                     }
-                    curve.AddKey(ticks[i].EventId, bytes);
+                    else
+                        curve = AnimationCurve.Constant(0, 1, 0);
+                    currentTicks.Clear();
+                    for (int i = 0; i < ticks.Length; i++)
+                    {
+                        currentTicks.Add(ticks[i]);
+
+                        uint bytes = 0;
+                        if (ticks[i].Events.Count > 0)
+                        {
+                            for (int j = 0; j < ticks[i].Events.Count; j++)
+                            {
+                                TickEvent tickEvent = ticks[i].Events[j];
+                                bytes += tickEvent.Bytes;
+                            }
+                        }
+                        curve.AddKey(ticks[i].EventId, bytes);
+                    }
                 }
             }
 
             if (GUILayout.Button("Export datafile"))
             {
-                int ticksInRange = 0;
-                for (int i = 0; i < currentTicks.Count; i++) if (currentTicks[i].EventId >= showMin && currentTicks[i].EventId <= showMin) ticksInRange++;
+                int max = (int)showMax;
+                int min = (int)showMin;
+                int ticksInRange = max - min;
                 ProfilerTick[] ticks = new ProfilerTick[ticksInRange];
-                for (int i = 0; i < currentTicks.Count; i++) if (currentTicks[i].EventId >= showMin && currentTicks[i].EventId <= showMin) ticks[i] = currentTicks[i];
-                File.WriteAllBytes(EditorUtility.SaveFilePanel("Save NetworkProfiler data", "", "networkProfilerData", ""), BinarySerializer.Serialize(new ProfilerContainer() { ticks = ticks }));
+                for (int i = min; i < max; i++) ticks[i - min] = currentTicks[i];
+                string path = EditorUtility.SaveFilePanel("Save NetworkProfiler data", "", "networkProfilerData", "");
+                if (!string.IsNullOrEmpty(path)) File.WriteAllBytes(path, BinarySerializer.Serialize(new ProfilerContainer() { ticks = ticks }));
             }
 
             EditorGUILayout.EndHorizontal();
@@ -164,7 +187,7 @@ namespace UnityEditor
             }
 
             //Draw main board
-            TickEvent eventHover = null;
+            bool hover = false;
             int nonEmptyTicks = 0;
             int largestTickCount = 0;
             int totalTicks = ((int)showMax - (int)showMin);
@@ -209,7 +232,11 @@ namespace UnityEditor
                         TickEvent tickEvent = tick.Events[j];
                         Rect dataRect = new Rect(currentX, currentY, widthPerTick, heightPerEvent);
 
-                        if (dataRect.Contains(Event.current.mousePosition)) eventHover = tickEvent;
+                        if (dataRect.Contains(Event.current.mousePosition))
+                        {
+                            hover = true;
+                            eventHover = tickEvent;
+                        }
 
                         if (j == tick.Events.Count - 1)
                             dataRect.height -= 45f;
@@ -231,17 +258,32 @@ namespace UnityEditor
                 currentX += widthPerTick;
             }
 
+            //Calculate alpha
+            if (hover)
+            {
+                hoverAlpha += deltaTime * 10f;
+
+                if (hoverAlpha > 1f) hoverAlpha = 1f;
+                else if (hoverAlpha < 0f) hoverAlpha = 0f;
+            }
+            else
+            {
+                hoverAlpha -= deltaTime * 10f;
+                if (hoverAlpha > 1f) hoverAlpha = 1f;
+                else if (hoverAlpha < 0f) hoverAlpha = 0f;
+            }
+
             //Draw hover thingy
             if (eventHover != null)
             {
                 Rect rect = new Rect(Event.current.mousePosition, new Vector2(500, 100));
-                EditorGUI.DrawRect(rect, EditorColor);
+                EditorGUI.DrawRect(rect, GetEditorColorWithAlpha(hoverAlpha));
 
                 float heightPerField = (rect.height - 5) / 4;
-                EditorGUI.LabelField(new Rect(rect.x + 5, rect.y + 5, rect.width, rect.height), "EventType: " + eventHover.EventType.ToString());
-                EditorGUI.LabelField(new Rect(rect.x + 5, rect.y + heightPerField * 1 + 5, rect.width, rect.height), "Size: " + eventHover.Bytes + "B");
-                EditorGUI.LabelField(new Rect(rect.x + 5, rect.y + heightPerField * 2 + 5, rect.width, rect.height), "Channel: " + eventHover.ChannelName);
-                EditorGUI.LabelField(new Rect(rect.x + 5, rect.y + heightPerField * 3 + 5, rect.width, rect.height), "MessageType: " + eventHover.MessageType);
+                EditorGUI.LabelField(new Rect(rect.x + 5, rect.y + 5, rect.width, rect.height), "EventType: " + eventHover.EventType.ToString(), GetStyleWithTextAlpha(EditorStyles.label, hoverAlpha));
+                EditorGUI.LabelField(new Rect(rect.x + 5, rect.y + heightPerField * 1 + 5, rect.width, rect.height), "Size: " + eventHover.Bytes + "B", GetStyleWithTextAlpha(EditorStyles.label, hoverAlpha));
+                EditorGUI.LabelField(new Rect(rect.x + 5, rect.y + heightPerField * 2 + 5, rect.width, rect.height), "Channel: " + eventHover.ChannelName, GetStyleWithTextAlpha(EditorStyles.label, hoverAlpha));
+                EditorGUI.LabelField(new Rect(rect.x + 5, rect.y + heightPerField * 3 + 5, rect.width, rect.height), "MessageType: " + eventHover.MessageType, GetStyleWithTextAlpha(EditorStyles.label, hoverAlpha));
             }
 
             Repaint();
@@ -268,6 +310,20 @@ namespace UnityEditor
             {
                 return EditorGUIUtility.isProSkin ? new Color32(56, 56, 56, 255) : new Color32(194, 194, 194, 255);
             }
+        }
+
+        private Color GetEditorColorWithAlpha(float alpha)
+        {
+            return EditorGUIUtility.isProSkin ? new Color(0.22f, 0.22f, 0.22f, alpha) : new Color(0.76f, 0.76f, 0.76f, alpha);
+        }
+
+        private GUIStyle GetStyleWithTextAlpha(GUIStyle style, float alpha)
+        {
+            Color textColor = style.normal.textColor;
+            textColor.a = alpha;
+            GUIStyle newStyle = new GUIStyle(style);
+            newStyle.normal.textColor = textColor;
+            return newStyle;
         }
     }
 
