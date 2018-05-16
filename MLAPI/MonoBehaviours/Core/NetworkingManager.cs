@@ -1148,11 +1148,13 @@ namespace MLAPI.MonoBehaviours.Core
                 };
                 connectedClients.Add(clientId, client);
                 connectedClientsList.Add(client);
-                
+
+                NetworkedObject netObject = null;
                 if(NetworkConfig.HandleObjectSpawning)
                 {
                     uint networkId = SpawnManager.GetNetworkObjectId();
                     GameObject go = SpawnManager.SpawnPlayerObject(clientId, networkId, position, rotation);
+                    netObject = go.GetComponent<NetworkedObject>();
                     connectedClients[clientId].PlayerObject = go;
                 }
 
@@ -1177,12 +1179,16 @@ namespace MLAPI.MonoBehaviours.Core
                     writer.WriteInt(NetworkConfig.NetworkTransport.GetNetworkTimestamp());
 
                     writer.WriteInt(connectedClients.Count - 1);
+
                     foreach (KeyValuePair<uint, NetworkedClient> item in connectedClients)
                     {
                         //Our own ID. Already added as the first one above
                         if (item.Key == clientId)
                             continue;
                         writer.WriteUInt(item.Key); //ClientId
+
+                        if (netObject != null)
+                            netObject.RebuildObservers(item.Key);
                     }
                     if (NetworkConfig.HandleObjectSpawning)
                     {
