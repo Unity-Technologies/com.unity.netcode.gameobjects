@@ -29,7 +29,6 @@ namespace UnityEditor
         int captureCount = 100;
         float showMax = 0;
         float showMin = 0;
-        bool record = false;
         AnimationCurve curve = AnimationCurve.Constant(0, 1, 0);
         readonly List<ProfilerTick> currentTicks = new List<ProfilerTick>();
         float lastDrawn = 0;
@@ -37,30 +36,50 @@ namespace UnityEditor
         {
             public ProfilerTick[] ticks;
         }
+
+        private void StopRecording()
+        {
+            NetworkProfiler.Stop();
+        }
+
+        private void StartRecording()
+        {
+            if (NetworkProfiler.IsRunning)
+                StopRecording();
+            
+            if (NetworkProfiler.Ticks != null && NetworkProfiler.Ticks.Count >= 2)
+                curve = AnimationCurve.Constant(NetworkProfiler.Ticks.ElementAt(0).Frame, NetworkProfiler.Ticks.ElementAt(NetworkProfiler.Ticks.Count - 1).Frame, 0);
+            else
+                curve = AnimationCurve.Constant(0, 1, 0);
+
+            lastDrawn = 0;
+            NetworkProfiler.Start(captureCount);
+        }
+
+        private void ChangeRecordState()
+        {
+            if (NetworkProfiler.IsRunning) StopRecording();
+            else StartRecording();
+        }
+
         private void OnGUI()
         {
-            if (!NetworkProfiler.IsRunning && record)
-            {
-                if (NetworkProfiler.Ticks != null && NetworkProfiler.Ticks.Count >= 2)
-                    curve = AnimationCurve.Constant(NetworkProfiler.Ticks.ElementAt(0).Frame, NetworkProfiler.Ticks.ElementAt(NetworkProfiler.Ticks.Count - 1).Frame, 0);
-                else
-                    curve = AnimationCurve.Constant(0, 1, 0);
-
-                lastDrawn = 0;
-                NetworkProfiler.Start(captureCount);
-            }
+            bool recording = NetworkProfiler.IsRunning;
 
             //Draw top bar
             EditorGUILayout.BeginVertical();
             EditorGUILayout.BeginHorizontal();
-            bool prevRec = record;
-            record = EditorGUILayout.Toggle("Record", record);
+            if (GUILayout.Button(recording ? "Stop" : "Capture")) ChangeRecordState();
 
             if (GUILayout.Button("Import datafile"))
             {
                 ProfilerTick[] ticks = BinarySerializer.Deserialize<ProfilerContainer>(File.ReadAllBytes(EditorUtility.OpenFilePanel("Choose a NetworkProfiler file", "", ""))).ticks;
                 if (ticks.Length >= 2)
+                {
                     curve = AnimationCurve.Constant(ticks[0].EventId, ticks[(ticks.Length - 1)].EventId, 0);
+                    showMax = ticks.Length;
+                    showMin = ticks.Length - Mathf.Clamp(100, 0, ticks.Length);
+                }
                 else
                     curve = AnimationCurve.Constant(0, 1, 0);
                 currentTicks.Clear();
@@ -83,7 +102,11 @@ namespace UnityEditor
 
             if (GUILayout.Button("Export datafile"))
             {
-                File.WriteAllBytes(EditorUtility.SaveFilePanel("Save NetworkProfiler data", "", "networkProfilerData", ""), BinarySerializer.Serialize(new ProfilerContainer() { ticks = currentTicks.ToArray() }));
+                int ticksInRange = 0;
+                for (int i = 0; i < currentTicks.Count; i++) if (currentTicks[i].EventId >= showMin && currentTicks[i].EventId <= showMin) ticksInRange++;
+                ProfilerTick[] ticks = new ProfilerTick[ticksInRange];
+                for (int i = 0; i < currentTicks.Count; i++) if (currentTicks[i].EventId >= showMin && currentTicks[i].EventId <= showMin) ticks[i] = currentTicks[i];
+                File.WriteAllBytes(EditorUtility.SaveFilePanel("Save NetworkProfiler data", "", "networkProfilerData", ""), BinarySerializer.Serialize(new ProfilerContainer() { ticks = ticks }));
             }
 
             EditorGUILayout.EndHorizontal();
@@ -94,34 +117,7 @@ namespace UnityEditor
             updateDelay = EditorGUILayout.Slider("Refresh delay", updateDelay, 0.1f, 10f);
             EditorGUILayout.EndVertical();
 
-            if (prevRec != record)
-            {
-                if (prevRec)
-                {
-                    NetworkProfiler.Stop();
-                }
-                else
-                {
-                    if (NetworkProfiler.Ticks != null && NetworkProfiler.Ticks.Count >= 2)
-                        curve = AnimationCurve.Constant(NetworkProfiler.Ticks.ElementAt(0).EventId, NetworkProfiler.Ticks.ElementAt(NetworkProfiler.Ticks.Count - 1).EventId, 0);
-                    else
-                        curve = AnimationCurve.Constant(0, 1, 0);
-                    lastDrawn = 0;
-                    NetworkProfiler.Start(captureCount);
-                }
-            }
-            if (prevHis != captureCount)
-            {
-                NetworkProfiler.Stop();
-
-                if (NetworkProfiler.Ticks != null && NetworkProfiler.Ticks.Count >= 2)
-                    curve = AnimationCurve.Constant(NetworkProfiler.Ticks.ElementAt(0).EventId, NetworkProfiler.Ticks.ElementAt(NetworkProfiler.Ticks.Count - 1).EventId, 0);
-                else
-                    curve = AnimationCurve.Constant(0, 1, 0);
-
-                lastDrawn = 0;
-                NetworkProfiler.Start(captureCount);
-            }
+            if (prevHis != captureCount) StartRecording();
 
             //Cache
             if (NetworkProfiler.IsRunning)
@@ -198,7 +194,7 @@ namespace UnityEditor
                 {
                     Rect dataRect = new Rect(currentX, 100, propWidth * emptyStreak, position.height - 100);
                     currentX += propWidth * emptyStreak;
-                    EditorGUI.LabelField(new Rect(dataRect.x, dataRect.y, dataRect.width, dataRect.height), emptyStreak.ToString(), wrapStyle);
+                    if (emptyStreak >= 4) EditorGUI.LabelField(new Rect(dataRect.x, dataRect.y, dataRect.width, dataRect.height), emptyStreak.ToString(), wrapStyle);
                     emptyStreak = 0;
                 }
 
