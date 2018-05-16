@@ -57,6 +57,15 @@ namespace MLAPI.Data.NetworkProfiler
         public TickType Type;
         public int Frame;
         public int EventId;
+        public uint Bytes
+        {
+            get
+            {
+                uint bytes = 0;
+                for (int i = 0; i < Events.Count; i++) bytes += Events[i].Bytes;
+                return bytes;
+            }
+        }
     }
 
     public class TickEvent

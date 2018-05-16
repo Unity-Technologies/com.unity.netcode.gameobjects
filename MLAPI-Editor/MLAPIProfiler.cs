@@ -60,6 +60,7 @@ namespace UnityEditor
 
         private void ClearDrawing()
         {
+            currentTicks.Clear();
             curve = AnimationCurve.Constant(0, 1, 0);
             lastDrawn = 0;
         }
@@ -215,18 +216,18 @@ namespace UnityEditor
                 }
                 else if (emptyStreak > 0 || i == totalTicks - 1)
                 {
-                    Rect dataRect = new Rect(currentX, 100, propWidth * emptyStreak, position.height - 100);
+                    Rect dataRect = new Rect(currentX, 140f, propWidth * emptyStreak, position.height - 140f);
                     currentX += propWidth * emptyStreak;
-                    if (emptyStreak >= 4) EditorGUI.LabelField(new Rect(dataRect.x, dataRect.y, dataRect.width, dataRect.height), emptyStreak.ToString(), wrapStyle);
+                    if (emptyStreak >= 2) EditorGUI.LabelField(new Rect(dataRect.x, dataRect.y, dataRect.width, dataRect.height), emptyStreak.ToString(), wrapStyle);
                     emptyStreak = 0;
                 }
 
                 if (tick.Events.Count > 0)
                 {
-                    float heightPerEvent = ((position.height - 100f) - (5f * largestTickCount)) / largestTickCount;
-                    float heightPerTotalBackground = ((position.height - 100f) - (5f * largestTickCount)) / tick.Events.Count;
+                    float heightPerEvent = ((position.height - 140f) - (5f * largestTickCount)) / largestTickCount;
+                    float heightPerTotalBackground = ((position.height - 140f) - (5f * largestTickCount)) / tick.Events.Count;
 
-                    float currentY = 100;
+                    float currentY = 140f;
                     for (int j = 0; j < tick.Events.Count; j++)
                     {
                         TickEvent tickEvent = tick.Events[j];
@@ -238,23 +239,16 @@ namespace UnityEditor
                             eventHover = tickEvent;
                         }
 
-                        if (j == tick.Events.Count - 1)
-                            dataRect.height -= 45f;
-                        EditorGUI.DrawRect(dataRect, TickTypeToColor(tickEvent.EventType));
-                        float heightPerField = heightPerEvent / 12f;
-                        EditorGUI.LabelField(new Rect(dataRect.x, dataRect.y + heightPerField * -3f, dataRect.width, dataRect.height), "EventType: " + tickEvent.EventType.ToString(), wrapStyle);
-                        EditorGUI.LabelField(new Rect(dataRect.x, dataRect.y + heightPerField * -1f, dataRect.width, dataRect.height), "Size: " + tickEvent.Bytes + "B", wrapStyle);
-                        string channelName = tickEvent.ChannelName.Length > 5 ? tickEvent.ChannelName.Remove(5, tickEvent.ChannelName.Length - 5) + "..." : tickEvent.ChannelName;
-                        EditorGUI.LabelField(new Rect(dataRect.x, dataRect.y + heightPerField * 1f, dataRect.width, dataRect.height), "Channel: " + channelName, wrapStyle);
-                        string messageType = tickEvent.MessageType.Length > 5 ? tickEvent.MessageType.Remove(5, tickEvent.MessageType.Length - 5) + "..." : tickEvent.MessageType;
-                        EditorGUI.LabelField(new Rect(dataRect.x, dataRect.y + heightPerField * 3f, dataRect.width, dataRect.height), "MessageType: " + messageType, wrapStyle);
+                        EditorGUI.DrawRect(dataRect, TickTypeToColor(tickEvent.EventType, true));
+                        EditorGUI.LabelField(new Rect(dataRect.x, dataRect.y, dataRect.width, dataRect.height / 2), tickEvent.EventType.ToString(), wrapStyle);
+                        EditorGUI.LabelField(new Rect(dataRect.x, dataRect.y + dataRect.height / 2, dataRect.width, dataRect.height / 2), tickEvent.Bytes + "B", wrapStyle);
 
                         currentY += heightPerEvent + 5f;
                     }
                 }
-                EditorGUI.DrawRect(new Rect(currentX, position.height - 40, widthPerTick, 40), TickTypeToColor(tick.Type));
-                EditorGUI.LabelField(new Rect(currentX, position.height - 40, widthPerTick, 20), "TickType: " + tick.Type.ToString(), wrapStyle);
-                EditorGUI.LabelField(new Rect(currentX, position.height - 20, widthPerTick, 20), "Frame: " + tick.Frame.ToString(), wrapStyle);
+                EditorGUI.DrawRect(new Rect(currentX, 100, widthPerTick, 40), TickTypeToColor(tick.Type, false));
+                EditorGUI.LabelField(new Rect(currentX, 100, widthPerTick, 20), tick.Type.ToString(), wrapStyle);
+                EditorGUI.LabelField(new Rect(currentX, 120, widthPerTick, 20), tick.Frame.ToString(), wrapStyle);
                 currentX += widthPerTick;
             }
 
@@ -285,20 +279,19 @@ namespace UnityEditor
                 EditorGUI.LabelField(new Rect(rect.x + 5, rect.y + heightPerField * 2 + 5, rect.width, rect.height), "Channel: " + eventHover.ChannelName, GetStyleWithTextAlpha(EditorStyles.label, hoverAlpha));
                 EditorGUI.LabelField(new Rect(rect.x + 5, rect.y + heightPerField * 3 + 5, rect.width, rect.height), "MessageType: " + eventHover.MessageType, GetStyleWithTextAlpha(EditorStyles.label, hoverAlpha));
             }
-
             Repaint();
         }
 
-        private Color TickTypeToColor(TickType type)
+        private Color TickTypeToColor(TickType type, bool alpha)
         {
             switch (type)
             {
                 case TickType.Event:
-                    return new Color(0.58f, 0f, 0.56f, 0.37f);
+                    return new Color(0.58f, 0f, 0.56f, alpha ? 0.37f : 0.7f);
                 case TickType.Receive:
-                    return new Color(0f, 0.85f, 0.85f, 0.28f);
+                    return new Color(0f, 0.85f, 0.85f, alpha ? 0.28f : 0.7f);
                 case TickType.Send:
-                    return new Color(0, 0.55f, 1f, 0.06f);
+                    return new Color(0, 0.55f, 1f, alpha ? 0.06f : 0.7f);
                 default:
                     return Color.clear;
             }
