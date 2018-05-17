@@ -1,4 +1,5 @@
-﻿using MLAPI.NetworkingManagerComponents.Core;
+﻿using System.Collections.Generic;
+using MLAPI.NetworkingManagerComponents.Core;
 using UnityEngine;
 
 namespace MLAPI.Data.NetworkProfiler
@@ -29,18 +30,39 @@ namespace MLAPI.Data.NetworkProfiler
             isRunning = true;
         }
 
-        public static ProfilerTick[] Stop()
+        public static void Stop()
         {
-            if (!isRunning)
-                return new ProfilerTick[0];
-            ProfilerTick[] ticks = new ProfilerTick[Ticks.Count];
-            for (int i = 0; i < Ticks.Count; i++)
-                ticks[i] = Ticks.ElementAt(i);
-            
             Ticks = null; //leave to GC
             CurrentTick = null; //leave to GC
             isRunning = false;
-            return ticks;
+        }
+
+        public static int Stop(ref ProfilerTick[] tickBuffer)
+        {
+            if (!isRunning)
+                return 0;
+            int iteration = Ticks.Count > tickBuffer.Length ? tickBuffer.Length : Ticks.Count;
+            for (int i = 0; i < iteration; i++) tickBuffer[i] = Ticks[i];
+
+            Ticks = null; //leave to GC
+            CurrentTick = null; //leave to GC
+            isRunning = false;
+
+            return iteration;
+        }
+
+        public static int Stop(ref List<ProfilerTick> tickBuffer)
+        {
+            if (!isRunning)
+                return 0;
+            int iteration = Ticks.Count > tickBuffer.Count ? tickBuffer.Count : Ticks.Count;
+            for (int i = 0; i < iteration; i++) tickBuffer[i] = Ticks[i];
+
+            Ticks = null; //leave to GC
+            CurrentTick = null; //leave to GC
+            isRunning = false;
+
+            return iteration; 
         }
 
         internal static void StartTick(TickType type)

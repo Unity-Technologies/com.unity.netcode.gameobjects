@@ -177,7 +177,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
         internal static void HandleClientDisconnect(uint clientId, BitReader reader, int channelId)
         {
             uint disconnectedClientId = reader.ReadUInt();
-            netManager.OnClientDisconnect(disconnectedClientId);
+            netManager.OnClientDisconnectFromServer(disconnectedClientId);
         }
 
         internal static void HandleDestroyObject(uint clientId, BitReader reader, int channelId)

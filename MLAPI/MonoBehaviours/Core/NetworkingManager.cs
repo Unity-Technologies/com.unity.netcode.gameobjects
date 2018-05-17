@@ -592,6 +592,7 @@ namespace MLAPI.MonoBehaviours.Core
             if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("StopClient()");
             _isClient = false;
             NetworkConfig.NetworkTransport.DisconnectFromServer();
+            _isClientConnected = false;
             Shutdown();
         }
 
@@ -661,6 +662,7 @@ namespace MLAPI.MonoBehaviours.Core
         private void Shutdown()
         {
             if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Shutdown()");
+            NetworkProfiler.Stop();
             isListening = false;
             _isClient = false;
             _isServer = false;
@@ -751,9 +753,12 @@ namespace MLAPI.MonoBehaviours.Core
                                 if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Disconnect Event From " + clientId);
 
                                 if (isServer)
-                                    OnClientDisconnect(clientId);
+                                    OnClientDisconnectFromServer(clientId);
                                 else
+                                {
                                     _isClientConnected = false;
+                                    StopClient();
+                                }
 
                                 if (OnClientDisconnectCallback != null)
                                     OnClientDisconnectCallback.Invoke(clientId);
@@ -1061,7 +1066,7 @@ namespace MLAPI.MonoBehaviours.Core
             NetworkConfig.NetworkTransport.DisconnectClient(clientId);
         }
 
-        internal void OnClientDisconnect(uint clientId)
+        internal void OnClientDisconnectFromServer(uint clientId)
         {
             if (pendingClients.Contains(clientId))
                 pendingClients.Remove(clientId);
@@ -1434,7 +1439,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <typeparam name="T">The class type to send</typeparam>
         /// <param name="clientId">The clientId to send the message to</param>
         /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>	
+        /// <param name="channelName">User defined channelName</param>    
         /// <param name="instance">The instance to send</param>
         public void SendToClient<T>(int clientId, string messageType, string channelName, T instance)
         {
@@ -1505,7 +1510,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <typeparam name="T">The class type to send</typeparam>
         /// <param name="clientIds">The clientId's to send to</param>
         /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>	
+        /// <param name="channelName">User defined channelName</param>    
         /// <param name="instance">The instance to send</param>
         public void SendToClients<T>(int[] clientIds, string messageType, string channelName, T instance)
         {
@@ -1576,7 +1581,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <typeparam name="T">The class type to send</typeparam>
         /// <param name="clientIds">The clientId's to send to</param>
         /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>	
+        /// <param name="channelName">User defined channelName</param>    
         /// <param name="instance">The instance to send</param>
         public void SendToClients<T>(List<int> clientIds, string messageType, string channelName, T instance)
         {
@@ -1644,7 +1649,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// </summary>
         /// <typeparam name="T">The class type to send</typeparam>
         /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>	
+        /// <param name="channelName">User defined channelName</param>    
         /// <param name="instance">The instance to send</param>
         public void SendToClients<T>(string messageType, string channelName, T instance)
         {

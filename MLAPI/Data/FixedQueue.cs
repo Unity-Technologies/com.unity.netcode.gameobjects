@@ -17,6 +17,14 @@ namespace MLAPI.Data
         /// </summary>
         public int Count { get => queueCount; }
 
+        public T this[int index]
+        {
+            get
+            {
+                return queue[(queueStart + index) % queue.Length];
+            }
+        }
+
         /// <summary>
         /// Creates a new FixedQueue with a given size
         /// </summary>
