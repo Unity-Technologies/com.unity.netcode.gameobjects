@@ -181,7 +181,7 @@ namespace MLAPI.MonoBehaviours.Core
 
             if (!NetworkConfig.EnableSceneSwitching && NetworkConfig.HandleObjectSpawning)
             {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Please be aware that Scene objects are NOT supported if SceneManagement is turned on, even if HandleObjectSpawning is turned on");
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Please be aware that Scene objects are NOT supported if SceneManagement is turned off, even if HandleObjectSpawning is turned on");
             }
 
             if (NetworkConfig.HandleObjectSpawning)
