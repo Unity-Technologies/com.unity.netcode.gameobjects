@@ -9,6 +9,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
 {
     public class BitReader : IDisposable
     {
+        private bool disposed;
         private delegate T Getter<T>();
         private static readonly float[] holder_f = new float[1];
         private static readonly double[] holder_d = new double[1];
@@ -24,6 +25,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         private BitReader(byte[] readFrom)
         {
             this.readFrom = readFrom;
+            disposed = false;
         }
 
         public static BitReader Get(byte[] readFrom)
@@ -33,12 +35,14 @@ namespace MLAPI.NetworkingManagerComponents.Binary
                 if (pools > 10)
                     if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("There are more than 10 BitReaders. Have you forgotten do dispose? (More readers hurt performance)");
                 BitReader reader = new BitReader(readFrom);
+                reader.disposed = false;
                 pools++;
                 return reader;
             }
             else
             {
                 BitReader reader = readerPool.Dequeue();
+                reader.disposed = false;
                 reader.readFrom = readFrom;
                 return reader;
             }
@@ -173,6 +177,8 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         {
             readFrom = null; //Give to GC
             bitCount = 0;
+            if (disposed) return; //this is already in the pool
+            disposed = true;
             readerPool.Enqueue(this);
         }
     }
