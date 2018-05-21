@@ -152,7 +152,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             }
         }
 
-        internal static GameObject SpawnPrefabIndexClient(int networkedPrefabId, uint networkId, uint owner, Vector3 position, Quaternion rotation, BitReader reader = null)
+        internal static GameObject CreateSpawnedObject(int networkedPrefabId, uint networkId, uint owner, bool playerObject, Vector3 position, Quaternion rotation, BitReader reader = null)
         {
             if (!netManager.NetworkConfig.NetworkPrefabNames.ContainsKey(networkedPrefabId))
             {
@@ -174,8 +174,13 @@ namespace MLAPI.NetworkingManagerComponents.Core
             netObject.NetworkedPrefabName = netManager.NetworkConfig.NetworkPrefabNames[networkedPrefabId];
             netObject._isSpawned = true;
             netObject._isPooledObject = false;
-            netObject.networkId = networkId;
+
+            if (netManager.isServer) netObject.networkId = GetNetworkObjectId();
+            else netObject.networkId = networkId;
+
+            netObject.sceneObject = false;
             netObject.ownerClientId = owner;
+            netObject._isPlayerObject = playerObject;
             netObject.transform.position = position;
             netObject.transform.rotation = rotation;
             spawnedObjects.Add(netObject.NetworkId, netObject);
@@ -183,7 +188,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             return go;
         }
 
-        internal static void SpawnPrefabIndexServer(NetworkedObject netObject, uint? clientOwnerId = null)
+        internal static void SpawnObject(NetworkedObject netObject, uint? clientOwnerId = null)
         {
             if (netObject.isSpawned)
             {
@@ -241,40 +246,6 @@ namespace MLAPI.NetworkingManagerComponents.Core
                     InternalMessageHandler.Send(client.Key, "MLAPI_ADD_OBJECT", "MLAPI_INTERNAL", writer, null);
                 }
             }
-        }
-
-        internal static GameObject SpawnPlayerObject(uint clientId, uint networkId, Vector3 position, Quaternion rotation, BitReader reader = null)
-        {
-            if (string.IsNullOrEmpty(netManager.NetworkConfig.PlayerPrefabName) || !netManager.NetworkConfig.NetworkPrefabIds.ContainsKey(netManager.NetworkConfig.PlayerPrefabName))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("There is no player prefab in the NetworkConfig, or it's not registered at as a spawnable prefab");
-                return null;
-            }
-            GameObject go = MonoBehaviour.Instantiate(netManager.NetworkConfig.NetworkedPrefabs[netManager.NetworkConfig.NetworkPrefabIds[netManager.NetworkConfig.PlayerPrefabName]].prefab, position, rotation);
-            NetworkedObject netObject = go.GetComponent<NetworkedObject>();
-            if (netObject == null)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Please add a NetworkedObject component to the root of the player prefab");
-                netObject = go.AddComponent<NetworkedObject>();
-            }
-
-            if (NetworkingManager.singleton.isServer)
-                netObject.networkId = GetNetworkObjectId();
-            else
-                netObject.networkId = networkId;
-
-            if (reader != null)
-                netObject.SetFormattedSyncedVarData(reader);
-
-            netObject._isPooledObject = false;
-            netObject.ownerClientId = clientId;
-            netObject._isPlayerObject = true;
-            netObject._isSpawned = true;
-            netObject.sceneObject = false;
-            netManager.connectedClients[clientId].PlayerObject = go;
-            spawnedObjects.Add(netObject.NetworkId, netObject);
-            netObject.InvokeBehaviourNetworkSpawn();
-            return go;
         }
 
         internal static void OnDestroyObject(uint networkId, bool destroyGameObject)

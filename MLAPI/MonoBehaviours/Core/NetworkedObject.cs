@@ -224,7 +224,7 @@ namespace MLAPI.MonoBehaviours.Core
         public void Spawn()
         {
             if (NetworkingManager.singleton != null)
-                SpawnManager.SpawnPrefabIndexServer(this);
+                SpawnManager.SpawnObject(this);
         }
         /// <summary>
         /// Spawns an object across the network with a given owner. Can only be called from server
@@ -233,7 +233,7 @@ namespace MLAPI.MonoBehaviours.Core
         public void SpawnWithOwnership(uint clientId)
         {
             if (NetworkingManager.singleton != null)
-                SpawnManager.SpawnPrefabIndexServer(this, clientId);
+                SpawnManager.SpawnObject(this, clientId);
         }
         /// <summary>
         /// Removes all ownership of an object from any client. Can only be called from server

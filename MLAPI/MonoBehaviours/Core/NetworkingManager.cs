@@ -148,10 +148,11 @@ namespace MLAPI.MonoBehaviours.Core
         /// The callback to invoke once the server is ready
         /// </summary>
         public Action OnServerStarted = null;
+        public delegate void ConnectionApprovedDelegate(uint clientId, int prefabId, bool approved, Vector3 position, Quaternion rotation);
         /// <summary>
         /// The callback to invoke during connection approval
         /// </summary>
-        public Action<byte[], uint, Action<uint, bool, Vector3, Quaternion>> ConnectionApprovalCallback = null;
+        public Action<byte[], uint, ConnectionApprovedDelegate> ConnectionApprovalCallback = null;
         /// <summary>
         /// The current NetworkingConfiguration
         /// </summary>
@@ -599,7 +600,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <summary>
         /// Starts a Host
         /// </summary>
-        public void StartHost(Vector3? pos = null, Quaternion? rot = null)
+        public void StartHost(Vector3? pos = null, Quaternion? rot = null, int prefabId = -1)
         {
             if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("StartHost()");
             if (isServer || isClient)
@@ -631,7 +632,8 @@ namespace MLAPI.MonoBehaviours.Core
 
             if (NetworkConfig.HandleObjectSpawning)
             {
-                SpawnManager.SpawnPlayerObject(hostClientId, 0, pos.GetValueOrDefault(), rot.GetValueOrDefault());
+                prefabId = prefabId == -1 ? NetworkConfig.NetworkPrefabIds[NetworkConfig.PlayerPrefabName] : prefabId;
+                SpawnManager.CreateSpawnedObject(prefabId, 0, hostClientId, true, pos.GetValueOrDefault(), rot.GetValueOrDefault(), null);
             }
 
             if (OnServerStarted != null)
@@ -1111,7 +1113,7 @@ namespace MLAPI.MonoBehaviours.Core
             }
         }
 
-        internal void HandleApproval(uint clientId, bool approved, Vector3 position, Quaternion rotation)
+        internal void HandleApproval(uint clientId, int prefabId, bool approved, Vector3 position, Quaternion rotation)
         {
             if(approved)
             {
@@ -1158,7 +1160,8 @@ namespace MLAPI.MonoBehaviours.Core
                 if(NetworkConfig.HandleObjectSpawning)
                 {
                     uint networkId = SpawnManager.GetNetworkObjectId();
-                    GameObject go = SpawnManager.SpawnPlayerObject(clientId, networkId, position, rotation);
+                    prefabId = prefabId == -1 ? NetworkConfig.NetworkPrefabIds[NetworkConfig.PlayerPrefabName] : prefabId;
+                    GameObject go = SpawnManager.CreateSpawnedObject(prefabId, networkId, clientId, true, position, rotation);
                     netObject = go.GetComponent<NetworkedObject>();
                     connectedClients[clientId].PlayerObject = go;
                 }
@@ -1243,7 +1246,7 @@ namespace MLAPI.MonoBehaviours.Core
                             writer.WriteBool(true);
                             writer.WriteUInt(connectedClients[clientId].PlayerObject.GetComponent<NetworkedObject>().NetworkId);
                             writer.WriteUInt(clientId);
-                            writer.WriteInt(-1);
+                            writer.WriteInt(prefabId);
                             writer.WriteBool(false);
                             writer.WriteBool(connectedClients[clientId].PlayerObject.GetComponent<NetworkedObject>().observers.Contains(clientPair.Key));
 
