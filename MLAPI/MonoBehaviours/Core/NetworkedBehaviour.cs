@@ -120,6 +120,12 @@ namespace MLAPI.MonoBehaviours.Core
         {
 
         }
+
+        public virtual void NetworkStart(BitReader payloadReader)
+        {
+            NetworkStart();
+        }
+
         internal void InternalNetworkStart()
         {
             CacheAttributedMethods();

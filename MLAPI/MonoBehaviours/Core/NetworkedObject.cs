@@ -227,6 +227,12 @@ namespace MLAPI.MonoBehaviours.Core
                 SpawnManager.SpawnObject(this);
         }
 
+        public void Spawn(BitWriter spawnPayload)
+        {
+            if (NetworkingManager.singleton != null)
+                SpawnManager.SpawnObject(this, null, spawnPayload);
+        }
+
         /// <summary>
         /// Unspawns this GameObject and destroys it for other clients. This should be used if the object should be kept on the server
         /// </summary>
@@ -245,6 +251,14 @@ namespace MLAPI.MonoBehaviours.Core
             if (NetworkingManager.singleton != null)
                 SpawnManager.SpawnObject(this, clientId);
         }
+
+        public void SpawnWithOwnership(uint clientId, BitWriter payload)
+        {
+            if (NetworkingManager.singleton != null)
+                SpawnManager.SpawnObject(this, clientId, payload);
+        }
+
+
         /// <summary>
         /// Removes all ownership of an object from any client. Can only be called from server
         /// </summary>
@@ -277,7 +291,7 @@ namespace MLAPI.MonoBehaviours.Core
             }
         }
 
-        internal void InvokeBehaviourNetworkSpawn()
+        internal void InvokeBehaviourNetworkSpawn(BitReader reader)
         {
             for (int i = 0; i < childNetworkedBehaviours.Count; i++)
             {
@@ -285,7 +299,7 @@ namespace MLAPI.MonoBehaviours.Core
                 if(!childNetworkedBehaviours[i].networkedStartInvoked)
                 {
                     childNetworkedBehaviours[i].InternalNetworkStart();
-                    childNetworkedBehaviours[i].NetworkStart();
+                    childNetworkedBehaviours[i].NetworkStart(reader);
                     childNetworkedBehaviours[i].SyncVarInit();
                     childNetworkedBehaviours[i].networkedStartInvoked = true;
                 }

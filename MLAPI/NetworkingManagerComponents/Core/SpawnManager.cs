@@ -72,10 +72,10 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 InternalMessageHandler.Send("MLAPI_CHANGE_OWNER", "MLAPI_INTERNAL", writer, null);
             }
         }
-  
+
         internal static void DestroyNonSceneObjects()
         {
-            if(spawnedObjects != null)
+            if (spawnedObjects != null)
             {
                 foreach (KeyValuePair<uint, NetworkedObject> netObject in spawnedObjects)
                 {
@@ -102,7 +102,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             {
                 if (netObjects[i].sceneObject == null)
                 {
-                    netObjects[i].InvokeBehaviourNetworkSpawn();
+                    netObjects[i].InvokeBehaviourNetworkSpawn(null);
                     netObjects[i].sceneObject = true;
                 }
             }
@@ -152,7 +152,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             }
         }
 
-        internal static GameObject CreateSpawnedObject(int networkedPrefabId, uint networkId, uint owner, bool playerObject, Vector3 position, Quaternion rotation, BitReader reader = null)
+        internal static GameObject CreateSpawnedObject(int networkedPrefabId, uint networkId, uint owner, bool playerObject, Vector3 position, Quaternion rotation, BitReader reader, bool readSyncedVar, bool readPayload)
         {
             if (!netManager.NetworkConfig.NetworkPrefabNames.ContainsKey(networkedPrefabId))
             {
@@ -168,8 +168,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 netObject = go.AddComponent<NetworkedObject>();
             }
 
-            if (reader != null)
-                netObject.SetFormattedSyncedVarData(reader);
+            if (readSyncedVar) netObject.SetFormattedSyncedVarData(reader);
 
             netObject.NetworkedPrefabName = netManager.NetworkConfig.NetworkPrefabNames[networkedPrefabId];
             netObject._isSpawned = true;
@@ -184,7 +183,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             netObject.transform.position = position;
             netObject.transform.rotation = rotation;
             spawnedObjects.Add(netObject.NetworkId, netObject);
-            netObject.InvokeBehaviourNetworkSpawn();
+            netObject.InvokeBehaviourNetworkSpawn(reader);
             return go;
         }
 
@@ -195,7 +194,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot unspawn objects that are not spawned");
                 return;
             }
-            else if(!netManager.isServer)
+            else if (!netManager.isServer)
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Only server can unspawn objects");
                 return;
@@ -209,7 +208,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             OnDestroyObject(netObject.networkId, false);
         }
 
-        internal static void SpawnObject(NetworkedObject netObject, uint? clientOwnerId = null)
+        internal static void SpawnObject(NetworkedObject netObject, uint? clientOwnerId = null, BitWriter payload = null)
         {
             if (netObject.isSpawned)
             {
@@ -236,7 +235,9 @@ namespace MLAPI.NetworkingManagerComponents.Core
             spawnedObjects.Add(netId, netObject);
             netObject._isSpawned = true;
             netObject.sceneObject = false;
-            netObject.InvokeBehaviourNetworkSpawn();
+            if (payload == null) netObject.InvokeBehaviourNetworkSpawn(null);
+            else using (BitReader payloadReader = BitReader.Get(payload.Finalize())) netObject.InvokeBehaviourNetworkSpawn(payloadReader);    
+
             if (clientOwnerId != null)
             {
                 netObject.ownerClientId = clientOwnerId.Value;
@@ -261,8 +262,12 @@ namespace MLAPI.NetworkingManagerComponents.Core
                     writer.WriteFloat(netObject.transform.rotation.eulerAngles.y);
                     writer.WriteFloat(netObject.transform.rotation.eulerAngles.z);
 
+                    writer.WriteBool(payload != null);
+
                     if (netObject.observers.Contains(client.Key))
                         netObject.WriteFormattedSyncedVarData(writer);
+
+                    if (payload != null) writer.WriteWriter(payload);
 
                     InternalMessageHandler.Send(client.Key, "MLAPI_ADD_OBJECT", "MLAPI_INTERNAL", writer, null);
                 }

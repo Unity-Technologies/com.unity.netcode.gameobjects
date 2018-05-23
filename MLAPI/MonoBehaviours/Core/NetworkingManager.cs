@@ -633,7 +633,7 @@ namespace MLAPI.MonoBehaviours.Core
             if (NetworkConfig.HandleObjectSpawning)
             {
                 prefabId = prefabId == -1 ? NetworkConfig.NetworkPrefabIds[NetworkConfig.PlayerPrefabName] : prefabId;
-                SpawnManager.CreateSpawnedObject(prefabId, 0, hostClientId, true, pos.GetValueOrDefault(), rot.GetValueOrDefault(), null);
+                SpawnManager.CreateSpawnedObject(prefabId, 0, hostClientId, true, pos.GetValueOrDefault(), rot.GetValueOrDefault(), null, false, false);
             }
 
             if (OnServerStarted != null)
@@ -1161,7 +1161,7 @@ namespace MLAPI.MonoBehaviours.Core
                 {
                     uint networkId = SpawnManager.GetNetworkObjectId();
                     prefabId = prefabId == -1 ? NetworkConfig.NetworkPrefabIds[NetworkConfig.PlayerPrefabName] : prefabId;
-                    GameObject go = SpawnManager.CreateSpawnedObject(prefabId, networkId, clientId, true, position, rotation);
+                    GameObject go = SpawnManager.CreateSpawnedObject(prefabId, networkId, clientId, true, position, rotation, null, false, false);
                     netObject = go.GetComponent<NetworkedObject>();
                     connectedClients[clientId].PlayerObject = go;
                 }
@@ -1257,6 +1257,8 @@ namespace MLAPI.MonoBehaviours.Core
                             writer.WriteFloat(connectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.x);
                             writer.WriteFloat(connectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.y);
                             writer.WriteFloat(connectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.z);
+
+                            writer.WriteBool(false); //No payload data
 
                             if (connectedClients[clientId].PlayerObject.GetComponent<NetworkedObject>().observers.Contains(clientPair.Key))
                                 connectedClients[clientId].PlayerObject.GetComponent<NetworkedObject>().WriteFormattedSyncedVarData(writer);
