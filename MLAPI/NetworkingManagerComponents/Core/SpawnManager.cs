@@ -188,6 +188,27 @@ namespace MLAPI.NetworkingManagerComponents.Core
             return go;
         }
 
+        internal static void UnSpawnObject(NetworkedObject netObject)
+        {
+            if (!netObject.isSpawned)
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot unspawn objects that are not spawned");
+                return;
+            }
+            else if(!netManager.isServer)
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Only server can unspawn objects");
+                return;
+            }
+            else if (!netManager.NetworkConfig.HandleObjectSpawning)
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkConfig is set to not handle object spawning");
+                return;
+            }
+
+            OnDestroyObject(netObject.networkId, false);
+        }
+
         internal static void SpawnObject(NetworkedObject netObject, uint? clientOwnerId = null)
         {
             if (netObject.isSpawned)
@@ -258,6 +279,8 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 NetworkingManager.singleton.connectedClients[spawnedObjects[networkId].OwnerClientId].OwnedObjects.RemoveAll(x => x.NetworkId == networkId);
             }
             GameObject go = spawnedObjects[networkId].gameObject;
+            spawnedObjects[networkId]._isSpawned = false;
+
             if (netManager != null && netManager.isServer)
             {
                 releasedNetworkObjectIds.Push(networkId);

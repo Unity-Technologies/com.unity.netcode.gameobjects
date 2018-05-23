@@ -15,7 +15,7 @@ namespace MLAPI.MonoBehaviours.Core
     {
         private void OnValidate()
         {
-            if(string.IsNullOrEmpty(NetworkedPrefabName))
+            if (string.IsNullOrEmpty(NetworkedPrefabName))
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The NetworkedObject " + gameObject.name + " does not have a NetworkedPrefabName. It has been set to the gameObject name");
                 NetworkedPrefabName = gameObject.name;
@@ -226,6 +226,16 @@ namespace MLAPI.MonoBehaviours.Core
             if (NetworkingManager.singleton != null)
                 SpawnManager.SpawnObject(this);
         }
+
+        /// <summary>
+        /// Unspawns this GameObject and destroys it for other clients. This should be used if the object should be kept on the server
+        /// </summary>
+        public void UnSpawn()
+        {
+            if (NetworkingManager.singleton != null)
+                SpawnManager.UnSpawnObject(this);
+        }
+
         /// <summary>
         /// Spawns an object across the network with a given owner. Can only be called from server
         /// </summary>
