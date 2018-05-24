@@ -249,6 +249,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
             foreach (var client in netManager.connectedClients)
             {
+                netObject.RebuildObservers(client.Key);
                 using (BitWriter writer = BitWriter.Get())
                 {
                     writer.WriteBool(true);
@@ -315,6 +316,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             }
             foreach (var client in netManager.connectedClients)
             {
+                netObject.RebuildObservers(client.Key);
                 using (BitWriter writer = BitWriter.Get())
                 {
                     writer.WriteBool(false);
