@@ -221,16 +221,9 @@ namespace MLAPI.MonoBehaviours.Core
         /// <summary>
         /// Spawns this GameObject across the network. Can only be called from the Server
         /// </summary>
-        public void Spawn()
+        public void Spawn(BitWriter spawnPayload = null)
         {
-            if (NetworkingManager.singleton != null)
-                SpawnManager.SpawnObject(this);
-        }
-
-        public void Spawn(BitWriter spawnPayload)
-        {
-            if (NetworkingManager.singleton != null)
-                SpawnManager.SpawnObject(this, null, spawnPayload);
+            SpawnManager.SpawnObject(this, null, spawnPayload);
         }
 
         /// <summary>
@@ -238,26 +231,22 @@ namespace MLAPI.MonoBehaviours.Core
         /// </summary>
         public void UnSpawn()
         {
-            if (NetworkingManager.singleton != null)
-                SpawnManager.UnSpawnObject(this);
-        }
+            SpawnManager.UnSpawnObject(this);
+        } 
 
         /// <summary>
         /// Spawns an object across the network with a given owner. Can only be called from server
         /// </summary>
         /// <param name="clientId">The clientId to own the object</param>
-        public void SpawnWithOwnership(uint clientId)
+        public void SpawnWithOwnership(uint clientId, BitWriter spawnPayload = null)
         {
-            if (NetworkingManager.singleton != null)
-                SpawnManager.SpawnObject(this, clientId);
+            SpawnManager.SpawnObject(this, clientId, spawnPayload);
         }
 
-        public void SpawnWithOwnership(uint clientId, BitWriter payload)
+        public void SpawnAsPlayerObject(uint clientId, BitWriter spawnPayload = null)
         {
-            if (NetworkingManager.singleton != null)
-                SpawnManager.SpawnObject(this, clientId, payload);
+            SpawnManager.SpawnPlayerObject(this, clientId, spawnPayload);
         }
-
 
         /// <summary>
         /// Removes all ownership of an object from any client. Can only be called from server

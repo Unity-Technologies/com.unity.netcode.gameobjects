@@ -208,6 +208,76 @@ namespace MLAPI.NetworkingManagerComponents.Core
             OnDestroyObject(netObject.networkId, false);
         }
 
+        //Server only
+        internal static void SpawnPlayerObject(NetworkedObject netObject, uint clientId, BitWriter payload = null)
+        {
+            if (netObject.isSpawned)
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Object already spawned");
+                return;
+            }
+            else if (!netManager.isServer)
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Only server can spawn objects");
+                return;
+            }
+            else if (!netManager.NetworkConfig.NetworkPrefabIds.ContainsKey(netObject.NetworkedPrefabName))
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The prefab name " + netObject.NetworkedPrefabName + " does not exist as a networkedPrefab");
+                return;
+            }
+            else if (!netManager.NetworkConfig.HandleObjectSpawning)
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkConfig is set to not handle object spawning");
+                return;
+            }
+            else if (netManager.connectedClients[clientId].PlayerObject != null)
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Client already have a player object");
+                return;
+            }
+            uint netId = GetNetworkObjectId();
+            netObject.networkId = netId;
+            spawnedObjects.Add(netId, netObject);
+            netObject._isSpawned = true;
+            netObject.sceneObject = false;
+            netObject._isPlayerObject = true;
+            netManager.connectedClients[clientId].PlayerObject = netObject.gameObject;
+
+            if (payload == null) netObject.InvokeBehaviourNetworkSpawn(null);
+            else using (BitReader payloadReader = BitReader.Get(payload.Finalize())) netObject.InvokeBehaviourNetworkSpawn(payloadReader);
+
+            foreach (var client in netManager.connectedClients)
+            {
+                using (BitWriter writer = BitWriter.Get())
+                {
+                    writer.WriteBool(true);
+                    writer.WriteUInt(netObject.NetworkId);
+                    writer.WriteUInt(netObject.OwnerClientId);
+                    writer.WriteInt(netManager.NetworkConfig.NetworkPrefabIds[netObject.NetworkedPrefabName]);
+                    writer.WriteBool(netObject.sceneObject == null ? true : netObject.sceneObject.Value);
+                    writer.WriteBool(netObject.observers.Contains(client.Key));
+
+                    writer.WriteFloat(netObject.transform.position.x);
+                    writer.WriteFloat(netObject.transform.position.y);
+                    writer.WriteFloat(netObject.transform.position.z);
+
+                    writer.WriteFloat(netObject.transform.rotation.eulerAngles.x);
+                    writer.WriteFloat(netObject.transform.rotation.eulerAngles.y);
+                    writer.WriteFloat(netObject.transform.rotation.eulerAngles.z);
+
+                    writer.WriteBool(payload != null);
+
+                    if (netObject.observers.Contains(client.Key))
+                        netObject.WriteFormattedSyncedVarData(writer);
+
+                    if (payload != null) writer.WriteWriter(payload);
+
+                    InternalMessageHandler.Send(client.Key, "MLAPI_ADD_OBJECT", "MLAPI_INTERNAL", writer, null);
+                }
+            }
+        }
+
         internal static void SpawnObject(NetworkedObject netObject, uint? clientOwnerId = null, BitWriter payload = null)
         {
             if (netObject.isSpawned)
