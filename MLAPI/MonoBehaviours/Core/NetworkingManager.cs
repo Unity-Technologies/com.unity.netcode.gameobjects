@@ -1161,9 +1161,8 @@ namespace MLAPI.MonoBehaviours.Core
                 {
                     uint networkId = SpawnManager.GetNetworkObjectId();
                     prefabId = prefabId == -1 ? NetworkConfig.NetworkPrefabIds[NetworkConfig.PlayerPrefabName] : prefabId;
-                    GameObject go = SpawnManager.CreateSpawnedObject(prefabId, networkId, clientId, true, position, rotation, null, false, false);
-                    netObject = go.GetComponent<NetworkedObject>();
-                    connectedClients[clientId].PlayerObject = go;
+                    netObject = SpawnManager.CreateSpawnedObject(prefabId, networkId, clientId, true, position, rotation, null, false, false);
+                    connectedClients[clientId].PlayerObject = netObject;
                 }
 
                 int amountOfObjectsToSend = SpawnManager.spawnedObjects.Values.Count;

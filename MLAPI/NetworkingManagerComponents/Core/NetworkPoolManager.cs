@@ -58,17 +58,17 @@ namespace MLAPI.NetworkingManagerComponents.Core
         /// <param name="position">The position to spawn the object at</param>
         /// <param name="rotation">The rotation to spawn the object at</param>
         /// <returns></returns>
-        public static GameObject SpawnPoolObject(string poolName, Vector3 position, Quaternion rotation)
+        public static NetworkedObject SpawnPoolObject(string poolName, Vector3 position, Quaternion rotation)
         {
             if (!NetworkingManager.singleton.isServer)
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Object spawning can only occur on server");
                 return null;
             }
-            GameObject go = Pools[PoolNamesToIndexes[poolName]].SpawnObject(position, rotation);
+            NetworkedObject netObject = Pools[PoolNamesToIndexes[poolName]].SpawnObject(position, rotation);
             using (BitWriter writer = BitWriter.Get())
             {
-                writer.WriteUInt(go.GetComponent<NetworkedObject>().NetworkId);
+                writer.WriteUInt(netObject.NetworkId);
 
                 writer.WriteFloat(position.x);
                 writer.WriteFloat(position.y);
@@ -80,7 +80,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
                 InternalMessageHandler.Send("MLAPI_SPAWN_POOL_OBJECT", "MLAPI_INTERNAL", writer, null);
             }
-            return go;
+            return netObject;
         }
 
         /// <summary>

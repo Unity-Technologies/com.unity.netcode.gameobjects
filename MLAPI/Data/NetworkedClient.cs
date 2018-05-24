@@ -1,6 +1,5 @@
 ﻿using MLAPI.MonoBehaviours.Core;
 using System.Collections.Generic;
-using UnityEngine;
 
 namespace MLAPI.Data
 {
@@ -16,7 +15,7 @@ namespace MLAPI.Data
         /// <summary>
         /// The PlayerObject of the Client
         /// </summary>
-        public GameObject PlayerObject;
+        public NetworkedObject PlayerObject;
         /// <summary>
         /// The NetworkedObject's owned by this Client
         /// </summary>

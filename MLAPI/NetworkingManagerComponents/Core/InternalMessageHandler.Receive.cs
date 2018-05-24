@@ -105,11 +105,11 @@ namespace MLAPI.NetworkingManagerComponents.Core
                     float yRot = reader.ReadFloat();
                     float zRot = reader.ReadFloat();
 
-                    GameObject go = SpawnManager.CreateSpawnedObject(prefabId, networkId, ownerId, isPlayerObject,
+                    NetworkedObject netObject = SpawnManager.CreateSpawnedObject(prefabId, networkId, ownerId, isPlayerObject,
                         new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), reader, visible, false);
-                    go.GetComponent<NetworkedObject>().SetLocalVisibility(visible);
-                    go.GetComponent<NetworkedObject>().sceneObject = sceneObject;
-                    go.SetActive(isActive);
+                    netObject.SetLocalVisibility(visible);
+                    netObject.sceneObject = sceneObject;
+                    netObject.gameObject.SetActive(isActive);
                 }
             }
 
@@ -149,11 +149,11 @@ namespace MLAPI.NetworkingManagerComponents.Core
                     netManager.connectedClients.Add(ownerId, new NetworkedClient() { ClientId = ownerId });
                     netManager.connectedClientsList.Add(netManager.connectedClients[ownerId]);
                 }
-                GameObject go = SpawnManager.CreateSpawnedObject(prefabId, networkId, ownerId, isPlayerObject,
+                NetworkedObject netObject = SpawnManager.CreateSpawnedObject(prefabId, networkId, ownerId, isPlayerObject,
                     new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), reader, visible, hasPayload);
 
-                go.GetComponent<NetworkedObject>().SetLocalVisibility(visible);
-                go.GetComponent<NetworkedObject>().sceneObject = sceneObject;
+                netObject.SetLocalVisibility(visible);
+                netObject.sceneObject = sceneObject;
 
             }
             else
@@ -273,9 +273,10 @@ namespace MLAPI.NetworkingManagerComponents.Core
                         netManager.connectedClients.Add(ownerId, new NetworkedClient() { ClientId = ownerId });
                         netManager.connectedClientsList.Add(netManager.connectedClients[ownerId]);
                     }
-                    GameObject go = SpawnManager.CreateSpawnedObject(prefabId, networkId, ownerId, isPlayerObject, new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), reader, visible, false);
-                    go.GetComponent<NetworkedObject>().SetLocalVisibility(visible);
-                    go.GetComponent<NetworkedObject>().sceneObject = sceneObject;
+                    NetworkedObject netObject = SpawnManager.CreateSpawnedObject(prefabId, networkId, ownerId, isPlayerObject,
+                        new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), reader, visible, false);
+                    netObject.SetLocalVisibility(visible);
+                    netObject.sceneObject = sceneObject;
 
                 }
             }

@@ -6,12 +6,12 @@ namespace MLAPI.Data
 {
     internal class NetworkPool
     {
-        internal GameObject[] objects;
+        internal NetworkedObject[] objects;
         internal ushort poolId;
 
         internal NetworkPool(int prefabId, uint size, ushort poolIndex)
         {
-            objects = new GameObject[size];
+            objects = new NetworkedObject[size];
             poolId = poolIndex;
             for (int i = 0; i < size; i++)
             {
@@ -24,13 +24,13 @@ namespace MLAPI.Data
             }
         }
 
-        internal GameObject SpawnObject(Vector3 position, Quaternion rotation)
+        internal NetworkedObject SpawnObject(Vector3 position, Quaternion rotation)
         {
             for (int i = 0; i < objects.Length; i++)
             {
-                if (objects[i].activeInHierarchy)
+                if (objects[i].gameObject.activeInHierarchy)
                 {
-                    GameObject go = objects[i];
+                    GameObject go = objects[i].gameObject;
                     go.transform.position = position;
                     go.transform.rotation = rotation;
                     go.SetActive(true);

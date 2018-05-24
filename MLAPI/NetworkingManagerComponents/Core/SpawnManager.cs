@@ -152,7 +152,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             }
         }
 
-        internal static GameObject CreateSpawnedObject(int networkedPrefabId, uint networkId, uint owner, bool playerObject, Vector3 position, Quaternion rotation, BitReader reader, bool readSyncedVar, bool readPayload)
+        internal static NetworkedObject CreateSpawnedObject(int networkedPrefabId, uint networkId, uint owner, bool playerObject, Vector3 position, Quaternion rotation, BitReader reader, bool readSyncedVar, bool readPayload)
         {
             if (!netManager.NetworkConfig.NetworkPrefabNames.ContainsKey(networkedPrefabId))
             {
@@ -184,7 +184,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             netObject.transform.rotation = rotation;
             spawnedObjects.Add(netObject.NetworkId, netObject);
             netObject.InvokeBehaviourNetworkSpawn(reader);
-            return go;
+            return netObject;
         }
 
         internal static void UnSpawnObject(NetworkedObject netObject)
@@ -242,7 +242,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             netObject._isSpawned = true;
             netObject.sceneObject = false;
             netObject._isPlayerObject = true;
-            netManager.connectedClients[clientId].PlayerObject = netObject.gameObject;
+            netManager.connectedClients[clientId].PlayerObject = netObject;
 
             if (payload == null) netObject.InvokeBehaviourNetworkSpawn(null);
             else using (BitReader payloadReader = BitReader.Get(payload.Finalize())) netObject.InvokeBehaviourNetworkSpawn(payloadReader);
@@ -353,7 +353,6 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 //Someone owns it.
                 NetworkingManager.singleton.connectedClients[spawnedObjects[networkId].OwnerClientId].OwnedObjects.RemoveAll(x => x.NetworkId == networkId);
             }
-            GameObject go = spawnedObjects[networkId].gameObject;
             spawnedObjects[networkId]._isSpawned = false;
 
             if (netManager != null && netManager.isServer)
@@ -369,6 +368,8 @@ namespace MLAPI.NetworkingManagerComponents.Core
                     }
                 }
             }
+
+            GameObject go = spawnedObjects[networkId].gameObject;
             if (destroyGameObject && go != null)
                 MonoBehaviour.Destroy(go);
             spawnedObjects.Remove(networkId);
