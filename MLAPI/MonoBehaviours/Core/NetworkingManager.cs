@@ -232,6 +232,7 @@ namespace MLAPI.MonoBehaviours.Core
         private object Init(bool server)
         {
             if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Init()");
+            myClientId = 0;
             networkTime = 0f;
             lastSendTickTime = 0f;
             lastEventTickTime = 0f;
