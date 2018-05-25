@@ -350,10 +350,11 @@ namespace MLAPI.NetworkingManagerComponents.Core
         {
             if (!spawnedObjects.ContainsKey(networkId) || (netManager != null && !netManager.NetworkConfig.HandleObjectSpawning))
                 return;
-            if (spawnedObjects[networkId].OwnerClientId != NetworkingManager.singleton.NetworkConfig.NetworkTransport.InvalidDummyId && !spawnedObjects[networkId].isPlayerObject)
+            if (spawnedObjects[networkId].OwnerClientId != NetworkingManager.singleton.NetworkConfig.NetworkTransport.InvalidDummyId && 
+                !spawnedObjects[networkId].isPlayerObject && netManager.connectedClients.ContainsKey(spawnedObjects[networkId].OwnerClientId))
             {
                 //Someone owns it.
-                NetworkingManager.singleton.connectedClients[spawnedObjects[networkId].OwnerClientId].OwnedObjects.RemoveAll(x => x.NetworkId == networkId);
+                netManager.connectedClients[spawnedObjects[networkId].OwnerClientId].OwnedObjects.RemoveAll(x => x.NetworkId == networkId);
             }
             spawnedObjects[networkId]._isSpawned = false;
 

@@ -1077,7 +1077,7 @@ namespace MLAPI.MonoBehaviours.Core
                 if(NetworkConfig.HandleObjectSpawning)
                 {
                     if (connectedClients[clientId].PlayerObject != null)
-                        Destroy(connectedClients[clientId].PlayerObject);
+                        Destroy(connectedClients[clientId].PlayerObject.gameObject);
                     for (int i = 0; i < connectedClients[clientId].OwnedObjects.Count; i++)
                     {
                         if (connectedClients[clientId].OwnedObjects[i] != null)
