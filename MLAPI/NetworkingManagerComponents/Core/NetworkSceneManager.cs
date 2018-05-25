@@ -115,7 +115,6 @@ namespace MLAPI.NetworkingManagerComponents.Core
             }
             else
             {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogError("DESTROING OBJECTS");
                 SpawnManager.DestroySceneObjects();
             }
         }
