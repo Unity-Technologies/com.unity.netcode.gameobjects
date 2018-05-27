@@ -225,7 +225,6 @@ namespace UnityEditor
                 if (tick.Events.Count > 0)
                 {
                     float heightPerEvent = ((position.height - 140f) - (5f * largestTickCount)) / largestTickCount;
-                    float heightPerTotalBackground = ((position.height - 140f) - (5f * largestTickCount)) / tick.Events.Count;
 
                     float currentY = 140f;
                     for (int j = 0; j < tick.Events.Count; j++)
