@@ -64,7 +64,7 @@ namespace MLAPI.MonoBehaviours.Prototyping
         /// Min / Max depth range (2D only).
         /// </summary>
         [Tooltip("Min / Max depth range (Physics2D only).")]
-        public MinMax2D depth2D;
+        public Depth2D depth2D;
 
         /// <summary>
         private float lastUpdateTime;
@@ -168,7 +168,7 @@ namespace MLAPI.MonoBehaviours.Prototyping
 }
 
 [System.Serializable]
-public class MinMax2D
+public class Depth2D
 {
     /// <summary>
     /// Only include objects with a Z coordinate (depth) greater than or equal to this value.
