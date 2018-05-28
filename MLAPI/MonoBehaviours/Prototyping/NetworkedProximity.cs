@@ -1,4 +1,5 @@
 using MLAPI.MonoBehaviours.Core;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -7,8 +8,8 @@ namespace MLAPI.MonoBehaviours.Prototyping
     /// <summary>
     /// A prototype component to set observers based on distance
     /// </summary>
-    [AddComponentMenu("MLAPI/NetworkedProximity")]
-    public class NetworkedProximity : NetworkedBehaviour
+    [AddComponentMenu("MLAPI/NetworkedProximity2")]
+    public class NetworkedProximity2 : NetworkedBehaviour
     {
         /// <summary>
         /// Method to use for checking distance
@@ -55,31 +56,19 @@ namespace MLAPI.MonoBehaviours.Prototyping
         public CheckMethod CheckType = CheckMethod.Physics3D;
 
         /// <summary>
-        /// Specifies whether this query should hit Triggers.
+        /// Specifies whether this query should hit Triggers (Physics3D only.
         /// </summary>
         [Tooltip("Specifies whether this query should hit Triggers (Physics3D only).")]
         public QueryTriggerInteraction queryTriggerInteraction3D = QueryTriggerInteraction.UseGlobal;
 
         /// <summary>
-        /// Min / Max depth range (2D only).
+        /// Min / Max depth range (Physics2D only).
         /// </summary>
         [Tooltip("Min / Max depth range (Physics2D only).")]
         public Depth2D depth2D;
 
         /// <summary>
         private float lastUpdateTime;
-
-        //private void FixedUpdate()
-        //{
-        //	if (!isServer)
-        //		return;
-
-        //	if (Time.time - lastUpdateTime > VisibilityUpdateInterval)
-        //	{
-        //		RebuildObservers();
-        //		lastUpdateTime = NetworkingManager.singleton.NetworkTime;
-        //	}
-        //}
 
         /// <summary>
         /// Called when a new client connects
@@ -165,20 +154,20 @@ namespace MLAPI.MonoBehaviours.Prototyping
             return false;
         }
     }
-}
 
-[System.Serializable]
-public class Depth2D
-{
-    /// <summary>
-    /// Only include objects with a Z coordinate (depth) greater than or equal to this value.
-    /// </summary>
-    [Tooltip("Only include objects with a Z coordinate (depth) greater than or equal to this value.")]
-    public float minDepth = -Mathf.Infinity;
+    [System.Serializable]
+    public class Depth2D
+    {
+        /// <summary>
+        /// Only include objects with a Z coordinate (depth) greater than or equal to this value.
+        /// </summary>
+        [Tooltip("Only include objects with a Z coordinate (depth) greater than or equal to this value.")]
+        public float minDepth = -Mathf.Infinity;
 
-    /// <summary>
-    /// Only include objects with a Z coordinate (depth) less than or equal to this value.
-    /// </summary>
-    [Tooltip("Only include objects with a Z coordinate (depth) less than or equal to this value.")]
-    public float maxDepth = Mathf.Infinity;
+        /// <summary>
+        /// Only include objects with a Z coordinate (depth) less than or equal to this value.
+        /// </summary>
+        [Tooltip("Only include objects with a Z coordinate (depth) less than or equal to this value.")]
+        public float maxDepth = Mathf.Infinity;
+    }
 }
