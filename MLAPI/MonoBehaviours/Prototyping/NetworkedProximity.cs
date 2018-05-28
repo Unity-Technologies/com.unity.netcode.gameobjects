@@ -55,19 +55,31 @@ namespace MLAPI.MonoBehaviours.Prototyping
         public CheckMethod CheckType = CheckMethod.Physics3D;
 
         /// <summary>
-        /// Specifies whether this query should hit Triggers (Physics3D only.
+        /// Specifies whether this query should hit Triggers.
         /// </summary>
         [Tooltip("Specifies whether this query should hit Triggers (Physics3D only).")]
         public QueryTriggerInteraction queryTriggerInteraction3D = QueryTriggerInteraction.UseGlobal;
 
         /// <summary>
-        /// Min / Max depth range (Physics2D only).
+        /// Min / Max depth range (2D only).
         /// </summary>
         [Tooltip("Min / Max depth range (Physics2D only).")]
         public Depth2D depth2D;
 
         /// <summary>
         private float lastUpdateTime;
+
+        private void FixedUpdate()
+        {
+            if (!isServer)
+                return;
+
+            if (Time.time - lastUpdateTime > VisibilityUpdateInterval)
+            {
+                RebuildObservers();
+                lastUpdateTime = NetworkingManager.singleton.NetworkTime;
+            }
+        }
 
         /// <summary>
         /// Called when a new client connects
@@ -106,67 +118,68 @@ namespace MLAPI.MonoBehaviours.Prototyping
                 return true;
             }
 
-            if (Time.time - lastUpdateTime > VisibilityUpdateInterval)
+            switch (CheckType)
             {
-                switch (CheckType)
-                {
-                    case CheckMethod.Physics3D:
+                case CheckMethod.Physics3D:
+                    {
+                        if (!Physics.CheckSphere(transform.position, Range, layerMask, queryTriggerInteraction3D))
                         {
-                            int hits = Physics.OverlapSphereNonAlloc(transform.position, Range, colliders, layerMask, queryTriggerInteraction3D);
-                            //We check if it's equal to since the OverlapSphereNonAlloc only returns what it actually wrote, not what it found.
-                            if (hits >= colliders.Length)
-                            {
-                                //Resize colliders array
-                                colliders = new Collider[(int)((hits + 2) * 1.3f)];
-                                hits = Physics.OverlapSphereNonAlloc(transform.position, Range, colliders, layerMask, queryTriggerInteraction3D);
-                            }
-                            for (int i = 0; i < hits; i++)
-                            {
-                                var uv = colliders[i].GetComponent<NetworkedObject>();
-                                if (uv != null && uv.isPlayerObject)
-                                    observers.Add(uv.OwnerClientId);
-                            }
-                            lastUpdateTime = NetworkingManager.singleton.NetworkTime;
+                            // observers was cleared above and there's nothing nearby...short circuit return
                             return true;
                         }
-                    case CheckMethod.Physics2D:
+
+                        int hits = Physics.OverlapSphereNonAlloc(transform.position, Range, colliders, layerMask, queryTriggerInteraction3D);
+                        //We check if it's equal to since the OverlapSphereNonAlloc only returns what it actually wrote, not what it found.
+                        if (hits >= colliders.Length)
                         {
-                            int hits = Physics2D.OverlapCircleNonAlloc(transform.position, Range, colliders2d, layerMask, depth2D.minDepth, depth2D.maxDepth);
-                            //We check if it's equal to since the OverlapSphereNonAlloc only returns what it actually wrote, not what it found.
-                            if (hits >= colliders.Length)
-                            {
-                                //Resize colliders array
-                                colliders2d = new Collider2D[(int)((hits + 2) * 1.3f)];
-                                hits = Physics2D.OverlapCircleNonAlloc(transform.position, Range, colliders2d, layerMask, depth2D.minDepth, depth2D.maxDepth);
-                            }
-                            for (int i = 0; i < hits; i++)
-                            {
-                                var uv = colliders2d[i].GetComponent<NetworkedObject>();
-                                if (uv != null && (uv.isPlayerObject))
-                                    observers.Add(uv.OwnerClientId);
-                            }
-                            lastUpdateTime = NetworkingManager.singleton.NetworkTime;
-                            return true;
+                            //Resize colliders array
+                            colliders = new Collider[(int)((hits + 2) * 1.3f)];
+                            hits = Physics.OverlapSphereNonAlloc(transform.position, Range, colliders, layerMask, queryTriggerInteraction3D);
                         }
-                }
+                        for (int i = 0; i < hits; i++)
+                        {
+                            var uv = colliders[i].GetComponent<NetworkedObject>();
+                            if (uv != null && uv.isPlayerObject)
+                                observers.Add(uv.OwnerClientId);
+                        }
+                        return true;
+                    }
+                case CheckMethod.Physics2D:
+                    {
+                        int hits = Physics2D.OverlapCircleNonAlloc(transform.position, Range, colliders2d, layerMask, depth2D.minDepth, depth2D.maxDepth);
+                        //We check if it's equal to since the OverlapSphereNonAlloc only returns what it actually wrote, not what it found.
+                        if (hits >= colliders.Length)
+                        {
+                            //Resize colliders array
+                            colliders2d = new Collider2D[(int)((hits + 2) * 1.3f)];
+                            hits = Physics2D.OverlapCircleNonAlloc(transform.position, Range, colliders2d, layerMask, depth2D.minDepth, depth2D.maxDepth);
+                        }
+                        for (int i = 0; i < hits; i++)
+                        {
+                            var uv = colliders2d[i].GetComponent<NetworkedObject>();
+                            if (uv != null && (uv.isPlayerObject))
+                                observers.Add(uv.OwnerClientId);
+                        }
+                        return true;
+                    }
             }
             return false;
         }
     }
+}
 
-    [System.Serializable]
-    public class Depth2D
-    {
-        /// <summary>
-        /// Only include objects with a Z coordinate (depth) greater than or equal to this value.
-        /// </summary>
-        [Tooltip("Only include objects with a Z coordinate (depth) greater than or equal to this value.")]
-        public float minDepth = -Mathf.Infinity;
+[System.Serializable]
+public class Depth2D
+{
+    /// <summary>
+    /// Only include objects with a Z coordinate (depth) greater than or equal to this value.
+    /// </summary>
+    [Tooltip("Only include objects with a Z coordinate (depth) greater than or equal to this value.")]
+    public float minDepth = -Mathf.Infinity;
 
-        /// <summary>
-        /// Only include objects with a Z coordinate (depth) less than or equal to this value.
-        /// </summary>
-        [Tooltip("Only include objects with a Z coordinate (depth) less than or equal to this value.")]
-        public float maxDepth = Mathf.Infinity;
-    }
+    /// <summary>
+    /// Only include objects with a Z coordinate (depth) less than or equal to this value.
+    /// </summary>
+    [Tooltip("Only include objects with a Z coordinate (depth) less than or equal to this value.")]
+    public float maxDepth = Mathf.Infinity;
 }
