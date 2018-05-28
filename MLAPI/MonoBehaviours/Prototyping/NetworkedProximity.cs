@@ -1,5 +1,4 @@
 using MLAPI.MonoBehaviours.Core;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -8,8 +7,8 @@ namespace MLAPI.MonoBehaviours.Prototyping
     /// <summary>
     /// A prototype component to set observers based on distance
     /// </summary>
-    [AddComponentMenu("MLAPI/NetworkedProximity2")]
-    public class NetworkedProximity2 : NetworkedBehaviour
+    [AddComponentMenu("MLAPI/NetworkedProximity")]
+    public class NetworkedProximity : NetworkedBehaviour
     {
         /// <summary>
         /// Method to use for checking distance
