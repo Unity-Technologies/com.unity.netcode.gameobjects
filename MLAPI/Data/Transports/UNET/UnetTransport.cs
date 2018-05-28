@@ -20,7 +20,7 @@ namespace MLAPI.Data.Transports.UNET
         public int serverConnectionId;
         public int serverHostId;
 
-        public List<TransportHost> ServerTransports = new List<TransportHost>()
+        public static List<TransportHost> ServerTransports = new List<TransportHost>()
         {
             new TransportHost()
             {
