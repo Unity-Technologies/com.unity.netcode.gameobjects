@@ -74,7 +74,7 @@ namespace MLAPI.MonoBehaviours.Prototyping
             if (!isServer)
                 return;
 
-            if (Time.time - lastUpdateTime > VisibilityUpdateInterval)
+            if (NetworkingManager.singleton.NetworkTime - lastUpdateTime > VisibilityUpdateInterval)
             {
                 RebuildObservers();
                 lastUpdateTime = NetworkingManager.singleton.NetworkTime;
