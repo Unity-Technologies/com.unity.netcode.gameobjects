@@ -70,10 +70,10 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         public void SkipPadded()     => bitCount += (8 - (bitCount % 8)) % 8;
         public ushort ReadUShort()   => (ushort)ReadULong();
         public uint ReadUInt()       => (uint)ReadULong();
-        public sbyte ReadSByte()     => (sbyte)ZigZagDecode(ReadByte(), 1);
-        public short ReadShort()     => (short)ZigZagDecode(ReadUShort(), 2);
-        public int ReadInt()         => (int)ZigZagDecode(ReadUInt(), 4);
-        public long ReadLong()       => ZigZagDecode(ReadULong(), 8);
+        public sbyte ReadSByte()     => (sbyte)ZigZagDecode(ReadByte());
+        public short ReadShort()     => (short)ZigZagDecode(ReadUShort());
+        public int ReadInt()         => (int)ZigZagDecode(ReadUInt());
+        public long ReadLong()       => ZigZagDecode(ReadULong());
 
         public float[] ReadFloatArray(int known = -1)                   => ReadArray(ReadFloat, known);
         public uint ReadFloatArray(float[] buffer, int known = -1)      => ReadArray(ReadFloat, buffer, known);
@@ -171,7 +171,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
                 }
             return result;
         }
-        private static long ZigZagDecode(ulong d, int bytes) => (long)(((d << (bytes * 8 - 1)) & 1) | (d >> 1));
+        private static long ZigZagDecode(ulong d) => (long)(((d << 63) & 1) | (d >> 1));
 
         public void Dispose()
         {
