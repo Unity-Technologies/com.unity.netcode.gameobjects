@@ -1167,9 +1167,8 @@ namespace MLAPI.MonoBehaviours.Core
                 NetworkedObject netObject = null;
                 if(NetworkConfig.HandleObjectSpawning)
                 {
-                    uint networkId = SpawnManager.GetNetworkObjectId();
                     prefabId = prefabId == -1 ? NetworkConfig.NetworkPrefabIds[NetworkConfig.PlayerPrefabName] : prefabId;
-                    netObject = SpawnManager.CreateSpawnedObject(prefabId, networkId, clientId, true, position, rotation, null, false, false);
+                    netObject = SpawnManager.CreateSpawnedObject(prefabId, 0, clientId, true, position, rotation, null, false, false);
                     connectedClients[clientId].PlayerObject = netObject;
                 }
 
