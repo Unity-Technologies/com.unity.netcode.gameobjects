@@ -171,7 +171,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
                 }
             return result;
         }
-        private static long ZigZagDecode(ulong d) => (long)(((d << 63) & 1) | (d >> 1));
+        private static long ZigZagDecode(ulong d) => (long)(((d & 1) << 63) | (d >> 1));
 
         public void Dispose()
         {
