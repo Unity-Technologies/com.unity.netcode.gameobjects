@@ -47,8 +47,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="GithubAsset.cs" />
-    <Compile Include="GithubRelease.cs" />
     <Compile Include="MLAPIEditor.cs" />
     <Compile Include="MLAPIProfiler.cs" />
     <Compile Include="NetworkedAnimatorEditor.cs" />
