@@ -307,14 +307,16 @@ namespace MLAPI.NetworkingManagerComponents.Core
             spawnedObjects.Add(netId, netObject);
             netObject._isSpawned = true;
             netObject.sceneObject = false;
-            if (payload == null) netObject.InvokeBehaviourNetworkSpawn(null);
-            else using (BitReader payloadReader = BitReader.Get(payload.Finalize())) netObject.InvokeBehaviourNetworkSpawn(payloadReader);    
 
             if (clientOwnerId != null)
             {
                 netObject.ownerClientId = clientOwnerId.Value;
                 NetworkingManager.singleton.connectedClients[clientOwnerId.Value].OwnedObjects.Add(netObject);
             }
+
+            if (payload == null) netObject.InvokeBehaviourNetworkSpawn(null);
+            else using (BitReader payloadReader = BitReader.Get(payload.Finalize())) netObject.InvokeBehaviourNetworkSpawn(payloadReader);    
+
             foreach (var client in netManager.connectedClients)
             {
                 netObject.RebuildObservers(client.Key);
