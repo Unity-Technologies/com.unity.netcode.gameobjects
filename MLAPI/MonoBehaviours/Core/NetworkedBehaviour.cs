@@ -110,6 +110,7 @@ namespace MLAPI.MonoBehaviours.Core
                 _networkedObject = GetComponentInParent<NetworkedObject>();
 
             NetworkedObject.NetworkedBehaviours.Add(this);
+            OnEnabled();
         }
 
         internal bool networkedStartInvoked = false;
@@ -129,7 +130,44 @@ namespace MLAPI.MonoBehaviours.Core
         internal void InternalNetworkStart()
         {
             CacheAttributedMethods();
+            WarnUnityReflectionMethodUse();
         }
+
+        private void WarnUnityReflectionMethodUse()
+        {
+            MethodInfo[] methods = GetType().GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.FlattenHierarchy);
+            for (int i = 0; i < methods.Length; i++)
+            {
+                if (methods[i].Name == "OnDestroy")
+                {
+                    throw new Exception("The method \"OnDestroy\" is not allowed to be defined in classes that inherit NetworkedBehaviour. Please override the \"OnDestroyed\" method instead");
+                }
+                else if (methods[i].Name == "OnDisable")
+                {
+                    throw new Exception("The method \"OnDisable\" is not allowed to be defined in classes that inherit NetworkedBehaviour. Please override the \"OnDisabled\" method instead");
+                }
+                else if (methods[i].Name == "OnEnable")
+                {
+                    throw new Exception("The method \"OnEnable\" is not allowed to be defined in classes that inherit NetworkedBehaviour. Please override the \"OnEnable\" method instead");
+                }
+            }
+        }
+
+        public virtual void OnDisabled()
+        {
+
+        }
+
+        public virtual void OnDestroyed()
+        {
+
+        }
+
+        public virtual void OnEnabled()
+        {
+
+        }
+
         /// <summary>
         /// Gets called when SyncedVars gets updated
         /// </summary>
@@ -446,6 +484,7 @@ namespace MLAPI.MonoBehaviours.Core
         private void OnDisable()
         {
             NetworkedObject.NetworkedBehaviours.Remove(this);
+            OnDisabled();
         }
 
         private void OnDestroy()
@@ -454,6 +493,7 @@ namespace MLAPI.MonoBehaviours.Core
             {
                 DeregisterMessageHandler(pair.Key, pair.Value);
             }
+            OnDestroyed();
         }
 
         #region SYNC_VAR
