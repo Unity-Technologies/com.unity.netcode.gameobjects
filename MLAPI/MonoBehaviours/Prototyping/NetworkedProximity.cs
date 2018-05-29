@@ -1,4 +1,4 @@
-﻿using MLAPI.MonoBehaviours.Core;
+using MLAPI.MonoBehaviours.Core;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -38,25 +38,43 @@ namespace MLAPI.MonoBehaviours.Prototyping
         public float VisibilityUpdateInterval = 1.0f; // in seconds
 
         /// <summary>
+        /// Filter to check objects only on specific layers.
+        /// </summary>
+        [Tooltip("Filter to check objects only on specific layers.")]
+        public LayerMask layerMask;
+
+        /// If enabled, the object will always be hidden from players.
+        /// </summary>
+        [Tooltip("Enable to force this object to be hidden from players.")]
+        public bool ForceHidden = false;
+
+        /// <summary>
         /// The method to use for checking distance
         /// </summary>
         [Tooltip("Which method to use for checking proximity of players.\n\nPhysics3D uses 3D physics to determine proximity.\n\nPhysics2D uses 2D physics to determine proximity.")]
         public CheckMethod CheckType = CheckMethod.Physics3D;
 
         /// <summary>
-        /// If enabled, the object will always be hidden from players.
+        /// Specifies whether this query should hit Triggers.
         /// </summary>
-        [Tooltip("Enable to force this object to be hidden from players.")]
-        public bool ForceHidden = false;
+        [Tooltip("Specifies whether this query should hit Triggers (Physics3D only).")]
+        public QueryTriggerInteraction queryTriggerInteraction3D = QueryTriggerInteraction.UseGlobal;
 
+        /// <summary>
+        /// Min / Max depth range (2D only).
+        /// </summary>
+        [Tooltip("Min / Max depth range (Physics2D only).")]
+        public Depth2D depth2D;
+
+        /// <summary>
         private float lastUpdateTime;
 
-        private void Update()
+        private void FixedUpdate()
         {
             if (!isServer)
                 return;
 
-            if (Time.time - lastUpdateTime > VisibilityUpdateInterval)
+            if (NetworkingManager.singleton.NetworkTime - lastUpdateTime > VisibilityUpdateInterval)
             {
                 RebuildObservers();
                 lastUpdateTime = NetworkingManager.singleton.NetworkTime;
@@ -104,13 +122,19 @@ namespace MLAPI.MonoBehaviours.Prototyping
             {
                 case CheckMethod.Physics3D:
                     {
-                        int hits = Physics.OverlapSphereNonAlloc(transform.position, Range, colliders);
+                        if (!Physics.CheckSphere(transform.position, Range, layerMask, queryTriggerInteraction3D))
+                        {
+                            // observers was cleared above and there's nothing nearby...short circuit return
+                            return true;
+                        }
+
+                        int hits = Physics.OverlapSphereNonAlloc(transform.position, Range, colliders, layerMask, queryTriggerInteraction3D);
                         //We check if it's equal to since the OverlapSphereNonAlloc only returns what it actually wrote, not what it found.
                         if (hits >= colliders.Length)
                         {
                             //Resize colliders array
-                            colliders = new Collider[(int)((hits + 2)* 1.3f)];
-                            hits = Physics.OverlapSphereNonAlloc(transform.position, Range, colliders);
+                            colliders = new Collider[(int)((hits + 2) * 1.3f)];
+                            hits = Physics.OverlapSphereNonAlloc(transform.position, Range, colliders, layerMask, queryTriggerInteraction3D);
                         }
                         for (int i = 0; i < hits; i++)
                         {
@@ -122,13 +146,13 @@ namespace MLAPI.MonoBehaviours.Prototyping
                     }
                 case CheckMethod.Physics2D:
                     {
-                        int hits = Physics2D.OverlapCircleNonAlloc(transform.position, Range, colliders2d);
+                        int hits = Physics2D.OverlapCircleNonAlloc(transform.position, Range, colliders2d, layerMask, depth2D.minDepth, depth2D.maxDepth);
                         //We check if it's equal to since the OverlapSphereNonAlloc only returns what it actually wrote, not what it found.
                         if (hits >= colliders.Length)
                         {
                             //Resize colliders array
                             colliders2d = new Collider2D[(int)((hits + 2) * 1.3f)];
-                            hits = Physics2D.OverlapCircleNonAlloc(transform.position, Range, colliders2d);
+                            hits = Physics2D.OverlapCircleNonAlloc(transform.position, Range, colliders2d, layerMask, depth2D.minDepth, depth2D.maxDepth);
                         }
                         for (int i = 0; i < hits; i++)
                         {
@@ -142,4 +166,21 @@ namespace MLAPI.MonoBehaviours.Prototyping
             return false;
         }
     }
+
+    [System.Serializable]
+    public class Depth2D
+    {
+        /// <summary>
+        /// Only include objects with a Z coordinate (depth) greater than or equal to this value.
+        /// </summary>
+        [Tooltip("Only include objects with a Z coordinate (depth) greater than or equal to this value.")]
+        public float minDepth = -Mathf.Infinity;
+
+        /// <summary>
+        /// Only include objects with a Z coordinate (depth) less than or equal to this value.
+        /// </summary>
+        [Tooltip("Only include objects with a Z coordinate (depth) less than or equal to this value.")]
+        public float maxDepth = Mathf.Infinity;
+    }
 }
+
