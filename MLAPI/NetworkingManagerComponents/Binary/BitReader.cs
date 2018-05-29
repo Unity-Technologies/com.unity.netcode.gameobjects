@@ -70,9 +70,9 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         public void SkipPadded()     => bitCount += (8 - (bitCount % 8)) % 8;
         public ushort ReadUShort()   => (ushort)ReadULong();
         public uint ReadUInt()       => (uint)ReadULong();
-        public sbyte ReadSByte()     => (sbyte)ZigZagDecode(ReadByte());
-        public short ReadShort()     => (short)ZigZagDecode(ReadUShort());
-        public int ReadInt()         => (int)ZigZagDecode(ReadUInt());
+        public sbyte ReadSByte()     => (sbyte)ZigZagDecode(ReadULong());
+        public short ReadShort()     => (short)ZigZagDecode(ReadULong());
+        public int ReadInt()         => (int)ZigZagDecode(ReadULong());
         public long ReadLong()       => ZigZagDecode(ReadULong());
 
         public float[] ReadFloatArray(int known = -1)                   => ReadArray(ReadFloat, known);

@@ -358,8 +358,8 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             t == typeof(int) ? typeof(uint) :
             t == typeof(long) ? typeof(ulong) :
             null;
-
-        public static ulong ZigZagEncode(long d) => (ulong)(((d >> 63)&1) | (d << 1));
+        
+        public static ulong ZigZagEncode(long d) => (ulong)(((d >> 63) & 1) | (d << 1));
 
         public static long GetBitCount<T>(T t)
         {
