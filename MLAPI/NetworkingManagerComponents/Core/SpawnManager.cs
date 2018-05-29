@@ -183,6 +183,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             netObject.transform.position = position;
             netObject.transform.rotation = rotation;
             spawnedObjects.Add(netObject.NetworkId, netObject);
+            if (playerObject) NetworkingManager.singleton.connectedClients[owner].PlayerObject = netObject;
             netObject.InvokeBehaviourNetworkSpawn(reader);
             return netObject;
         }
