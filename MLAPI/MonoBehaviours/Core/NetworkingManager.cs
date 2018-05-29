@@ -269,6 +269,8 @@ namespace MLAPI.MonoBehaviours.Core
 
             if (NetworkConfig.Transport == DefaultTransport.UNET)
                 NetworkConfig.NetworkTransport = new UnetTransport();
+            else if (NetworkConfig.Transport == DefaultTransport.MLAPI_Relay)
+                NetworkConfig.NetworkTransport = new RelayedTransport();
             else if (NetworkConfig.Transport == DefaultTransport.Custom && NetworkConfig.NetworkTransport == null)
                 throw new NullReferenceException("The current NetworkTransport is null");
 

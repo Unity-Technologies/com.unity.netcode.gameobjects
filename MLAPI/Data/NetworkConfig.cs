@@ -27,6 +27,14 @@ namespace MLAPI.Data
         /// </summary>
         public IUDPTransport NetworkTransport = null;
         /// <summary>
+        /// Only used if the transport is MLPAI-Relay
+        /// </summary>
+        public string RelayAddress;
+        /// <summary>
+        /// Only used if the transport is MLPAI-Relay
+        /// </summary>
+        public ushort RelayPort;
+        /// <summary>
         /// Channels used by the NetworkedTransport
         /// </summary>
         public List<Channel> Channels = new List<Channel>();

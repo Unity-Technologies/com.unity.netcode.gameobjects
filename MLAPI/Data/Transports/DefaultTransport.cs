@@ -10,7 +10,11 @@
         /// </summary>
         UNET,
         /// <summary>
-        /// LiteNetLib transport
+        /// MLAPI.Relay transport (UNET internally)
+        /// </summary>
+        MLAPI_Relay,
+        /// <summary>
+        /// Custom transport
         /// </summary>
         Custom
     }
