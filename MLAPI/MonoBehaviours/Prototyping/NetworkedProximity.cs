@@ -166,20 +166,21 @@ namespace MLAPI.MonoBehaviours.Prototyping
             return false;
         }
     }
+
+    [System.Serializable]
+    public class Depth2D
+    {
+        /// <summary>
+        /// Only include objects with a Z coordinate (depth) greater than or equal to this value.
+        /// </summary>
+        [Tooltip("Only include objects with a Z coordinate (depth) greater than or equal to this value.")]
+        public float minDepth = -Mathf.Infinity;
+
+        /// <summary>
+        /// Only include objects with a Z coordinate (depth) less than or equal to this value.
+        /// </summary>
+        [Tooltip("Only include objects with a Z coordinate (depth) less than or equal to this value.")]
+        public float maxDepth = Mathf.Infinity;
+    }
 }
 
-[System.Serializable]
-public class Depth2D
-{
-    /// <summary>
-    /// Only include objects with a Z coordinate (depth) greater than or equal to this value.
-    /// </summary>
-    [Tooltip("Only include objects with a Z coordinate (depth) greater than or equal to this value.")]
-    public float minDepth = -Mathf.Infinity;
-
-    /// <summary>
-    /// Only include objects with a Z coordinate (depth) less than or equal to this value.
-    /// </summary>
-    [Tooltip("Only include objects with a Z coordinate (depth) less than or equal to this value.")]
-    public float maxDepth = Mathf.Infinity;
-}
