@@ -110,10 +110,10 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         public void WriteUShort(ushort s)           => Push(s);
         public void WriteUInt(uint i)               => Push(i);
         public void WriteULong(ulong l)             => Push(l);
-        public void WriteSByte(sbyte b)             => Push(ZigZagEncode(b, 8));
-        public void WriteShort(short s)             => Push(ZigZagEncode(s, 8));
-        public void WriteInt(int i)                 => Push(ZigZagEncode(i, 8));
-        public void WriteLong(long l)               => Push(ZigZagEncode(l, 8));
+        public void WriteSByte(sbyte b)             => Push(ZigZagEncode(b));
+        public void WriteShort(short s)             => Push(ZigZagEncode(s));
+        public void WriteInt(int i)                 => Push(ZigZagEncode(i));
+        public void WriteLong(long l)               => Push(ZigZagEncode(l));
         public void WriteString(string s)           => Push(s);
         public void WriteAlignBits()                => Push<object>(null);
         public void WriteFloatArray(float[] f, bool known = false)                                  => PushArray(f, known);
@@ -149,16 +149,16 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         {
             if (!knownSize) Push((uint)t.Length);
             bool signed = IsSigned(t.GetType().GetElementType());
-            int size = Marshal.SizeOf(t.GetType().GetElementType());
-            foreach (T t1 in t) Push(signed ? (object)ZigZagEncode(t1 as long? ?? t1 as int? ?? t1 as short? ?? t1 as sbyte? ?? 0, size) : (object)t1);
+            //int size = Marshal.SizeOf(t.GetType().GetElementType());
+            foreach (T t1 in t) Push(signed ? (object)ZigZagEncode(t1 as long? ?? t1 as int? ?? t1 as short? ?? t1 as sbyte? ?? 0) : (object)t1);
         }
 
         private void PushArray<T>(T[] t, int startIndex, int length, bool knownSize = false)
         {
             if (!knownSize) Push((uint)t.Length);
             bool signed = IsSigned(t.GetType().GetElementType());
-            int size = Marshal.SizeOf(t.GetType().GetElementType());
-            for (int i = startIndex; i < length; i++) Push(signed ? (object)ZigZagEncode(t[i] as long? ?? t[i] as int? ?? t[i] as short? ?? t[i] as sbyte? ?? 0, size) : (object)t[i]);
+            //int size = Marshal.SizeOf(t.GetType().GetElementType());
+            for (int i = startIndex; i < length; i++) Push(signed ? (object)ZigZagEncode(t[i] as long? ?? t[i] as int? ?? t[i] as short? ?? t[i] as sbyte? ?? 0) : (object)t[i]);
         }
 
         /// <summary>
@@ -359,7 +359,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             t == typeof(long) ? typeof(ulong) :
             null;
 
-        public static ulong ZigZagEncode(long d, int bytes) => (ulong)(((d >> (bytes * 8 - 1))&1) | (d << 1));
+        public static ulong ZigZagEncode(long d) => (ulong)(((d >> 63)&1) | (d << 1));
 
         public static long GetBitCount<T>(T t)
         {
