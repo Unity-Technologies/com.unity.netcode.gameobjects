@@ -4,7 +4,7 @@ MLAPI (Mid level API) is a framework that hopefully simplifies building networke
 
 [![Github All Releases](https://img.shields.io/github/downloads/MidLevel/MLAPI/total.svg)](https://github.com/MidLevel/MLAPI/releases)
 [![GitHub Release](https://img.shields.io/github/release/MidLevel/MLAPI.svg)](https://github.com/MidLevel/MLAPI/releases)
-[![AppVeyor](https://img.shields.io/appveyor/ci/TwoTenPvP/MLAPI.svg)](https://ci.appveyor.com/project/TwoTenPvP/mlapi/build/artifacts)
+[![Build status](https://ci.appveyor.com/api/projects/status/isxpxba8r76x7chu?svg=true)](https://ci.appveyor.com/project/TwoTenPvP/mlapi)
 [![Discord](https://img.shields.io/discord/449263083769036810.svg)](https://discord.gg/FM8SE9E)
 
 
