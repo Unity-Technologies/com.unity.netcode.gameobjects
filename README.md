@@ -2,18 +2,18 @@
 
 MLAPI (Mid level API) is a framework that hopefully simplifies building networked games in Unity. It is built on the LLAPI and is similar to the HLAPI in many ways. It does not however integrate into the compiler and it's meant to offer much greater flexibility than the HLAPI while keeping some of it's simplicity. It offers greater performance over the HLAPI.
 
-[![Github All Releases](https://img.shields.io/github/downloads/TwoTenPvP/MLAPI/total.svg)](https://github.com/TwoTenPvP/MLAPI/releases)
-[![GitHub Release](https://img.shields.io/github/release/TwoTenPvP/MLAPI.svg)](https://github.com/TwoTenPvP/MLAPI/releases)
+[![Github All Releases](https://img.shields.io/github/downloads/MidLevel/MLAPI/total.svg)](https://github.com/MidLevel/MLAPI/releases)
+[![GitHub Release](https://img.shields.io/github/release/MidLevel/MLAPI.svg)](https://github.com/MidLevel/MLAPI/releases)
 [![AppVeyor](https://img.shields.io/appveyor/ci/TwoTenPvP/MLAPI.svg)](https://ci.appveyor.com/project/TwoTenPvP/mlapi/build/artifacts)
 [![Discord](https://img.shields.io/discord/449263083769036810.svg)](https://discord.gg/FM8SE9E)
 
 
-[![Licence](https://img.shields.io/github/license/TwoTenPvP/MLAPI.svg)](https://github.com/TwoTenPvP/MLAPI/blob/master/LICENCE)
-[![Wiki](https://img.shields.io/badge/docs-wiki-green.svg)](https://github.com/TwoTenPvP/MLAPI/wiki)
-[![API](https://img.shields.io/badge/docs-api-green.svg)](https://twotenpvp.github.io/MLAPI/docs/index.html)
+[![Licence](https://img.shields.io/github/license/MidLevel/MLAPI.svg)](https://github.com/MidLevel/MLAPI/blob/master/LICENCE)
+[![Wiki](https://img.shields.io/badge/docs-wiki-green.svg)](https://github.com/MidLevel/MLAPI/wiki)
+[![API](https://img.shields.io/badge/docs-api-green.svg)](https://MidLevel.github.io/MLAPI/docs/index.html)
 
 ### Documentation
-To get started, check the [Wiki](https://github.com/TwoTenPvP/MLAPI/wiki).
+To get started, check the [Wiki](https://github.com/MidLevel/MLAPI/wiki).
 This is also where most documentation lies.
 
 To get the latest features, the CI server automatically builds the latest commits from master branch. Note that this build still requires the other DLL's. It might be unstable. You can download it [Here](https://ci.appveyor.com/project/TwoTenPvP/mlapi/build/artifacts)
@@ -25,12 +25,12 @@ For bug reports or feature requests you want to propose, please use the Issue Tr
 
 ### Requirements
 * Unity 2017 or newer
-* .NET 4.6 or .NET 3.5 with .NET 2.0 non subset [Issue](https://github.com/TwoTenPvP/MLAPI/issues/43)
+* .NET 4.6 or .NET 3.5 with .NET 2.0 non subset [Issue](https://github.com/MidLevel/MLAPI/issues/43)
 
 ## Feature highlights
 * Host support (Client hosts the server)
-* Object and player spawning \[[Wiki page](https://github.com/TwoTenPvP/MLAPI/wiki/Object-Spawning)\]
-* Connection approval \[[Wiki page](https://github.com/TwoTenPvP/MLAPI/wiki/Connection-Approval)\]
+* Object and player spawning \[[Wiki page](https://github.com/MidLevel/MLAPI/wiki/Object-Spawning)\]
+* Connection approval \[[Wiki page](https://github.com/MidLevel/MLAPI/wiki/Connection-Approval)\]
 * Message names
 * Replace the integer QOS with names. When you setup the networking you specify names that are associated with a channel. This makes it easier to manage. You can thus specify that a message should be sent on the "damage" channel which handles all damage related logic and is running on the AllCostDelivery channel.
 * ProtocolVersion to allow making different versions not talk to each other.
@@ -38,25 +38,25 @@ For bug reports or feature requests you want to propose, please use the Issue Tr
 * Custom tickrate
 * Synced network time
 * Supports separate Unity projects crosstalking
-* Passthrough messages \[[Wiki page](https://github.com/TwoTenPvP/MLAPI/wiki/Passthrough-messages)\]
-* Scene Management \[[Wiki page](https://github.com/TwoTenPvP/MLAPI/wiki/Scene-Management)\]
-* Built in Lag compensation \[[Wiki page](https://github.com/TwoTenPvP/MLAPI/wiki/Lag-Compensation)\]
-* NetworkTransform replacement \[[Wiki page](https://github.com/TwoTenPvP/MLAPI/wiki/NetworkedTransform)\]
-* Targeted messages \[[Wiki page](https://github.com/TwoTenPvP/MLAPI/wiki/Targeted-Messages)\]
-* Port of NetworkedAnimator \[[Wiki page](https://github.com/TwoTenPvP/MLAPI/wiki/NetworkedAnimator)\]
-* Networked NavMeshAgent \[[Wiki page](https://github.com/TwoTenPvP/MLAPI/wiki/NetworkedNavMeshAgent)\]
-* Networked Object Pooling \[[Wiki page](https://github.com/TwoTenPvP/MLAPI/wiki/Networked-Object-Pooling)\]
-* Synced Vars \[[Wiki page](https://github.com/TwoTenPvP/MLAPI/wiki/SyncedVars)\]
-* Targeted Synced Vars \[[Wiki page](https://github.com/TwoTenPvP/MLAPI/wiki/SyncedVars#target)\]
-* Encryption \[[Wiki page](https://github.com/TwoTenPvP/MLAPI/wiki/Message-Encryption)\]
-* Super efficient BitWriter & BitReader \[[Wiki page](https://github.com/TwoTenPvP/MLAPI/wiki/BitWriter-&-BitReader)\]
-* Command & Rpc system like HLAPI to allow for quick transfer from HLAPI to MLAPI \[[Wiki page](https://github.com/TwoTenPvP/MLAPI/wiki/Attribute-Message-System)\]
-* Observer system similar to the HLAPI \[[Wiki page](https://github.com/TwoTenPvP/MLAPI/wiki/Observer)\]
-* Custom UDP transport support \[[Wiki page](https://github.com/TwoTenPvP/MLAPI/wiki/Custom-Transports)\]
-* NetworkProfiler \[[Wiki page](https://github.com/TwoTenPvP/MLAPI/wiki/NetworkProfiler-Editor-Window)\]
+* Passthrough messages \[[Wiki page](https://github.com/MidLevel/MLAPI/wiki/Passthrough-messages)\]
+* Scene Management \[[Wiki page](https://github.com/MidLevel/MLAPI/wiki/Scene-Management)\]
+* Built in Lag compensation \[[Wiki page](https://github.com/MidLevel/MLAPI/wiki/Lag-Compensation)\]
+* NetworkTransform replacement \[[Wiki page](https://github.com/MidLevel/MLAPI/wiki/NetworkedTransform)\]
+* Targeted messages \[[Wiki page](https://github.com/MidLevel/MLAPI/wiki/Targeted-Messages)\]
+* Port of NetworkedAnimator \[[Wiki page](https://github.com/MidLevel/MLAPI/wiki/NetworkedAnimator)\]
+* Networked NavMeshAgent \[[Wiki page](https://github.com/MidLevel/MLAPI/wiki/NetworkedNavMeshAgent)\]
+* Networked Object Pooling \[[Wiki page](https://github.com/MidLevel/MLAPI/wiki/Networked-Object-Pooling)\]
+* Synced Vars \[[Wiki page](https://github.com/MidLevel/MLAPI/wiki/SyncedVars)\]
+* Targeted Synced Vars \[[Wiki page](https://github.com/MidLevel/MLAPI/wiki/SyncedVars#target)\]
+* Encryption \[[Wiki page](https://github.com/MidLevel/MLAPI/wiki/Message-Encryption)\]
+* Super efficient BitWriter & BitReader \[[Wiki page](https://github.com/MidLevel/MLAPI/wiki/BitWriter-&-BitReader)\]
+* Command & Rpc system like HLAPI to allow for quick transfer from HLAPI to MLAPI \[[Wiki page](https://github.com/MidLevel/MLAPI/wiki/Attribute-Message-System)\]
+* Observer system similar to the HLAPI \[[Wiki page](https://github.com/MidLevel/MLAPI/wiki/Observer)\]
+* Custom UDP transport support \[[Wiki page](https://github.com/MidLevel/MLAPI/wiki/Custom-Transports)\]
+* NetworkProfiler \[[Wiki page](https://github.com/MidLevel/MLAPI/wiki/NetworkProfiler-Editor-Window)\]
 
 ## Example
-[Example project](https://github.com/TwoTenPvP/MLAPI-Examples)
+[Example project](https://github.com/MidLevel/MLAPI-Examples)
 
 The example project has a much lower priority compared to the library itself. If something doesn't exist in the example nor the wiki. Please open an issue on GitHub.
 
@@ -66,4 +66,4 @@ Special thanks to [Gabriel Tofvesson](https://github.com/GabrielTofvesson) for w
 
 
 ## Issues and missing features
-If there are any issues, bugs or features that are missing. Please open an issue on the GitHub [issues page](https://github.com/TwoTenPvP/MLAPI/issues)
+If there are any issues, bugs or features that are missing. Please open an issue on the GitHub [issues page](https://github.com/MidLevel/MLAPI/issues)
