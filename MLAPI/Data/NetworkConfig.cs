@@ -118,11 +118,11 @@ namespace MLAPI.Data
         /// <summary>
         /// Wheter or not to enable encryption
         /// </summary>
-        public bool EnableEncryption = true;
+        public bool EnableEncryption = false;
         /// <summary>
         /// Wheter or not to enable signed diffie hellman key exchange.
         /// </summary>
-        public bool SignKeyExchange = true;
+        public bool SignKeyExchange = false;
         /// <summary>
         /// Private RSA XML key to use for signing key exchange
         /// </summary>
