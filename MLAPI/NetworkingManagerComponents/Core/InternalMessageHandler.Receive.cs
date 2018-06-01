@@ -244,6 +244,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(FieldTypeHelper.ReadFieldType(reader,
                     field.FieldInfo.FieldType, ref field.FieldValue), i);
             }
+            SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate();
         }
 
         internal static void HandleAddObjects(uint clientId, BitReader reader, int channelId)

@@ -1,7 +1,6 @@
 ﻿using MLAPI.NetworkingManagerComponents.Binary;
 using System;
 using UnityEngine;
-using System.Collections.Generic;
 
 namespace MLAPI.Data
 {
@@ -25,12 +24,12 @@ namespace MLAPI.Data
                 Array ar1 = (Array)o1;
                 Array ar2 = (Array)o2;
                 if (ar1.Length != ar2.Length)
-                    return false;
+                    return false; 
 
                 int i = 0;
                 foreach (object item in ar1)
                 {
-                    if (item != ar2.GetValue(i))
+                    if (!ObjectEqual(item, ar2.GetValue(i)))
                         return false;
                     i++;
                 }
@@ -228,6 +227,7 @@ namespace MLAPI.Data
                     Type elementType = type.GetElementType();
                     Array array = Array.CreateInstance(elementType, arrayLength);
                     for (int i = 0; i < arrayLength; i++) array.SetValue(ReadFieldType(reader, elementType), i);
+                    oldValueRef = array;
                     return array;
                 }
             }
