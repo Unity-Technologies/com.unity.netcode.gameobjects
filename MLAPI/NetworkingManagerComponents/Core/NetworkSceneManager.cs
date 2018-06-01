@@ -108,9 +108,17 @@ namespace MLAPI.NetworkingManagerComponents.Core
         private static void OnSceneUnload(AsyncOperation operation)
         {
             isSwitching = false;
-            if(NetworkingManager.singleton.isServer)
+            if (NetworkingManager.singleton.isServer)
             {
                 SpawnManager.MarkSceneObjects();
+
+                NetworkedObject[] networkedObjects = MonoBehaviour.FindObjectsOfType<NetworkedObject>();
+                for (int i = 0; i < networkedObjects.Length; i++)
+                {
+                    if (!networkedObjects[i].isSpawned && (networkedObjects[i].sceneObject == null || networkedObjects[i].sceneObject == true))
+                        networkedObjects[i].Spawn();
+                }
+
                 SpawnManager.FlushSceneObjects();
             }
             else
