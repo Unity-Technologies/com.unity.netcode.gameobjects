@@ -107,7 +107,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 }
             }
         }
-
+        /*
         internal static void FlushSceneObjects()
         {
             if (!NetworkingManager.singleton.isServer)
@@ -151,6 +151,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 }
             }
         }
+        */
 
         internal static NetworkedObject CreateSpawnedObject(int networkedPrefabId, uint networkId, uint owner, bool playerObject, Vector3 position, Quaternion rotation, BitReader reader, bool readSyncedVar, bool readPayload)
         {

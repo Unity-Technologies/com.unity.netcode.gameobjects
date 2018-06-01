@@ -119,7 +119,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                         networkedObjects[i].Spawn();
                 }
 
-                SpawnManager.FlushSceneObjects();
+                //SpawnManager.FlushSceneObjects();
             }
             else
             {
