@@ -262,11 +262,6 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="methodParams">Method parameters to send</param>
         protected void InvokeCommand(string methodName, params object[] methodParams)
         {
-            if (NetworkingManager.singleton.isServer)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot invoke commands from server");
-                return;
-            }
             if (ownerClientId != NetworkingManager.singleton.MyClientId)
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot invoke command for object without ownership");
@@ -282,7 +277,16 @@ namespace MLAPI.MonoBehaviours.Core
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Calling InvokeCommand is not allowed when AttributeMessageMode is set to disabled");
                 return;
             }
-            if (isHost) cachedMethods[methodName].Invoke(this, methodParams);
+            if (NetworkingManager.singleton.isServer)
+            {
+                if (isHost)
+                {
+                    cachedMethods[methodName].Invoke(this, methodParams);
+                    return;
+                }
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot invoke commands from server");
+                return;
+            }
 
             ulong hash = Data.Cache.GetMessageAttributeHash(methodName, NetworkingManager.singleton.NetworkConfig.AttributeMessageMode);
             using (BitWriter writer = BitWriter.Get())
