@@ -29,11 +29,11 @@ namespace MLAPI.Data
         /// <summary>
         /// Only used if the transport is MLPAI-Relay
         /// </summary>
-        public string RelayAddress;
+        public string RelayAddress = "127.0.0.1";
         /// <summary>
         /// Only used if the transport is MLPAI-Relay
         /// </summary>
-        public ushort RelayPort;
+        public ushort RelayPort = 8888;
         /// <summary>
         /// Channels used by the NetworkedTransport
         /// </summary>
