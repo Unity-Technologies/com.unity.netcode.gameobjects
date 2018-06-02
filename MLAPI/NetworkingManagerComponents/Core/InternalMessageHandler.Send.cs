@@ -19,19 +19,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
             using (BitWriter writer = BitWriter.Get())
             {
-                writer.WriteUShort(messageType);
-                writer.WriteBool(networkId != null);
-
-                if (networkId != null)
-                    writer.WriteUInt(networkId.Value);
-
-                if (orderId != null)
-                    writer.WriteUShort(orderId.Value);
-
-                writer.WriteBool(true);
-                writer.WriteUInt(sourceId);
-
-                writer.WriteAlignBits();
+                writer.WriteGenericMessageHeader(messageType, networkId != null, networkId.GetValueOrDefault(), orderId.GetValueOrDefault(), true, null, sourceId);
 
 #if !DISABLE_CRYPTOGRAPHY
                 if (netManager.NetworkConfig.EncryptedChannelsHashSet.Contains(MessageManager.reverseChannels[channelId]))
@@ -74,21 +62,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
             using (BitWriter writer = BitWriter.Get())
             {
-                writer.WriteUShort(MessageManager.messageTypes[messageType]);
-                writer.WriteBool(networkId != null);
-
-                if (networkId != null)
-                    writer.WriteUInt(networkId.Value);
-
-                if (orderId != null)
-                    writer.WriteUShort(orderId.Value);
-
-                writer.WriteBool(isPassthrough);
-
-                if (isPassthrough)
-                    writer.WriteUInt(clientId);
-
-                writer.WriteAlignBits();
+                writer.WriteGenericMessageHeader(MessageManager.messageTypes[messageType], networkId != null, networkId.GetValueOrDefault(), orderId.GetValueOrDefault(), isPassthrough, clientId, null);
 
 #if !DISABLE_CRYPTOGRAPHY
                 if (netManager.NetworkConfig.EncryptedChannelsHashSet.Contains(channelName))
@@ -133,18 +107,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
             using (BitWriter writer = BitWriter.Get())
             {
-                writer.WriteUShort(MessageManager.messageTypes[messageType]);
-                writer.WriteBool(networkId != null);
-
-                if (networkId != null)
-                    writer.WriteUInt(networkId.Value);
-
-                if (orderId != null)
-                    writer.WriteUShort(orderId.Value);
-
-                writer.WriteBool(false);
-
-                writer.WriteAlignBits();
+                writer.WriteGenericMessageHeader(MessageManager.messageTypes[messageType], networkId != null, networkId.GetValueOrDefault(), orderId.GetValueOrDefault(), false, 0, 0);
 
                 writer.WriteWriter(messageWriter);
 
@@ -187,18 +150,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
             using (BitWriter writer = BitWriter.Get())
             {
-                writer.WriteUShort(MessageManager.messageTypes[messageType]);
-                writer.WriteBool(networkId != null);
-
-                if (networkId != null)
-                    writer.WriteUInt(networkId.Value);
-
-                if (orderId != null)
-                    writer.WriteUShort(orderId.Value);
-
-                writer.WriteBool(false);
-
-                writer.WriteAlignBits();
+                writer.WriteGenericMessageHeader(MessageManager.messageTypes[messageType], networkId != null, networkId.GetValueOrDefault(), orderId.GetValueOrDefault(), false, 0, 0);
 
                 writer.WriteWriter(messageWriter);
 
@@ -246,18 +198,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
             using (BitWriter writer = BitWriter.Get())
             {
-                writer.WriteUShort(MessageManager.messageTypes[messageType]);
-                writer.WriteBool(networkId != null);
-
-                if (networkId != null)
-                    writer.WriteUInt(networkId.Value);
-
-                if (orderId != null)
-                    writer.WriteUShort(orderId.Value);
-
-                writer.WriteBool(false);
-
-                writer.WriteAlignBits();
+                writer.WriteGenericMessageHeader(MessageManager.messageTypes[messageType], networkId != null, networkId.GetValueOrDefault(), orderId.GetValueOrDefault(), false, 0, 0);
 
                 writer.WriteWriter(messageWriter);
 
@@ -306,18 +247,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
             using (BitWriter writer = BitWriter.Get())
             {
-                writer.WriteUShort(MessageManager.messageTypes[messageType]);
-                writer.WriteBool(networkId != null);
-
-                if (networkId != null)
-                    writer.WriteUInt(networkId.Value);
-
-                if (orderId != null)
-                    writer.WriteUShort(orderId.Value);
-
-                writer.WriteBool(false);
-
-                writer.WriteAlignBits();
+                writer.WriteGenericMessageHeader(MessageManager.messageTypes[messageType], networkId != null, networkId.GetValueOrDefault(), orderId.GetValueOrDefault(), false, 0, 0);
 
                 writer.WriteWriter(messageWriter);
 
@@ -355,6 +285,24 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 }
                 return ref failedObservers;
             }
+        }
+
+        private static void WriteGenericMessageHeader(this BitWriter writer, ushort messageType, bool isTargeted, uint targetNetworkId, ushort behaviourIndex, bool isPassthrough, uint? passthroughTarget, uint? passthroughOrigin)
+        {
+            writer.WriteUShort(messageType);
+            writer.WriteBool(isTargeted);
+            if (isTargeted)
+            {
+                writer.WriteUInt(targetNetworkId);
+                writer.WriteUShort(behaviourIndex);
+            }
+            writer.WriteBool(isPassthrough);
+            if (isPassthrough)
+            {
+                if (passthroughTarget != null) writer.WriteUInt(passthroughTarget.Value);
+                if (passthroughOrigin != null) writer.WriteUInt(passthroughOrigin.Value);
+            }
+            writer.WriteAlignBits();
         }
     }
 }
