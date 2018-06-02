@@ -71,7 +71,7 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\..\..\..\..\Program Files\Unity\Editor\Data\Managed\UnityEngine.dll</HintPath>
     </Reference>
-    <Reference Include="UnityStupidity" Condition="'$(Configuration)' == 'CI'">
+    <Reference Include="UnityEngine" Condition="'$(Configuration)' == 'CI'">
       <HintPath>..\UnityStupidity.dll</HintPath>
     </Reference>
   </ItemGroup>
