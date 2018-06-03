@@ -150,8 +150,9 @@ namespace MLAPI.Data
         /// </summary>
         public AttributeMessageMode AttributeMessageMode = AttributeMessageMode.Disabled;
 
-        public static string ToBase64(this NetworkConfig config)
+        public string ToBase64()
         {
+            NetworkConfig config = this;
             using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteUShort(config.ProtocolVersion);
@@ -208,8 +209,9 @@ namespace MLAPI.Data
             }
         }
 
-        public static void FromBase64(this NetworkConfig config, string base64, bool createDummyObject = false)
+        public void FromBase64(string base64, bool createDummyObject = false)
         {
+            NetworkConfig config = this;
             byte[] binary = Convert.FromBase64String(base64);
             using (BitReader reader = BitReader.Get(binary))
             {
