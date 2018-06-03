@@ -120,6 +120,14 @@ namespace MLAPI.MonoBehaviours.Core
             }
         }
 
+        public bool isOwnedByNoone
+        {
+            get
+            {
+                return ownerClientId == NetworkingManager.singleton.NetworkConfig.NetworkTransport.InvalidDummyId;
+            }
+        }
+
         /// <summary>
         /// Gets if the object has yet been spawned across the network
         /// </summary>

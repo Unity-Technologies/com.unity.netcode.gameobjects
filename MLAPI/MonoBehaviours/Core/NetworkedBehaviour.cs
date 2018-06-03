@@ -65,6 +65,15 @@ namespace MLAPI.MonoBehaviours.Core
                 return NetworkingManager.singleton.isHost;
             }
         }
+
+        protected bool isOwnedByNoone
+        {
+            get
+            {
+                return networkedObject.isOwnedByNoone;
+            }
+        }
+
         /// <summary>
         /// Gets the NetworkedObject that owns this NetworkedBehaviour instance
         /// </summary>
