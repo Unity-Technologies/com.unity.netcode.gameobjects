@@ -241,12 +241,24 @@ namespace MLAPI.MonoBehaviours.Core
                 renderers[i].enabled = visible;
         }
 
+
+        private List<MethodInfo> getMethodsRecursive(Type type, List<MethodInfo> list = null) {
+            if(list == null) {
+                list = new List<MethodInfo>();
+            }
+            if(type == typeof(NetworkedBehaviour)) {
+                return list;
+            }
+            list.AddRange(type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.FlattenHierarchy));
+            return getMethodsRecursive(type.BaseType, list); 
+        }
+
         private void CacheAttributedMethods()
         {
             if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.Disabled)
                 return;
 
-            MethodInfo[] methods = GetType().GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.FlattenHierarchy);
+            MethodInfo[] methods = getMethodsRecursive(GetType()).ToArray();
             for (int i = 0; i < methods.Length; i++)
             {
                 if (methods[i].IsDefined(typeof(Command), true) || methods[i].IsDefined(typeof(ClientRpc), true) || methods[i].IsDefined(typeof(TargetRpc), true))
@@ -269,9 +281,9 @@ namespace MLAPI.MonoBehaviours.Core
         /// </summary>
         /// <param name="methodName">Method name to invoke</param>
         /// <param name="methodParams">Method parameters to send</param>
-        protected void InvokeCommand(string methodName, params object[] methodParams)
+        public void InvokeCommand(string methodName, params object[] methodParams)
         {
-            if (ownerClientId != NetworkingManager.singleton.MyClientId)
+            if (ownerClientId != NetworkingManager.singleton.MyClientId && !isLocalPlayer)
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot invoke command for object without ownership");
                 return;
@@ -315,7 +327,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// </summary>
         /// <param name="methodName">Method name to invoke</param>
         /// <param name="methodParams">Method parameters to send</param>
-        protected void InvokeClientRpc(string methodName, params object[] methodParams)
+        public void InvokeClientRpc(string methodName, params object[] methodParams)
         {
             if (!NetworkingManager.singleton.isServer)
             {
@@ -352,7 +364,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// </summary>
         /// <param name="methodName">Method name to invoke</param>
         /// <param name="methodParams">Method parameters to send</param>
-        protected void InvokeTargetRpc(string methodName, params object[] methodParams)
+        public void InvokeTargetRpc(string methodName, params object[] methodParams)
         {
             if (!NetworkingManager.singleton.isServer)
             {
@@ -382,6 +394,142 @@ namespace MLAPI.MonoBehaviours.Core
                 InternalMessageHandler.Send(ownerClientId, "MLAPI_RPC", messageChannelName[methodName], writer, networkId);
             }
         }
+
+        #region ActionInvokes
+        /// <summary>
+        /// Calls a Command method on server
+        /// </summary>
+        /// <param name="method">Method to invoke</param>
+        public void InvokeCommand(System.Action method) {
+            InvokeCommand(method.Method.Name);
+        }
+        /// <summary>
+        /// Calls a Command method on server
+        /// </summary>
+        /// <param name="method">Method to invoke</param>
+        /// <param name="p1">Method parameter to send</param>
+        public void InvokeCommand<T1>(System.Action<T1> method, T1 p1) {
+            InvokeCommand(method.Method.Name, new object[] { p1 });
+        }
+        /// <summary>
+        /// Calls a Command method on server
+        /// </summary>
+        /// <param name="method">Method to invoke</param>
+        /// <param name="p1">Method parameter to send</param>
+        /// <param name="p2">Method parameter to send</param>
+        public void InvokeCommand<T1, T2>(System.Action<T1, T2> method, T1 p1, T2 p2) {
+            InvokeCommand(method.Method.Name, new object[] { p1, p2});
+        }
+        /// <summary>
+        /// Calls a Command method on server
+        /// </summary>
+        /// <param name="method">Method to invoke</param>
+        /// <param name="p1">Method parameter to send</param>
+        /// <param name="p2">Method parameter to send</param>
+        /// <param name="p3">Method parameter to send</param>
+        public void InvokeCommand<T1, T2, T3>(System.Action<T1, T2, T3> method, T1 p1, T2 p2, T3 p3) {
+            InvokeCommand(method.Method.Name, new object[] { p1, p2, p3 });
+        }
+        /// <summary>
+        /// Calls a Command method on server
+        /// </summary>
+        /// <param name="method">Method to invoke</param>
+        /// <param name="p1">Method parameter to send</param>
+        /// <param name="p2">Method parameter to send</param>
+        /// <param name="p3">Method parameter to send</param>
+        /// <param name="p4">Method parameter to send</param>
+        public void InvokeCommand<T1, T2, T3, T4>(System.Action<T1, T2, T3, T4> method, T1 p1, T2 p2, T3 p3, T4 p4) {
+            InvokeCommand(method.Method.Name, new object[] { p1, p2, p3, p4 });
+        }
+
+        /// <summary>
+        /// Calls a ClientRpc method on all clients
+        /// </summary>
+        /// <param name="method">Method to invoke</param>
+        public void InvokeClientRpc(System.Action method) {
+            InvokeClientRpc(method.Method.Name);
+        }
+        /// <summary>
+        /// Calls a ClientRpc method on all clients
+        /// </summary>
+        /// <param name="method">Method to invoke</param>
+        /// <param name="p1">Method parameter to send</param>
+        public void InvokeClientRpc<T1>(System.Action<T1> method, T1 p1) {
+            InvokeClientRpc(method.Method.Name, new object[] { p1 });
+        }
+        /// <summary>
+        /// Calls a ClientRpc method on all clients
+        /// </summary>
+        /// <param name="method">Method to invoke</param>
+        /// <param name="p1">Method parameter to send</param>
+        /// <param name="p2">Method parameter to send</param>
+        public void InvokeClientRpc<T1, T2>(System.Action<T1, T2> method, T1 p1, T2 p2) {
+            InvokeClientRpc(method.Method.Name, new object[] { p1, p2 });
+        }
+        /// <summary>
+        /// Calls a ClientRpc method on all clients
+        /// </summary>
+        /// <param name="method">Method to invoke</param>
+        /// <param name="p1">Method parameter to send</param>
+        /// <param name="p2">Method parameter to send</param>
+        /// <param name="p3">Method parameter to send</param>
+        public void InvokeClientRpc<T1, T2, T3>(System.Action<T1, T2, T3> method, T1 p1, T2 p2, T3 p3) {
+            InvokeClientRpc(method.Method.Name, new object[] { p1, p2, p3 });
+        }
+        /// <summary>
+        /// Calls a ClientRpc method on all clients
+        /// </summary>
+        /// <param name="method">Method to invoke</param>
+        /// <param name="p1">Method parameter to send</param>
+        /// <param name="p2">Method parameter to send</param>
+        /// <param name="p3">Method parameter to send</param>
+        /// <param name="p4">Method parameter to send</param>
+        public void InvokeClientRpc<T1, T2, T3, T4>(System.Action<T1, T2, T3, T4> method, T1 p1, T2 p2, T3 p3, T4 p4) {
+            InvokeClientRpc(method.Method.Name, new object[] { p1, p2, p3, p4 });
+        }
+
+        /// <summary>
+        /// Calls a TargetRpc method on the owner client
+        /// </summary>
+        /// <param name="method">Method to invoke</param>
+        public void InvokeTargetRpc(System.Action method) {
+            InvokeTargetRpc(method.Method.Name);
+        }
+        /// <summary>
+        /// Calls a TargetRpc method on the owner client
+        /// </summary>
+        /// <param name="p1">Method parameter to send</param>
+        public void InvokeTargetRpc<T1>(System.Action<T1> method, T1 p1) {
+            InvokeTargetRpc(method.Method.Name, new object[] { p1 });
+        }
+        /// <summary>
+        /// Calls a TargetRpc method on the owner client
+        /// </summary>
+        /// <param name="p1">Method parameter to send</param>
+        /// <param name="p2">Method parameter to send</param>
+        public void InvokeTargetRpc<T1, T2>(System.Action<T1, T2> method, T1 p1, T2 p2) {
+            InvokeTargetRpc(method.Method.Name, new object[] { p1, p2 });
+        }
+        /// <summary>
+        /// Calls a TargetRpc method on the owner client
+        /// </summary>
+        /// <param name="p1">Method parameter to send</param>
+        /// <param name="p2">Method parameter to send</param>
+        /// <param name="p3">Method parameter to send</param>
+        public void InvokeTargetRpc<T1, T2, T3>(System.Action<T1, T2, T3> method, T1 p1, T2 p2, T3 p3) {
+            InvokeTargetRpc(method.Method.Name, new object[] { p1, p2, p3 });
+        }
+        /// <summary>
+        /// Calls a TargetRpc method on the owner client
+        /// </summary>
+        /// <param name="p1">Method parameter to send</param>
+        /// <param name="p2">Method parameter to send</param>
+        /// <param name="p3">Method parameter to send</param>
+        /// <param name="p4">Method parameter to send</param>
+        public void InvokeTargetRpc<T1, T2, T3, T4>(System.Action<T1, T2, T3, T4> method, T1 p1, T2 p2, T3 p3, T4 p4) {
+            InvokeTargetRpc(method.Method.Name, new object[] { p1, p2, p3, p4 });
+        }
+        #endregion
 
         /// <summary>
         /// Registers a message handler
