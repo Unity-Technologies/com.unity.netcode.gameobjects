@@ -242,7 +242,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                     continue;
                 SyncedVarField field = SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).syncedVarFields[i];
                 SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(FieldTypeHelper.ReadFieldType(reader,
-                    field.FieldInfo.FieldType, ref field.FieldValue), i);
+                    field.FieldInfo.FieldType, field.FieldValue), i);
             }
             SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate();
         }

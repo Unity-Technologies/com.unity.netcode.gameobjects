@@ -331,7 +331,8 @@ namespace MLAPI.MonoBehaviours.Core
             }
         }
 
-        //Writes SyncedVar data in a formatted way so taht the SetFormattedSyncedVarData method can read it.
+
+        //Writes SyncedVar data in a formatted way so that the SetFormattedSyncedVarData method can read it.
         //The format doesn't NECCECARLY correspond with the "general syncedVar message layout" 
         //as this should only be used for reading SyncedVar data that is to be read by the SetFormattedData method
         //*

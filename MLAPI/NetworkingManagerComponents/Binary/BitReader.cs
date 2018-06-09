@@ -22,6 +22,22 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         private static int pools = 0;
         private static readonly Queue<BitReader> readerPool = new Queue<BitReader>();
 
+        public ulong Remaining
+        {
+            get
+            {
+                return BitLength - (ulong)bitCount;
+            }
+        }
+
+        public ulong BitLength
+        {
+            get
+            {
+                return (ulong)readFrom.Length * 8UL;
+            }
+        }
+
         private BitReader(byte[] readFrom)
         {
             this.readFrom = readFrom;
