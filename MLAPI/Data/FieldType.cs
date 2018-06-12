@@ -95,7 +95,7 @@ namespace MLAPI.Data
                 else // Send a diff
                 {
                     Array oldArray = oldValue as Array;
-                    bool diff = oldValue == null || newArray.Length != oldArray.Length;
+                    bool diff = newArray.Length != oldArray.Length;
                     writer.WriteBool(diff); //Has length changed
                     if (diff) writer.WriteUShort((ushort)newArray.Length);
                     object newHolder = null, oldHolder = null;
