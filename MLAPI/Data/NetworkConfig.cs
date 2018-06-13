@@ -35,6 +35,10 @@ namespace MLAPI.Data
         /// </summary>
         public ushort RelayPort = 8888;
         /// <summary>
+        /// Wheter or not to use the relay
+        /// </summary>
+        public bool RelayEnabled = true;
+        /// <summary>
         /// Channels used by the NetworkedTransport
         /// </summary>
         public List<Channel> Channels = new List<Channel>();

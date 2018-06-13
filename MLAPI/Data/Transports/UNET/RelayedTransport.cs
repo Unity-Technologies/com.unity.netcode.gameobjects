@@ -17,9 +17,6 @@ namespace MLAPI.Data.Transports.UNET
         public int serverConnectionId;
         public int serverHostId;
 
-        private static string relayAddress { get => NetworkingManager.singleton.NetworkConfig.RelayAddress; }
-        private static ushort relayPort { get => NetworkingManager.singleton.NetworkConfig.RelayPort; }
-
         public static List<TransportHost> ServerTransports = new List<TransportHost>()
         {
             new TransportHost()
@@ -33,8 +30,8 @@ namespace MLAPI.Data.Transports.UNET
         public int Connect(string address, int port, object settings, bool websocket, out byte error)
         {
             NetworkTransport.Init();
-            int hostId = RelayTransport.AddHost((HostTopology)settings, false, relayAddress, relayPort);
-            return RelayTransport.Connect(hostId, address, port, relayAddress, relayPort, 0, out error);
+            int hostId = RelayTransport.AddHost((HostTopology)settings, false);
+            return RelayTransport.Connect(hostId, address, port, 0, out error);
         }
 
         public void DisconnectClient(uint clientId)
@@ -129,9 +126,9 @@ namespace MLAPI.Data.Transports.UNET
             for (int i = 0; i < ServerTransports.Count; i++)
             {
                 if (ServerTransports[i].Websockets)
-                    RelayTransport.AddWebsocketHost(topology, ServerTransports[i].Port, true, relayAddress, relayPort);
+                    RelayTransport.AddWebsocketHost(topology, ServerTransports[i].Port, true);
                 else
-                    RelayTransport.AddHost(topology, ServerTransports[i].Port, true, relayAddress, relayPort);
+                    RelayTransport.AddHost(topology, ServerTransports[i].Port, true);
             }
         }
 
@@ -177,8 +174,8 @@ namespace MLAPI.Data.Transports.UNET
 
         public void Connect(string address, int port, object settings, out byte error)
         {
-            serverHostId = RelayTransport.AddHost(new HostTopology((ConnectionConfig)settings, 1), false, relayAddress, relayPort);
-            serverConnectionId = RelayTransport.Connect(serverHostId, address, port, relayAddress, relayPort, 0, out error);
+            serverHostId = RelayTransport.AddHost(new HostTopology((ConnectionConfig)settings, 1), false);
+            serverConnectionId = RelayTransport.Connect(serverHostId, address, port, 0, out error);
         }
     }
 }
