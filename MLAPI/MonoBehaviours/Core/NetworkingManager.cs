@@ -803,7 +803,7 @@ namespace MLAPI.MonoBehaviours.Core
                     NetworkProfiler.EndTick();
                 }
 
-                if (NetworkConfig.EnableTimeResync && NetworkTime - lastTimeSyncTime >= 30)
+                if (isServer && NetworkConfig.EnableTimeResync && NetworkTime - lastTimeSyncTime >= 30)
                 {
                     NetworkProfiler.StartTick(TickType.Event);
                     SyncTime();
