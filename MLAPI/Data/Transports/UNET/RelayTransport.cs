@@ -38,7 +38,6 @@ namespace MLAPI.Data.Transports.UNET
             RelayTransport.port = (ushort)serverPort;
             relayConnectionId = NetworkTransport.Connect(hostId, RelayAddress, RelayPort, exceptionConnectionId, out error); // Requests connection
             return relayConnectionId;
-            // Wait here until connect event is accepted
         }
 
         public static int ConnectWithSimulator(int hostId, string serverAddress, int serverPort, int exceptionConnectionId, out byte error, ConnectionSimulatorConfig conf)
@@ -151,40 +150,33 @@ namespace MLAPI.Data.Transports.UNET
             return ret;
         }
 
-        private static byte[] disconnectBuffer = new byte[3] { (byte)MessageType.ClientDisconnect, 0, 0 };
+        private static byte[] disconnectBuffer = new byte[] { 0, 0, (byte)MessageType.ClientDisconnect };
         public static bool Disconnect(int hostId, int connectionId, out byte error)
         {
             if (!Enabled) NetworkTransport.Disconnect(hostId, connectionId, out error);
 
             if (!isClient)
             {
-                disconnectBuffer.ToBytes((ushort)connectionId, 1);
+                disconnectBuffer.ToBytes((ushort)connectionId); // Tell relay who to drop
                 return NetworkTransport.Send(hostId, relayConnectionId, GetReliableChannel(), disconnectBuffer, 3, out error);
             }
-            else
-            {
-                return NetworkTransport.Disconnect(hostId, connectionId, out error);
-            }
+            else return NetworkTransport.Disconnect(hostId, connectionId, out error);
         }
 
         public static bool Send(int hostId, int connectionId, int channelId, byte[] buffer, int size, out byte error)
         {
             if (!Enabled) return NetworkTransport.Send(hostId, connectionId, channelId, buffer, size, out error);
-
-            if (isClient)
+            //ForwardOffset(buffer, 1, size); // Offsets just the bytes we're sending (isClient old)
+            ++size;
+            if (!isClient)
             {
-                ForwardOffset(buffer, 1, size); // Offsets just the bytes we're sending
-                ++size;
-            }
-            else
-            {
-                ForwardOffset(buffer, 3, size); // Offsets just the bytes we're sending
-                size += 3;
+                //ForwardOffset(buffer, 3, size); // Offsets just the bytes we're sending
+                size += 2;
 
-                buffer[1] = (byte)connectionId;
-                buffer[2] = (byte)(connectionId >> 8);
+                buffer[size - 3] = (byte)connectionId;
+                buffer[size - 2] = (byte)(connectionId >> 8);
             }
-            buffer[0] = (byte)MessageType.Data;
+            buffer[size - 1] = (byte)MessageType.Data;
 
             return NetworkTransport.Send(hostId, relayConnectionId, channelId, buffer, size, out error);
         }
@@ -193,20 +185,16 @@ namespace MLAPI.Data.Transports.UNET
         {
             if (!Enabled) return NetworkTransport.QueueMessageForSending(hostId, connectionId, channelId, buffer, size, out error);
 
-            if (isClient)
+            ++size;
+            if (!isClient)
             {
-                ForwardOffset(buffer, 1, size); // Offsets just the bytes we're sending
-                ++size;
-            }
-            else
-            {
-                ForwardOffset(buffer, 3, size); // Offsets just the bytes we're sending
-                size += 3;
+                //ForwardOffset(buffer, 3, size); // Offsets just the bytes we're sending
+                size += 2;
 
-                buffer[1] = (byte)connectionId;
-                buffer[2] = (byte)(connectionId >> 8);
+                buffer[size - 3] = (byte)connectionId;
+                buffer[size - 2] = (byte)(connectionId >> 8);
             }
-            buffer[0] = (byte)MessageType.Data;
+            buffer[size - 1] = (byte)MessageType.Data;
 
             return NetworkTransport.QueueMessageForSending(hostId, relayConnectionId, channelId, buffer, size, out error);
         }
@@ -237,37 +225,26 @@ namespace MLAPI.Data.Transports.UNET
             switch (@event)
             {
                 case NetworkEventType.DataEvent:
-                    MessageType messageType = (MessageType)buffer[0];
+                    MessageType messageType = (MessageType)buffer[receivedSize - 1];
                     switch (messageType)
                     {
                         case MessageType.ConnectToServer: // Connection approved
                             {
                                 if (!isClient)
-                                {
-                                    connectionId = (ushort)(buffer[1] | (buffer[2] << 8)); // Parse connection id
-                                }
+                                    connectionId = (ushort)(buffer[receivedSize - 3] | (buffer[receivedSize - 2] << 8)); // Parse connection id
                                 return NetworkEventType.ConnectEvent;
                             }
                         case MessageType.Data:
                             {
-                                if (isClient)
-                                {
-                                    // Remove our headers
-                                    ReverseOffset(buffer, 1, receivedSize);
-                                    --receivedSize;
-                                }
-                                else
-                                {
-                                    // Remove our headers
-                                    connectionId = buffer.FromBytes(1);
-                                    ReverseOffset(buffer, 3, receivedSize);
-                                    receivedSize -= 3;
-                                }
+                                // Implicitly remove header
+                                if (isClient) --receivedSize;
+                                else connectionId = buffer.FromBytes(receivedSize -= 3);
+
                                 return NetworkEventType.DataEvent;
                             }
                         case MessageType.ClientDisconnect:
                             {
-                                connectionId = (ushort)(buffer[1] | (buffer[2] << 8)); // Parse connection id
+                                connectionId = (ushort)(buffer[0] | (buffer[1] << 8)); // Parse connection id
                                 return NetworkEventType.DisconnectEvent;
                             }
                     }
@@ -278,14 +255,13 @@ namespace MLAPI.Data.Transports.UNET
                         {
                             //Connect via relay
                             string s = new StringBuilder(address).Append(':').Append(port).ToString();
-                            buffer[0] = (byte)MessageType.ConnectToServer;
-                            buffer[1] = (byte)s.Length;
-                            for (int i = 0; i < s.Length; i++)
-                            {
-                                buffer[i + 2] = (byte)s[i]; // Get ASCII characters
-                            }
+                            buffer[s.Length] = (byte)MessageType.ConnectToServer;
 
-                            NetworkTransport.Send(hostId, connectionId, GetReliableChannel(), buffer, s.Length + 2, out error);
+                            // Address data length is implied
+                            for (int i = 0; i < s.Length; i++)
+                                buffer[i] = (byte)s[i]; // Get ASCII characters
+
+                            NetworkTransport.Send(hostId, connectionId, GetReliableChannel(), buffer, s.Length + 1, out error);
                         }
                         else
                         {
