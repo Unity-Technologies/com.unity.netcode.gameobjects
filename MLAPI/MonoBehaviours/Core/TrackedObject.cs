@@ -26,7 +26,8 @@ namespace MLAPI.MonoBehaviours.Core
         {
             get
             {
-                return Framekeys.Count;
+                if (Framekeys == null) return 0;
+                else return Framekeys.Count;
             }
         }
 
@@ -37,10 +38,8 @@ namespace MLAPI.MonoBehaviours.Core
         {
             get
             {
-                if (Framekeys.Count < 2)
-                    return 0;
-                float totalSpan = Framekeys.ElementAt(Framekeys.Count - 1) - Framekeys.ElementAt(0);
-                return (totalSpan / Framekeys.Count) * 1000f;
+                if (Framekeys == null || Framekeys.Count == 0) return 0;
+                else return ((Framekeys.ElementAt(Framekeys.Count - 1) - Framekeys.ElementAt(0)) / Framekeys.Count) * 1000f;
             }
         }
 
@@ -51,7 +50,8 @@ namespace MLAPI.MonoBehaviours.Core
         {
             get
             {
-                return Framekeys.ElementAt(Framekeys.Count - 1) - Framekeys.ElementAt(0);
+                if (Framekeys == null) return 0;
+                else return Framekeys.ElementAt(Framekeys.Count - 1) - Framekeys.ElementAt(0);
             }
         }
 
