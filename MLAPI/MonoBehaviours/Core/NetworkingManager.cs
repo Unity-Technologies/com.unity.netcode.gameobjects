@@ -193,7 +193,15 @@ namespace MLAPI.MonoBehaviours.Core
             {
                 for (int i = 0; i < NetworkConfig.NetworkedPrefabs.Count; i++)
                 {
-                    if (string.IsNullOrEmpty(NetworkConfig.NetworkedPrefabs[i].name))
+                    if (NetworkConfig.NetworkedPrefabs[i].prefab == null)
+                    {
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The NetworkedPrefab at index [" + i + "] is not assigned");
+                    }
+                    else if (!NetworkConfig.NetworkedPrefabs[i].prefab.GetComponent<NetworkedObject>())
+                    {
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The NetworkedPrefab " + NetworkConfig.NetworkedPrefabs[i].prefab.name + " does not have a NetworkedObject component");
+                    }
+                    else if (string.IsNullOrEmpty(NetworkConfig.NetworkedPrefabs[i].name))
                     {
                         if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The NetworkedPrefab " + NetworkConfig.NetworkedPrefabs[i].prefab.name + " does not have a NetworkedPrefabName.");
                     }
@@ -284,7 +292,17 @@ namespace MLAPI.MonoBehaviours.Core
                 HashSet<string> networkedPrefabName = new HashSet<string>();
                 for (int i = 0; i < NetworkConfig.NetworkedPrefabs.Count; i++)
                 {
-                    if (networkedPrefabName.Contains(NetworkConfig.NetworkedPrefabs[i].name))
+                    if (NetworkConfig.NetworkedPrefabs[i].prefab == null)
+                    {
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The NetworkedPrefab at index [" + i + "] is not assigned");
+                        continue;
+                    }
+                    else if (!NetworkConfig.NetworkedPrefabs[i].prefab.GetComponent<NetworkedObject>())
+                    {
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The NetworkedPrefab " + NetworkConfig.NetworkedPrefabs[i].prefab.name + " does not have a NetworkedObject component");
+                        continue;
+                    }
+                    else if (networkedPrefabName.Contains(NetworkConfig.NetworkedPrefabs[i].name))
                     {
                         if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Duplicate NetworkedPrefabName " + NetworkConfig.NetworkedPrefabs[i].name);
                         continue;
