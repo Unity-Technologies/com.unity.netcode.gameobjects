@@ -197,7 +197,7 @@ namespace MLAPI.MonoBehaviours.Core
                     {
                         if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The NetworkedPrefab at index [" + i + "] is not assigned");
                     }
-                    else if (!NetworkConfig.NetworkedPrefabs[i].prefab.GetComponent<NetworkedObject>())
+                    else if (NetworkConfig.NetworkedPrefabs[i].prefab.GetComponent<NetworkedObject>() == null)
                     {
                         if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The NetworkedPrefab " + NetworkConfig.NetworkedPrefabs[i].prefab.name + " does not have a NetworkedObject component");
                     }
@@ -297,7 +297,7 @@ namespace MLAPI.MonoBehaviours.Core
                         if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The NetworkedPrefab at index [" + i + "] is not assigned");
                         continue;
                     }
-                    else if (!NetworkConfig.NetworkedPrefabs[i].prefab.GetComponent<NetworkedObject>())
+                    else if (NetworkConfig.NetworkedPrefabs[i].prefab.GetComponent<NetworkedObject>() == null)
                     {
                         if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The NetworkedPrefab " + NetworkConfig.NetworkedPrefabs[i].prefab.name + " does not have a NetworkedObject component");
                         continue;
