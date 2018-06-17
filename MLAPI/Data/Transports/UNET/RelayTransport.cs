@@ -273,7 +273,7 @@ namespace MLAPI.Data.Transports.UNET
                     }
                 case NetworkEventType.DisconnectEvent:
                     {
-                        if ((NetworkError)error == NetworkError.CRCMismatch) Debug.LogError("[MLAPI.Relay] The MLAPI Relay detected a CRC missmatch. This could be due to the maxClients or other connectionConfig settings not being the same");
+                        if ((NetworkError)error == NetworkError.CRCMismatch) Debug.LogError("[MLAPI.Relay] The MLAPI Relay detected a CRC mismatch. This could be due to the maxClients or other connectionConfig settings not being the same");
                         return NetworkEventType.DisconnectEvent;
                     }
             }

@@ -14,7 +14,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             byte[] configHash = reader.ReadByteArray(20);
             if (!netManager.NetworkConfig.CompareConfig(configHash))
             {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkConfiguration missmatch. The configuration between the server and client does not match");
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkConfiguration mismatch. The configuration between the server and client does not match");
                 netManager.DisconnectClient(clientId);
                 return;
             }
