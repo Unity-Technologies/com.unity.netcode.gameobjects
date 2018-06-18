@@ -57,9 +57,9 @@ namespace MLAPI.MonoBehaviours.Core
 		private static NetworkingManager _singleton;
 
 		/// <summary>
-		/// Makes sure that when a client connects, that their network configuration is identical to ours
+		/// Makes sure that when a client connects, that their spawnable prefabs is identical to ours
 		/// </summary>
-		public bool EnforceEqualConfigs = true;
+		public bool EnforceEqualSpawnables = true;
 
 		/// <summary>
 		/// The clientId the server calls the local client by, only valid for clients

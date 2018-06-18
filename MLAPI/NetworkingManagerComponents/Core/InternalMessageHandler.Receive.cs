@@ -15,7 +15,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
 			#region NetworkConfig Hash Checking
 
-			if (netManager.EnforceEqualConfigs && !netManager.NetworkConfig.CompareConfig(configHash))
+			if (!netManager.NetworkConfig.CompareConfig(configHash))
 			{
 				if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkConfiguration mismatch. The configuration between the server and client does not match");
 				netManager.DisconnectClient(clientId);
