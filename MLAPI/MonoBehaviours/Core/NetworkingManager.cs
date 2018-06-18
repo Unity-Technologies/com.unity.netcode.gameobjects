@@ -366,7 +366,7 @@ namespace MLAPI.MonoBehaviours.Core
 					}
 					if (NetworkConfig.MessageTypes[i].Passthrough)
 					{
-						NetworkConfig.PassthroughMessageHashSet.Add(MessageManager.messageTypes[NetworkConfig.MessageTypes[i].Name]);
+						NetworkConfig.PassthroughMessageHashSet.Add(MessageManager.messageTypes[NetworkConfig.MessageTypes[i].Name]); //ERROR HERE
 						addedPassthroughMessages.Add(NetworkConfig.MessageTypes[i].Name);
 					}
 				}
