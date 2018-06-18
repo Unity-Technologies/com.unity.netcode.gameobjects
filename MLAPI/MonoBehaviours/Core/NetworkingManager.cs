@@ -348,24 +348,6 @@ namespace MLAPI.MonoBehaviours.Core
                 }
             }
 
-            if (NetworkConfig.AllowPassthroughMessages)
-            {
-                HashSet<string> addedPassthroughMessages = new HashSet<string>();
-                for (int i = 0; i < NetworkConfig.MessageTypes.Count; i++)
-                {
-                    if (addedPassthroughMessages.Contains(NetworkConfig.MessageTypes[i].Name))
-                    {
-                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Duplicate passthrough message type " + NetworkConfig.MessageTypes[i].Name);
-                        continue;
-                    }
-                    if (NetworkConfig.MessageTypes[i].Passthrough)
-                    {
-                        NetworkConfig.PassthroughMessageHashSet.Add(MessageManager.messageTypes[NetworkConfig.MessageTypes[i].Name]);
-                        addedPassthroughMessages.Add(NetworkConfig.MessageTypes[i].Name);
-                    }
-                }
-            }
-
             HashSet<string> channelNames = new HashSet<string>();
             //Register internal channels
             for (int i = 0; i < internalChannels.Count; i++)
@@ -471,6 +453,25 @@ namespace MLAPI.MonoBehaviours.Core
                 MessageManager.reverseMessageTypes.Add(messageId, messageTypes[i].Name);
                 messageId++;
             }
+
+            if (NetworkConfig.AllowPassthroughMessages)
+            {
+                HashSet<string> addedPassthroughMessages = new HashSet<string>();
+                for (int i = 0; i < NetworkConfig.MessageTypes.Count; i++)
+                {
+                    if (addedPassthroughMessages.Contains(NetworkConfig.MessageTypes[i].Name))
+                    {
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Duplicate passthrough message type " + NetworkConfig.MessageTypes[i].Name);
+                        continue;
+                    }
+                    if (NetworkConfig.MessageTypes[i].Passthrough)
+                    {
+                        NetworkConfig.PassthroughMessageHashSet.Add(MessageManager.messageTypes[NetworkConfig.MessageTypes[i].Name]);
+                        addedPassthroughMessages.Add(NetworkConfig.MessageTypes[i].Name);
+                    }
+                }
+            }
+
             return settings;
         }
 
