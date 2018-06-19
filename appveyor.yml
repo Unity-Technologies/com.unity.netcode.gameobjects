@@ -2,3 +2,5 @@ test:
   assemblies:
     - '**\*.tests.dll'
 
+build:
+  project: MLAPI.sln
