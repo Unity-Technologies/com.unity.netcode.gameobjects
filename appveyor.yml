@@ -1,0 +1,4 @@
+test:
+  assemblies:
+    - '**\*.tests.dll'
+
