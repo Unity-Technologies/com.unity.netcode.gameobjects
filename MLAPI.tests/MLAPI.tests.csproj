@@ -34,6 +34,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Test.cs" />
+    <Compile Include="NetworkingManagerComponents\Binary\BitWriterTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -43,6 +44,10 @@
       <Project>{EE431720-A9ED-43DC-9E74-10B693816D38}</Project>
       <Name>MLAPI</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="NetworkingManagerComponents\" />
+    <Folder Include="NetworkingManagerComponents\Binary\" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>
