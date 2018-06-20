@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MLAPI", "MLAPI\MLAPI.csproj
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MLAPI-Editor", "MLAPI-Editor\MLAPI-Editor.csproj", "{A45DBD43-D640-4562-9F24-6745269CEDF7}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MLAPI.tests", "MLAPI.tests\MLAPI.tests.csproj", "{59E9F73A-398C-4F46-85E7-1DCDEEB2A85F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		CI|Any CPU = CI|Any CPU
@@ -31,6 +33,14 @@ Global
 		{A45DBD43-D640-4562-9F24-6745269CEDF7}.Development|Any CPU.Build.0 = Debug|Any CPU
 		{A45DBD43-D640-4562-9F24-6745269CEDF7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A45DBD43-D640-4562-9F24-6745269CEDF7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{59E9F73A-398C-4F46-85E7-1DCDEEB2A85F}.CI|Any CPU.ActiveCfg = Debug|Any CPU
+		{59E9F73A-398C-4F46-85E7-1DCDEEB2A85F}.CI|Any CPU.Build.0 = Debug|Any CPU
+		{59E9F73A-398C-4F46-85E7-1DCDEEB2A85F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{59E9F73A-398C-4F46-85E7-1DCDEEB2A85F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{59E9F73A-398C-4F46-85E7-1DCDEEB2A85F}.Development|Any CPU.ActiveCfg = Debug|Any CPU
+		{59E9F73A-398C-4F46-85E7-1DCDEEB2A85F}.Development|Any CPU.Build.0 = Debug|Any CPU
+		{59E9F73A-398C-4F46-85E7-1DCDEEB2A85F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{59E9F73A-398C-4F46-85E7-1DCDEEB2A85F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
