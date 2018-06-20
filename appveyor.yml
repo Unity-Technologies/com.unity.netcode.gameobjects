@@ -6,7 +6,7 @@ before_build:
   - nuget restore
 
 build:
-  project: MLAPI.sln
+  project: MLAPI/MLAPI.csproj
 
 image: Visual Studio 2017
 
