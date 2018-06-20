@@ -6,3 +6,12 @@ build:
 
 image: Visual Studio 2017
 
+test_script:
+ - .\packages\OpenCover.4.6.519\tools\OpenCover.Console.exe -register:user -target:"nunit-console.exe" -targetargs:"MLAPI.tests\bin\Debug\MLAPI.tests.dll" -output:"coverage.xml" -filter:"+[MLAPI*]*"
+
+
+after_test:
+  - ps: |
+      $env:PATH = 'C:\msys64\usr\bin;' + $env:PATH
+      Invoke-WebRequest -Uri 'https://codecov.io/bash' -OutFile codecov.sh
+      bash codecov.sh -f "coverage.xml" -t YourUploadToken
