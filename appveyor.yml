@@ -1,7 +1,3 @@
-test:
-  assemblies:
-    - '**\*.tests.dll'
-
 before_build:
   - nuget restore
 
