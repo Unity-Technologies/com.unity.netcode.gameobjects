@@ -49,11 +49,13 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <Reference Include="UnityEngine">
-      <HintPath>..\UnityEngine.dll</HintPath>
+    <Reference Include="UnityEditor, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Libraries\Unity\UnityEditor.dll</HintPath>
     </Reference>
-    <Reference Include="UnityEditor">
-      <HintPath>..\UnityEditor.dll</HintPath>
+    <Reference Include="UnityEngine, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\Libraries\Unity\UnityEngine.dll</HintPath>
     </Reference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

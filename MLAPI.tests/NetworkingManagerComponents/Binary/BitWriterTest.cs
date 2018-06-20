@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace MLAPI.tests.NetworkingManagerComponents.Binary
+namespace MLAPI.Tests.NetworkingManagerComponents.Binary
 {
     using MLAPI.NetworkingManagerComponents.Binary;
     using NUnit.Framework;
@@ -21,7 +21,5 @@ namespace MLAPI.tests.NetworkingManagerComponents.Binary
             Assert.That(result.Length, Is.EqualTo(1));
             Assert.That(result[0], Is.EqualTo(1));
         }
-
-
     }
 }
