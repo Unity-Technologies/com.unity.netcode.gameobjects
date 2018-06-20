@@ -42,9 +42,6 @@
     <Reference Include="UnityEngine">
       <HintPath>..\UnityEngine.dll</HintPath>
     </Reference>
-    <Reference Include="UnityEngine">
-      <HintPath>..\UnityEngine.dll</HintPath>
-    </Reference>
     <Reference Include="UnityEditor">
       <HintPath>..\UnityEditor.dll</HintPath>
     </Reference>
