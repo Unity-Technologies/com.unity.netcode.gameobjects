@@ -16,7 +16,7 @@ namespace MLAPI.tests.NetworkingManagerComponents.Cryptography
             Random lengthRnd = new Random(0);
             for (int i = 0; i < 500; i++)
             {
-                using (SHA256Managed sha = new SHA256Managed())
+                using (SHA1Managed sha = new SHA1Managed())
                 {
                     byte[] data = new byte[lengthRnd.Next(500)];
                     dataRnd.NextBytes(data);
