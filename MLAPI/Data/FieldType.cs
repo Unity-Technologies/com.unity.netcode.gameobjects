@@ -41,6 +41,9 @@ namespace MLAPI.Data
 
         internal static bool SequenceEquals(this Array a1, Array a2)
         {
+            if ((a1 == null) != (a2 == null)) return false;
+            if (a1 == null && a2 == null) return true; //?
+            if (a1.Length != a2.Length) return false;
             bool equal = true;
             object val1;
             object val2;
