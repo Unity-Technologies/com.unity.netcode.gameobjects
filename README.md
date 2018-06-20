@@ -1,3 +1,5 @@
+[![codecov](https://codecov.io/gh/paulpach/MLAPI/branch/master/graph/badge.svg)](https://codecov.io/gh/paulpach/MLAPI)
+
 ![](https://i.imgur.com/d0amtqs.png)
 
 MLAPI (Mid level API) is a framework that hopefully simplifies building networked games in Unity. It is built on the LLAPI and is similar to the HLAPI in many ways. It does not however integrate into the compiler and it's meant to offer much greater flexibility than the HLAPI while keeping some of it's simplicity. It offers greater performance over the HLAPI.
