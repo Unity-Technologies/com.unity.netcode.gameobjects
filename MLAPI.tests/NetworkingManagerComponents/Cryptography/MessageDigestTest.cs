@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace MLAPI.tests.NetworkingManagerComponents.Cryptography
+namespace MLAPI.Tests.NetworkingManagerComponents.Cryptography
 {
     using MLAPI.NetworkingManagerComponents.Cryptography;
     using NUnit.Framework;

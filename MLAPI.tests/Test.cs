@@ -1,6 +1,6 @@
 ﻿using NUnit.Framework;
 using System;
-namespace MLAPI.tests
+namespace MLAPI.Tests
 {
     [TestFixture()]
     public class Test
