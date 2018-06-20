@@ -8,4 +8,4 @@ before_build:
 build:
   project: MLAPI.sln
 
-image: Visual Studio 2017
+image: Visual Studio 2015
