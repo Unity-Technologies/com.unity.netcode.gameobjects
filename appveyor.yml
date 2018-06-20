@@ -5,6 +5,8 @@ before_build:
 
 build:
   project: MLAPI.sln
+  verbosity: minimal
+
   
 artifacts:
   - path: MLAPI\bin\CI\MLAPI.dll
