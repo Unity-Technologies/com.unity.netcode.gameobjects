@@ -12,8 +12,8 @@ namespace MLAPI.Tests.Data
         [Test]
         public void TestForReferenceTypes()
         {
-            object o = (int)2; //Boxed to ref type
-            Assert.That(FieldTypeHelper.IsRefType(o.GetType()), Is.True);
+            object o = (int)2; //Boxed to ref type. But the type of the value is a value type.
+            Assert.That(FieldTypeHelper.IsRefType(o.GetType()), Is.False);
             int i = 3; //Value type
             Assert.That(FieldTypeHelper.IsRefType(i.GetType()), Is.False);
             string s = "123"; //Actually ref type. But it's immutable so the method should return true.
