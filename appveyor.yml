@@ -7,7 +7,7 @@ build:
 image: Visual Studio 2017
 
 test_script:
- - .\packages\OpenCover.4.6.519\tools\OpenCover.Console.exe -register:user -target:"nunit-console.exe" -targetargs:"MLAPI.tests\bin\Debug\MLAPI.tests.dll" -output:"coverage.xml" -filter:"+[MLAPI*]*"
+ - .\packages\OpenCover.4.6.519\tools\OpenCover.Console.exe -register:user -target:"nunit-console.exe" -targetargs:"MLAPI.tests\bin\Debug\MLAPI.tests.dll" -output:"coverage.xml" -filter:"+[MLAPI*]* -[MLAPI.tests*]*"
 
 
 after_test:
