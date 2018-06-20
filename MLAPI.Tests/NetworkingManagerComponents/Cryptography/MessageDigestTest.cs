@@ -14,11 +14,11 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Cryptography
         {
             Random dataRnd = new Random(0);
             Random lengthRnd = new Random(0);
-            for (int i = 0; i < 10; i++)
+            for (int i = 0; i < 3; i++)
             {
                 using (SHA1Managed sha = new SHA1Managed())
                 {
-                    byte[] data = new byte[lengthRnd.Next(100)];
+                    byte[] data = new byte[lengthRnd.Next(83)];
                     dataRnd.NextBytes(data);
                     byte[] managed = sha.ComputeHash(data);
                     byte[] recursive = MessageDigest.SHA1_Opt(data).ToArray();
