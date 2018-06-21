@@ -39,7 +39,7 @@
     <Compile Include="NetworkingManagerComponents\Cryptography\MessageDigestTest.cs" />
     <Compile Include="Test.cs" />
     <Compile Include="NetworkingManagerComponents\Binary\BitWriterTest.cs" />
-    <Compile Include="Data\StringExtensionTest.cs" />
+    <Compile Include="Data\ExtensionsTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
