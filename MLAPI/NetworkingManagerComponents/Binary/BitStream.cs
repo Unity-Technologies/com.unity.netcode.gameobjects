@@ -9,9 +9,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
 {
     public sealed class BitStream : Stream
     {
-        private delegate void ByteWriteFunc(byte b);
-        private delegate void ULongWriteFunc(ulong l);
-        private delegate byte ByteReadFunc();
+        private const long SIGN_BIT = -9223372036854775808;
 
 
         private readonly double growthFactor;
@@ -31,25 +29,26 @@ namespace MLAPI.NetworkingManagerComponents.Binary
 
         public override long Length => (long) (BitLength/8);
 
-        public override long Position { get => (long)(BitPosition/8); set => BitPosition = (ulong)value * 8UL; }
+        public override long Position { get => (long)(BitPosition>>3); set => BitPosition = (ulong)value << 3; }
         public ulong BitPosition { get; set; }
         public ulong BitLength { get; private set; }
-        public bool BitAligned { get => BitPosition % 8 == 0; }
+        public bool BitAligned { get => (BitPosition & 7) == 0; }
 
         public override void Flush() { } // NOP
 
         private byte ReadByteMisaligned()
         {
-            int mod = (int)(BitPosition % 8);
+            int mod = (int)(BitPosition & 7);
             return (byte)((target[(int)Position++] >> mod) | (target[(int)Position] << (8 - mod)));
         }
         private byte ReadByteAligned() => target[Position++];
-        public new byte ReadByte() => BitAligned ? ReadByteAligned() : ReadByteMisaligned();
+        private byte _ReadByte() => BitAligned ? ReadByteAligned() : ReadByteMisaligned();
+        public override int ReadByte() => CanRead ? BitAligned ? ReadByteAligned() : ReadByteMisaligned() : -1;
 
         public override int Read(byte[] buffer, int offset, int count)
         {
-            int tLen = Math.Min(count, (int)(target.LongLength - Position) - (BitPosition % 8 == 0 ? 0 : 1));
-            for (int i = 0; i < tLen; ++i) buffer[offset + i] = ReadByte();
+            int tLen = Math.Min(count, (int)(target.LongLength - Position) - ((BitPosition & 7) == 0 ? 0 : 1));
+            for (int i = 0; i < tLen; ++i) buffer[offset + i] = _ReadByte();
             return tLen;
         }
 
@@ -60,13 +59,13 @@ namespace MLAPI.NetworkingManagerComponents.Binary
                     (
                     origin == SeekOrigin.Current ?
                         offset > 0 ?
-                            Math.Min(BitPosition + ((ulong)offset * 8UL), (ulong)target.Length * 8UL) :
-                            (ulong)(offset * -8L) > BitPosition ?
+                            Math.Min(BitPosition + ((ulong)offset << 3), (ulong)target.Length << 3) :
+                            (offset ^ SIGN_BIT) > Position ?
                                 0UL :
-                                BitPosition - (ulong)(offset * -8L) :
+                                BitPosition - (ulong)((offset ^ SIGN_BIT) << 3) :
                     origin == SeekOrigin.Begin ?
-                        (ulong)Math.Max(0, offset) * 8UL :
-                        (ulong)Math.Max(target.Length - offset, 0) * 8UL
+                        (ulong)Math.Max(0, offset) << 3 :
+                        (ulong)Math.Max(target.Length - offset, 0) << 3
                     ));
         }
 
@@ -75,7 +74,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             byte[] newTarg = new byte[value];
             long len = Math.Min(value, target.LongLength);
             for (long l = 0; l < len; ++l) newTarg[l] = target[l];
-            if (value > target.LongLength) BitPosition = (ulong)value * 8UL;
+            if (value > target.LongLength) BitPosition = (ulong)value << 3;
         }
 
         public override void Write(byte[] buffer, int offset, int count)
@@ -99,39 +98,36 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         public void WriteBit(bool bit)
         {
             if (BitAligned && Position + 1 >= target.Length) Grow(1);
-            int offset = (int)(BitPosition % 8);
+            int offset = (int)(BitPosition & 7);
             ++BitPosition;
-            target[BitPosition] = (byte)(bit ? (target[BitPosition / 8] & ~(1 << offset)) | (1 << offset) : (target[BitPosition / 8] & ~(1 << offset)));
+            target[BitPosition] = (byte)(bit ? (target[BitPosition >> 3] & ~(1 << offset)) | (1 << offset) : (target[BitPosition >> 3] & ~(1 << offset)));
         }
 
         public void WriteSByte(sbyte value) => WriteByte((byte)value);
         public void WriteUInt16(ushort value)
         {
-            ByteWriteFunc Write = SelectWriter();
-            Write((byte)value);
-            Write((byte)(value >> 8));
+            WriteByte((byte)value);
+            WriteByte((byte)(value >> 8));
         }
         public void WriteInt16(short value) => WriteUInt16((ushort)value);
         public void WriteUInt32(uint value)
         {
-            ByteWriteFunc Write = SelectWriter();
-            Write((byte)value);
-            Write((byte)(value >> 8));
-            Write((byte)(value >> 16));
-            Write((byte)(value >> 24));
+            WriteByte((byte)value);
+            WriteByte((byte)(value >> 8));
+            WriteByte((byte)(value >> 16));
+            WriteByte((byte)(value >> 24));
         }
         public void WriteInt32(int value) => WriteUInt32((uint)value);
         public void WriteUInt64(ulong value)
         {
-            ByteWriteFunc Write = SelectWriter();
-            Write((byte)value);
-            Write((byte)(value >> 8));
-            Write((byte)(value >> 16));
-            Write((byte)(value >> 24));
-            Write((byte)(value >> 32));
-            Write((byte)(value >> 40));
-            Write((byte)(value >> 48));
-            Write((byte)(value >> 56));
+            WriteByte((byte)value);
+            WriteByte((byte)(value >> 8));
+            WriteByte((byte)(value >> 16));
+            WriteByte((byte)(value >> 24));
+            WriteByte((byte)(value >> 32));
+            WriteByte((byte)(value >> 40));
+            WriteByte((byte)(value >> 48));
+            WriteByte((byte)(value >> 56));
         }
         public void WriteInt64(long value) => WriteUInt64((ulong)value);
 
@@ -142,18 +138,17 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         public void WriteInt64Packed(long value) => WriteUInt64(ZigZagEncode(value));
         public void WriteUInt64Packed(ulong value)
         {
-            ULongWriteFunc Write = SelectUWriter();
-            if (value <= 240) Write(value);
+            if (value <= 240) WriteULongByte(value);
             else if (value <= 2287)
             {
-                Write((value - 240) / 256 + 241);
-                Write((value - 240) % 256);
+                WriteULongByte(((value - 240) >> 8) + 241);
+                WriteULongByte(value - 240);
             }
             else if (value <= 67823)
             {
-                Write(249);
-                Write((value - 2288) / 256);
-                Write((value - 2288) % 256);
+                WriteULongByte(249);
+                WriteULongByte((value - 2288) >> 8);
+                WriteULongByte(value - 2288);
             }
             else
             {
@@ -164,16 +159,34 @@ namespace MLAPI.NetworkingManagerComponents.Binary
                     --header;
                     match >>= 8;
                 }
-                Write(header);
+                WriteULongByte(header);
                 int max = (int)(header - 247);
-                for (int i = 0; i < max; ++i) Write(value >> i);
+                for (int i = 0; i < max; ++i) WriteULongByte(value >> (i<<3));
             }
         }
-        public ushort ReadUInt16() => (ushort)(ReadByte() | (ReadByte() << 8));
+        public ushort ReadUInt16()
+        {
+            return (ushort)(_ReadByte() | (_ReadByte() << 8));
+        }
         public short ReadInt16() => (short)ReadUInt16();
-        public uint ReadUInt32() => (uint)(ReadByte() | (ReadByte() << 8) | (ReadByte() << 16) | (ReadByte() << 24));
+        public uint ReadUInt32()
+        {
+            return (uint)(_ReadByte() | (_ReadByte() << 8) | (_ReadByte() << 16) | (_ReadByte() << 24));
+        }
         public int ReadInt32() => (int)ReadUInt32();
-        public ulong ReadUInt64() => (ulong)(ReadByte() | (ReadByte() << 8) | (ReadByte() << 16) | (ReadByte() << 24) | (ReadByte() << 32) | (ReadByte() << 40) | (ReadByte() << 48) | (ReadByte() << 56));
+        public ulong ReadUInt64()
+        {
+            return (ulong)(
+                _ReadByte() |
+                (_ReadByte() << 8)  |
+                (_ReadByte() << 16) |
+                (_ReadByte() << 24) |
+                (_ReadByte() << 32) |
+                (_ReadByte() << 40) |
+                (_ReadByte() << 48) |
+                (_ReadByte() << 56)
+                );
+        }
         public long ReadInt64() => (long)ReadUInt64();
 
         public short ReadInt16Packed() => (short)ZigZagDecode(ReadUInt64Packed());
@@ -183,15 +196,14 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         public long ReadInt64Packed() => ZigZagDecode(ReadUInt64Packed());
         public ulong ReadUInt64Packed()
         {
-            ByteReadFunc Read = SelectReader();
-            ulong header = Read();
+            ulong header = _ReadByte();
             if (header <= 240) return header;
-            if (header <= 248) return 240 + 256 * (header - 241) + Read();
-            if (header == 249) return 2288 + 256UL * Read() + Read();
-            ulong res = Read() | ((ulong)Read() << 8) | ((ulong)Read() << 16);
+            if (header <= 248) return 240 + ((header - 241) << 8) + _ReadByte();
+            if (header == 249) return 2288UL + (ulong)(_ReadByte() << 8) + _ReadByte();
+            ulong res = _ReadByte() | ((ulong)_ReadByte() << 8) | ((ulong)_ReadByte() << 16);
             int cmp = 2;
             int hdr = (int)(header-246);
-            while (hdr > ++cmp) res |= (ulong)Read() << (8 * cmp);
+            while (hdr > ++cmp) res |= (ulong)_ReadByte() << (cmp << 3);
             return res;
         }
 
@@ -206,10 +218,6 @@ namespace MLAPI.NetworkingManagerComponents.Binary
 
             BitPosition += 8;
         }
-
-        private ULongWriteFunc SelectUWriter() => BitAligned ? WriteULongByte : (ULongWriteFunc)WriteULongByteMisaligned;
-        private ByteWriteFunc SelectWriter() => BitAligned ? WriteByte : (ByteWriteFunc)WriteMisaligned;
-        private ByteReadFunc SelectReader() => BitAligned ? ReadByteAligned : (ByteReadFunc)ReadByteMisaligned;
 
         private void WriteULongByte(ulong byteValue) => WriteByte((byte)byteValue);
         public override void WriteByte(byte value)
