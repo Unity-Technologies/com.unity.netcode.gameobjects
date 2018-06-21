@@ -27,7 +27,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
 
         public override bool CanWrite => true;
 
-        public override long Length => (long) (BitLength/8);
+        public override long Length => (long) (BitLength>>3);
 
         public override long Position { get => (long)(BitPosition>>3); set => BitPosition = (ulong)value << 3; }
         public ulong BitPosition { get; set; }
