@@ -2,7 +2,7 @@
 
 namespace MLAPI.Data
 {
-    public static class Extensions
+    public static class HashCode
     {
         private const uint FNV_offset_basis32 = 2166136261;
         private const uint FNV_prime32 = 16777619;

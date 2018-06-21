@@ -136,7 +136,7 @@
     <Compile Include="NetworkingManagerComponents\Core\InternalMessageHandler.cs" />
     <Compile Include="Data\NetworkProfiler\ProfilerTickData.cs" />
     <Compile Include="Data\NetworkProfiler\NetworkProfiler.cs" />
-    <Compile Include="Data\Extensions.cs" />
+    <Compile Include="Data\HashCode.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

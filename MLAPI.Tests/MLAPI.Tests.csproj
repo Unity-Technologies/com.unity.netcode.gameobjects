@@ -38,7 +38,7 @@
     <Compile Include="Data\FieldTypeTests.cs" />
     <Compile Include="Test.cs" />
     <Compile Include="NetworkingManagerComponents\Binary\BitWriterTest.cs" />
-    <Compile Include="Data\ExtensionsTest.cs" />
+    <Compile Include="Data\HashCodeTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

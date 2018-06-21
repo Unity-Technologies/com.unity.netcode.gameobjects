@@ -6,7 +6,7 @@ namespace MLAPI.Tests.Data
 
 
     [TestFixture]
-    public class ExtensionsTest
+    public class HashCodeTest
     {
 
         [Test]
