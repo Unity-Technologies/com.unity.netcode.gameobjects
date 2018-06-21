@@ -11,7 +11,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
     {
         internal static void HandleConnectionRequest(uint clientId, BitReader reader, int channelId)
         {
-            byte[] configHash = reader.ReadByteArray(20);
+            ulong configHash = reader.ReadULong();
             if (!netManager.NetworkConfig.CompareConfig(configHash))
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkConfiguration mismatch. The configuration between the server and client does not match");
@@ -305,8 +305,8 @@ namespace MLAPI.NetworkingManagerComponents.Core
             if (clientId != behaviour.ownerClientId)
                 return; // Not owner
             MethodInfo targetMethod = null;
-            if (behaviour.cachedMethods.ContainsKey(Data.Cache.GetAttributeMethodName(hash)))
-                targetMethod = behaviour.cachedMethods[Data.Cache.GetAttributeMethodName(hash)];
+            if (behaviour.cachedMethods.ContainsKey(hash))
+                targetMethod = behaviour.cachedMethods[hash];
 
             ParameterInfo[] parameters = targetMethod.GetParameters();
             object[] methodParams = new object[parameters.Length];
@@ -325,8 +325,8 @@ namespace MLAPI.NetworkingManagerComponents.Core
             ulong hash = reader.ReadULong();
             NetworkedBehaviour behaviour = SpawnManager.spawnedObjects[networkId].GetBehaviourAtOrderIndex(orderId);
             MethodInfo targetMethod = null;
-            if (behaviour.cachedMethods.ContainsKey(Data.Cache.GetAttributeMethodName(hash)))
-                targetMethod = behaviour.cachedMethods[Data.Cache.GetAttributeMethodName(hash)];
+            if (behaviour.cachedMethods.ContainsKey(hash))
+                targetMethod = behaviour.cachedMethods[hash];
             ParameterInfo[] parameters = targetMethod.GetParameters();
             object[] methodParams = new object[parameters.Length];
             for (int i = 0; i < parameters.Length; i++)
@@ -344,8 +344,8 @@ namespace MLAPI.NetworkingManagerComponents.Core
             ulong hash = reader.ReadULong();
             NetworkedBehaviour behaviour = SpawnManager.spawnedObjects[networkId].GetBehaviourAtOrderIndex(orderId);
             MethodInfo targetMethod = null;
-            if (behaviour.cachedMethods.ContainsKey(Data.Cache.GetAttributeMethodName(hash)))
-                targetMethod = behaviour.cachedMethods[Data.Cache.GetAttributeMethodName(hash)];
+            if (behaviour.cachedMethods.ContainsKey(hash))
+                targetMethod = behaviour.cachedMethods[hash];
             ParameterInfo[] parameters = targetMethod.GetParameters();
             object[] methodParams = new object[parameters.Length];
             for (int i = 0; i < parameters.Length; i++)
