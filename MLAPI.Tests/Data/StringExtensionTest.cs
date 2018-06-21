@@ -10,7 +10,7 @@ namespace MLAPI.Tests.Data
     {
 
         [Test]
-        public static void CheckHash()
+        public static void CheckHash32()
         {
             string str1 = "string 1";
             string str2 = "string 2";
@@ -18,6 +18,13 @@ namespace MLAPI.Tests.Data
             Assert.That(str1.GetStableHash32(), Is.Not.EqualTo(str2.GetStableHash32()));
         }
 
+        [Test]
+        public static void CheckHash64()
+        {
+            string str1 = "string 1";
+            string str2 = "string 2";
 
+            Assert.That(str1.GetStableHash64(), Is.Not.EqualTo(str2.GetStableHash64()));
+        }
     }
 }
