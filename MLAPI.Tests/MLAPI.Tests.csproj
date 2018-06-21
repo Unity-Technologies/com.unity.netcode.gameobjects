@@ -5,8 +5,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{59E9F73A-398C-4F46-85E7-1DCDEEB2A85F}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>MLAPI.tests</RootNamespace>
-    <AssemblyName>MLAPI.tests</AssemblyName>
+    <RootNamespace>MLAPI.Tests</RootNamespace>
+    <AssemblyName>MLAPI.Tests</AssemblyName>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
@@ -38,6 +38,7 @@
     <Compile Include="Data\FieldTypeTests.cs" />
     <Compile Include="Test.cs" />
     <Compile Include="NetworkingManagerComponents\Binary\BitWriterTest.cs" />
+    <Compile Include="Data\HashCodeTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -48,6 +49,8 @@
       <Name>MLAPI</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="NetworkingManagerComponents\Cryptography\" />
+  </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

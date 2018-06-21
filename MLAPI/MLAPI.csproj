@@ -86,7 +86,6 @@
     <Compile Include="Attributes\ClientRpc.cs" />
     <Compile Include="Attributes\Command.cs" />
     <Compile Include="Attributes\TargetRpc.cs" />
-    <Compile Include="Data\Cache.cs" />
     <Compile Include="Data\Channel.cs" />
     <Compile Include="Data\AttributeMessageMode.cs" />
     <Compile Include="Data\Transports\ChannelType.cs" />
@@ -115,7 +114,6 @@
     <Compile Include="NetworkingManagerComponents\Binary\BitReader.cs" />
     <Compile Include="NetworkingManagerComponents\Binary\BinaryHelpers.cs" />
     <Compile Include="NetworkingManagerComponents\Binary\BinarySerializer.cs" />
-    <Compile Include="NetworkingManagerComponents\Binary\PrimitiveHasher.cs" />
     <Compile Include="NetworkingManagerComponents\Core\LogHelper.cs" />
     <Compile Include="NetworkingManagerComponents\Cryptography\CryptographyHelper.cs" />
     <Compile Include="NetworkingManagerComponents\Cryptography\DiffieHellman.cs" />
@@ -131,7 +129,6 @@
     <Compile Include="NetworkingManagerComponents\Core\NetworkPoolManager.cs" />
     <Compile Include="NetworkingManagerComponents\Core\NetworkSceneManager.cs" />
     <Compile Include="NetworkingManagerComponents\Core\SpawnManager.cs" />
-    <Compile Include="NetworkingManagerComponents\Cryptography\MessageDigest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Data\Transports\UNET\NetId.cs" />
     <Compile Include="NetworkingManagerComponents\Binary\MessageChunker.cs" />
@@ -141,6 +138,7 @@
     <Compile Include="NetworkingManagerComponents\Core\InternalMessageHandler.cs" />
     <Compile Include="Data\NetworkProfiler\ProfilerTickData.cs" />
     <Compile Include="Data\NetworkProfiler\NetworkProfiler.cs" />
+    <Compile Include="Data\HashCode.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

@@ -199,7 +199,7 @@ namespace MLAPI.MonoBehaviours.Core
 
         }
 
-        internal Dictionary<string, MethodInfo> cachedMethods = new Dictionary<string, MethodInfo>();
+        internal Dictionary<ulong, MethodInfo> cachedMethods = new Dictionary<ulong, MethodInfo>();
         internal Dictionary<string, string> messageChannelName = new Dictionary<string, string>();
 
         /// <summary>
@@ -259,20 +259,32 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
 
             MethodInfo[] methods = getMethodsRecursive(GetType()).ToArray();
-            for (int i = 0; i < methods.Length; i++)
+            foreach (MethodInfo method in methods)
             {
-                if (methods[i].IsDefined(typeof(Command), true) || methods[i].IsDefined(typeof(ClientRpc), true) || methods[i].IsDefined(typeof(TargetRpc), true))
+                if (method.IsDefined(typeof(Command), true) || method.IsDefined(typeof(ClientRpc), true) || method.IsDefined(typeof(TargetRpc), true))
                 {
-                    Data.Cache.RegisterMessageAttributeName(methods[i].Name, NetworkingManager.singleton.NetworkConfig.AttributeMessageMode);
-                    if (!cachedMethods.ContainsKey(methods[i].Name))
-                        cachedMethods.Add(methods[i].Name, methods[i]);
+                    ulong hash = 0;
+
+                    if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenTwoByte)
+                        hash = method.Name.GetStableHash16();
+                    else if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenFourByte)
+                        hash = method.Name.GetStableHash32();
+                    else if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenEightByte)
+                        hash = method.Name.GetStableHash64();
+
+                    if (cachedMethods.ContainsKey(hash))
+                    {
+                        MethodInfo previous = cachedMethods[hash];
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogError(string.Format("Method {0} and {1} have the same hash.  Rename one of the methods or increase Attribute Message Mode", previous.Name, method.Name));
+                    }
+                    cachedMethods[hash] = method;
                 }
-                if (methods[i].IsDefined(typeof(Command), true) && !messageChannelName.ContainsKey(methods[i].Name))
-                    messageChannelName.Add(methods[i].Name, ((Command[])methods[i].GetCustomAttributes(typeof(Command), true))[0].channelName);
-                if (methods[i].IsDefined(typeof(ClientRpc), true) && !messageChannelName.ContainsKey(methods[i].Name))
-                    messageChannelName.Add(methods[i].Name, ((ClientRpc[])methods[i].GetCustomAttributes(typeof(ClientRpc), true))[0].channelName);
-                if (methods[i].IsDefined(typeof(TargetRpc), true) && !messageChannelName.ContainsKey(methods[i].Name))
-                    messageChannelName.Add(methods[i].Name, ((TargetRpc[])methods[i].GetCustomAttributes(typeof(TargetRpc), true))[0].channelName);
+                if (method.IsDefined(typeof(Command), true) && !messageChannelName.ContainsKey(method.Name))
+                    messageChannelName.Add(method.Name, ((Command[])method.GetCustomAttributes(typeof(Command), true))[0].channelName);
+                if (method.IsDefined(typeof(ClientRpc), true) && !messageChannelName.ContainsKey(method.Name))
+                    messageChannelName.Add(method.Name, ((ClientRpc[])method.GetCustomAttributes(typeof(ClientRpc), true))[0].channelName);
+                if (method.IsDefined(typeof(TargetRpc), true) && !messageChannelName.ContainsKey(method.Name))
+                    messageChannelName.Add(method.Name, ((TargetRpc[])method.GetCustomAttributes(typeof(TargetRpc), true))[0].channelName);
             }
         }
 
@@ -298,18 +310,26 @@ namespace MLAPI.MonoBehaviours.Core
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Calling InvokeCommand is not allowed when AttributeMessageMode is set to disabled");
                 return;
             }
+
+            ulong hash = 0;
+            if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenTwoByte)
+                hash = methodName.GetStableHash16();
+            else if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenFourByte)
+                hash = methodName.GetStableHash32();
+            else if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenEightByte)
+                hash = methodName.GetStableHash64();
+
             if (NetworkingManager.singleton.isServer)
             {
                 if (isHost)
                 {
-                    cachedMethods[methodName].Invoke(this, methodParams);
+                    cachedMethods[hash].Invoke(this, methodParams);
                     return;
                 }
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot invoke commands from server");
                 return;
             }
 
-            ulong hash = Data.Cache.GetMessageAttributeHash(methodName, NetworkingManager.singleton.NetworkConfig.AttributeMessageMode);
             using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteUInt(networkId);
@@ -344,9 +364,17 @@ namespace MLAPI.MonoBehaviours.Core
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Calling InvokeClientRpc is not allowed when AttributeMessageMode is set to disabled");
                 return;
             }
-            if (isHost) cachedMethods[methodName].Invoke(this, methodParams);
 
-            ulong hash = Data.Cache.GetMessageAttributeHash(methodName, NetworkingManager.singleton.NetworkConfig.AttributeMessageMode);
+            ulong hash = 0;
+            if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenTwoByte)
+                hash = methodName.GetStableHash16();
+            else if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenFourByte)
+                hash = methodName.GetStableHash32();
+            else if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenEightByte)
+                hash = methodName.GetStableHash64();
+
+            if (isHost) cachedMethods[hash].Invoke(this, methodParams);
+
             using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteUInt(networkId);
@@ -381,9 +409,17 @@ namespace MLAPI.MonoBehaviours.Core
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Calling InvokeTargetRpc is not allowed when AttributeMessageMode is set to disabled");
                 return;
             }
-            if (isHost) cachedMethods[methodName].Invoke(this, methodParams);
 
-            ulong hash = Data.Cache.GetMessageAttributeHash(methodName, NetworkingManager.singleton.NetworkConfig.AttributeMessageMode);
+            ulong hash = 0;
+            if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenTwoByte)
+                hash = methodName.GetStableHash16();
+            else if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenFourByte)
+                hash = methodName.GetStableHash32();
+            else if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenEightByte)
+                hash = methodName.GetStableHash64();
+
+            if (isHost) cachedMethods[hash].Invoke(this, methodParams);
+
             using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteUInt(networkId);
