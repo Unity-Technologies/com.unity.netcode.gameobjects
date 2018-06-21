@@ -276,8 +276,9 @@ namespace MLAPI.MonoBehaviours.Core
                     {
                         var previous = cachedMethods[hash];
 
-                        Debug.LogErrorFormat("Method {0} and {1} have the same hash.  Rename one of the methods or increase Attribute Message Mode",
-                                             previous.Name, method.Name);
+                        LogHelper.LogError(
+                            string.Format("Method {0} and {1} have the same hash.  Rename one of the methods or increase Attribute Message Mode",
+                                          previous.Name, method.Name));
                     }
                     cachedMethods[hash] = method;
                 }
