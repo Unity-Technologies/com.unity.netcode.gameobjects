@@ -275,7 +275,7 @@ namespace MLAPI.MonoBehaviours.Core
                     if (cachedMethods.ContainsKey(hash))
                     {
                         MethodInfo previous = cachedMethods[hash];
-                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogError(string.Format("Method {0} and {1} have the same hash.  Rename one of the methods or increase Attribute Message Mode", previous.Name, method.Name));
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError(string.Format("Method {0} and {1} have the same hash.  Rename one of the methods or increase Attribute Message Mode", previous.Name, method.Name));
                     }
                     cachedMethods[hash] = method;
                 }
