@@ -36,7 +36,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Data\FieldTypeTests.cs" />
-    <Compile Include="NetworkingManagerComponents\Cryptography\MessageDigestTest.cs" />
     <Compile Include="Test.cs" />
     <Compile Include="NetworkingManagerComponents\Binary\BitWriterTest.cs" />
     <Compile Include="Data\ExtensionsTest.cs" />
@@ -50,6 +49,8 @@
       <Name>MLAPI</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="NetworkingManagerComponents\Cryptography\" />
+  </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
 </Project>

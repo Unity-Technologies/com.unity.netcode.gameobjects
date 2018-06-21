@@ -741,7 +741,7 @@ namespace MLAPI.MonoBehaviours.Core
 
                                     using (BitWriter writer = BitWriter.Get())
                                     {
-                                        writer.WriteByteArray(NetworkConfig.GetConfig(), true);
+                                        writer.WriteULong(NetworkConfig.GetConfig());
 #if !DISABLE_CRYPTOGRAPHY
                                         if (NetworkConfig.EnableEncryption)      
                                             writer.WriteByteArray(diffiePublic);

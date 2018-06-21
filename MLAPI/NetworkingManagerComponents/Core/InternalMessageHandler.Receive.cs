@@ -11,7 +11,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
     {
         internal static void HandleConnectionRequest(uint clientId, BitReader reader, int channelId)
         {
-            byte[] configHash = reader.ReadByteArray(20);
+            ulong configHash = reader.ReadULong();
             if (!netManager.NetworkConfig.CompareConfig(configHash))
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkConfiguration mismatch. The configuration between the server and client does not match");

@@ -296,16 +296,16 @@ namespace MLAPI.Data
             }
         }
 
-        private byte[] ConfigHash = null;
+        private ulong? ConfigHash = null;
         /// <summary>
         /// Gets a SHA256 hash of parts of the NetworkingConfiguration instance
         /// </summary>
         /// <param name="cache"></param>
         /// <returns></returns>
-        public byte[] GetConfig(bool cache = true)
+        public ulong GetConfig(bool cache = true)
         {
-            if (ConfigHash != null && cache)
-                return ConfigHash;
+            if (ConfigHash == null && cache)
+                return ConfigHash.Value;
 
             using (BitWriter writer = BitWriter.Get())
             {
@@ -347,10 +347,10 @@ namespace MLAPI.Data
                 // Returns a 160 bit / 20 byte / 5 int checksum of the config
                 if (cache)
                 {
-                    ConfigHash = MessageDigest.SHA1_Opt(writer.Finalize()).ToArray();
-                    return ConfigHash;
+                    ConfigHash = writer.Finalize().GetStableHash64();
+                    return ConfigHash.Value;
                 }
-                return MessageDigest.SHA1_Opt(writer.Finalize()).ToArray();
+                return writer.Finalize().GetStableHash64();
             }
         }
 
@@ -359,19 +359,9 @@ namespace MLAPI.Data
         /// </summary>
         /// <param name="hash"></param>
         /// <returns></returns>
-        public bool CompareConfig(byte[] hash)
+        public bool CompareConfig(ulong hash)
         {
-            byte[] localConfigHash = GetConfig();
-
-            if (hash.Length != localConfigHash.Length)
-                return false;
-
-            for (int i = 0; i < hash.Length; i++)
-            {
-                if (hash[i] != localConfigHash[i])
-                    return false;
-            }
-            return true;
+            return hash == GetConfig();
         }
     }
 }
