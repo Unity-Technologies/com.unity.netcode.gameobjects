@@ -263,12 +263,21 @@ namespace MLAPI.MonoBehaviours.Core
             {
                 if (method.IsDefined(typeof(Command), true) || method.IsDefined(typeof(ClientRpc), true) || method.IsDefined(typeof(TargetRpc), true))
                 {
+                    ulong hash = 0;
+
                     if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenTwoByte)
-                        cachedMethods[method.Name.GetStableHash16()] = method;
+                        hash = method.Name.GetStableHash16();
                     else if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenFourByte)
-                        cachedMethods[method.Name.GetStableHash32()] = method;
+                        hash = method.Name.GetStableHash32();
                     else if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenEightByte)
-                        cachedMethods[method.Name.GetStableHash64()] = method;
+                        hash = method.Name.GetStableHash64();
+
+                    if (cachedMethods.ContainsKey(hash))
+                    {
+                        MethodInfo previous = cachedMethods[hash];
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogError(string.Format("Method {0} and {1} have the same hash.  Rename one of the methods or increase Attribute Message Mode", previous.Name, method.Name));
+                    }
+                    cachedMethods[hash] = method;
                 }
                 if (method.IsDefined(typeof(Command), true) && !messageChannelName.ContainsKey(method.Name))
                     messageChannelName.Add(method.Name, ((Command[])method.GetCustomAttributes(typeof(Command), true))[0].channelName);
