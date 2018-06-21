@@ -248,8 +248,6 @@ namespace MLAPI.MonoBehaviours.Core
 #if !DISABLE_CRYPTOGRAPHY
             diffieHellmanPublicKeys.Clear();
 #endif
-            Data.Cache.messageAttributeHashes.Clear();
-            Data.Cache.messageAttributeNames.Clear();
             MessageManager.channels.Clear();
             MessageManager.messageTypes.Clear();
             MessageManager.messageCallbacks.Clear();
