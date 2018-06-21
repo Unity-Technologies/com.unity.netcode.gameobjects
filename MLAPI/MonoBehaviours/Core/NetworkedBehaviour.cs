@@ -263,7 +263,12 @@ namespace MLAPI.MonoBehaviours.Core
             {
                 if (method.IsDefined(typeof(Command), true) || method.IsDefined(typeof(ClientRpc), true) || method.IsDefined(typeof(TargetRpc), true))
                 {
-                    cachedMethods[method.Name.GetStableHash32()] = method;
+                    if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenTwoByte)
+                        cachedMethods[method.Name.GetStableHash16()] = method;
+                    else if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenFourByte)
+                        cachedMethods[method.Name.GetStableHash32()] = method;
+                    else if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenEightByte)
+                        cachedMethods[method.Name.GetStableHash64()] = method;
                 }
                 if (method.IsDefined(typeof(Command), true) && !messageChannelName.ContainsKey(method.Name))
                     messageChannelName.Add(method.Name, ((Command[])method.GetCustomAttributes(typeof(Command), true))[0].channelName);
@@ -296,18 +301,26 @@ namespace MLAPI.MonoBehaviours.Core
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Calling InvokeCommand is not allowed when AttributeMessageMode is set to disabled");
                 return;
             }
+
+            ulong hash = 0;
+            if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenTwoByte)
+                hash = methodName.GetStableHash16();
+            else if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenFourByte)
+                hash = methodName.GetStableHash32();
+            else if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenEightByte)
+                hash = methodName.GetStableHash64();
+
             if (NetworkingManager.singleton.isServer)
             {
                 if (isHost)
                 {
-                    cachedMethods[methodName.GetStableHash32()].Invoke(this, methodParams);
+                    cachedMethods[hash].Invoke(this, methodParams);
                     return;
                 }
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot invoke commands from server");
                 return;
             }
 
-            ulong hash = methodName.GetStableHash32();
             using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteUInt(networkId);
@@ -342,9 +355,17 @@ namespace MLAPI.MonoBehaviours.Core
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Calling InvokeClientRpc is not allowed when AttributeMessageMode is set to disabled");
                 return;
             }
-            if (isHost) cachedMethods[methodName.GetStableHash32()].Invoke(this, methodParams);
 
-            ulong hash = methodName.GetStableHash32();
+            ulong hash = 0;
+            if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenTwoByte)
+                hash = methodName.GetStableHash16();
+            else if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenFourByte)
+                hash = methodName.GetStableHash32();
+            else if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenEightByte)
+                hash = methodName.GetStableHash64();
+
+            if (isHost) cachedMethods[hash].Invoke(this, methodParams);
+
             using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteUInt(networkId);
@@ -379,9 +400,17 @@ namespace MLAPI.MonoBehaviours.Core
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Calling InvokeTargetRpc is not allowed when AttributeMessageMode is set to disabled");
                 return;
             }
-            if (isHost) cachedMethods[methodName.GetStableHash32()].Invoke(this, methodParams);
 
-            ulong hash = methodName.GetStableHash32();
+            ulong hash = 0;
+            if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenTwoByte)
+                hash = methodName.GetStableHash16();
+            else if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenFourByte)
+                hash = methodName.GetStableHash32();
+            else if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenEightByte)
+                hash = methodName.GetStableHash64();
+
+            if (isHost) cachedMethods[hash].Invoke(this, methodParams);
+
             using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteUInt(networkId);
