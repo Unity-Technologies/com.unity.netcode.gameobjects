@@ -272,13 +272,10 @@ namespace MLAPI.MonoBehaviours.Core
                     else if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenEightByte)
                         hash = method.Name.GetStableHash64();
 
-                    if (cachedMethods.ContainsKey(hash) && hash != 0)
+                    if (cachedMethods.ContainsKey(hash))
                     {
-                        var previous = cachedMethods[hash];
-
-                        LogHelper.LogError(
-                            string.Format("Method {0} and {1} have the same hash.  Rename one of the methods or increase Attribute Message Mode",
-                                          previous.Name, method.Name));
+                        MethodInfo previous = cachedMethods[hash];
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogError(string.Format("Method {0} and {1} have the same hash.  Rename one of the methods or increase Attribute Message Mode", previous.Name, method.Name));
                     }
                     cachedMethods[hash] = method;
                 }
