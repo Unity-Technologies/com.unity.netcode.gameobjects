@@ -55,7 +55,9 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
 
             BitStream inStream = new BitStream(buffer);
 
-            Assert.That(inStream.ReadBit() && !inStream.ReadBit() && inStream.ReadBit(), "Incorrect ReadBit result");
+            Assert.That(inStream.ReadBit(), Is.True);
+            Assert.That(inStream.ReadBit(), Is.False);
+            Assert.That(inStream.ReadBit(), Is.True);
         }
 
 
