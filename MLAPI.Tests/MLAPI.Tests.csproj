@@ -33,6 +33,9 @@
       <HintPath>..\packages\NUnit.2.6.6\lib\nunit.framework.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="nunit.framework">
+      <HintPath>..\packages\NUnit.2.6.6\lib\nunit.framework.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Data\FieldTypeTests.cs" />
@@ -40,6 +43,7 @@
     <Compile Include="NetworkingManagerComponents\Binary\BitWriterTest.cs" />
     <Compile Include="Data\HashCodeTest.cs" />
     <Compile Include="NetworkingManagerComponents\Binary\ArithmeticTest.cs" />
+    <Compile Include="NetworkingManagerComponents\Binary\BitStreamTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
