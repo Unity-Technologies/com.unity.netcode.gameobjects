@@ -25,8 +25,8 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
             BitStream bitStream = new BitStream(new byte[100]);
             bitStream.WriteBit(true);
 
-            // this is failing,  I just wrote something,  how is it possible
-            // that the length is still 0?
+            // we only wrote 1 bit,  so the size should be as small as possible
+            // which is 1 byte,   regardless of how big the buffer is
             Assert.That(bitStream.Length, Is.EqualTo(1));
         }
 
