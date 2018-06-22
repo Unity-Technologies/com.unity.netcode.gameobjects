@@ -17,15 +17,14 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         public BitStream(int capacity = 16, double growthFactor = 2.0)
         {
             target = new byte[capacity];
-            this.growthFactor = growthFactor;
-            Resizable = false;
+            this.growthFactor = growthFactor <= 1 ? 1.5 : growthFactor;
+            Resizable = true;
         }
-        public BitStream(byte[] target, double growthFactor = 2.0)
+        public BitStream(byte[] target)
         {
             this.target = target;
-            this.growthFactor = growthFactor <= 1 ? 1.5 : growthFactor;
             BitLength = (ulong)target.LongLength << 3;
-            Resizable = true;
+            Resizable = false;
         }
 
         public bool Resizable { get; }
