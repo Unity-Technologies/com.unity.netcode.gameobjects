@@ -14,7 +14,7 @@ artifacts:
 image: Visual Studio 2017
 
 test_script:
- - .\packages\OpenCover.4.6.519\tools\OpenCover.Console.exe -register:user -target:"nunit-console.exe" -targetargs:"MLAPI.Tests\bin\Debug\MLAPI.Tests.dll" -output:"coverage.xml" -filter:"+[MLAPI*]* -[MLAPI.Tests*]*"
+ - .\packages\OpenCover.4.6.519\tools\OpenCover.Console.exe -register:user -target:"nunit3-console.exe" -targetargs:"MLAPI.Tests\bin\Debug\MLAPI.Tests.dll" -output:"coverage.xml" -filter:"+[MLAPI*]* -[MLAPI.Tests*]* -returntargetcode"
 
 
 after_test:
