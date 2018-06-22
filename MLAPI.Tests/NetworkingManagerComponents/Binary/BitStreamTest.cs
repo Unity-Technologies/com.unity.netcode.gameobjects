@@ -3,7 +3,7 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
 {
     using MLAPI.NetworkingManagerComponents.Binary;
     using NUnit.Framework;
-
+    using static MLAPI.NetworkingManagerComponents.Binary.BitStream;
 
     [TestFixture]
     public class BitStreamTest
@@ -33,19 +33,17 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
         [Test]
         public void TestGrow()
         {
-            // stream should grow to accomodate input
+            // stream should not grow when given a buffer
             BitStream bitStream = new BitStream(new byte[0]);
-            bitStream.WriteInt64(long.MaxValue);
-
-        }
-
-        [Test]
-        public void TestGrow2()
-        {
-            // stream should grow to accomodate input
-            BitStream bitStream = new BitStream(new byte[1]);
-            bitStream.WriteInt64(long.MaxValue);
-
+            try
+            {
+                bitStream.WriteInt64(long.MaxValue);
+                Assert.Fail("Should throw capacity exception");
+            }
+            catch (CapacityException ex)
+            {
+                Assert.Pass("Method threw capacity exception: " + ex);
+            }
         }
 
         [Test]
@@ -57,14 +55,12 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
             outStream.WriteBit(true);
             outStream.WriteBit(false);
             outStream.WriteBit(true);
-            outStream.Flush();
 
 
             // the bit should now be stored in the buffer,  lets see if it comes out
 
             BitStream inStream = new BitStream(buffer);
 
-            // Yeet
             Assert.That(inStream.ReadBit() && !inStream.ReadBit() && inStream.ReadBit(), "Incorrect ReadBit result");
         }
 
@@ -79,7 +75,6 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
 
             BitStream outStream = new BitStream(buffer);
             outStream.WriteInt64Packed(someNumber);
-            outStream.Flush();
 
 
             // the bit should now be stored in the buffer,  lets see if it comes out
@@ -100,7 +95,6 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
 
             BitStream outStream = new BitStream(buffer);
             outStream.WriteByte(someNumber);
-            outStream.Flush();
 
 
             // the bit should now be stored in the buffer,  lets see if it comes out
@@ -122,7 +116,6 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
 
             BitStream outStream = new BitStream(buffer);
             outStream.WriteInt16(someNumber);
-            outStream.Flush();
 
 
             // the bit should now be stored in the buffer,  lets see if it comes out
@@ -143,7 +136,6 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
 
             BitStream outStream = new BitStream(buffer);
             outStream.WriteInt32(someNumber);
-            outStream.Flush();
 
 
             // the bit should now be stored in the buffer,  lets see if it comes out
@@ -165,7 +157,6 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
             BitStream outStream = new BitStream(buffer);
             outStream.WriteInt16(someNumber);
             outStream.WriteInt16(someNumber2);
-            outStream.Flush();
 
 
             // the bit should now be stored in the buffer,  lets see if it comes out
