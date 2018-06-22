@@ -35,15 +35,9 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
         {
             // stream should not grow when given a buffer
             BitStream bitStream = new BitStream(new byte[0]);
-            try
-            {
+            Assert.Throws<CapacityException>( () => {
                 bitStream.WriteInt64(long.MaxValue);
-                Assert.Fail("Should throw capacity exception");
-            }
-            catch (CapacityException ex)
-            {
-                Assert.Pass("Method threw capacity exception: " + ex);
-            }
+            });
         }
 
         [Test]
