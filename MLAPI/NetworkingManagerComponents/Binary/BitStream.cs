@@ -9,9 +9,6 @@ namespace MLAPI.NetworkingManagerComponents.Binary
 {
     public sealed class BitStream : Stream
     {
-        private const long SIGN_BIT = -9223372036854775808;
-
-
         private readonly double growthFactor;
         private readonly byte[] target;
 
@@ -19,17 +16,19 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         {
             this.target = target;
             this.growthFactor = growthFactor <= 1 ? 1.5 : growthFactor;
+            BitLength = (ulong)target.LongLength << 3;
         }
 
-        public override bool CanRead => BitPosition < (ulong) target.LongLength;
+        public override bool CanRead => BitPosition < (ulong)target.LongLength;
 
         public override bool CanSeek => true;
 
         public override bool CanWrite => true;
 
-        public override long Length => (long) (BitLength>>3);
+        public override long Length => (long)((BitLength >> 3) + ((BitLength & 1UL) | ((BitLength >> 1) & 1UL) | ((BitLength >> 2) & 1UL))); // Optimized CeilingExact
 
-        public override long Position { get => (long)(BitPosition>>3); set => BitPosition = (ulong)value << 3; }
+        private long BitWriteIndex { get => (long)((BitPosition >> 3) + ((BitPosition & 1UL) | ((BitPosition >> 1) & 1UL) | ((BitPosition >> 2) & 1UL))); }
+        public override long Position { get => (long)(BitPosition >> 3); set => BitPosition = (ulong)value << 3; }
         public ulong BitPosition { get; set; }
         public ulong BitLength { get; private set; }
         public bool BitAligned { get => (BitPosition & 7) == 0; }
@@ -54,15 +53,15 @@ namespace MLAPI.NetworkingManagerComponents.Binary
 
         public override long Seek(long offset, SeekOrigin origin)
         {
-            return (long) (
+            return (long)(
                 BitPosition =
                     (
                     origin == SeekOrigin.Current ?
                         offset > 0 ?
                             Math.Min(BitPosition + ((ulong)offset << 3), (ulong)target.Length << 3) :
-                            (offset ^ SIGN_BIT) > Position ?
+                            (offset ^ SIGN_BIT_64) > Position ?
                                 0UL :
-                                BitPosition - (ulong)((offset ^ SIGN_BIT) << 3) :
+                                BitPosition - (ulong)((offset ^ SIGN_BIT_64) << 3) :
                     origin == SeekOrigin.Begin ?
                         (ulong)Math.Max(0, offset) << 3 :
                         (ulong)Math.Max(target.Length - offset, 0) << 3
@@ -93,7 +92,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             }
         }
 
-        private void Grow(int newContent) => SetLength(target.LongLength * (long)Math.Pow(growthFactor, CeilingExact(newContent, target.Length)));
+        private void Grow(int newContent) => SetLength(Math.Max(target.LongLength, 1) * (long)Math.Pow(growthFactor, CeilingExact(newContent, Math.Max(target.Length, 1))));
 
         public void WriteBit(bool bit)
         {
@@ -138,6 +137,8 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         public void WriteInt64Packed(long value) => WriteUInt64(ZigZagEncode(value));
         public void WriteUInt64Packed(ulong value)
         {
+            int grow = VarIntSize(value);
+            if (BitWriteIndex + grow >= target.LongLength) Grow(grow);
             if (value <= 240) WriteULongByte(value);
             else if (value <= 2287)
             {
@@ -161,7 +162,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
                 }
                 WriteULongByte(header);
                 int max = (int)(header - 247);
-                for (int i = 0; i < max; ++i) WriteULongByte(value >> (i<<3));
+                for (int i = 0; i < max; ++i) WriteULongByte(value >> (i << 3));
             }
         }
         public ushort ReadUInt16()
@@ -178,7 +179,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         {
             return (ulong)(
                 _ReadByte() |
-                (_ReadByte() << 8)  |
+                (_ReadByte() << 8) |
                 (_ReadByte() << 16) |
                 (_ReadByte() << 24) |
                 (_ReadByte() << 32) |
@@ -202,10 +203,11 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             if (header == 249) return 2288UL + (ulong)(_ReadByte() << 8) + _ReadByte();
             ulong res = _ReadByte() | ((ulong)_ReadByte() << 8) | ((ulong)_ReadByte() << 16);
             int cmp = 2;
-            int hdr = (int)(header-246);
+            int hdr = (int)(header - 246);
             while (hdr > ++cmp) res |= (ulong)_ReadByte() << (cmp << 3);
             return res;
         }
+        public bool ReadBit() => (target[Position] & (1 << (int)(BitPosition++ & 7))) != 0;
 
 
         private void WriteULongByteMisaligned(ulong value) => WriteMisaligned((byte)value);
@@ -222,6 +224,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         private void WriteULongByte(ulong byteValue) => WriteByte((byte)byteValue);
         public override void WriteByte(byte value)
         {
+            if (Position == target.LongLength) Grow(1);
             if (BitAligned)
             {
                 target[Position] = value;
@@ -229,5 +232,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             }
             else WriteMisaligned(value);
         }
+
+        public byte[] GetBuffer() => target;
     }
 }
