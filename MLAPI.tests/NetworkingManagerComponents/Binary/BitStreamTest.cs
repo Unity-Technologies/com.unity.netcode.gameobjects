@@ -177,5 +177,22 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
             Assert.That(result, Is.EqualTo(someNumber));
             Assert.That(result2, Is.EqualTo(someNumber2));
         }
+
+        [Test]
+        public void TestCapacity()
+        {
+            BitStream inStream = new BitStream(4);
+
+            inStream.WriteByte(1);
+            inStream.WriteByte(2);
+            inStream.WriteByte(3);
+            inStream.WriteByte(4);
+            inStream.WriteByte(5);
+
+            // buffer should grow and the reported length
+            // should not waste any space
+            // note MemoryStream makes a distinction between Length and Capacity
+            Assert.That(inStream.Length, Is.EqualTo(5));
+        }
     }
 }
