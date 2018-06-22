@@ -106,7 +106,7 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
             // the bit should now be stored in the buffer,  lets see if it comes out
 
             BitStream inStream = new BitStream(buffer);
-            Assert.That(inStream.ReadByte() == someNumber, "Read/Write mismatch in WriteByte() and/or ReadByte()");
+            Assert.That(inStream.ReadByte(), Is.EqualTo(someNumber));
 
             // wtf this is standard behaviour
             //Assert.Fail("Read byte should return byte,  but it returns int");
