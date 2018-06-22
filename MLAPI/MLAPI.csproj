@@ -80,9 +80,6 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Libraries\Unity\UnityEngine.dll</HintPath>
     </Reference>
-    <Reference Include="IntXLib">
-      <HintPath>..\packages\IntX.1.0.1.0\lib\net20\IntXLib.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Attributes\BinaryIgnore.cs" />
