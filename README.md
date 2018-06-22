@@ -7,6 +7,7 @@ MLAPI (Mid level API) is a framework that hopefully simplifies building networke
 [![Build status](https://ci.appveyor.com/api/projects/status/isxpxba8r76x7chu/branch/master?svg=true)](https://ci.appveyor.com/project/MidLevel/mlapi/branch/master)
 [![Codecov](https://codecov.io/gh/MidLevel/MLAPI/branch/master/graph/badge.svg)](https://codecov.io/gh/MidLevel/MLAPI)
 [![AppVeyor tests branch](https://img.shields.io/appveyor/tests/MidLevel/MLAPI/master.svg)](https://ci.appveyor.com/project/MidLevel/mlapi/build/tests)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/ab11c8cbe89745728de7e4806c2d2036)](https://www.codacy.com/app/TwoTenPvP/MLAPI?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=MidLevel/MLAPI&amp;utm_campaign=Badge_Grade)
 [![Discord](https://img.shields.io/discord/449263083769036810.svg)](https://discord.gg/FM8SE9E)
 
 
