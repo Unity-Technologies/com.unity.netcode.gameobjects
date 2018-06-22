@@ -39,6 +39,7 @@
     <Compile Include="Test.cs" />
     <Compile Include="NetworkingManagerComponents\Binary\BitWriterTest.cs" />
     <Compile Include="Data\HashCodeTest.cs" />
+    <Compile Include="NetworkingManagerComponents\Binary\BitStreamTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
