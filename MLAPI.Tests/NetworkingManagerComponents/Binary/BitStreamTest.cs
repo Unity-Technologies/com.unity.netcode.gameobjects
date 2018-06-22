@@ -55,16 +55,17 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
 
             BitStream outStream = new BitStream(buffer);
             outStream.WriteBit(true);
+            outStream.WriteBit(false);
+            outStream.WriteBit(true);
             outStream.Flush();
 
 
             // the bit should now be stored in the buffer,  lets see if it comes out
 
             BitStream inStream = new BitStream(buffer);
-            //bool result = inStream.ReadBit();
 
-            Assert.Fail("There is no read bit method");
-
+            // Yeet
+            Assert.That(inStream.ReadBit() && !inStream.ReadBit() && inStream.ReadBit(), "Incorrect ReadBit result");
         }
 
 
@@ -72,7 +73,7 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
         public void TestInOutPacked64Bit()
         {
             byte[] buffer = new byte[100];
-
+            
             long someNumber = 1469598103934656037;
 
 
