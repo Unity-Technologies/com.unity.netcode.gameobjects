@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.Serialization;
 using System.Text;
 using static MLAPI.NetworkingManagerComponents.Binary.Arithmetic;
 
@@ -12,19 +13,25 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         private readonly double growthFactor;
         private readonly byte[] target;
 
+
+        public BitStream(int capacity = 16, double growthFactor = 2.0)
+        {
+            target = new byte[capacity];
+            this.growthFactor = growthFactor;
+            Resizable = false;
+        }
         public BitStream(byte[] target, double growthFactor = 2.0)
         {
             this.target = target;
             this.growthFactor = growthFactor <= 1 ? 1.5 : growthFactor;
             BitLength = (ulong)target.LongLength << 3;
+            Resizable = true;
         }
 
+        public bool Resizable { get; }
         public override bool CanRead => BitPosition < (ulong)target.LongLength;
-
         public override bool CanSeek => true;
-
         public override bool CanWrite => true;
-
         public override long Length => (long)((BitLength >> 3) + ((BitLength & 1UL) | ((BitLength >> 1) & 1UL) | ((BitLength >> 2) & 1UL))); // Optimized CeilingExact
 
         private long BitWriteIndex { get => (long)((BitPosition >> 3) + ((BitPosition & 1UL) | ((BitPosition >> 1) & 1UL) | ((BitPosition >> 2) & 1UL))); }
@@ -70,6 +77,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
 
         public override void SetLength(long value)
         {
+            if (!Resizable) throw new CapacityException("Can't resize fixed-capacity buffer! Capacity (bytes): "+target.Length); // Don't do shit because fuck you
             byte[] newTarg = new byte[value];
             long len = Math.Min(value, target.LongLength);
             for (long l = 0; l < len; ++l) newTarg[l] = target[l];
@@ -234,5 +242,13 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         }
 
         public byte[] GetBuffer() => target;
+
+
+        public sealed class CapacityException : Exception
+        {
+            public CapacityException() { }
+            public CapacityException(string message) : base(message) { }
+            public CapacityException(string message, Exception innerException) : base(message, innerException) { }
+        }
     }
 }
