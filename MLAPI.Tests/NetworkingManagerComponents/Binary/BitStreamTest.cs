@@ -3,7 +3,7 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
 {
     using MLAPI.NetworkingManagerComponents.Binary;
     using NUnit.Framework;
-
+    using static MLAPI.NetworkingManagerComponents.Binary.BitStream;
 
     [TestFixture]
     public class BitStreamTest
@@ -25,27 +25,19 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
             BitStream bitStream = new BitStream(new byte[100]);
             bitStream.WriteBit(true);
 
-            // this is failing,  I just wrote something,  how is it possible
-            // that the length is still 0?
+            // we only wrote 1 bit,  so the size should be as small as possible
+            // which is 1 byte,   regardless of how big the buffer is
             Assert.That(bitStream.Length, Is.EqualTo(1));
         }
 
         [Test]
         public void TestGrow()
         {
-            // stream should grow to accomodate input
+            // stream should not grow when given a buffer
             BitStream bitStream = new BitStream(new byte[0]);
-            bitStream.WriteInt64(long.MaxValue);
-
-        }
-
-        [Test]
-        public void TestGrow2()
-        {
-            // stream should grow to accomodate input
-            BitStream bitStream = new BitStream(new byte[1]);
-            bitStream.WriteInt64(long.MaxValue);
-
+            Assert.That(
+                () => { bitStream.WriteInt64(long.MaxValue); }, 
+                Throws.TypeOf<CapacityException>());
         }
 
         [Test]
@@ -57,15 +49,15 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
             outStream.WriteBit(true);
             outStream.WriteBit(false);
             outStream.WriteBit(true);
-            outStream.Flush();
 
 
             // the bit should now be stored in the buffer,  lets see if it comes out
 
             BitStream inStream = new BitStream(buffer);
 
-            // Yeet
-            Assert.That(inStream.ReadBit() && !inStream.ReadBit() && inStream.ReadBit(), "Incorrect ReadBit result");
+            Assert.That(inStream.ReadBit(), Is.True);
+            Assert.That(inStream.ReadBit(), Is.False);
+            Assert.That(inStream.ReadBit(), Is.True);
         }
 
 
@@ -79,7 +71,6 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
 
             BitStream outStream = new BitStream(buffer);
             outStream.WriteInt64Packed(someNumber);
-            outStream.Flush();
 
 
             // the bit should now be stored in the buffer,  lets see if it comes out
@@ -100,7 +91,6 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
 
             BitStream outStream = new BitStream(buffer);
             outStream.WriteByte(someNumber);
-            outStream.Flush();
 
 
             // the bit should now be stored in the buffer,  lets see if it comes out
@@ -122,7 +112,6 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
 
             BitStream outStream = new BitStream(buffer);
             outStream.WriteInt16(someNumber);
-            outStream.Flush();
 
 
             // the bit should now be stored in the buffer,  lets see if it comes out
@@ -143,7 +132,6 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
 
             BitStream outStream = new BitStream(buffer);
             outStream.WriteInt32(someNumber);
-            outStream.Flush();
 
 
             // the bit should now be stored in the buffer,  lets see if it comes out
@@ -165,7 +153,6 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
             BitStream outStream = new BitStream(buffer);
             outStream.WriteInt16(someNumber);
             outStream.WriteInt16(someNumber2);
-            outStream.Flush();
 
 
             // the bit should now be stored in the buffer,  lets see if it comes out
@@ -176,6 +163,23 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
 
             Assert.That(result, Is.EqualTo(someNumber));
             Assert.That(result2, Is.EqualTo(someNumber2));
+        }
+
+        [Test]
+        public void TestCapacityGrowth()
+        {
+            BitStream inStream = new BitStream(4);
+
+            inStream.WriteByte(1);
+            inStream.WriteByte(2);
+            inStream.WriteByte(3);
+            inStream.WriteByte(4);
+            inStream.WriteByte(5);
+
+            // buffer should grow and the reported length
+            // should not waste any space
+            // note MemoryStream makes a distinction between Length and Capacity
+            Assert.That(inStream.Length, Is.EqualTo(5));
         }
     }
 }
