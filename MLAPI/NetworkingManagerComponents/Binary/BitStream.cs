@@ -210,7 +210,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             if (header == 249) return 2288UL + (ulong)(_ReadByte() << 8) + _ReadByte();
             ulong res = _ReadByte() | ((ulong)_ReadByte() << 8) | ((ulong)_ReadByte() << 16);
             int cmp = 2;
-            int hdr = (int)(header - 246);
+            int hdr = (int)(header - 247);
             while (hdr > ++cmp) res |= (ulong)_ReadByte() << (cmp << 3);
             return res;
         }
