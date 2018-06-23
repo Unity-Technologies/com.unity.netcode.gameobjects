@@ -212,7 +212,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         }
 
         /// <summary>
-        /// Write data from the given buffer to the internal stream buffer,
+        /// Write data from the given buffer to the internal stream buffer.
         /// </summary>
         /// <param name="buffer">Buffer to write from.</param>
         /// <param name="offset">Offset in given buffer to start reading from.</param>
@@ -233,6 +233,12 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             }
             if (BitPosition > BitLength) BitLength = BitPosition;
         }
+
+        /// <summary>
+        /// Write data from the given buffer to the internal stream buffer.
+        /// </summary>
+        /// <param name="buffer">Buffer to write from.</param>
+        public void Write(byte[] buffer) => Write(buffer, 0, buffer.Length);
 
         /// <summary>
         /// Grow buffer if possible. According to Max(bufferLength, 1) * growthFactor^Ceil(newContent/Max(bufferLength, 1))
