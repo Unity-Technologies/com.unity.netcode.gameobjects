@@ -607,6 +607,12 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         public byte[] GetBuffer() => target;
 
         /// <summary>
+        /// Returns hex encoded version of the buffer
+        /// </summary>
+        /// <returns>Hex encoded version of the buffer</returns>
+        public override string ToString() => BitConverter.ToString(target, 0, (int)Length);;
+
+        /// <summary>
         /// An exception representing cases when buffer-capacity related errors occur.
         /// </summary>
         public sealed class CapacityException : Exception
