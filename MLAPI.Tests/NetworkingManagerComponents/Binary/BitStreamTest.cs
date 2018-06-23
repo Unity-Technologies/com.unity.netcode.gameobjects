@@ -166,9 +166,25 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
         }
 
         [Test]
+        public void TestLength()
+        {
+            BitStream inStream = new BitStream(4);
+            Assert.That(inStream.Length, Is.EqualTo(0));
+            inStream.WriteByte(1);
+            Assert.That(inStream.Length, Is.EqualTo(1));
+            inStream.WriteByte(2);
+            Assert.That(inStream.Length, Is.EqualTo(2));
+            inStream.WriteByte(3);
+            Assert.That(inStream.Length, Is.EqualTo(3));
+            inStream.WriteByte(4);
+            Assert.That(inStream.Length, Is.EqualTo(4));
+        }
+
+        [Test]
         public void TestCapacityGrowth()
         {
             BitStream inStream = new BitStream(4);
+            Assert.That(inStream.Capacity, Is.EqualTo(4));
 
             inStream.WriteByte(1);
             inStream.WriteByte(2);
@@ -180,6 +196,7 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
             // should not waste any space
             // note MemoryStream makes a distinction between Length and Capacity
             Assert.That(inStream.Length, Is.EqualTo(5));
+            Assert.That(inStream.Capacity, Is.GreaterThanOrEqualTo(5));
         }
     }
 }
