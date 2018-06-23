@@ -11,7 +11,6 @@ namespace MLAPI.NetworkingManagerComponents.Binary
     public sealed class BitStream : Stream
     {
         const int initialCapacity = 16;
-        private readonly float growthFactor;
         private readonly byte[] target;
 
         /// <summary>
@@ -22,7 +21,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         public BitStream(int capacity = initialCapacity, float growthFactor = 2.0f)
         {
             target = new byte[capacity];
-            this.growthFactor = growthFactor <= 1 ? 1.5f : growthFactor;
+            GrowthFactor = growthFactor;
             Resizable = true;
         }
 
@@ -59,6 +58,12 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// Whether or not the stream will grow the buffer to accomodate more data.
         /// </summary>
         public bool Resizable { get; }
+
+        private float _growthFactor;
+        /// <summary>
+        /// Factor by which buffer should grow when necessary.
+        /// </summary>
+        public float GrowthFactor { set { _growthFactor = value <= 1 ? 1.5f : value; } get { return _growthFactor; } }
 
         /// <summary>
         /// Whether or not data can be read from the stream.
@@ -233,7 +238,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// Grow buffer if possible. According to Max(bufferLength, 1) * growthFactor^Ceil(newContent/Max(bufferLength, 1))
         /// </summary>
         /// <param name="newContent">How many new values need to be accomodated (at least).</param>
-        private void Grow(long newContent) => SetCapacity(Math.Max(target.LongLength, 1) * (long)Math.Pow(growthFactor, CeilingExact(newContent, Math.Max(target.LongLength, 1))));
+        private void Grow(long newContent) => SetCapacity(Math.Max(target.LongLength, 1) * (long)Math.Pow(GrowthFactor, CeilingExact(newContent, Math.Max(target.LongLength, 1))));
 
         /// <summary>
         /// Write a single bit to the stream
