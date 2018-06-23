@@ -258,6 +258,55 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         public void WriteNibble(byte value, bool upper) => WriteNibble((byte)(value >> (upper ? 4 : 0)));
 
         /// <summary>
+        /// Write s certain amount of bits to the stream.
+        /// </summary>
+        /// <param name="value">Value to get bits from.</param>
+        /// <param name="bitCount">Amount of bits to write</param>
+        public void WriteBits(ulong value, int bitCount)
+        {
+            if (bitCount > 64) throw new ArgumentOutOfRangeException("Cannot read more than 64 bits from a 64-bit value!");
+            if (bitCount < 0) throw new ArgumentOutOfRangeException("Cannot read fewer than 0 bits!");
+            int count = -8;
+            while (bitCount > (count+=8)) _WriteULongByte(value >> count);
+            BitPosition += (ulong)count;
+            if((bitCount & 7) != 0) _WriteBits((byte)(value >> count), bitCount & 7);
+            UpdateLength();
+        }
+        /// <summary>
+        /// Write bits to stream. This does not update the current Length of the stream.
+        /// </summary>
+        /// <param name="value">Value to get bits from.</param>
+        /// <param name="bitCount">Amount of bits to write.</param>
+        private void _WriteBits(byte value, int bitCount)
+        {
+            if (bitCount > 8) throw new ArgumentOutOfRangeException("Cannot read more than 8 bits from a 8-bit value!");
+            if (bitCount < 0) throw new ArgumentOutOfRangeException("Cannot read fewer than 0 bits!");
+            int offset = (int)(BitPosition & 7UL), offset_inv = 8 - offset;
+            value &= (byte)(0xFF >> (8 - bitCount));
+            target[Position] = (byte)(
+                    (target[Position] & (0xFF >> offset_inv)) |             // Bits prior to value (lower)
+                    (target[Position] & (0xFF << (offset + bitCount))) |    // Bits after value (higher)
+                    (value<<offset)                                         // Bits to write
+                );
+            if (bitCount + offset > 8)
+                target[Position + 1] = (byte)(
+                        (target[Position + 1] & (0xFF << ((bitCount + offset) & 7))) |  // Bits after upper part of value (higher)
+                        (value >> (16 - bitCount - offset))                             // upper part of value
+                    );
+            BitPosition += (ulong)bitCount;
+        }
+        /// <summary>
+        /// Write bits to stream.
+        /// </summary>
+        /// <param name="value">Value to get bits from.</param>
+        /// <param name="bitCount">Amount of bits to write.</param>
+        public void WriteBits(byte value, int bitCount)
+        {
+            _WriteBits(value, bitCount);
+            UpdateLength();
+        }
+
+        /// <summary>
         /// Write a signed byte to the stream.
         /// </summary>
         /// <param name="value">Value to write</param>
