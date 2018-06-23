@@ -10,7 +10,8 @@ namespace MLAPI.NetworkingManagerComponents.Binary
 {
     public sealed class BitStream : Stream
     {
-        private readonly double growthFactor;
+        const int initialCapacity = 16;
+        private readonly float growthFactor;
         private readonly byte[] target;
 
         /// <summary>
@@ -18,11 +19,29 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// </summary>
         /// <param name="capacity">Initial capacity of buffer in bytes.</param>
         /// <param name="growthFactor">Factor by which buffer should grow when necessary.</param>
-        public BitStream(int capacity = 16, double growthFactor = 2.0)
+        public BitStream(int capacity = initialCapacity, float growthFactor = 2.0f)
         {
             target = new byte[capacity];
-            this.growthFactor = growthFactor <= 1 ? 1.5 : growthFactor;
+            this.growthFactor = growthFactor <= 1 ? 1.5f : growthFactor;
             Resizable = true;
+        }
+
+        /// <summary>
+        /// A stream that supports writing data smaller than a single byte. This stream also has a built-in compression algorithm that can (optionally) be used to write compressed data.
+        /// </summary>
+        /// <param name="growthFactor">Factor by which buffer should grow when necessary.</param>
+        public BitStream(float growthFactor = 2.0f) : this(initialCapacity, growthFactor) { }
+
+        /// <summary>
+        /// A stream that supports writing data smaller than a single byte. This stream also has a built-in compression algorithm that can (optionally) be used to write compressed data.
+        /// </summary>
+        /// <param name="target">The buffer containing initial data</param>
+        /// <param name="offset">The offset where the data begins</param>
+        /// <param name="count">The amount of bytes to copy from the initial data buffer</param>
+        public BitStream(byte[] target, int offset, int count) : this(count)
+        {
+            Buffer.BlockCopy(target, offset, this.target, 0, count);
+            Resizable = false;
         }
 
         /// <summary>
