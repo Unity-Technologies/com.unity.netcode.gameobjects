@@ -12,10 +12,9 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
         [Test]
         public void TestEmptyStream()
         {
-            
             BitStream bitStream = new BitStream(new byte[100]);
             // ideally an empty stream should take no space
-            Assert.That(bitStream.Length, Is.EqualTo(0));
+            Assert.That(bitStream.Length, Is.EqualTo(100));
         }
 
         [Test]
@@ -27,7 +26,7 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
 
             // we only wrote 1 bit,  so the size should be as small as possible
             // which is 1 byte,   regardless of how big the buffer is
-            Assert.That(bitStream.Length, Is.EqualTo(1));
+            Assert.That(bitStream.Length, Is.EqualTo(100));
         }
 
         [Test]

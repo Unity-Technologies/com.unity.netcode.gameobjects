@@ -11,7 +11,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
     public sealed class BitStream : Stream
     {
         private readonly double growthFactor;
-        private readonly byte[] target;
+        private byte[] target;
 
         /// <summary>
         /// A stream that supports writing data smaller than a single byte. This stream also has a built-in compression algorithm that can (optionally) be used to write compressed data.
@@ -34,6 +34,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         {
             this.target = target;
             Resizable = false;
+            BitLength = (ulong) (target.Length << 3);
         }
 
         /// <summary>
@@ -76,7 +77,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// <summary>
         /// The index that will be written to when any call to write data is made to this stream.
         /// </summary>
-        public override long Position { get => Div8Ceil(BitPosition); set => BitPosition = (ulong)value << 3; }
+        public override long Position { get => (long)(BitPosition>>3); set => BitPosition = (ulong)value << 3; }
 
         /// <summary>
         /// Bit offset into the buffer that new data will be written to.
@@ -172,8 +173,9 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             if (!Resizable) throw new CapacityException("Can't resize fixed-capacity buffer! Capacity (bytes): "+target.Length); // Don't do shit because fuck you
             byte[] newTarg = new byte[value];
             long len = Math.Min(value, target.LongLength);
-            for (long l = 0; l < len; ++l) newTarg[l] = target[l];
-            if (value > target.LongLength) BitPosition = (ulong)value << 3;
+            Buffer.BlockCopy(target, 0, newTarg, 0, (int)len);
+            if (value < target.LongLength) BitPosition = (ulong)value << 3;
+            target = newTarg;
         }
 
         /// <summary>
@@ -224,8 +226,9 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         {
             if (BitAligned && Position + 1 >= target.Length) Grow(1);
             int offset = (int)(BitPosition & 7);
+            ulong pos = BitPosition >> 3;
             ++BitPosition;
-            target[BitPosition] = (byte)(bit ? (target[BitPosition >> 3] & ~(1 << offset)) | (1 << offset) : (target[BitPosition >> 3] & ~(1 << offset)));
+            target[pos] = (byte)(bit ? (target[pos] & ~(1 << offset)) | (1 << offset) : (target[pos] & ~(1 << offset)));
             UpdateLength();
         }
 
@@ -563,7 +566,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// <param name="value">Value to write</param>
         private void _WriteByte(byte value)
         {
-            if (Position == target.LongLength) Grow(1);
+            if (Div8Ceil(BitPosition) == target.LongLength) Grow(1);
             if (BitAligned)
             {
                 target[Position] = value;
