@@ -11,7 +11,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
     public sealed class BitStream : Stream
     {
         const int initialCapacity = 16;
-        private readonly byte[] target;
+        private byte[] target;
 
         /// <summary>
         /// A stream that supports writing data smaller than a single byte. This stream also has a built-in compression algorithm that can (optionally) be used to write compressed data.
