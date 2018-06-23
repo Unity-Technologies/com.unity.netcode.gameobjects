@@ -625,6 +625,29 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             _WriteByte(value);
             UpdateLength();
         }
+        /// <summary>
+        /// Copy data from another stream
+        /// </summary>
+        /// <param name="s">Stream to copy from</param>
+        /// <param name="count">How many bytes to read. Set to value less than one to read until ReadByte returns -1</param>
+        public void CopyFrom(Stream s, int count = -1)
+        {
+            if(s is BitStream b)
+            {
+                ulong bytes = b.BitLength >> 3;
+                Write(b.target, 0, (int)bytes);
+                if ((b.BitLength & 7) != 0) _WriteBits(b.target[bytes - 1], (int)(b.BitLength & 7));
+            }
+            else
+            {
+                int read;
+                bool readToEnd = count < 0;
+                while((readToEnd || count-- > 0) && (read = s.ReadByte()) != -1)
+                    _WriteIntByte(read);
+            }
+
+            UpdateLength();
+        }
         
         /// <summary>
         /// Update length of data considered to be "written" to the stream.
