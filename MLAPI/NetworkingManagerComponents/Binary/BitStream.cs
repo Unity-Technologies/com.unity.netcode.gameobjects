@@ -607,10 +607,21 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         public byte[] GetBuffer() => target;
 
         /// <summary>
+        /// Creates a copy of the internal buffer. This only contains the used bytes
+        /// </summary>
+        /// <returns>A copy of used bytes in the internal buffer</returns>
+        public byte[] ToArray()
+        {
+            byte[] copy = new byte[Length];
+            Buffer.BlockCopy(target, 0, copy, 0, (int)Length);
+            return copy;
+        }
+
+        /// <summary>
         /// Returns hex encoded version of the buffer
         /// </summary>
         /// <returns>Hex encoded version of the buffer</returns>
-        public override string ToString() => BitConverter.ToString(target, 0, (int)Length);;
+        public override string ToString() => BitConverter.ToString(target, 0, (int)Length);
 
         /// <summary>
         /// An exception representing cases when buffer-capacity related errors occur.
