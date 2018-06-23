@@ -76,7 +76,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// <summary>
         /// The index that will be written to when any call to write data is made to this stream.
         /// </summary>
-        public override long Position { get => (long)((BitPosition >> 3) + ((BitPosition & 1UL) | ((BitPosition >> 1) & 1UL) | ((BitPosition >> 2) & 1UL))); set => BitPosition = (ulong)value << 3; }
+        public override long Position { get => Div8Ceil(BitPosition); set => BitPosition = (ulong)value << 3; }
 
         /// <summary>
         /// Bit offset into the buffer that new data will be written to.
@@ -264,6 +264,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// <param name="bitCount">Amount of bits to write</param>
         public void WriteBits(ulong value, int bitCount)
         {
+            if (BitPosition + (ulong)bitCount > ((ulong)target.LongLength << 3)) Grow(Div8Ceil(BitPosition+(ulong)bitCount));
             if (bitCount > 64) throw new ArgumentOutOfRangeException("Cannot read more than 64 bits from a 64-bit value!");
             if (bitCount < 0) throw new ArgumentOutOfRangeException("Cannot read fewer than 0 bits!");
             int count = -8;
@@ -279,6 +280,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// <param name="bitCount">Amount of bits to write.</param>
         private void _WriteBits(byte value, int bitCount)
         {
+            if (BitPosition + (ulong)bitCount > ((ulong)target.LongLength << 3)) Grow(1);
             if (bitCount > 8) throw new ArgumentOutOfRangeException("Cannot read more than 8 bits from a 8-bit value!");
             if (bitCount < 0) throw new ArgumentOutOfRangeException("Cannot read fewer than 0 bits!");
             int offset = (int)(BitPosition & 7UL), offset_inv = 8 - offset;

@@ -33,5 +33,7 @@
                 value <= 281474976710655 ? 7 :
                 value <= 72057594037927935 ? 8 :
                 9;
+
+        internal static long Div8Ceil(ulong value) => (long)((value >> 3) + ((value & 1UL) | ((value >> 1) & 1UL) | ((value >> 2) & 1UL)));
     }
 }
