@@ -10,19 +10,37 @@ namespace MLAPI.NetworkingManagerComponents.Binary
 {
     public sealed class BitStream : Stream
     {
-        private readonly double growthFactor;
-        private byte[] target;
+        const int initialCapacity = 16;
+        private readonly byte[] target;
 
         /// <summary>
         /// A stream that supports writing data smaller than a single byte. This stream also has a built-in compression algorithm that can (optionally) be used to write compressed data.
         /// </summary>
         /// <param name="capacity">Initial capacity of buffer in bytes.</param>
         /// <param name="growthFactor">Factor by which buffer should grow when necessary.</param>
-        public BitStream(int capacity = 16, double growthFactor = 2.0)
+        public BitStream(int capacity = initialCapacity, float growthFactor = 2.0f)
         {
             target = new byte[capacity];
-            this.growthFactor = growthFactor <= 1 ? 1.5 : growthFactor;
+            GrowthFactor = growthFactor;
             Resizable = true;
+        }
+
+        /// <summary>
+        /// A stream that supports writing data smaller than a single byte. This stream also has a built-in compression algorithm that can (optionally) be used to write compressed data.
+        /// </summary>
+        /// <param name="growthFactor">Factor by which buffer should grow when necessary.</param>
+        public BitStream(float growthFactor = 2.0f) : this(initialCapacity, growthFactor) { }
+
+        /// <summary>
+        /// A stream that supports writing data smaller than a single byte. This stream also has a built-in compression algorithm that can (optionally) be used to write compressed data.
+        /// </summary>
+        /// <param name="target">The buffer containing initial data</param>
+        /// <param name="offset">The offset where the data begins</param>
+        /// <param name="count">The amount of bytes to copy from the initial data buffer</param>
+        public BitStream(byte[] target, int offset, int count) : this(count)
+        {
+            Buffer.BlockCopy(target, offset, this.target, 0, count);
+            Resizable = false;
         }
 
         /// <summary>
@@ -41,6 +59,12 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// Whether or not the stream will grow the buffer to accomodate more data.
         /// </summary>
         public bool Resizable { get; }
+
+        private float _growthFactor;
+        /// <summary>
+        /// Factor by which buffer should grow when necessary.
+        /// </summary>
+        public float GrowthFactor { set { _growthFactor = value <= 1 ? 1.5f : value; } get { return _growthFactor; } }
 
         /// <summary>
         /// Whether or not data can be read from the stream.
@@ -190,7 +214,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         }
 
         /// <summary>
-        /// Write data from the given buffer to the internal stream buffer,
+        /// Write data from the given buffer to the internal stream buffer.
         /// </summary>
         /// <param name="buffer">Buffer to write from.</param>
         /// <param name="offset">Offset in given buffer to start reading from.</param>
@@ -213,10 +237,16 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         }
 
         /// <summary>
+        /// Write data from the given buffer to the internal stream buffer.
+        /// </summary>
+        /// <param name="buffer">Buffer to write from.</param>
+        public void Write(byte[] buffer) => Write(buffer, 0, buffer.Length);
+
+        /// <summary>
         /// Grow buffer if possible. According to Max(bufferLength, 1) * growthFactor^Ceil(newContent/Max(bufferLength, 1))
         /// </summary>
         /// <param name="newContent">How many new values need to be accomodated (at least).</param>
-        private void Grow(long newContent) => SetCapacity(Math.Max(target.LongLength, 1) * (long)Math.Pow(growthFactor, CeilingExact(newContent, Math.Max(target.LongLength, 1))));
+        private void Grow(long newContent) => SetCapacity(Math.Max(target.LongLength, 1) * (long)Math.Pow(GrowthFactor, CeilingExact(newContent, Math.Max(target.LongLength, 1))));
 
         /// <summary>
         /// Write a single bit to the stream
@@ -608,6 +638,23 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// </summary>
         /// <returns></returns>
         public byte[] GetBuffer() => target;
+
+        /// <summary>
+        /// Creates a copy of the internal buffer. This only contains the used bytes
+        /// </summary>
+        /// <returns>A copy of used bytes in the internal buffer</returns>
+        public byte[] ToArray()
+        {
+            byte[] copy = new byte[Length];
+            Buffer.BlockCopy(target, 0, copy, 0, (int)Length);
+            return copy;
+        }
+
+        /// <summary>
+        /// Returns hex encoded version of the buffer
+        /// </summary>
+        /// <returns>Hex encoded version of the buffer</returns>
+        public override string ToString() => BitConverter.ToString(target, 0, (int)Length);
 
         /// <summary>
         /// An exception representing cases when buffer-capacity related errors occur.

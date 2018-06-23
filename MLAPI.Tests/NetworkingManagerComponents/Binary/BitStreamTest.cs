@@ -20,7 +20,6 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
         [Test]
         public void TestBool()
         {
-
             BitStream bitStream = new BitStream(new byte[100]);
             bitStream.WriteBit(true);
 
