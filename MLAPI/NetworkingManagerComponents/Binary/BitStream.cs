@@ -71,7 +71,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// <summary>
         /// The current length of data considered to be "written" to the buffer.
         /// </summary>
-        public override long Length { get => (long)(BitLength>>8); }
+        public override long Length { get => Div8Ceil(BitLength); }
 
         /// <summary>
         /// The index that will be written to when any call to write data is made to this stream.
