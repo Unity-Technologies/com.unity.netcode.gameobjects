@@ -11,8 +11,7 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
 
         [Test]
         public void TestEmptyStream()
-        {
-            
+        {     
             BitStream bitStream = new BitStream(new byte[100]);
             // ideally an empty stream should take no space
             Assert.That(bitStream.Length, Is.EqualTo(0));
@@ -21,7 +20,6 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
         [Test]
         public void TestBool()
         {
-
             BitStream bitStream = new BitStream(new byte[100]);
             bitStream.WriteBit(true);
 
