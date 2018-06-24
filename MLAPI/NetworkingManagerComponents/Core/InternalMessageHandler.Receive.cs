@@ -71,8 +71,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
             float netTime = reader.ReadFloat();
             int remoteStamp = reader.ReadInt();
-            byte error;
-            int msDelay = NetworkingManager.singleton.NetworkConfig.NetworkTransport.GetRemoteDelayTimeMS(clientId, remoteStamp, out error);
+            int msDelay = NetworkingManager.singleton.NetworkConfig.NetworkTransport.GetRemoteDelayTimeMS(clientId, remoteStamp, out byte error);
             netManager.NetworkTime = netTime + (msDelay / 1000f);
 
             netManager.ConnectedClients.Add(netManager.LocalClientId, new NetworkedClient() { ClientId = netManager.LocalClientId });
@@ -288,8 +287,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             float netTime = reader.ReadFloat();
             int timestamp = reader.ReadInt();
 
-            byte error;
-            int msDelay = NetworkingManager.singleton.NetworkConfig.NetworkTransport.GetRemoteDelayTimeMS(clientId, timestamp, out error);
+            int msDelay = NetworkingManager.singleton.NetworkConfig.NetworkTransport.GetRemoteDelayTimeMS(clientId, timestamp, out byte error);
             netManager.NetworkTime = netTime + (msDelay / 1000f);
         }
 

@@ -575,10 +575,10 @@ namespace MLAPI.MonoBehaviours.Core
                 return -1;
             }
 
-            Action<uint, BitReader> convertedAction = (clientId, reader) =>
+            void convertedAction(uint clientId, BitReader reader)
             {
                 action.Invoke(clientId, reader.ReadByteArray());
-            };
+            }
 
             networkedObject.targetMessageActions[behaviourOrder].Add(messageType, convertedAction);
             int counter = MessageManager.AddIncomingMessageHandler(name, convertedAction);
