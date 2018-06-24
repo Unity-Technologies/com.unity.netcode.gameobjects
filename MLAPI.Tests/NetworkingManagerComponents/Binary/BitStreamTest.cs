@@ -267,5 +267,34 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
             Assert.That(inStream.Length, Is.EqualTo(5));
             Assert.That(inStream.Capacity, Is.GreaterThanOrEqualTo(5));
         }
+
+        [Test]
+        public void TestWriteSingle()
+        {
+            float somenumber = 0.1f;
+            BitStream outStream = new BitStream();
+
+            outStream.WriteSingle(somenumber);
+            byte[] buffer = outStream.GetBuffer();
+
+            BitStream inStream = new BitStream(buffer);
+
+            Assert.That(inStream.ReadSingle(), Is.EqualTo(somenumber));
+        }
+
+        [Test]
+        public void TestWriteDouble()
+        {
+            double somenumber = Math.PI;
+            BitStream outStream = new BitStream();
+
+            outStream.WriteDouble(somenumber);
+            byte[] buffer = outStream.GetBuffer();
+
+            BitStream inStream = new BitStream(buffer);
+
+            Assert.That(inStream.ReadDouble(), Is.EqualTo(somenumber));
+
+        }
     }
 }
