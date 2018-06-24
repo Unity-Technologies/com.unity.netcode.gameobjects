@@ -28,6 +28,31 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
         }
 
         [Test]
+        public void TestSetLength()
+        {
+            BitStream bitStream = new BitStream(4);
+            bitStream.SetLength(100);
+
+            Assert.That(bitStream.Capacity, Is.GreaterThanOrEqualTo(100));
+        }
+
+        [Test]
+        public void TestSetLength2()
+        {
+            BitStream bitStream = new BitStream(4);
+
+            bitStream.WriteByte(1);
+            bitStream.WriteByte(1);
+            bitStream.WriteByte(1);
+            bitStream.WriteByte(1);
+
+            bitStream.SetLength(0);
+
+            // position should never go beyond length
+            Assert.That(bitStream.Position, Is.EqualTo(0));
+        }
+
+        [Test]
         public void TestGrow()
         {
             // stream should not grow when given a buffer
@@ -161,9 +186,6 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
             BitStream outStream = new BitStream(buffer);
             outStream.WriteByte(someNumber);
 
-
-            // the bit should now be stored in the buffer,  lets see if it comes out
-
             BitStream inStream = new BitStream(buffer);
             Assert.That(inStream.ReadByte(), Is.EqualTo(someNumber));
 
@@ -182,9 +204,6 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
             BitStream outStream = new BitStream(buffer);
             outStream.WriteInt16(someNumber);
 
-
-            // the bit should now be stored in the buffer,  lets see if it comes out
-
             BitStream inStream = new BitStream(buffer);
             short result = inStream.ReadInt16();
 
@@ -202,11 +221,25 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
             BitStream outStream = new BitStream(buffer);
             outStream.WriteInt32(someNumber);
 
-
-            // the bit should now be stored in the buffer,  lets see if it comes out
-
             BitStream inStream = new BitStream(buffer);
             int result = inStream.ReadInt32();
+
+            Assert.That(result, Is.EqualTo(someNumber));
+        }
+
+        [Test]
+        public void TestInOutInt64()
+        {
+            byte[] buffer = new byte[100];
+
+            long someNumber = 4614256656552045848;
+
+
+            BitStream outStream = new BitStream(buffer);
+            outStream.WriteInt64(someNumber);
+
+            BitStream inStream = new BitStream(buffer);
+            long result = inStream.ReadInt64();
 
             Assert.That(result, Is.EqualTo(someNumber));
         }
@@ -266,6 +299,69 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
             // note MemoryStream makes a distinction between Length and Capacity
             Assert.That(inStream.Length, Is.EqualTo(5));
             Assert.That(inStream.Capacity, Is.GreaterThanOrEqualTo(5));
+        }
+
+        [Test]
+        public void TestWriteSingle()
+        {
+            float somenumber = 0.1f;
+            BitStream outStream = new BitStream();
+
+            outStream.WriteSingle(somenumber);
+            byte[] buffer = outStream.GetBuffer();
+
+            BitStream inStream = new BitStream(buffer);
+
+            Assert.That(inStream.ReadSingle(), Is.EqualTo(somenumber));
+        }
+
+        [Test]
+        public void TestWriteDouble()
+        {
+            double somenumber = Math.PI;
+            BitStream outStream = new BitStream();
+
+            outStream.WriteDouble(somenumber);
+            byte[] buffer = outStream.GetBuffer();
+
+            BitStream inStream = new BitStream(buffer);
+
+            Assert.That(inStream.ReadDouble(), Is.EqualTo(somenumber));
+
+        }
+
+        [Test]
+        public void TestWriteMisaligned()
+        {
+            BitStream outStream = new BitStream();
+            outStream.WriteBit(true);
+            outStream.WriteBit(false);
+            // now the stream is misalligned,  lets write some bytes
+            outStream.WriteByte(244);
+            outStream.WriteByte(123);
+            outStream.WriteInt16(-5457);
+            outStream.WriteUInt64(4773753249);
+            outStream.WriteUInt64Packed(5435285812313212);
+            outStream.WriteInt64Packed(-5435285812313212);
+            outStream.WriteBit(true);
+            outStream.WriteByte(1);
+            outStream.WriteByte(0);
+
+            byte[] buffer = outStream.GetBuffer();
+
+            BitStream inStream = new BitStream(buffer);
+
+            Assert.That(inStream.ReadBit(), Is.True);
+            Assert.That(inStream.ReadBit(), Is.False);
+            Assert.That(inStream.ReadByte(), Is.EqualTo(244));
+            Assert.That(inStream.ReadByte(), Is.EqualTo(123));
+            Assert.That(inStream.ReadInt16(), Is.EqualTo(-5457));
+            Assert.That(inStream.ReadUInt64(), Is.EqualTo(4773753249));
+            Assert.That(inStream.ReadUInt64Packed(), Is.EqualTo(5435285812313212));
+            Assert.That(inStream.ReadInt64Packed(), Is.EqualTo(-5435285812313212));
+            Assert.That(inStream.ReadBit(), Is.True);
+            Assert.That(inStream.ReadByte(), Is.EqualTo(1));
+            Assert.That(inStream.ReadByte(), Is.EqualTo(0));
         }
     }
 }

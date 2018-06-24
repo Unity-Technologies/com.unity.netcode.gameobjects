@@ -67,7 +67,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         {
             this.target = target;
             Resizable = false;
-            BitLength = (ulong) (target.Length << 3);
+            BitLength = (ulong)(target.Length << 3);
         }
 
         /// <summary>
@@ -99,7 +99,8 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// <summary>
         /// Current buffer size. The buffer will not be resized (if possible) until Position is equal to Capacity and an attempt to write data is made.
         /// </summary>
-        public long Capacity {
+        public long Capacity
+        {
             get => target.LongLength; // Optimized CeilingExact
             set
             {
@@ -107,7 +108,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
                 SetCapacity(value);
             }
         }
-        
+
         /// <summary>
         /// The current length of data considered to be "written" to the buffer.
         /// </summary>
@@ -116,7 +117,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// <summary>
         /// The index that will be written to when any call to write data is made to this stream.
         /// </summary>
-        public override long Position { get => (long)(BitPosition>>3); set => BitPosition = (ulong)value << 3; }
+        public override long Position { get => (long)(BitPosition >> 3); set => BitPosition = (ulong)value << 3; }
 
         /// <summary>
         /// Bit offset into the buffer that new data will be written to.
@@ -146,7 +147,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         private byte ReadByteMisaligned()
         {
             int mod = (int)(BitPosition & 7);
-            return (byte)((target[(int)Position++] >> mod) | (target[(int)Position] << (8 - mod)));
+            return (byte)((target[(int)Position] >> mod) | (target[(int)(BitPosition += 8) >> 3] << (8 - mod)));
         }
         /// <summary>
         /// Read an aligned byte from the buffer. It's recommended to not use this when the BitPosition is byte-misaligned.
@@ -224,8 +225,9 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         public override void SetLength(long value)
         {
             if (value < 0) throw new IndexOutOfRangeException("Cannot set a negative length!");
-            if (value > Capacity) Grow(value-Capacity);
+            if (value > Capacity) Grow(value - Capacity);
             BitLength = (ulong)value << 3;
+            BitPosition = Math.Min((ulong)value << 3, BitPosition);
         }
 
         /// <summary>
@@ -271,7 +273,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         {
             if (BitAligned && Position == target.Length) Grow(1);
             int offset = (int)(BitPosition & 7);
-            ulong pos = BitPosition >> 3;
+            long pos = Position;
             ++BitPosition;
             target[pos] = (byte)(bit ? (target[pos] & ~(1 << offset)) | (1 << offset) : (target[pos] & ~(1 << offset)));
             UpdateLength();
@@ -313,7 +315,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// <param name="value">Value to write</param>
         public void WriteSinglePacked(float value)
         {
-            lock(holder_f)
+            lock (holder_f)
                 lock (holder_i)
                 {
                     holder_f[0] = value;
@@ -470,8 +472,8 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         {
             if (bytes < 1 || bytes > 4) throw new ArgumentOutOfRangeException("Result must occupy between 1 and 4 bytes!");
             if (value < minValue || value > maxValue) throw new ArgumentOutOfRangeException("Given value does not match the given constraints!");
-            uint result = (uint)(((value + minValue)/(maxValue+minValue))*((0x100*bytes) - 1));
-            for (int i = 0; i < bytes; ++i) _WriteByte((byte)(result >> (i<<3)));
+            uint result = (uint)(((value + minValue) / (maxValue + minValue)) * ((0x100 * bytes) - 1));
+            for (int i = 0; i < bytes; ++i) _WriteByte((byte)(result >> (i << 3)));
         }
 
         /// <summary>
@@ -485,7 +487,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         {
             if (bytes < 1 || bytes > 8) throw new ArgumentOutOfRangeException("Result must occupy between 1 and 8 bytes!");
             if (value < minValue || value > maxValue) throw new ArgumentOutOfRangeException("Given value does not match the given constraints!");
-            ulong result = (ulong)(((value + minValue) / (maxValue+minValue)) * ((0x100 * bytes) - 1));
+            ulong result = (ulong)(((value + minValue) / (maxValue + minValue)) * ((0x100 * bytes) - 1));
             for (int i = 0; i < bytes; ++i) _WriteByte((byte)(result >> (i << 3)));
         }
 
@@ -497,7 +499,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         public void WriteRotation(Quaternion rotation, int bytesPerAngle)
         {
             if (bytesPerAngle < 1 || bytesPerAngle > 4) throw new ArgumentOutOfRangeException("Bytes per angle must be at least 1 byte and at most 4 bytes!");
-            if (bytesPerAngle==4) WriteVector3(rotation.eulerAngles);
+            if (bytesPerAngle == 4) WriteVector3(rotation.eulerAngles);
             else
             {
                 Vector3 rot = rotation.eulerAngles;
@@ -539,7 +541,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
                     return holder_d[0];
                 }
         }
-        
+
         /// <summary>
         /// Read a single-precision floating point value from the stream from a varint
         /// </summary>
@@ -547,7 +549,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         public float ReadSinglePacked()
         {
             uint read = ReadUInt32Packed();
-            lock(holder_f)
+            lock (holder_f)
                 lock (holder_i)
                 {
                     holder_i[0] = BinaryHelpers.SwapEndian(read);
@@ -700,7 +702,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
                 value &= 0x0F;
                 int offset = (int)(BitPosition & 7), offset_inv = 8 - offset;
                 target[Position] = (byte)((target[Position] & (0xFF >> offset_inv)) | (byte)(value << offset));
-                if(offset > 4) target[Position + 1] = (byte)((target[Position + 1] & (0xFF << (offset & 3))) | (byte)(value >> offset_inv));
+                if (offset > 4) target[Position + 1] = (byte)((target[Position + 1] & (0xFF << (offset & 3))) | (byte)(value >> offset_inv));
                 BitPosition += 4;
             }
             UpdateLength();
@@ -719,13 +721,13 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// <param name="bitCount">Amount of bits to write</param>
         public void WriteBits(ulong value, int bitCount)
         {
-            if (BitPosition + (ulong)bitCount > ((ulong)target.LongLength << 3)) Grow(Div8Ceil(BitPosition+(ulong)bitCount));
+            if (BitPosition + (ulong)bitCount > ((ulong)target.LongLength << 3)) Grow(Div8Ceil(BitPosition + (ulong)bitCount));
             if (bitCount > 64) throw new ArgumentOutOfRangeException("Cannot read more than 64 bits from a 64-bit value!");
             if (bitCount < 0) throw new ArgumentOutOfRangeException("Cannot read fewer than 0 bits!");
             int count = -8;
-            while (bitCount > (count+=8)) _WriteULongByte(value >> count);
+            while (bitCount > (count += 8)) _WriteULongByte(value >> count);
             BitPosition += (ulong)count;
-            if((bitCount & 7) != 0) _WriteBits((byte)(value >> count), bitCount & 7);
+            if ((bitCount & 7) != 0) _WriteBits((byte)(value >> count), bitCount & 7);
             UpdateLength();
         }
         /// <summary>
@@ -743,7 +745,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             target[Position] = (byte)(
                     (target[Position] & (0xFF >> offset_inv)) |             // Bits prior to value (lower)
                     (target[Position] & (0xFF << (offset + bitCount))) |    // Bits after value (higher)
-                    (value<<offset)                                         // Bits to write
+                    (value << offset)                                         // Bits to write
                 );
             if (bitCount + offset > 8)
                 target[Position + 1] = (byte)(
@@ -906,15 +908,15 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// Read an unsigned long (UInt64) from the stream.
         /// </summary>
         /// <returns>Value read from stream.</returns>
-        public ulong ReadUInt64() => (ulong)(
+        public ulong ReadUInt64() => (
                 _ReadByte() |
-                (_ReadByte() << 8) |
-                (_ReadByte() << 16) |
-                (_ReadByte() << 24) |
-                (_ReadByte() << 32) |
-                (_ReadByte() << 40) |
-                (_ReadByte() << 48) |
-                (_ReadByte() << 56)
+                ((ulong)_ReadByte() << 8) |
+                ((ulong)_ReadByte() << 16) |
+                ((ulong)_ReadByte() << 24) |
+                ((ulong)_ReadByte() << 32) |
+                ((ulong)_ReadByte() << 40) |
+                ((ulong)_ReadByte() << 48) |
+                ((ulong)_ReadByte() << 56)
                 );
         /// <summary>
         /// Read a signed long (Int64) from the stream.
@@ -982,7 +984,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         {
             int off = (int)(BitPosition & 7);
             int shift1 = 8 - off;
-            target[Position + 1] = (byte)((target[Position + 1] & (0xFF >> off)) | (value >> shift1));
+            target[Position + 1] = (byte)((target[Position + 1] & (0xFF << off)) | (value >> shift1));
             target[Position] = (byte)((target[Position] & (0xFF >> shift1)) | (value << off));
 
             BitPosition += 8;
@@ -1054,19 +1056,19 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// <param name="count">How many bytes to read. Set to value less than one to read until ReadByte returns -1</param>
         public void CopyFrom(Stream s, int count = -1)
         {
-            if(s is BitStream b) Write(b.target, 0, count < 0 ? (int)b.Length : count);
+            if (s is BitStream b) Write(b.target, 0, count < 0 ? (int)b.Length : count);
             else
             {
                 int read;
                 bool readToEnd = count < 0;
-                while((readToEnd || count-- > 0) && (read = s.ReadByte()) != -1)
+                while ((readToEnd || count-- > 0) && (read = s.ReadByte()) != -1)
                     _WriteIntByte(read);
                 UpdateLength();
             }
         }
-        
+
         // TODO: Implement CopyFrom() for BitStream with bitCount parameter
-        
+
         /// <summary>
         /// Update length of data considered to be "written" to the stream.
         /// </summary>
