@@ -15,9 +15,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         const float initialGrowthFactor = 2.0f;
         private byte[] target;
         private static readonly float[] holder_f = new float[1];
-        private static readonly double[] holder_d = new double[1];
         private static readonly uint[] holder_i = new uint[1];
-        private static readonly ulong[] holder_l = new ulong[1];
 
         /// <summary>
         /// A stream that supports writing data smaller than a single byte. This stream also has a built-in compression algorithm that can (optionally) be used to write compressed data.
