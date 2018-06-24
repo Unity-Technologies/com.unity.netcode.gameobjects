@@ -335,6 +335,26 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         }
 
         /// <summary>
+        /// Convenience method that writes two non-packed Vector3 from the ray to the stream
+        /// </summary>
+        /// <param name="ray">Ray to write</param>
+        public void WriteRay(Ray ray)
+        {
+            WriteVector3(ray.origin);
+            WriteVector3(ray.direction);
+        }
+
+        /// <summary>
+        /// Convenience method that writes two packed Vector3 from the ray to the stream
+        /// </summary>
+        /// <param name="ray">Ray to write</param>
+        public void WriteRayPacked(Ray ray)
+        {
+            WriteVector3Packed(ray.origin);
+            WriteVector3Packed(ray.direction);
+        }
+
+        /// <summary>
         /// Convenience method that writes four non-varint floats from the color to the stream
         /// </summary>
         /// <param name="color">Color to write</param>
@@ -602,6 +622,18 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// </summary>
         /// <returns>The Color32 read from the stream.</returns>
         public Color32 ReadColor32() => new Color32((byte)ReadByte(), (byte)ReadByte(), (byte)ReadByte(), (byte)ReadByte());
+
+        /// <summary>
+        /// Read a Ray from the stream.
+        /// </summary>
+        /// <returns>The Ray read from the stream.</returns>
+        public Ray ReadRay() => new Ray(ReadVector3(), ReadVector3());
+
+        /// <summary>
+        /// Read a Ray from the stream.
+        /// </summary>
+        /// <returns>The Ray read from the stream.</returns>
+        public Ray ReadRayPacked() => new Ray(ReadVector3Packed(), ReadVector3Packed());
 
         /// <summary>
         /// Read a single-precision floating point value from the stream. The value is between (inclusive) the minValue and maxValue.
