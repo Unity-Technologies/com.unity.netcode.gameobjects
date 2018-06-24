@@ -11,6 +11,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
     public sealed class BitStream : Stream
     {
         const int initialCapacity = 16;
+        const float initialGrowthFactor = 2.0f;
         private byte[] target;
 
         /// <summary>
@@ -18,7 +19,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// </summary>
         /// <param name="capacity">Initial capacity of buffer in bytes.</param>
         /// <param name="growthFactor">Factor by which buffer should grow when necessary.</param>
-        public BitStream(int capacity = initialCapacity, float growthFactor = 2.0f)
+        public BitStream(int capacity, float growthFactor)
         {
             target = new byte[capacity];
             GrowthFactor = growthFactor;
@@ -29,7 +30,17 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// A stream that supports writing data smaller than a single byte. This stream also has a built-in compression algorithm that can (optionally) be used to write compressed data.
         /// </summary>
         /// <param name="growthFactor">Factor by which buffer should grow when necessary.</param>
-        public BitStream(float growthFactor = 2.0f) : this(initialCapacity, growthFactor) { }
+        public BitStream(float growthFactor) : this(initialCapacity, growthFactor) { }
+        /// <summary>
+        /// A stream that supports writing data smaller than a single byte. This stream also has a built-in compression algorithm that can (optionally) be used to write compressed data.
+        /// </summary>
+        /// <param name="capacity"></param>
+        public BitStream(int capacity) : this(capacity, initialGrowthFactor) { }
+
+        /// <summary>
+        /// A stream that supports writing data smaller than a single byte. This stream also has a built-in compression algorithm that can (optionally) be used to write compressed data.
+        /// </summary>
+        public BitStream() : this(initialCapacity, initialGrowthFactor) { }
 
         /// <summary>
         /// A stream that supports writing data smaller than a single byte. This stream also has a built-in compression algorithm that can (optionally) be used to write compressed data.
@@ -69,7 +80,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// <summary>
         /// Whether or not data can be read from the stream.
         /// </summary>
-        public override bool CanRead => BitPosition < (ulong)target.LongLength;
+        public override bool CanRead => Position < target.LongLength;
 
         /// <summary>
         /// Whether or not seeking is supported by this stream. (Always true)
@@ -632,22 +643,18 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// <param name="count">How many bytes to read. Set to value less than one to read until ReadByte returns -1</param>
         public void CopyFrom(Stream s, int count = -1)
         {
-            if(s is BitStream b)
-            {
-                ulong bytes = b.BitLength >> 3;
-                Write(b.target, 0, (int)bytes);
-                if ((b.BitLength & 7) != 0) _WriteBits(b.target[bytes - 1], (int)(b.BitLength & 7));
-            }
+            if(s is BitStream b) Write(b.target, 0, count < 0 ? (int)b.Length : count);
             else
             {
                 int read;
                 bool readToEnd = count < 0;
                 while((readToEnd || count-- > 0) && (read = s.ReadByte()) != -1)
                     _WriteIntByte(read);
+                UpdateLength();
             }
-
-            UpdateLength();
         }
+        
+        // TODO: Implement CopyFrom() for BitStream with bitCount parameter
         
         /// <summary>
         /// Update length of data considered to be "written" to the stream.

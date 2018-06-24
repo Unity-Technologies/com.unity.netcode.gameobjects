@@ -60,24 +60,96 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
 
 
         [Test]
+        public void TestIntOutPacked16Bit()
+        {
+            short svalue = -31934;
+            ushort uvalue = 64893;
+            BitStream outStream = new BitStream();
+            outStream.WriteInt16Packed(svalue);
+            outStream.WriteUInt16Packed(uvalue);
+
+            BitStream inStream = new BitStream(outStream.GetBuffer());
+            Assert.That(inStream.ReadInt16Packed(), Is.EqualTo(svalue));
+            Assert.That(inStream.ReadUInt16Packed(), Is.EqualTo(uvalue));
+        }
+
+
+        [Test]
+        public void TestIntOutPacked32Bit()
+        {
+            int svalue = -100913642;
+            uint uvalue = 1467867235;
+            BitStream outStream = new BitStream();
+            outStream.WriteInt32Packed(svalue);
+            outStream.WriteUInt32Packed(uvalue);
+
+            BitStream inStream = new BitStream(outStream.GetBuffer());
+            Assert.That(inStream.ReadInt32Packed(), Is.EqualTo(svalue));
+            Assert.That(inStream.ReadUInt32Packed(), Is.EqualTo(uvalue));
+        }
+
+
+        [Test]
         public void TestInOutPacked64Bit()
         {
             byte[] buffer = new byte[100];
             
-            long someNumber = 1469598103934656037;
+            long someNumber = -1469598103934656037;
+            ulong uNumber = 81246971249124124;
 
 
             BitStream outStream = new BitStream(buffer);
             outStream.WriteInt64Packed(someNumber);
+            outStream.WriteUInt64Packed(uNumber);
 
 
             // the bit should now be stored in the buffer,  lets see if it comes out
 
             BitStream inStream = new BitStream(buffer);
             long result = inStream.ReadInt64Packed();
+            ulong result1 = inStream.ReadUInt64Packed();
 
             Assert.That(result, Is.EqualTo(someNumber));
+            Assert.That(result1, Is.EqualTo(uNumber));
         }
+
+        [Test]
+        public void TestStreamCopy()
+        {
+            BitStream inStream = new BitStream();
+            BitStream copyFrom = new BitStream();
+
+            byte initialValue1 = 56;
+            byte initialValue2 = 24;
+
+            inStream.WriteByte(initialValue1);
+            inStream.WriteByte(initialValue2);
+
+            byte copyValue1 = 27;
+            byte copyValue2 = 100;
+
+            copyFrom.WriteByte(copyValue1);
+            copyFrom.WriteByte(copyValue2);
+
+            inStream.CopyFrom(copyFrom, 2);
+
+            BitStream outStream = new BitStream(inStream.ToArray());
+
+            Assert.That(outStream.ReadByte(), Is.EqualTo(initialValue1));
+            Assert.That(outStream.ReadByte(), Is.EqualTo(initialValue2));
+            Assert.That(outStream.ReadByte(), Is.EqualTo(copyValue1));
+            Assert.That(outStream.ReadByte(), Is.EqualTo(copyValue2));
+        }
+
+        [Test]
+        public void TestToArray()
+        {
+            BitStream inStream = new BitStream();
+            inStream.WriteByte(5);
+            inStream.WriteByte(6);
+            Assert.That(inStream.ToArray().Length, Is.EqualTo(2));
+        }
+
 
         [Test]
         public void TestInOutBytes()
