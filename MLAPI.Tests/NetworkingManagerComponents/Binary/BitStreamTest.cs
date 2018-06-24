@@ -212,6 +212,25 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
         }
 
         [Test]
+        public void TestInOutInt64()
+        {
+            byte[] buffer = new byte[100];
+
+            long someNumber = 4614256656552045848;
+
+
+            BitStream outStream = new BitStream(buffer);
+            outStream.WriteInt64(someNumber);
+
+            // the bit should now be stored in the buffer,  lets see if it comes out
+
+            BitStream inStream = new BitStream(buffer);
+            long result = inStream.ReadInt64();
+
+            Assert.That(result, Is.EqualTo(someNumber));
+        }
+
+        [Test]
         public void TestInOutMultiple()
         {
             byte[] buffer = new byte[100];
