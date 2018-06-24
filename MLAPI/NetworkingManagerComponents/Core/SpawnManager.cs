@@ -172,7 +172,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             if (readSyncedVar) netObject.SetFormattedSyncedVarData(reader);
 
             netObject.NetworkedPrefabName = netManager.NetworkConfig.NetworkPrefabNames[networkedPrefabId];
-            netObject.IsSpawned = true;
+            netObject.isSpawned = true;
             netObject.isPooledObject = false;
 
             if (netManager.isServer) netObject.NetworKId = GetNetworkObjectId();
@@ -191,7 +191,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
         internal static void UnSpawnObject(NetworkedObject netObject)
         {
-            if (!netObject.IsSpawned)
+            if (!netObject.isSpawned)
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot unspawn objects that are not spawned");
                 return;
@@ -213,7 +213,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
         //Server only
         internal static void SpawnPlayerObject(NetworkedObject netObject, uint clientId, BitWriter payload = null)
         {
-            if (netObject.IsSpawned)
+            if (netObject.isSpawned)
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Object already spawned");
                 return;
@@ -241,7 +241,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             uint netId = GetNetworkObjectId();
             netObject.NetworKId = netId;
             spawnedObjects.Add(netId, netObject);
-            netObject.IsSpawned = true;
+            netObject.isSpawned = true;
             netObject.sceneObject = false;
             netObject.isPlayerObject = true;
             netManager.ConnectedClients[clientId].PlayerObject = netObject;
@@ -283,7 +283,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
         internal static void SpawnObject(NetworkedObject netObject, uint? clientOwnerId = null, BitWriter payload = null)
         {
-            if (netObject.IsSpawned)
+            if (netObject.isSpawned)
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Object already spawned");
                 return;
@@ -306,7 +306,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             uint netId = GetNetworkObjectId();
             netObject.NetworKId = netId;
             spawnedObjects.Add(netId, netObject);
-            netObject.IsSpawned = true;
+            netObject.isSpawned = true;
             netObject.sceneObject = false;
 
             if (clientOwnerId != null)
@@ -360,7 +360,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 //Someone owns it.
                 netManager.ConnectedClients[spawnedObjects[networkId].OwnerClientId].OwnedObjects.RemoveAll(x => x.NetworKId == networkId);
             }
-            spawnedObjects[networkId].IsSpawned = false;
+            spawnedObjects[networkId].isSpawned = false;
 
             if (netManager != null && netManager.isServer)
             {

@@ -78,7 +78,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <summary>
         /// Gets if the object has yet been spawned across the network
         /// </summary>
-        public bool IsSpawned { get; internal set; }
+        public bool isSpawned { get; internal set; }
         internal bool? sceneObject = null;
 
         /// <summary>

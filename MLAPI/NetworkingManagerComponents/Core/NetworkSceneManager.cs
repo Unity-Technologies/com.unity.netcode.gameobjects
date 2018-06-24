@@ -116,7 +116,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 NetworkedObject[] networkedObjects = MonoBehaviour.FindObjectsOfType<NetworkedObject>();
                 for (int i = 0; i < networkedObjects.Length; i++)
                 {
-                    if (!networkedObjects[i].IsSpawned && (networkedObjects[i].sceneObject == null || networkedObjects[i].sceneObject == true))
+                    if (!networkedObjects[i].isSpawned && (networkedObjects[i].sceneObject == null || networkedObjects[i].sceneObject == true))
                         networkedObjects[i].Spawn();
                 }
 
