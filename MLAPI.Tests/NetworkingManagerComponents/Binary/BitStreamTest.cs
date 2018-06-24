@@ -120,21 +120,23 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
             
             long someNumber = -1469598103934656037;
             ulong uNumber = 81246971249124124;
-
+            ulong uNumber2 = 2287;
+            ulong uNumber3 = 235;
 
             BitStream outStream = new BitStream(buffer);
             outStream.WriteInt64Packed(someNumber);
             outStream.WriteUInt64Packed(uNumber);
-
+            outStream.WriteUInt64Packed(uNumber2);
+            outStream.WriteUInt64Packed(uNumber3);
 
             // the bit should now be stored in the buffer,  lets see if it comes out
 
             BitStream inStream = new BitStream(buffer);
-            long result = inStream.ReadInt64Packed();
-            ulong result1 = inStream.ReadUInt64Packed();
 
-            Assert.That(result, Is.EqualTo(someNumber));
-            Assert.That(result1, Is.EqualTo(uNumber));
+            Assert.That(inStream.ReadInt64Packed(), Is.EqualTo(someNumber));
+            Assert.That(inStream.ReadUInt64Packed(), Is.EqualTo(uNumber));
+            Assert.That(inStream.ReadUInt64Packed(), Is.EqualTo(uNumber2));
+            Assert.That(inStream.ReadUInt64Packed(), Is.EqualTo(uNumber3));
         }
 
         [Test]
@@ -331,6 +333,35 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
         }
 
         [Test]
+        public void TestWritePackedSingle()
+        {
+            float somenumber = (float)Math.PI;
+            BitStream outStream = new BitStream();
+
+            outStream.WriteSinglePacked(somenumber);
+            byte[] buffer = outStream.GetBuffer();
+
+            BitStream inStream = new BitStream(buffer);
+
+            Assert.That(inStream.ReadSinglePacked(), Is.EqualTo(somenumber));
+        }
+
+        [Test]
+        public void TestWritePackedDouble()
+        {
+            double somenumber = Math.PI;
+            BitStream outStream = new BitStream();
+
+            outStream.WriteDoublePacked(somenumber);
+            byte[] buffer = outStream.GetBuffer();
+
+            BitStream inStream = new BitStream(buffer);
+
+            Assert.That(inStream.ReadDoublePacked(), Is.EqualTo(somenumber));
+
+        }
+
+        [Test]
         public void TestWriteMisaligned()
         {
             BitStream outStream = new BitStream();
@@ -362,6 +393,23 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
             Assert.That(inStream.ReadBit(), Is.True);
             Assert.That(inStream.ReadByte(), Is.EqualTo(1));
             Assert.That(inStream.ReadByte(), Is.EqualTo(0));
+        }
+
+        [Test]
+        public void TestBits()
+        {
+            ulong somevalue = 0b1100101010011;
+
+            BitStream outStream = new BitStream();
+            outStream.WriteBits(somevalue, 5);
+
+            byte[] buffer = outStream.GetBuffer();
+
+            BitStream inStream = new BitStream(buffer);
+
+            //Assert.That(inStream.ReadBits(5), Is.EqualTo(0b10011));
+            Assert.Fail("There is no way to read back the bits");
+
         }
     }
 }
