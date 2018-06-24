@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Security;
 using UnityEngine;
 using static MLAPI.NetworkingManagerComponents.Binary.Arithmetic;
@@ -11,11 +12,27 @@ namespace MLAPI.NetworkingManagerComponents.Binary
     /// </summary>
     public sealed class BitStream : Stream
     {
+
+        [StructLayout(LayoutKind.Explicit)]
+        internal struct UIntFloat
+        {
+            [FieldOffset(0)]
+            public float floatValue;
+
+            [FieldOffset(0)]
+            public uint intValue;
+
+            [FieldOffset(0)]
+            public double doubleValue;
+
+            [FieldOffset(0)]
+            public ulong longValue;
+        }
+
+
         const int initialCapacity = 16;
         const float initialGrowthFactor = 2.0f;
         private byte[] target;
-        private static readonly float[] holder_f = new float[1];
-        private static readonly uint[] holder_i = new uint[1];
 
         /// <summary>
         /// A stream that supports writing data smaller than a single byte. This stream also has a built-in compression algorithm that can (optionally) be used to write compressed data.
@@ -284,13 +301,10 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// <param name="value">Value to write</param>
         public void WriteSingle(float value)
         {
-            lock (holder_f)
-                lock (holder_i)
-                {
-                    holder_f[0] = value;
-                    Buffer.BlockCopy(holder_f, 0, holder_i, 0, 4);
-                    WriteUInt32(holder_i[0]);
-                }
+            UIntFloat conversion = new UIntFloat();
+            conversion.floatValue = value;
+            uint binary = conversion.intValue;
+            WriteUInt32(binary);
         }
 
         /// <summary>
@@ -299,8 +313,10 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// <param name="value">Value to write</param>
         public void WriteDouble(double value)
         {
-            long binary = BitConverter.DoubleToInt64Bits(value);
-            WriteInt64(binary);
+            UIntFloat conversion = new UIntFloat();
+            conversion.doubleValue = value;
+            ulong binary = conversion.longValue;
+            WriteUInt64(binary);
 
         }
 
@@ -310,13 +326,10 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// <param name="value">Value to write</param>
         public void WriteSinglePacked(float value)
         {
-            lock (holder_f)
-                lock (holder_i)
-                {
-                    holder_f[0] = value;
-                    Buffer.BlockCopy(holder_f, 0, holder_i, 0, 4);
-                    WriteUInt32Packed(BinaryHelpers.SwapEndian(holder_i[0]));
-                }
+            UIntFloat conversion = new UIntFloat();
+            conversion.floatValue = value;
+            uint binary = conversion.intValue;
+            WriteUInt32Packed(binary);
         }
 
         /// <summary>
@@ -325,8 +338,11 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// <param name="value">Value to write</param>
         public void WriteDoublePacked(double value)
         {
-            long binary = BitConverter.DoubleToInt64Bits(value);
-            WriteInt64Packed(binary);
+            UIntFloat conversion = new UIntFloat();
+            conversion.doubleValue = value;
+            ulong binary = conversion.longValue;
+
+            WriteUInt64Packed(binary);
         }
 
         /// <summary>
@@ -506,13 +522,10 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         public float ReadSingle()
         {
             uint read = ReadUInt32();
-            lock (holder_f)
-                lock (holder_i)
-                {
-                    holder_i[0] = read;
-                    Buffer.BlockCopy(holder_i, 0, holder_f, 0, 4);
-                    return holder_f[0];
-                }
+
+            UIntFloat conversion = new UIntFloat();
+            conversion.intValue = read;
+            return conversion.floatValue;
         }
 
 
@@ -522,10 +535,13 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// <returns>The read value</returns>
         public double ReadDouble()
         {
-            
-            long read = ReadInt64();
-            return BitConverter.Int64BitsToDouble(read);
+            ulong read = ReadUInt64();
+
+            UIntFloat conversion = new UIntFloat();
+            conversion.longValue = read;
+            return conversion.doubleValue;
         }
+    
 
         /// <summary>
         /// Read a single-precision floating point value from the stream from a varint
@@ -534,13 +550,9 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         public float ReadSinglePacked()
         {
             uint read = ReadUInt32Packed();
-            lock (holder_f)
-                lock (holder_i)
-                {
-                    holder_i[0] = BinaryHelpers.SwapEndian(read);
-                    Buffer.BlockCopy(holder_i, 0, holder_f, 0, 4);
-                    return holder_f[0];
-                }
+            UIntFloat conversion = new UIntFloat();
+            conversion.intValue = read;
+            return conversion.floatValue;
         }
 
         /// <summary>
@@ -549,8 +561,10 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// <returns>The read value</returns>
         public double ReadDoublePacked()
         {
-            long read = ReadInt64Packed();
-            return BitConverter.Int64BitsToDouble(read);
+            ulong read = ReadUInt64Packed();
+            UIntFloat conversion = new UIntFloat();
+            conversion.longValue = read;
+            return conversion.doubleValue;
         }
 
         /// <summary>
