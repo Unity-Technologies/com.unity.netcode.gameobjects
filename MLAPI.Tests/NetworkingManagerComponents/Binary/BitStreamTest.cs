@@ -161,9 +161,6 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
             BitStream outStream = new BitStream(buffer);
             outStream.WriteByte(someNumber);
 
-
-            // the bit should now be stored in the buffer,  lets see if it comes out
-
             BitStream inStream = new BitStream(buffer);
             Assert.That(inStream.ReadByte(), Is.EqualTo(someNumber));
 
@@ -182,9 +179,6 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
             BitStream outStream = new BitStream(buffer);
             outStream.WriteInt16(someNumber);
 
-
-            // the bit should now be stored in the buffer,  lets see if it comes out
-
             BitStream inStream = new BitStream(buffer);
             short result = inStream.ReadInt16();
 
@@ -202,9 +196,6 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
             BitStream outStream = new BitStream(buffer);
             outStream.WriteInt32(someNumber);
 
-
-            // the bit should now be stored in the buffer,  lets see if it comes out
-
             BitStream inStream = new BitStream(buffer);
             int result = inStream.ReadInt32();
 
@@ -221,8 +212,6 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
 
             BitStream outStream = new BitStream(buffer);
             outStream.WriteInt64(someNumber);
-
-            // the bit should now be stored in the buffer,  lets see if it comes out
 
             BitStream inStream = new BitStream(buffer);
             long result = inStream.ReadInt64();
