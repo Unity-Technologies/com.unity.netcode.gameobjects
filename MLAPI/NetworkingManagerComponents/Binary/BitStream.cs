@@ -144,7 +144,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         private byte ReadByteMisaligned()
         {
             int mod = (int)(BitPosition & 7);
-            return (byte)((target[(int)Position++] >> mod) | (target[(int)Position] << (8 - mod)));
+            return (byte)((target[(int)Position] >> mod) | (target[(int)(BitPosition += 8) >> 3] << (8 - mod)));
         }
         /// <summary>
         /// Read an aligned byte from the buffer. It's recommended to not use this when the BitPosition is byte-misaligned.
@@ -224,6 +224,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             if (value < 0) throw new IndexOutOfRangeException("Cannot set a negative length!");
             if (value > Capacity) Grow(value - Capacity);
             BitLength = (ulong)value << 3;
+            BitPosition = Math.Min((ulong)value << 3, BitPosition);
         }
 
         /// <summary>
@@ -269,7 +270,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         {
             if (BitAligned && Position == target.Length) Grow(1);
             int offset = (int)(BitPosition & 7);
-            ulong pos = BitPosition >> 3;
+            long pos = Position;
             ++BitPosition;
             target[pos] = (byte)(bit ? (target[pos] & ~(1 << offset)) | (1 << offset) : (target[pos] & ~(1 << offset)));
             UpdateLength();
@@ -810,7 +811,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         {
             int off = (int)(BitPosition & 7);
             int shift1 = 8 - off;
-            target[Position + 1] = (byte)((target[Position + 1] & (0xFF >> off)) | (value >> shift1));
+            target[Position + 1] = (byte)((target[Position + 1] & (0xFF << off)) | (value >> shift1));
             target[Position] = (byte)((target[Position] & (0xFF >> shift1)) | (value << off));
 
             BitPosition += 8;
