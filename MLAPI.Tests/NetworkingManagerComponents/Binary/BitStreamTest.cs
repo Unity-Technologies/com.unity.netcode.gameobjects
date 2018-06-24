@@ -48,6 +48,7 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
 
             bitStream.SetLength(0);
 
+            // position should never go beyond length
             Assert.That(bitStream.Position, Is.EqualTo(0));
         }
 
@@ -326,6 +327,36 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
             BitStream inStream = new BitStream(buffer);
 
             Assert.That(inStream.ReadDouble(), Is.EqualTo(somenumber));
+
+        }
+
+        [Test]
+        public void TestWriteMisaligned()
+        {
+            BitStream outStream = new BitStream();
+            outStream.WriteBit(true);
+            outStream.WriteBit(false);
+            // now the stream is misalligned,  lets write some bytes
+            outStream.WriteByte(244);
+            outStream.WriteByte(123);
+
+            outStream.WriteBit(true);
+            outStream.WriteByte(1);
+            outStream.WriteByte(0);
+
+            byte[] buffer = outStream.GetBuffer();
+
+            BitStream inStream = new BitStream(buffer);
+
+            Assert.That(inStream.ReadBit(), Is.True);
+            Assert.That(inStream.ReadBit(), Is.False);
+            Assert.That(inStream.ReadByte(), Is.EqualTo(244));
+            Assert.That(inStream.ReadByte(), Is.EqualTo(123));
+            Assert.That(inStream.ReadBit(), Is.True);
+            Assert.That(inStream.ReadByte(), Is.EqualTo(1));
+            Assert.That(inStream.ReadByte(), Is.EqualTo(0));
+
+
 
         }
     }
