@@ -434,7 +434,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// Write a rotation to the stream.
         /// </summary>
         /// <param name="rotation">Rotation to write</param>
-        /// <param name="bytesPerAngle">How many bytes each written angle should occupy</param>
+        /// <param name="bytesPerAngle">How many bytes each written angle should occupy. Must be between 1 and 4 (inclusive)</param>
         public void WriteRotation(Quaternion rotation, int bytesPerAngle)
         {
             if (bytesPerAngle < 1 || bytesPerAngle > 4) throw new ArgumentOutOfRangeException("Bytes per angle must be at least 1 byte and at most 4 bytes!");
@@ -583,7 +583,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// <summary>
         /// Read a rotation from the stream.
         /// </summary>
-        /// <param name="bytesPerAngle">How many bytes each angle occupies</param>
+        /// <param name="bytesPerAngle">How many bytes each angle occupies. Must be between 1 and 4 (inclusive)</param>
         /// <returns>The rotation read from the stream</returns>
         public Quaternion ReadRotation(int bytesPerAngle)
         {
