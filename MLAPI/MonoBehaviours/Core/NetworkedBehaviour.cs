@@ -18,61 +18,27 @@ namespace MLAPI.MonoBehaviours.Core
         /// <summary>
         /// Gets if the object is the the personal clients player object
         /// </summary>
-        public bool isLocalPlayer
-        {
-            get
-            {
-                return networkedObject.isLocalPlayer;
-            }
-        }
+        public bool isLocalPlayer => networkedObject.isLocalPlayer;
         /// <summary>
         /// Gets if the object is owned by the local player
         /// </summary>
-        public bool isOwner
-        {
-            get
-            {
-                return networkedObject.isOwner;
-            }
-        }
+        public bool isOwner => networkedObject.isOwner;
         /// <summary>
         /// Gets if we are executing as server
         /// </summary>
-        protected bool isServer
-        {
-            get
-            {
-                return NetworkingManager.singleton.isServer;
-            }
-        }
+        protected bool isServer => NetworkingManager.singleton.isServer;
         /// <summary>
         /// Gets if we are executing as client
         /// </summary>
-        protected bool isClient
-        {
-            get
-            {
-                return NetworkingManager.singleton.isClient;
-            }
-        }
+        protected bool isClient => NetworkingManager.singleton.isClient;
         /// <summary>
         /// Gets if we are executing as Host, I.E Server and Client
         /// </summary>
-        protected bool isHost
-        {
-            get
-            {
-                return NetworkingManager.singleton.isHost;
-            }
-        }
-
-        protected bool isOwnedByNoone
-        {
-            get
-            {
-                return networkedObject.isOwnedByNoone;
-            }
-        }
+        protected bool isHost => NetworkingManager.singleton.isHost;
+        /// <summary>
+        /// Gets wheter or not the object has a owner
+        /// </summary>
+        public bool hasOwner => networkedObject.hasOwner;
 
         /// <summary>
         /// Gets the NetworkedObject that owns this NetworkedBehaviour instance
@@ -92,26 +58,13 @@ namespace MLAPI.MonoBehaviours.Core
         /// <summary>
         /// Gets the NetworkId of the NetworkedObject that owns the NetworkedBehaviour instance
         /// </summary>
-        public uint networkId
-        {
-            get
-            {
-                return networkedObject.NetworkId;
-            }
-        }
+        public uint networkId => networkedObject.NetworKId;
         /// <summary>
         /// Gets the clientId that owns the NetworkedObject
         /// </summary>
-        public uint ownerClientId
-        {
-            get
-            {
-                return networkedObject.OwnerClientId;
-            }
-        }
+        public uint OwnerClientId => networkedObject.OwnerClientId;
 
-        //Change data type
-        private Dictionary<string, int> registeredMessageHandlers = new Dictionary<string, int>();
+        private readonly Dictionary<string, int> registeredMessageHandlers = new Dictionary<string, int>();
 
         private void OnEnable()
         {
@@ -295,7 +248,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="methodParams">Method parameters to send</param>
         public void InvokeCommand(string methodName, params object[] methodParams)
         {
-            if (ownerClientId != NetworkingManager.singleton.MyClientId && !isLocalPlayer)
+            if (OwnerClientId != NetworkingManager.singleton.LocalClientId && !isLocalPlayer)
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot invoke command for object without ownership");
                 return;
@@ -427,7 +380,7 @@ namespace MLAPI.MonoBehaviours.Core
                 writer.WriteULong(hash);
                 for (int i = 0; i < methodParams.Length; i++)
                     FieldTypeHelper.WriteFieldType(writer, methodParams[i]);
-                InternalMessageHandler.Send(ownerClientId, "MLAPI_RPC", messageChannelName[methodName], writer, networkId);
+                InternalMessageHandler.Send(OwnerClientId, "MLAPI_RPC", messageChannelName[methodName], writer, networkId);
             }
         }
 
@@ -754,7 +707,7 @@ namespace MLAPI.MonoBehaviours.Core
                 {
                     if (!syncedVarFields[i].Target)
                         syncCount++;
-                    else if (syncedVarFields[i].Target && ownerClientId == clientId)
+                    else if (syncedVarFields[i].Target && OwnerClientId == clientId)
                         syncCount++;
                 }
                 if (syncCount == 0)
@@ -768,7 +721,7 @@ namespace MLAPI.MonoBehaviours.Core
                 for (int i = 0; i < syncedVarFields.Count; i++)
                 {
                     writer.WriteBool(mask[i]);
-                    if (syncedVarFields[i].Target && clientId != ownerClientId)
+                    if (syncedVarFields[i].Target && clientId != OwnerClientId)
                         continue;
                     FieldTypeHelper.WriteFieldType(writer, syncedVarFields[i].FieldInfo.GetValue(this));
                 }
@@ -784,7 +737,7 @@ namespace MLAPI.MonoBehaviours.Core
                 syncMask[i] = (clientId == null && ignoreTarget && syncedVarFields[i].Dirty && !syncedVarFields[i].Target) ||
                                (clientId == null && !ignoreTarget && syncedVarFields[i].Dirty) || 
                                 (clientId != null && !syncedVarFields[i].Target) || 
-                                 (clientId != null && syncedVarFields[i].Target && ownerClientId == clientId.Value);
+                                 (clientId != null && syncedVarFields[i].Target && OwnerClientId == clientId.Value);
             return ref syncMask;
         }
 
@@ -848,7 +801,7 @@ namespace MLAPI.MonoBehaviours.Core
             }
             else
             {
-                if (!(isHost && ownerClientId == NetworkingManager.singleton.NetworkConfig.NetworkTransport.HostDummyId))
+                if (!(isHost && OwnerClientId == NetworkingManager.singleton.NetworkConfig.NetworkTransport.HostDummyId))
                 {
                     //It's sync time. This is the target receivers packet.
                     using (BitWriter writer = BitWriter.Get())
@@ -876,9 +829,9 @@ namespace MLAPI.MonoBehaviours.Core
                                 }
                             }
                         }
-                        bool observing = !InternalMessageHandler.Send(ownerClientId, "MLAPI_SYNC_VAR_UPDATE", "MLAPI_INTERNAL", writer, networkId); //Send only to target
+                        bool observing = !InternalMessageHandler.Send(OwnerClientId, "MLAPI_SYNC_VAR_UPDATE", "MLAPI_INTERNAL", writer, networkId); //Send only to target
                         if (!observing)
-                            OutOfSyncClients.Add(ownerClientId);
+                            OutOfSyncClients.Add(OwnerClientId);
                     }
                 }
 
@@ -907,7 +860,7 @@ namespace MLAPI.MonoBehaviours.Core
                             InvokeSyncvarMethodOnServer(syncedVarFields[i].HookMethod);
                         }
                     }
-                    List<uint> stillDirtyIds = InternalMessageHandler.Send("MLAPI_SYNC_VAR_UPDATE", "MLAPI_INTERNAL", writer, ownerClientId, networkId, null, null); // Send to everyone except target.
+                    List<uint> stillDirtyIds = InternalMessageHandler.Send("MLAPI_SYNC_VAR_UPDATE", "MLAPI_INTERNAL", writer, OwnerClientId, networkId, null, null); // Send to everyone except target.
                     if (stillDirtyIds != null)
                     {
                         for (int i = 0; i < stillDirtyIds.Count; i++)
@@ -1116,7 +1069,7 @@ namespace MLAPI.MonoBehaviours.Core
             using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteByteArray(data);
-                InternalMessageHandler.Send(ownerClientId, messageType, channelName, writer, fromNetId);
+                InternalMessageHandler.Send(OwnerClientId, messageType, channelName, writer, fromNetId);
             }
         }
 
@@ -1145,7 +1098,7 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
             uint? fromNetId = respectObservers ? (uint?)networkId : null;
-            InternalMessageHandler.Send(ownerClientId, messageType, channelName, writer, fromNetId);
+            InternalMessageHandler.Send(OwnerClientId, messageType, channelName, writer, fromNetId);
         }
 
         /// <summary>
@@ -1187,7 +1140,7 @@ namespace MLAPI.MonoBehaviours.Core
             using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteByteArray(data);
-                InternalMessageHandler.Send(ownerClientId, messageType, channelName, writer, null, networkId, networkedObject.GetOrderIndex(this));
+                InternalMessageHandler.Send(OwnerClientId, messageType, channelName, writer, null, networkId, networkedObject.GetOrderIndex(this));
             }
         }
 
@@ -1214,7 +1167,7 @@ namespace MLAPI.MonoBehaviours.Core
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
                 return;
             }
-            InternalMessageHandler.Send(ownerClientId, messageType, channelName, writer, null, networkId, networkedObject.GetOrderIndex(this));
+            InternalMessageHandler.Send(OwnerClientId, messageType, channelName, writer, null, networkId, networkedObject.GetOrderIndex(this));
         }
 
         /// <summary>gh
@@ -1257,7 +1210,7 @@ namespace MLAPI.MonoBehaviours.Core
             using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteByteArray(data);
-                InternalMessageHandler.Send(messageType, channelName, writer, ownerClientId, fromNetId, null, null);
+                InternalMessageHandler.Send(messageType, channelName, writer, OwnerClientId, fromNetId, null, null);
             }
         }
 
@@ -1286,7 +1239,7 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
             uint? fromNetId = respectObservers ? (uint?)networkId : null;
-            InternalMessageHandler.Send(messageType, channelName, writer, ownerClientId, fromNetId, null, null);
+            InternalMessageHandler.Send(messageType, channelName, writer, OwnerClientId, fromNetId, null, null);
         }
 
         /// <summary>
@@ -1330,7 +1283,7 @@ namespace MLAPI.MonoBehaviours.Core
             using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteByteArray(data);
-                InternalMessageHandler.Send(messageType, channelName, writer, ownerClientId, fromNetId, networkId, networkedObject.GetOrderIndex(this));
+                InternalMessageHandler.Send(messageType, channelName, writer, OwnerClientId, fromNetId, networkId, networkedObject.GetOrderIndex(this));
             }
         }
 
@@ -1359,7 +1312,7 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
             uint? fromNetId = respectObservers ? (uint?)networkId : null;
-            InternalMessageHandler.Send(messageType, channelName, writer, ownerClientId, fromNetId, networkId, networkedObject.GetOrderIndex(this));
+            InternalMessageHandler.Send(messageType, channelName, writer, OwnerClientId, fromNetId, networkId, networkedObject.GetOrderIndex(this));
         }
 
         /// <summary>

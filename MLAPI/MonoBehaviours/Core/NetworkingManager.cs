@@ -24,14 +24,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <summary>
         /// A syncronized time, represents the time in seconds since the server application started. Is replicated across all clients
         /// </summary>
-        public float NetworkTime
-        {
-            get
-            {
-                return networkTime;
-            }
-        }
-        internal float networkTime;
+        public float NetworkTime { get; internal set; }
         /// <summary>
         /// Gets or sets if the NetworkingManager should be marked as DontDestroyOnLoad
         /// </summary>
@@ -47,95 +40,41 @@ namespace MLAPI.MonoBehaviours.Core
         /// <summary>
         /// The singleton instance of the NetworkingManager
         /// </summary>
-        public static NetworkingManager singleton
-        {
-            get
-            {
-                return _singleton;
-            }
-        }
-        private static NetworkingManager _singleton;
+        public static NetworkingManager singleton { get; private set; }
         /// <summary>
         /// The clientId the server calls the local client by, only valid for clients
         /// </summary>
-        public uint MyClientId
-        {
-            get
-            {
-                return myClientId;
-            }
-        }
-        internal uint myClientId;
-        internal readonly Dictionary<uint, NetworkedClient> connectedClients = new Dictionary<uint, NetworkedClient>();
-        internal readonly List<NetworkedClient> connectedClientsList = new List<NetworkedClient>();
+        public uint LocalClientId { get; internal set; }
+        /// <summary>
+        /// Gets a dictionary of connected clients and their clientId keys
+        /// </summary>
+        public readonly Dictionary<uint, NetworkedClient> ConnectedClients = new Dictionary<uint, NetworkedClient>();
         /// <summary>
         /// Gets a list of connected clients
         /// </summary>
-        public List<NetworkedClient> ConnectedClientsList
-        {
-            get
-            {
-                return connectedClientsList;
-            }
-        }
-        /// <summary>
-        /// Gets a dictionary of connected clients
-        /// </summary>
-        public Dictionary<uint, NetworkedClient> ConnectedClients
-        {
-            get
-            {
-                return connectedClients;
-            }
-        }
+        public readonly List<NetworkedClient> ConnectedClientsList = new List<NetworkedClient>();
         internal readonly HashSet<uint> pendingClients = new HashSet<uint>();
-        internal bool _isServer;
-        internal bool _isClient;
-        /// <summary>
-        /// Gets if we are running as host
-        /// </summary>
-        public bool isHost
-        {
-            get
-            {
-                return isServer && isClient;
-            }
-        }
-        /// <summary>
-        /// Gets wheter or not a client is running
-        /// </summary>
-        public bool isClient
-        {
-            get
-            {
-                return _isClient;
-            }
-        }
-
         /// <summary>
         /// Gets wheter or not a server is running
         /// </summary>
-        public bool isServer
-        {
-            get
-            {
-                return _isServer;
-            }
-        }
-
-        private bool isListening;
+        public bool isServer { get; internal set; }
+        /// <summary>
+        /// Gets wheter or not a client is running
+        /// </summary>
+        public bool isClient { get; internal set; }
+        /// <summary>
+        /// Gets if we are running as host
+        /// </summary>
+        public bool isHost => isServer && isClient;
+        /// <summary>
+        /// Gets wheter or not we are listening for connections
+        /// </summary>
+        public bool isListening { get; internal set; }
         private byte[] messageBuffer;
         /// <summary>
         /// Gets if we are connected as a client
         /// </summary>
-        public bool IsClientConnected
-        {
-            get
-            {
-                return _isClientConnected;
-            }
-        }
-        internal bool _isClientConnected;
+        public bool isConnectedClients { get; internal set; }
         /// <summary>
         /// The callback to invoke once a client connects
         /// </summary>
@@ -235,15 +174,15 @@ namespace MLAPI.MonoBehaviours.Core
         private object Init(bool server)
         {
             if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Init()");
-            myClientId = 0;
-            networkTime = 0f;
+            LocalClientId = 0;
+            NetworkTime = 0f;
             lastSendTickTime = 0f;
             lastEventTickTime = 0f;
             lastReceiveTickTime = 0f;
             eventOvershootCounter = 0f;
             pendingClients.Clear();
-            connectedClients.Clear();
-            connectedClientsList.Clear();
+            ConnectedClients.Clear();
+            ConnectedClientsList.Clear();
             messageBuffer = new byte[NetworkConfig.MessageBufferSize];
 #if !DISABLE_CRYPTOGRAPHY
             diffieHellmanPublicKeys.Clear();
@@ -513,8 +452,8 @@ namespace MLAPI.MonoBehaviours.Core
             object settings = Init(true);
             NetworkConfig.NetworkTransport.RegisterServerListenSocket(settings);
 
-            _isServer = true;
-            _isClient = false;
+            isServer = true;
+            isClient = false;
             isListening = true;
 
             SpawnSceneObjects();
@@ -538,8 +477,8 @@ namespace MLAPI.MonoBehaviours.Core
             object settings = Init(false);
             byte error;
             NetworkConfig.NetworkTransport.Connect(NetworkConfig.ConnectAddress, NetworkConfig.ConnectPort, settings, out error);
-            _isServer = false;
-            _isClient = true;
+            isServer = false;
+            isClient = true;
             isListening = true;
         }
 
@@ -551,7 +490,7 @@ namespace MLAPI.MonoBehaviours.Core
             if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("StopServer()");
             HashSet<uint> disconnectedIds = new HashSet<uint>();
             //Don't know if I have to disconnect the clients. I'm assuming the NetworkTransport does all the cleaning on shtudown. But this way the clients get a disconnect message from server (so long it does't get lost)
-            foreach (KeyValuePair<uint, NetworkedClient> pair in connectedClients)
+            foreach (KeyValuePair<uint, NetworkedClient> pair in ConnectedClients)
             {
                 if(!disconnectedIds.Contains(pair.Key))
                 {
@@ -574,7 +513,7 @@ namespace MLAPI.MonoBehaviours.Core
                     NetworkConfig.NetworkTransport.DisconnectClient(clientId);
                 }
             }
-            _isServer = false;
+            isServer = false;
             Shutdown();
         }
 
@@ -584,8 +523,8 @@ namespace MLAPI.MonoBehaviours.Core
         public void StopHost()
         {
             if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("StopHost()");
-            _isClient = false;
-            _isServer = false;
+            isServer = false;
+            isClient = false;
             StopServer();
             //We don't stop client since we dont actually have a transport connection to our own host. We just handle host messages directly in the MLAPI
         }
@@ -596,9 +535,9 @@ namespace MLAPI.MonoBehaviours.Core
         public void StopClient()
         {
             if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("StopClient()");
-            _isClient = false;
+            isClient = false;
             NetworkConfig.NetworkTransport.DisconnectFromServer();
-            _isClientConnected = false;
+            isConnectedClients = false;
             Shutdown();
         }
 
@@ -624,16 +563,16 @@ namespace MLAPI.MonoBehaviours.Core
             object settings = Init(true);
             NetworkConfig.NetworkTransport.RegisterServerListenSocket(settings);
 
-            _isServer = true;
-            _isClient = true;
+            isServer = true;
+            isClient = true;
             isListening = true;
 
             uint hostClientId = NetworkConfig.NetworkTransport.HostDummyId;
-            connectedClients.Add(hostClientId, new NetworkedClient()
+            ConnectedClients.Add(hostClientId, new NetworkedClient()
             {
                 ClientId = hostClientId
             });
-            connectedClientsList.Add(connectedClients[hostClientId]);
+            ConnectedClientsList.Add(ConnectedClients[hostClientId]);
 
             if (NetworkConfig.HandleObjectSpawning)
             {
@@ -656,7 +595,7 @@ namespace MLAPI.MonoBehaviours.Core
                 Destroy(this.gameObject);
                 return;
             }
-            _singleton = this;
+            singleton = this;
             if (DontDestroy)
                 DontDestroyOnLoad(gameObject);
             if (RunInBackground)
@@ -666,7 +605,7 @@ namespace MLAPI.MonoBehaviours.Core
         private void OnDestroy()
         {
             if (!isMultipleInstance) {
-                _singleton = null;
+                singleton = null;
                 Shutdown();
             }
         }
@@ -676,8 +615,8 @@ namespace MLAPI.MonoBehaviours.Core
             if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Shutdown()");
             NetworkProfiler.Stop();
             isListening = false;
-            _isClient = false;
-            _isServer = false;
+            isServer = false;
+            isClient = false;
             SpawnManager.DestroyNonSceneObjects();
 
             if (NetworkConfig != null && NetworkConfig.NetworkTransport != null) //The Transport is set during Init time, thus it is possible for the Transport to be null
@@ -695,7 +634,7 @@ namespace MLAPI.MonoBehaviours.Core
             {
                 if((NetworkTime - lastSendTickTime >= (1f / NetworkConfig.SendTickrate)) || NetworkConfig.SendTickrate <= 0)
                 {
-                    foreach (KeyValuePair<uint, NetworkedClient> pair in connectedClients)
+                    foreach (KeyValuePair<uint, NetworkedClient> pair in ConnectedClients)
                     {
                         byte error;
                         NetworkConfig.NetworkTransport.SendQueue(pair.Key, out error);
@@ -768,7 +707,7 @@ namespace MLAPI.MonoBehaviours.Core
                                     OnClientDisconnectFromServer(clientId);
                                 else
                                 {
-                                    _isClientConnected = false;
+                                    isConnectedClients = false;
                                     StopClient();
                                 }
 
@@ -809,7 +748,7 @@ namespace MLAPI.MonoBehaviours.Core
                     NetworkProfiler.EndTick();
                 }
 
-                networkTime += Time.unscaledDeltaTime;
+                NetworkTime += Time.unscaledDeltaTime;
             }
         }
 
@@ -821,7 +760,7 @@ namespace MLAPI.MonoBehaviours.Core
             {
                 yield return null;
             }
-            if(pendingClients.Contains(clientId) && !connectedClients.ContainsKey(clientId))
+            if(pendingClients.Contains(clientId) && !ConnectedClients.ContainsKey(clientId))
             {
                 //Timeout
                 if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Client " + clientId + " Handshake Timed Out");
@@ -888,7 +827,7 @@ namespace MLAPI.MonoBehaviours.Core
                     if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Decrypting message body");
                     //Encrypted message
                     if (isServer)
-                        readBuffer = CryptographyHelper.Decrypt(reader.ReadByteArray(), connectedClients[clientId].AesKey);
+                        readBuffer = CryptographyHelper.Decrypt(reader.ReadByteArray(), ConnectedClients[clientId].AesKey);
                     else
                         readBuffer = CryptographyHelper.Decrypt(reader.ReadByteArray(), clientAesKey);
                 }
@@ -912,7 +851,7 @@ namespace MLAPI.MonoBehaviours.Core
                     }
                     else if (isServer && isPassthrough)
                     {
-                        if (!connectedClients.ContainsKey(passthroughTarget))
+                        if (!ConnectedClients.ContainsKey(passthroughTarget))
                         {
                             if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Passthrough message was sent with invalid target: " + passthroughTarget + " from client " + clientId);
                             messageReader.Dispose();
@@ -1062,10 +1001,10 @@ namespace MLAPI.MonoBehaviours.Core
             if (pendingClients.Contains(clientId))
                 pendingClients.Remove(clientId);
 
-            if (connectedClients.ContainsKey(clientId))
-                connectedClients.Remove(clientId);
+            if (ConnectedClients.ContainsKey(clientId))
+                ConnectedClients.Remove(clientId);
       
-            connectedClientsList.RemoveAll(x => x.ClientId == clientId); // :(
+            ConnectedClientsList.RemoveAll(x => x.ClientId == clientId); // :(
 
 #if !DISABLE_CRYPTOGRAPHY
             if (diffieHellmanPublicKeys.ContainsKey(clientId))
@@ -1082,20 +1021,20 @@ namespace MLAPI.MonoBehaviours.Core
         {
             if (pendingClients.Contains(clientId))
                 pendingClients.Remove(clientId);
-            if (connectedClients.ContainsKey(clientId))
+            if (ConnectedClients.ContainsKey(clientId))
             {
                 if(NetworkConfig.HandleObjectSpawning)
                 {
-                    if (connectedClients[clientId].PlayerObject != null)
-                        Destroy(connectedClients[clientId].PlayerObject.gameObject);
-                    for (int i = 0; i < connectedClients[clientId].OwnedObjects.Count; i++)
+                    if (ConnectedClients[clientId].PlayerObject != null)
+                        Destroy(ConnectedClients[clientId].PlayerObject.gameObject);
+                    for (int i = 0; i < ConnectedClients[clientId].OwnedObjects.Count; i++)
                     {
-                        if (connectedClients[clientId].OwnedObjects[i] != null)
-                            Destroy(connectedClients[clientId].OwnedObjects[i].gameObject);
+                        if (ConnectedClients[clientId].OwnedObjects[i] != null)
+                            Destroy(ConnectedClients[clientId].OwnedObjects[i].gameObject);
                     }
                 }
-                connectedClientsList.RemoveAll(x => x.ClientId == clientId);
-                connectedClients.Remove(clientId);
+                ConnectedClientsList.RemoveAll(x => x.ClientId == clientId);
+                ConnectedClients.Remove(clientId);
             }
 
             if (isServer)
@@ -1163,15 +1102,15 @@ namespace MLAPI.MonoBehaviours.Core
                     AesKey = aesKey
 #endif
                 };
-                connectedClients.Add(clientId, client);
-                connectedClientsList.Add(client);
+                ConnectedClients.Add(clientId, client);
+                ConnectedClientsList.Add(client);
 
                 NetworkedObject netObject = null;
                 if(NetworkConfig.HandleObjectSpawning)
                 {
                     prefabId = prefabId == -1 ? NetworkConfig.NetworkPrefabIds[NetworkConfig.PlayerPrefabName] : prefabId;
                     netObject = SpawnManager.CreateSpawnedObject(prefabId, 0, clientId, true, position, rotation, null, false, false);
-                    connectedClients[clientId].PlayerObject = netObject;
+                    ConnectedClients[clientId].PlayerObject = netObject;
                 }
 
                 int amountOfObjectsToSend = SpawnManager.spawnedObjects.Values.Count;
@@ -1194,9 +1133,9 @@ namespace MLAPI.MonoBehaviours.Core
                     writer.WriteFloat(NetworkTime);
                     writer.WriteInt(NetworkConfig.NetworkTransport.GetNetworkTimestamp());
 
-                    writer.WriteInt(connectedClients.Count - 1);
+                    writer.WriteInt(ConnectedClients.Count - 1);
 
-                    foreach (KeyValuePair<uint, NetworkedClient> item in connectedClients)
+                    foreach (KeyValuePair<uint, NetworkedClient> item in ConnectedClients)
                     {
                         //Our own ID. Already added as the first one above
                         if (item.Key == clientId)
@@ -1215,7 +1154,7 @@ namespace MLAPI.MonoBehaviours.Core
                             pair.Value.RebuildObservers(clientId); //Rebuilds observers for the new client
 
                             writer.WriteBool(pair.Value.isPlayerObject);
-                            writer.WriteUInt(pair.Value.NetworkId);
+                            writer.WriteUInt(pair.Value.NetworKId);
                             writer.WriteUInt(pair.Value.OwnerClientId);
                             writer.WriteInt(NetworkConfig.NetworkPrefabIds[pair.Value.NetworkedPrefabName]);
                             writer.WriteBool(pair.Value.gameObject.activeInHierarchy);
@@ -1242,7 +1181,7 @@ namespace MLAPI.MonoBehaviours.Core
 
                 //Inform old clients of the new player
 
-                foreach (var clientPair in connectedClients)
+                foreach (var clientPair in ConnectedClients)
                 {
                     if (clientPair.Key == clientId)
                         continue; //The new client.
@@ -1252,24 +1191,24 @@ namespace MLAPI.MonoBehaviours.Core
                         if (NetworkConfig.HandleObjectSpawning)
                         {
                             writer.WriteBool(true);
-                            writer.WriteUInt(connectedClients[clientId].PlayerObject.GetComponent<NetworkedObject>().NetworkId);
+                            writer.WriteUInt(ConnectedClients[clientId].PlayerObject.GetComponent<NetworkedObject>().NetworKId);
                             writer.WriteUInt(clientId);
                             writer.WriteInt(prefabId);
                             writer.WriteBool(false);
-                            writer.WriteBool(connectedClients[clientId].PlayerObject.GetComponent<NetworkedObject>().observers.Contains(clientPair.Key));
+                            writer.WriteBool(ConnectedClients[clientId].PlayerObject.GetComponent<NetworkedObject>().observers.Contains(clientPair.Key));
 
-                            writer.WriteFloat(connectedClients[clientId].PlayerObject.transform.position.x);
-                            writer.WriteFloat(connectedClients[clientId].PlayerObject.transform.position.y);
-                            writer.WriteFloat(connectedClients[clientId].PlayerObject.transform.position.z);
+                            writer.WriteFloat(ConnectedClients[clientId].PlayerObject.transform.position.x);
+                            writer.WriteFloat(ConnectedClients[clientId].PlayerObject.transform.position.y);
+                            writer.WriteFloat(ConnectedClients[clientId].PlayerObject.transform.position.z);
 
-                            writer.WriteFloat(connectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.x);
-                            writer.WriteFloat(connectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.y);
-                            writer.WriteFloat(connectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.z);
+                            writer.WriteFloat(ConnectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.x);
+                            writer.WriteFloat(ConnectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.y);
+                            writer.WriteFloat(ConnectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.z);
 
                             writer.WriteBool(false); //No payload data
 
-                            if (connectedClients[clientId].PlayerObject.GetComponent<NetworkedObject>().observers.Contains(clientPair.Key))
-                                connectedClients[clientId].PlayerObject.GetComponent<NetworkedObject>().WriteFormattedSyncedVarData(writer);
+                            if (ConnectedClients[clientId].PlayerObject.GetComponent<NetworkedObject>().observers.Contains(clientPair.Key))
+                                ConnectedClients[clientId].PlayerObject.GetComponent<NetworkedObject>().WriteFormattedSyncedVarData(writer);
                         }
                         else
                         {

@@ -23,7 +23,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
 #if !DISABLE_CRYPTOGRAPHY
                 if (netManager.NetworkConfig.EncryptedChannelsHashSet.Contains(MessageManager.reverseChannels[channelId]))
-                    writer.WriteByteArray(CryptographyHelper.Encrypt(reader.ReadByteArray(), netManager.connectedClients[targetId].AesKey));
+                    writer.WriteByteArray(CryptographyHelper.Encrypt(reader.ReadByteArray(), netManager.ConnectedClients[targetId].AesKey));
                 else
 #endif
                     writer.WriteByteArray(reader.ReadByteArray());
@@ -70,7 +70,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                     //This is an encrypted message.
                     byte[] encrypted;
                     if (netManager.isServer)
-                        encrypted = CryptographyHelper.Encrypt(messageWriter.Finalize(), netManager.connectedClients[clientId].AesKey);
+                        encrypted = CryptographyHelper.Encrypt(messageWriter.Finalize(), netManager.ConnectedClients[clientId].AesKey);
                     else
                         encrypted = CryptographyHelper.Encrypt(messageWriter.Finalize(), netManager.clientAesKey);
 
@@ -188,7 +188,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
         internal static ref List<uint> Send(string messageType, string channelName, BitWriter messageWriter, uint? fromNetId,  uint? networkId = null, ushort? orderId = null)
         {
             failedObservers.Clear();
-            if (netManager.connectedClients.Count == 0)
+            if (netManager.ConnectedClients.Count == 0)
                 return ref failedObservers;
             if (netManager.NetworkConfig.EncryptedChannels.Contains(channelName))
             {
@@ -203,7 +203,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 writer.WriteWriter(messageWriter);
 
                 int channel = MessageManager.channels[channelName];
-                foreach (KeyValuePair<uint, NetworkedClient> pair in netManager.connectedClients)
+                foreach (KeyValuePair<uint, NetworkedClient> pair in netManager.ConnectedClients)
                 {
                     uint targetClientId = pair.Key;
                     if (netManager.isHost && targetClientId == netManager.NetworkConfig.NetworkTransport.HostDummyId)
@@ -252,7 +252,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 writer.WriteWriter(messageWriter);
 
                 int channel = MessageManager.channels[channelName];
-                foreach (KeyValuePair<uint, NetworkedClient> pair in netManager.connectedClients)
+                foreach (KeyValuePair<uint, NetworkedClient> pair in netManager.ConnectedClients)
                 {
                     if (pair.Key == clientIdToIgnore)
                         continue;

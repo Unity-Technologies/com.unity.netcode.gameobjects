@@ -107,7 +107,7 @@ namespace MLAPI.MonoBehaviours.Prototyping
 
         private void Update()
         {
-            if(isOwner || isLocalPlayer || (ownerClientId == NetworkingManager.singleton.NetworkConfig.NetworkTransport.InvalidDummyId && isServer))
+            if(isOwner || isLocalPlayer || (OwnerClientId == NetworkingManager.singleton.NetworkConfig.NetworkTransport.InvalidDummyId && isServer))
             {
                 //We own the object OR we are server and the object is not owned by anyone OR we are the object.
                 if(NetworkingManager.singleton.NetworkTime - lastSendTime >= timeForLerp && (Vector3.Distance(transform.position, lastSentPos) > MinMeters || Quaternion.Angle(transform.rotation, lastSentRot) > MinDegrees))
@@ -218,11 +218,11 @@ namespace MLAPI.MonoBehaviours.Prototyping
                         if (EnableProximity)
                         {
                             // For instead of Foreach?! TODO!!!
-                            for (uint i = 0; i < NetworkingManager.singleton.connectedClients.Count; i++)
+                            for (uint i = 0; i < NetworkingManager.singleton.ConnectedClients.Count; i++)
                             {
-                                if (Vector3.Distance(NetworkingManager.singleton.connectedClients[i].PlayerObject.transform.position, transform.position) <= ProximityRange)
+                                if (Vector3.Distance(NetworkingManager.singleton.ConnectedClients[i].PlayerObject.transform.position, transform.position) <= ProximityRange)
                                 {
-                                    SendToClientTarget(NetworkingManager.singleton.connectedClients[i].ClientId, "MLAPI_OnRecieveTransformFromServer", "MLAPI_POSITION_UPDATE", positionUpdateBuffer, true);
+                                    SendToClientTarget(NetworkingManager.singleton.ConnectedClients[i].ClientId, "MLAPI_OnRecieveTransformFromServer", "MLAPI_POSITION_UPDATE", positionUpdateBuffer, true);
                                 }
                             }
                         }

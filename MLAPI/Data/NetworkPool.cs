@@ -16,8 +16,8 @@ namespace MLAPI.Data
             for (int i = 0; i < size; i++)
             {
                 GameObject go = MonoBehaviour.Instantiate(NetworkingManager.singleton.NetworkConfig.NetworkedPrefabs[prefabId].prefab, Vector3.zero, Quaternion.identity);
-                go.GetComponent<NetworkedObject>()._isPooledObject = true;
-                go.GetComponent<NetworkedObject>().poolId = poolId;
+                go.GetComponent<NetworkedObject>().isPooledObject = true;
+                go.GetComponent<NetworkedObject>().PoolId = poolId;
                 go.GetComponent<NetworkedObject>().Spawn();
                 go.name = "Pool Id: " + poolId + " #" + i;
                 go.SetActive(false);

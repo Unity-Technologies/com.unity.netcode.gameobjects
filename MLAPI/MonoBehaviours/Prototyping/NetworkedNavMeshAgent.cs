@@ -91,7 +91,7 @@ namespace MLAPI.MonoBehaviours.Prototyping
                     else
                     {
                         List<uint> proximityClients = new List<uint>();
-                        foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.connectedClients)
+                        foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.ConnectedClients)
                         {
                             if (Vector3.Distance(client.Value.PlayerObject.transform.position, transform.position) <= ProximityRange)
                                 proximityClients.Add(client.Key);
@@ -123,7 +123,7 @@ namespace MLAPI.MonoBehaviours.Prototyping
                     else
                     {
                         List<uint> proximityClients = new List<uint>();
-                        foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.connectedClients)
+                        foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.ConnectedClients)
                         {
                             if (Vector3.Distance(client.Value.PlayerObject.transform.position, transform.position) <= ProximityRange)
                                 proximityClients.Add(client.Key);
