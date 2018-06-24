@@ -96,10 +96,7 @@ namespace MLAPI.Data.Transports.UNET
                 NetworkTransport.QueueMessageForSending(netId.HostId, netId.ConnectionId, channelId, dataBuffer, dataSize, out error);
         }
 
-        public void Shutdown()
-        {
-            NetworkTransport.Shutdown();
-        }
+        public void Shutdown() => NetworkTransport.Shutdown();
 
         public void SendQueue(uint clientId, out byte error)
         {
