@@ -28,6 +28,30 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
         }
 
         [Test]
+        public void TestSetLength()
+        {
+            BitStream bitStream = new BitStream(4);
+            bitStream.SetLength(100);
+
+            Assert.That(bitStream.Capacity, Is.GreaterThanOrEqualTo(100));
+        }
+
+        [Test]
+        public void TestSetLength2()
+        {
+            BitStream bitStream = new BitStream(4);
+
+            bitStream.WriteByte(1);
+            bitStream.WriteByte(1);
+            bitStream.WriteByte(1);
+            bitStream.WriteByte(1);
+
+            bitStream.SetLength(0);
+
+            Assert.That(bitStream.Position, Is.EqualTo(0));
+        }
+
+        [Test]
         public void TestGrow()
         {
             // stream should not grow when given a buffer
