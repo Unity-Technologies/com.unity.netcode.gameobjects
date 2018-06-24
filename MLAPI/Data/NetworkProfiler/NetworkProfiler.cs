@@ -6,17 +6,10 @@ namespace MLAPI.Data.NetworkProfiler
 {
     public static class NetworkProfiler
     {
-        public static FixedQueue<ProfilerTick> Ticks = null;
+        public static FixedQueue<ProfilerTick> Ticks { get; private set; }
+        public static bool isRunning { get; private set; }
         private static int tickHistory = 1024;
         private static int EventIdCounter = 0;
-        private static bool isRunning = false;
-        public static bool IsRunning
-        {
-            get
-            {
-                return isRunning;
-            }
-        }
         private static ProfilerTick CurrentTick;
 
         public static void Start(int historyLength)
