@@ -3,7 +3,6 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
 {
     using MLAPI.NetworkingManagerComponents.Binary;
     using NUnit.Framework;
-    using static MLAPI.NetworkingManagerComponents.Binary.BitStream;
 
     [TestFixture]
     public class BitStreamTest

@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Runtime.Serialization;
-using System.Text;
+using UnityEngine;
 using static MLAPI.NetworkingManagerComponents.Binary.Arithmetic;
 
 namespace MLAPI.NetworkingManagerComponents.Binary
@@ -13,6 +10,10 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         const int initialCapacity = 16;
         const float initialGrowthFactor = 2.0f;
         private byte[] target;
+        private static readonly float[] holder_f = new float[1];
+        private static readonly double[] holder_d = new double[1];
+        private static readonly uint[] holder_i = new uint[1];
+        private static readonly ulong[] holder_l = new ulong[1];
 
         /// <summary>
         /// A stream that supports writing data smaller than a single byte. This stream also has a built-in compression algorithm that can (optionally) be used to write compressed data.
@@ -265,12 +266,249 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// <param name="bit">Value of the bit. True represents 1, False represents 0</param>
         public void WriteBit(bool bit)
         {
-            if (BitAligned && Position + 1 >= target.Length) Grow(1);
+            if (BitAligned && Position == target.Length) Grow(1);
             int offset = (int)(BitPosition & 7);
             ulong pos = BitPosition >> 3;
             ++BitPosition;
             target[pos] = (byte)(bit ? (target[pos] & ~(1 << offset)) | (1 << offset) : (target[pos] & ~(1 << offset)));
             UpdateLength();
+        }
+
+        /// <summary>
+        /// Write single-precision floating point value to the stream
+        /// </summary>
+        /// <param name="value">Value to write</param>
+        public void WriteSingle(float value)
+        {
+            lock (holder_f)
+                lock (holder_i)
+                {
+                    holder_f[0] = value;
+                    Buffer.BlockCopy(holder_f, 0, holder_i, 0, 4);
+                    WriteUInt32(holder_i[0]);
+                }
+        }
+
+        /// <summary>
+        /// Write double-precision floating point value to the stream
+        /// </summary>
+        /// <param name="value">Value to write</param>
+        public void WriteDouble(double value)
+        {
+            lock (holder_d)
+                lock (holder_l)
+                {
+                    holder_d[0] = value;
+                    Buffer.BlockCopy(holder_d, 0, holder_l, 0, 8);
+                    WriteUInt64(holder_l[0]);
+                }
+        }
+
+        /// <summary>
+        /// Write single-precision floating point value to the stream as a varint
+        /// </summary>
+        /// <param name="value">Value to write</param>
+        public void WriteSinglePacked(float value)
+        {
+            lock(holder_f)
+                lock (holder_i)
+                {
+                    holder_f[0] = value;
+                    Buffer.BlockCopy(holder_f, 0, holder_i, 0, 4);
+                    WriteUInt32Packed(BinaryHelpers.SwapEndian(holder_i[0]));
+                }
+        }
+
+        /// <summary>
+        /// Write double-precision floating point value to the stream as a varint
+        /// </summary>
+        /// <param name="value">Value to write</param>
+        public void WriteDoublePacked(double value)
+        {
+            lock (holder_d)
+                lock (holder_l)
+                {
+                    holder_d[0] = value;
+                    Buffer.BlockCopy(holder_d, 0, holder_l, 0, 8);
+                    WriteUInt64Packed(BinaryHelpers.SwapEndian(holder_l[0]));
+                }
+        }
+
+        /// <summary>
+        /// Convenience method that writes three non-varint floats from the vector to the stream
+        /// </summary>
+        /// <param name="vec">Vector to write</param>
+        public void WriteVector3(Vector3 vec)
+        {
+            WriteSingle(vec.x);
+            WriteSingle(vec.y);
+            WriteSingle(vec.z);
+        }
+
+        /// <summary>
+        /// Write a single-precision floating point value to the stream. The value is between (inclusive) the minValue and maxValue.
+        /// </summary>
+        /// <param name="value">Value to write</param>
+        /// <param name="minValue">Minimum value that this value could be</param>
+        /// <param name="maxValue">Maximum possible value that this could be</param>
+        /// <param name="bytes">How many bytes the compressed result should occupy. Must be between 1 and 4 (inclusive)</param>
+        public void WriteRangedSingle(float value, float minValue, float maxValue, int bytes)
+        {
+            if (bytes < 1 || bytes > 4) throw new ArgumentOutOfRangeException("Result must occupy between 1 and 4 bytes!");
+            if (value < minValue || value > maxValue) throw new ArgumentOutOfRangeException("Given value does not match the given constraints!");
+            uint result = (uint)(((value + minValue)/(maxValue+minValue))*((0x100*bytes) - 1));
+            for (int i = 0; i < bytes; ++i) _WriteByte((byte)(result >> (i<<3)));
+        }
+
+        /// <summary>
+        /// Write a double-precision floating point value to the stream. The value is between (inclusive) the minValue and maxValue.
+        /// </summary>
+        /// <param name="value">Value to write</param>
+        /// <param name="minValue">Minimum value that this value could be</param>
+        /// <param name="maxValue">Maximum possible value that this could be</param>
+        /// <param name="bytes">How many bytes the compressed result should occupy. Must be between 1 and 8 (inclusive)</param>
+        public void WriteRangedDouble(double value, double minValue, double maxValue, int bytes)
+        {
+            if (bytes < 1 || bytes > 8) throw new ArgumentOutOfRangeException("Result must occupy between 1 and 8 bytes!");
+            if (value < minValue || value > maxValue) throw new ArgumentOutOfRangeException("Given value does not match the given constraints!");
+            ulong result = (ulong)(((value + minValue) / (maxValue+minValue)) * ((0x100 * bytes) - 1));
+            for (int i = 0; i < bytes; ++i) _WriteByte((byte)(result >> (i << 3)));
+        }
+
+        /// <summary>
+        /// Write a rotation to the stream.
+        /// </summary>
+        /// <param name="rotation">Rotation to write</param>
+        /// <param name="bytesPerAngle">How many bytes each written angle should occupy</param>
+        public void WriteRotation(Quaternion rotation, int bytesPerAngle)
+        {
+            if (bytesPerAngle < 1 || bytesPerAngle > 4) throw new ArgumentOutOfRangeException("Bytes per angle must be at least 1 byte and at most 4 bytes!");
+            if (bytesPerAngle==4) WriteVector3(rotation.eulerAngles);
+            else
+            {
+                Vector3 rot = rotation.eulerAngles;
+                WriteRangedSingle(rot.x, 0f, 360f, bytesPerAngle);
+                WriteRangedSingle(rot.y, 0f, 360f, bytesPerAngle);
+                WriteRangedSingle(rot.z, 0f, 360f, bytesPerAngle);
+            }
+        }
+
+        /// <summary>
+        /// Read a single-precision floating point value from the stream.
+        /// </summary>
+        /// <returns>The read value</returns>
+        public float ReadSingle()
+        {
+            uint read = ReadUInt32();
+            lock (holder_f)
+                lock (holder_i)
+                {
+                    holder_i[0] = read;
+                    Buffer.BlockCopy(holder_i, 0, holder_f, 0, 4);
+                    return holder_f[0];
+                }
+        }
+
+
+        /// <summary>
+        /// Read a double-precision floating point value from the stream.
+        /// </summary>
+        /// <returns>The read value</returns>
+        public double ReadDouble()
+        {
+            ulong read = ReadUInt64();
+            lock (holder_d)
+                lock (holder_l)
+                {
+                    holder_l[0] = read;
+                    Buffer.BlockCopy(holder_l, 0, holder_d, 0, 8);
+                    return holder_d[0];
+                }
+        }
+        
+        /// <summary>
+        /// Read a single-precision floating point value from the stream from a varint
+        /// </summary>
+        /// <returns>The read value</returns>
+        public float ReadSinglePacked()
+        {
+            uint read = ReadUInt32Packed();
+            lock(holder_f)
+                lock (holder_i)
+                {
+                    holder_i[0] = BinaryHelpers.SwapEndian(read);
+                    Buffer.BlockCopy(holder_i, 0, holder_f, 0, 4);
+                    return holder_f[0];
+                }
+        }
+
+        /// <summary>
+        /// Read a double-precision floating point value from the stream as a varint
+        /// </summary>
+        /// <returns>The read value</returns>
+        public double ReadDoublePacked()
+        {
+            ulong read = ReadUInt64Packed();
+            lock (holder_d)
+                lock (holder_l)
+                {
+                    holder_l[0] = BinaryHelpers.SwapEndian(read);
+                    Buffer.BlockCopy(holder_l, 0, holder_d, 0, 8);
+                    return holder_d[0];
+                }
+        }
+
+        /// <summary>
+        /// Read a Vector3 from the stream.
+        /// </summary>
+        /// <returns>The Vector3 read from the stream.</returns>
+        public Vector3 ReadVector3() => new Vector3(ReadSingle(), ReadSingle(), ReadSingle());
+
+        /// <summary>
+        /// Read a single-precision floating point value from the stream. The value is between (inclusive) the minValue and maxValue.
+        /// </summary>
+        /// <param name="minValue">Minimum value that this value could be</param>
+        /// <param name="maxValue">Maximum possible value that this could be</param>
+        /// <param name="bytes">How many bytes the compressed value occupies. Must be between 1 and 4 (inclusive)</param>
+        /// <returns>The read value</returns>
+        public float ReadRangedSingle(float minValue, float maxValue, int bytes)
+        {
+            if (bytes < 1 || bytes > 4) throw new ArgumentOutOfRangeException("Result must occupy between 1 and 4 bytes!");
+            uint read = 0;
+            for (int i = 0; i < bytes; ++i) read |= (uint)_ReadByte() << (i << 3);
+            return (((float)read / ((0x100 * bytes) - 1)) * (minValue + maxValue)) - minValue;
+        }
+
+        /// <summary>
+        /// read a double-precision floating point value from the stream. The value is between (inclusive) the minValue and maxValue.
+        /// </summary>
+        /// <param name="value">Value to write</param>
+        /// <param name="minValue">Minimum value that this value could be</param>
+        /// <param name="maxValue">Maximum possible value that this could be</param>
+        /// <param name="bytes">How many bytes the compressed value occupies. Must be between 1 and 8 (inclusive)</param>
+        /// <returns>The read value</returns>
+        public double ReadRangedDouble(double minValue, double maxValue, int bytes)
+        {
+            if (bytes < 1 || bytes > 8) throw new ArgumentOutOfRangeException("Result must occupy between 1 and 8 bytes!");
+            ulong read = 0;
+            for (int i = 0; i < bytes; ++i) read |= (ulong)_ReadByte() << (i << 3);
+            return (((double)read / ((0x100 * bytes) - 1)) * (minValue + maxValue)) - minValue;
+        }
+
+        /// <summary>
+        /// Read a rotation from the stream.
+        /// </summary>
+        /// <param name="bytesPerAngle">How many bytes each angle occupies</param>
+        /// <returns>The rotation read from the stream</returns>
+        public Quaternion ReadRotation(int bytesPerAngle)
+        {
+            if (bytesPerAngle < 1 || bytesPerAngle > 4) throw new ArgumentOutOfRangeException("Bytes per angle must be at least 1 byte and at most 4 bytes!");
+            if (bytesPerAngle == 4) return Quaternion.Euler(ReadVector3());
+            else return Quaternion.Euler(
+                ReadRangedSingle(0f, 360f, bytesPerAngle),  // X
+                ReadRangedSingle(0f, 360f, bytesPerAngle),  // Y
+                ReadRangedSingle(0f, 360f, bytesPerAngle)   // Z
+                );
         }
 
         /// <summary>
