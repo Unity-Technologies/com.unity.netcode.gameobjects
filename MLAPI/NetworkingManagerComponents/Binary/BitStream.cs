@@ -335,9 +335,29 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         }
 
         /// <summary>
+        /// Convenience method that writes two non-varint floats from the vector to the stream
+        /// </summary>
+        /// <param name="vector2">Vector to write</param>
+        public void WriteVector2(Vector2 vector2)
+        {
+            WriteSingle(vector2.x);
+            WriteSingle(vector2.y);
+        }
+
+        /// <summary>
+        /// Convenience method that writes two varint floats from the vector to the stream
+        /// </summary>
+        /// <param name="vector2">Vector to write</param>
+        public void WriteVector2Packed(Vector2 vector2)
+        {
+            WriteSinglePacked(vector2.x);
+            WriteSinglePacked(vector2.y);
+        }
+
+        /// <summary>
         /// Convenience method that writes three non-varint floats from the vector to the stream
         /// </summary>
-        /// <param name="vec">Vector to write</param>
+        /// <param name="vector3">Vector to write</param>
         public void WriteVector3(Vector3 vector3)
         {
             WriteSingle(vector3.x);
@@ -348,12 +368,36 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// <summary>
         /// Convenience method that writes three varint floats from the vector to the stream
         /// </summary>
-        /// <param name="vec">Vector to write</param>
+        /// <param name="vector3">Vector to write</param>
         public void WriteVector3Packed(Vector3 vector3)
         {
             WriteSinglePacked(vector3.x);
             WriteSinglePacked(vector3.y);
             WriteSinglePacked(vector3.z);
+        }
+
+        /// <summary>
+        /// Convenience method that writes four non-varint floats from the vector to the stream
+        /// </summary>
+        /// <param name="vector4">Vector to write</param>
+        public void WriteVector4(Vector4 vector4)
+        {
+            WriteSingle(vector4.x);
+            WriteSingle(vector4.y);
+            WriteSingle(vector4.z);
+            WriteSingle(vector4.w);
+        }
+
+        /// <summary>
+        /// Convenience method that writes four varint floats from the vector to the stream
+        /// </summary>
+        /// <param name="vector4">Vector to write</param>
+        public void WriteVector4Packed(Vector4 vector4)
+        {
+            WriteSinglePacked(vector4.x);
+            WriteSinglePacked(vector4.y);
+            WriteSinglePacked(vector4.z);
+            WriteSinglePacked(vector4.w);
         }
 
         /// <summary>
@@ -470,6 +514,18 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         }
 
         /// <summary>
+        /// Read a Vector2 from the stream.
+        /// </summary>
+        /// <returns>The Vector2 read from the stream.</returns>
+        public Vector2 ReadVector2() => new Vector2(ReadSingle(), ReadSingle());
+
+        /// <summary>
+        /// Read a Vector2 from the stream.
+        /// </summary>
+        /// <returns>The Vector2 read from the stream.</returns>
+        public Vector2 ReadVector2Packed() => new Vector2(ReadSinglePacked(), ReadSinglePacked());
+
+        /// <summary>
         /// Read a Vector3 from the stream.
         /// </summary>
         /// <returns>The Vector3 read from the stream.</returns>
@@ -480,6 +536,18 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// </summary>
         /// <returns>The Vector3 read from the stream.</returns>
         public Vector3 ReadVector3Packed() => new Vector3(ReadSinglePacked(), ReadSinglePacked(), ReadSinglePacked());
+
+        /// <summary>
+        /// Read a Vector4 from the stream.
+        /// </summary>
+        /// <returns>The Vector4 read from the stream.</returns>
+        public Vector4 ReadVector4() => new Vector4(ReadSingle(), ReadSingle(), ReadSingle(), ReadSingle());
+
+        /// <summary>
+        /// Read a Vector4 from the stream.
+        /// </summary>
+        /// <returns>The Vector4 read from the stream.</returns>
+        public Vector4 ReadVector4Packed() => new Vector4(ReadSinglePacked(), ReadSinglePacked(), ReadSinglePacked(), ReadSinglePacked());
 
         /// <summary>
         /// Read a single-precision floating point value from the stream. The value is between (inclusive) the minValue and maxValue.
