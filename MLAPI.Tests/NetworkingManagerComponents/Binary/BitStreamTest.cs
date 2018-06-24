@@ -339,7 +339,10 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
             // now the stream is misalligned,  lets write some bytes
             outStream.WriteByte(244);
             outStream.WriteByte(123);
-
+            outStream.WriteInt16(-5457);
+            outStream.WriteUInt64(4773753249);
+            outStream.WriteUInt64Packed(5435285812313212);
+            outStream.WriteInt64Packed(-5435285812313212);
             outStream.WriteBit(true);
             outStream.WriteByte(1);
             outStream.WriteByte(0);
@@ -352,12 +355,13 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
             Assert.That(inStream.ReadBit(), Is.False);
             Assert.That(inStream.ReadByte(), Is.EqualTo(244));
             Assert.That(inStream.ReadByte(), Is.EqualTo(123));
+            Assert.That(inStream.ReadInt16(), Is.EqualTo(-5457));
+            Assert.That(inStream.ReadUInt64(), Is.EqualTo(4773753249));
+            Assert.That(inStream.ReadUInt64Packed(), Is.EqualTo(5435285812313212));
+            Assert.That(inStream.ReadInt64Packed(), Is.EqualTo(-5435285812313212));
             Assert.That(inStream.ReadBit(), Is.True);
             Assert.That(inStream.ReadByte(), Is.EqualTo(1));
             Assert.That(inStream.ReadByte(), Is.EqualTo(0));
-
-
-
         }
     }
 }
