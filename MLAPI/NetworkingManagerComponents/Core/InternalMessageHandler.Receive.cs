@@ -307,7 +307,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             MethodInfo targetMethod = null;
             if (behaviour.cachedMethods.ContainsKey(hash))
                 targetMethod = behaviour.cachedMethods[hash];
-
+            else return; //No method
             ParameterInfo[] parameters = targetMethod.GetParameters();
             object[] methodParams = new object[parameters.Length];
             for (int i = 0; i < parameters.Length; i++)
@@ -327,6 +327,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             MethodInfo targetMethod = null;
             if (behaviour.cachedMethods.ContainsKey(hash))
                 targetMethod = behaviour.cachedMethods[hash];
+            else return; //No method
             ParameterInfo[] parameters = targetMethod.GetParameters();
             object[] methodParams = new object[parameters.Length];
             for (int i = 0; i < parameters.Length; i++)
@@ -346,6 +347,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             MethodInfo targetMethod = null;
             if (behaviour.cachedMethods.ContainsKey(hash))
                 targetMethod = behaviour.cachedMethods[hash];
+            else return; //No method
             ParameterInfo[] parameters = targetMethod.GetParameters();
             object[] methodParams = new object[parameters.Length];
             for (int i = 0; i < parameters.Length; i++)
