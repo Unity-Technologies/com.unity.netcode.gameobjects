@@ -335,6 +335,42 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         }
 
         /// <summary>
+        /// Convenience method that writes four non-varint floats from the color to the stream
+        /// </summary>
+        /// <param name="color">Color to write</param>
+        public void WriteColor(Color color)
+        {
+            WriteSingle(color.r);
+            WriteSingle(color.g);
+            WriteSingle(color.b);
+            WriteSingle(color.a);
+        }
+
+        /// <summary>
+        /// Convenience method that writes four varint floats from the color to the stream
+        /// </summary>
+        /// <param name="color">Color to write</param>
+        public void WriteColorPacked(Color color)
+        {
+            WriteSinglePacked(color.r);
+            WriteSinglePacked(color.g);
+            WriteSinglePacked(color.b);
+            WriteSinglePacked(color.a);
+        }
+
+        /// <summary>
+        /// Convenience method that writes four non-varint floats from the color to the stream
+        /// </summary>
+        /// <param name="color32">Color32 to write</param>
+        public void WriteColor32(Color32 color32)
+        {
+            WriteSingle(color32.r);
+            WriteSingle(color32.g);
+            WriteSingle(color32.b);
+            WriteSingle(color32.a);
+        }
+
+        /// <summary>
         /// Convenience method that writes two non-varint floats from the vector to the stream
         /// </summary>
         /// <param name="vector2">Vector to write</param>
@@ -548,6 +584,24 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// </summary>
         /// <returns>The Vector4 read from the stream.</returns>
         public Vector4 ReadVector4Packed() => new Vector4(ReadSinglePacked(), ReadSinglePacked(), ReadSinglePacked(), ReadSinglePacked());
+
+        /// <summary>
+        /// Read a Color from the stream.
+        /// </summary>
+        /// <returns>The Color read from the stream.</returns>
+        public Color ReadColor() => new Color(ReadSingle(), ReadSingle(), ReadSingle(), ReadSingle());
+
+        /// <summary>
+        /// Read a Color from the stream.
+        /// </summary>
+        /// <returns>The Color read from the stream.</returns>
+        public Color ReadColorPacked() => new Color(ReadSinglePacked(), ReadSinglePacked(), ReadSinglePacked(), ReadSinglePacked());
+
+        /// <summary>
+        /// Read a Color32 from the stream.
+        /// </summary>
+        /// <returns>The Color32 read from the stream.</returns>
+        public Color32 ReadColor32() => new Color32((byte)ReadByte(), (byte)ReadByte(), (byte)ReadByte(), (byte)ReadByte());
 
         /// <summary>
         /// Read a single-precision floating point value from the stream. The value is between (inclusive) the minValue and maxValue.
