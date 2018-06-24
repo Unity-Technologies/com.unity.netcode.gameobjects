@@ -331,6 +331,21 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
         }
 
         [Test]
+        public void TestWriteDoublePacked()
+        {
+            double somenumber = Math.PI;
+            BitStream outStream = new BitStream();
+
+            outStream.WriteDoublePacked(somenumber);
+            byte[] buffer = outStream.GetBuffer();
+
+            BitStream inStream = new BitStream(buffer);
+
+            Assert.That(inStream.ReadDoublePacked(), Is.EqualTo(somenumber));
+
+        }
+
+        [Test]
         public void TestWriteMisaligned()
         {
             BitStream outStream = new BitStream();

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Security;
 using UnityEngine;
 using static MLAPI.NetworkingManagerComponents.Binary.Arithmetic;
 
@@ -300,13 +301,9 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// <param name="value">Value to write</param>
         public void WriteDouble(double value)
         {
-            lock (holder_d)
-                lock (holder_l)
-                {
-                    holder_d[0] = value;
-                    Buffer.BlockCopy(holder_d, 0, holder_l, 0, 8);
-                    WriteUInt64(holder_l[0]);
-                }
+            long binary = BitConverter.DoubleToInt64Bits(value);
+            WriteInt64(binary);
+
         }
 
         /// <summary>
@@ -330,13 +327,8 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// <param name="value">Value to write</param>
         public void WriteDoublePacked(double value)
         {
-            lock (holder_d)
-                lock (holder_l)
-                {
-                    holder_d[0] = value;
-                    Buffer.BlockCopy(holder_d, 0, holder_l, 0, 8);
-                    WriteUInt64Packed(BinaryHelpers.SwapEndian(holder_l[0]));
-                }
+            long binary = BitConverter.DoubleToInt64Bits(value);
+            WriteInt64Packed(binary);
         }
 
         /// <summary>
@@ -532,14 +524,9 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// <returns>The read value</returns>
         public double ReadDouble()
         {
-            ulong read = ReadUInt64();
-            lock (holder_d)
-                lock (holder_l)
-                {
-                    holder_l[0] = read;
-                    Buffer.BlockCopy(holder_l, 0, holder_d, 0, 8);
-                    return holder_d[0];
-                }
+            
+            long read = ReadInt64();
+            return BitConverter.Int64BitsToDouble(read);
         }
 
         /// <summary>
@@ -564,14 +551,8 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// <returns>The read value</returns>
         public double ReadDoublePacked()
         {
-            ulong read = ReadUInt64Packed();
-            lock (holder_d)
-                lock (holder_l)
-                {
-                    holder_l[0] = BinaryHelpers.SwapEndian(read);
-                    Buffer.BlockCopy(holder_l, 0, holder_d, 0, 8);
-                    return holder_d[0];
-                }
+            long read = ReadInt64Packed();
+            return BitConverter.Int64BitsToDouble(read);
         }
 
         /// <summary>
