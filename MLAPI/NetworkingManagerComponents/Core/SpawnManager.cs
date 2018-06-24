@@ -24,13 +24,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             }
         }
 
-        private static NetworkingManager netManager
-        {
-            get
-            {
-                return NetworkingManager.singleton;
-            }
-        }
+        private static NetworkingManager netManager => NetworkingManager.singleton;
 
         internal static void RemoveOwnership(uint netId)
         {
