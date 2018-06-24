@@ -411,5 +411,22 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
             Assert.Fail("There is no way to read back the bits");
 
         }
+
+        [Test]
+        public void TestNibble()
+        {
+            byte somevalue = 0b1010011;
+
+            BitStream outStream = new BitStream();
+            outStream.WriteNibble(somevalue);
+
+            byte[] buffer = outStream.GetBuffer();
+
+            BitStream inStream = new BitStream(buffer);
+
+            //Assert.That(inStream.ReadNibble(), Is.EqualTo(0b0011));
+            Assert.Fail("There is no way to read back Nibbles");
+
+        }
     }
 }
