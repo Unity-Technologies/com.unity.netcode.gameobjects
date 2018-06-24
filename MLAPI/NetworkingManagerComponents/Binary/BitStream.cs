@@ -205,7 +205,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// <param name="value">New capacity of the buffer</param>
         private void SetCapacity(long value)
         {
-            if (!Resizable) throw new CapacityException("Can't resize fixed-capacity buffer! Capacity (bytes): "+target.Length); // Don't do shit because fuck you
+            if (!Resizable) throw new NotSupportedException("Can't resize non resizable buffer"); // Don't do shit because fuck you (comment by @GabrielTofvesson -TwoTen)
             byte[] newTarg = new byte[value];
             long len = Math.Min(value, target.LongLength);
             Buffer.BlockCopy(target, 0, newTarg, 0, (int)len);
@@ -685,15 +685,5 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// </summary>
         /// <returns>Hex encoded version of the buffer</returns>
         public override string ToString() => BitConverter.ToString(target, 0, (int)Length);
-
-        /// <summary>
-        /// An exception representing cases when buffer-capacity related errors occur.
-        /// </summary>
-        public sealed class CapacityException : Exception
-        {
-            public CapacityException() { }
-            public CapacityException(string message) : base(message) { }
-            public CapacityException(string message, Exception innerException) : base(message, innerException) { }
-        }
     }
 }

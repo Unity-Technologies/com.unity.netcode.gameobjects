@@ -35,7 +35,7 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
             BitStream bitStream = new BitStream(new byte[0]);
             Assert.That(
                 () => { bitStream.WriteInt64(long.MaxValue); }, 
-                Throws.TypeOf<CapacityException>());
+                Throws.TypeOf<NotSupportedException>());
         }
 
         [Test]
