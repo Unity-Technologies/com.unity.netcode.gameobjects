@@ -338,11 +338,22 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// Convenience method that writes three non-varint floats from the vector to the stream
         /// </summary>
         /// <param name="vec">Vector to write</param>
-        public void WriteVector3(Vector3 vec)
+        public void WriteVector3(Vector3 vector3)
         {
-            WriteSingle(vec.x);
-            WriteSingle(vec.y);
-            WriteSingle(vec.z);
+            WriteSingle(vector3.x);
+            WriteSingle(vector3.y);
+            WriteSingle(vector3.z);
+        }
+
+        /// <summary>
+        /// Convenience method that writes three varint floats from the vector to the stream
+        /// </summary>
+        /// <param name="vec">Vector to write</param>
+        public void WriteVector3Packed(Vector3 vector3)
+        {
+            WriteSinglePacked(vector3.x);
+            WriteSinglePacked(vector3.y);
+            WriteSinglePacked(vector3.z);
         }
 
         /// <summary>
@@ -463,6 +474,12 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// </summary>
         /// <returns>The Vector3 read from the stream.</returns>
         public Vector3 ReadVector3() => new Vector3(ReadSingle(), ReadSingle(), ReadSingle());
+
+        /// <summary>
+        /// Read a Vector3 from the stream.
+        /// </summary>
+        /// <returns>The Vector3 read from the stream.</returns>
+        public Vector3 ReadVector3Packed() => new Vector3(ReadSinglePacked(), ReadSinglePacked(), ReadSinglePacked());
 
         /// <summary>
         /// Read a single-precision floating point value from the stream. The value is between (inclusive) the minValue and maxValue.
