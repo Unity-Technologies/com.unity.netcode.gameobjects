@@ -84,6 +84,10 @@ namespace MLAPI.MonoBehaviours.Core
 
         }
 
+        /// <summary>
+        /// Gets called when message handlers are ready to be registered and the networking is setup. Provides a Payload if it was provided
+        /// </summary>
+        /// <param name="payloadReader"></param>
         public virtual void NetworkStart(BitReader payloadReader)
         {
             NetworkStart();
@@ -115,16 +119,25 @@ namespace MLAPI.MonoBehaviours.Core
             }
         }
 
+        /// <summary>
+        /// Invoked when the object is Disabled
+        /// </summary>
         public virtual void OnDisabled()
         {
 
         }
 
+        /// <summary>
+        /// Invoked when the object is Destroyed
+        /// </summary>
         public virtual void OnDestroyed()
         {
 
         }
 
+        /// <summary>
+        /// Invoked when the object is Enabled
+        /// </summary>
         public virtual void OnEnabled()
         {
 
@@ -389,7 +402,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// Calls a Command method on server
         /// </summary>
         /// <param name="method">Method to invoke</param>
-        public void InvokeCommand(System.Action method) {
+        public void InvokeCommand(Action method) {
             InvokeCommand(method.Method.Name);
         }
         /// <summary>
@@ -397,7 +410,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// </summary>
         /// <param name="method">Method to invoke</param>
         /// <param name="p1">Method parameter to send</param>
-        public void InvokeCommand<T1>(System.Action<T1> method, T1 p1) {
+        public void InvokeCommand<T1>(Action<T1> method, T1 p1) {
             InvokeCommand(method.Method.Name, new object[] { p1 });
         }
         /// <summary>
@@ -406,7 +419,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="method">Method to invoke</param>
         /// <param name="p1">Method parameter to send</param>
         /// <param name="p2">Method parameter to send</param>
-        public void InvokeCommand<T1, T2>(System.Action<T1, T2> method, T1 p1, T2 p2) {
+        public void InvokeCommand<T1, T2>(Action<T1, T2> method, T1 p1, T2 p2) {
             InvokeCommand(method.Method.Name, new object[] { p1, p2});
         }
         /// <summary>
@@ -416,7 +429,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="p1">Method parameter to send</param>
         /// <param name="p2">Method parameter to send</param>
         /// <param name="p3">Method parameter to send</param>
-        public void InvokeCommand<T1, T2, T3>(System.Action<T1, T2, T3> method, T1 p1, T2 p2, T3 p3) {
+        public void InvokeCommand<T1, T2, T3>(Action<T1, T2, T3> method, T1 p1, T2 p2, T3 p3) {
             InvokeCommand(method.Method.Name, new object[] { p1, p2, p3 });
         }
         /// <summary>
@@ -427,7 +440,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="p2">Method parameter to send</param>
         /// <param name="p3">Method parameter to send</param>
         /// <param name="p4">Method parameter to send</param>
-        public void InvokeCommand<T1, T2, T3, T4>(System.Action<T1, T2, T3, T4> method, T1 p1, T2 p2, T3 p3, T4 p4) {
+        public void InvokeCommand<T1, T2, T3, T4>(Action<T1, T2, T3, T4> method, T1 p1, T2 p2, T3 p3, T4 p4) {
             InvokeCommand(method.Method.Name, new object[] { p1, p2, p3, p4 });
         }
 
@@ -435,7 +448,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// Calls a ClientRpc method on all clients
         /// </summary>
         /// <param name="method">Method to invoke</param>
-        public void InvokeClientRpc(System.Action method) {
+        public void InvokeClientRpc(Action method) {
             InvokeClientRpc(method.Method.Name);
         }
         /// <summary>
@@ -443,7 +456,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// </summary>
         /// <param name="method">Method to invoke</param>
         /// <param name="p1">Method parameter to send</param>
-        public void InvokeClientRpc<T1>(System.Action<T1> method, T1 p1) {
+        public void InvokeClientRpc<T1>(Action<T1> method, T1 p1) {
             InvokeClientRpc(method.Method.Name, new object[] { p1 });
         }
         /// <summary>
@@ -452,7 +465,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="method">Method to invoke</param>
         /// <param name="p1">Method parameter to send</param>
         /// <param name="p2">Method parameter to send</param>
-        public void InvokeClientRpc<T1, T2>(System.Action<T1, T2> method, T1 p1, T2 p2) {
+        public void InvokeClientRpc<T1, T2>(Action<T1, T2> method, T1 p1, T2 p2) {
             InvokeClientRpc(method.Method.Name, new object[] { p1, p2 });
         }
         /// <summary>
@@ -462,7 +475,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="p1">Method parameter to send</param>
         /// <param name="p2">Method parameter to send</param>
         /// <param name="p3">Method parameter to send</param>
-        public void InvokeClientRpc<T1, T2, T3>(System.Action<T1, T2, T3> method, T1 p1, T2 p2, T3 p3) {
+        public void InvokeClientRpc<T1, T2, T3>(Action<T1, T2, T3> method, T1 p1, T2 p2, T3 p3) {
             InvokeClientRpc(method.Method.Name, new object[] { p1, p2, p3 });
         }
         /// <summary>
@@ -473,7 +486,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="p2">Method parameter to send</param>
         /// <param name="p3">Method parameter to send</param>
         /// <param name="p4">Method parameter to send</param>
-        public void InvokeClientRpc<T1, T2, T3, T4>(System.Action<T1, T2, T3, T4> method, T1 p1, T2 p2, T3 p3, T4 p4) {
+        public void InvokeClientRpc<T1, T2, T3, T4>(Action<T1, T2, T3, T4> method, T1 p1, T2 p2, T3 p3, T4 p4) {
             InvokeClientRpc(method.Method.Name, new object[] { p1, p2, p3, p4 });
         }
 
@@ -481,14 +494,15 @@ namespace MLAPI.MonoBehaviours.Core
         /// Calls a TargetRpc method on the owner client
         /// </summary>
         /// <param name="method">Method to invoke</param>
-        public void InvokeTargetRpc(System.Action method) {
+        public void InvokeTargetRpc(Action method) {
             InvokeTargetRpc(method.Method.Name);
         }
         /// <summary>
         /// Calls a TargetRpc method on the owner client
         /// </summary>
         /// <param name="p1">Method parameter to send</param>
-        public void InvokeTargetRpc<T1>(System.Action<T1> method, T1 p1) {
+        /// <param name="method">Method to invoke</param>
+        public void InvokeTargetRpc<T1>(Action<T1> method, T1 p1) {
             InvokeTargetRpc(method.Method.Name, new object[] { p1 });
         }
         /// <summary>
@@ -496,7 +510,8 @@ namespace MLAPI.MonoBehaviours.Core
         /// </summary>
         /// <param name="p1">Method parameter to send</param>
         /// <param name="p2">Method parameter to send</param>
-        public void InvokeTargetRpc<T1, T2>(System.Action<T1, T2> method, T1 p1, T2 p2) {
+        /// <param name="method">Method to invoke</param>
+        public void InvokeTargetRpc<T1, T2>(Action<T1, T2> method, T1 p1, T2 p2) {
             InvokeTargetRpc(method.Method.Name, new object[] { p1, p2 });
         }
         /// <summary>
@@ -505,6 +520,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="p1">Method parameter to send</param>
         /// <param name="p2">Method parameter to send</param>
         /// <param name="p3">Method parameter to send</param>
+        /// <param name="method">Method to invoke</param>
         public void InvokeTargetRpc<T1, T2, T3>(System.Action<T1, T2, T3> method, T1 p1, T2 p2, T3 p3) {
             InvokeTargetRpc(method.Method.Name, new object[] { p1, p2, p3 });
         }
@@ -515,6 +531,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="p2">Method parameter to send</param>
         /// <param name="p3">Method parameter to send</param>
         /// <param name="p4">Method parameter to send</param>
+        /// <param name="method">Method to invoke</param>
         public void InvokeTargetRpc<T1, T2, T3, T4>(System.Action<T1, T2, T3, T4> method, T1 p1, T2 p2, T3 p3, T4 p4) {
             InvokeTargetRpc(method.Method.Name, new object[] { p1, p2, p3, p4 });
         }

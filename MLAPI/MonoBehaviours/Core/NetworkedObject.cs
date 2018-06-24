@@ -180,17 +180,23 @@ namespace MLAPI.MonoBehaviours.Core
         public void UnSpawn()
         {
             SpawnManager.UnSpawnObject(this);
-        } 
+        }
 
         /// <summary>
         /// Spawns an object across the network with a given owner. Can only be called from server
         /// </summary>
         /// <param name="clientId">The clientId to own the object</param>
+        /// <param name="spawnPayload">The writer containing the spawn payload</param>
         public void SpawnWithOwnership(uint clientId, BitWriter spawnPayload = null)
         {
             SpawnManager.SpawnObject(this, clientId, spawnPayload);
         }
 
+        /// <summary>
+        /// Spawns an object across the network and makes it the player object for the given client
+        /// </summary>
+        /// <param name="clientId">The clientId whos player object this is</param>
+        /// <param name="spawnPayload">The writer containing the spawn payload</param>
         public void SpawnAsPlayerObject(uint clientId, BitWriter spawnPayload = null)
         {
             SpawnManager.SpawnPlayerObject(this, clientId, spawnPayload);

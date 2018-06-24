@@ -1,4 +1,5 @@
-﻿using MLAPI.MonoBehaviours.Core;
+﻿#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+using MLAPI.MonoBehaviours.Core;
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -199,10 +200,7 @@ namespace MLAPI.Data.Transports.UNET
             return NetworkTransport.QueueMessageForSending(hostId, relayConnectionId, channelId, buffer, size, out error);
         }
 
-        public static bool SendQueuedMessages(int hostId, int connectionId, out byte error)
-        {
-            return NetworkTransport.SendQueuedMessages(hostId, relayConnectionId, out error);
-        }
+        public static bool SendQueuedMessages(int hostId, int connectionId, out byte error) => NetworkTransport.SendQueuedMessages(hostId, relayConnectionId, out error);
 
         public static NetworkEventType ReceiveFromHost(int hostId, out int connectionId, out int channelId, byte[] buffer, int bufferSize, out int receivedSize, out byte error)
         {
@@ -330,3 +328,4 @@ namespace MLAPI.Data.Transports.UNET
         public InvalidConfigException(string issue) : base(issue) { }
     }
 }
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member

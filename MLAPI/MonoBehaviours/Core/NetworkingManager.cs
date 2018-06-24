@@ -91,6 +91,14 @@ namespace MLAPI.MonoBehaviours.Core
         /// Wheter or not this NetworkedManager is an multiple instance of the singleton about to be removed.
         /// </summary>
         private bool isMultipleInstance = false;
+        /// <summary>
+        /// Delegate type called when connection has been approved
+        /// </summary>
+        /// <param name="clientId">The clientId of the approved client</param>
+        /// <param name="prefabId">The prefabId to use for the client</param>
+        /// <param name="approved">Wheter or not the client was approved</param>
+        /// <param name="position">The position to spawn the client at</param>
+        /// <param name="rotation">The rotation to spawn the client with</param>
         public delegate void ConnectionApprovedDelegate(uint clientId, int prefabId, bool approved, Vector3 position, Quaternion rotation);
         /// <summary>
         /// The callback to invoke during connection approval

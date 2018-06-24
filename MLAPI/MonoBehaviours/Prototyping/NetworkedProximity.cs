@@ -1,4 +1,5 @@
 using MLAPI.MonoBehaviours.Core;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -43,6 +44,7 @@ namespace MLAPI.MonoBehaviours.Prototyping
         [Tooltip("Filter to check objects only on specific layers.")]
         public LayerMask layerMask;
 
+        /// <summary>
         /// If enabled, the object will always be hidden from players.
         /// </summary>
         [Tooltip("Enable to force this object to be hidden from players.")]
@@ -166,7 +168,10 @@ namespace MLAPI.MonoBehaviours.Prototyping
         }
     }
 
-    [System.Serializable]
+    /// <summary>
+    /// Depth2D
+    /// </summary>
+    [Serializable]
     public class Depth2D
     {
         /// <summary>

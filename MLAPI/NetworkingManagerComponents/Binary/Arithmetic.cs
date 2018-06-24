@@ -1,4 +1,5 @@
-﻿namespace MLAPI.NetworkingManagerComponents.Binary
+﻿#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+namespace MLAPI.NetworkingManagerComponents.Binary
 {
     public static class Arithmetic
     {
@@ -18,11 +19,23 @@
         public static byte CeilingExact(byte u1, byte u2) => (byte)((u1 / u2) + (u1 % u2 == 0 ? 0 : 1));
         public static sbyte CeilingExact(sbyte u1, sbyte u2) => (sbyte)((u1 / u2) + (u1 % u2 == 0 ? 0 : 1 | (((u1 & SIGN_BIT_32) ^ (u2 & SIGN_BIT_32)) >> 30)));
 
-        // ZigZag
+        /// <summary>
+        /// ZigZag encodes a signed integer and maps it to a unsigned integer
+        /// </summary>
+        /// <param name="value">The signed integer to encode</param>
+        /// <returns>A ZigZag encoded version of the integer</returns>
         public static ulong ZigZagEncode(long value) => (ulong)((value >> 63) ^ (value << 1));
+        /// <summary>
+        /// Decides a ZigZag encoded integer back to a signed integer
+        /// </summary>
+        /// <param name="value">The unsigned integer</param>
+        /// <returns>The signed version of the integer</returns>
         public static long ZigZagDecode(ulong value) => (((long)(value >> 1) & 0x7FFFFFFFFFFFFFFFL) ^ ((long)(value << 63) >> 63));
-
-        // Var int helper stuff
+        /// <summary>
+        /// Gets the output size in bytes after VarInting a unsigned integer
+        /// </summary>
+        /// <param name="value">The unsigned integer whose length to get</param>
+        /// <returns>The amount of bytes</returns>
         public static int VarIntSize(ulong value) =>
                 value <= 240 ? 1 :
                 value <= 2287 ? 2 :
@@ -37,3 +50,4 @@
         internal static long Div8Ceil(ulong value) => (long)((value >> 3) + ((value & 1UL) | ((value >> 1) & 1UL) | ((value >> 2) & 1UL)));
     }
 }
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member

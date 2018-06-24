@@ -4,14 +4,27 @@ using UnityEngine;
 
 namespace MLAPI.Data.NetworkProfiler
 {
+    /// <summary>
+    /// NetworkProfiler for profiling network traffic
+    /// </summary>
     public static class NetworkProfiler
     {
+        /// <summary>
+        /// The ticks that has been recorded
+        /// </summary>
         public static FixedQueue<ProfilerTick> Ticks { get; private set; }
+        /// <summary>
+        /// Wheter or not the profiler is recording data
+        /// </summary>
         public static bool isRunning { get; private set; }
         private static int tickHistory = 1024;
         private static int EventIdCounter = 0;
         private static ProfilerTick CurrentTick;
 
+        /// <summary>
+        /// Starts recording data for the Profiler
+        /// </summary>
+        /// <param name="historyLength">The amount of ticks to keep in memory</param>
         public static void Start(int historyLength)
         {
             if (isRunning)
@@ -23,6 +36,9 @@ namespace MLAPI.Data.NetworkProfiler
             isRunning = true;
         }
 
+        /// <summary>
+        /// Stops recording data
+        /// </summary>
         public static void Stop()
         {
             Ticks = null; //leave to GC
@@ -30,6 +46,11 @@ namespace MLAPI.Data.NetworkProfiler
             isRunning = false;
         }
 
+        /// <summary>
+        /// Stops recording data and fills the buffer with the recorded ticks and returns the length;
+        /// </summary>
+        /// <param name="tickBuffer">The buffer to fill with the ticks</param>
+        /// <returns>The number of ticks recorded</returns>
         public static int Stop(ref ProfilerTick[] tickBuffer)
         {
             if (!isRunning)
@@ -44,6 +65,11 @@ namespace MLAPI.Data.NetworkProfiler
             return iteration;
         }
 
+        /// <summary>
+        /// Stops recording data and fills the buffer with the recorded ticks and returns the length;
+        /// </summary>
+        /// <param name="tickBuffer">The buffer to fill with the ticks</param>
+        /// <returns>The number of ticks recorded</returns>
         public static int Stop(ref List<ProfilerTick> tickBuffer)
         {
             if (!isRunning)

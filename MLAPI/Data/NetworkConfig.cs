@@ -154,6 +154,10 @@ namespace MLAPI.Data
         /// </summary>
         public AttributeMessageMode AttributeMessageMode = AttributeMessageMode.Disabled;
 
+        /// <summary>
+        /// Returns a base64 encoded version of the config
+        /// </summary>
+        /// <returns></returns>
         public string ToBase64()
         {
             NetworkConfig config = this;
@@ -212,7 +216,12 @@ namespace MLAPI.Data
                 return Convert.ToBase64String(writer.Finalize());
             }
         }
-
+        
+        /// <summary>
+        /// Sets the NetworkConfig data with that from a base64 encoded version
+        /// </summary>
+        /// <param name="base64">The base64 encoded version</param>
+        /// <param name="createDummyObject">Wheter or not to create dummy objects for NetworkedPrefabs</param>
         public void FromBase64(string base64, bool createDummyObject = false)
         {
             NetworkConfig config = this;

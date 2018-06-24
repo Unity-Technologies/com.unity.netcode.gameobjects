@@ -2,6 +2,9 @@
 
 namespace MLAPI.Data
 {
+    /// <summary>
+    /// Provides extension methods for getting hashes
+    /// </summary>
     public static class HashCode
     {
         private const uint FNV_offset_basis32 = 2166136261;
@@ -87,7 +90,7 @@ namespace MLAPI.Data
         /// https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function
         /// </summary>
         /// <returns>The stable hash32.</returns>
-        /// <param name="txt">Text.</param>
+        /// <param name="bytes">Text.</param>
         public static ushort GetStableHash16(this byte[] bytes)
         {
             uint hash32 = bytes.GetStableHash32();
@@ -104,7 +107,7 @@ namespace MLAPI.Data
         /// https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function
         /// </summary>
         /// <returns>The stable hash32.</returns>
-        /// <param name="txt">Text.</param>
+        /// <param name="bytes">Text.</param>
         public static uint GetStableHash32(this byte[] bytes)
         {
             unchecked
@@ -129,7 +132,7 @@ namespace MLAPI.Data
         /// https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function
         /// </summary>
         /// <returns>The stable hash32.</returns>
-        /// <param name="txt">Text.</param>
+        /// <param name="bytes">Text.</param>
         public static ulong GetStableHash64(this byte[] bytes)
         {
             unchecked

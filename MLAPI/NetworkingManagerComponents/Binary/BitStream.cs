@@ -5,6 +5,9 @@ using static MLAPI.NetworkingManagerComponents.Binary.Arithmetic;
 
 namespace MLAPI.NetworkingManagerComponents.Binary
 {
+    /// <summary>
+    /// A stream that can be used at the bit level
+    /// </summary>
     public sealed class BitStream : Stream
     {
         const int initialCapacity = 16;
@@ -653,7 +656,6 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// <summary>
         /// read a double-precision floating point value from the stream. The value is between (inclusive) the minValue and maxValue.
         /// </summary>
-        /// <param name="value">Value to write</param>
         /// <param name="minValue">Minimum value that this value could be</param>
         /// <param name="maxValue">Maximum possible value that this could be</param>
         /// <param name="bytes">How many bytes the compressed value occupies. Must be between 1 and 8 (inclusive)</param>
