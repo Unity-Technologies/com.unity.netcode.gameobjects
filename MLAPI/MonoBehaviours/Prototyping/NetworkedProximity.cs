@@ -66,7 +66,6 @@ namespace MLAPI.MonoBehaviours.Prototyping
         [Tooltip("Min / Max depth range (Physics2D only).")]
         public Depth2D depth2D;
 
-        /// <summary>
         private float lastUpdateTime;
 
         private void FixedUpdate()
