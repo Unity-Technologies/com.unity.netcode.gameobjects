@@ -74,7 +74,6 @@ namespace MLAPI.MonoBehaviours.Core
             NetworkedObject.NetworkedBehaviours.Add(this);
             OnEnabled();
         }
-
         internal bool networkedStartInvoked = false;
         /// <summary>
         /// Gets called when message handlers are ready to be registered and the networking is setup
