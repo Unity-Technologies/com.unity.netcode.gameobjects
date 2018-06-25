@@ -13,6 +13,12 @@ namespace MLAPI.NetworkingManagerComponents.Binary
     public sealed class BitStream : Stream
     {
 
+        /// <summary>
+        /// A struct with a explicit memory layout. The struct has 4 fields. float,uint,double and ulong.
+        /// Every field has the same starting point in memory. If you insert a float value, it can be extracted as a uint.
+        /// This is to allow for lockless & garbage free conversion from float to uint and double to ulong.
+        /// This allows for VarInt encoding and other integer encodings.
+        /// </summary>
         [StructLayout(LayoutKind.Explicit)]
         internal struct UIntFloat
         {
@@ -20,13 +26,13 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             public float floatValue;
 
             [FieldOffset(0)]
-            public uint intValue;
+            public uint uintValue;
 
             [FieldOffset(0)]
             public double doubleValue;
 
             [FieldOffset(0)]
-            public ulong longValue;
+            public ulong ulongValue;
         }
 
 
@@ -304,7 +310,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             WriteUInt32(new UIntFloat
             {
                 floatValue = value
-            }.intValue);
+            }.uintValue);
         }
 
         /// <summary>
@@ -316,7 +322,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             WriteUInt64(new UIntFloat
             {
                 doubleValue = value
-            }.longValue);
+            }.ulongValue);
 
         }
 
@@ -329,7 +335,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             WriteUInt32Packed(new UIntFloat
             {
                 floatValue = value
-            }.intValue);
+            }.uintValue);
         }
 
         /// <summary>
@@ -341,7 +347,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             WriteUInt64Packed(new UIntFloat
             {
                 doubleValue = value
-            }.longValue);
+            }.ulongValue);
         }
 
         /// <summary>
@@ -522,7 +528,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         {
             return new UIntFloat
             {
-                intValue = ReadUInt32()
+                uintValue = ReadUInt32()
             }.floatValue;
         }
 
@@ -535,7 +541,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         {
             return new UIntFloat
             {
-                longValue = ReadUInt64()
+                ulongValue = ReadUInt64()
             }.doubleValue;
         }
     
@@ -548,7 +554,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         {
             return new UIntFloat
             {
-                intValue = ReadUInt32Packed()
+                uintValue = ReadUInt32Packed()
             }.floatValue;
         }
 
@@ -560,7 +566,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         {
             return new UIntFloat
             {
-                longValue = ReadUInt64Packed()
+                ulongValue = ReadUInt64Packed()
             }.doubleValue;
         }
 
