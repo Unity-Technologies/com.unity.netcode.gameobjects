@@ -426,7 +426,20 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
 
             //Assert.That(inStream.ReadNibble(), Is.EqualTo(0b0011));
             Assert.Fail("There is no way to read back Nibbles");
+        }
 
+        public void TestReadWriteMissaligned()
+        {
+            BitStream outStream = new BitStream();
+            outStream.WriteBit(true);
+            byte[] writeBytes = new byte[16] {0, 5, 2, 54, 192, 60, 214, 65, 95, 2, 43, 62, 252, 190, 45, 2};
+            outStream.Write(writeBytes);
+            
+            BitStream inStream = new BitStream(outStream.GetBuffer());
+            Assert.That(inStream.ReadBit(), Is.True);
+            byte[] readTo = new byte[16];
+            inStream.Read(readTo, 0, 16);
+            Assert.That(readTo, Is.EquivalentTo(writeBytes));
         }
     }
 }

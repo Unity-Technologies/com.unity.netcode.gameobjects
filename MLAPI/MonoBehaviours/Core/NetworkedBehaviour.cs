@@ -58,7 +58,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <summary>
         /// Gets the NetworkId of the NetworkedObject that owns the NetworkedBehaviour instance
         /// </summary>
-        public uint networkId => networkedObject.NetworKId;
+        public uint networkId => networkedObject.NetworkId;
         /// <summary>
         /// Gets the clientId that owns the NetworkedObject
         /// </summary>
@@ -74,7 +74,6 @@ namespace MLAPI.MonoBehaviours.Core
             NetworkedObject.NetworkedBehaviours.Add(this);
             OnEnabled();
         }
-
         internal bool networkedStartInvoked = false;
         /// <summary>
         /// Gets called when message handlers are ready to be registered and the networking is setup

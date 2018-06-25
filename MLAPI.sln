@@ -7,7 +7,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MLAPI", "MLAPI\MLAPI.csproj
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MLAPI-Editor", "MLAPI-Editor\MLAPI-Editor.csproj", "{A45DBD43-D640-4562-9F24-6745269CEDF7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MLAPI.Tests", "MLAPI.tests\MLAPI.Tests.csproj", "{59E9F73A-398C-4F46-85E7-1DCDEEB2A85F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MLAPI.Tests", "MLAPI.Tests\MLAPI.Tests.csproj", "{59E9F73A-398C-4F46-85E7-1DCDEEB2A85F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

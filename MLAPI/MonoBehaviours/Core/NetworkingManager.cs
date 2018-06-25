@@ -1162,7 +1162,7 @@ namespace MLAPI.MonoBehaviours.Core
                             pair.Value.RebuildObservers(clientId); //Rebuilds observers for the new client
 
                             writer.WriteBool(pair.Value.isPlayerObject);
-                            writer.WriteUInt(pair.Value.NetworKId);
+                            writer.WriteUInt(pair.Value.NetworkId);
                             writer.WriteUInt(pair.Value.OwnerClientId);
                             writer.WriteInt(NetworkConfig.NetworkPrefabIds[pair.Value.NetworkedPrefabName]);
                             writer.WriteBool(pair.Value.gameObject.activeInHierarchy);
@@ -1199,7 +1199,7 @@ namespace MLAPI.MonoBehaviours.Core
                         if (NetworkConfig.HandleObjectSpawning)
                         {
                             writer.WriteBool(true);
-                            writer.WriteUInt(ConnectedClients[clientId].PlayerObject.GetComponent<NetworkedObject>().NetworKId);
+                            writer.WriteUInt(ConnectedClients[clientId].PlayerObject.GetComponent<NetworkedObject>().NetworkId);
                             writer.WriteUInt(clientId);
                             writer.WriteInt(prefabId);
                             writer.WriteBool(false);

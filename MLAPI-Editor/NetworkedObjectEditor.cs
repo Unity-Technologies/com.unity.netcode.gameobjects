@@ -38,7 +38,7 @@ namespace UnityEditor
             }
             else if(networkedObject.isSpawned)
             {
-                EditorGUILayout.LabelField("NetworkId: ", networkedObject.NetworKId.ToString(), EditorStyles.label);
+                EditorGUILayout.LabelField("NetworkId: ", networkedObject.NetworkId.ToString(), EditorStyles.label);
                 EditorGUILayout.LabelField("OwnerId: ", networkedObject.OwnerClientId.ToString(), EditorStyles.label);
                 EditorGUILayout.LabelField("isSpawned: ", networkedObject.isSpawned.ToString(), EditorStyles.label);
                 EditorGUILayout.LabelField("isLocalPlayer: ", networkedObject.isLocalPlayer.ToString(), EditorStyles.label);
