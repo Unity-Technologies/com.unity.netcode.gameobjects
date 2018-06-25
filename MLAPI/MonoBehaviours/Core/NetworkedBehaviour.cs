@@ -58,7 +58,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <summary>
         /// Gets the NetworkId of the NetworkedObject that owns the NetworkedBehaviour instance
         /// </summary>
-        public uint networkId => networkedObject.NetworKId;
+        public uint networkId => networkedObject.NetworkId;
         /// <summary>
         /// Gets the clientId that owns the NetworkedObject
         /// </summary>

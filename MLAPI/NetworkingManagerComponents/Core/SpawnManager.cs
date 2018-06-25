@@ -34,7 +34,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 return;
             }
             NetworkedObject netObject = SpawnManager.spawnedObjects[netId];
-            NetworkingManager.singleton.ConnectedClients[netObject.OwnerClientId].OwnedObjects.RemoveAll(x => x.NetworKId == netId);
+            NetworkingManager.singleton.ConnectedClients[netObject.OwnerClientId].OwnedObjects.RemoveAll(x => x.NetworkId == netId);
             netObject.OwnerClientId = NetworkingManager.singleton.NetworkConfig.NetworkTransport.InvalidDummyId;
 
             using (BitWriter writer = BitWriter.Get())
@@ -54,7 +54,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 return;
             }
             NetworkedObject netObject = SpawnManager.spawnedObjects[netId];
-            NetworkingManager.singleton.ConnectedClients[netObject.OwnerClientId].OwnedObjects.RemoveAll(x => x.NetworKId == netId);
+            NetworkingManager.singleton.ConnectedClients[netObject.OwnerClientId].OwnedObjects.RemoveAll(x => x.NetworkId == netId);
             NetworkingManager.singleton.ConnectedClients[clientId].OwnedObjects.Add(netObject);
             netObject.OwnerClientId = clientId;
 
@@ -169,15 +169,15 @@ namespace MLAPI.NetworkingManagerComponents.Core
             netObject.isSpawned = true;
             netObject.isPooledObject = false;
 
-            if (netManager.isServer) netObject.NetworKId = GetNetworkObjectId();
-            else netObject.NetworKId = networkId;
+            if (netManager.isServer) netObject.NetworkId = GetNetworkObjectId();
+            else netObject.NetworkId = networkId;
 
             netObject.sceneObject = false;
             netObject.OwnerClientId = owner;
             netObject.isPlayerObject = playerObject;
             netObject.transform.position = position;
             netObject.transform.rotation = rotation;
-            spawnedObjects.Add(netObject.NetworKId, netObject);
+            spawnedObjects.Add(netObject.NetworkId, netObject);
             if (playerObject) NetworkingManager.singleton.ConnectedClients[owner].PlayerObject = netObject;
             netObject.InvokeBehaviourNetworkSpawn(reader);
             return netObject;
@@ -201,7 +201,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 return;
             }
 
-            OnDestroyObject(netObject.NetworKId, false);
+            OnDestroyObject(netObject.NetworkId, false);
         }
 
         //Server only
@@ -233,7 +233,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 return;
             }
             uint netId = GetNetworkObjectId();
-            netObject.NetworKId = netId;
+            netObject.NetworkId = netId;
             spawnedObjects.Add(netId, netObject);
             netObject.isSpawned = true;
             netObject.sceneObject = false;
@@ -249,7 +249,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 using (BitWriter writer = BitWriter.Get())
                 {
                     writer.WriteBool(true);
-                    writer.WriteUInt(netObject.NetworKId);
+                    writer.WriteUInt(netObject.NetworkId);
                     writer.WriteUInt(netObject.OwnerClientId);
                     writer.WriteInt(netManager.NetworkConfig.NetworkPrefabIds[netObject.NetworkedPrefabName]);
                     writer.WriteBool(netObject.sceneObject == null ? true : netObject.sceneObject.Value);
@@ -298,7 +298,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 return;
             }
             uint netId = GetNetworkObjectId();
-            netObject.NetworKId = netId;
+            netObject.NetworkId = netId;
             spawnedObjects.Add(netId, netObject);
             netObject.isSpawned = true;
             netObject.sceneObject = false;
@@ -318,7 +318,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 using (BitWriter writer = BitWriter.Get())
                 {
                     writer.WriteBool(false);
-                    writer.WriteUInt(netObject.NetworKId);
+                    writer.WriteUInt(netObject.NetworkId);
                     writer.WriteUInt(netObject.OwnerClientId);
                     writer.WriteInt(netManager.NetworkConfig.NetworkPrefabIds[netObject.NetworkedPrefabName]);
                     writer.WriteBool(netObject.sceneObject == null ? true : netObject.sceneObject.Value);
@@ -352,7 +352,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 !spawnedObjects[networkId].isPlayerObject && netManager.ConnectedClients.ContainsKey(spawnedObjects[networkId].OwnerClientId))
             {
                 //Someone owns it.
-                netManager.ConnectedClients[spawnedObjects[networkId].OwnerClientId].OwnedObjects.RemoveAll(x => x.NetworKId == networkId);
+                netManager.ConnectedClients[spawnedObjects[networkId].OwnerClientId].OwnedObjects.RemoveAll(x => x.NetworkId == networkId);
             }
             spawnedObjects[networkId].isSpawned = false;
 

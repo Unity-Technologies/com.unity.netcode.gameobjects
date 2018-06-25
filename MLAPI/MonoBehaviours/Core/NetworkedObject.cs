@@ -25,7 +25,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <summary>
         /// Gets the unique ID of this object that is synced across the network
         /// </summary>
-        public uint NetworKId { get; internal set; }
+        public uint NetworkId { get; internal set; }
         /// <summary>
         /// Gets the clientId of the owner of this NetworkedObject
         /// </summary>
@@ -132,7 +132,7 @@ namespace MLAPI.MonoBehaviours.Core
                             //Something changed for this client.
                             using (BitWriter writer = BitWriter.Get())
                             {
-                                writer.WriteUInt(NetworKId);
+                                writer.WriteUInt(NetworkId);
                                 writer.WriteBool(observers.Contains(pair.Key));
 
                                 if (observers.Contains(pair.Key))
@@ -163,7 +163,7 @@ namespace MLAPI.MonoBehaviours.Core
         private void OnDestroy()
         {
             if (NetworkingManager.singleton != null)
-                SpawnManager.OnDestroyObject(NetworKId, false);
+                SpawnManager.OnDestroyObject(NetworkId, false);
         }
 
         /// <summary>
@@ -207,7 +207,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// </summary>
         public void RemoveOwnership()
         {
-            SpawnManager.RemoveOwnership(NetworKId);
+            SpawnManager.RemoveOwnership(NetworkId);
         }
         /// <summary>
         /// Changes the owner of the object. Can only be called from server
@@ -215,7 +215,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="newOwnerClientId">The new owner clientId</param>
         public void ChangeOwnership(uint newOwnerClientId)
         {
-            SpawnManager.ChangeOwnership(NetworKId, newOwnerClientId);
+            SpawnManager.ChangeOwnership(NetworkId, newOwnerClientId);
         }
 
         internal void InvokeBehaviourOnLostOwnership()
