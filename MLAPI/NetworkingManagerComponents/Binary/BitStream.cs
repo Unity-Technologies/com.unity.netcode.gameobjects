@@ -301,10 +301,10 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// <param name="value">Value to write</param>
         public void WriteSingle(float value)
         {
-            UIntFloat conversion = new UIntFloat();
-            conversion.floatValue = value;
-            uint binary = conversion.intValue;
-            WriteUInt32(binary);
+            WriteUInt32(new UIntFloat
+            {
+                floatValue = value
+            }.intValue);
         }
 
         /// <summary>
@@ -313,10 +313,10 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// <param name="value">Value to write</param>
         public void WriteDouble(double value)
         {
-            UIntFloat conversion = new UIntFloat();
-            conversion.doubleValue = value;
-            ulong binary = conversion.longValue;
-            WriteUInt64(binary);
+            WriteUInt64(new UIntFloat
+            {
+                doubleValue = value
+            }.longValue);
 
         }
 
@@ -326,10 +326,10 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// <param name="value">Value to write</param>
         public void WriteSinglePacked(float value)
         {
-            UIntFloat conversion = new UIntFloat();
-            conversion.floatValue = value;
-            uint binary = conversion.intValue;
-            WriteUInt32Packed(binary);
+            WriteUInt32Packed(new UIntFloat
+            {
+                floatValue = value
+            }.intValue);
         }
 
         /// <summary>
@@ -338,11 +338,10 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// <param name="value">Value to write</param>
         public void WriteDoublePacked(double value)
         {
-            UIntFloat conversion = new UIntFloat();
-            conversion.doubleValue = value;
-            ulong binary = conversion.longValue;
-
-            WriteUInt64Packed(binary);
+            WriteUInt64Packed(new UIntFloat
+            {
+                doubleValue = value
+            }.longValue);
         }
 
         /// <summary>
@@ -521,11 +520,10 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// <returns>The read value</returns>
         public float ReadSingle()
         {
-            uint read = ReadUInt32();
-
-            UIntFloat conversion = new UIntFloat();
-            conversion.intValue = read;
-            return conversion.floatValue;
+            return new UIntFloat
+            {
+                intValue = ReadUInt32()
+            }.floatValue;
         }
 
 
@@ -535,11 +533,10 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// <returns>The read value</returns>
         public double ReadDouble()
         {
-            ulong read = ReadUInt64();
-
-            UIntFloat conversion = new UIntFloat();
-            conversion.longValue = read;
-            return conversion.doubleValue;
+            return new UIntFloat
+            {
+                longValue = ReadUInt64()
+            }.doubleValue;
         }
     
 
@@ -549,10 +546,10 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// <returns>The read value</returns>
         public float ReadSinglePacked()
         {
-            uint read = ReadUInt32Packed();
-            UIntFloat conversion = new UIntFloat();
-            conversion.intValue = read;
-            return conversion.floatValue;
+            return new UIntFloat
+            {
+                intValue = ReadUInt32Packed()
+            }.floatValue;
         }
 
         /// <summary>
@@ -561,10 +558,10 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// <returns>The read value</returns>
         public double ReadDoublePacked()
         {
-            ulong read = ReadUInt64Packed();
-            UIntFloat conversion = new UIntFloat();
-            conversion.longValue = read;
-            return conversion.doubleValue;
+            return new UIntFloat
+            {
+                longValue = ReadUInt64Packed()
+            }.doubleValue;
         }
 
         /// <summary>
