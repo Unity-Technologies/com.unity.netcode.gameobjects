@@ -20,6 +20,9 @@ namespace MLAPI.Attributes
         /// The delay for syncing this variable.
         /// </summary>
         public float syncDelay = 0.1f;
-        internal float lastSyncTime = 0f;
+        /// <summary>
+        /// Gets the time the Syncedvar was last synced
+        /// </summary>
+        public float lastSyncTime { get; internal set; }
     }
 }
