@@ -1,9 +1,14 @@
-﻿using System;
+﻿#define ARRAY_WRITE_PERMISSIVE  // Allow attempt to write "packed" byte array (calls WriteByteArray())
+#define ARRAY_RESOLVE_IMPLICIT  // Include WriteArray() method with automatic type resolution
+#define ARRAY_WRITE_PREMAP      // Create a prefixed array diff mapping
+#define ARRAY_DIFF_ALLOW_RESIZE // Whether or not to permit writing diffs of differently sized arrays
+
+using System;
+using System.Diagnostics;
 using System.IO;
-using System.Runtime.InteropServices;
-using System.Security;
 using UnityEngine;
 using static MLAPI.NetworkingManagerComponents.Binary.Arithmetic;
+
 
 namespace MLAPI.NetworkingManagerComponents.Binary
 {
@@ -12,27 +17,13 @@ namespace MLAPI.NetworkingManagerComponents.Binary
     /// </summary>
     public sealed class BitStream : Stream
     {
-
-        [StructLayout(LayoutKind.Explicit)]
-        internal struct UIntFloat
-        {
-            [FieldOffset(0)]
-            public float floatValue;
-
-            [FieldOffset(0)]
-            public uint intValue;
-
-            [FieldOffset(0)]
-            public double doubleValue;
-
-            [FieldOffset(0)]
-            public ulong longValue;
-        }
-
-
         const int initialCapacity = 16;
         const float initialGrowthFactor = 2.0f;
         private byte[] target;
+        private static readonly float[] holder_f = new float[1];
+        private static readonly double[] holder_d = new double[1];
+        private static readonly uint[] holder_i = new uint[1];
+        private static readonly ulong[] holder_l = new ulong[1];
 
         /// <summary>
         /// A stream that supports writing data smaller than a single byte. This stream also has a built-in compression algorithm that can (optionally) be used to write compressed data.
@@ -301,10 +292,13 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// <param name="value">Value to write</param>
         public void WriteSingle(float value)
         {
-            WriteUInt32(new UIntFloat
-            {
-                floatValue = value
-            }.intValue);
+            lock (holder_f)
+                lock (holder_i)
+                {
+                    holder_f[0] = value;
+                    Buffer.BlockCopy(holder_f, 0, holder_i, 0, 4);
+                    WriteUInt32(holder_i[0]);
+                }
         }
 
         /// <summary>
@@ -313,11 +307,13 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// <param name="value">Value to write</param>
         public void WriteDouble(double value)
         {
-            WriteUInt64(new UIntFloat
-            {
-                doubleValue = value
-            }.longValue);
-
+            lock (holder_d)
+                lock (holder_l)
+                {
+                    holder_d[0] = value;
+                    Buffer.BlockCopy(holder_d, 0, holder_l, 0, 8);
+                    WriteUInt64(holder_l[0]);
+                }
         }
 
         /// <summary>
@@ -326,10 +322,13 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// <param name="value">Value to write</param>
         public void WriteSinglePacked(float value)
         {
-            WriteUInt32Packed(new UIntFloat
-            {
-                floatValue = value
-            }.intValue);
+            lock (holder_f)
+                lock (holder_i)
+                {
+                    holder_f[0] = value;
+                    Buffer.BlockCopy(holder_f, 0, holder_i, 0, 4);
+                    WriteUInt32Packed(BinaryHelpers.SwapEndian(holder_i[0]));
+                }
         }
 
         /// <summary>
@@ -338,10 +337,13 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// <param name="value">Value to write</param>
         public void WriteDoublePacked(double value)
         {
-            WriteUInt64Packed(new UIntFloat
-            {
-                doubleValue = value
-            }.longValue);
+            lock (holder_d)
+                lock (holder_l)
+                {
+                    holder_d[0] = value;
+                    Buffer.BlockCopy(holder_d, 0, holder_l, 0, 8);
+                    WriteUInt64Packed(BinaryHelpers.SwapEndian(holder_l[0]));
+                }
         }
 
         /// <summary>
@@ -520,10 +522,14 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// <returns>The read value</returns>
         public float ReadSingle()
         {
-            return new UIntFloat
-            {
-                intValue = ReadUInt32()
-            }.floatValue;
+            uint read = ReadUInt32();
+            lock (holder_f)
+                lock (holder_i)
+                {
+                    holder_i[0] = read;
+                    Buffer.BlockCopy(holder_i, 0, holder_f, 0, 4);
+                    return holder_f[0];
+                }
         }
 
 
@@ -533,12 +539,15 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// <returns>The read value</returns>
         public double ReadDouble()
         {
-            return new UIntFloat
-            {
-                longValue = ReadUInt64()
-            }.doubleValue;
+            ulong read = ReadUInt64();
+            lock (holder_d)
+                lock (holder_l)
+                {
+                    holder_l[0] = read;
+                    Buffer.BlockCopy(holder_l, 0, holder_d, 0, 8);
+                    return holder_d[0];
+                }
         }
-    
 
         /// <summary>
         /// Read a single-precision floating point value from the stream from a varint
@@ -546,10 +555,14 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// <returns>The read value</returns>
         public float ReadSinglePacked()
         {
-            return new UIntFloat
-            {
-                intValue = ReadUInt32Packed()
-            }.floatValue;
+            uint read = ReadUInt32Packed();
+            lock (holder_f)
+                lock (holder_i)
+                {
+                    holder_i[0] = BinaryHelpers.SwapEndian(read);
+                    Buffer.BlockCopy(holder_i, 0, holder_f, 0, 4);
+                    return holder_f[0];
+                }
         }
 
         /// <summary>
@@ -558,10 +571,14 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// <returns>The read value</returns>
         public double ReadDoublePacked()
         {
-            return new UIntFloat
-            {
-                longValue = ReadUInt64Packed()
-            }.doubleValue;
+            ulong read = ReadUInt64Packed();
+            lock (holder_d)
+                lock (holder_l)
+                {
+                    holder_l[0] = BinaryHelpers.SwapEndian(read);
+                    Buffer.BlockCopy(holder_l, 0, holder_d, 0, 8);
+                    return holder_d[0];
+                }
         }
 
         /// <summary>
@@ -714,10 +731,11 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             if (BitPosition + (ulong)bitCount > ((ulong)target.LongLength << 3)) Grow(Div8Ceil(BitPosition + (ulong)bitCount));
             if (bitCount > 64) throw new ArgumentOutOfRangeException("Cannot read more than 64 bits from a 64-bit value!");
             if (bitCount < 0) throw new ArgumentOutOfRangeException("Cannot read fewer than 0 bits!");
-            int count = -8;
-            while (bitCount > (count += 8)) _WriteULongByte(value >> count);
+            int count = 0;
+            for(; count+8<bitCount; count += 8) _WriteULongByte(value >> count);
             BitPosition += (ulong)count;
             if ((bitCount & 7) != 0) _WriteBits((byte)(value >> count), bitCount & 7);
+            BitPosition += (ulong)bitCount & 7UL;
             UpdateLength();
         }
         /// <summary>
@@ -744,6 +762,67 @@ namespace MLAPI.NetworkingManagerComponents.Binary
                     );
             BitPosition += (ulong)bitCount;
         }
+
+        /// <summary>
+        /// Read a certain amount of bits from the stream.
+        /// </summary>
+        /// <param name="bitCount">How many bits to read. Minimum 0, maximum 8.</param>
+        /// <returns>The bits that were read</returns>
+        public ulong ReadBits(int bitCount)
+        {
+            if (bitCount > 64) throw new ArgumentOutOfRangeException("Cannot read more than 64 bits into a 64-bit value!");
+            if (bitCount < 0) throw new ArgumentOutOfRangeException("Cannot read fewer than 0 bits!");
+            ulong read = 0;
+            for(int i = 0; i+8<bitCount; i+=8) read |= (ulong)_ReadByte() << i;
+            BitPosition += (ulong)bitCount & ~7UL;
+            read |= (ulong)ReadByteBits(bitCount & 7) << (bitCount & ~7);
+            return read;
+        }
+
+        /// <summary>
+        /// Read a certain amount of bits from the stream.
+        /// </summary>
+        /// <param name="bitCount">How many bits to read. Minimum 0, maximum 64.</param>
+        /// <returns>The bits that were read</returns>
+        public byte ReadByteBits(int bitCount)
+        {
+            if (bitCount > 8) throw new ArgumentOutOfRangeException("Cannot read more than 8 bits into an 8-bit value!");
+            if (bitCount < 0) throw new ArgumentOutOfRangeException("Cannot read fewer than 0 bits!");
+            byte result = 0;
+            for (int i = 0; i < 8; ++i) result |= (byte)(((target[(BitPosition + (ulong)i)>>3] >> (int)((BitPosition+(ulong)i) & 7)) & 1) << i);
+            BitPosition += (ulong)bitCount;
+            return result;
+        }
+
+        /// <summary>
+        /// Read a nibble (4 bits) from the stream.
+        /// </summary>
+        /// <param name="asUpper">Whether or not the nibble should be left-shifted by 4 bits</param>
+        /// <returns>The nibble that was read</returns>
+        public byte ReadNibble(bool asUpper)
+        {
+            byte result = (byte)(
+                ((target[BitPosition >> 3] >> (int)(BitPosition & 7UL)) & 1) |
+                (((target[(BitPosition + 1UL) >> 3] >> (int)((BitPosition + 1UL) & 7UL)) & 1) << 1) |
+                (((target[(BitPosition + 2UL) >> 3] >> (int)((BitPosition + 2UL) & 7UL)) & 1) << 2) |
+                (((target[(BitPosition + 3UL) >> 3] >> (int)((BitPosition + 3UL) & 7UL)) & 1) << 3)
+                );
+            if (asUpper) result <<= 4;
+            return result;
+        }
+
+        // Marginally faster than the one that accepts a bool
+        /// <summary>
+        /// Read a nibble (4 bits) from the stream.
+        /// </summary>
+        /// <returns>The nibble that was read</returns>
+        public byte ReadNibble() => (byte)(
+                ((target[BitPosition >> 3] >> (int)(BitPosition & 7UL)) & 1) |
+                (((target[(BitPosition + 1UL) >> 3] >> (int)((BitPosition + 1UL) & 7UL)) & 1) << 1) |
+                (((target[(BitPosition + 2UL) >> 3] >> (int)((BitPosition + 2UL) & 7UL)) & 1) << 2) |
+                (((target[(BitPosition + 3UL) >> 3] >> (int)((BitPosition + 3UL) & 7UL)) & 1) << 3)
+                );
+
         /// <summary>
         /// Write bits to stream.
         /// </summary>
@@ -760,6 +839,13 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// </summary>
         /// <param name="value">Value to write</param>
         public void WriteSByte(sbyte value) => WriteByte((byte)value);
+
+        /// <summary>
+        /// Write a single character to the stream.
+        /// </summary>
+        /// <param name="c">Character to write</param>
+        public void WriteChar(char c) => WriteUInt16(c);
+
         /// <summary>
         /// Write an unsigned short (UInt16) to the stream.
         /// </summary>
@@ -825,6 +911,11 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// <param name="value">Value to write</param>
         public void WriteUInt16Packed(ushort value) => WriteUInt64Packed(value);
         /// <summary>
+        /// Write a two-byte character as a varint to the stream.
+        /// </summary>
+        /// <param name="c">Value to write</param>
+        public void WriteCharPacked(char c) => WriteUInt16Packed(c);
+        /// <summary>
         /// Write a signed int (Int32) as a ZigZag encoded varint to the stream.
         /// </summary>
         /// <param name="value">Value to write</param>
@@ -885,6 +976,11 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// <returns>Value read from stream.</returns>
         public short ReadInt16() => (short)ReadUInt16();
         /// <summary>
+        /// Read a single character from the stream
+        /// </summary>
+        /// <returns>Value read from stream.</returns>
+        public char ReadChar() => (char)ReadUInt16();
+        /// <summary>
         /// Read an unsigned int (UInt32) from the stream.
         /// </summary>
         /// <returns>Value read from stream.</returns>
@@ -924,6 +1020,11 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// </summary>
         /// <returns>Un-varinted value.</returns>
         public ushort ReadUInt16Packed() => (ushort)ReadUInt64Packed();
+        /// <summary>
+        /// Read a varint two-byte character from the stream.
+        /// </summary>
+        /// <returns>Un-varinted value.</returns>
+        public char ReadCharPacked() => (char)ReadUInt16Packed();
         /// <summary>
         /// Read a ZigZag encoded varint signed int (Int32) from the stream.
         /// </summary>
@@ -1039,6 +1140,1181 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             _WriteByte(value);
             UpdateLength();
         }
+
+        // As it turns out, strings cannot be treated as char arrays, since strings use pointers to store data rather than C# arrays
+        public void WriteString(string s, bool knownLength = false)
+        {
+            if (!knownLength) WriteUInt64Packed((ulong)s.Length);
+            int target = s.Length;
+            for (int i = 0; i < target; ++i) WriteChar(s[i]);
+        }
+
+        public void WriteStringPacked(string s, bool knownLength = false)
+        {
+            if (!knownLength) WriteUInt64Packed((ulong)s.Length);
+            int target = s.Length;
+            for (int i = 0; i < target; ++i) WriteCharPacked(s[i]);
+        }
+
+        public void WriteStringDiff(string write, string compare, bool knownLength = false)
+        {
+
+#if !ARRAY_DIFF_ALLOW_RESIZE
+            if (write.Length != compare.Length) throw new ArgumentException("Mismatched string lengths");
+#endif
+            if (!knownLength) WriteUInt64Packed((ulong)write.Length);
+
+            // Premapping
+#if ARRAY_WRITE_PREMAP
+            int target;
+#if ARRAY_DIFF_ALLOW_RESIZE
+            target = Math.Min(write.Length, compare.Length);
+#else
+            target = a1.Length;
+#endif
+            for (int i = 0; i < target; ++i) WriteBit(write[i] != compare[i]);
+#endif
+            for(int i = 0; i<target; ++i)
+            {
+
+                bool b = write[i] == compare[i];
+#if !ARRAY_WRITE_PREMAP
+                WriteBit(!b);
+#endif
+                if (b) WriteChar(write[i]);
+            }
+        }
+
+        public void WriteStringPackedDiff(string write, string compare, bool knownLength = false)
+        {
+
+#if !ARRAY_DIFF_ALLOW_RESIZE
+            if (write.Length != compare.Length) throw new ArgumentException("Mismatched string lengths");
+#endif
+            if (!knownLength) WriteUInt64Packed((ulong)write.Length);
+
+            // Premapping
+#if ARRAY_WRITE_PREMAP
+            int target;
+#if ARRAY_DIFF_ALLOW_RESIZE
+            target = Math.Min(write.Length, compare.Length);
+#else
+            target = a1.Length;
+#endif
+            for (int i = 0; i < target; ++i) WriteBit(write[i] != compare[i]);
+#endif
+            for (int i = 0; i < target; ++i)
+            {
+
+                bool b = write[i] == compare[i];
+#if !ARRAY_WRITE_PREMAP
+                WriteBit(!b);
+#endif
+                if (b) WriteCharPacked(write[i]);
+            }
+        }
+
+#if ARRAY_RESOLVE_IMPLICIT
+        public void WriteArray(Array a, long count = -1, bool knownSize = false)
+        {
+            Type arrayType = a.GetType();
+
+            if (arrayType == typeof(byte[])) WriteByteArray(a as byte[], count, knownSize);
+            else if (arrayType == typeof(short[])) WriteShortArray(a as short[], count, knownSize);
+            else if (arrayType == typeof(ushort[])) WriteUShortArray(a as ushort[], count, knownSize);
+            else if (arrayType == typeof(char[])) WriteCharArray(a as char[], count, knownSize);
+            else if (arrayType == typeof(int[])) WriteIntArray(a as int[], count, knownSize);
+            else if (arrayType == typeof(uint[])) WriteUIntArray(a as uint[], count, knownSize);
+            else if (arrayType == typeof(long[])) WriteLongArray(a as long[], count, knownSize);
+            else if (arrayType == typeof(ulong[])) WriteULongArray(a as ulong[], count, knownSize);
+            else if (arrayType == typeof(float[])) WriteFloatArray(a as float[], count, knownSize);
+            else if (arrayType == typeof(double[])) WriteDoubleArray(a as double[], count, knownSize);
+            else throw new InvalidDataException("Unknown array type! Please serialize manually!");
+        }
+
+        public void WriteArrayDiff(Array write, Array compare, long count = -1, bool knownSize = false)
+        {
+            Type arrayType = write.GetType();
+            if (arrayType != compare.GetType()) throw new ArrayTypeMismatchException("Cannot write diff of two differing array types");
+
+            if (arrayType == typeof(byte[])) WriteByteArrayDiff(write as byte[], compare as byte[], count, knownSize);
+            else if (arrayType == typeof(short[])) WriteShortArrayDiff(write as short[], compare as short[], count, knownSize);
+            else if (arrayType == typeof(ushort[])) WriteUShortArrayDiff(write as ushort[], compare as ushort[], count, knownSize);
+            else if (arrayType == typeof(char[])) WriteCharArrayDiff(write as char[], compare as char[], count, knownSize);
+            else if (arrayType == typeof(int[])) WriteIntArrayDiff(write as int[], compare as int[], count, knownSize);
+            else if (arrayType == typeof(uint[])) WriteUIntArrayDiff(write as uint[], compare as uint[], count, knownSize);
+            else if (arrayType == typeof(long[])) WriteLongArrayDiff(write as long[], compare as long[], count, knownSize);
+            else if (arrayType == typeof(ulong[])) WriteULongArrayDiff(write as ulong[], compare as ulong[], count, knownSize);
+            else if (arrayType == typeof(float[])) WriteFloatArrayDiff(write as float[], compare as float[], count, knownSize);
+            else if (arrayType == typeof(double[])) WriteDoubleArrayDiff(write as double[], compare as double[], count, knownSize);
+            else throw new InvalidDataException("Unknown array type! Please serialize manually!");
+        }
+#endif
+
+        private void CheckLengths(Array a1, Array a2)
+        {
+#if !ARRAY_DIFF_ALLOW_RESIZE
+            if (a1.LongLength != a2.LongLength) throw new ArgumentException("Mismatched array lengths");
+#endif
+        }
+        [Conditional("ARRAY_WRITE_PREMAP")]
+        private void WritePremap(Array a1, Array a2)
+        {
+            long target;
+#if ARRAY_DIFF_ALLOW_RESIZE
+            target = Math.Min(a1.LongLength, a2.LongLength);
+#else
+            target = a1.LongLength;
+#endif
+            for (long i = 0; i < target; ++i) WriteBit(a1.GetValue(i)!=a2.GetValue(i));
+        }
+        private ulong WriteArraySize(Array a1, Array a2, long length, bool known)
+        {
+            ulong write =
+                (ulong)
+                        (
+                            length > 0 ?
+                            length :
+#if ARRAY_DIFF_ALLOW_RESIZE
+                            Math.Min(a1.LongLength, a2 == null ? 0 : a2.LongLength)
+#else
+                            a1.LongLength
+#endif
+                        );
+            if (!known)
+            {
+
+                if (length > a1.LongLength) throw new IndexOutOfRangeException("Cannot write more data than is available");
+                WriteUInt64Packed(write);
+            }
+            return write;
+        }
+
+
+        public void WriteByteArray(byte[] b, long count = -1, bool knownSize = false)
+        {
+            ulong target = WriteArraySize(b, null, count, knownSize);
+            for (ulong i = 0; i < target; ++i) _WriteByte(b[i]);
+            UpdateLength();
+        }
+
+        public void WriteByteArrayDiff(byte[] write, byte[] compare, long count = -1, bool knownSize = false)
+        {
+            CheckLengths(write, compare);
+            ulong target = WriteArraySize(write, compare, count, knownSize);
+            WritePremap(write, compare);
+            for (ulong i = 0; i < target; ++i)
+            {
+                bool b = write[i] == compare[i];
+#if !ARRAY_WRITE_PREMAP
+                WriteBit(!b);
+#endif
+                if(b) WriteByte(write[i]);
+            }
+        }
+
+        public void WriteShortArray(short[] b, long count = -1, bool knownSize = false)
+        {
+            ulong target = WriteArraySize(b, null, count, knownSize);
+            for (ulong i = 0; i < target; ++i) WriteInt16(b[i]);
+        }
+
+        public void WriteShortArrayDiff(short[] write, short[] compare, long count = -1, bool knownSize = false)
+        {
+            CheckLengths(write, compare);
+            ulong target = WriteArraySize(write, compare, count, knownSize);
+            WritePremap(write, compare);
+            for (ulong i = 0; i < target; ++i)
+            {
+                bool b = write[i] == compare[i];
+#if !ARRAY_WRITE_PREMAP
+                WriteBit(!b);
+#endif
+                if (b) WriteInt16(write[i]);
+            }
+        }
+
+        public void WriteUShortArray(ushort[] b, long count = -1, bool knownSize = false)
+        {
+            ulong target = WriteArraySize(b, null, count, knownSize);
+            for (ulong i = 0; i < target; ++i) WriteUInt16(b[i]);
+        }
+
+        public void WriteUShortArrayDiff(ushort[] write, ushort[] compare, long count = -1, bool knownSize = false)
+        {
+            CheckLengths(write, compare);
+            ulong target = WriteArraySize(write, compare, count, knownSize);
+            WritePremap(write, compare);
+            for (ulong i = 0; i < target; ++i)
+            {
+                bool b = write[i] == compare[i];
+#if !ARRAY_WRITE_PREMAP
+                WriteBit(!b);
+#endif
+                if (b) WriteUInt16(write[i]);
+            }
+        }
+
+        public void WriteCharArray(char[] b, long count = -1, bool knownSize = false)
+        {
+            ulong target = WriteArraySize(b, null, count, knownSize);
+            for (ulong i = 0; i < target; ++i) WriteChar(b[i]);
+        }
+
+        public void WriteCharArrayDiff(char[] write, char[] compare, long count = -1, bool knownSize = false)
+        {
+            CheckLengths(write, compare);
+            ulong target = WriteArraySize(write, compare, count, knownSize);
+            WritePremap(write, compare);
+            for (ulong i = 0; i < target; ++i)
+            {
+                bool b = write[i] == compare[i];
+#if !ARRAY_WRITE_PREMAP
+                WriteBit(!b);
+#endif
+                if (b) WriteChar(write[i]);
+            }
+        }
+
+        public void WriteIntArray(int[] b, long count = -1, bool knownSize = false)
+        {
+            ulong target = WriteArraySize(b, null, count, knownSize);
+            for (ulong i = 0; i < target; ++i) WriteInt32(b[i]);
+        }
+
+        public void WriteIntArrayDiff(int[] write, int[] compare, long count = -1, bool knownSize = false)
+        {
+            CheckLengths(write, compare);
+            ulong target = WriteArraySize(write, compare, count, knownSize);
+            WritePremap(write, compare);
+            for (ulong i = 0; i < target; ++i)
+            {
+                bool b = write[i] == compare[i];
+#if !ARRAY_WRITE_PREMAP
+                WriteBit(!b);
+#endif
+                if (b) WriteInt32(write[i]);
+            }
+        }
+
+        public void WriteUIntArray(uint[] b, long count = -1, bool knownSize = false)
+        {
+            ulong target = WriteArraySize(b, null, count, knownSize);
+            for (ulong i = 0; i < target; ++i) WriteUInt32(b[i]);
+        }
+
+        public void WriteUIntArrayDiff(uint[] write, uint[] compare, long count = -1, bool knownSize = false)
+        {
+            CheckLengths(write, compare);
+            ulong target = WriteArraySize(write, compare, count, knownSize);
+            WritePremap(write, compare);
+            for (ulong i = 0; i < target; ++i)
+            {
+                bool b = write[i] == compare[i];
+#if !ARRAY_WRITE_PREMAP
+                WriteBit(!b);
+#endif
+                if (b) WriteUInt32(write[i]);
+            }
+        }
+
+        public void WriteLongArray(long[] b, long count = -1, bool knownSize = false)
+        {
+            ulong target = WriteArraySize(b, null, count, knownSize);
+            for (ulong i = 0; i < target; ++i) WriteInt64(b[i]);
+        }
+
+        public void WriteLongArrayDiff(long[] write, long[] compare, long count = -1, bool knownSize = false)
+        {
+            CheckLengths(write, compare);
+            ulong target = WriteArraySize(write, compare, count, knownSize);
+            WritePremap(write, compare);
+            for (ulong i = 0; i < target; ++i)
+            {
+                bool b = write[i] == compare[i];
+#if !ARRAY_WRITE_PREMAP
+                WriteBit(!b);
+#endif
+                if (b) WriteInt64(write[i]);
+            }
+        }
+
+        public void WriteULongArray(ulong[] b, long count = -1, bool knownSize = false)
+        {
+            ulong target = WriteArraySize(b, null, count, knownSize);
+            for (ulong i = 0; i < target; ++i) WriteUInt64(b[i]);
+        }
+
+        public void WriteULongArrayDiff(ulong[] write, ulong[] compare, long count = -1, bool knownSize = false)
+        {
+            CheckLengths(write, compare);
+            ulong target = WriteArraySize(write, compare, count, knownSize);
+            WritePremap(write, compare);
+            for (ulong i = 0; i < target; ++i)
+            {
+                bool b = write[i] == compare[i];
+#if !ARRAY_WRITE_PREMAP
+                WriteBit(!b);
+#endif
+                if (b) WriteUInt64(write[i]);
+            }
+        }
+
+        public void WriteFloatArray(float[] b, long count = -1, bool knownSize = false)
+        {
+            ulong target = WriteArraySize(b, null, count, knownSize);
+            for (ulong i = 0; i < target; ++i) WriteSingle(b[i]);
+        }
+
+        public void WriteFloatArrayDiff(float[] write, float[] compare, long count = -1, bool knownSize = false)
+        {
+            CheckLengths(write, compare);
+            ulong target = WriteArraySize(write, compare, count, knownSize);
+            WritePremap(write, compare);
+            for (ulong i = 0; i < target; ++i)
+            {
+                bool b = write[i] == compare[i];
+#if !ARRAY_WRITE_PREMAP
+                WriteBit(!b);
+#endif
+                if (b) WriteSingle(write[i]);
+            }
+        }
+
+        public void WriteDoubleArray(double[] b, long count = -1, bool knownSize = false)
+        {
+            ulong target = WriteArraySize(b, null, count, knownSize);
+            for (ulong i = 0; i < target; ++i) WriteDouble(b[i]);
+        }
+
+        public void WriteDoubleArrayDiff(double[] write, double[] compare, long count = -1, bool knownSize = false)
+        {
+            CheckLengths(write, compare);
+            ulong target = WriteArraySize(write, compare, count, knownSize);
+            WritePremap(write, compare);
+            for (ulong i = 0; i < target; ++i)
+            {
+                bool b = write[i] == compare[i];
+#if !ARRAY_WRITE_PREMAP
+                WriteBit(!b);
+#endif
+                if (b) WriteDouble(write[i]);
+            }
+        }
+
+
+
+
+
+        // Packed arrays
+#if ARRAY_RESOLVE_IMPLICIT
+        public void WriteArrayPacked(Array a, long count = -1, bool knownSize = false)
+        {
+            Type arrayType = a.GetType();
+
+
+#if ARRAY_WRITE_PERMISSIVE
+            if (arrayType == typeof(byte[])) WriteByteArray(a as byte[], count, knownSize);
+            else
+#endif
+            if (arrayType == typeof(short[])) WriteShortArrayPacked(a as short[], count, knownSize);
+            else if (arrayType == typeof(ushort[])) WriteUShortArrayPacked(a as ushort[], count, knownSize);
+            else if (arrayType == typeof(char[])) WriteCharArrayPacked(a as char[], count, knownSize);
+            else if (arrayType == typeof(int[])) WriteIntArrayPacked(a as int[], count, knownSize);
+            else if (arrayType == typeof(uint[])) WriteUIntArrayPacked(a as uint[], count, knownSize);
+            else if (arrayType == typeof(long[])) WriteLongArrayPacked(a as long[], count, knownSize);
+            else if (arrayType == typeof(ulong[])) WriteULongArrayPacked(a as ulong[], count, knownSize);
+            else if (arrayType == typeof(float[])) WriteFloatArrayPacked(a as float[], count, knownSize);
+            else if (arrayType == typeof(double[])) WriteDoubleArrayPacked(a as double[], count, knownSize);
+            else throw new InvalidDataException("Unknown array type! Please serialize manually!");
+        }
+
+        public void WriteArrayPackedDiff(Array write, Array compare, long count = -1, bool knownSize = false)
+        {
+            Type arrayType = write.GetType();
+            if (arrayType != compare.GetType()) throw new ArrayTypeMismatchException("Cannot write diff of two differing array types");
+
+#if ARRAY_WRITE_PERMISSIVE
+            if (arrayType == typeof(byte[])) WriteByteArrayDiff(write as byte[], compare as byte[], count, knownSize);
+            else
+#endif
+            if (arrayType == typeof(short[])) WriteShortArrayPackedDiff(write as short[], compare as short[], count, knownSize);
+            else if (arrayType == typeof(ushort[])) WriteUShortArrayPackedDiff(write as ushort[], compare as ushort[], count, knownSize);
+            else if (arrayType == typeof(char[])) WriteCharArrayPackedDiff(write as char[], compare as char[], count, knownSize);
+            else if (arrayType == typeof(int[])) WriteIntArrayPackedDiff(write as int[], compare as int[], count, knownSize);
+            else if (arrayType == typeof(uint[])) WriteUIntArrayPackedDiff(write as uint[], compare as uint[], count, knownSize);
+            else if (arrayType == typeof(long[])) WriteLongArrayPackedDiff(write as long[], compare as long[], count, knownSize);
+            else if (arrayType == typeof(ulong[])) WriteULongArrayPackedDiff(write as ulong[], compare as ulong[], count, knownSize);
+            else if (arrayType == typeof(float[])) WriteFloatArrayPackedDiff(write as float[], compare as float[], count, knownSize);
+            else if (arrayType == typeof(double[])) WriteDoubleArrayPackedDiff(write as double[], compare as double[], count, knownSize);
+            else throw new InvalidDataException("Unknown array type! Please serialize manually!");
+        }
+#endif
+
+        public void WriteShortArrayPacked(short[] b, long count = -1, bool knownSize = false)
+        {
+            ulong target = WriteArraySize(b, null, count, knownSize);
+            for (ulong i = 0; i < target; ++i) WriteInt16Packed(b[i]);
+        }
+
+        public void WriteShortArrayPackedDiff(short[] write, short[] compare, long count = -1, bool knownSize = false)
+        {
+            CheckLengths(write, compare);
+            ulong target = WriteArraySize(write, compare, count, knownSize);
+            WritePremap(write, compare);
+            for (ulong i = 0; i < target; ++i)
+            {
+                bool b = write[i] == compare[i];
+#if !ARRAY_WRITE_PREMAP
+                WriteBit(!b);
+#endif
+                if (b) WriteInt16Packed(write[i]);
+            }
+        }
+
+        public void WriteUShortArrayPacked(ushort[] b, long count = -1, bool knownSize = false)
+        {
+            ulong target = WriteArraySize(b, null, count, knownSize);
+            for (ulong i = 0; i < target; ++i) WriteUInt16Packed(b[i]);
+        }
+
+        public void WriteUShortArrayPackedDiff(ushort[] write, ushort[] compare, long count = -1, bool knownSize = false)
+        {
+            CheckLengths(write, compare);
+            ulong target = WriteArraySize(write, compare, count, knownSize);
+            WritePremap(write, compare);
+            for (ulong i = 0; i < target; ++i)
+            {
+                bool b = write[i] == compare[i];
+#if !ARRAY_WRITE_PREMAP
+                WriteBit(!b);
+#endif
+                if (b) WriteUInt16Packed(write[i]);
+            }
+        }
+
+        public void WriteCharArrayPacked(char[] b, long count = -1, bool knownSize = false)
+        {
+            ulong target = WriteArraySize(b, null, count, knownSize);
+            for (ulong i = 0; i < target; ++i) WriteCharPacked(b[i]);
+        }
+
+        public void WriteCharArrayPackedDiff(char[] write, char[] compare, long count = -1, bool knownSize = false)
+        {
+            CheckLengths(write, compare);
+            ulong target = WriteArraySize(write, compare, count, knownSize);
+            WritePremap(write, compare);
+            for (ulong i = 0; i < target; ++i)
+            {
+                bool b = write[i] == compare[i];
+#if !ARRAY_WRITE_PREMAP
+                WriteBit(!b);
+#endif
+                if (b) WriteCharPacked(write[i]);
+            }
+        }
+
+        public void WriteIntArrayPacked(int[] b, long count = -1, bool knownSize = false)
+        {
+            ulong target = WriteArraySize(b, null, count, knownSize);
+            for (ulong i = 0; i < target; ++i) WriteInt32Packed(b[i]);
+        }
+
+        public void WriteIntArrayPackedDiff(int[] write, int[] compare, long count = -1, bool knownSize = false)
+        {
+            CheckLengths(write, compare);
+            ulong target = WriteArraySize(write, compare, count, knownSize);
+            WritePremap(write, compare);
+            for (ulong i = 0; i < target; ++i)
+            {
+                bool b = write[i] == compare[i];
+#if !ARRAY_WRITE_PREMAP
+                WriteBit(!b);
+#endif
+                if (b) WriteInt32Packed(write[i]);
+            }
+        }
+
+        public void WriteUIntArrayPacked(uint[] b, long count = -1, bool knownSize = false)
+        {
+            ulong target = WriteArraySize(b, null, count, knownSize);
+            for (ulong i = 0; i < target; ++i) WriteUInt32Packed(b[i]);
+        }
+
+        public void WriteUIntArrayPackedDiff(uint[] write, uint[] compare, long count = -1, bool knownSize = false)
+        {
+            CheckLengths(write, compare);
+            ulong target = WriteArraySize(write, compare, count, knownSize);
+            WritePremap(write, compare);
+            for (ulong i = 0; i < target; ++i)
+            {
+                bool b = write[i] == compare[i];
+#if !ARRAY_WRITE_PREMAP
+                WriteBit(!b);
+#endif
+                if (b) WriteUInt32Packed(write[i]);
+            }
+        }
+
+        public void WriteLongArrayPacked(long[] b, long count = -1, bool knownSize = false)
+        {
+            ulong target = WriteArraySize(b, null, count, knownSize);
+            for (ulong i = 0; i < target; ++i) WriteInt64Packed(b[i]);
+        }
+
+        public void WriteLongArrayPackedDiff(long[] write, long[] compare, long count = -1, bool knownSize = false)
+        {
+            CheckLengths(write, compare);
+            ulong target = WriteArraySize(write, compare, count, knownSize);
+            WritePremap(write, compare);
+            for (ulong i = 0; i < target; ++i)
+            {
+                bool b = write[i] == compare[i];
+#if !ARRAY_WRITE_PREMAP
+                WriteBit(!b);
+#endif
+                if (b) WriteInt64Packed(write[i]);
+            }
+        }
+
+        public void WriteULongArrayPacked(ulong[] b, long count = -1, bool knownSize = false)
+        {
+            ulong target = WriteArraySize(b, null, count, knownSize);
+            for (ulong i = 0; i < target; ++i) WriteUInt64Packed(b[i]);
+        }
+
+        public void WriteULongArrayPackedDiff(ulong[] write, ulong[] compare, long count = -1, bool knownSize = false)
+        {
+            CheckLengths(write, compare);
+            ulong target = WriteArraySize(write, compare, count, knownSize);
+            WritePremap(write, compare);
+            for (ulong i = 0; i < target; ++i)
+            {
+                bool b = write[i] == compare[i];
+#if !ARRAY_WRITE_PREMAP
+                WriteBit(!b);
+#endif
+                if (b) WriteUInt64Packed(write[i]);
+            }
+        }
+
+        public void WriteFloatArrayPacked(float[] b, long count = -1, bool knownSize = false)
+        {
+            ulong target = WriteArraySize(b, null, count, knownSize);
+            for (ulong i = 0; i < target; ++i) WriteSinglePacked(b[i]);
+        }
+
+        public void WriteFloatArrayPackedDiff(float[] write, float[] compare, long count = -1, bool knownSize = false)
+        {
+            CheckLengths(write, compare);
+            ulong target = WriteArraySize(write, compare, count, knownSize);
+            WritePremap(write, compare);
+            for (ulong i = 0; i < target; ++i)
+            {
+                bool b = write[i] == compare[i];
+#if !ARRAY_WRITE_PREMAP
+                WriteBit(!b);
+#endif
+                if (b) WriteSinglePacked(write[i]);
+            }
+        }
+
+        public void WriteDoubleArrayPacked(double[] b, long count = -1, bool knownSize = false)
+        {
+            ulong target = WriteArraySize(b, null, count, knownSize);
+            for (ulong i = 0; i < target; ++i) WriteDoublePacked(b[i]);
+        }
+
+        public void WriteDoubleArrayPackedDiff(double[] write, double[] compare, long count = -1, bool knownSize = false)
+        {
+            CheckLengths(write, compare);
+            ulong target = WriteArraySize(write, compare, count, knownSize);
+            WritePremap(write, compare);
+            for (ulong i = 0; i < target; ++i)
+            {
+                bool b = write[i] == compare[i];
+#if !ARRAY_WRITE_PREMAP
+                WriteBit(!b);
+#endif
+                if (b) WriteDoublePacked(write[i]);
+            }
+        }
+
+
+
+
+
+        // Read arrays
+        public byte[] ReadByteArray(byte[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            if (readTo == null || readTo.LongLength != knownLength) readTo = new byte[knownLength];
+            for (long i = 0; i < knownLength; ++i) readTo[i] = _ReadByte();
+            return readTo;
+        }
+
+        public byte[] ReadByteArrayDiff(byte[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            byte[] writeTo = readTo == null || readTo.LongLength != knownLength ? new byte[knownLength] : readTo;
+            for (long i = 0; i < knownLength; ++i)
+            {
+                if (ReadBit()) {
+#if ARRAY_WRITE_PREMAP
+                    // Move to data section
+                    BitPosition += (ulong)(knownLength - i + (i*8L));
+#endif
+                    // Read datum
+                    writeTo[i] = _ReadByte();
+#if ARRAY_WRITE_PREMAP
+                    // Return to mapping section
+                    BitPosition -= (ulong)(knownLength - i -1 + (i * 8L) + 8);
+#endif
+                }
+                else if (i < readTo.LongLength) writeTo[i] = readTo[i];
+            }
+            return writeTo;
+        }
+
+        public short[] ReadShortArray(short[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            if (readTo == null || readTo.LongLength != knownLength) readTo = new short[knownLength];
+            for (long i = 0; i < knownLength; ++i) readTo[i] = ReadInt16();
+            return readTo;
+        }
+
+        public short[] ReadShortArrayPacked(short[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            if (readTo == null || readTo.LongLength != knownLength) readTo = new short[knownLength];
+            for(long i = 0; i<knownLength; ++i) readTo[i] = ReadInt16Packed();
+            return readTo;
+        }
+
+        public short[] ReadShortArrayDiff(short[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            if (readTo == null || readTo.LongLength != knownLength) readTo = new short[knownLength];
+            for (long i = 0; i < knownLength; ++i)
+            {
+                if (ReadBit())
+                {
+#if ARRAY_WRITE_PREMAP
+                    // Move to data section
+                    BitPosition += (ulong)(knownLength - i -1 + (i * 16L));
+#endif
+                    // Read datum
+                    readTo[i] = ReadInt16();
+#if ARRAY_WRITE_PREMAP
+                    // Return to mapping section
+                    BitPosition -= (ulong)(knownLength - i -1 + (i * 16L) + 16);
+#endif
+                }
+            }
+            return readTo;
+        }
+
+        public short[] ReadShortArrayPackedDiff(short[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            short[] writeTo = readTo == null || readTo.LongLength != knownLength ? new short[knownLength] : readTo;
+            ulong data = BitPosition + (ulong)knownLength;
+            ulong rset;
+            for (long i = 0; i < knownLength; ++i)
+            {
+                if (ReadBit())
+                {
+#if ARRAY_WRITE_PREMAP
+                    // Move to data section
+                    rset = BitPosition;
+                    BitPosition = data;
+#endif
+                    // Read datum
+                    writeTo[i] = ReadInt16Packed();
+#if ARRAY_WRITE_PREMAP
+                    // Return to mapping section
+                    data = BitPosition;
+                    BitPosition = rset;
+#endif
+                }
+                else if (i < readTo.LongLength) writeTo[i] = readTo[i];
+            }
+            return writeTo;
+        }
+
+        public ushort[] ReadUShortArray(ushort[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            if (readTo == null || readTo.LongLength != knownLength) readTo = new ushort[knownLength];
+            for (long i = 0; i < knownLength; ++i) readTo[i] = ReadUInt16();
+            return readTo;
+        }
+
+        public ushort[] ReadUShortArrayPacked(ushort[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            if (readTo == null || readTo.LongLength != knownLength) readTo = new ushort[knownLength];
+            for (long i = 0; i < knownLength; ++i) readTo[i] = ReadUInt16Packed();
+            return readTo;
+        }
+
+        public ushort[] ReadUShortArrayDiff(ushort[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            if (readTo == null || readTo.LongLength != knownLength) readTo = new ushort[knownLength];
+            for (long i = 0; i < knownLength; ++i)
+            {
+                if (ReadBit())
+                {
+#if ARRAY_WRITE_PREMAP
+                    // Move to data section
+                    BitPosition += (ulong)(knownLength - i -1 + (i * 16L));
+#endif
+                    // Read datum
+                    readTo[i] = ReadUInt16();
+#if ARRAY_WRITE_PREMAP
+                    // Return to mapping section
+                    BitPosition -= (ulong)(knownLength - i -1 + (i * 16L) + 16);
+#endif
+                }
+            }
+            return readTo;
+        }
+
+        public ushort[] ReadUShortArrayPackedDiff(ushort[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            ushort[] writeTo = readTo == null || readTo.LongLength != knownLength ? new ushort[knownLength] : readTo;
+            ulong data = BitPosition + (ulong)knownLength;
+            ulong rset;
+            for (long i = 0; i < knownLength; ++i)
+            {
+                if (ReadBit())
+                {
+#if ARRAY_WRITE_PREMAP
+                    // Move to data section
+                    rset = BitPosition;
+                    BitPosition = data;
+#endif
+                    // Read datum
+                    writeTo[i] = ReadUInt16Packed();
+#if ARRAY_WRITE_PREMAP
+                    // Return to mapping section
+                    data = BitPosition;
+                    BitPosition = rset;
+#endif
+                }
+                else if (i < readTo.LongLength) writeTo[i] = readTo[i];
+            }
+            return writeTo;
+        }
+
+        public int[] ReadIntArray(int[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            if (readTo == null || readTo.LongLength != knownLength) readTo = new int[knownLength];
+            for (long i = 0; i < knownLength; ++i) readTo[i] = ReadInt32();
+            return readTo;
+        }
+
+        public int[] ReadIntArrayPacked(int[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            if (readTo == null || readTo.LongLength != knownLength) readTo = new int[knownLength];
+            for (long i = 0; i < knownLength; ++i) readTo[i] = ReadInt32Packed();
+            return readTo;
+        }
+
+        public int[] ReadIntArrayDiff(int[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            if (readTo == null || readTo.LongLength != knownLength) readTo = new int[knownLength];
+            for (long i = 0; i < knownLength; ++i)
+            {
+                if (ReadBit())
+                {
+#if ARRAY_WRITE_PREMAP
+                    // Move to data section
+                    BitPosition += (ulong)(knownLength - i -1 + (i * 32L));
+#endif
+                    // Read datum
+                    readTo[i] = ReadInt32();
+#if ARRAY_WRITE_PREMAP
+                    // Return to mapping section
+                    BitPosition -= (ulong)(knownLength - i -1 + (i * 32L) + 32);
+#endif
+                }
+            }
+            return readTo;
+        }
+
+        public int[] ReadIntArrayPackedDiff(int[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            int[] writeTo = readTo == null || readTo.LongLength != knownLength ? new int[knownLength] : readTo;
+            ulong data = BitPosition + (ulong)knownLength;
+            ulong rset;
+            for (long i = 0; i < knownLength; ++i)
+            {
+                if (ReadBit())
+                {
+#if ARRAY_WRITE_PREMAP
+                    // Move to data section
+                    rset = BitPosition;
+                    BitPosition = data;
+#endif
+                    // Read datum
+                    writeTo[i] = ReadInt32Packed();
+#if ARRAY_WRITE_PREMAP
+                    // Return to mapping section
+                    data = BitPosition;
+                    BitPosition = rset;
+#endif
+                }
+                else if (i < readTo.LongLength) writeTo[i] = readTo[i];
+            }
+            return writeTo;
+        }
+
+        public uint[] ReadUIntArray(uint[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            if (readTo == null || readTo.LongLength != knownLength) readTo = new uint[knownLength];
+            for (long i = 0; i < knownLength; ++i) readTo[i] = ReadUInt32();
+            return readTo;
+        }
+
+        public uint[] ReadUIntArrayPacked(uint[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            if (readTo == null || readTo.LongLength != knownLength) readTo = new uint[knownLength];
+            for (long i = 0; i < knownLength; ++i) readTo[i] = ReadUInt32Packed();
+            return readTo;
+        }
+
+        public uint[] ReadUIntArrayDiff(uint[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            if (readTo == null || readTo.LongLength != knownLength) readTo = new uint[knownLength];
+            for (long i = 0; i < knownLength; ++i)
+            {
+                if (ReadBit())
+                {
+#if ARRAY_WRITE_PREMAP
+                    // Move to data section
+                    BitPosition += (ulong)(knownLength - i -1 + (i * 32L));
+#endif
+                    // Read datum
+                    readTo[i] = ReadUInt32();
+#if ARRAY_WRITE_PREMAP
+                    // Return to mapping section
+                    BitPosition -= (ulong)(knownLength - i -1 + (i * 32L) + 32);
+#endif
+                }
+            }
+            return readTo;
+        }
+
+        public uint[] ReadUIntArrayPackedDiff(uint[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            uint[] writeTo = readTo == null || readTo.LongLength != knownLength ? new uint[knownLength] : readTo;
+            ulong data = BitPosition + (ulong)knownLength;
+            ulong rset;
+            for (long i = 0; i < knownLength; ++i)
+            {
+                if (ReadBit())
+                {
+#if ARRAY_WRITE_PREMAP
+                    // Move to data section
+                    rset = BitPosition;
+                    BitPosition = data;
+#endif
+                    // Read datum
+                    writeTo[i] = ReadUInt32Packed();
+#if ARRAY_WRITE_PREMAP
+                    // Return to mapping section
+                    data = BitPosition;
+                    BitPosition = rset;
+#endif
+                }
+                else if (i < readTo.LongLength) writeTo[i] = readTo[i];
+            }
+            return writeTo;
+        }
+
+        public long[] ReadLongArray(long[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            if (readTo == null || readTo.LongLength != knownLength) readTo = new long[knownLength];
+            for (long i = 0; i < knownLength; ++i) readTo[i] = ReadInt64();
+            return readTo;
+        }
+
+        public long[] ReadLongArrayPacked(long[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            if (readTo == null || readTo.LongLength != knownLength) readTo = new long[knownLength];
+            for (long i = 0; i < knownLength; ++i) readTo[i] = ReadInt64Packed();
+            return readTo;
+        }
+
+        public long[] ReadLongArrayDiff(long[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            if (readTo == null || readTo.LongLength != knownLength) readTo = new long[knownLength];
+            for (long i = 0; i < knownLength; ++i)
+            {
+                if (ReadBit())
+                {
+#if ARRAY_WRITE_PREMAP
+                    // Move to data section
+                    BitPosition += (ulong)(knownLength - i -1 + (i * 64L));
+#endif
+                    // Read datum
+                    readTo[i] = ReadInt64();
+#if ARRAY_WRITE_PREMAP
+                    // Return to mapping section
+                    BitPosition -= (ulong)(knownLength - i -1 + (i * 64L) + 64);
+#endif
+                }
+            }
+            return readTo;
+        }
+
+        public long[] ReadLongArrayPackedDiff(long[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            long[] writeTo = readTo == null || readTo.LongLength != knownLength ? new long[knownLength] : readTo;
+            ulong data = BitPosition + (ulong)knownLength;
+            ulong rset;
+            for (long i = 0; i < knownLength; ++i)
+            {
+                if (ReadBit())
+                {
+#if ARRAY_WRITE_PREMAP
+                    // Move to data section
+                    rset = BitPosition;
+                    BitPosition = data;
+#endif
+                    // Read datum
+                    writeTo[i] = ReadInt64Packed();
+#if ARRAY_WRITE_PREMAP
+                    // Return to mapping section
+                    data = BitPosition;
+                    BitPosition = rset;
+#endif
+                }
+                else if (i < readTo.LongLength) writeTo[i] = readTo[i];
+            }
+            return writeTo;
+        }
+
+        public ulong[] ReadULongArray(ulong[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            if (readTo == null || readTo.LongLength != knownLength) readTo = new ulong[knownLength];
+            for (long i = 0; i < knownLength; ++i) readTo[i] = ReadUInt64();
+            return readTo;
+        }
+
+        public ulong[] ReadULongArrayPacked(ulong[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            if (readTo == null || readTo.LongLength != knownLength) readTo = new ulong[knownLength];
+            for (long i = 0; i < knownLength; ++i) readTo[i] = ReadUInt64Packed();
+            return readTo;
+        }
+
+        public ulong[] ReadULongArrayDiff(ulong[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            if (readTo == null || readTo.LongLength != knownLength) readTo = new ulong[knownLength];
+            for (long i = 0; i < knownLength; ++i)
+            {
+                if (ReadBit())
+                {
+#if ARRAY_WRITE_PREMAP
+                    // Move to data section
+                    BitPosition += (ulong)(knownLength - i -1 + (i * 64L));
+#endif
+                    // Read datum
+                    readTo[i] = ReadUInt64();
+#if ARRAY_WRITE_PREMAP
+                    // Return to mapping section
+                    BitPosition -= (ulong)(knownLength - i -1 + (i * 64L) + 64);
+#endif
+                }
+            }
+            return readTo;
+        }
+
+        public ulong[] ReadULongArrayPackedDiff(ulong[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            ulong[] writeTo = readTo == null || readTo.LongLength != knownLength ? new ulong[knownLength] : readTo;
+            ulong data = BitPosition + (ulong)knownLength;
+            ulong rset;
+            for (long i = 0; i < knownLength; ++i)
+            {
+                if (ReadBit())
+                {
+#if ARRAY_WRITE_PREMAP
+                    // Move to data section
+                    rset = BitPosition;
+                    BitPosition = data;
+#endif
+                    // Read datum
+                    writeTo[i] = ReadUInt64Packed();
+#if ARRAY_WRITE_PREMAP
+                    // Return to mapping section
+                    data = BitPosition;
+                    BitPosition = rset;
+#endif
+                }
+                else if (i < readTo.LongLength) writeTo[i] = readTo[i];
+            }
+            return writeTo;
+        }
+
+        public float[] ReadFloatArray(float[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            if (readTo == null || readTo.LongLength != knownLength) readTo = new float[knownLength];
+            for (long i = 0; i < knownLength; ++i) readTo[i] = ReadSingle();
+            return readTo;
+        }
+
+        public float[] ReadFloatArrayPacked(float[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            if (readTo == null || readTo.LongLength != knownLength) readTo = new float[knownLength];
+            for (long i = 0; i < knownLength; ++i) readTo[i] = ReadSinglePacked();
+            return readTo;
+        }
+
+        public float[] ReadFloatArrayDiff(float[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            if (readTo == null || readTo.LongLength != knownLength) readTo = new float[knownLength];
+            for (long i = 0; i < knownLength; ++i)
+            {
+                if (ReadBit())
+                {
+#if ARRAY_WRITE_PREMAP
+                    // Move to data section
+                    BitPosition += (ulong)(knownLength - i -1 + (i * 32L));
+#endif
+                    // Read datum
+                    readTo[i] = ReadSingle();
+#if ARRAY_WRITE_PREMAP
+                    // Return to mapping section
+                    BitPosition -= (ulong)(knownLength - i -1 + (i * 32L) + 32);
+#endif
+                }
+            }
+            return readTo;
+        }
+
+        public float[] ReadFloatArrayPackedDiff(float[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            float[] writeTo = readTo == null || readTo.LongLength != knownLength ? new float[knownLength] : readTo;
+            ulong data = BitPosition + (ulong)knownLength;
+            ulong rset;
+            for (long i = 0; i < knownLength; ++i)
+            {
+                if (ReadBit())
+                {
+#if ARRAY_WRITE_PREMAP
+                    // Move to data section
+                    rset = BitPosition;
+                    BitPosition = data;
+#endif
+                    // Read datum
+                    readTo[i] = ReadSinglePacked();
+#if ARRAY_WRITE_PREMAP
+                    // Return to mapping section
+                    data = BitPosition;
+                    BitPosition = rset;
+#endif
+                }
+                else if (i < readTo.LongLength) writeTo[i] = readTo[i];
+            }
+            return writeTo;
+        }
+
+        public double[] ReadDoubleArray(double[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            if (readTo == null || readTo.LongLength != knownLength) readTo = new double[knownLength];
+            for (long i = 0; i < knownLength; ++i) readTo[i] = ReadDouble();
+            return readTo;
+        }
+
+        public double[] ReadDoubleArrayPacked(double[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            if (readTo == null || readTo.LongLength != knownLength) readTo = new double[knownLength];
+            for (long i = 0; i < knownLength; ++i) readTo[i] = ReadDoublePacked();
+            return readTo;
+        }
+
+        public double[] ReadDoubleArrayDiff(double[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            if (readTo == null || readTo.LongLength != knownLength) readTo = new double[knownLength];
+            for (long i = 0; i < knownLength; ++i)
+            {
+                if (ReadBit())
+                {
+#if ARRAY_WRITE_PREMAP
+                    // Move to data section
+                    BitPosition += (ulong)(knownLength - i - 1 + (i * 64L));
+#endif
+                    // Read datum
+                    readTo[i] = ReadDouble();
+#if ARRAY_WRITE_PREMAP
+                    // Return to mapping section
+                    BitPosition -= (ulong)(knownLength - i - 1 + (i * 64L) + 64);
+#endif
+                }
+            }
+            return readTo;
+        }
+
+        public double[] ReadDoubleArrayPackedDiff(double[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            double[] writeTo = readTo == null || readTo.LongLength != knownLength ? new double[knownLength] : readTo;
+            ulong data = BitPosition + (ulong)knownLength;
+            ulong rset;
+            for (long i = 0; i < knownLength; ++i)
+            {
+                if (ReadBit())
+                {
+#if ARRAY_WRITE_PREMAP
+                    // Move to data section
+                    rset = BitPosition;
+                    BitPosition = data;
+#endif
+                    // Read datum
+                    writeTo[i] = ReadDoublePacked();
+#if ARRAY_WRITE_PREMAP
+                    // Return to mapping section
+                    data = BitPosition;
+                    BitPosition = rset;
+#endif
+                }
+                else if (i < readTo.LongLength) writeTo[i] = readTo[i];
+            }
+            return writeTo;
+        }
+
+
+
+
         /// <summary>
         /// Copy data from another stream
         /// </summary>

@@ -407,8 +407,8 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
 
             BitStream inStream = new BitStream(buffer);
 
-            //Assert.That(inStream.ReadBits(5), Is.EqualTo(0b10011));
-            Assert.Fail("There is no way to read back the bits");
+            Assert.That(inStream.ReadBits(5), Is.EqualTo(0b10011));
+            //Assert.Fail("There is no way to read back the bits");
 
         }
 
@@ -424,8 +424,8 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
 
             BitStream inStream = new BitStream(buffer);
 
-            //Assert.That(inStream.ReadNibble(), Is.EqualTo(0b0011));
-            Assert.Fail("There is no way to read back Nibbles");
+            Assert.That(inStream.ReadNibble(), Is.EqualTo(0b0011));
+            //Assert.Fail("There is no way to read back Nibbles");
         }
 
         public void TestReadWriteMissaligned()
