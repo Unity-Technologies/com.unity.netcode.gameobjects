@@ -15,8 +15,14 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
         {
             Assert.That(Arithmetic.CeilingExact(10, 5), Is.EqualTo(2));
             Assert.That(Arithmetic.CeilingExact(11, 5), Is.EqualTo(3));
-            Assert.That(Arithmetic.CeilingExact(-5, 5), Is.EqualTo(-1));
-            Assert.That(Arithmetic.CeilingExact(-4, 5), Is.EqualTo(-1));
+            Assert.That(Arithmetic.CeilingExact(0, 5), Is.EqualTo(0));
+            Assert.That(Arithmetic.CeilingExact(1, 5), Is.EqualTo(1));
+            Assert.That(Arithmetic.CeilingExact(2, 5), Is.EqualTo(1));
+            Assert.That(Arithmetic.CeilingExact(3, 5), Is.EqualTo(1));
+            Assert.That(Arithmetic.CeilingExact(4, 5), Is.EqualTo(1));
+            Assert.That(Arithmetic.CeilingExact(5, 5), Is.EqualTo(1));
+            Assert.That(Arithmetic.CeilingExact(6, 5), Is.EqualTo(2));
+
         }
 
         [Test]
