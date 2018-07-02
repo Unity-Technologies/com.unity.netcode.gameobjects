@@ -120,21 +120,23 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
             
             long someNumber = -1469598103934656037;
             ulong uNumber = 81246971249124124;
-
+            ulong uNumber2 = 2287;
+            ulong uNumber3 = 235;
 
             BitStream outStream = new BitStream(buffer);
             outStream.WriteInt64Packed(someNumber);
             outStream.WriteUInt64Packed(uNumber);
-
+            outStream.WriteUInt64Packed(uNumber2);
+            outStream.WriteUInt64Packed(uNumber3);
 
             // the bit should now be stored in the buffer,  lets see if it comes out
 
             BitStream inStream = new BitStream(buffer);
-            long result = inStream.ReadInt64Packed();
-            ulong result1 = inStream.ReadUInt64Packed();
 
-            Assert.That(result, Is.EqualTo(someNumber));
-            Assert.That(result1, Is.EqualTo(uNumber));
+            Assert.That(inStream.ReadInt64Packed(), Is.EqualTo(someNumber));
+            Assert.That(inStream.ReadUInt64Packed(), Is.EqualTo(uNumber));
+            Assert.That(inStream.ReadUInt64Packed(), Is.EqualTo(uNumber2));
+            Assert.That(inStream.ReadUInt64Packed(), Is.EqualTo(uNumber3));
         }
 
         [Test]
@@ -331,7 +333,21 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
         }
 
         [Test]
-        public void TestWriteDoublePacked()
+        public void TestWritePackedSingle()
+        {
+            float somenumber = (float)Math.PI;
+            BitStream outStream = new BitStream();
+
+            outStream.WriteSinglePacked(somenumber);
+            byte[] buffer = outStream.GetBuffer();
+
+            BitStream inStream = new BitStream(buffer);
+
+            Assert.That(inStream.ReadSinglePacked(), Is.EqualTo(somenumber));
+        }
+
+        [Test]
+        public void TestWritePackedDouble()
         {
             double somenumber = Math.PI;
             BitStream outStream = new BitStream();
@@ -380,6 +396,39 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
         }
 
         [Test]
+        public void TestBits()
+        {
+            ulong somevalue = 0b1100101010011;
+
+            BitStream outStream = new BitStream();
+            outStream.WriteBits(somevalue, 5);
+
+            byte[] buffer = outStream.GetBuffer();
+
+            BitStream inStream = new BitStream(buffer);
+
+            Assert.That(inStream.ReadBits(5), Is.EqualTo(0b10011));
+            //Assert.Fail("There is no way to read back the bits");
+
+        }
+
+        [Test]
+        public void TestNibble()
+        {
+            byte somevalue = 0b1010011;
+
+            BitStream outStream = new BitStream();
+            outStream.WriteNibble(somevalue);
+
+            byte[] buffer = outStream.GetBuffer();
+
+            BitStream inStream = new BitStream(buffer);
+
+            Assert.That(inStream.ReadNibble(), Is.EqualTo(0b0011));
+            //Assert.Fail("There is no way to read back Nibbles");
+        }
+
+        [Test]
         public void TestReadWriteMissaligned()
         {
             BitStream outStream = new BitStream();
@@ -392,6 +441,116 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
             byte[] readTo = new byte[16];
             inStream.Read(readTo, 0, 16);
             Assert.That(readTo, Is.EquivalentTo(writeBytes));
+        }
+
+        [Test]
+        public void TestArrays()
+        {
+            byte[] byteOutData = new byte[] { 1, 2, 13, 37, 69 };
+            int[] intOutData = new int[] { 1337, 69420, 12345, 0, 0, 5 };
+            double[] doubleOutData = new double[] { 0.02, 0.06, 1E40, 256.0 };
+
+            BitStream outStream = new BitStream();
+            outStream.WriteByteArray(byteOutData);
+            outStream.WriteIntArray(intOutData);
+            outStream.WriteDoubleArray(doubleOutData);
+
+            BitStream inStream = new BitStream(outStream.GetBuffer());
+            byte[] byteInData = inStream.ReadByteArray();
+            int[] intInData = inStream.ReadIntArray();
+            double[] doubleInData = inStream.ReadDoubleArray();
+
+            Assert.That(byteOutData, Is.EqualTo(byteInData));
+            Assert.That(intOutData, Is.EqualTo(intInData));
+            Assert.That(doubleOutData, Is.EqualTo(doubleInData));
+        }
+
+        [Test]
+        public void TestArraysPacked()
+        {
+            short[] byteOutData = new short[] { 1, 2, 13, 37, 69 };
+            int[] intOutData = new int[] { 1337, 69420, 12345, 0, 0, 5 };
+            double[] doubleOutData = new double[] { 0.02, 0.06, 1E40, 256.0 };
+
+            BitStream outStream = new BitStream();
+            outStream.WriteShortArrayPacked(byteOutData);
+            outStream.WriteIntArrayPacked(intOutData);
+            outStream.WriteDoubleArrayPacked(doubleOutData);
+
+            BitStream inStream = new BitStream(outStream.GetBuffer());
+            short[] byteInData = inStream.ReadShortArrayPacked();
+            int[] intInData = inStream.ReadIntArrayPacked();
+            double[] doubleInData = inStream.ReadDoubleArrayPacked();
+
+            Assert.That(byteOutData, Is.EqualTo(byteInData));
+            Assert.That(intOutData, Is.EqualTo(intInData));
+            Assert.That(doubleOutData, Is.EqualTo(doubleInData));
+        }
+
+        [Test]
+        public void TestArraysDiff()
+        {
+            // Values changed test
+            byte[] byteOutDiffData = new byte[] { 1, 2, 13, 29, 44, 15 };
+            byte[] byteOutData = new byte[] { 1, 2, 13, 37, 69 };
+            
+            // No change test
+            int[] intOutDiffData = new int[] { 1337, 69420, 12345, 0, 0, 5 };
+            int[] intOutData = new int[] { 1337, 69420, 12345, 0, 0, 5 };
+
+            // Array resize test
+            double[] doubleOutDiffData = new double[] { 0.2, 6, 1E39 };
+            double[] doubleOutData = new double[] { 0.02, 0.06, 1E40, 256.0 };
+
+            // Serialize
+            BitStream outStream = new BitStream();
+            outStream.WriteByteArrayDiff(byteOutData, byteOutDiffData);
+            outStream.WriteIntArrayDiff(intOutData, intOutDiffData);
+            outStream.WriteDoubleArrayDiff(doubleOutData, doubleOutDiffData);
+
+            // Deserialize
+            BitStream inStream = new BitStream(outStream.GetBuffer());
+            byte[] byteInData = inStream.ReadByteArrayDiff(byteOutDiffData);
+            int[] intInData = inStream.ReadIntArrayDiff(intOutDiffData);
+            double[] doubleInData = inStream.ReadDoubleArrayDiff(doubleOutDiffData);
+
+            // Compare
+            Assert.That(byteInData, Is.EqualTo(byteOutData));
+            Assert.That(intInData, Is.EqualTo(intOutData));
+            Assert.That(doubleInData, Is.EqualTo(doubleOutData));
+        }
+
+        [Test]
+        public void TestArraysPackedDiff()
+        {
+            // Values changed test
+            long[] longOutDiffData = new long[] { 1, 2, 13, 29, 44, 15 };
+            long[] longOutData = new long[] { 1, 2, 13, 37, 69 };
+
+            // No change test
+            int[] intOutDiffData = new int[] { 1337, 69420, 12345, 0, 0, 5 };
+            int[] intOutData = new int[] { 1337, 69420, 12345, 0, 0, 5 };
+
+            // Array resize test
+            double[] doubleOutDiffData = new double[] { 0.2, 6, 1E39 };
+            double[] doubleOutData = new double[] { 0.02, 0.06, 1E40, 256.0 };
+
+            // Serialize
+            BitStream outStream = new BitStream();
+            outStream.WriteLongArrayPackedDiff(longOutData, longOutDiffData);
+            outStream.WriteIntArrayPackedDiff(intOutData, intOutDiffData);
+            outStream.WriteDoubleArrayPackedDiff(doubleOutData, doubleOutDiffData);
+
+            // Deserialize
+            BitStream inStream = new BitStream(outStream.GetBuffer());
+            long[] longInData = inStream.ReadLongArrayPackedDiff(longOutDiffData);
+            int[] intInData = inStream.ReadIntArrayPackedDiff(intOutDiffData);
+            double[] doubleInData = inStream.ReadDoubleArrayPackedDiff(doubleOutDiffData);
+
+            // Compare
+            Assert.That(longInData, Is.EqualTo(longOutData));
+            Assert.That(intInData, Is.EqualTo(intOutData));
+            Assert.That(doubleInData, Is.EqualTo(doubleOutData));
         }
     }
 }
