@@ -1137,14 +1137,16 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         // As it turns out, strings cannot be treated as char arrays, since strings use pointers to store data rather than C# arrays
         public void WriteString(string s, bool oneByteChars = false)
         {
-            WriteUInt64Packed((ulong)s.Length * (oneByteChars ? 1UL : 2UL));
+            WriteUInt32Packed((uint)s.Length);
             int target = s.Length;
-            for (int i = 0; i < target; ++i) WriteChar(s[i]);
+            for (int i = 0; i < target; ++i)
+                if (oneByteChars) WriteByte((byte)s[i]);
+                else WriteChar(s[i]);
         }
 
-        public void WriteStringPacked(string s, bool oneByteChars = false)
+        public void WriteStringPacked(string s)
         {
-            WriteUInt64Packed((ulong)s.Length * (oneByteChars ? 1UL : 2UL));
+            WriteUInt32Packed((uint)s.Length);
             int target = s.Length;
             for (int i = 0; i < target; ++i) WriteCharPacked(s[i]);
         }
@@ -1154,7 +1156,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
 #if !ARRAY_DIFF_ALLOW_RESIZE
             if (write.Length != compare.Length) throw new ArgumentException("Mismatched string lengths");
 #endif
-            WriteUInt64Packed((ulong)write.Length * (oneByteChars ? 1UL : 2UL));
+            WriteUInt32Packed((uint)write.Length);
 
             // Premapping
 #if ARRAY_WRITE_PREMAP
@@ -1181,13 +1183,13 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             }
         }
 
-        public void WriteStringPackedDiff(string write, string compare, bool oneByteChars = false)
+        public void WriteStringPackedDiff(string write, string compare)
         {
 
 #if !ARRAY_DIFF_ALLOW_RESIZE
             if (write.Length != compare.Length) throw new ArgumentException("Mismatched string lengths");
 #endif
-            WriteUInt64Packed((ulong)write.Length * (oneByteChars ? 1UL : 2UL));
+            WriteUInt32Packed((uint)write.Length);
 
             // Premapping
 #if ARRAY_WRITE_PREMAP
@@ -1206,11 +1208,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
 #if !ARRAY_WRITE_PREMAP
                 WriteBit(!b);
 #endif
-                if (b)
-                {
-                    if (oneByteChars) WriteByte((byte)write[i]);
-                    else WriteCharPacked(write[i]);
-                }
+                if (b) WriteCharPacked(write[i]);
             }
         }
 
@@ -1691,6 +1689,151 @@ namespace MLAPI.NetworkingManagerComponents.Binary
 
 
         // Read arrays
+        public StringBuilder ReadString(bool oneByteChars) => ReadString(null, oneByteChars);
+        public StringBuilder ReadString(StringBuilder builder = null, bool oneByteChars = false)
+        {
+            int expectedLength = (int)ReadUInt32Packed();
+            if (builder == null) builder = new StringBuilder(expectedLength);
+            else if (builder.Capacity + builder.Length < expectedLength) builder.Capacity = expectedLength + builder.Length;
+            for (int i = 0; i < expectedLength; ++i)
+                builder.Insert(i, oneByteChars ? (char)_ReadByte() : ReadChar());
+            return builder;
+        }
+
+        public StringBuilder ReadStringPacked(StringBuilder builder = null)
+        {
+            int expectedLength = (int)ReadUInt32Packed();
+            if (builder == null) builder = new StringBuilder(expectedLength);
+            else if (builder.Capacity + builder.Length < expectedLength) builder.Capacity = expectedLength + builder.Length;
+            for (int i = 0; i < expectedLength; ++i)
+                builder.Insert(i, ReadCharPacked());
+            return builder;
+        }
+
+        public StringBuilder ReadStringDiff(string compare, bool oneByteChars = false) => ReadStringDiff(null, compare, oneByteChars);
+        public StringBuilder ReadStringDiff(StringBuilder builder, string compare, bool oneByteChars = false)
+        {
+            int expectedLength = (int)ReadUInt32Packed();
+            if (builder == null) builder = new StringBuilder(expectedLength);
+            else if (builder.Capacity < expectedLength) builder.Capacity = expectedLength;
+            ulong dBlockStart = BitPosition + (ulong)(compare == null ? 0 : Math.Min(expectedLength, compare.Length));
+            ulong mapStart;
+            int compareLength = compare == null ? 0 : compare.Length;
+            for (int i = 0; i < expectedLength; ++i)
+            {
+                if (i >= compareLength || ReadBit())
+                {
+#if ARRAY_WRITE_PREMAP
+                    // Move to data section
+                    mapStart = BitPosition;
+                    BitPosition = dBlockStart;
+#endif
+                    // Read datum
+                    builder.Insert(i, oneByteChars ? (char)_ReadByte() : ReadChar());
+#if ARRAY_WRITE_PREMAP
+                    dBlockStart = BitPosition;
+                    // Return to mapping section
+                    BitPosition = mapStart;
+#endif
+                }
+                else if (i < compareLength) builder.Insert(i, compare[i]);
+            }
+            BitPosition = dBlockStart;
+            return builder;
+        }
+
+        public StringBuilder ReadStringDiff(StringBuilder compareAndBuffer, bool oneByteChars = false)
+        {
+            int expectedLength = (int)ReadUInt32Packed();
+            if (compareAndBuffer == null) throw new ArgumentNullException("Buffer cannot be null");
+            else if (compareAndBuffer.Capacity < expectedLength) compareAndBuffer.Capacity = expectedLength;
+            ulong dBlockStart = BitPosition + (ulong)Math.Min(expectedLength, compareAndBuffer.Length);
+            ulong mapStart;
+            for (int i = 0; i < expectedLength; ++i)
+            {
+                if (i >= compareAndBuffer.Length || ReadBit())
+                {
+#if ARRAY_WRITE_PREMAP
+                    // Move to data section
+                    mapStart = BitPosition;
+                    BitPosition = dBlockStart;
+#endif
+                    // Read datum
+                    compareAndBuffer.Remove(i, 1);
+                    compareAndBuffer.Insert(i, oneByteChars ? (char)_ReadByte() : ReadChar());
+#if ARRAY_WRITE_PREMAP
+                    dBlockStart = BitPosition;
+                    // Return to mapping section
+                    BitPosition = mapStart;
+#endif
+                }
+            }
+            BitPosition = dBlockStart;
+            return compareAndBuffer;
+        }
+
+        public StringBuilder ReadStringPackedDiff(string compare) => ReadStringPackedDiff(null, compare);
+        public StringBuilder ReadStringPackedDiff(StringBuilder builder, string compare)
+        {
+            int expectedLength = (int)ReadUInt32Packed();
+            if (builder == null) builder = new StringBuilder(expectedLength);
+            else if (builder.Capacity < expectedLength) builder.Capacity = expectedLength;
+            ulong dBlockStart = BitPosition + (ulong)(compare == null ? 0 : Math.Min(expectedLength, compare.Length));
+            ulong mapStart;
+            int compareLength = compare == null ? 0 : compare.Length;
+            for (int i = 0; i < expectedLength; ++i)
+            {
+                if (i >= compareLength || ReadBit())
+                {
+#if ARRAY_WRITE_PREMAP
+                    // Move to data section
+                    mapStart = BitPosition;
+                    BitPosition = dBlockStart;
+#endif
+                    // Read datum
+                    builder.Insert(i, ReadCharPacked());
+#if ARRAY_WRITE_PREMAP
+                    dBlockStart = BitPosition;
+                    // Return to mapping section
+                    BitPosition = mapStart;
+#endif
+                }
+                else if (i < compareLength) builder.Insert(i, compare[i]);
+            }
+            BitPosition = dBlockStart;
+            return builder;
+        }
+
+        public StringBuilder ReadStringPackedDiff(StringBuilder compareAndBuffer)
+        {
+            int expectedLength = (int)ReadUInt32Packed();
+            if (compareAndBuffer == null) throw new ArgumentNullException("Buffer cannot be null");
+            else if (compareAndBuffer.Capacity < expectedLength) compareAndBuffer.Capacity = expectedLength;
+            ulong dBlockStart = BitPosition + (ulong)Math.Min(expectedLength, compareAndBuffer.Length);
+            ulong mapStart;
+            for (int i = 0; i < expectedLength; ++i)
+            {
+                if (i >= compareAndBuffer.Length || ReadBit())
+                {
+#if ARRAY_WRITE_PREMAP
+                    // Move to data section
+                    mapStart = BitPosition;
+                    BitPosition = dBlockStart;
+#endif
+                    // Read datum
+                    compareAndBuffer.Remove(i, 1);
+                    compareAndBuffer.Insert(i, ReadCharPacked());
+#if ARRAY_WRITE_PREMAP
+                    dBlockStart = BitPosition;
+                    // Return to mapping section
+                    BitPosition = mapStart;
+#endif
+                }
+            }
+            BitPosition = dBlockStart;
+            return compareAndBuffer;
+        }
+
         public byte[] ReadByteArray(byte[] readTo = null, long knownLength = -1)
         {
             if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
