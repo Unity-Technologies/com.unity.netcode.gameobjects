@@ -313,7 +313,7 @@ namespace MLAPI.Data
         /// <returns></returns>
         public ulong GetConfig(bool cache = true)
         {
-            if (ConfigHash == null && cache)
+            if (ConfigHash != null && cache)
                 return ConfigHash.Value;
 
             using (BitWriter writer = BitWriter.Get())
