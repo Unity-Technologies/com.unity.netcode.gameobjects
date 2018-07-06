@@ -68,9 +68,13 @@ namespace MLAPI.MonoBehaviours.Core
         /// </summary>
         public bool isLocalPlayer => isPlayerObject && (OwnerClientId == NetworkingManager.singleton.LocalClientId || (OwnerClientId == NetworkingManager.singleton.NetworkConfig.NetworkTransport.HostDummyId && NetworkingManager.singleton.isHost));
         /// <summary>
-        /// Gets if the object is owned by the local player
+        /// Gets if the object is owned by the local player or if the object is the local player object
         /// </summary>
-        public bool isOwner => !isPlayerObject && (OwnerClientId == NetworkingManager.singleton.LocalClientId || (OwnerClientId == NetworkingManager.singleton.NetworkConfig.NetworkTransport.HostDummyId && NetworkingManager.singleton.isHost));
+        public bool isOwner => isLocalPlayer || isObjectOwner;
+        /// <summary>
+        /// Gets if the object is owned by the local player and this is not a player object
+        /// </summary>
+        public bool isObjectOwner => !isPlayerObject && (OwnerClientId == NetworkingManager.singleton.LocalClientId || (OwnerClientId == NetworkingManager.singleton.NetworkConfig.NetworkTransport.HostDummyId && NetworkingManager.singleton.isHost));
         /// <summary>
         /// Gets wheter or not the object is owned by anyone
         /// </summary>

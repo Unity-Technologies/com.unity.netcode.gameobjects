@@ -20,9 +20,13 @@ namespace MLAPI.MonoBehaviours.Core
         /// </summary>
         public bool isLocalPlayer => networkedObject.isLocalPlayer;
         /// <summary>
-        /// Gets if the object is owned by the local player
+        /// Gets if the object is owned by the local player or if the object is the local player object
         /// </summary>
         public bool isOwner => networkedObject.isOwner;
+        /// <summary>
+        /// Gets if the object is owned by the local player and this is not a player object
+        /// </summary>
+        public bool isObjectOwner => networkedObject.isObjectOwner;
         /// <summary>
         /// Gets if we are executing as server
         /// </summary>

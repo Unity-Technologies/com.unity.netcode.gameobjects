@@ -88,10 +88,6 @@ namespace MLAPI.MonoBehaviours.Core
         /// </summary>
         public Action OnServerStarted = null;
         /// <summary>
-        /// Wheter or not this NetworkedManager is an multiple instance of the singleton about to be removed.
-        /// </summary>
-        private bool isMultipleInstance = false;
-        /// <summary>
         /// Delegate type called when connection has been approved
         /// </summary>
         /// <param name="clientId">The clientId of the approved client</param>
@@ -596,25 +592,26 @@ namespace MLAPI.MonoBehaviours.Core
 
         private void OnEnable()
         {
-            if (singleton != null)
+            if (singleton != null && singleton != this)
             {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Multiple NetworkingManagers");
-                this.isMultipleInstance = true;
                 Destroy(this.gameObject);
-                return;
             }
-            singleton = this;
-            if (DontDestroy)
-                DontDestroyOnLoad(gameObject);
-            if (RunInBackground)
-                Application.runInBackground = true;
+            else
+            {
+                singleton = this;
+                if (DontDestroy)
+                    DontDestroyOnLoad(gameObject);
+                if (RunInBackground)
+                    Application.runInBackground = true;
+            }
         }
         
         private void OnDestroy()
         {
-            if (!isMultipleInstance) {
+            if (singleton != null && singleton == this)
+            {
                 singleton = null;
-                Shutdown();
+                Shutdown();  
             }
         }
 

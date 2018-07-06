@@ -3,6 +3,7 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
 {
     using MLAPI.NetworkingManagerComponents.Binary;
     using NUnit.Framework;
+    using System.Text;
 
     [TestFixture]
     public class BitStreamTest
@@ -551,6 +552,82 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
             Assert.That(longInData, Is.EqualTo(longOutData));
             Assert.That(intInData, Is.EqualTo(intOutData));
             Assert.That(doubleInData, Is.EqualTo(doubleOutData));
+        }
+
+        [Test]
+        public void TestString()
+        {
+            string testString = "Hello, World";
+            BitStream outStream = new BitStream();
+            outStream.WriteString(testString);
+            outStream.WriteString(testString, true);
+
+            BitStream inStream = new BitStream(outStream.GetBuffer());
+            StringBuilder readBuilder = inStream.ReadString();
+            StringBuilder readBuilderSingle = inStream.ReadString(true);
+
+            Assert.That(readBuilder.ToString(), Is.EqualTo(testString));
+            Assert.That(readBuilderSingle.ToString(), Is.EqualTo(testString));
+        }
+
+        [Test]
+        public void TestStringPacked()
+        {
+            string testString = "Hello, World";
+            BitStream outStream = new BitStream();
+            outStream.WriteStringPacked(testString);
+
+            BitStream inStream = new BitStream(outStream.GetBuffer());
+            StringBuilder readBuilder = inStream.ReadStringPacked();
+
+            Assert.That(readBuilder.ToString(), Is.EqualTo(testString));
+        }
+
+        [Test]
+        public void TestStringDiff()
+        {
+            string testString =     "Hello, World";  // The simulated "new" value of testString
+            string originalString = "Heyo,  World";  // This is what testString supposedly changed *from*
+            BitStream outStream = new BitStream();
+            outStream.WriteStringDiff(testString, originalString);
+            outStream.WriteStringDiff(testString, originalString, true);
+
+            BitStream inStream = new BitStream(outStream.GetBuffer());
+            // Read regular diff
+            StringBuilder readBuilder = inStream.ReadStringDiff(originalString);
+
+            // Read diff directly to StringBuilder
+            inStream.BitPosition = 0;
+            StringBuilder stringCompare = new StringBuilder(originalString);
+            inStream.ReadStringDiff(stringCompare);
+
+            // Read single-byte diff
+            StringBuilder byteBuilder = inStream.ReadStringDiff(originalString, true);
+
+            Assert.That(readBuilder.ToString(), Is.EqualTo(testString));
+            Assert.That(stringCompare.ToString(), Is.EqualTo(testString));
+            Assert.That(byteBuilder.ToString(), Is.EqualTo(testString));
+        }
+
+        [Test]
+        public void TestStringPackedDiff()
+        {
+            string testString = "Hello, World";  // The simulated "new" value of testString
+            string originalString = "Heyo,  World";  // This is what testString supposedly changed *from*
+            BitStream outStream = new BitStream();
+            outStream.WriteStringPackedDiff(testString, originalString);
+
+            BitStream inStream = new BitStream(outStream.GetBuffer());
+            // Read regular diff
+            StringBuilder readBuilder = inStream.ReadStringPackedDiff(originalString);
+
+            // Read diff directly to StringBuilder
+            inStream.BitPosition = 0;
+            StringBuilder stringCompare = new StringBuilder(originalString);
+            inStream.ReadStringPackedDiff(stringCompare);
+
+            Assert.That(readBuilder.ToString(), Is.EqualTo(testString));
+            Assert.That(stringCompare.ToString(), Is.EqualTo(testString));
         }
     }
 }
