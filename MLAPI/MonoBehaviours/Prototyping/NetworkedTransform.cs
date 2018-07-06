@@ -49,6 +49,7 @@ namespace MLAPI.MonoBehaviours.Prototyping
         /// The min degrees to rotate before a send it sent
         /// </summary>
         public float MinDegrees = 1.5f;
+        public bool ExtrapolatePosition = true;
         private float lerpT;
         private Vector3 lerpStartPos;
         private Quaternion lerpStartRot;
@@ -60,6 +61,7 @@ namespace MLAPI.MonoBehaviours.Prototyping
         private Quaternion lastSentRot;
         
         public bool EnableRange;
+        public bool EnableNonProvokedResendChecks;
         public AnimationCurve DistanceSendrate = AnimationCurve.Constant(0, 500, 20);
         private readonly Dictionary<uint, ClientSendInfo> clientSendInfo = new Dictionary<uint, ClientSendInfo>();
 
@@ -79,6 +81,8 @@ namespace MLAPI.MonoBehaviours.Prototyping
                 MinDegrees = 0;
             if (MinMeters < 0)
                 MinMeters = 0;
+            if (EnableNonProvokedResendChecks && !EnableRange)
+                EnableNonProvokedResendChecks = false;
         }
         
         private float GetTimeForLerp(Vector3 pos1, Vector3 pos2)
@@ -151,20 +155,27 @@ namespace MLAPI.MonoBehaviours.Prototyping
                         lerpT = 1f;
                     }
 
-                    if (isServer || !EnableRange)
+                    if (isServer || !EnableRange || !AssumeSyncedSends)
                         lerpT += Time.unscaledDeltaTime / FixedSendsPerSecond;
                     else
                     {
                         Vector3 myPos = NetworkingManager.singleton.ConnectedClients[NetworkingManager.singleton.LocalClientId].PlayerObject.transform.position;
                         lerpT += Time.unscaledDeltaTime / GetTimeForLerp(transform.position, myPos);
                     }
-                    
-                    transform.position = Vector3.Lerp(lerpStartPos, lerpEndPos, lerpT);
-                    transform.rotation = Quaternion.Slerp(lerpStartRot, lerpEndRot, lerpT);
+
+                    if (ExtrapolatePosition)
+                        transform.position = Vector3.LerpUnclamped(lerpStartPos, lerpEndPos, lerpT);
+                    else
+                        transform.position = Vector3.Lerp(lerpStartPos, lerpEndPos, lerpT);
+
+                    if (ExtrapolatePosition)
+                        transform.rotation = Quaternion.SlerpUnclamped(lerpStartRot, lerpEndRot, lerpT);
+                    else
+                        transform.rotation = Quaternion.Slerp(lerpStartRot, lerpEndRot, lerpT);
                 }
             }
 
-            if (isServer) CheckForMissedSends();
+            if (isServer && EnableRange && EnableNonProvokedResendChecks) CheckForMissedSends();
         }
 
         private void OnRecieveTransformFromServer(uint clientId, BitReader reader)
@@ -289,6 +300,16 @@ namespace MLAPI.MonoBehaviours.Prototyping
         {
             for (int i = 0; i < NetworkingManager.singleton.ConnectedClientsList.Count; i++)
             {
+                if (!clientSendInfo.ContainsKey(NetworkingManager.singleton.ConnectedClientsList[i].ClientId))
+                {
+                    clientSendInfo.Add(NetworkingManager.singleton.ConnectedClientsList[i].ClientId, new ClientSendInfo()
+                    {
+                        clientId = NetworkingManager.singleton.ConnectedClientsList[i].ClientId,
+                        lastMissedPosition = null,
+                        lastMissedRotation = null,
+                        lastSent = 0
+                    });
+                }
                 ClientSendInfo info = clientSendInfo[NetworkingManager.singleton.ConnectedClientsList[i].ClientId];
                 Vector3 receiverPosition = NetworkingManager.singleton.ConnectedClientsList[i].PlayerObject.transform.position;
                 Vector3 senderPosition = NetworkingManager.singleton.ConnectedClients[OwnerClientId].PlayerObject.transform.position;
