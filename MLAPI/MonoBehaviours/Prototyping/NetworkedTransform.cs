@@ -154,6 +154,8 @@ namespace MLAPI.MonoBehaviours.Prototyping
 
         private void OnRecieveTransformFromServer(uint clientId, BitReader reader)
         {
+            if (!enabled) return;
+            
             byte[] data = reader.ReadByteArray();
             using (MemoryStream stream = new MemoryStream(data))
             {
@@ -178,6 +180,8 @@ namespace MLAPI.MonoBehaviours.Prototyping
 
         private void OnRecieveTransformFromClient(uint clientId, BitReader reader)
         {
+            if (!enabled) return;
+            
             byte[] data = reader.ReadByteArray();
             using (MemoryStream readStream = new MemoryStream(data))
             {
@@ -232,6 +236,18 @@ namespace MLAPI.MonoBehaviours.Prototyping
                         }
                     }
                 }
+            }
+        }
+
+        public void Teleport(Vector3 position, Quaternion rotation)
+        {   
+            if (InterpolateServer && isServer || isClient)
+            {
+                lerpStartPos = position;
+                lerpStartRot = rotation;
+                lerpEndPos = position;
+                lerpEndRot = rotation;
+                lerpT = 0;
             }
         }
     }
