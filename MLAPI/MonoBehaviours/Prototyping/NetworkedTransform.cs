@@ -65,6 +65,10 @@ namespace MLAPI.MonoBehaviours.Prototyping
 
         private static byte[] positionUpdateBuffer = new byte[24];
 
+        public delegate bool MoveValidationDelegate(Vector3 oldPos, Vector3 newPos);
+
+        public MoveValidationDelegate IsMoveValidDelegate = null;
+
         private void OnValidate()
         {
             if (!AssumeSyncedSends && InterpolatePosition)
@@ -205,6 +209,13 @@ namespace MLAPI.MonoBehaviours.Prototyping
                     float xRot = bReader.ReadSingle();
                     float yRot = bReader.ReadSingle();
                     float zRot = bReader.ReadSingle();
+                    
+                    if (IsMoveValidDelegate != null && !IsMoveValidDelegate(lerpEndPos, new Vector3(xPos, yPos, zPos)))
+                    {
+                        //Invalid move!
+                        //TODO: Add rubber band (just a message telling them to go back)
+                        return;
+                    }
 
                     if (InterpolateServer)
                     {
