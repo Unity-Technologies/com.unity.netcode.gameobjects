@@ -1,4 +1,5 @@
-﻿using MLAPI.MonoBehaviours.Core;
+﻿using System.Collections.Generic;
+using MLAPI.MonoBehaviours.Core;
 using MLAPI.NetworkingManagerComponents.Binary;
 using System.IO;
 using UnityEngine;
@@ -11,11 +12,16 @@ namespace MLAPI.MonoBehaviours.Prototyping
     [AddComponentMenu("MLAPI/NetworkedTransform")]
     public class NetworkedTransform : NetworkedBehaviour
     {
-        /// <summary>
-        /// Sends per second
-        /// </summary>
-        [Range(0f, 120f)]
-        public float SendsPerSecond = 20;
+        public class ClientSendInfo
+        {
+            public uint clientId;
+            public float lastSent;
+            public Vector3? lastMissedPosition;
+            public Quaternion? lastMissedRotation;
+        }
+
+        [Range(0, 120)]
+        public float FixedSendsPerSecond = 20f;
         /// <summary>
         /// Is the sends per second assumed to be the same across all instances
         /// </summary>
@@ -43,7 +49,6 @@ namespace MLAPI.MonoBehaviours.Prototyping
         /// The min degrees to rotate before a send it sent
         /// </summary>
         public float MinDegrees = 1.5f;
-        private float timeForLerp;
         private float lerpT;
         private Vector3 lerpStartPos;
         private Quaternion lerpStartRot;
@@ -53,15 +58,10 @@ namespace MLAPI.MonoBehaviours.Prototyping
         private float lastSendTime;
         private Vector3 lastSentPos;
         private Quaternion lastSentRot;
-        /// <summary>
-        /// Should proximity be enabled
-        /// </summary>
-        public bool EnableProximity = false;
-        /// <summary>
-        /// The distance to use for proximity
-        /// </summary>
-        [Tooltip("If enable proximity is turned on, on clients within this range will be recieving position updates from the server")]
-        public float ProximityRange = 50;
+        
+        public bool EnableRange;
+        public AnimationCurve DistanceSendrate = AnimationCurve.Constant(0, 500, 20);
+        private readonly Dictionary<uint, ClientSendInfo> clientSendInfo = new Dictionary<uint, ClientSendInfo>();
 
         private static byte[] positionUpdateBuffer = new byte[24];
 
@@ -77,6 +77,11 @@ namespace MLAPI.MonoBehaviours.Prototyping
                 MinMeters = 0;
         }
         
+        private float GetTimeForLerp(Vector3 pos1, Vector3 pos2)
+        {
+            return 1f / DistanceSendrate.Evaluate(Vector3.Distance(pos1, pos2));
+        }
+        
         /// <summary>
         /// Registers message handlers
         /// </summary>
@@ -89,10 +94,6 @@ namespace MLAPI.MonoBehaviours.Prototyping
             if (isClient)
             {
                 RegisterMessageHandler("MLAPI_OnRecieveTransformFromServer", OnRecieveTransformFromServer);
-            }
-            if(AssumeSyncedSends)
-            {
-                timeForLerp = 1f / SendsPerSecond;
             }
 
             lastSentRot = transform.rotation;
@@ -110,7 +111,7 @@ namespace MLAPI.MonoBehaviours.Prototyping
             if(isOwner || isLocalPlayer || (OwnerClientId == NetworkingManager.singleton.NetworkConfig.NetworkTransport.InvalidDummyId && isServer))
             {
                 //We own the object OR we are server and the object is not owned by anyone OR we are the object.
-                if(NetworkingManager.singleton.NetworkTime - lastSendTime >= timeForLerp && (Vector3.Distance(transform.position, lastSentPos) > MinMeters || Quaternion.Angle(transform.rotation, lastSentRot) > MinDegrees))
+                if(NetworkingManager.singleton.NetworkTime - lastSendTime >= (1f / FixedSendsPerSecond) && (Vector3.Distance(transform.position, lastSentPos) > MinMeters || Quaternion.Angle(transform.rotation, lastSentRot) > MinDegrees))
                 {
                     lastSendTime = NetworkingManager.singleton.NetworkTime;
                     lastSentPos = transform.position;
@@ -145,11 +146,21 @@ namespace MLAPI.MonoBehaviours.Prototyping
                         //Snap, set T to 1 (100% of the lerp)
                         lerpT = 1f;
                     }
-                    lerpT += Time.unscaledDeltaTime / timeForLerp;
+
+                    if (isServer || !EnableRange)
+                        lerpT += Time.unscaledDeltaTime / FixedSendsPerSecond;
+                    else
+                    {
+                        Vector3 myPos = NetworkingManager.singleton.ConnectedClients[NetworkingManager.singleton.LocalClientId].PlayerObject.transform.position;
+                        lerpT += Time.unscaledDeltaTime / GetTimeForLerp(transform.position, myPos);
+                    }
+                    
                     transform.position = Vector3.Lerp(lerpStartPos, lerpEndPos, lerpT);
                     transform.rotation = Quaternion.Slerp(lerpStartRot, lerpEndRot, lerpT);
                 }
             }
+
+            if (isServer) CheckForMissedSends();
         }
 
         private void OnRecieveTransformFromServer(uint clientId, BitReader reader)
@@ -219,14 +230,38 @@ namespace MLAPI.MonoBehaviours.Prototyping
                             writer.Write(yRot);
                             writer.Write(zRot);
                         }
-                        if (EnableProximity)
+                        if (EnableRange)
                         {
                             // For instead of Foreach?! TODO!!!
-                            for (uint i = 0; i < NetworkingManager.singleton.ConnectedClients.Count; i++)
+                            for (int i = 0; i < NetworkingManager.singleton.ConnectedClientsList.Count; i++)
                             {
-                                if (Vector3.Distance(NetworkingManager.singleton.ConnectedClients[i].PlayerObject.transform.position, transform.position) <= ProximityRange)
+                                if (!clientSendInfo.ContainsKey(NetworkingManager.singleton.ConnectedClientsList[i].ClientId))
                                 {
-                                    SendToClientTarget(NetworkingManager.singleton.ConnectedClients[i].ClientId, "MLAPI_OnRecieveTransformFromServer", "MLAPI_POSITION_UPDATE", positionUpdateBuffer, true);
+                                    clientSendInfo.Add(NetworkingManager.singleton.ConnectedClientsList[i].ClientId, new ClientSendInfo()
+                                    {
+                                        clientId = NetworkingManager.singleton.ConnectedClientsList[i].ClientId,
+                                        lastMissedPosition = null,
+                                        lastMissedRotation = null,
+                                        lastSent = 0
+                                    });
+                                }
+                                
+                                ClientSendInfo info = clientSendInfo[NetworkingManager.singleton.ConnectedClientsList[i].ClientId];
+                                Vector3 receiverPosition = NetworkingManager.singleton.ConnectedClientsList[i].PlayerObject.transform.position;
+                                Vector3 senderPosition = NetworkingManager.singleton.ConnectedClients[OwnerClientId].PlayerObject.transform.position;
+                                
+                                if (NetworkingManager.singleton.NetworkTime - info.lastSent >= GetTimeForLerp(receiverPosition, senderPosition))
+                                {
+                                    info.lastSent = NetworkingManager.singleton.NetworkTime;
+                                    info.lastMissedPosition = null;
+                                    info.lastMissedRotation = null;
+                                    
+                                    SendToClientTarget(NetworkingManager.singleton.ConnectedClientsList[i].ClientId, "MLAPI_OnRecieveTransformFromServer", "MLAPI_POSITION_UPDATE", positionUpdateBuffer, true);
+                                }
+                                else
+                                {
+                                    info.lastMissedPosition = new Vector3(xPos, yPos, zPos);
+                                    info.lastMissedRotation = Quaternion.Euler(xRot, yRot, zRot);
                                 }
                             }
                         }
@@ -235,6 +270,25 @@ namespace MLAPI.MonoBehaviours.Prototyping
                             SendToNonLocalClientsTarget("MLAPI_OnRecieveTransformFromServer", "MLAPI_POSITION_UPDATE", positionUpdateBuffer, true);
                         }
                     }
+                }
+            }
+        }
+
+        private void CheckForMissedSends()
+        {
+            for (int i = 0; i < NetworkingManager.singleton.ConnectedClientsList.Count; i++)
+            {
+                ClientSendInfo info = clientSendInfo[NetworkingManager.singleton.ConnectedClientsList[i].ClientId];
+                Vector3 receiverPosition = NetworkingManager.singleton.ConnectedClientsList[i].PlayerObject.transform.position;
+                Vector3 senderPosition = NetworkingManager.singleton.ConnectedClients[OwnerClientId].PlayerObject.transform.position;
+                                
+                if (NetworkingManager.singleton.NetworkTime - info.lastSent >= GetTimeForLerp(receiverPosition, senderPosition))
+                {
+                    info.lastSent = NetworkingManager.singleton.NetworkTime;
+                    info.lastMissedPosition = null;
+                    info.lastMissedRotation = null;
+                                    
+                    SendToClientTarget(NetworkingManager.singleton.ConnectedClientsList[i].ClientId, "MLAPI_OnRecieveTransformFromServer", "MLAPI_POSITION_UPDATE", positionUpdateBuffer, true);
                 }
             }
         }
