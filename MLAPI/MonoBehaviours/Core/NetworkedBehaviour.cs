@@ -928,7 +928,6 @@ namespace MLAPI.MonoBehaviours.Core
         #region NetworkedVar
 
         bool networkedVarInit = false;
-        const string networkedVarTypeName = "NetworkedVar`1";
         List<INetworkedVar> networkedVarFields = new List<INetworkedVar>();
         internal void NetworkedVarInit()
         {
@@ -940,7 +939,7 @@ namespace MLAPI.MonoBehaviours.Core
             for (int i = 0; i < sortedFields.Length; i++)
             {
                 Type fieldType = sortedFields[i].FieldType;
-                if (fieldType.Name == networkedVarTypeName)
+                if (fieldType == typeof(NetworkedVar<>))
                 {
                     Type genericTypeDefinition = typeof(NetworkedVar<>);
                     Type genericType = genericTypeDefinition.MakeGenericType(fieldType.GetGenericArguments());
@@ -963,7 +962,7 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
 
-            networkedVarFields[index].HandleValueChangedByRemote(reader);
+            networkedVarFields[index].SetFieldFromReader(reader);
         }
 
         internal void SendNetworkedVar(INetworkedVar networkedVar, BitWriter varWriter)

@@ -91,6 +91,7 @@
     <Compile Include="Data\Channel.cs" />
     <Compile Include="Data\AttributeMessageMode.cs" />
     <Compile Include="Data\NetworkedVar.cs" />
+    <Compile Include="Data\NetworkedVarMeta.cs" />
     <Compile Include="Data\Transports\ChannelType.cs" />
     <Compile Include="Data\FieldType.cs" />
     <Compile Include="Attributes\SyncedVar.cs" />
