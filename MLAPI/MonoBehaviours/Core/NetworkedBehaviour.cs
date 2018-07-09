@@ -968,14 +968,16 @@ namespace MLAPI.MonoBehaviours.Core
 
         internal void SendNetworkedVar(INetworkedVar networkedVar, BitWriter varWriter)
         {
-            BitWriter writer = BitWriter.Get();
-            writer.WriteUShort(GetNetworkedVarIndex(networkedVar));
-            writer.WriteWriter(varWriter);
+            using (BitWriter writer = BitWriter.Get())
+            {
+                writer.WriteUShort(GetNetworkedVarIndex(networkedVar));
+                writer.WriteWriter(varWriter);
 
-            if (isClient)
-                InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerNetId, "MLAPI_NETWORKED_VAR_UPDATE", "MLAPI_INTERNAL", writer, null, networkId, networkedObject.GetOrderIndex(this));
-            else
-                InternalMessageHandler.Send(OwnerClientId, "MLAPI_NETWORKED_VAR_UPDATE", "MLAPI_INTERNAL", writer, null, networkId, networkedObject.GetOrderIndex(this));
+                if (isClient)
+                    InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerNetId, "MLAPI_NETWORKED_VAR_UPDATE", "MLAPI_INTERNAL", writer, null, networkId, networkedObject.GetOrderIndex(this));
+                else
+                    InternalMessageHandler.Send(OwnerClientId, "MLAPI_NETWORKED_VAR_UPDATE", "MLAPI_INTERNAL", writer, null, networkId, networkedObject.GetOrderIndex(this));
+            }
         } 
 
         internal ushort GetNetworkedVarIndex(INetworkedVar networkedVar)

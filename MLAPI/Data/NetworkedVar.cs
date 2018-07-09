@@ -32,11 +32,13 @@ namespace MLAPI.Data
             {
                 if (!EqualityComparer<T>.Default.Equals(InternalValue, value)) // Note: value types of T should implement IEquatable to avoid boxing by default comparer
                 {
-                    BitWriter writer = BitWriter.Get();
-                    FieldTypeHelper.WriteFieldType(writer, value, InternalValue);
-                    InternalValue = value;
-                    networkedBehaviour.SendNetworkedVar(this, writer);
-                    MonoBehaviour.print("sending networked var to remote");
+                    using (BitWriter writer = BitWriter.Get())
+                    {
+                        FieldTypeHelper.WriteFieldType(writer, value, InternalValue);
+                        InternalValue = value;
+                        networkedBehaviour.SendNetworkedVar(this, writer);
+                        MonoBehaviour.print("sending networked var to remote");
+                    }
                 }
             }
         }
