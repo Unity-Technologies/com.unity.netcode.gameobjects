@@ -1,5 +1,6 @@
 ﻿using MLAPI.NetworkingManagerComponents.Binary;
 using MLAPI.MonoBehaviours.Core;
+using MLAPI.NetworkingManagerComponents.Core;
 
 namespace MLAPI.Data
 {
@@ -106,10 +107,16 @@ namespace MLAPI.Data
         {
             //TODO: Write field
         }
+
+        public string GetChannel()
+        {
+            return Settings.SendChannel;
+        }
     }
 
     public interface INetworkedVar
     {
+        string GetChannel();
         void ResetDirty();
         bool IsDirty();
         bool CanClientWrite(uint clientId);

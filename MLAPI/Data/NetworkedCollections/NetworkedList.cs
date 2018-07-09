@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using MLAPI.MonoBehaviours.Core;
 using MLAPI.NetworkingManagerComponents.Binary;
+using MLAPI.NetworkingManagerComponents.Core;
 
 namespace MLAPI.Data.NetworkedCollections
 {
@@ -37,6 +38,11 @@ namespace MLAPI.Data.NetworkedCollections
         public bool IsDirty()
         {
             return dirtyEvents.Count > 0;
+        }
+
+        public string GetChannel()
+        {
+            return Settings.SendChannel;
         }
 
         public bool CanClientWrite(uint clientId)

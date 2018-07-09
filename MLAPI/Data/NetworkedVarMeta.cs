@@ -1,4 +1,6 @@
-﻿namespace MLAPI.Data
+﻿using MLAPI.Data.Transports;
+
+namespace MLAPI.Data
 {
     public class NetworkedVarSettings
     {
@@ -8,8 +10,9 @@
         public NetworkedVarPermissionsDelegate ReadPermissionCallback = null;
         public bool SendOnChange = false;
         public float SendDelay = 0.1f;
+        public string SendChannel = "MLAPI_INTERNAL";
         
-        internal NetworkedVarSettings()
+        public NetworkedVarSettings()
         {
             
         }

@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using MLAPI.MonoBehaviours.Core;
 using MLAPI.NetworkingManagerComponents.Binary;
+using MLAPI.NetworkingManagerComponents.Core;
 
 namespace MLAPI.Data.NetworkedCollections
 {
@@ -32,6 +33,11 @@ namespace MLAPI.Data.NetworkedCollections
         public void ResetDirty()
         {
             dirtyEvents.Clear();
+        }
+
+        public string GetChannel()
+        {
+            return Settings.SendChannel;
         }
 
         public void SetDeltaFromReader(BitReader reader)

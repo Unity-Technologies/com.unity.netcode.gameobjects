@@ -928,6 +928,8 @@ namespace MLAPI.MonoBehaviours.Core
         #region NetworkedVar
 
         private bool networkedVarInit = false;
+        private readonly List<HashSet<int>> channelMappedVarIndexes = new List<HashSet<int>>();
+        private readonly List<string> channelsForVarGroups = new List<string>();
         internal readonly List<INetworkedVar> networkedVarFields = new List<INetworkedVar>();
         internal void NetworkedVarInit()
         {
@@ -956,34 +958,62 @@ namespace MLAPI.MonoBehaviours.Core
                     networkedVarFields.Add(instance);
                 }
             }
+
+            //Create index map for channels
+            Dictionary<string, int> firstLevelIndex = new Dictionary<string, int>();
+            int secondLevelCounter = 0;
+            for (int i = 0; i < networkedVarFields.Count; i++)
+            {
+                string channel = networkedVarFields[i].GetChannel(); //Cache this here. Some developers are stupid. You don't know what shit they will do in their methods
+                if (!firstLevelIndex.ContainsKey(channel))
+                {
+                    firstLevelIndex.Add(channel, secondLevelCounter);
+                    channelsForVarGroups.Add(channel);
+                    secondLevelCounter++;
+                }
+                channelMappedVarIndexes[firstLevelIndex[channel]].Add(i);
+            }
         }
 
         internal void NetworkedVarUpdate()
         {
+            if (!networkedVarInit)
+                NetworkedVarInit();
             //TODO: Do this efficiently.
 
             for (int i = 0; i < NetworkingManager.singleton.ConnectedClientsList.Count; i++)
             {
-                using (BitWriter writer = BitWriter.Get())
+                //This iterates over every "channel group".
+                for (int j = 0; j < channelMappedVarIndexes.Count; j++)
                 {
-                    writer.WriteUInt(networkId);
-                    writer.WriteUShort(networkedObject.GetOrderIndex(this));
-
-                    uint clientId = NetworkingManager.singleton.ConnectedClientsList[i].ClientId;
-                    for (int j = 0; j < networkedVarFields.Count; j++)
+                    using (BitWriter writer = BitWriter.Get())
                     {
-                        bool isDirty = networkedVarFields[j].IsDirty(); //cache this here. You never know what operations users will do in the dirty methods
-                        writer.WriteBool(isDirty);
-                        if (isDirty && (!isServer || networkedVarFields[j].CanClientRead(clientId)))
-                        {
-                            networkedVarFields[j].WriteDeltaToWriter(writer);
-                        }
-                    }
+                        writer.WriteUInt(networkId);
+                        writer.WriteUShort(networkedObject.GetOrderIndex(this));
 
-                    if (isServer)
-                        InternalMessageHandler.Send(clientId, "MLAPI_NETWORKED_VAR_DELTA", "MLAPI_INTERNAL", writer, null);
-                    else
-                        InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerNetId, "MLAPI_NETWORKED_VAR_DELTA", "MLAPI_INTERNAL", writer, null);
+                        uint clientId = NetworkingManager.singleton.ConnectedClientsList[i].ClientId;
+                        for (int k = 0; k < networkedVarFields.Count; k++)
+                        {
+                            if (!channelMappedVarIndexes[j].Contains(k))
+                            {
+                                //This var does not belong to the currently iterating channel group.
+                                writer.WriteBool(false);
+                                continue;
+                            }
+
+                            bool isDirty = networkedVarFields[k].IsDirty(); //cache this here. You never know what operations users will do in the dirty methods
+                            writer.WriteBool(isDirty);
+                            if (isDirty && (!isServer || networkedVarFields[k].CanClientRead(clientId)))
+                            {
+                                networkedVarFields[k].WriteDeltaToWriter(writer);
+                            }
+                        }
+
+                        if (isServer)
+                            InternalMessageHandler.Send(clientId, "MLAPI_NETWORKED_VAR_DELTA", channelsForVarGroups[j], writer, null);
+                        else
+                            InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerNetId, "MLAPI_NETWORKED_VAR_DELTA", channelsForVarGroups[j], writer, null);
+                    }
                 }
             }
 
