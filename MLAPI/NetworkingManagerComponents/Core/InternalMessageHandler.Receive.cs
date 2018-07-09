@@ -378,7 +378,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 return;
             }
 
-            SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).HandleNetworkedVarDeltas(reader);
+            SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).HandleNetworkedVarDeltas(reader, clientId);
         }
 
         internal static void HandleNetworkedVarUpdate(uint clientId, BitReader reader, int channelId)
@@ -397,7 +397,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 return;
             }
 
-            SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).HandleNetworkedVarUpdate(reader);
+            SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).HandleNetworkedVarUpdate(reader, clientId);
         }
     }
 }

@@ -993,23 +993,49 @@ namespace MLAPI.MonoBehaviours.Core
             }
         }
 
-        internal void HandleNetworkedVarDeltas(BitReader reader)
+        internal void HandleNetworkedVarDeltas(BitReader reader, uint clientId)
         {
             for (int i = 0; i < networkedVarFields.Count; i++)
             {
                 if (!reader.ReadBool())
                     continue;
+
+                if (isServer && !networkedVarFields[i].CanClientWrite(clientId))
+                {
+                    //This client wrote somewhere they are not allowed. This is critical
+                    //We can't just skip this field. Because we don't actually know how to dummy read
+                    //That is, we don't know how many bytes to skip. Because the interface doesn't have a 
+                    //Read that gives us the value. Only a Read that applies the value straight away
+                    //A dummy read COULD be added to the interface for this situation, but it's just being too nice.
+                    //This is after all a developer fault. A critical error should be fine.
+                    // - TwoTen
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Client wrote to NetworkedVar without permission. No more variables can be read. This is critical");
+                    return;
+                }
 
                 networkedVarFields[i].SetDeltaFromReader(reader);
             }
         }
 
-        internal void HandleNetworkedVarUpdate(BitReader reader)
+        internal void HandleNetworkedVarUpdate(BitReader reader, uint clientId)
         {
             for (int i = 0; i < networkedVarFields.Count; i++)
             {
                 if (!reader.ReadBool())
                     continue;
+
+                if (isServer && !networkedVarFields[i].CanClientWrite(clientId))
+                {
+                    //This client wrote somewhere they are not allowed. This is critical
+                    //We can't just skip this field. Because we don't actually know how to dummy read
+                    //That is, we don't know how many bytes to skip. Because the interface doesn't have a 
+                    //Read that gives us the value. Only a Read that applies the value straight away
+                    //A dummy read COULD be added to the interface for this situation, but it's just being too nice.
+                    //This is after all a developer fault. A critical error should be fine.
+                    // - TwoTen
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Client wrote to NetworkedVar without permission. No more variables can be read. This is critical");
+                    return;
+                }
 
                 networkedVarFields[i].SetFieldFromReader(reader);
             }
