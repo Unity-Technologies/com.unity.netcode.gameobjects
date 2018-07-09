@@ -246,6 +246,25 @@ namespace MLAPI.NetworkingManagerComponents.Core
             SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate();
         }
 
+        internal static void HandleNetworkedVarChangedByRemote(uint clientId, BitReader reader, int channelId)
+        {
+            uint netId = reader.ReadUInt();
+            ushort orderIndex = reader.ReadUShort();
+
+            if (!SpawnManager.spawnedObjects.ContainsKey(netId))
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkedVar message recieved for a non existant object with id: " + netId);
+                return;
+            }
+            else if (SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex) == null)
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkedVar message recieved for a non existant behaviour");
+                return;
+            }
+
+            SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).HandleNetworkedVarChangedByRemote(reader);
+        }
+
         internal static void HandleAddObjects(uint clientId, BitReader reader, int channelId)
         {
             if (netManager.NetworkConfig.HandleObjectSpawning)

@@ -100,6 +100,7 @@ namespace MLAPI.MonoBehaviours.Core
         {
             CacheAttributedMethods();
             WarnUnityReflectionMethodUse();
+            NetworkedVarInit();
         }
 
         private void WarnUnityReflectionMethodUse()
@@ -921,7 +922,74 @@ namespace MLAPI.MonoBehaviours.Core
             }
             return dirty;
         }
-        
+
+        #endregion
+
+        #region NetworkedVar
+
+        bool networkedVarInit = false;
+        const string networkedVarTypeName = "NetworkedVar`1";
+        List<INetworkedVar> networkedVarFields = new List<INetworkedVar>();
+        internal void NetworkedVarInit()
+        {
+            if (networkedVarInit)
+                return;
+            networkedVarInit = true;
+
+            FieldInfo[] sortedFields = GetType().GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy | BindingFlags.Instance).OrderBy(x => x.Name).ToArray();
+            for (int i = 0; i < sortedFields.Length; i++)
+            {
+                Type fieldType = sortedFields[i].FieldType;
+                if (fieldType.Name == networkedVarTypeName)
+                {
+                    Type genericTypeDefinition = typeof(NetworkedVar<>);
+                    Type genericType = genericTypeDefinition.MakeGenericType(fieldType.GetGenericArguments());
+                    INetworkedVar instance = (INetworkedVar)Activator.CreateInstance(genericType, true);
+
+                    sortedFields[i].SetValue(this, instance);
+                    instance.SetNetworkedBehaviour(this);
+
+                    networkedVarFields.Add((INetworkedVar)instance);
+                }
+            }
+        }
+
+        internal void HandleNetworkedVarChangedByRemote(BitReader reader)
+        {
+            ushort index = reader.ReadUShort();
+            if (index >= networkedVarFields.Count)
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkedVar index out of range");
+                return;
+            }
+
+            networkedVarFields[index].HandleValueChangedByRemote(reader);
+        }
+
+        internal void SendNetworkedVar(INetworkedVar networkedVar, BitWriter varWriter)
+        {
+            BitWriter writer = BitWriter.Get();
+            writer.WriteUShort(GetNetworkedVarIndex(networkedVar));
+            writer.WriteWriter(varWriter);
+
+            if (isClient)
+                InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerNetId, "MLAPI_NETWORKED_VAR_UPDATE", "MLAPI_INTERNAL", writer, null, networkId, networkedObject.GetOrderIndex(this));
+            else
+                InternalMessageHandler.Send(OwnerClientId, "MLAPI_NETWORKED_VAR_UPDATE", "MLAPI_INTERNAL", writer, null, networkId, networkedObject.GetOrderIndex(this));
+        } 
+
+        internal ushort GetNetworkedVarIndex(INetworkedVar networkedVar)
+        {
+            int index = networkedVarFields.IndexOf(networkedVar);
+            if (index == -1)
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogWarning("Unable to find NetworkedVar instance");
+                return 0;
+            }
+
+            return (ushort)index;
+        }
+
         #endregion
 
         #region SEND METHODS
