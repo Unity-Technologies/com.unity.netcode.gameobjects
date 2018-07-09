@@ -29,27 +29,22 @@ namespace MLAPI.Data
             }
             set
             {
-                if (Settings.SendOnChange)
-                {
-                    IsDirty = false;
-                    LastSyncedTime = NetworkingManager.singleton.NetworkTime;
-                    InternalValue = value;
-                    //TODO: Send
-                }
-                else
-                {
-                    InternalValue = value;
-                    IsDirty = true;
-                }
+                IsDirty = true;
+                InternalValue = value;
             }
         }
 
-        bool INetworkedVar.NeedsDirtySync()
+        void INetworkedVar.OnSynced()
         {
-            if (!IsDirty && !Settings.SendOnChange && NetworkingManager.singleton.NetworkTime - LastSyncedTime >= Settings.SendDelay)
-            {
-                IsDirty = true;
-            }
+            IsDirty = false;
+            LastSyncedTime = NetworkingManager.singleton.NetworkTime;
+        }
+
+        bool INetworkedVar.IsDirty()
+        {
+            if (!IsDirty) return false;
+            if (Settings.SendOnChange) return true;
+            if (NetworkingManager.singleton.NetworkTime - LastSyncedTime >= Settings.SendDelay) return true;
             return IsDirty;
         }
 
@@ -100,7 +95,7 @@ namespace MLAPI.Data
         void INetworkedVar.SetFieldFromReader(BitReader reader)
         {
             // TODO TwoTen - Boxing sucks
-            T newValue = (T)FieldTypeHelper.ReadFieldType(reader, typeof(T), (object)InternalValue);
+            InternalValue = (T)FieldTypeHelper.ReadFieldType(reader, typeof(T), (object)InternalValue);
         }
         
         void INetworkedVar.WriteFieldToWriter(BitWriter writer)
@@ -109,9 +104,10 @@ namespace MLAPI.Data
         }
     }
 
-    internal interface INetworkedVar
+    public interface INetworkedVar
     {
-        bool NeedsDirtySync();
+        void OnSynced();
+        bool IsDirty();
         bool CanClientWrite(uint clientId);
         bool CanClientRead(uint clientId);
         void WriteFieldToWriter(BitWriter writer);

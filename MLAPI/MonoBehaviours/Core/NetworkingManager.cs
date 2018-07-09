@@ -640,6 +640,7 @@ namespace MLAPI.MonoBehaviours.Core
             {
                 if((NetworkTime - lastSendTickTime >= (1f / NetworkConfig.SendTickrate)) || NetworkConfig.SendTickrate <= 0)
                 {
+                    NetworkedObject.NetworkedVarPrepareSend();
                     foreach (KeyValuePair<uint, NetworkedClient> pair in ConnectedClients)
                     {
                         byte error;

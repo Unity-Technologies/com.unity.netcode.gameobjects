@@ -281,6 +281,14 @@ namespace MLAPI.MonoBehaviours.Core
             }
         }
 
+        internal static void NetworkedVarPrepareSend()
+        {
+            for (int i = 0; i < NetworkedBehaviours.Count; i++)
+            {
+                NetworkedBehaviours[i].NetworkedVarPrepareSend();
+            }
+        }
+
 
         //Writes SyncedVar data in a formatted way so that the SetFormattedSyncedVarData method can read it.
         //The format doesn't NECCECARLY correspond with the "general syncedVar message layout" 

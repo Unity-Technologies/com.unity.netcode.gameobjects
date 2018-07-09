@@ -953,6 +953,17 @@ namespace MLAPI.MonoBehaviours.Core
             }
         }
 
+        internal void NetworkedVarPrepareSend()
+        {
+            //TODO: Loop all the fields, write dirty fields and send them to the transport.
+            //TODO: Do this efficiently.
+            //Avoid: One loop for the networkedFields and then one per client per networkedField iteration.
+            
+            //Flow:
+            //Check if dirty, send to clients that have read access
+            //Call OnSynced
+        }
+
         internal void HandleNetworkedVarChangedByRemote(BitReader reader)
         {
             ushort index = reader.ReadUShort();
