@@ -109,6 +109,7 @@
     <Compile Include="Data\Transports\UNET\RelayTransport.cs" />
     <Compile Include="Data\Transports\UNET\TransportHost.cs" />
     <Compile Include="Data\Transports\UNET\UnetTransport.cs" />
+    <Compile Include="Data\TypeExtensions.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="MonoBehaviours\Prototyping\NetworkedAnimator.cs" />
     <Compile Include="MonoBehaviours\Prototyping\NetworkedNavMeshAgent.cs" />
