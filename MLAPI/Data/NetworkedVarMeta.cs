@@ -1,6 +1,6 @@
 ﻿namespace MLAPI.Data
 {
-    public class NetworkedVarSettings<T>
+    public class NetworkedVarSettings
     {
         public NetworkedVarPermission WritePermission = NetworkedVarPermission.ServerOnly;
         public NetworkedVarPermission ReadPermission = NetworkedVarPermission.Everyone;

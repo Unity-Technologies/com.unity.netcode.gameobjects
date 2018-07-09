@@ -8,8 +8,8 @@ namespace MLAPI.Data
     /// </summary>
     public class NetworkedVar<T> : INetworkedVar
     {
-        public bool IsDirty { get; set; }
-        public readonly NetworkedVarSettings<T> Settings = new NetworkedVarSettings<T>();
+        public bool isDirty { get; set; }
+        public readonly NetworkedVarSettings Settings = new NetworkedVarSettings();
         public float LastSyncedTime { get; internal set; }
         
         public delegate void OnValueChangedByRemoteDelegate(T newValue);
@@ -29,26 +29,26 @@ namespace MLAPI.Data
             }
             set
             {
-                IsDirty = true;
+                isDirty = true;
                 InternalValue = value;
             }
         }
 
-        void INetworkedVar.OnSynced()
+        public void OnSynced()
         {
-            IsDirty = false;
+            isDirty = false;
             LastSyncedTime = NetworkingManager.singleton.NetworkTime;
         }
 
-        bool INetworkedVar.IsDirty()
+        public bool IsDirty()
         {
-            if (!IsDirty) return false;
+            if (!isDirty) return false;
             if (Settings.SendOnChange) return true;
             if (NetworkingManager.singleton.NetworkTime - LastSyncedTime >= Settings.SendDelay) return true;
-            return IsDirty;
+            return isDirty;
         }
 
-        bool INetworkedVar.CanClientRead(uint clientId)
+        public bool CanClientRead(uint clientId)
         {
             switch (Settings.ReadPermission)
             {
@@ -66,8 +66,10 @@ namespace MLAPI.Data
             }
             return true;
         }
-        
-        bool INetworkedVar.CanClientWrite(uint clientId)
+
+        public void WriteDeltaToWriter(BitWriter writer) => WriteFieldToWriter(writer); //The NetworkedVar is built for simple data types and has no delta.
+
+        public bool CanClientWrite(uint clientId)
         {
             switch (Settings.WritePermission)
             {
@@ -87,18 +89,20 @@ namespace MLAPI.Data
             return true;
         }
 
-        void INetworkedVar.SetNetworkedBehaviour(NetworkedBehaviour behaviour)
+        public void SetDeltaFromReader(BitReader reader) => SetFieldFromReader(reader); //The NetworkedVar is built for simple data types and has no delta.
+
+        public void SetNetworkedBehaviour(NetworkedBehaviour behaviour)
         {
             networkedBehaviour = behaviour;
         }
 
-        void INetworkedVar.SetFieldFromReader(BitReader reader)
+        public void SetFieldFromReader(BitReader reader)
         {
             // TODO TwoTen - Boxing sucks
             InternalValue = (T)FieldTypeHelper.ReadFieldType(reader, typeof(T), (object)InternalValue);
         }
         
-        void INetworkedVar.WriteFieldToWriter(BitWriter writer)
+        public void WriteFieldToWriter(BitWriter writer)
         {
             //TODO: Write field
         }
@@ -110,8 +114,10 @@ namespace MLAPI.Data
         bool IsDirty();
         bool CanClientWrite(uint clientId);
         bool CanClientRead(uint clientId);
+        void WriteDeltaToWriter(BitWriter writer);
         void WriteFieldToWriter(BitWriter writer);
         void SetFieldFromReader(BitReader reader);
+        void SetDeltaFromReader(BitReader reader);
         void SetNetworkedBehaviour(NetworkedBehaviour behaviour);
     }
 }
