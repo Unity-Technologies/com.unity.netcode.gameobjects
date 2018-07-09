@@ -320,7 +320,8 @@ namespace MLAPI.MonoBehaviours.Core
             MessageManager.messageTypes.Add("MLAPI_RPC", 13);
             MessageManager.messageTypes.Add("MLAPI_TARGET", 14);
             MessageManager.messageTypes.Add("MLAPI_SET_VISIBILITY", 15);
-            MessageManager.messageTypes.Add("MLAPI_NETWORKED_VAR_UPDATE", 16);
+            MessageManager.messageTypes.Add("MLAPI_NETWORKED_VAR_DELTA", 16);
+            MessageManager.messageTypes.Add("MLAPI_NETWORKED_VAR_UPDATE", 17);
 
             List<MessageType> messageTypes = new List<MessageType>(NetworkConfig.MessageTypes)
             {
@@ -994,7 +995,10 @@ namespace MLAPI.MonoBehaviours.Core
                                 break;
                             case 16:
                                 // Handled on both client and server
-                                InternalMessageHandler.HandleNetworkedVarChangedByRemote(clientId, messageReader, channelId);
+                                InternalMessageHandler.HandleNetworkedVarDelta(clientId, messageReader, channelId);
+                                break;
+                            case 17:
+                                InternalMessageHandler.HandleNetworkedVarUpdate(clientId, messageReader, channelId);
                                 break;
                         }
                         #endregion

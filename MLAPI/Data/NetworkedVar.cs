@@ -34,7 +34,7 @@ namespace MLAPI.Data
             }
         }
 
-        public void OnSynced()
+        public void ResetDirty()
         {
             isDirty = false;
             LastSyncedTime = NetworkingManager.singleton.NetworkTime;
@@ -110,7 +110,7 @@ namespace MLAPI.Data
 
     public interface INetworkedVar
     {
-        void OnSynced();
+        void ResetDirty();
         bool IsDirty();
         bool CanClientWrite(uint clientId);
         bool CanClientRead(uint clientId);

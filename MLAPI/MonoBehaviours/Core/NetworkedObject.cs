@@ -285,7 +285,33 @@ namespace MLAPI.MonoBehaviours.Core
         {
             for (int i = 0; i < NetworkedBehaviours.Count; i++)
             {
-                NetworkedBehaviours[i].NetworkedVarPrepareSend();
+                NetworkedBehaviours[i].NetworkedVarUpdate();
+            }
+        }
+
+        internal void WriteNetworkedVarData(BitWriter writer)
+        {
+            for (int i = 0; i < childNetworkedBehaviours.Count; i++)
+            {
+                childNetworkedBehaviours[i].NetworkedVarInit();
+                if (childNetworkedBehaviours[i].networkedVarFields.Count == 0)
+                    continue;
+                writer.WriteUShort(GetOrderIndex(childNetworkedBehaviours[i])); //Write the behaviourId
+                for (int j = 0; j < childNetworkedBehaviours[i].networkedVarFields.Count; j++)
+                    childNetworkedBehaviours[i].networkedVarFields[j].WriteFieldToWriter(writer);
+            }
+        }
+
+        internal void SetNetworkedVarData(BitReader reader)
+        {
+            for (int i = 0; i < childNetworkedBehaviours.Count; i++)
+            {
+                childNetworkedBehaviours[i].NetworkedVarInit();
+                if (childNetworkedBehaviours[i].networkedVarFields.Count == 0)
+                    continue;
+                NetworkedBehaviour behaviour = GetBehaviourAtOrderIndex(reader.ReadUShort());
+                for (int j = 0; j < childNetworkedBehaviours[i].networkedVarFields.Count; j++)
+                    childNetworkedBehaviours[i].networkedVarFields[j].SetFieldFromReader(reader);
             }
         }
 

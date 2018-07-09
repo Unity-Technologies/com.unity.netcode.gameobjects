@@ -927,8 +927,8 @@ namespace MLAPI.MonoBehaviours.Core
 
         #region NetworkedVar
 
-        bool networkedVarInit = false;
-        List<INetworkedVar> networkedVarFields = new List<INetworkedVar>();
+        private bool networkedVarInit = false;
+        internal readonly List<INetworkedVar> networkedVarFields = new List<INetworkedVar>();
         internal void NetworkedVarInit()
         {
             if (networkedVarInit)
@@ -939,32 +939,70 @@ namespace MLAPI.MonoBehaviours.Core
             for (int i = 0; i < sortedFields.Length; i++)
             {
                 Type fieldType = sortedFields[i].FieldType;
-                if (fieldType == typeof(NetworkedVar<>))
+                if (fieldType.HasInterface(typeof(INetworkedVar)))
                 {
-                    Type genericTypeDefinition = typeof(NetworkedVar<>);
-                    Type genericType = genericTypeDefinition.MakeGenericType(fieldType.GetGenericArguments());
-                    INetworkedVar instance = (INetworkedVar)Activator.CreateInstance(genericType, true);
-
-                    sortedFields[i].SetValue(this, instance);
+                    INetworkedVar instance = null;
+                    if (sortedFields[i].GetValue(this) == null)
+                    {
+                        Type genericType = fieldType.MakeGenericType(fieldType.GetGenericArguments());
+                        instance = (INetworkedVar)Activator.CreateInstance(genericType, true);
+                        sortedFields[i].SetValue(this, instance);
+                    }
+                    else
+                    {
+                        instance = (INetworkedVar)sortedFields[i].GetValue(this);
+                    }
                     instance.SetNetworkedBehaviour(this);
-
-                    networkedVarFields.Add((INetworkedVar)instance);
+                    networkedVarFields.Add(instance);
                 }
             }
         }
 
-        internal void NetworkedVarPrepareSend()
+        internal void NetworkedVarUpdate()
         {
-            //TODO: Loop all the fields, write dirty fields and send them to the transport.
             //TODO: Do this efficiently.
-            //Avoid: One loop for the networkedFields and then one per client per networkedField iteration.
-            
-            //Flow:
-            //Check if dirty, send to clients that have read access
-            //Call OnSynced
+
+            for (int i = 0; i < NetworkingManager.singleton.ConnectedClientsList.Count; i++)
+            {
+                using (BitWriter writer = BitWriter.Get())
+                {
+                    uint clientId = NetworkingManager.singleton.ConnectedClientsList[i].ClientId;
+                    for (int j = 0; j < networkedVarFields.Count; j++)
+                    {
+                        bool isDirty = networkedVarFields[j].IsDirty(); //cache this here. You never know what operations users will do in the dirty methods
+                        writer.WriteBool(isDirty);
+                        if (isDirty && (!isServer || networkedVarFields[j].CanClientRead(clientId)))
+                        {
+                            networkedVarFields[j].WriteDeltaToWriter(writer);
+                        }
+                    }
+
+                    if (isServer)
+                        InternalMessageHandler.Send(clientId, "MLAPI_NETWORKED_VAR_DELTA", "MLAPI_INTERNAL", writer, null);
+                    else
+                        InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerNetId, "MLAPI_NETWORKED_VAR_DELTA", "MLAPI_INTERNAL", writer, null);
+                }
+            }
+
+            for (int i = 0; i < networkedVarFields.Count; i++)
+            {
+                networkedVarFields[i].ResetDirty();
+            }
         }
 
-        internal void HandleNetworkedVarChangedByRemote(BitReader reader)
+        internal void HandleNetworkedVarDeltas(BitReader reader)
+        {
+            ushort index = reader.ReadUShort();
+            if (index >= networkedVarFields.Count)
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkedVar index out of range");
+                return;
+            }
+
+            networkedVarFields[index].SetDeltaFromReader(reader);
+        }
+
+        internal void HandleNetworkedVarUpdate(BitReader reader)
         {
             ushort index = reader.ReadUShort();
             if (index >= networkedVarFields.Count)
@@ -975,20 +1013,6 @@ namespace MLAPI.MonoBehaviours.Core
 
             networkedVarFields[index].SetFieldFromReader(reader);
         }
-
-        internal void SendNetworkedVar(INetworkedVar networkedVar, BitWriter varWriter)
-        {
-            using (BitWriter writer = BitWriter.Get())
-            {
-                writer.WriteUShort(GetNetworkedVarIndex(networkedVar));
-                writer.WriteWriter(varWriter);
-
-                if (isClient)
-                    InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerNetId, "MLAPI_NETWORKED_VAR_UPDATE", "MLAPI_INTERNAL", writer, null, networkId, networkedObject.GetOrderIndex(this));
-                else
-                    InternalMessageHandler.Send(OwnerClientId, "MLAPI_NETWORKED_VAR_UPDATE", "MLAPI_INTERNAL", writer, null, networkId, networkedObject.GetOrderIndex(this));
-            }
-        } 
 
         internal ushort GetNetworkedVarIndex(INetworkedVar networkedVar)
         {

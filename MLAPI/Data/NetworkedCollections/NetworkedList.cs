@@ -29,7 +29,7 @@ namespace MLAPI.Data.NetworkedCollections
         private NetworkedBehaviour networkedBehaviour;
         public NetworkedVarSettings Settings = new NetworkedVarSettings();
         
-        public void OnSynced()
+        public void ResetDirty()
         {
             dirtyEvents.Clear();
         }
