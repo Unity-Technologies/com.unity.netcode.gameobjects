@@ -11,10 +11,10 @@ namespace MLAPI.NetworkingManagerComponents.Core
     {
         internal static void HandleConnectionRequest(uint clientId, BitReader reader, int channelId)
         {
-            byte[] configHash = reader.ReadByteArray(20);
+            ulong configHash = reader.ReadULong();
             if (!netManager.NetworkConfig.CompareConfig(configHash))
             {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkConfiguration missmatch. The configuration between the server and client does not match");
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkConfiguration mismatch. The configuration between the server and client does not match");
                 netManager.DisconnectClient(clientId);
                 return;
             }
@@ -40,7 +40,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
         internal static void HandleConnectionApproved(uint clientId, BitReader reader, int channelId)
         {
-            netManager.myClientId = reader.ReadUInt();
+            netManager.LocalClientId = reader.ReadUInt();
             uint sceneIndex = 0;
             if (netManager.NetworkConfig.EnableSceneSwitching)
                 sceneIndex = reader.ReadUInt();
@@ -71,17 +71,16 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
             float netTime = reader.ReadFloat();
             int remoteStamp = reader.ReadInt();
-            byte error;
-            int msDelay = NetworkingManager.singleton.NetworkConfig.NetworkTransport.GetRemoteDelayTimeMS(clientId, remoteStamp, out error);
-            netManager.networkTime = netTime + (msDelay / 1000f);
+            int msDelay = NetworkingManager.singleton.NetworkConfig.NetworkTransport.GetRemoteDelayTimeMS(clientId, remoteStamp, out byte error);
+            netManager.NetworkTime = netTime + (msDelay / 1000f);
 
-            netManager.connectedClients.Add(netManager.MyClientId, new NetworkedClient() { ClientId = netManager.MyClientId });
+            netManager.ConnectedClients.Add(netManager.LocalClientId, new NetworkedClient() { ClientId = netManager.LocalClientId });
             int clientCount = reader.ReadInt();
             for (int i = 0; i < clientCount; i++)
             {
                 uint _clientId = reader.ReadUInt();
-                netManager.connectedClients.Add(_clientId, new NetworkedClient() { ClientId = _clientId });
-                netManager.connectedClientsList.Add(netManager.connectedClients[_clientId]);
+                netManager.ConnectedClients.Add(_clientId, new NetworkedClient() { ClientId = _clientId });
+                netManager.ConnectedClientsList.Add(netManager.ConnectedClients[_clientId]);
             }
             if (netManager.NetworkConfig.HandleObjectSpawning)
             {
@@ -118,9 +117,9 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 NetworkSceneManager.OnSceneSwitch(sceneIndex);
             }
 
-            netManager._isClientConnected = true;
+            netManager.isConnectedClients = true;
             if (netManager.OnClientConnectedCallback != null)
-                netManager.OnClientConnectedCallback.Invoke(netManager.MyClientId);
+                netManager.OnClientConnectedCallback.Invoke(netManager.LocalClientId);
         }
 
         internal static void HandleAddObject(uint clientId, BitReader reader, int channelId)
@@ -146,8 +145,8 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
                 if (isPlayerObject)
                 {
-                    netManager.connectedClients.Add(ownerId, new NetworkedClient() { ClientId = ownerId });
-                    netManager.connectedClientsList.Add(netManager.connectedClients[ownerId]);
+                    netManager.ConnectedClients.Add(ownerId, new NetworkedClient() { ClientId = ownerId });
+                    netManager.ConnectedClientsList.Add(netManager.ConnectedClients[ownerId]);
                 }
                 NetworkedObject netObject = SpawnManager.CreateSpawnedObject(prefabId, networkId, ownerId, isPlayerObject,
                     new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), reader, visible, hasPayload);
@@ -159,7 +158,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             else
             {
                 uint ownerId = reader.ReadUInt();
-                netManager.connectedClients.Add(ownerId, new NetworkedClient() { ClientId = ownerId });
+                netManager.ConnectedClients.Add(ownerId, new NetworkedClient() { ClientId = ownerId });
             }
         }
 
@@ -207,17 +206,17 @@ namespace MLAPI.NetworkingManagerComponents.Core
         {
             uint netId = reader.ReadUInt();
             uint ownerClientId = reader.ReadUInt();
-            if (SpawnManager.spawnedObjects[netId].OwnerClientId == netManager.MyClientId)
+            if (SpawnManager.spawnedObjects[netId].OwnerClientId == netManager.LocalClientId)
             {
                 //We are current owner.
                 SpawnManager.spawnedObjects[netId].InvokeBehaviourOnLostOwnership();
             }
-            if (ownerClientId == netManager.MyClientId)
+            if (ownerClientId == netManager.LocalClientId)
             {
                 //We are new owner.
                 SpawnManager.spawnedObjects[netId].InvokeBehaviourOnGainedOwnership();
             }
-            SpawnManager.spawnedObjects[netId].ownerClientId = ownerClientId;
+            SpawnManager.spawnedObjects[netId].OwnerClientId = ownerClientId;
         }
 
         internal static void HandleSyncVarUpdate(uint clientId, BitReader reader, int channelId)
@@ -242,8 +241,9 @@ namespace MLAPI.NetworkingManagerComponents.Core
                     continue;
                 SyncedVarField field = SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).syncedVarFields[i];
                 SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(FieldTypeHelper.ReadFieldType(reader,
-                    field.FieldInfo.FieldType, ref field.FieldValue), i);
+                    field.FieldInfo.FieldType, field.FieldValue), i);
             }
+            SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate();
         }
 
         internal static void HandleAddObjects(uint clientId, BitReader reader, int channelId)
@@ -270,8 +270,8 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
                     if (isPlayerObject)
                     {
-                        netManager.connectedClients.Add(ownerId, new NetworkedClient() { ClientId = ownerId });
-                        netManager.connectedClientsList.Add(netManager.connectedClients[ownerId]);
+                        netManager.ConnectedClients.Add(ownerId, new NetworkedClient() { ClientId = ownerId });
+                        netManager.ConnectedClientsList.Add(netManager.ConnectedClients[ownerId]);
                     }
                     NetworkedObject netObject = SpawnManager.CreateSpawnedObject(prefabId, networkId, ownerId, isPlayerObject,
                         new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), reader, visible, false);
@@ -287,9 +287,8 @@ namespace MLAPI.NetworkingManagerComponents.Core
             float netTime = reader.ReadFloat();
             int timestamp = reader.ReadInt();
 
-            byte error;
-            int msDelay = NetworkingManager.singleton.NetworkConfig.NetworkTransport.GetRemoteDelayTimeMS(clientId, timestamp, out error);
-            netManager.networkTime = netTime + (msDelay / 1000f);
+            int msDelay = NetworkingManager.singleton.NetworkConfig.NetworkTransport.GetRemoteDelayTimeMS(clientId, timestamp, out byte error);
+            netManager.NetworkTime = netTime + (msDelay / 1000f);
         }
 
         internal static void HandleCommand(uint clientId, BitReader reader, int channelId)
@@ -301,12 +300,12 @@ namespace MLAPI.NetworkingManagerComponents.Core
             ushort orderId = reader.ReadUShort();
             ulong hash = reader.ReadULong();
             NetworkedBehaviour behaviour = SpawnManager.spawnedObjects[networkId].GetBehaviourAtOrderIndex(orderId);
-            if (clientId != behaviour.ownerClientId)
+            if (clientId != behaviour.OwnerClientId)
                 return; // Not owner
             MethodInfo targetMethod = null;
-            if (behaviour.cachedMethods.ContainsKey(Data.Cache.GetAttributeMethodName(hash)))
-                targetMethod = behaviour.cachedMethods[Data.Cache.GetAttributeMethodName(hash)];
-
+            if (behaviour.cachedMethods.ContainsKey(hash))
+                targetMethod = behaviour.cachedMethods[hash];
+            else return; //No method
             ParameterInfo[] parameters = targetMethod.GetParameters();
             object[] methodParams = new object[parameters.Length];
             for (int i = 0; i < parameters.Length; i++)
@@ -324,8 +323,9 @@ namespace MLAPI.NetworkingManagerComponents.Core
             ulong hash = reader.ReadULong();
             NetworkedBehaviour behaviour = SpawnManager.spawnedObjects[networkId].GetBehaviourAtOrderIndex(orderId);
             MethodInfo targetMethod = null;
-            if (behaviour.cachedMethods.ContainsKey(Data.Cache.GetAttributeMethodName(hash)))
-                targetMethod = behaviour.cachedMethods[Data.Cache.GetAttributeMethodName(hash)];
+            if (behaviour.cachedMethods.ContainsKey(hash))
+                targetMethod = behaviour.cachedMethods[hash];
+            else return; //No method
             ParameterInfo[] parameters = targetMethod.GetParameters();
             object[] methodParams = new object[parameters.Length];
             for (int i = 0; i < parameters.Length; i++)
@@ -343,8 +343,9 @@ namespace MLAPI.NetworkingManagerComponents.Core
             ulong hash = reader.ReadULong();
             NetworkedBehaviour behaviour = SpawnManager.spawnedObjects[networkId].GetBehaviourAtOrderIndex(orderId);
             MethodInfo targetMethod = null;
-            if (behaviour.cachedMethods.ContainsKey(Data.Cache.GetAttributeMethodName(hash)))
-                targetMethod = behaviour.cachedMethods[Data.Cache.GetAttributeMethodName(hash)];
+            if (behaviour.cachedMethods.ContainsKey(hash))
+                targetMethod = behaviour.cachedMethods[hash];
+            else return; //No method
             ParameterInfo[] parameters = targetMethod.GetParameters();
             object[] methodParams = new object[parameters.Length];
             for (int i = 0; i < parameters.Length; i++)

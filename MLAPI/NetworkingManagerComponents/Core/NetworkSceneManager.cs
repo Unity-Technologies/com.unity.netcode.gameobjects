@@ -94,6 +94,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
         private static void OnSceneLoaded(AsyncOperation operation)
         {
+            SceneManager.SetActiveScene(nextScene);
             List<NetworkedObject> objectsToKeep = SpawnManager.spawnedObjects.Values.ToList();
             //The last loaded scene
             nextScene = SceneManager.GetSceneAt(SceneManager.sceneCount - 1);
@@ -108,10 +109,18 @@ namespace MLAPI.NetworkingManagerComponents.Core
         private static void OnSceneUnload(AsyncOperation operation)
         {
             isSwitching = false;
-            if(NetworkingManager.singleton.isServer)
+            if (NetworkingManager.singleton.isServer)
             {
                 SpawnManager.MarkSceneObjects();
-                SpawnManager.FlushSceneObjects();
+
+                NetworkedObject[] networkedObjects = MonoBehaviour.FindObjectsOfType<NetworkedObject>();
+                for (int i = 0; i < networkedObjects.Length; i++)
+                {
+                    if (!networkedObjects[i].isSpawned && (networkedObjects[i].sceneObject == null || networkedObjects[i].sceneObject == true))
+                        networkedObjects[i].Spawn();
+                }
+
+                //SpawnManager.FlushSceneObjects();
             }
             else
             {

@@ -1,7 +1,6 @@
 ﻿using MLAPI.MonoBehaviours.Core;
 using System;
 using System.Collections.Generic;
-using UnityEngine;
 
 namespace MLAPI.NetworkingManagerComponents.Core
 {
@@ -10,17 +9,10 @@ namespace MLAPI.NetworkingManagerComponents.Core
     /// </summary>
     public static class LagCompensationManager
     {
-        internal static List<TrackedObject> simulationObjects = new List<TrackedObject>();
         /// <summary>
         /// Simulation objects
         /// </summary>
-        public static List<TrackedObject> SimulationObjects
-        {
-            get
-            {
-                return simulationObjects;
-            }
-        }
+        public static readonly List<TrackedObject> simulationObjects = new List<TrackedObject>();
 
         /// <summary>
         /// Turns time back a given amount of seconds, invokes an action and turns it back

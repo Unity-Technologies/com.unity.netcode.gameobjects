@@ -18,53 +18,32 @@ namespace MLAPI.MonoBehaviours.Core
         /// <summary>
         /// Gets if the object is the the personal clients player object
         /// </summary>
-        public bool isLocalPlayer
-        {
-            get
-            {
-                return networkedObject.isLocalPlayer;
-            }
-        }
+        public bool isLocalPlayer => networkedObject.isLocalPlayer;
         /// <summary>
-        /// Gets if the object is owned by the local player
+        /// Gets if the object is owned by the local player or if the object is the local player object
         /// </summary>
-        public bool isOwner
-        {
-            get
-            {
-                return networkedObject.isOwner;
-            }
-        }
+        public bool isOwner => networkedObject.isOwner;
+        /// <summary>
+        /// Gets if the object is owned by the local player and this is not a player object
+        /// </summary>
+        public bool isObjectOwner => networkedObject.isObjectOwner;
         /// <summary>
         /// Gets if we are executing as server
         /// </summary>
-        protected bool isServer
-        {
-            get
-            {
-                return NetworkingManager.singleton.isServer;
-            }
-        }
+        protected bool isServer => NetworkingManager.singleton.isServer;
         /// <summary>
         /// Gets if we are executing as client
         /// </summary>
-        protected bool isClient
-        {
-            get
-            {
-                return NetworkingManager.singleton.isClient;
-            }
-        }
+        protected bool isClient => NetworkingManager.singleton.isClient;
         /// <summary>
         /// Gets if we are executing as Host, I.E Server and Client
         /// </summary>
-        protected bool isHost
-        {
-            get
-            {
-                return NetworkingManager.singleton.isHost;
-            }
-        }
+        protected bool isHost => NetworkingManager.singleton.isHost;
+        /// <summary>
+        /// Gets wheter or not the object has a owner
+        /// </summary>
+        public bool hasOwner => networkedObject.hasOwner;
+
         /// <summary>
         /// Gets the NetworkedObject that owns this NetworkedBehaviour instance
         /// </summary>
@@ -83,26 +62,13 @@ namespace MLAPI.MonoBehaviours.Core
         /// <summary>
         /// Gets the NetworkId of the NetworkedObject that owns the NetworkedBehaviour instance
         /// </summary>
-        public uint networkId
-        {
-            get
-            {
-                return networkedObject.NetworkId;
-            }
-        }
+        public uint networkId => networkedObject.NetworkId;
         /// <summary>
         /// Gets the clientId that owns the NetworkedObject
         /// </summary>
-        public uint ownerClientId
-        {
-            get
-            {
-                return networkedObject.OwnerClientId;
-            }
-        }
+        public uint OwnerClientId => networkedObject.OwnerClientId;
 
-        //Change data type
-        private Dictionary<string, int> registeredMessageHandlers = new Dictionary<string, int>();
+        private readonly Dictionary<string, int> registeredMessageHandlers = new Dictionary<string, int>();
 
         private void OnEnable()
         {
@@ -112,7 +78,6 @@ namespace MLAPI.MonoBehaviours.Core
             NetworkedObject.NetworkedBehaviours.Add(this);
             OnEnabled();
         }
-
         internal bool networkedStartInvoked = false;
         /// <summary>
         /// Gets called when message handlers are ready to be registered and the networking is setup
@@ -122,6 +87,10 @@ namespace MLAPI.MonoBehaviours.Core
 
         }
 
+        /// <summary>
+        /// Gets called when message handlers are ready to be registered and the networking is setup. Provides a Payload if it was provided
+        /// </summary>
+        /// <param name="payloadReader"></param>
         public virtual void NetworkStart(BitReader payloadReader)
         {
             NetworkStart();
@@ -153,35 +122,44 @@ namespace MLAPI.MonoBehaviours.Core
             }
         }
 
+        /// <summary>
+        /// Invoked when the object is Disabled
+        /// </summary>
         public virtual void OnDisabled()
         {
 
         }
 
+        /// <summary>
+        /// Invoked when the object is Destroyed
+        /// </summary>
         public virtual void OnDestroyed()
         {
 
         }
 
+        /// <summary>
+        /// Invoked when the object is Enabled
+        /// </summary>
         public virtual void OnEnabled()
         {
 
         }
 
-        /// <summary>
-        /// Gets called when SyncedVars gets updated
-        /// </summary>
+        /// <summary>                                                                               
+        /// Gets called when SyncedVars gets updated                                                
+        /// </summary>                                                                              
         public virtual void OnSyncVarUpdate()
-        {
-
-        }
-        /// <summary>
-        /// Gets called when the local client gains ownership of this object
-        /// </summary>
-        public virtual void OnGainedOwnership()
-        {
-
-        }
+        {                                                                                                  
+            
+        }                                                                                                  
+        /// <summary>                                                                                      
+        /// Gets called when the local client gains ownership of this object                               
+        /// </summary>                                                                                     
+        public virtual void OnGainedOwnership()                                                            
+        {                                                                                                 
+            
+        }                                                                                                  
         /// <summary>
         /// Gets called when we loose ownership of this object
         /// </summary>
@@ -190,7 +168,7 @@ namespace MLAPI.MonoBehaviours.Core
 
         }
 
-        internal Dictionary<string, MethodInfo> cachedMethods = new Dictionary<string, MethodInfo>();
+        internal Dictionary<ulong, MethodInfo> cachedMethods = new Dictionary<ulong, MethodInfo>();
         internal Dictionary<string, string> messageChannelName = new Dictionary<string, string>();
 
         /// <summary>
@@ -232,26 +210,50 @@ namespace MLAPI.MonoBehaviours.Core
                 renderers[i].enabled = visible;
         }
 
+
+        private List<MethodInfo> getMethodsRecursive(Type type, List<MethodInfo> list = null) {
+            if(list == null) {
+                list = new List<MethodInfo>();
+            }
+            if(type == typeof(NetworkedBehaviour)) {
+                return list;
+            }
+            list.AddRange(type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.FlattenHierarchy));
+            return getMethodsRecursive(type.BaseType, list); 
+        }
+
         private void CacheAttributedMethods()
         {
             if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.Disabled)
                 return;
 
-            MethodInfo[] methods = GetType().GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.FlattenHierarchy);
-            for (int i = 0; i < methods.Length; i++)
+            MethodInfo[] methods = getMethodsRecursive(GetType()).ToArray();
+            foreach (MethodInfo method in methods)
             {
-                if (methods[i].IsDefined(typeof(Command), true) || methods[i].IsDefined(typeof(ClientRpc), true) || methods[i].IsDefined(typeof(TargetRpc), true))
+                if (method.IsDefined(typeof(Command), true) || method.IsDefined(typeof(ClientRpc), true) || method.IsDefined(typeof(TargetRpc), true))
                 {
-                    Data.Cache.RegisterMessageAttributeName(methods[i].Name, NetworkingManager.singleton.NetworkConfig.AttributeMessageMode);
-                    if (!cachedMethods.ContainsKey(methods[i].Name))
-                        cachedMethods.Add(methods[i].Name, methods[i]);
+                    ulong hash = 0;
+
+                    if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenTwoByte)
+                        hash = method.Name.GetStableHash16();
+                    else if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenFourByte)
+                        hash = method.Name.GetStableHash32();
+                    else if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenEightByte)
+                        hash = method.Name.GetStableHash64();
+
+                    if (cachedMethods.ContainsKey(hash))
+                    {
+                        MethodInfo previous = cachedMethods[hash];
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError(string.Format("Method {0} and {1} have the same hash.  Rename one of the methods or increase Attribute Message Mode", previous.Name, method.Name));
+                    }
+                    cachedMethods[hash] = method;
                 }
-                if (methods[i].IsDefined(typeof(Command), true) && !messageChannelName.ContainsKey(methods[i].Name))
-                    messageChannelName.Add(methods[i].Name, ((Command[])methods[i].GetCustomAttributes(typeof(Command), true))[0].channelName);
-                if (methods[i].IsDefined(typeof(ClientRpc), true) && !messageChannelName.ContainsKey(methods[i].Name))
-                    messageChannelName.Add(methods[i].Name, ((ClientRpc[])methods[i].GetCustomAttributes(typeof(ClientRpc), true))[0].channelName);
-                if (methods[i].IsDefined(typeof(TargetRpc), true) && !messageChannelName.ContainsKey(methods[i].Name))
-                    messageChannelName.Add(methods[i].Name, ((TargetRpc[])methods[i].GetCustomAttributes(typeof(TargetRpc), true))[0].channelName);
+                if (method.IsDefined(typeof(Command), true) && !messageChannelName.ContainsKey(method.Name))
+                    messageChannelName.Add(method.Name, ((Command[])method.GetCustomAttributes(typeof(Command), true))[0].channelName);
+                if (method.IsDefined(typeof(ClientRpc), true) && !messageChannelName.ContainsKey(method.Name))
+                    messageChannelName.Add(method.Name, ((ClientRpc[])method.GetCustomAttributes(typeof(ClientRpc), true))[0].channelName);
+                if (method.IsDefined(typeof(TargetRpc), true) && !messageChannelName.ContainsKey(method.Name))
+                    messageChannelName.Add(method.Name, ((TargetRpc[])method.GetCustomAttributes(typeof(TargetRpc), true))[0].channelName);
             }
         }
 
@@ -260,14 +262,9 @@ namespace MLAPI.MonoBehaviours.Core
         /// </summary>
         /// <param name="methodName">Method name to invoke</param>
         /// <param name="methodParams">Method parameters to send</param>
-        protected void InvokeCommand(string methodName, params object[] methodParams)
+        public void InvokeCommand(string methodName, params object[] methodParams)
         {
-            if (NetworkingManager.singleton.isServer)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot invoke commands from server");
-                return;
-            }
-            if (ownerClientId != NetworkingManager.singleton.MyClientId)
+            if (OwnerClientId != NetworkingManager.singleton.LocalClientId && !isLocalPlayer)
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot invoke command for object without ownership");
                 return;
@@ -283,7 +280,25 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
 
-            ulong hash = Data.Cache.GetMessageAttributeHash(methodName, NetworkingManager.singleton.NetworkConfig.AttributeMessageMode);
+            ulong hash = 0;
+            if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenTwoByte)
+                hash = methodName.GetStableHash16();
+            else if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenFourByte)
+                hash = methodName.GetStableHash32();
+            else if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenEightByte)
+                hash = methodName.GetStableHash64();
+
+            if (NetworkingManager.singleton.isServer)
+            {
+                if (isHost)
+                {
+                    cachedMethods[hash].Invoke(this, methodParams);
+                    return;
+                }
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot invoke commands from server");
+                return;
+            }
+
             using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteUInt(networkId);
@@ -301,7 +316,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// </summary>
         /// <param name="methodName">Method name to invoke</param>
         /// <param name="methodParams">Method parameters to send</param>
-        protected void InvokeClientRpc(string methodName, params object[] methodParams)
+        public void InvokeClientRpc(string methodName, params object[] methodParams)
         {
             if (!NetworkingManager.singleton.isServer)
             {
@@ -319,7 +334,16 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
 
-            ulong hash = Data.Cache.GetMessageAttributeHash(methodName, NetworkingManager.singleton.NetworkConfig.AttributeMessageMode);
+            ulong hash = 0;
+            if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenTwoByte)
+                hash = methodName.GetStableHash16();
+            else if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenFourByte)
+                hash = methodName.GetStableHash32();
+            else if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenEightByte)
+                hash = methodName.GetStableHash64();
+
+            if (isHost) cachedMethods[hash].Invoke(this, methodParams);
+
             using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteUInt(networkId);
@@ -337,7 +361,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// </summary>
         /// <param name="methodName">Method name to invoke</param>
         /// <param name="methodParams">Method parameters to send</param>
-        protected void InvokeTargetRpc(string methodName, params object[] methodParams)
+        public void InvokeTargetRpc(string methodName, params object[] methodParams)
         {
             if (!NetworkingManager.singleton.isServer)
             {
@@ -355,7 +379,16 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
 
-            ulong hash = Data.Cache.GetMessageAttributeHash(methodName, NetworkingManager.singleton.NetworkConfig.AttributeMessageMode);
+            ulong hash = 0;
+            if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenTwoByte)
+                hash = methodName.GetStableHash16();
+            else if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenFourByte)
+                hash = methodName.GetStableHash32();
+            else if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenEightByte)
+                hash = methodName.GetStableHash64();
+
+            if (isHost) cachedMethods[hash].Invoke(this, methodParams);
+
             using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteUInt(networkId);
@@ -363,9 +396,149 @@ namespace MLAPI.MonoBehaviours.Core
                 writer.WriteULong(hash);
                 for (int i = 0; i < methodParams.Length; i++)
                     FieldTypeHelper.WriteFieldType(writer, methodParams[i]);
-                InternalMessageHandler.Send(ownerClientId, "MLAPI_RPC", messageChannelName[methodName], writer, networkId);
+                InternalMessageHandler.Send(OwnerClientId, "MLAPI_RPC", messageChannelName[methodName], writer, networkId);
             }
         }
+
+        #region ActionInvokes
+        /// <summary>
+        /// Calls a Command method on server
+        /// </summary>
+        /// <param name="method">Method to invoke</param>
+        public void InvokeCommand(Action method) {
+            InvokeCommand(method.Method.Name);
+        }
+        /// <summary>
+        /// Calls a Command method on server
+        /// </summary>
+        /// <param name="method">Method to invoke</param>
+        /// <param name="p1">Method parameter to send</param>
+        public void InvokeCommand<T1>(Action<T1> method, T1 p1) {
+            InvokeCommand(method.Method.Name, new object[] { p1 });
+        }
+        /// <summary>
+        /// Calls a Command method on server
+        /// </summary>
+        /// <param name="method">Method to invoke</param>
+        /// <param name="p1">Method parameter to send</param>
+        /// <param name="p2">Method parameter to send</param>
+        public void InvokeCommand<T1, T2>(Action<T1, T2> method, T1 p1, T2 p2) {
+            InvokeCommand(method.Method.Name, new object[] { p1, p2});
+        }
+        /// <summary>
+        /// Calls a Command method on server
+        /// </summary>
+        /// <param name="method">Method to invoke</param>
+        /// <param name="p1">Method parameter to send</param>
+        /// <param name="p2">Method parameter to send</param>
+        /// <param name="p3">Method parameter to send</param>
+        public void InvokeCommand<T1, T2, T3>(Action<T1, T2, T3> method, T1 p1, T2 p2, T3 p3) {
+            InvokeCommand(method.Method.Name, new object[] { p1, p2, p3 });
+        }
+        /// <summary>
+        /// Calls a Command method on server
+        /// </summary>
+        /// <param name="method">Method to invoke</param>
+        /// <param name="p1">Method parameter to send</param>
+        /// <param name="p2">Method parameter to send</param>
+        /// <param name="p3">Method parameter to send</param>
+        /// <param name="p4">Method parameter to send</param>
+        public void InvokeCommand<T1, T2, T3, T4>(Action<T1, T2, T3, T4> method, T1 p1, T2 p2, T3 p3, T4 p4) {
+            InvokeCommand(method.Method.Name, new object[] { p1, p2, p3, p4 });
+        }
+
+        /// <summary>
+        /// Calls a ClientRpc method on all clients
+        /// </summary>
+        /// <param name="method">Method to invoke</param>
+        public void InvokeClientRpc(Action method) {
+            InvokeClientRpc(method.Method.Name);
+        }
+        /// <summary>
+        /// Calls a ClientRpc method on all clients
+        /// </summary>
+        /// <param name="method">Method to invoke</param>
+        /// <param name="p1">Method parameter to send</param>
+        public void InvokeClientRpc<T1>(Action<T1> method, T1 p1) {
+            InvokeClientRpc(method.Method.Name, new object[] { p1 });
+        }
+        /// <summary>
+        /// Calls a ClientRpc method on all clients
+        /// </summary>
+        /// <param name="method">Method to invoke</param>
+        /// <param name="p1">Method parameter to send</param>
+        /// <param name="p2">Method parameter to send</param>
+        public void InvokeClientRpc<T1, T2>(Action<T1, T2> method, T1 p1, T2 p2) {
+            InvokeClientRpc(method.Method.Name, new object[] { p1, p2 });
+        }
+        /// <summary>
+        /// Calls a ClientRpc method on all clients
+        /// </summary>
+        /// <param name="method">Method to invoke</param>
+        /// <param name="p1">Method parameter to send</param>
+        /// <param name="p2">Method parameter to send</param>
+        /// <param name="p3">Method parameter to send</param>
+        public void InvokeClientRpc<T1, T2, T3>(Action<T1, T2, T3> method, T1 p1, T2 p2, T3 p3) {
+            InvokeClientRpc(method.Method.Name, new object[] { p1, p2, p3 });
+        }
+        /// <summary>
+        /// Calls a ClientRpc method on all clients
+        /// </summary>
+        /// <param name="method">Method to invoke</param>
+        /// <param name="p1">Method parameter to send</param>
+        /// <param name="p2">Method parameter to send</param>
+        /// <param name="p3">Method parameter to send</param>
+        /// <param name="p4">Method parameter to send</param>
+        public void InvokeClientRpc<T1, T2, T3, T4>(Action<T1, T2, T3, T4> method, T1 p1, T2 p2, T3 p3, T4 p4) {
+            InvokeClientRpc(method.Method.Name, new object[] { p1, p2, p3, p4 });
+        }
+
+        /// <summary>
+        /// Calls a TargetRpc method on the owner client
+        /// </summary>
+        /// <param name="method">Method to invoke</param>
+        public void InvokeTargetRpc(Action method) {
+            InvokeTargetRpc(method.Method.Name);
+        }
+        /// <summary>
+        /// Calls a TargetRpc method on the owner client
+        /// </summary>
+        /// <param name="p1">Method parameter to send</param>
+        /// <param name="method">Method to invoke</param>
+        public void InvokeTargetRpc<T1>(Action<T1> method, T1 p1) {
+            InvokeTargetRpc(method.Method.Name, new object[] { p1 });
+        }
+        /// <summary>
+        /// Calls a TargetRpc method on the owner client
+        /// </summary>
+        /// <param name="p1">Method parameter to send</param>
+        /// <param name="p2">Method parameter to send</param>
+        /// <param name="method">Method to invoke</param>
+        public void InvokeTargetRpc<T1, T2>(Action<T1, T2> method, T1 p1, T2 p2) {
+            InvokeTargetRpc(method.Method.Name, new object[] { p1, p2 });
+        }
+        /// <summary>
+        /// Calls a TargetRpc method on the owner client
+        /// </summary>
+        /// <param name="p1">Method parameter to send</param>
+        /// <param name="p2">Method parameter to send</param>
+        /// <param name="p3">Method parameter to send</param>
+        /// <param name="method">Method to invoke</param>
+        public void InvokeTargetRpc<T1, T2, T3>(System.Action<T1, T2, T3> method, T1 p1, T2 p2, T3 p3) {
+            InvokeTargetRpc(method.Method.Name, new object[] { p1, p2, p3 });
+        }
+        /// <summary>
+        /// Calls a TargetRpc method on the owner client
+        /// </summary>
+        /// <param name="p1">Method parameter to send</param>
+        /// <param name="p2">Method parameter to send</param>
+        /// <param name="p3">Method parameter to send</param>
+        /// <param name="p4">Method parameter to send</param>
+        /// <param name="method">Method to invoke</param>
+        public void InvokeTargetRpc<T1, T2, T3, T4>(System.Action<T1, T2, T3, T4> method, T1 p1, T2 p2, T3 p3, T4 p4) {
+            InvokeTargetRpc(method.Method.Name, new object[] { p1, p2, p3, p4 });
+        }
+        #endregion
 
         /// <summary>
         /// Registers a message handler
@@ -422,10 +595,10 @@ namespace MLAPI.MonoBehaviours.Core
                 return -1;
             }
 
-            Action<uint, BitReader> convertedAction = (clientId, reader) =>
+            void convertedAction(uint clientId, BitReader reader)
             {
                 action.Invoke(clientId, reader.ReadByteArray());
-            };
+            }
 
             networkedObject.targetMessageActions[behaviourOrder].Add(messageType, convertedAction);
             int counter = MessageManager.AddIncomingMessageHandler(name, convertedAction);
@@ -523,7 +696,7 @@ namespace MLAPI.MonoBehaviours.Core
                         Dirty = false,
                         Target = attribute.target,
                         FieldInfo = sortedFields[i],
-                        FieldValue = FieldTypeHelper.GetReferenceArrayValue(sortedFields[i].GetValue(this), null),
+                        FieldValue = sortedFields[i].GetValue(this).SheepCopy(),
                         HookMethod = hookMethod,
                         Attribute = attribute
                     });
@@ -539,6 +712,7 @@ namespace MLAPI.MonoBehaviours.Core
                 syncedVarFields[fieldIndex].HookMethod.Invoke(this, null);
         }
 
+        
         internal void FlushSyncedVarsToClient(uint clientId)
         {
             //This NetworkedBehaviour has no SyncVars
@@ -553,7 +727,7 @@ namespace MLAPI.MonoBehaviours.Core
                 {
                     if (!syncedVarFields[i].Target)
                         syncCount++;
-                    else if (syncedVarFields[i].Target && ownerClientId == clientId)
+                    else if (syncedVarFields[i].Target && OwnerClientId == clientId)
                         syncCount++;
                 }
                 if (syncCount == 0)
@@ -567,9 +741,9 @@ namespace MLAPI.MonoBehaviours.Core
                 for (int i = 0; i < syncedVarFields.Count; i++)
                 {
                     writer.WriteBool(mask[i]);
-                    if (syncedVarFields[i].Target && clientId != ownerClientId)
+                    if (syncedVarFields[i].Target && clientId != OwnerClientId)
                         continue;
-                    FieldTypeHelper.WriteFieldType(writer, syncedVarFields[i].FieldInfo.GetValue(this), null);
+                    FieldTypeHelper.WriteFieldType(writer, syncedVarFields[i].FieldInfo.GetValue(this));
                 }
                 bool observed = InternalMessageHandler.Send(clientId, "MLAPI_SYNC_VAR_UPDATE", "MLAPI_INTERNAL", writer, networkId);
                 if (observed)
@@ -583,7 +757,7 @@ namespace MLAPI.MonoBehaviours.Core
                 syncMask[i] = (clientId == null && ignoreTarget && syncedVarFields[i].Dirty && !syncedVarFields[i].Target) ||
                                (clientId == null && !ignoreTarget && syncedVarFields[i].Dirty) || 
                                 (clientId != null && !syncedVarFields[i].Target) || 
-                                 (clientId != null && syncedVarFields[i].Target && ownerClientId == clientId.Value);
+                                 (clientId != null && syncedVarFields[i].Target && OwnerClientId == clientId.Value);
             return ref syncMask;
         }
 
@@ -630,8 +804,9 @@ namespace MLAPI.MonoBehaviours.Core
                         //Writes all the indexes of the dirty syncvars.
                         if (syncedVarFields[i].Dirty == true)
                         {
-                            FieldTypeHelper.WriteFieldType(writer, syncedVarFields[i].FieldInfo.GetValue(this), syncedVarFields[i].FieldValue);
-                            syncedVarFields[i].FieldValue = FieldTypeHelper.GetReferenceArrayValue(syncedVarFields[i].FieldInfo.GetValue(this), syncedVarFields[i].FieldValue);
+                            object o = syncedVarFields[i].FieldInfo.GetValue(this).SheepCopy();
+                            FieldTypeHelper.WriteFieldType(writer, o, syncedVarFields[i].FieldValue);
+                            syncedVarFields[i].FieldValue = o; //FieldTypeHelper.GetReferenceArrayValue(syncedVarFields[i].FieldInfo.GetValue(this), syncedVarFields[i].FieldValue);
                             syncedVarFields[i].Dirty = false;
                             InvokeSyncvarMethodOnServer(syncedVarFields[i].HookMethod);
                         }
@@ -646,7 +821,7 @@ namespace MLAPI.MonoBehaviours.Core
             }
             else
             {
-                if (!(isHost && ownerClientId == NetworkingManager.singleton.NetworkConfig.NetworkTransport.HostDummyId))
+                if (!(isHost && OwnerClientId == NetworkingManager.singleton.NetworkConfig.NetworkTransport.HostDummyId))
                 {
                     //It's sync time. This is the target receivers packet.
                     using (BitWriter writer = BitWriter.Get())
@@ -663,19 +838,20 @@ namespace MLAPI.MonoBehaviours.Core
                             //Writes all the indexes of the dirty syncvars.
                             if (syncedVarFields[i].Dirty == true)
                             {
-                                FieldTypeHelper.WriteFieldType(writer, syncedVarFields[i].FieldInfo.GetValue(this), syncedVarFields[i].FieldValue);
+                                object o = syncedVarFields[i].FieldInfo.GetValue(this).SheepCopy();
+                                FieldTypeHelper.WriteFieldType(writer, o, syncedVarFields[i].FieldValue);
                                 if (nonTargetDirtyCount == 0)
                                 {
                                     //Only targeted SyncedVars were changed. Thus we need to set them as non dirty here since it wont be done by the next loop.
-                                    syncedVarFields[i].FieldValue = FieldTypeHelper.GetReferenceArrayValue(syncedVarFields[i].FieldInfo.GetValue(this), syncedVarFields[i].FieldValue);
+                                    syncedVarFields[i].FieldValue = o; //FieldTypeHelper.GetReferenceArrayValue(syncedVarFields[i].FieldInfo.GetValue(this), syncedVarFields[i].FieldValue);
                                     syncedVarFields[i].Dirty = false;
                                     InvokeSyncvarMethodOnServer(syncedVarFields[i].HookMethod);
                                 }
                             }
                         }
-                        bool observing = !InternalMessageHandler.Send(ownerClientId, "MLAPI_SYNC_VAR_UPDATE", "MLAPI_INTERNAL", writer, networkId); //Send only to target
+                        bool observing = !InternalMessageHandler.Send(OwnerClientId, "MLAPI_SYNC_VAR_UPDATE", "MLAPI_INTERNAL", writer, networkId); //Send only to target
                         if (!observing)
-                            OutOfSyncClients.Add(ownerClientId);
+                            OutOfSyncClients.Add(OwnerClientId);
                     }
                 }
 
@@ -697,13 +873,14 @@ namespace MLAPI.MonoBehaviours.Core
                         //Writes all the indexes of the dirty syncvars.
                         if (syncedVarFields[i].Dirty == true && !syncedVarFields[i].Target)
                         {
-                            FieldTypeHelper.WriteFieldType(writer, syncedVarFields[i].FieldInfo.GetValue(this), syncedVarFields[i].FieldValue);
-                            syncedVarFields[i].FieldValue = FieldTypeHelper.GetReferenceArrayValue(syncedVarFields[i].FieldInfo.GetValue(this), syncedVarFields[i].FieldValue);
+                            object o = syncedVarFields[i].FieldInfo.GetValue(this).SheepCopy();
+                            FieldTypeHelper.WriteFieldType(writer, o, syncedVarFields[i].FieldValue);
+                            syncedVarFields[i].FieldValue = o; //FieldTypeHelper.GetReferenceArrayValue(syncedVarFields[i].FieldInfo.GetValue(this), syncedVarFields[i].FieldValue);
                             syncedVarFields[i].Dirty = false;
                             InvokeSyncvarMethodOnServer(syncedVarFields[i].HookMethod);
                         }
                     }
-                    List<uint> stillDirtyIds = InternalMessageHandler.Send("MLAPI_SYNC_VAR_UPDATE", "MLAPI_INTERNAL", writer, ownerClientId, networkId, null, null); // Send to everyone except target.
+                    List<uint> stillDirtyIds = InternalMessageHandler.Send("MLAPI_SYNC_VAR_UPDATE", "MLAPI_INTERNAL", writer, OwnerClientId, networkId, null, null); // Send to everyone except target.
                     if (stillDirtyIds != null)
                     {
                         for (int i = 0; i < stillDirtyIds.Count; i++)
@@ -744,6 +921,7 @@ namespace MLAPI.MonoBehaviours.Core
             }
             return dirty;
         }
+        
         #endregion
 
         #region SEND METHODS
@@ -911,7 +1089,7 @@ namespace MLAPI.MonoBehaviours.Core
             using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteByteArray(data);
-                InternalMessageHandler.Send(ownerClientId, messageType, channelName, writer, fromNetId);
+                InternalMessageHandler.Send(OwnerClientId, messageType, channelName, writer, fromNetId);
             }
         }
 
@@ -940,7 +1118,7 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
             uint? fromNetId = respectObservers ? (uint?)networkId : null;
-            InternalMessageHandler.Send(ownerClientId, messageType, channelName, writer, fromNetId);
+            InternalMessageHandler.Send(OwnerClientId, messageType, channelName, writer, fromNetId);
         }
 
         /// <summary>
@@ -982,7 +1160,7 @@ namespace MLAPI.MonoBehaviours.Core
             using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteByteArray(data);
-                InternalMessageHandler.Send(ownerClientId, messageType, channelName, writer, null, networkId, networkedObject.GetOrderIndex(this));
+                InternalMessageHandler.Send(OwnerClientId, messageType, channelName, writer, null, networkId, networkedObject.GetOrderIndex(this));
             }
         }
 
@@ -1009,7 +1187,7 @@ namespace MLAPI.MonoBehaviours.Core
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
                 return;
             }
-            InternalMessageHandler.Send(ownerClientId, messageType, channelName, writer, null, networkId, networkedObject.GetOrderIndex(this));
+            InternalMessageHandler.Send(OwnerClientId, messageType, channelName, writer, null, networkId, networkedObject.GetOrderIndex(this));
         }
 
         /// <summary>gh
@@ -1052,7 +1230,7 @@ namespace MLAPI.MonoBehaviours.Core
             using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteByteArray(data);
-                InternalMessageHandler.Send(messageType, channelName, writer, ownerClientId, fromNetId, null, null);
+                InternalMessageHandler.Send(messageType, channelName, writer, OwnerClientId, fromNetId, null, null);
             }
         }
 
@@ -1081,7 +1259,7 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
             uint? fromNetId = respectObservers ? (uint?)networkId : null;
-            InternalMessageHandler.Send(messageType, channelName, writer, ownerClientId, fromNetId, null, null);
+            InternalMessageHandler.Send(messageType, channelName, writer, OwnerClientId, fromNetId, null, null);
         }
 
         /// <summary>
@@ -1125,7 +1303,7 @@ namespace MLAPI.MonoBehaviours.Core
             using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteByteArray(data);
-                InternalMessageHandler.Send(messageType, channelName, writer, ownerClientId, fromNetId, networkId, networkedObject.GetOrderIndex(this));
+                InternalMessageHandler.Send(messageType, channelName, writer, OwnerClientId, fromNetId, networkId, networkedObject.GetOrderIndex(this));
             }
         }
 
@@ -1154,7 +1332,7 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
             uint? fromNetId = respectObservers ? (uint?)networkId : null;
-            InternalMessageHandler.Send(messageType, channelName, writer, ownerClientId, fromNetId, networkId, networkedObject.GetOrderIndex(this));
+            InternalMessageHandler.Send(messageType, channelName, writer, OwnerClientId, fromNetId, networkId, networkedObject.GetOrderIndex(this));
         }
 
         /// <summary>

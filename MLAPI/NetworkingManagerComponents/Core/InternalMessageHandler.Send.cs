@@ -19,31 +19,18 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
             using (BitWriter writer = BitWriter.Get())
             {
-                writer.WriteUShort(messageType);
-                writer.WriteBool(networkId != null);
-
-                if (networkId != null)
-                    writer.WriteUInt(networkId.Value);
-
-                if (orderId != null)
-                    writer.WriteUShort(orderId.Value);
-
-                writer.WriteBool(true);
-                writer.WriteUInt(sourceId);
-
-                writer.WriteAlignBits();
+                writer.WriteGenericMessageHeader(messageType, networkId != null, networkId.GetValueOrDefault(), orderId.GetValueOrDefault(), true, null, sourceId);
 
 #if !DISABLE_CRYPTOGRAPHY
                 if (netManager.NetworkConfig.EncryptedChannelsHashSet.Contains(MessageManager.reverseChannels[channelId]))
-                    writer.WriteByteArray(CryptographyHelper.Encrypt(reader.ReadByteArray(), netManager.connectedClients[targetId].AesKey));
+                    writer.WriteByteArray(CryptographyHelper.Encrypt(reader.ReadByteArray(), netManager.ConnectedClients[targetId].AesKey));
                 else
 #endif
                     writer.WriteByteArray(reader.ReadByteArray());
 
                 writer.Finalize(ref FinalMessageBuffer);
 
-                byte error;
-                netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(targetId, ref FinalMessageBuffer, (int)writer.GetFinalizeSize(), channelId, false, out error);
+                netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(targetId, ref FinalMessageBuffer, (int)writer.GetFinalizeSize(), channelId, false, out byte error);
             }
         }
 
@@ -74,21 +61,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
             using (BitWriter writer = BitWriter.Get())
             {
-                writer.WriteUShort(MessageManager.messageTypes[messageType]);
-                writer.WriteBool(networkId != null);
-
-                if (networkId != null)
-                    writer.WriteUInt(networkId.Value);
-
-                if (orderId != null)
-                    writer.WriteUShort(orderId.Value);
-
-                writer.WriteBool(isPassthrough);
-
-                if (isPassthrough)
-                    writer.WriteUInt(clientId);
-
-                writer.WriteAlignBits();
+                writer.WriteGenericMessageHeader(MessageManager.messageTypes[messageType], networkId != null, networkId.GetValueOrDefault(), orderId.GetValueOrDefault(), isPassthrough, clientId, null);
 
 #if !DISABLE_CRYPTOGRAPHY
                 if (netManager.NetworkConfig.EncryptedChannelsHashSet.Contains(channelName))
@@ -96,7 +69,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                     //This is an encrypted message.
                     byte[] encrypted;
                     if (netManager.isServer)
-                        encrypted = CryptographyHelper.Encrypt(messageWriter.Finalize(), netManager.connectedClients[clientId].AesKey);
+                        encrypted = CryptographyHelper.Encrypt(messageWriter.Finalize(), netManager.ConnectedClients[clientId].AesKey);
                     else
                         encrypted = CryptographyHelper.Encrypt(messageWriter.Finalize(), netManager.clientAesKey);
 
@@ -133,18 +106,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
             using (BitWriter writer = BitWriter.Get())
             {
-                writer.WriteUShort(MessageManager.messageTypes[messageType]);
-                writer.WriteBool(networkId != null);
-
-                if (networkId != null)
-                    writer.WriteUInt(networkId.Value);
-
-                if (orderId != null)
-                    writer.WriteUShort(orderId.Value);
-
-                writer.WriteBool(false);
-
-                writer.WriteAlignBits();
+                writer.WriteGenericMessageHeader(MessageManager.messageTypes[messageType], networkId != null, networkId.GetValueOrDefault(), orderId.GetValueOrDefault(), false, 0, 0);
 
                 writer.WriteWriter(messageWriter);
 
@@ -170,8 +132,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                     writer.Finalize(ref FinalMessageBuffer);
 
                     NetworkProfiler.StartEvent(TickType.Send, (uint)messageWriter.GetFinalizeSize(), channelName, messageType);
-                    byte error;
-                    netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(targetClientId, ref FinalMessageBuffer, (int)writer.GetFinalizeSize(), channel, false, out error);
+                    netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(targetClientId, ref FinalMessageBuffer, (int)writer.GetFinalizeSize(), channel, false, out byte error);
                     NetworkProfiler.EndEvent();
                 }
             }
@@ -187,18 +148,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
             using (BitWriter writer = BitWriter.Get())
             {
-                writer.WriteUShort(MessageManager.messageTypes[messageType]);
-                writer.WriteBool(networkId != null);
-
-                if (networkId != null)
-                    writer.WriteUInt(networkId.Value);
-
-                if (orderId != null)
-                    writer.WriteUShort(orderId.Value);
-
-                writer.WriteBool(false);
-
-                writer.WriteAlignBits();
+                writer.WriteGenericMessageHeader(MessageManager.messageTypes[messageType], networkId != null, networkId.GetValueOrDefault(), orderId.GetValueOrDefault(), false, 0, 0);
 
                 writer.WriteWriter(messageWriter);
 
@@ -224,8 +174,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                     writer.Finalize(ref FinalMessageBuffer);
 
                     NetworkProfiler.StartEvent(TickType.Send, (uint)messageWriter.GetFinalizeSize(), channelName, messageType);
-                     byte error;
-                    netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(targetClientId, ref FinalMessageBuffer, (int)writer.GetFinalizeSize(), channel, false, out error);
+                    netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(targetClientId, ref FinalMessageBuffer, (int)writer.GetFinalizeSize(), channel, false, out byte error);
                     NetworkProfiler.EndEvent();
                 }
             }
@@ -236,7 +185,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
         internal static ref List<uint> Send(string messageType, string channelName, BitWriter messageWriter, uint? fromNetId,  uint? networkId = null, ushort? orderId = null)
         {
             failedObservers.Clear();
-            if (netManager.connectedClients.Count == 0)
+            if (netManager.ConnectedClients.Count == 0)
                 return ref failedObservers;
             if (netManager.NetworkConfig.EncryptedChannels.Contains(channelName))
             {
@@ -246,23 +195,12 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
             using (BitWriter writer = BitWriter.Get())
             {
-                writer.WriteUShort(MessageManager.messageTypes[messageType]);
-                writer.WriteBool(networkId != null);
-
-                if (networkId != null)
-                    writer.WriteUInt(networkId.Value);
-
-                if (orderId != null)
-                    writer.WriteUShort(orderId.Value);
-
-                writer.WriteBool(false);
-
-                writer.WriteAlignBits();
+                writer.WriteGenericMessageHeader(MessageManager.messageTypes[messageType], networkId != null, networkId.GetValueOrDefault(), orderId.GetValueOrDefault(), false, 0, 0);
 
                 writer.WriteWriter(messageWriter);
 
                 int channel = MessageManager.channels[channelName];
-                foreach (KeyValuePair<uint, NetworkedClient> pair in netManager.connectedClients)
+                foreach (KeyValuePair<uint, NetworkedClient> pair in netManager.ConnectedClients)
                 {
                     uint targetClientId = pair.Key;
                     if (netManager.isHost && targetClientId == netManager.NetworkConfig.NetworkTransport.HostDummyId)
@@ -286,8 +224,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                     writer.Finalize(ref FinalMessageBuffer);
 
                     NetworkProfiler.StartEvent(TickType.Send, (uint)messageWriter.GetFinalizeSize(), channelName, messageType);
-                    byte error;
-                    netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(targetClientId, ref FinalMessageBuffer, (int)writer.GetFinalizeSize(), channel, false, out error);
+                    netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(targetClientId, ref FinalMessageBuffer, (int)writer.GetFinalizeSize(), channel, false, out byte error);
                     NetworkProfiler.EndEvent();
                 }
                 return ref failedObservers;
@@ -306,23 +243,12 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
             using (BitWriter writer = BitWriter.Get())
             {
-                writer.WriteUShort(MessageManager.messageTypes[messageType]);
-                writer.WriteBool(networkId != null);
-
-                if (networkId != null)
-                    writer.WriteUInt(networkId.Value);
-
-                if (orderId != null)
-                    writer.WriteUShort(orderId.Value);
-
-                writer.WriteBool(false);
-
-                writer.WriteAlignBits();
+                writer.WriteGenericMessageHeader(MessageManager.messageTypes[messageType], networkId != null, networkId.GetValueOrDefault(), orderId.GetValueOrDefault(), false, 0, 0);
 
                 writer.WriteWriter(messageWriter);
 
                 int channel = MessageManager.channels[channelName];
-                foreach (KeyValuePair<uint, NetworkedClient> pair in netManager.connectedClients)
+                foreach (KeyValuePair<uint, NetworkedClient> pair in netManager.ConnectedClients)
                 {
                     if (pair.Key == clientIdToIgnore)
                         continue;
@@ -349,12 +275,29 @@ namespace MLAPI.NetworkingManagerComponents.Core
                     writer.Finalize(ref FinalMessageBuffer);
 
                     NetworkProfiler.StartEvent(TickType.Send, (uint)messageWriter.GetFinalizeSize(), channelName, messageType);
-                    byte error;
-                    netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(targetClientId, ref FinalMessageBuffer, (int)writer.GetFinalizeSize(), channel, false, out error);
+                    netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(targetClientId, ref FinalMessageBuffer, (int)writer.GetFinalizeSize(), channel, false, out byte error);
                     NetworkProfiler.EndEvent();
                 }
                 return ref failedObservers;
             }
+        }
+
+        private static void WriteGenericMessageHeader(this BitWriter writer, ushort messageType, bool isTargeted, uint targetNetworkId, ushort behaviourIndex, bool isPassthrough, uint? passthroughTarget, uint? passthroughOrigin)
+        {
+            writer.WriteUShort(messageType);
+            writer.WriteBool(isTargeted);
+            if (isTargeted)
+            {
+                writer.WriteUInt(targetNetworkId);
+                writer.WriteUShort(behaviourIndex);
+            }
+            writer.WriteBool(isPassthrough);
+            if (isPassthrough)
+            {
+                if (passthroughTarget != null) writer.WriteUInt(passthroughTarget.Value);
+                if (passthroughOrigin != null) writer.WriteUInt(passthroughOrigin.Value);
+            }
+            writer.WriteAlignBits();
         }
     }
 }

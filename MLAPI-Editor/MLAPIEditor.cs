@@ -27,33 +27,33 @@ public class MLAPIEditor : EditorWindow
 {
     private GithubRelease[] releases = new GithubRelease[0];
     private bool[] foldoutStatus = new bool[0];
-    private long lastUpdated = 0;
-    private string currentVersion;
+    private string currentVersion
+    {
+        get
+        {
+            return EditorPrefs.GetString("MLAPI_version", "None");
+        }
+        set
+        {
+            EditorPrefs.SetString("MLAPI_version", value);
+        }
+    }
+    private long lastUpdated
+    {
+        get
+        {
+            return Convert.ToInt64(EditorPrefs.GetString("MLAPI_lastUpdated", "0"));
+        }
+        set
+        {
+            EditorPrefs.SetString("MLAPI_lastUpdated", Convert.ToString(value));
+        }
+    }
 
     [MenuItem("Window/MLAPI")]
     public static void ShowWindow()
     {
         GetWindow<MLAPIEditor>();
-    }
-
-    private void Init()
-    {
-        lastUpdated = 0;
-
-        if (EditorPrefs.HasKey("MLAPI_version"))
-            currentVersion = EditorPrefs.GetString("MLAPI_version");
-        else
-            currentVersion = "None";
-    }
-
-    private void Awake()
-    {
-        Init();
-    }
-
-    private void OnFocus()
-    {
-        Init();
     }
 
     private void OnGUI()
@@ -100,17 +100,24 @@ public class MLAPIEditor : EditorWindow
             }
         }
 
-        GUILayout.BeginArea(new Rect(5, position.height - 20, position.width, 20));
+        GUILayout.BeginArea(new Rect(5, position.height - 40, position.width, 40));
 
-        if (GUILayout.Button("Check for updates"))
+        if (GUILayout.Button("Fetch releases"))
             GetReleases();
+        if (GUILayout.Button("Reset defaults"))
+        {
+            releases = new GithubRelease[0];
+            foldoutStatus = new bool[0];
+            if (EditorPrefs.HasKey("MLAPI_version")) EditorPrefs.DeleteKey("MLAPI_version");
+            if (EditorPrefs.HasKey("MLAPI_lastUpdated")) EditorPrefs.DeleteKey("MLAPI_lastUpdated");
+        }
 
         GUILayout.EndArea();
 
         string lastUpdatedString = lastUpdated == 0 ? "Never" : new DateTime(lastUpdated).ToShortTimeString();
-        EditorGUI.LabelField(new Rect(5, position.height - 40, position.width, 20), "Last checked: " + lastUpdatedString, EditorStyles.centeredGreyMiniLabel);
+        EditorGUI.LabelField(new Rect(5, position.height - 60, position.width, 20), "Last checked: " + lastUpdatedString, EditorStyles.centeredGreyMiniLabel);
 
-        if ((DateTime.Now - new DateTime(lastUpdated)).Seconds > 3600)
+        if ((releases.Length == 0 && (DateTime.Now - new DateTime(lastUpdated)).TotalSeconds > 600) || (DateTime.Now - new DateTime(lastUpdated)).TotalSeconds > 3600)
             GetReleases();
 
         Repaint();
@@ -135,7 +142,6 @@ public class MLAPIEditor : EditorWindow
                 AssetDatabase.ImportPackage(Application.dataPath + "/MLAPI/Lib/" + releases[index].assets[i].name, false);
         }
 
-        EditorPrefs.SetString("MLAPI_version", releases[index].tag_name);
         currentVersion = releases[index].tag_name;
         AssetDatabase.Refresh();
     }

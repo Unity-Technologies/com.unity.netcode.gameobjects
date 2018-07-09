@@ -25,27 +25,11 @@ namespace MLAPI.MonoBehaviours.Core
         /// <summary>
         /// Gets the unique ID of this object that is synced across the network
         /// </summary>
-        public uint NetworkId
-        {
-            get
-            {
-                return networkId;
-            }
-        }
-        internal uint networkId;
+        public uint NetworkId { get; internal set; }
         /// <summary>
         /// Gets the clientId of the owner of this NetworkedObject
         /// </summary>
         public uint OwnerClientId
-        {
-            get
-            {
-                return ownerClientId;
-            }
-        }
-        private uint? _ownerClientId = null;
-        //internal uint ownerClientId = new NetId(0, 0, false, true).GetClientId();
-        internal uint ownerClientId
         {
             get
             {
@@ -54,7 +38,7 @@ namespace MLAPI.MonoBehaviours.Core
                 else
                     return _ownerClientId.Value;
             }
-            set
+            internal set
             {
                 if (value == NetworkingManager.singleton.NetworkConfig.NetworkTransport.InvalidDummyId)
                     _ownerClientId = null;
@@ -62,6 +46,7 @@ namespace MLAPI.MonoBehaviours.Core
                     _ownerClientId = value;
             }
         }
+        private uint? _ownerClientId = null;
         /// <summary>
         /// The name of the NetworkedPrefab
         /// </summary>
@@ -69,68 +54,35 @@ namespace MLAPI.MonoBehaviours.Core
         /// <summary>
         /// Gets if this object is a player object
         /// </summary>
-        public bool isPlayerObject
-        {
-            get
-            {
-                return _isPlayerObject;
-            }
-        }
-        internal bool _isPlayerObject = false;
+        public bool isPlayerObject { get; internal set; }
         /// <summary>
         /// Gets if this object is part of a pool
         /// </summary>
-        public bool isPooledObject
-        {
-            get
-            {
-                return _isPooledObject;
-            }
-        }
-        internal bool _isPooledObject = false;
+        public bool isPooledObject { get; internal set; }
         /// <summary>
         /// Gets the poolId this object is part of
         /// </summary>
-        public ushort PoolId
-        {
-            get
-            {
-                return poolId;
-            }
-        }
-        internal ushort poolId;
+        public ushort PoolId { get; internal set; }
         /// <summary>
         /// Gets if the object is the the personal clients player object
         /// </summary>
-        public bool isLocalPlayer
-        {
-            get
-            {
-                return isPlayerObject && (OwnerClientId == NetworkingManager.singleton.MyClientId || (ownerClientId == NetworkingManager.singleton.NetworkConfig.NetworkTransport.HostDummyId && NetworkingManager.singleton.isHost));
-            }
-        }
+        public bool isLocalPlayer => isPlayerObject && (OwnerClientId == NetworkingManager.singleton.LocalClientId || (OwnerClientId == NetworkingManager.singleton.NetworkConfig.NetworkTransport.HostDummyId && NetworkingManager.singleton.isHost));
         /// <summary>
-        /// Gets if the object is owned by the local player
+        /// Gets if the object is owned by the local player or if the object is the local player object
         /// </summary>
-        public bool isOwner
-        {
-            get
-            {
-                return !isPlayerObject && (OwnerClientId == NetworkingManager.singleton.MyClientId || (ownerClientId == NetworkingManager.singleton.NetworkConfig.NetworkTransport.HostDummyId && NetworkingManager.singleton.isHost));
-            }
-        }
-
+        public bool isOwner => isLocalPlayer || isObjectOwner;
+        /// <summary>
+        /// Gets if the object is owned by the local player and this is not a player object
+        /// </summary>
+        public bool isObjectOwner => !isPlayerObject && (OwnerClientId == NetworkingManager.singleton.LocalClientId || (OwnerClientId == NetworkingManager.singleton.NetworkConfig.NetworkTransport.HostDummyId && NetworkingManager.singleton.isHost));
+        /// <summary>
+        /// Gets wheter or not the object is owned by anyone
+        /// </summary>
+        public bool hasOwner => OwnerClientId != NetworkingManager.singleton.NetworkConfig.NetworkTransport.InvalidDummyId;
         /// <summary>
         /// Gets if the object has yet been spawned across the network
         /// </summary>
-        public bool isSpawned
-        {
-            get
-            {
-                return _isSpawned;
-            }
-        }
-        internal bool _isSpawned = false;
+        public bool isSpawned { get; internal set; }
         internal bool? sceneObject = null;
 
         /// <summary>
@@ -174,7 +126,7 @@ namespace MLAPI.MonoBehaviours.Core
                 }
                 if (update)
                 {
-                    foreach (KeyValuePair<uint, NetworkedClient> pair in NetworkingManager.singleton.connectedClients)
+                    foreach (KeyValuePair<uint, NetworkedClient> pair in NetworkingManager.singleton.ConnectedClients)
                     {
                         if (pair.Key == NetworkingManager.singleton.NetworkConfig.NetworkTransport.HostDummyId)
                             continue;
@@ -184,7 +136,7 @@ namespace MLAPI.MonoBehaviours.Core
                             //Something changed for this client.
                             using (BitWriter writer = BitWriter.Get())
                             {
-                                writer.WriteUInt(networkId);
+                                writer.WriteUInt(NetworkId);
                                 writer.WriteBool(observers.Contains(pair.Key));
 
                                 if (observers.Contains(pair.Key))
@@ -232,17 +184,23 @@ namespace MLAPI.MonoBehaviours.Core
         public void UnSpawn()
         {
             SpawnManager.UnSpawnObject(this);
-        } 
+        }
 
         /// <summary>
         /// Spawns an object across the network with a given owner. Can only be called from server
         /// </summary>
         /// <param name="clientId">The clientId to own the object</param>
+        /// <param name="spawnPayload">The writer containing the spawn payload</param>
         public void SpawnWithOwnership(uint clientId, BitWriter spawnPayload = null)
         {
             SpawnManager.SpawnObject(this, clientId, spawnPayload);
         }
 
+        /// <summary>
+        /// Spawns an object across the network and makes it the player object for the given client
+        /// </summary>
+        /// <param name="clientId">The clientId whos player object this is</param>
+        /// <param name="spawnPayload">The writer containing the spawn payload</param>
         public void SpawnAsPlayerObject(uint clientId, BitWriter spawnPayload = null)
         {
             SpawnManager.SpawnPlayerObject(this, clientId, spawnPayload);
@@ -323,7 +281,8 @@ namespace MLAPI.MonoBehaviours.Core
             }
         }
 
-        //Writes SyncedVar data in a formatted way so taht the SetFormattedSyncedVarData method can read it.
+
+        //Writes SyncedVar data in a formatted way so that the SetFormattedSyncedVarData method can read it.
         //The format doesn't NECCECARLY correspond with the "general syncedVar message layout" 
         //as this should only be used for reading SyncedVar data that is to be read by the SetFormattedData method
         //*

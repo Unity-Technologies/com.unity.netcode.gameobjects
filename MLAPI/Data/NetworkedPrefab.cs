@@ -1,4 +1,5 @@
 ﻿using MLAPI.MonoBehaviours.Core;
+using MLAPI.NetworkingManagerComponents.Core;
 using System;
 using UnityEngine;
 
@@ -14,7 +15,17 @@ namespace MLAPI.Data
         {
             get
             {
-                return prefab.GetComponent<NetworkedObject>().NetworkedPrefabName;
+                if (prefab == null)
+                {
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkedPrefab is not assigned");
+                    return string.Empty;
+                }
+                else if (prefab.GetComponent<NetworkedObject>() == null)
+                {
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The NetworkedPrefab " + prefab.name + " does not have a NetworkedObject");
+                    return prefab.name;
+                }
+                else return prefab.GetComponent<NetworkedObject>().NetworkedPrefabName;
             }
         }
         /// <summary>

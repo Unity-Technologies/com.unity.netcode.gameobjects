@@ -11,6 +11,6 @@ namespace MLAPI.Attributes
         /// <summary>
         /// The channelName to send this Command
         /// </summary>
-        public string channelName = "MLAPI_INTERNAL";
+        public string channelName { get; set; } = "MLAPI_INTERNAL";
     }
 }

@@ -17,6 +17,11 @@ namespace MLAPI.Data
         /// </summary>
         public int Count { get => queueCount; }
 
+        /// <summary>
+        /// Gets the element at a given virtual index
+        /// </summary>
+        /// <param name="index">The virtual index to get the item from</param>
+        /// <returns>The element at the virtual index</returns>
         public T this[int index]
         {
             get
@@ -66,8 +71,8 @@ namespace MLAPI.Data
         /// <summary>
         /// Gets the element at a given virtual index
         /// </summary>
-        /// <param name="index"></param>
-        /// <returns></returns>
+        /// <param name="index">The virtual index to get the item from</param>
+        /// <returns>The element at the virtual index</returns>
         public T ElementAt(int index) => queue[(queueStart + index) % queue.Length];
     }
 }
