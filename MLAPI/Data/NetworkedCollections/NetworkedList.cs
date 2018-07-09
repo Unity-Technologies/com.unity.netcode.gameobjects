@@ -80,17 +80,56 @@ namespace MLAPI.Data.NetworkedCollections
 
         public void WriteDeltaToWriter(BitWriter writer)
         {
+            writer.WriteUShort((ushort)dirtyEvents.Count);
             for (int i = 0; i < dirtyEvents.Count; i++)
             {
-                //TODO: Write event
+                writer.WriteBits((byte)dirtyEvents[i].eventType, 3);
+                switch (dirtyEvents[i].eventType)
+                {
+                    //Fuck me these signatures are proper aids
+                    case global::MLAPI.Data.NetworkedCollections.NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.Add:
+                        {
+                            //TODO: Write dirtyEvents[i].value
+                        }
+                        break;
+                    case global::MLAPI.Data.NetworkedCollections.NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.Insert:
+                        {
+                            writer.WriteInt(dirtyEvents[i].index);
+                            //TODO: Write dirtyEvents[i].value
+                        }
+                        break;
+                    case global::MLAPI.Data.NetworkedCollections.NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.Remove:
+                        {
+                            //TODO: Write dirtyEvents[i].value
+                        }
+                        break;
+                    case global::MLAPI.Data.NetworkedCollections.NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.RemoveAt:
+                        {
+                            writer.WriteInt(dirtyEvents[i].index);
+                        }
+                        break;
+                    case global::MLAPI.Data.NetworkedCollections.NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.Value:
+                        {
+                            writer.WriteInt(dirtyEvents[i].index);
+                            //TODO: Write dirtyEvents[i].value
+                        }
+
+                        break;
+                    case global::MLAPI.Data.NetworkedCollections.NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.Clear:
+                        {
+                            //Nothing has to be written
+                        }
+                        break;
+                }
             }
         }
 
         public void WriteFieldToWriter(BitWriter writer)
         {
+            writer.WriteUShort((ushort)list.Count);
             for (int i = 0; i < list.Count; i++)
             {
-                //TODO: Write the field
+                //TODO: Write the fieldValue
             }
         }
 
@@ -108,7 +147,44 @@ namespace MLAPI.Data.NetworkedCollections
             ushort deltaCount = reader.ReadUShort();
             for (int i = 0; i < deltaCount; i++)
             {
-                //TODO: Read the NetworkedListEvent and apply the instruction
+                NetworkedListEvent<T>.NetworkedListEventType eventType = (NetworkedListEvent<T>.NetworkedListEventType)reader.ReadBits(3);
+                switch (eventType)
+                {
+                    case global::MLAPI.Data.NetworkedCollections.NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.Add:
+                        {
+                            //TODO: list.Add(readValue);
+                        }
+                        break;
+                    case global::MLAPI.Data.NetworkedCollections.NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.Insert:
+                        {
+                            int index = reader.ReadInt();
+                            //TODO: list.Insert(index, readValue);
+                        }
+                        break;
+                    case global::MLAPI.Data.NetworkedCollections.NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.Remove:
+                        {
+                            //TODO: list.Remove(readValue);
+                        }
+                        break;
+                    case global::MLAPI.Data.NetworkedCollections.NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.RemoveAt:
+                        {
+                            int index = reader.ReadInt();
+                            list.RemoveAt(index);
+                        }
+                        break;
+                    case global::MLAPI.Data.NetworkedCollections.NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.Value:
+                        {
+                            int index = reader.ReadInt();
+                            //TODO: list[index] = readValue
+                        }
+                        break;
+                    case global::MLAPI.Data.NetworkedCollections.NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.Clear:
+                        {
+                            //Read nothing
+                            list.Clear();
+                        }
+                        break;
+                }
             }
         }
 
