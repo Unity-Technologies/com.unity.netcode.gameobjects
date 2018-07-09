@@ -25,7 +25,7 @@ namespace MLAPI.Data.NetworkedCollections
         }
 
         public NetworkedVarSettings Settings = new NetworkedVarSettings();
-        private readonly Dictionary<TKey, TValue> dictionary = new Dictionary<TKey, TValue>();
+        private readonly IDictionary<TKey, TValue> dictionary = new Dictionary<TKey, TValue>();
         private NetworkedBehaviour networkedBehaviour;
         private readonly List<NetworkedDictionaryEvent<TKey, TValue>> dirtyEvents = new List<NetworkedDictionaryEvent<TKey, TValue>>();
 
@@ -215,13 +215,13 @@ namespace MLAPI.Data.NetworkedCollections
             }
         }
 
-        public ICollection<TKey> Keys => ((IDictionary<TKey, TValue>)dictionary).Keys;
+        public ICollection<TKey> Keys => dictionary.Keys;
 
-        public ICollection<TValue> Values => ((IDictionary<TKey, TValue>)dictionary).Values;
+        public ICollection<TValue> Values => dictionary.Values;
 
         public int Count => dictionary.Count;
 
-        public bool IsReadOnly => ((IDictionary<TKey, TValue>)dictionary).IsReadOnly;
+        public bool IsReadOnly => dictionary.IsReadOnly;
 
         public void Add(TKey key, TValue value)
         {
@@ -236,7 +236,7 @@ namespace MLAPI.Data.NetworkedCollections
 
         public void Add(KeyValuePair<TKey, TValue> item)
         {
-            ((IDictionary<TKey, TValue>)dictionary).Add(item);
+            dictionary.Add(item);
             dirtyEvents.Add(new NetworkedDictionaryEvent<TKey, TValue>()
             {
                 eventType = NetworkedDictionaryEvent<TKey, TValue>.NetworkedListEventType.Add,
@@ -256,7 +256,7 @@ namespace MLAPI.Data.NetworkedCollections
 
         public bool Contains(KeyValuePair<TKey, TValue> item)
         {
-            return ((IDictionary<TKey, TValue>)dictionary).Contains(item);
+            return dictionary.Contains(item);
         }
 
         public bool ContainsKey(TKey key)
@@ -266,12 +266,12 @@ namespace MLAPI.Data.NetworkedCollections
 
         public void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex)
         {
-            ((IDictionary<TKey, TValue>)dictionary).CopyTo(array, arrayIndex);
+            dictionary.CopyTo(array, arrayIndex);
         }
 
         public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
         {
-            return ((IDictionary<TKey, TValue>)dictionary).GetEnumerator();
+            return dictionary.GetEnumerator();
         }
 
         public bool Remove(TKey key)
@@ -290,7 +290,7 @@ namespace MLAPI.Data.NetworkedCollections
 
         public bool Remove(KeyValuePair<TKey, TValue> item)
         {
-            bool state = ((IDictionary<TKey, TValue>)dictionary).Remove(item);
+            bool state = dictionary.Remove(item);
             if (state)
             {
                 dirtyEvents.Add(new NetworkedDictionaryEvent<TKey, TValue>()
@@ -305,7 +305,7 @@ namespace MLAPI.Data.NetworkedCollections
 
         IEnumerator IEnumerable.GetEnumerator()
         {
-            return ((IDictionary<TKey, TValue>)dictionary).GetEnumerator();
+            return dictionary.GetEnumerator();
         }
     }
 }
