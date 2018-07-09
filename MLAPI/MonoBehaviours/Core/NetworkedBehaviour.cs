@@ -966,6 +966,9 @@ namespace MLAPI.MonoBehaviours.Core
             {
                 using (BitWriter writer = BitWriter.Get())
                 {
+                    writer.WriteUInt(networkId);
+                    writer.WriteUShort(networkedObject.GetOrderIndex(this));
+
                     uint clientId = NetworkingManager.singleton.ConnectedClientsList[i].ClientId;
                     for (int j = 0; j < networkedVarFields.Count; j++)
                     {
@@ -992,38 +995,24 @@ namespace MLAPI.MonoBehaviours.Core
 
         internal void HandleNetworkedVarDeltas(BitReader reader)
         {
-            ushort index = reader.ReadUShort();
-            if (index >= networkedVarFields.Count)
+            for (int i = 0; i < networkedVarFields.Count; i++)
             {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkedVar index out of range");
-                return;
-            }
+                if (!reader.ReadBool())
+                    continue;
 
-            networkedVarFields[index].SetDeltaFromReader(reader);
+                networkedVarFields[i].SetDeltaFromReader(reader);
+            }
         }
 
         internal void HandleNetworkedVarUpdate(BitReader reader)
         {
-            ushort index = reader.ReadUShort();
-            if (index >= networkedVarFields.Count)
+            for (int i = 0; i < networkedVarFields.Count; i++)
             {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkedVar index out of range");
-                return;
+                if (!reader.ReadBool())
+                    continue;
+
+                networkedVarFields[i].SetFieldFromReader(reader);
             }
-
-            networkedVarFields[index].SetFieldFromReader(reader);
-        }
-
-        internal ushort GetNetworkedVarIndex(INetworkedVar networkedVar)
-        {
-            int index = networkedVarFields.IndexOf(networkedVar);
-            if (index == -1)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogWarning("Unable to find NetworkedVar instance");
-                return 0;
-            }
-
-            return (ushort)index;
         }
 
         #endregion
