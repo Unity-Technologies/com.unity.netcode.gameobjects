@@ -43,7 +43,8 @@ namespace UnityEditor
                 EditorGUILayout.LabelField("isSpawned: ", networkedObject.isSpawned.ToString(), EditorStyles.label);
                 EditorGUILayout.LabelField("isLocalPlayer: ", networkedObject.isLocalPlayer.ToString(), EditorStyles.label);
                 EditorGUILayout.LabelField("isOwner: ", networkedObject.isOwner.ToString(), EditorStyles.label);
-                EditorGUILayout.LabelField("isPoolObject: ", networkedObject.isPlayerObject.ToString(), EditorStyles.label);
+                EditorGUILayout.LabelField("isObjectOwner: ", networkedObject.isObjectOwner.ToString(), EditorStyles.label);
+                EditorGUILayout.LabelField("isPoolObject: ", networkedObject.isPooledObject.ToString(), EditorStyles.label);
                 EditorGUILayout.LabelField("isPlayerObject: ", networkedObject.isPlayerObject.ToString(), EditorStyles.label);
 
                 if (networkedObject.observers != null && networkedObject.observers.Count > 0)
