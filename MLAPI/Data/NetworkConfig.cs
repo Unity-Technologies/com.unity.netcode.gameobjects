@@ -42,10 +42,12 @@ namespace MLAPI.Data
         /// <summary>
         /// Channels used by the NetworkedTransport
         /// </summary>
+        [HideInInspector]
         public List<Channel> Channels = new List<Channel>();
         /// <summary>
         /// Registered MessageTypes
         /// </summary>
+        [HideInInspector]
         public List<MessageType> MessageTypes = new List<MessageType>();
         internal HashSet<ushort> PassthroughMessageHashSet = new HashSet<ushort>();
         internal HashSet<string> EncryptedChannelsHashSet = new HashSet<string>();
@@ -65,7 +67,6 @@ namespace MLAPI.Data
         /// The default player prefab
         /// </summary>
         [SerializeField]
-        [HideInInspector]
         internal string PlayerPrefabName;
         /// <summary>
         /// The size of the receive message buffer. This is the max message size.

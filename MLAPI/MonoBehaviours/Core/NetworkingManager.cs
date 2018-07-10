@@ -28,14 +28,17 @@ namespace MLAPI.MonoBehaviours.Core
         /// <summary>
         /// Gets or sets if the NetworkingManager should be marked as DontDestroyOnLoad
         /// </summary>
+        [HideInInspector]
         public bool DontDestroy = true;
         /// <summary>
         /// Gets or sets if the application should be set to run in background
         /// </summary>
+        [HideInInspector]
         public bool RunInBackground = true;
         /// <summary>
         /// The log level to use
         /// </summary>
+        [HideInInspector]
         public LogLevel LogLevel = LogLevel.Normal;
         /// <summary>
         /// The singleton instance of the NetworkingManager
