@@ -680,7 +680,8 @@ namespace MLAPI.MonoBehaviours.Core
             if (syncVarInit)
                 return;
             syncVarInit = true;
-            FieldInfo[] sortedFields = GetType().GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy | BindingFlags.Instance).OrderBy(x => x.Name).ToArray();
+
+            FieldInfo[] sortedFields = GetFieldInfoForType(GetType());
             for (int i = 0; i < sortedFields.Length; i++)
             {
                 if(sortedFields[i].IsDefined(typeof(SyncedVar), true))
@@ -931,13 +932,22 @@ namespace MLAPI.MonoBehaviours.Core
         private readonly List<HashSet<int>> channelMappedVarIndexes = new List<HashSet<int>>();
         private readonly List<string> channelsForVarGroups = new List<string>();
         internal readonly List<INetworkedVar> networkedVarFields = new List<INetworkedVar>();
+        private static readonly Dictionary<Type, FieldInfo[]> fieldTypes = new Dictionary<Type, FieldInfo[]>();
+
+        private static FieldInfo[] GetFieldInfoForType(Type type)
+        {
+            if (!fieldTypes.ContainsKey(type))
+                fieldTypes.Add(type, type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy | BindingFlags.Instance).OrderBy(x => x.Name).ToArray());
+            return fieldTypes[type];
+        }
+        
         internal void NetworkedVarInit()
         {
             if (networkedVarInit)
                 return;
             networkedVarInit = true;
 
-            FieldInfo[] sortedFields = GetType().GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy | BindingFlags.Instance).OrderBy(x => x.Name).ToArray();
+            FieldInfo[] sortedFields = GetFieldInfoForType(GetType());
             for (int i = 0; i < sortedFields.Length; i++)
             {
                 Type fieldType = sortedFields[i].FieldType;
