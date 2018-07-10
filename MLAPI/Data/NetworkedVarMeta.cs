@@ -87,7 +87,7 @@ namespace MLAPI.Data
         /// The maximum times per second this var will be synced.
         /// Less than or equal to 0 will cause the variable to sync as soon as possible after being changed.
         /// </summary>
-        public float SendTickrate = NetworkingManager.singleton.NetworkConfig.SendTickrate;
+        public float SendTickrate = 0;
         /// <summary>
         /// The name of the channel to use for this variable.
         /// Variables with different channels will be split into different packets
