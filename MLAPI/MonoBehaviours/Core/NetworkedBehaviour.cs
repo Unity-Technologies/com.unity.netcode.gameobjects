@@ -1074,7 +1074,7 @@ namespace MLAPI.MonoBehaviours.Core
                     return;
                 }
 
-                networkedVarFields[i].SetFieldFromReader(reader);
+                networkedVarFields[i].ReadField(reader);
             }
         }
 
