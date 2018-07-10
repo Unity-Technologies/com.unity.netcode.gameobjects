@@ -7,6 +7,11 @@ using MLAPI.NetworkingManagerComponents.Core;
 
 namespace MLAPI.Data.NetworkedCollections
 {
+    /// <summary>
+    /// Event based networkedVar container for syncing Lists
+    /// </summary>
+    /// <typeparam name="TKey">The type for the dictionary keys</typeparam>
+    /// <typeparam name="TValue">The type for the dctionary values</typeparam>
     public class NetworkedDictionary<TKey, TValue> : IDictionary<TKey, TValue>, INetworkedVar
     {
         internal struct NetworkedDictionaryEvent<TKey, TValue>
@@ -25,21 +30,31 @@ namespace MLAPI.Data.NetworkedCollections
             internal TValue value;
         }
 
-        public NetworkedVarSettings Settings = new NetworkedVarSettings();
+        /// <summary>
+        /// Gets the last time the variable was synced
+        /// </summary>
+        public float LastSyncedTime { get; internal set; }   
+        /// <summary>
+        /// The settings for this container
+        /// </summary>
+        public readonly NetworkedVarSettings Settings = new NetworkedVarSettings();
         private readonly IDictionary<TKey, TValue> dictionary = new Dictionary<TKey, TValue>();
         private NetworkedBehaviour networkedBehaviour;
         private readonly List<NetworkedDictionaryEvent<TKey, TValue>> dirtyEvents = new List<NetworkedDictionaryEvent<TKey, TValue>>();
 
+        /// <inheritdoc />
         public void ResetDirty()
         {
             dirtyEvents.Clear();
         }
 
+        /// <inheritdoc />
         public string GetChannel()
         {
             return Settings.SendChannel;
         }
 
+        /// <inheritdoc />
         public void SetDeltaFromReader(BitReader reader)
         {
             ushort deltaCount = reader.ReadUShort();
@@ -83,6 +98,7 @@ namespace MLAPI.Data.NetworkedCollections
             }
         }
 
+        /// <inheritdoc />
         public void SetFieldFromReader(BitReader reader)
         {
             ushort entryCount = reader.ReadUShort();
@@ -94,16 +110,19 @@ namespace MLAPI.Data.NetworkedCollections
             }
         }
 
+        /// <inheritdoc />
         public void SetNetworkedBehaviour(NetworkedBehaviour behaviour)
         {
             networkedBehaviour = behaviour;
         }
 
+        /// <inheritdoc />
         public bool TryGetValue(TKey key, out TValue value)
         {
             return dictionary.TryGetValue(key, out value);
         }
 
+        /// <inheritdoc />
         public void WriteDeltaToWriter(BitWriter writer)
         {
             writer.WriteUShort((ushort)dirtyEvents.Count);
@@ -146,6 +165,7 @@ namespace MLAPI.Data.NetworkedCollections
             }
         }
 
+        /// <inheritdoc />
         public void WriteFieldToWriter(BitWriter writer)
         {
             writer.WriteUShort((ushort)dictionary.Count);
@@ -156,6 +176,7 @@ namespace MLAPI.Data.NetworkedCollections
             }
         }
 
+        /// <inheritdoc />
         public bool CanClientWrite(uint clientId)
         {
             switch (Settings.WritePermission)
@@ -176,6 +197,7 @@ namespace MLAPI.Data.NetworkedCollections
             return true;
         }
 
+        /// <inheritdoc />
         public bool CanClientRead(uint clientId)
         {
             switch (Settings.ReadPermission)
@@ -194,14 +216,18 @@ namespace MLAPI.Data.NetworkedCollections
             }
             return true;
         }
-
+        
+        /// <inheritdoc />
         public bool IsDirty()
         {
-            return dirtyEvents.Count > 0;
+            if (dirtyEvents.Count == 0) return false;
+            if (Settings.SendOnChange) return true;
+            if (NetworkingManager.singleton.NetworkTime - LastSyncedTime >= Settings.SendDelay) return true;
+            return false;
         }
 
 
-
+        /// <inheritdoc />
         public TValue this[TKey key]
         {
             get
@@ -220,14 +246,19 @@ namespace MLAPI.Data.NetworkedCollections
             }
         }
 
+        /// <inheritdoc />
         public ICollection<TKey> Keys => dictionary.Keys;
 
+        /// <inheritdoc />
         public ICollection<TValue> Values => dictionary.Values;
 
+        /// <inheritdoc />
         public int Count => dictionary.Count;
 
+        /// <inheritdoc />
         public bool IsReadOnly => dictionary.IsReadOnly;
 
+        /// <inheritdoc />
         public void Add(TKey key, TValue value)
         {
             dictionary.Add(key, value);
@@ -239,6 +270,7 @@ namespace MLAPI.Data.NetworkedCollections
             });
         }
 
+        /// <inheritdoc />
         public void Add(KeyValuePair<TKey, TValue> item)
         {
             dictionary.Add(item);
@@ -250,6 +282,7 @@ namespace MLAPI.Data.NetworkedCollections
             });
         }
 
+        /// <inheritdoc />
         public void Clear()
         {
             dictionary.Clear();
@@ -259,26 +292,31 @@ namespace MLAPI.Data.NetworkedCollections
             });
         }
 
+        /// <inheritdoc />
         public bool Contains(KeyValuePair<TKey, TValue> item)
         {
             return dictionary.Contains(item);
         }
 
+        /// <inheritdoc />
         public bool ContainsKey(TKey key)
         {
             return dictionary.ContainsKey(key);
         }
 
+        /// <inheritdoc />
         public void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex)
         {
             dictionary.CopyTo(array, arrayIndex);
         }
 
+        /// <inheritdoc />
         public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
         {
             return dictionary.GetEnumerator();
         }
 
+        /// <inheritdoc />
         public bool Remove(TKey key)
         {
             bool state = dictionary.Remove(key);
@@ -293,6 +331,7 @@ namespace MLAPI.Data.NetworkedCollections
             return state;
         }
 
+        /// <inheritdoc />
         public bool Remove(KeyValuePair<TKey, TValue> item)
         {
             bool state = dictionary.Remove(item);
