@@ -1,7 +1,5 @@
 ﻿using MLAPI.NetworkingManagerComponents.Binary;
 using MLAPI.MonoBehaviours.Core;
-using MLAPI.NetworkingManagerComponents.Core;
-using System;
 using System.Collections.Generic;
 
 namespace MLAPI.Data
@@ -116,7 +114,7 @@ namespace MLAPI.Data
         /// Writes the variable to the writer
         /// </summary>
         /// <param name="writer">The writer to write the value to</param>
-        public void WriteDeltaToWriter(BitWriter writer) => WriteFieldToWriter(writer); //The NetworkedVar is built for simple data types and has no delta.
+        public void WriteDelta(BitWriter writer) => WriteField(writer); //The NetworkedVar is built for simple data types and has no delta.
 
         /// <inheritdoc />
         public bool CanClientWrite(uint clientId)
@@ -143,7 +141,7 @@ namespace MLAPI.Data
         /// Reads value from the reader and applies it
         /// </summary>
         /// <param name="reader">The reader to read the value from</param>
-        public void SetDeltaFromReader(BitReader reader) => SetFieldFromReader(reader); //The NetworkedVar is built for simple data types and has no delta.
+        public void ReadDelta(BitReader reader) => ReadField(reader); //The NetworkedVar is built for simple data types and has no delta.
 
         /// <inheritdoc />
         public void SetNetworkedBehaviour(NetworkedBehaviour behaviour)
@@ -152,7 +150,7 @@ namespace MLAPI.Data
         }
 
         /// <inheritdoc />
-        public void SetFieldFromReader(BitReader reader)
+        public void ReadField(BitReader reader)
         {
             // TODO TwoTen - Boxing sucks
             T previousValue = InternalValue;
@@ -162,7 +160,7 @@ namespace MLAPI.Data
         }
         
         /// <inheritdoc />
-        public void WriteFieldToWriter(BitWriter writer)
+        public void WriteField(BitWriter writer)
         {
             //TODO: Write field
         }
@@ -209,22 +207,22 @@ namespace MLAPI.Data
         /// Writes the dirty changes, that is, the changes since the variable was last dirty, to the writer
         /// </summary>
         /// <param name="writer">The writer to write the dirty changes to</param>
-        void WriteDeltaToWriter(BitWriter writer);
+        void WriteDelta(BitWriter writer);
         /// <summary>
         /// Writes the complete state of the variable to the writer
         /// </summary>
         /// <param name="writer">The writer to write the state to</param>
-        void WriteFieldToWriter(BitWriter writer);
+        void WriteField(BitWriter writer);
         /// <summary>
         /// Reads the complete state from the reader and applies it
         /// </summary>
         /// <param name="reader">The reader to read the state from</param>
-        void SetFieldFromReader(BitReader reader);
+        void ReadField(BitReader reader);
         /// <summary>
         /// Reads delta from the reader and applies them to the internal value
         /// </summary>
         /// <param name="reader">The reader to read the delta from</param>
-        void SetDeltaFromReader(BitReader reader);
+        void ReadDelta(BitReader reader);
         /// <summary>
         /// Sets NetworkedBehaviour the container belongs to.
         /// </summary>

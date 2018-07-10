@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using MLAPI.MonoBehaviours.Core;
 using MLAPI.NetworkingManagerComponents.Binary;
@@ -76,7 +75,7 @@ namespace MLAPI.Data.NetworkedCollections
         }
 
         /// <inheritdoc />
-        public void SetDeltaFromReader(BitReader reader)
+        public void ReadDelta(BitReader reader)
         {
             ushort deltaCount = reader.ReadUShort();
             for (int i = 0; i < deltaCount; i++)
@@ -120,7 +119,7 @@ namespace MLAPI.Data.NetworkedCollections
         }
 
         /// <inheritdoc />
-        public void SetFieldFromReader(BitReader reader)
+        public void ReadField(BitReader reader)
         {
             ushort entryCount = reader.ReadUShort();
 
@@ -144,7 +143,7 @@ namespace MLAPI.Data.NetworkedCollections
         }
 
         /// <inheritdoc />
-        public void WriteDeltaToWriter(BitWriter writer)
+        public void WriteDelta(BitWriter writer)
         {
             writer.WriteUShort((ushort)dirtyEvents.Count);
             for (int i = 0; i < dirtyEvents.Count; i++)
@@ -187,7 +186,7 @@ namespace MLAPI.Data.NetworkedCollections
         }
 
         /// <inheritdoc />
-        public void WriteFieldToWriter(BitWriter writer)
+        public void WriteField(BitWriter writer)
         {
             writer.WriteUShort((ushort)dictionary.Count);
             for (int i = 0; i < dictionary.Count; i++)
