@@ -953,17 +953,14 @@ namespace MLAPI.MonoBehaviours.Core
                 Type fieldType = sortedFields[i].FieldType;
                 if (fieldType.HasInterface(typeof(INetworkedVar)))
                 {
-                    INetworkedVar instance = null;
-                    if (sortedFields[i].GetValue(this) == null)
+                    INetworkedVar instance = (INetworkedVar)sortedFields[i].GetValue(this);
+                    if (instance == null)
                     {
                         Type genericType = fieldType.MakeGenericType(fieldType.GetGenericArguments());
                         instance = (INetworkedVar)Activator.CreateInstance(genericType, true);
                         sortedFields[i].SetValue(this, instance);
                     }
-                    else
-                    {
-                        instance = (INetworkedVar)sortedFields[i].GetValue(this);
-                    }
+                    
                     instance.SetNetworkedBehaviour(this);
                     networkedVarFields.Add(instance);
                 }
