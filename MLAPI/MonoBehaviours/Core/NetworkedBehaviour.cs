@@ -1959,7 +1959,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <returns></returns>
         protected NetworkedObject GetNetworkedObject(uint networkId)
         {
-            return SpawnManager.spawnedObjects[networkId];
+            return SpawnManager.SpawnedObjects[networkId];
         }
     }
 }

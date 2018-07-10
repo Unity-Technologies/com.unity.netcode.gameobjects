@@ -49,7 +49,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 targetClientId = netManager.NetworkConfig.NetworkTransport.ServerNetId;
             }
             //If we respect the observers, and the message is targeted (networkId != null) and the targetedNetworkId isnt observing the receiver. Then we return
-            if (netManager.isServer && fromNetId != null && !SpawnManager.spawnedObjects[fromNetId.Value].observers.Contains(clientId))
+            if (netManager.isServer && fromNetId != null && !SpawnManager.SpawnedObjects[fromNetId.Value].observers.Contains(clientId))
                 return false;
 
             bool isPassthrough = (!netManager.isServer && clientId != netManager.NetworkConfig.NetworkTransport.ServerNetId && netManager.NetworkConfig.AllowPassthroughMessages);
@@ -126,7 +126,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                     }
 
                     //If we respect the observers, and the message is targeted (networkId != null) and the targetedNetworkId isnt observing the receiver. Then we continue
-                    if (netManager.isServer && fromNetId != null && !SpawnManager.spawnedObjects[fromNetId.Value].observers.Contains(clientIds[i]))
+                    if (netManager.isServer && fromNetId != null && !SpawnManager.SpawnedObjects[fromNetId.Value].observers.Contains(clientIds[i]))
                         continue;
 
                     writer.Finalize(ref FinalMessageBuffer);
@@ -168,7 +168,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                     }
 
                     //If we respect the observers, and the message is targeted (networkId != null) and the targetedNetworkId isnt observing the receiver. Then we continue
-                    if (netManager.isServer && fromNetId != null && !SpawnManager.spawnedObjects[fromNetId.Value].observers.Contains(clientIds[i]))
+                    if (netManager.isServer && fromNetId != null && !SpawnManager.SpawnedObjects[fromNetId.Value].observers.Contains(clientIds[i]))
                         continue;
 
                     writer.Finalize(ref FinalMessageBuffer);
@@ -215,7 +215,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                     }
 
                     //If we respect the observers, and the message is targeted (networkId != null) and the targetedNetworkId isnt observing the receiver. Then we continue
-                    if (netManager.isServer && fromNetId != null && !SpawnManager.spawnedObjects[fromNetId.Value].observers.Contains(pair.Key))
+                    if (netManager.isServer && fromNetId != null && !SpawnManager.SpawnedObjects[fromNetId.Value].observers.Contains(pair.Key))
                     {
                         failedObservers.Add(pair.Key);
                         continue;
@@ -266,7 +266,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                     }
 
                     //If we respect the observers, and the message is targeted (networkId != null) and the targetedNetworkId isnt observing the receiver. Then we continue
-                    if (netManager.isServer && fromNetId != null && !SpawnManager.spawnedObjects[fromNetId.Value].observers.Contains(pair.Key))
+                    if (netManager.isServer && fromNetId != null && !SpawnManager.SpawnedObjects[fromNetId.Value].observers.Contains(pair.Key))
                     {
                         failedObservers.Add(pair.Key);
                         continue;

@@ -191,32 +191,32 @@ namespace MLAPI.NetworkingManagerComponents.Core
             float yRot = reader.ReadFloat();
             float zRot = reader.ReadFloat();
 
-            SpawnManager.spawnedObjects[netId].transform.position = new Vector3(xPos, yPos, zPos);
-            SpawnManager.spawnedObjects[netId].transform.rotation = Quaternion.Euler(xRot, yRot, zRot);
-            SpawnManager.spawnedObjects[netId].gameObject.SetActive(true);
+            SpawnManager.SpawnedObjects[netId].transform.position = new Vector3(xPos, yPos, zPos);
+            SpawnManager.SpawnedObjects[netId].transform.rotation = Quaternion.Euler(xRot, yRot, zRot);
+            SpawnManager.SpawnedObjects[netId].gameObject.SetActive(true);
         }
 
         internal static void HandleDestroyPoolObject(uint clientId, BitReader reader, int channelId)
         {
             uint netId = reader.ReadUInt();
-            SpawnManager.spawnedObjects[netId].gameObject.SetActive(false);
+            SpawnManager.SpawnedObjects[netId].gameObject.SetActive(false);
         }
 
         internal static void HandleChangeOwner(uint clientId, BitReader reader, int channelId)
         {
             uint netId = reader.ReadUInt();
             uint ownerClientId = reader.ReadUInt();
-            if (SpawnManager.spawnedObjects[netId].OwnerClientId == netManager.LocalClientId)
+            if (SpawnManager.SpawnedObjects[netId].OwnerClientId == netManager.LocalClientId)
             {
                 //We are current owner.
-                SpawnManager.spawnedObjects[netId].InvokeBehaviourOnLostOwnership();
+                SpawnManager.SpawnedObjects[netId].InvokeBehaviourOnLostOwnership();
             }
             if (ownerClientId == netManager.LocalClientId)
             {
                 //We are new owner.
-                SpawnManager.spawnedObjects[netId].InvokeBehaviourOnGainedOwnership();
+                SpawnManager.SpawnedObjects[netId].InvokeBehaviourOnGainedOwnership();
             }
-            SpawnManager.spawnedObjects[netId].OwnerClientId = ownerClientId;
+            SpawnManager.SpawnedObjects[netId].OwnerClientId = ownerClientId;
         }
 
         internal static void HandleSyncVarUpdate(uint clientId, BitReader reader, int channelId)
@@ -224,26 +224,26 @@ namespace MLAPI.NetworkingManagerComponents.Core
             uint netId = reader.ReadUInt();
             ushort orderIndex = reader.ReadUShort();
 
-            if (!SpawnManager.spawnedObjects.ContainsKey(netId))
+            if (!SpawnManager.SpawnedObjects.ContainsKey(netId))
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sync message recieved for a non existant object with id: " + netId);
                 return;
             }
-            else if (SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex) == null)
+            else if (SpawnManager.SpawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex) == null)
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sync message recieved for a non existant behaviour");
                 return;
             }
 
-            for (int i = 0; i < SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).syncedVarFields.Count; i++)
+            for (int i = 0; i < SpawnManager.SpawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).syncedVarFields.Count; i++)
             {
                 if (!reader.ReadBool())
                     continue;
-                SyncedVarField field = SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).syncedVarFields[i];
-                SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(FieldTypeHelper.ReadFieldType(reader,
+                SyncedVarField field = SpawnManager.SpawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).syncedVarFields[i];
+                SpawnManager.SpawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(FieldTypeHelper.ReadFieldType(reader,
                     field.FieldInfo.FieldType, field.FieldValue), i);
             }
-            SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate();
+            SpawnManager.SpawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate();
         }
 
         internal static void HandleAddObjects(uint clientId, BitReader reader, int channelId)
@@ -299,7 +299,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             uint networkId = reader.ReadUInt();
             ushort orderId = reader.ReadUShort();
             ulong hash = reader.ReadULong();
-            NetworkedBehaviour behaviour = SpawnManager.spawnedObjects[networkId].GetBehaviourAtOrderIndex(orderId);
+            NetworkedBehaviour behaviour = SpawnManager.SpawnedObjects[networkId].GetBehaviourAtOrderIndex(orderId);
             if (clientId != behaviour.OwnerClientId)
                 return; // Not owner
             MethodInfo targetMethod = null;
@@ -321,7 +321,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             uint networkId = reader.ReadUInt();
             ushort orderId = reader.ReadUShort();
             ulong hash = reader.ReadULong();
-            NetworkedBehaviour behaviour = SpawnManager.spawnedObjects[networkId].GetBehaviourAtOrderIndex(orderId);
+            NetworkedBehaviour behaviour = SpawnManager.SpawnedObjects[networkId].GetBehaviourAtOrderIndex(orderId);
             MethodInfo targetMethod = null;
             if (behaviour.cachedMethods.ContainsKey(hash))
                 targetMethod = behaviour.cachedMethods[hash];
@@ -341,7 +341,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             uint networkId = reader.ReadUInt();
             ushort orderId = reader.ReadUShort();
             ulong hash = reader.ReadULong();
-            NetworkedBehaviour behaviour = SpawnManager.spawnedObjects[networkId].GetBehaviourAtOrderIndex(orderId);
+            NetworkedBehaviour behaviour = SpawnManager.SpawnedObjects[networkId].GetBehaviourAtOrderIndex(orderId);
             MethodInfo targetMethod = null;
             if (behaviour.cachedMethods.ContainsKey(hash))
                 targetMethod = behaviour.cachedMethods[hash];
@@ -358,8 +358,8 @@ namespace MLAPI.NetworkingManagerComponents.Core
             uint networkId = reader.ReadUInt();
             bool visibility = reader.ReadBool();
             if (visibility)
-                SpawnManager.spawnedObjects[networkId].SetFormattedSyncedVarData(reader);
-            SpawnManager.spawnedObjects[networkId].SetLocalVisibility(visibility);
+                SpawnManager.SpawnedObjects[networkId].SetFormattedSyncedVarData(reader);
+            SpawnManager.SpawnedObjects[networkId].SetLocalVisibility(visibility);
         }
     }
 }

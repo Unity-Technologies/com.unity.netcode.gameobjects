@@ -211,7 +211,8 @@ namespace MLAPI.MonoBehaviours.Core
             MessageManager.releasedMessageHandlerCounters.Clear();
             MessageManager.reverseChannels.Clear();
             MessageManager.reverseMessageTypes.Clear();
-            SpawnManager.spawnedObjects.Clear();
+            SpawnManager.SpawnedObjects.Clear();
+            SpawnManager.SpawnedObjectsList.Clear();
             SpawnManager.releasedNetworkObjectIds.Clear();
             NetworkPoolManager.Pools.Clear();
             NetworkPoolManager.PoolNamesToIndexes.Clear();
@@ -899,27 +900,27 @@ namespace MLAPI.MonoBehaviours.Core
                         //Custom message, invoke all message handlers
                         if (targeted)
                         {
-                            if (!SpawnManager.spawnedObjects.ContainsKey(targetNetworkId))
+                            if (!SpawnManager.SpawnedObjects.ContainsKey(targetNetworkId))
                             {
                                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("No target for message found");
                                 messageReader.Dispose();
                                 return;
                             }
-                            else if (!SpawnManager.spawnedObjects[targetNetworkId].targetMessageActions.ContainsKey(networkOrderId))
+                            else if (!SpawnManager.SpawnedObjects[targetNetworkId].targetMessageActions.ContainsKey(networkOrderId))
                             {
                                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("No target messageType for message found");
                                 messageReader.Dispose();
                                 return;
                             }
-                            else if (!SpawnManager.spawnedObjects[targetNetworkId].targetMessageActions[networkOrderId].ContainsKey(messageType))
+                            else if (!SpawnManager.SpawnedObjects[targetNetworkId].targetMessageActions[networkOrderId].ContainsKey(messageType))
                             {
                                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("No target found with the given messageType");
                                 messageReader.Dispose();
                                 return;
                             }
-                            if (SpawnManager.spawnedObjects[targetNetworkId].targetMessageActions[networkOrderId].ContainsKey(messageType))
+                            if (SpawnManager.SpawnedObjects[targetNetworkId].targetMessageActions[networkOrderId].ContainsKey(messageType))
                             {
-                                SpawnManager.spawnedObjects[targetNetworkId].targetMessageActions[networkOrderId][messageType].Invoke(clientId, messageReader);
+                                SpawnManager.SpawnedObjects[targetNetworkId].targetMessageActions[networkOrderId][messageType].Invoke(clientId, messageReader);
                             }
                         }
                         else
@@ -1036,7 +1037,7 @@ namespace MLAPI.MonoBehaviours.Core
                 diffieHellmanPublicKeys.Remove(clientId);
 #endif
 
-            foreach (KeyValuePair<uint, NetworkedObject> pair in SpawnManager.spawnedObjects)
+            foreach (KeyValuePair<uint, NetworkedObject> pair in SpawnManager.SpawnedObjects)
                 pair.Value.observers.Remove(clientId);
 
             NetworkConfig.NetworkTransport.DisconnectClient(clientId);
@@ -1064,7 +1065,7 @@ namespace MLAPI.MonoBehaviours.Core
 
             if (isServer)
             {
-                foreach (KeyValuePair<uint, NetworkedObject> pair in SpawnManager.spawnedObjects)
+                foreach (KeyValuePair<uint, NetworkedObject> pair in SpawnManager.SpawnedObjects)
                     pair.Value.observers.Remove(clientId);
 
                 using (BitWriter writer = BitWriter.Get())
@@ -1138,7 +1139,7 @@ namespace MLAPI.MonoBehaviours.Core
                     ConnectedClients[clientId].PlayerObject = netObject;
                 }
 
-                int amountOfObjectsToSend = SpawnManager.spawnedObjects.Values.Count;
+                int amountOfObjectsToSend = SpawnManager.SpawnedObjects.Values.Count;
 
                 using (BitWriter writer = BitWriter.Get())
                 {
@@ -1174,7 +1175,7 @@ namespace MLAPI.MonoBehaviours.Core
                     {
                         writer.WriteInt(amountOfObjectsToSend);
 
-                        foreach (KeyValuePair<uint, NetworkedObject> pair in SpawnManager.spawnedObjects)
+                        foreach (KeyValuePair<uint, NetworkedObject> pair in SpawnManager.SpawnedObjects)
                         {
                             pair.Value.RebuildObservers(clientId); //Rebuilds observers for the new client
 
@@ -1640,7 +1641,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <returns>Returns the NetworkedObject</returns>
         public NetworkedObject GetNetworkedObject(uint networkId)
         {
-            return SpawnManager.spawnedObjects[networkId];
+            return SpawnManager.SpawnedObjects[networkId];
         }
 #endregion
     }
