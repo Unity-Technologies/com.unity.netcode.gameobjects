@@ -70,7 +70,8 @@ namespace MLAPI.Data
         public bool IsDirty()
         {
             if (!isDirty) return false;
-            if (NetworkingManager.singleton.NetworkTime - LastSyncedTime >= Settings.SendTickrate) return true;
+            if (Settings.SendTickrate <= 0) return true;
+            if (NetworkingManager.singleton.NetworkTime - LastSyncedTime >= (1f / Settings.SendTickrate)) return true;
             return false;
         }
 

@@ -25,7 +25,8 @@ namespace MLAPI.Data
         /// </summary>
         public NetworkedVarPermissionsDelegate ReadPermissionCallback = null;
         /// <summary>
-        /// The minimum amount of delay in seconds between sends
+        /// The maximum times per second this var will be synced.
+        /// Less than or equal to 0 will cause the variable to sync as soon as possible after being changed.
         /// </summary>
         public float SendTickrate = NetworkingManager.singleton.NetworkConfig.SendTickrate;
         /// <summary>
