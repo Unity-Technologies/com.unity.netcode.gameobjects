@@ -51,8 +51,7 @@ namespace MLAPI.Data.NetworkedCollections
         public bool IsDirty()
         {
             if (dirtyEvents.Count == 0) return false;
-            if (Settings.SendOnChange) return true;
-            if (NetworkingManager.singleton.NetworkTime - LastSyncedTime >= Settings.SendDelay) return true;
+            if (NetworkingManager.singleton.NetworkTime - LastSyncedTime >= Settings.SendTickrate) return true;
             return false;
         }
 

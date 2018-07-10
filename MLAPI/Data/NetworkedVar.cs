@@ -1,6 +1,8 @@
 ﻿using MLAPI.NetworkingManagerComponents.Binary;
 using MLAPI.MonoBehaviours.Core;
 using MLAPI.NetworkingManagerComponents.Core;
+using System;
+using System.Collections.Generic;
 
 namespace MLAPI.Data
 {
@@ -49,8 +51,11 @@ namespace MLAPI.Data
             }
             set
             {
-                isDirty = true;
-                InternalValue = value;
+                if (!EqualityComparer<T>.Default.Equals(InternalValue, value))
+                {
+                    isDirty = true;
+                    InternalValue = value;
+                }
             }
         }
 
@@ -65,8 +70,7 @@ namespace MLAPI.Data
         public bool IsDirty()
         {
             if (!isDirty) return false;
-            if (Settings.SendOnChange) return true;
-            if (NetworkingManager.singleton.NetworkTime - LastSyncedTime >= Settings.SendDelay) return true;
+            if (NetworkingManager.singleton.NetworkTime - LastSyncedTime >= Settings.SendTickrate) return true;
             return false;
         }
 

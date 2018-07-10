@@ -1,4 +1,5 @@
 ﻿using MLAPI.Data.Transports;
+using MLAPI.MonoBehaviours.Core;
 
 namespace MLAPI.Data
 {
@@ -24,13 +25,9 @@ namespace MLAPI.Data
         /// </summary>
         public NetworkedVarPermissionsDelegate ReadPermissionCallback = null;
         /// <summary>
-        /// If enabled, sends will be sent the as fast as possible. If disabled, the sendDelay will be used
-        /// </summary>
-        public bool SendOnChange = false;
-        /// <summary>
         /// The minimum amount of delay in seconds between sends
         /// </summary>
-        public float SendDelay = 0.1f;
+        public float SendTickrate = NetworkingManager.singleton.NetworkConfig.SendTickrate;
         /// <summary>
         /// The name of the channel to use for this variable.
         /// Variables with different channels will be split into different packets
