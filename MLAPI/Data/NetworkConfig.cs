@@ -55,6 +55,7 @@ namespace MLAPI.Data
         /// <summary>
         /// A list of SceneNames that can be used during networked games.
         /// </summary>
+        [HideInInspector]
         public List<string> RegisteredScenes = new List<string>();
         /// <summary>
         /// A list of spawnable prefabs
