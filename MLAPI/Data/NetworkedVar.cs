@@ -54,7 +54,7 @@ namespace MLAPI.Data
             this.InternalValue = value;
         }
 
-        private T InternalValue;
+        private T InternalValue = default(T);
         /// <summary>
         /// The value of the NetworkedVar container
         /// </summary>
