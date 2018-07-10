@@ -218,7 +218,7 @@ public class MLAPIEditor : EditorWindow
             if (depth == 0 && json[i] == ',')
             {
                 releasesJson.Add(builder.ToString());
-                builder.Clear();
+                builder.Length = 0;
             }
 
             //Parse in smaller batches
