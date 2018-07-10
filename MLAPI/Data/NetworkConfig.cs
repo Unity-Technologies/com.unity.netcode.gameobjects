@@ -68,6 +68,7 @@ namespace MLAPI.Data
         /// The default player prefab
         /// </summary>
         [SerializeField]
+        [HideInInspector]
         internal string PlayerPrefabName;
         /// <summary>
         /// The size of the receive message buffer. This is the max message size.
