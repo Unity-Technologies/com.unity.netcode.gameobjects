@@ -583,7 +583,7 @@ namespace MLAPI.MonoBehaviours.Core
             if (NetworkConfig.HandleObjectSpawning)
             {
                 prefabId = prefabId == -1 ? NetworkConfig.NetworkPrefabIds[NetworkConfig.PlayerPrefabName] : prefabId;
-                SpawnManager.CreateSpawnedObject(prefabId, 0, hostClientId, true, pos.GetValueOrDefault(), rot.GetValueOrDefault(), null, false, false);
+                SpawnManager.CreateSpawnedObject(prefabId, 0, hostClientId, true, pos.GetValueOrDefault(), rot.GetValueOrDefault(), null, false, false, false);
             }
 
             SpawnSceneObjects();
@@ -1124,7 +1124,7 @@ namespace MLAPI.MonoBehaviours.Core
                 if(NetworkConfig.HandleObjectSpawning)
                 {
                     prefabId = prefabId == -1 ? NetworkConfig.NetworkPrefabIds[NetworkConfig.PlayerPrefabName] : prefabId;
-                    netObject = SpawnManager.CreateSpawnedObject(prefabId, 0, clientId, true, position, rotation, null, false, false);
+                    netObject = SpawnManager.CreateSpawnedObject(prefabId, 0, clientId, true, position, rotation, null, false, false, false);
                     ConnectedClients[clientId].PlayerObject = netObject;
                 }
 
@@ -1186,6 +1186,7 @@ namespace MLAPI.MonoBehaviours.Core
 
                             if (pair.Value.observers.Contains(clientId))
                                 pair.Value.WriteFormattedSyncedVarData(writer);
+                            pair.Value.WriteNetworkedVarData(writer, clientId);
                         }
                     }
                     InternalMessageHandler.Send(clientId, "MLAPI_CONNECTION_APPROVED", "MLAPI_INTERNAL", writer, null, null, null, true);
@@ -1224,6 +1225,7 @@ namespace MLAPI.MonoBehaviours.Core
 
                             if (ConnectedClients[clientId].PlayerObject.GetComponent<NetworkedObject>().observers.Contains(clientPair.Key))
                                 ConnectedClients[clientId].PlayerObject.GetComponent<NetworkedObject>().WriteFormattedSyncedVarData(writer);
+                            ConnectedClients[clientId].PlayerObject.GetComponent<NetworkedObject>().WriteNetworkedVarData(writer, clientPair.Key);
                         }
                         else
                         {

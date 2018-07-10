@@ -288,17 +288,20 @@ namespace MLAPI.MonoBehaviours.Core
                 NetworkedBehaviours[i].NetworkedVarUpdate();
             }
         }
-
-        internal void WriteNetworkedVarData(BitWriter writer)
+        
+        internal void WriteNetworkedVarData(BitWriter writer, uint clientId)
         {
             for (int i = 0; i < childNetworkedBehaviours.Count; i++)
             {
                 childNetworkedBehaviours[i].NetworkedVarInit();
                 if (childNetworkedBehaviours[i].networkedVarFields.Count == 0)
                     continue;
-                writer.WriteUShort(GetOrderIndex(childNetworkedBehaviours[i])); //Write the behaviourId
                 for (int j = 0; j < childNetworkedBehaviours[i].networkedVarFields.Count; j++)
-                    childNetworkedBehaviours[i].networkedVarFields[j].WriteField(writer);
+                {
+                    bool canClientRead = childNetworkedBehaviours[i].networkedVarFields[j].CanClientRead(clientId);
+                    writer.WriteBool(canClientRead);
+                    if (canClientRead) childNetworkedBehaviours[i].networkedVarFields[j].WriteField(writer);
+                }
             }
         }
 
@@ -309,9 +312,10 @@ namespace MLAPI.MonoBehaviours.Core
                 childNetworkedBehaviours[i].NetworkedVarInit();
                 if (childNetworkedBehaviours[i].networkedVarFields.Count == 0)
                     continue;
-                NetworkedBehaviour behaviour = GetBehaviourAtOrderIndex(reader.ReadUShort());
                 for (int j = 0; j < childNetworkedBehaviours[i].networkedVarFields.Count; j++)
-                    childNetworkedBehaviours[i].networkedVarFields[j].ReadField(reader);
+                {
+                    if (reader.ReadBool()) childNetworkedBehaviours[i].networkedVarFields[j].ReadField(reader);
+                }
             }
         }
 

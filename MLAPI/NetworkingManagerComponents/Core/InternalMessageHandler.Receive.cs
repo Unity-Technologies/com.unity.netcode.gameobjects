@@ -105,7 +105,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                     float zRot = reader.ReadFloat();
 
                     NetworkedObject netObject = SpawnManager.CreateSpawnedObject(prefabId, networkId, ownerId, isPlayerObject,
-                        new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), reader, visible, false);
+                        new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), reader, visible, false, true);
                     netObject.SetLocalVisibility(visible);
                     netObject.sceneObject = sceneObject;
                     netObject.gameObject.SetActive(isActive);
@@ -149,7 +149,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                     netManager.ConnectedClientsList.Add(netManager.ConnectedClients[ownerId]);
                 }
                 NetworkedObject netObject = SpawnManager.CreateSpawnedObject(prefabId, networkId, ownerId, isPlayerObject,
-                    new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), reader, visible, hasPayload);
+                    new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), reader, visible, hasPayload, true);
 
                 netObject.SetLocalVisibility(visible);
                 netObject.sceneObject = sceneObject;
@@ -274,7 +274,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                         netManager.ConnectedClientsList.Add(netManager.ConnectedClients[ownerId]);
                     }
                     NetworkedObject netObject = SpawnManager.CreateSpawnedObject(prefabId, networkId, ownerId, isPlayerObject,
-                        new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), reader, visible, false);
+                        new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), reader, visible, false, true);
                     netObject.SetLocalVisibility(visible);
                     netObject.sceneObject = sceneObject;
 
