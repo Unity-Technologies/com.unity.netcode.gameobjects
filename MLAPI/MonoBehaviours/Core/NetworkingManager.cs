@@ -128,6 +128,8 @@ namespace MLAPI.MonoBehaviours.Core
                 NetworkConfig.Channels = NetworkConfig.Channels.OrderBy(x => x.Name).ToList();
             if (NetworkConfig.NetworkedPrefabs != null)
                 NetworkConfig.NetworkedPrefabs = NetworkConfig.NetworkedPrefabs.OrderBy(x => x.name).ToList(); 
+            if (NetworkConfig.RegisteredScenes != null)
+                NetworkConfig.RegisteredScenes.Sort();
 
             if (NetworkConfig.EnableSceneSwitching && !NetworkConfig.RegisteredScenes.Contains(SceneManager.GetActiveScene().name))
             {
@@ -312,6 +314,7 @@ namespace MLAPI.MonoBehaviours.Core
                 MessageManager.reverseChannels.Add(channelId, internalChannels[i].Name);
             }
 
+            NetworkConfig.RegisteredScenes.Sort();
             if (NetworkConfig.EnableSceneSwitching)
             {
                 for (int i = 0; i < NetworkConfig.RegisteredScenes.Count; i++)

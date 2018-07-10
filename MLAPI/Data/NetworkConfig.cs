@@ -160,6 +160,7 @@ namespace MLAPI.Data
             MessageTypes = MessageTypes.OrderBy(x => x.Name).ToList();
             Channels = Channels.OrderBy(x => x.Name).ToList();
             NetworkedPrefabs = NetworkedPrefabs.OrderBy(x => x.name).ToList();
+            RegisteredScenes.Sort();
         }
 
         /// <summary>
