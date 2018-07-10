@@ -978,6 +978,8 @@ namespace MLAPI.MonoBehaviours.Core
                     channelsForVarGroups.Add(channel);
                     secondLevelCounter++;
                 }
+                if (firstLevelIndex[channel] >= channelMappedVarIndexes.Count)
+                    channelMappedVarIndexes.Add(new HashSet<int>());
                 channelMappedVarIndexes[firstLevelIndex[channel]].Add(i);
             }
         }
