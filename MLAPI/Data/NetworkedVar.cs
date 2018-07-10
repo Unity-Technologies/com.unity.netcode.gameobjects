@@ -34,9 +34,26 @@ namespace MLAPI.Data
         /// </summary>
         public OnValueChangedDelegate OnValueChanged;
         private NetworkedBehaviour networkedBehaviour;
-
-        internal NetworkedVar()
+     
+        public NetworkedVar()
         {
+            
+        }
+        
+        public NetworkedVar(NetworkedVarSettings settings)
+        {
+            this.Settings = settings;
+        }
+        
+        public NetworkedVar(NetworkedVarSettings settings, T value)
+        {
+            this.Settings = settings;
+            this.InternalValue = value;
+        }
+        
+        public NetworkedVar(T value)
+        {
+            this.InternalValue = value;
         }
 
         private T InternalValue;

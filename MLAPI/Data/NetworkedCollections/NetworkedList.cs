@@ -41,6 +41,28 @@ namespace MLAPI.Data.NetworkedCollections
         /// </summary>
         public readonly NetworkedVarSettings Settings = new NetworkedVarSettings();
         
+        
+        public NetworkedList()
+        {
+            
+        }
+        
+        public NetworkedList(NetworkedVarSettings settings)
+        {
+            this.Settings = settings;
+        }
+        
+        public NetworkedList(NetworkedVarSettings settings, IList<T> value)
+        {
+            this.Settings = settings;
+            this.list = value;
+        }
+        
+        public NetworkedList(IList<T> value)
+        {
+            this.list = value;
+        }
+        
         /// <inheritdoc />
         public void ResetDirty()
         {

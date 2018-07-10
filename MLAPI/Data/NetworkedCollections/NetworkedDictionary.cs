@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using MLAPI.MonoBehaviours.Core;
 using MLAPI.NetworkingManagerComponents.Binary;
-using MLAPI.NetworkingManagerComponents.Core;
 
 namespace MLAPI.Data.NetworkedCollections
 {
@@ -41,6 +40,27 @@ namespace MLAPI.Data.NetworkedCollections
         private readonly IDictionary<TKey, TValue> dictionary = new Dictionary<TKey, TValue>();
         private NetworkedBehaviour networkedBehaviour;
         private readonly List<NetworkedDictionaryEvent<TKey, TValue>> dirtyEvents = new List<NetworkedDictionaryEvent<TKey, TValue>>();
+        
+        public NetworkedDictionary()
+        {
+            
+        }
+        
+        public NetworkedDictionary(NetworkedVarSettings settings)
+        {
+            this.Settings = settings;
+        }
+        
+        public NetworkedDictionary(NetworkedVarSettings settings, IDictionary<TKey, TValue> value)
+        {
+            this.Settings = settings;
+            this.dictionary = value;
+        }
+        
+        public NetworkedDictionary(IDictionary<TKey, TValue> value)
+        {
+            this.dictionary = value;
+        }
 
         /// <inheritdoc />
         public void ResetDirty()
