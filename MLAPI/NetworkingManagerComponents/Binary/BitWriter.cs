@@ -102,7 +102,8 @@ namespace MLAPI.NetworkingManagerComponents.Binary
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The type \"" + b.GetType() + "\" is not supported by the Binary Serializer. It will be ignored");
         }
 
-
+        public void WriteValueTypeOrString<T>(T t)  => Push(t);
+        public void WriteValueType(ValueType v)     => Push(v);
         public void WriteBool(bool b)               => Push(b);
         public void WriteFloat(float f)             => Push(f);
         public void WriteDouble(double d)           => Push(d);

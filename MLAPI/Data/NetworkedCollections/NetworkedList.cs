@@ -137,18 +137,18 @@ namespace MLAPI.Data.NetworkedCollections
                     //Fuck me these signatures are proper aids
                     case NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.Add:
                         {
-                            //TODO: Write dirtyEvents[i].value
+                            writer.WriteValueTypeOrString(dirtyEvents[i].value);
                         }
                         break;
                     case NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.Insert:
                         {
                             writer.WriteInt(dirtyEvents[i].index);
-                            //TODO: Write dirtyEvents[i].value
+                            writer.WriteValueTypeOrString(dirtyEvents[i].value);
                         }
                         break;
                     case NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.Remove:
                         {
-                            //TODO: Write dirtyEvents[i].value
+                            writer.WriteValueTypeOrString(dirtyEvents[i].value);
                         }
                         break;
                     case NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.RemoveAt:
@@ -159,7 +159,7 @@ namespace MLAPI.Data.NetworkedCollections
                     case NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.Value:
                         {
                             writer.WriteInt(dirtyEvents[i].index);
-                            //TODO: Write dirtyEvents[i].value
+                            writer.WriteValueTypeOrString(dirtyEvents[i].value);
                         }
 
                         break;
@@ -178,17 +178,18 @@ namespace MLAPI.Data.NetworkedCollections
             writer.WriteUShort((ushort)list.Count);
             for (int i = 0; i < list.Count; i++)
             {
-                //TODO: Write the fieldValue
+                writer.WriteValueTypeOrString(list[i]);
             }
         }
 
         /// <inheritdoc />
         public void ReadField(BitReader reader)
         {
+            list.Clear();
             ushort count = reader.ReadUShort();
             for (int i = 0; i < count; i++)
             {
-                //TODO: Read element
+                list.Add(reader.ReadValueTypeOrString<T>());
             }
         }
 
@@ -203,18 +204,18 @@ namespace MLAPI.Data.NetworkedCollections
                 {
                     case NetworkedListEvent<T>.NetworkedListEventType.Add:
                         {
-                            //TODO: list.Add(readValue);
+                            list.Add(reader.ReadValueTypeOrString<T>());
                         }
                         break;
                     case NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.Insert:
                         {
                             int index = reader.ReadInt();
-                            //TODO: list.Insert(index, readValue);
+                            list.Insert(index, reader.ReadValueTypeOrString<T>());
                         }
                         break;
                     case NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.Remove:
                         {
-                            //TODO: list.Remove(readValue);
+                            list.Remove(reader.ReadValueTypeOrString<T>());
                         }
                         break;
                     case NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.RemoveAt:
@@ -226,7 +227,7 @@ namespace MLAPI.Data.NetworkedCollections
                     case NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.Value:
                         {
                             int index = reader.ReadInt();
-                            //TODO: list[index] = readValue
+                            if (index < list.Count) list[index] = reader.ReadValueTypeOrString<T>();
                         }
                         break;
                     case NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.Clear:

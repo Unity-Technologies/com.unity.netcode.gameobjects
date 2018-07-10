@@ -84,20 +84,23 @@ namespace MLAPI.Data.NetworkedCollections
                 switch (eventType)
                 {
                     case NetworkedDictionaryEvent<TKey, TValue>.NetworkedListEventType.Add:
-                        {
-                            //TODO: readKey
-                            //TODO: readVal
-                        }
+                    {
+                        TKey key = reader.ReadValueTypeOrString<TKey>();
+                        TValue value = reader.ReadValueTypeOrString<TValue>();
+                        dictionary.Add(key, value);
+                    }
                         break;
                     case NetworkedDictionaryEvent<TKey, TValue>.NetworkedListEventType.Remove:
                         {
-                            //TODO: readKey
+                            TKey key = reader.ReadValueTypeOrString<TKey>();
+                            dictionary.Remove(key);
                         }
                         break;
                     case NetworkedDictionaryEvent<TKey, TValue>.NetworkedListEventType.RemovePair:
                         {
-                            //TODO: readKey
-                            //TODO: readVal
+                            TKey key = reader.ReadValueTypeOrString<TKey>();
+                            TValue value = reader.ReadValueTypeOrString<TValue>();
+                            dictionary.Remove(new KeyValuePair<TKey, TValue>(key, value));
                         }
                         break;
                     case NetworkedDictionaryEvent<TKey, TValue>.NetworkedListEventType.Clear:
@@ -108,8 +111,10 @@ namespace MLAPI.Data.NetworkedCollections
                         break;
                     case NetworkedDictionaryEvent<TKey, TValue>.NetworkedListEventType.Value:
                         {
-                            //TODO: readKey
-                            //TODO: readVal
+                            TKey key = reader.ReadValueTypeOrString<TKey>();
+                            TValue value = reader.ReadValueTypeOrString<TValue>();
+                            if (dictionary.ContainsKey(key))
+                                dictionary[key] = value;
                         }
                         break;
                     default:
@@ -121,12 +126,13 @@ namespace MLAPI.Data.NetworkedCollections
         /// <inheritdoc />
         public void ReadField(BitReader reader)
         {
+            dictionary.Clear();
             ushort entryCount = reader.ReadUShort();
-
             for (int i = 0; i < entryCount; i++)
             {
-                //TODO: readKey
-                //TODO: readVal
+                TKey key = reader.ReadValueTypeOrString<TKey>();
+                TValue value = reader.ReadValueTypeOrString<TValue>();
+                dictionary.Add(key, value);
             }
         }
 
@@ -153,19 +159,19 @@ namespace MLAPI.Data.NetworkedCollections
                 {
                     case NetworkedDictionaryEvent<TKey, TValue>.NetworkedListEventType.Add:
                         {
-                            //TODO: writeKey
-                            //TODO: writeVal
+                            writer.WriteValueTypeOrString(dirtyEvents[i].key);
+                            writer.WriteValueTypeOrString(dirtyEvents[i].value);
                         }
                         break;
                     case NetworkedDictionaryEvent<TKey, TValue>.NetworkedListEventType.Remove:
                         {
-                            //TODO: writeKey
+                            writer.WriteValueTypeOrString(dirtyEvents[i].key);
                         }
                         break;
                     case NetworkedDictionaryEvent<TKey, TValue>.NetworkedListEventType.RemovePair:
                         {
-                            //TODO: writeKey
-                            //TODO: writeVal
+                            writer.WriteValueTypeOrString(dirtyEvents[i].key);
+                            writer.WriteValueTypeOrString(dirtyEvents[i].value);
                         }
                         break;
                     case NetworkedDictionaryEvent<TKey, TValue>.NetworkedListEventType.Clear:
@@ -175,8 +181,8 @@ namespace MLAPI.Data.NetworkedCollections
                         break;
                     case NetworkedDictionaryEvent<TKey, TValue>.NetworkedListEventType.Value:
                         {
-                            //TODO: writeKey
-                            //TODO: writeVal
+                            writer.WriteValueTypeOrString(dirtyEvents[i].key);
+                            writer.WriteValueTypeOrString(dirtyEvents[i].value);
                         }
                         break;
                     default:
@@ -189,10 +195,10 @@ namespace MLAPI.Data.NetworkedCollections
         public void WriteField(BitWriter writer)
         {
             writer.WriteUShort((ushort)dictionary.Count);
-            for (int i = 0; i < dictionary.Count; i++)
+            foreach (KeyValuePair<TKey, TValue> pair in dictionary)
             {
-                //TODO: writeKey
-                //TODO: writeVal
+                writer.WriteValueTypeOrString(pair.Key);
+                writer.WriteValueTypeOrString(pair.Value);
             }
         }
 

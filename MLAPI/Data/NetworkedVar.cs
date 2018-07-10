@@ -152,9 +152,8 @@ namespace MLAPI.Data
         /// <inheritdoc />
         public void ReadField(BitReader reader)
         {
-            // TODO TwoTen - Boxing sucks
             T previousValue = InternalValue;
-            InternalValue = (T)FieldTypeHelper.ReadFieldType(reader, typeof(T), (object)InternalValue);
+            InternalValue = reader.ReadValueTypeOrString<T>();
             if (OnValueChanged != null)
                 OnValueChanged(previousValue, InternalValue);
         }
@@ -162,7 +161,7 @@ namespace MLAPI.Data
         /// <inheritdoc />
         public void WriteField(BitWriter writer)
         {
-            //TODO: Write field
+            writer.WriteValueTypeOrString(InternalValue);
         }
 
         /// <inheritdoc />
