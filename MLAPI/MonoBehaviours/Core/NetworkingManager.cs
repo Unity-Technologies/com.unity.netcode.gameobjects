@@ -121,6 +121,14 @@ namespace MLAPI.MonoBehaviours.Core
             if (NetworkConfig == null)
                 return; //May occur when the component is added            
 
+            //Sort lists
+            if (NetworkConfig.MessageTypes != null)
+                NetworkConfig.MessageTypes = NetworkConfig.MessageTypes.OrderBy(x => x.Name).ToList();
+            if (NetworkConfig.Channels != null)
+                NetworkConfig.Channels = NetworkConfig.Channels.OrderBy(x => x.Name).ToList();
+            if (NetworkConfig.NetworkedPrefabs != null)
+                NetworkConfig.NetworkedPrefabs = NetworkConfig.NetworkedPrefabs.OrderBy(x => x.name).ToList(); 
+
             if (NetworkConfig.EnableSceneSwitching && !NetworkConfig.RegisteredScenes.Contains(SceneManager.GetActiveScene().name))
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The active scene is not registered as a networked scene. The MLAPI has added it");
@@ -216,11 +224,11 @@ namespace MLAPI.MonoBehaviours.Core
 
             object settings = NetworkConfig.NetworkTransport.GetSettings(); //Gets a new "settings" object for the transport currently used.
 
-            if(NetworkConfig.HandleObjectSpawning)
+            if (NetworkConfig.HandleObjectSpawning)
             {
                 NetworkConfig.NetworkPrefabIds = new Dictionary<string, int>();
                 NetworkConfig.NetworkPrefabNames = new Dictionary<int, string>();
-                NetworkConfig.NetworkedPrefabs.OrderBy(x => x.name);
+                NetworkConfig.NetworkedPrefabs = NetworkConfig.NetworkedPrefabs.OrderBy(x => x.name).ToList();
                 HashSet<string> networkedPrefabName = new HashSet<string>();
                 for (int i = 0; i < NetworkConfig.NetworkedPrefabs.Count; i++)
                 {
@@ -304,6 +312,34 @@ namespace MLAPI.MonoBehaviours.Core
                 MessageManager.reverseChannels.Add(channelId, internalChannels[i].Name);
             }
 
+            if (NetworkConfig.EnableSceneSwitching)
+            {
+                for (int i = 0; i < NetworkConfig.RegisteredScenes.Count; i++)
+                {
+                    NetworkSceneManager.registeredSceneNames.Add(NetworkConfig.RegisteredScenes[i]);
+                    NetworkSceneManager.sceneIndexToString.Add((uint)i, NetworkConfig.RegisteredScenes[i]);
+                    NetworkSceneManager.sceneNameToIndex.Add(NetworkConfig.RegisteredScenes[i], (uint)i);
+                }
+
+                NetworkSceneManager.SetCurrentSceneIndex();
+            }
+
+            //Register user channels
+            NetworkConfig.Channels = NetworkConfig.Channels.OrderBy(x => x.Name).ToList();
+            for (int i = 0; i < NetworkConfig.Channels.Count; i++)
+            {
+                if(channelNames.Contains(NetworkConfig.Channels[i].Name))
+                {
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Duplicate channel name: " + NetworkConfig.Channels[i].Name);
+                    continue;
+                }
+                int channelId = NetworkConfig.NetworkTransport.AddChannel(NetworkConfig.Channels[i].Type, settings);
+                MessageManager.channels.Add(NetworkConfig.Channels[i].Name, channelId);
+                channelNames.Add(NetworkConfig.Channels[i].Name);
+                MessageManager.reverseChannels.Add(channelId, NetworkConfig.Channels[i].Name);
+            }
+
+            //Add internal messagetypes directly
             MessageManager.messageTypes.Add("MLAPI_CONNECTION_REQUEST", 0);
             MessageManager.messageTypes.Add("MLAPI_CONNECTION_APPROVED", 1);
             MessageManager.messageTypes.Add("MLAPI_ADD_OBJECT", 2);
@@ -321,6 +357,7 @@ namespace MLAPI.MonoBehaviours.Core
             MessageManager.messageTypes.Add("MLAPI_TARGET", 14);
             MessageManager.messageTypes.Add("MLAPI_SET_VISIBILITY", 15);
 
+            //These are message types concidered to be user level since they belong to prototype components
             List<MessageType> messageTypes = new List<MessageType>(NetworkConfig.MessageTypes)
             {
                 new MessageType()
@@ -360,33 +397,10 @@ namespace MLAPI.MonoBehaviours.Core
                 }
             };
 
-            if (NetworkConfig.EnableSceneSwitching)
-            {
-                for (int i = 0; i < NetworkConfig.RegisteredScenes.Count; i++)
-                {
-                    NetworkSceneManager.registeredSceneNames.Add(NetworkConfig.RegisteredScenes[i]);
-                    NetworkSceneManager.sceneIndexToString.Add((uint)i, NetworkConfig.RegisteredScenes[i]);
-                    NetworkSceneManager.sceneNameToIndex.Add(NetworkConfig.RegisteredScenes[i], (uint)i);
-                }
+            //Sort user messages
+            messageTypes = messageTypes.OrderBy(x => x.Name).ToList();
 
-                NetworkSceneManager.SetCurrentSceneIndex();
-            }
-
-            //Register user channels
-            for (int i = 0; i < NetworkConfig.Channels.Count; i++)
-            {
-                if(channelNames.Contains(NetworkConfig.Channels[i].Name))
-                {
-                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Duplicate channel name: " + NetworkConfig.Channels[i].Name);
-                    continue;
-                }
-                int channelId = NetworkConfig.NetworkTransport.AddChannel(NetworkConfig.Channels[i].Type, settings);
-                MessageManager.channels.Add(NetworkConfig.Channels[i].Name, channelId);
-                channelNames.Add(NetworkConfig.Channels[i].Name);
-                MessageManager.reverseChannels.Add(channelId, NetworkConfig.Channels[i].Name);
-            }
-
-            //0-32 are reserved for MLAPI messages
+            //0-32 are reserved for MLAPI messages  
             ushort messageId = 32;
             for (ushort i = 0; i < messageTypes.Count; i++)
             {

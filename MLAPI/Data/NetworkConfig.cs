@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using MLAPI.Data.Transports;
 using MLAPI.MonoBehaviours.Core;
+using System.Linq;
 
 namespace MLAPI.Data
 {
@@ -153,6 +154,13 @@ namespace MLAPI.Data
         /// Decides how many bytes to use for Attribute messaging. Leave this to 2 bytes unless you are facing hash collisions
         /// </summary>
         public AttributeMessageMode AttributeMessageMode = AttributeMessageMode.Disabled;
+
+        private void Sort()
+        {
+            MessageTypes = MessageTypes.OrderBy(x => x.Name).ToList();
+            Channels = Channels.OrderBy(x => x.Name).ToList();
+            NetworkedPrefabs = NetworkedPrefabs.OrderBy(x => x.name).ToList();
+        }
 
         /// <summary>
         /// Returns a base64 encoded version of the config
@@ -315,6 +323,8 @@ namespace MLAPI.Data
         {
             if (ConfigHash != null && cache)
                 return ConfigHash.Value;
+
+            Sort();
 
             using (BitWriter writer = BitWriter.Get())
             {
