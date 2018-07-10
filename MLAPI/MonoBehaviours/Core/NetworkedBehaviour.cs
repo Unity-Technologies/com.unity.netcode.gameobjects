@@ -1012,7 +1012,7 @@ namespace MLAPI.MonoBehaviours.Core
                             writer.WriteBool(isDirty);
                             if (isDirty && (!isServer || networkedVarFields[k].CanClientRead(clientId)))
                             {
-                                networkedVarFields[k].WriteDeltaToWriter(writer);
+                                networkedVarFields[k].WriteDelta(writer);
                             }
                         }
 
@@ -1050,7 +1050,7 @@ namespace MLAPI.MonoBehaviours.Core
                     return;
                 }
 
-                networkedVarFields[i].SetDeltaFromReader(reader);
+                networkedVarFields[i].ReadDelta(reader);
             }
         }
 

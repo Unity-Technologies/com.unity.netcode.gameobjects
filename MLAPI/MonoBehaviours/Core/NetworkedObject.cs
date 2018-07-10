@@ -298,7 +298,7 @@ namespace MLAPI.MonoBehaviours.Core
                     continue;
                 writer.WriteUShort(GetOrderIndex(childNetworkedBehaviours[i])); //Write the behaviourId
                 for (int j = 0; j < childNetworkedBehaviours[i].networkedVarFields.Count; j++)
-                    childNetworkedBehaviours[i].networkedVarFields[j].WriteFieldToWriter(writer);
+                    childNetworkedBehaviours[i].networkedVarFields[j].WriteField(writer);
             }
         }
 
@@ -311,7 +311,7 @@ namespace MLAPI.MonoBehaviours.Core
                     continue;
                 NetworkedBehaviour behaviour = GetBehaviourAtOrderIndex(reader.ReadUShort());
                 for (int j = 0; j < childNetworkedBehaviours[i].networkedVarFields.Count; j++)
-                    childNetworkedBehaviours[i].networkedVarFields[j].SetFieldFromReader(reader);
+                    childNetworkedBehaviours[i].networkedVarFields[j].ReadField(reader);
             }
         }
 
