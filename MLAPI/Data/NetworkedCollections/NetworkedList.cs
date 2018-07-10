@@ -45,6 +45,7 @@ namespace MLAPI.Data.NetworkedCollections
         public void ResetDirty()
         {
             dirtyEvents.Clear();
+            LastSyncedTime = NetworkingManager.singleton.NetworkTime;
         }
 
         /// <inheritdoc />
