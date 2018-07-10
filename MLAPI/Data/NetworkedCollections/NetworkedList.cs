@@ -6,6 +6,10 @@ using MLAPI.NetworkingManagerComponents.Core;
 
 namespace MLAPI.Data.NetworkedCollections
 {
+    /// <summary>
+    /// Event based networkedVar container for syncing Lists
+    /// </summary>
+    /// <typeparam name="T">The type for the list</typeparam>
     public class NetworkedList<T> : IList<T>, INetworkedVar
     {
         internal struct NetworkedListEvent<T>
@@ -28,23 +32,37 @@ namespace MLAPI.Data.NetworkedCollections
         private readonly IList<T> list = new List<T>();
         private List<NetworkedListEvent<T>> dirtyEvents = new List<NetworkedListEvent<T>>();
         private NetworkedBehaviour networkedBehaviour;
-        public NetworkedVarSettings Settings = new NetworkedVarSettings();
+        /// <summary>
+        /// Gets the last time the variable was synced
+        /// </summary>
+        public float LastSyncedTime { get; internal set; }
+        /// <summary>
+        /// The settings for this container
+        /// </summary>
+        public readonly NetworkedVarSettings Settings = new NetworkedVarSettings();
         
+        /// <inheritdoc />
         public void ResetDirty()
         {
             dirtyEvents.Clear();
         }
 
+        /// <inheritdoc />
         public bool IsDirty()
         {
-            return dirtyEvents.Count > 0;
+            if (dirtyEvents.Count == 0) return false;
+            if (Settings.SendOnChange) return true;
+            if (NetworkingManager.singleton.NetworkTime - LastSyncedTime >= Settings.SendDelay) return true;
+            return false;
         }
 
+        /// <inheritdoc />
         public string GetChannel()
         {
             return Settings.SendChannel;
         }
 
+        /// <inheritdoc />
         public bool CanClientWrite(uint clientId)
         {
             switch (Settings.WritePermission)
@@ -65,6 +83,7 @@ namespace MLAPI.Data.NetworkedCollections
             return true;
         }
 
+        /// <inheritdoc />
         public bool CanClientRead(uint clientId)
         {
             switch (Settings.ReadPermission)
@@ -84,6 +103,7 @@ namespace MLAPI.Data.NetworkedCollections
             return true;
         }
 
+        /// <inheritdoc />
         public void WriteDeltaToWriter(BitWriter writer)
         {
             writer.WriteUShort((ushort)dirtyEvents.Count);
@@ -130,6 +150,7 @@ namespace MLAPI.Data.NetworkedCollections
             }
         }
 
+        /// <inheritdoc />
         public void WriteFieldToWriter(BitWriter writer)
         {
             writer.WriteUShort((ushort)list.Count);
@@ -139,6 +160,7 @@ namespace MLAPI.Data.NetworkedCollections
             }
         }
 
+        /// <inheritdoc />
         public void SetFieldFromReader(BitReader reader)
         {
             ushort count = reader.ReadUShort();
@@ -148,6 +170,7 @@ namespace MLAPI.Data.NetworkedCollections
             }
         }
 
+        /// <inheritdoc />
         public void SetDeltaFromReader(BitReader reader)
         {
             ushort deltaCount = reader.ReadUShort();
@@ -194,11 +217,13 @@ namespace MLAPI.Data.NetworkedCollections
             }
         }
 
+        /// <inheritdoc />
         public void SetNetworkedBehaviour(NetworkedBehaviour behaviour)
         {
             networkedBehaviour = behaviour;
         }
         
+        /// <inheritdoc />
         public IEnumerator<T> GetEnumerator()
         {
             return list.GetEnumerator();
@@ -209,6 +234,7 @@ namespace MLAPI.Data.NetworkedCollections
             return ((IEnumerable) list).GetEnumerator();
         }
 
+        /// <inheritdoc />
         public void Add(T item)
         {
             list.Add(item);
@@ -219,6 +245,7 @@ namespace MLAPI.Data.NetworkedCollections
             });
         }
 
+        /// <inheritdoc />
         public void Clear()
         {
             list.Clear();
@@ -228,16 +255,19 @@ namespace MLAPI.Data.NetworkedCollections
             });
         }
 
+        /// <inheritdoc />
         public bool Contains(T item)
         {
             return list.Contains(item);
         }
 
+        /// <inheritdoc />
         public void CopyTo(T[] array, int arrayIndex)
         {
             list.CopyTo(array, arrayIndex);
         }
 
+        /// <inheritdoc />
         public bool Remove(T item)
         {
             bool state = list.Remove(item);
@@ -252,15 +282,19 @@ namespace MLAPI.Data.NetworkedCollections
             return state;
         }
 
+        /// <inheritdoc />
         public int Count => list.Count;
 
+        /// <inheritdoc />
         public bool IsReadOnly => list.IsReadOnly;
 
+        /// <inheritdoc />
         public int IndexOf(T item)
         {
             return list.IndexOf(item);
         }
 
+        /// <inheritdoc />
         public void Insert(int index, T item)
         {
             list.Insert(index, item);
@@ -272,6 +306,7 @@ namespace MLAPI.Data.NetworkedCollections
             });
         }
 
+        /// <inheritdoc />
         public void RemoveAt(int index)
         {
             list.RemoveAt(index);
@@ -282,6 +317,7 @@ namespace MLAPI.Data.NetworkedCollections
             });
         }
 
+        /// <inheritdoc />
         public T this[int index]
         {
             get
