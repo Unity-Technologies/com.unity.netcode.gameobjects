@@ -48,30 +48,30 @@ namespace MLAPI.Data.NetworkedCollections
                 NetworkedDictionaryEvent<TKey, TValue>.NetworkedListEventType eventType = (NetworkedDictionaryEvent<TKey, TValue>.NetworkedListEventType)reader.ReadBits(3);
                 switch (eventType)
                 {
-                    case global::MLAPI.Data.NetworkedCollections.NetworkedDictionary<TKey, TValue>.NetworkedDictionaryEvent<TKey, TValue>.NetworkedListEventType.Add:
+                    case NetworkedDictionaryEvent<TKey, TValue>.NetworkedListEventType.Add:
                         {
                             //TODO: readKey
                             //TODO: readVal
                         }
                         break;
-                    case global::MLAPI.Data.NetworkedCollections.NetworkedDictionary<TKey, TValue>.NetworkedDictionaryEvent<TKey, TValue>.NetworkedListEventType.Remove:
+                    case NetworkedDictionaryEvent<TKey, TValue>.NetworkedListEventType.Remove:
                         {
                             //TODO: readKey
                         }
                         break;
-                    case global::MLAPI.Data.NetworkedCollections.NetworkedDictionary<TKey, TValue>.NetworkedDictionaryEvent<TKey, TValue>.NetworkedListEventType.RemovePair:
+                    case NetworkedDictionaryEvent<TKey, TValue>.NetworkedListEventType.RemovePair:
                         {
                             //TODO: readKey
                             //TODO: readVal
                         }
                         break;
-                    case global::MLAPI.Data.NetworkedCollections.NetworkedDictionary<TKey, TValue>.NetworkedDictionaryEvent<TKey, TValue>.NetworkedListEventType.Clear:
+                    case NetworkedDictionaryEvent<TKey, TValue>.NetworkedListEventType.Clear:
                         {
                             //read nothing
                             dictionary.Clear();
                         }
                         break;
-                    case global::MLAPI.Data.NetworkedCollections.NetworkedDictionary<TKey, TValue>.NetworkedDictionaryEvent<TKey, TValue>.NetworkedListEventType.Value:
+                    case NetworkedDictionaryEvent<TKey, TValue>.NetworkedListEventType.Value:
                         {
                             //TODO: readKey
                             //TODO: readVal
@@ -112,30 +112,29 @@ namespace MLAPI.Data.NetworkedCollections
                 writer.WriteBits((byte)dirtyEvents[i].eventType, 3);
                 switch (dirtyEvents[i].eventType)
                 {
-                    //Fuck me these signatures are proper aids
-                    case global::MLAPI.Data.NetworkedCollections.NetworkedDictionary<TKey, TValue>.NetworkedDictionaryEvent<TKey, TValue>.NetworkedListEventType.Add:
+                    case NetworkedDictionaryEvent<TKey, TValue>.NetworkedListEventType.Add:
                         {
                             //TODO: writeKey
                             //TODO: writeVal
                         }
                         break;
-                    case global::MLAPI.Data.NetworkedCollections.NetworkedDictionary<TKey, TValue>.NetworkedDictionaryEvent<TKey, TValue>.NetworkedListEventType.Remove:
+                    case NetworkedDictionaryEvent<TKey, TValue>.NetworkedListEventType.Remove:
                         {
                             //TODO: writeKey
                         }
                         break;
-                    case global::MLAPI.Data.NetworkedCollections.NetworkedDictionary<TKey, TValue>.NetworkedDictionaryEvent<TKey, TValue>.NetworkedListEventType.RemovePair:
+                    case NetworkedDictionaryEvent<TKey, TValue>.NetworkedListEventType.RemovePair:
                         {
                             //TODO: writeKey
                             //TODO: writeVal
                         }
                         break;
-                    case global::MLAPI.Data.NetworkedCollections.NetworkedDictionary<TKey, TValue>.NetworkedDictionaryEvent<TKey, TValue>.NetworkedListEventType.Clear:
+                    case NetworkedDictionaryEvent<TKey, TValue>.NetworkedListEventType.Clear:
                         {
                             //write nothing
                         }
                         break;
-                    case global::MLAPI.Data.NetworkedCollections.NetworkedDictionary<TKey, TValue>.NetworkedDictionaryEvent<TKey, TValue>.NetworkedListEventType.Value:
+                    case NetworkedDictionaryEvent<TKey, TValue>.NetworkedListEventType.Value:
                         {
                             //TODO: writeKey
                             //TODO: writeVal

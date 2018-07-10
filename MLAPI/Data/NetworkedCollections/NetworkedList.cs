@@ -93,35 +93,35 @@ namespace MLAPI.Data.NetworkedCollections
                 switch (dirtyEvents[i].eventType)
                 {
                     //Fuck me these signatures are proper aids
-                    case global::MLAPI.Data.NetworkedCollections.NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.Add:
+                    case NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.Add:
                         {
                             //TODO: Write dirtyEvents[i].value
                         }
                         break;
-                    case global::MLAPI.Data.NetworkedCollections.NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.Insert:
+                    case NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.Insert:
                         {
                             writer.WriteInt(dirtyEvents[i].index);
                             //TODO: Write dirtyEvents[i].value
                         }
                         break;
-                    case global::MLAPI.Data.NetworkedCollections.NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.Remove:
+                    case NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.Remove:
                         {
                             //TODO: Write dirtyEvents[i].value
                         }
                         break;
-                    case global::MLAPI.Data.NetworkedCollections.NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.RemoveAt:
+                    case NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.RemoveAt:
                         {
                             writer.WriteInt(dirtyEvents[i].index);
                         }
                         break;
-                    case global::MLAPI.Data.NetworkedCollections.NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.Value:
+                    case NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.Value:
                         {
                             writer.WriteInt(dirtyEvents[i].index);
                             //TODO: Write dirtyEvents[i].value
                         }
 
                         break;
-                    case global::MLAPI.Data.NetworkedCollections.NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.Clear:
+                    case NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.Clear:
                         {
                             //Nothing has to be written
                         }
@@ -156,35 +156,35 @@ namespace MLAPI.Data.NetworkedCollections
                 NetworkedListEvent<T>.NetworkedListEventType eventType = (NetworkedListEvent<T>.NetworkedListEventType)reader.ReadBits(3);
                 switch (eventType)
                 {
-                    case global::MLAPI.Data.NetworkedCollections.NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.Add:
+                    case NetworkedListEvent<T>.NetworkedListEventType.Add:
                         {
                             //TODO: list.Add(readValue);
                         }
                         break;
-                    case global::MLAPI.Data.NetworkedCollections.NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.Insert:
+                    case NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.Insert:
                         {
                             int index = reader.ReadInt();
                             //TODO: list.Insert(index, readValue);
                         }
                         break;
-                    case global::MLAPI.Data.NetworkedCollections.NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.Remove:
+                    case NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.Remove:
                         {
                             //TODO: list.Remove(readValue);
                         }
                         break;
-                    case global::MLAPI.Data.NetworkedCollections.NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.RemoveAt:
+                    case NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.RemoveAt:
                         {
                             int index = reader.ReadInt();
                             list.RemoveAt(index);
                         }
                         break;
-                    case global::MLAPI.Data.NetworkedCollections.NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.Value:
+                    case NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.Value:
                         {
                             int index = reader.ReadInt();
                             //TODO: list[index] = readValue
                         }
                         break;
-                    case global::MLAPI.Data.NetworkedCollections.NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.Clear:
+                    case NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.Clear:
                         {
                             //Read nothing
                             list.Clear();
