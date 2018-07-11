@@ -367,18 +367,18 @@ namespace MLAPI.NetworkingManagerComponents.Core
             uint netId = reader.ReadUInt();
             ushort orderIndex = reader.ReadUShort();
 
-            if (!SpawnManager.spawnedObjects.ContainsKey(netId))
+            if (!SpawnManager.SpawnedObjects.ContainsKey(netId))
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkedVar message recieved for a non existant object with id: " + netId);
                 return;
             }
-            else if (SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex) == null)
+            else if (SpawnManager.SpawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex) == null)
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkedVar message recieved for a non existant behaviour");
                 return;
             }
 
-            SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).HandleNetworkedVarDeltas(reader, clientId);
+            SpawnManager.SpawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).HandleNetworkedVarDeltas(reader, clientId);
         }
 
         internal static void HandleNetworkedVarUpdate(uint clientId, BitReader reader, int channelId)
@@ -386,18 +386,18 @@ namespace MLAPI.NetworkingManagerComponents.Core
             uint netId = reader.ReadUInt();
             ushort orderIndex = reader.ReadUShort();
 
-            if (!SpawnManager.spawnedObjects.ContainsKey(netId))
+            if (!SpawnManager.SpawnedObjects.ContainsKey(netId))
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkedVar message recieved for a non existant object with id: " + netId);
                 return;
             }
-            else if (SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex) == null)
+            else if (SpawnManager.SpawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex) == null)
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkedVar message recieved for a non existant behaviour");
                 return;
             }
 
-            SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).HandleNetworkedVarUpdate(reader, clientId);
+            SpawnManager.SpawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).HandleNetworkedVarUpdate(reader, clientId);
         }
     }
 }
