@@ -1,12 +1,14 @@
 ﻿using MLAPI.NetworkingManagerComponents.Binary;
 using MLAPI.MonoBehaviours.Core;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace MLAPI.Data
 {
     /// <summary>
     /// A variable that can be synchronized over the network.
     /// </summary>
+    [System.Serializable]
     public class NetworkedVar<T> : INetworkedVar
     {
         /// <summary>
@@ -54,6 +56,7 @@ namespace MLAPI.Data
             this.InternalValue = value;
         }
 
+        [SerializeField]
         private T InternalValue = default(T);
         /// <summary>
         /// The value of the NetworkedVar container
