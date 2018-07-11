@@ -177,7 +177,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
         }
         */
 
-        internal static NetworkedObject CreateSpawnedObject(int networkedPrefabId, uint networkId, uint owner, bool playerObject, Vector3 position, Quaternion rotation, BitReader reader, bool readSyncedVar, bool readPayload, bool readNetworkedVar)
+        internal static NetworkedObject CreateSpawnedObject(int networkedPrefabId, uint networkId, uint owner, bool playerObject, Vector3 position, Quaternion rotation, BitReader reader, bool readPayload, bool readNetworkedVar)
         {
             if (!netManager.NetworkConfig.NetworkPrefabNames.ContainsKey(networkedPrefabId))
             {
@@ -193,7 +193,6 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 netObject = go.AddComponent<NetworkedObject>();
             }
 
-            if (readSyncedVar) netObject.SetFormattedSyncedVarData(reader);
             if (readNetworkedVar) netObject.SetNetworkedVarData(reader);
 
             netObject.NetworkedPrefabName = netManager.NetworkConfig.NetworkPrefabNames[networkedPrefabId];
@@ -278,7 +277,6 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
             foreach (var client in netManager.ConnectedClients)
             {
-                netObject.RebuildObservers(client.Key);
                 using (BitWriter writer = BitWriter.Get())
                 {
                     writer.WriteBool(true);
@@ -286,7 +284,6 @@ namespace MLAPI.NetworkingManagerComponents.Core
                     writer.WriteUInt(netObject.OwnerClientId);
                     writer.WriteInt(netManager.NetworkConfig.NetworkPrefabIds[netObject.NetworkedPrefabName]);
                     writer.WriteBool(netObject.sceneObject == null ? true : netObject.sceneObject.Value);
-                    writer.WriteBool(netObject.observers.Contains(client.Key));
 
                     writer.WriteFloat(netObject.transform.position.x);
                     writer.WriteFloat(netObject.transform.position.y);
@@ -298,8 +295,6 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
                     writer.WriteBool(payload != null);
 
-                    if (netObject.observers.Contains(client.Key))
-                        netObject.WriteFormattedSyncedVarData(writer);
                     netObject.WriteNetworkedVarData(writer, client.Key);
 
                     if (payload != null) writer.WriteWriter(payload);
@@ -349,7 +344,6 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
             foreach (var client in netManager.ConnectedClients)
             {
-                netObject.RebuildObservers(client.Key);
                 using (BitWriter writer = BitWriter.Get())
                 {
                     writer.WriteBool(false);
@@ -357,7 +351,6 @@ namespace MLAPI.NetworkingManagerComponents.Core
                     writer.WriteUInt(netObject.OwnerClientId);
                     writer.WriteInt(netManager.NetworkConfig.NetworkPrefabIds[netObject.NetworkedPrefabName]);
                     writer.WriteBool(netObject.sceneObject == null ? true : netObject.sceneObject.Value);
-                    writer.WriteBool(netObject.observers.Contains(client.Key));
 
                     writer.WriteFloat(netObject.transform.position.x);
                     writer.WriteFloat(netObject.transform.position.y);
@@ -369,8 +362,6 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
                     writer.WriteBool(payload != null);
 
-                    if (netObject.observers.Contains(client.Key))
-                        netObject.WriteFormattedSyncedVarData(writer);
                     netObject.WriteNetworkedVarData(writer, client.Key);
 
                     if (payload != null) writer.WriteWriter(payload);

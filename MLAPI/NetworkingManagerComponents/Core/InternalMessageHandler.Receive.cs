@@ -94,7 +94,6 @@ namespace MLAPI.NetworkingManagerComponents.Core
                     int prefabId = reader.ReadInt();
                     bool isActive = reader.ReadBool();
                     bool sceneObject = reader.ReadBool();
-                    bool visible = reader.ReadBool();
 
                     float xPos = reader.ReadFloat();
                     float yPos = reader.ReadFloat();
@@ -105,8 +104,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                     float zRot = reader.ReadFloat();
 
                     NetworkedObject netObject = SpawnManager.CreateSpawnedObject(prefabId, networkId, ownerId, isPlayerObject,
-                        new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), reader, visible, false, true);
-                    netObject.SetLocalVisibility(visible);
+                        new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), reader, false, true);
                     netObject.sceneObject = sceneObject;
                     netObject.gameObject.SetActive(isActive);
                 }
@@ -131,7 +129,6 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 uint ownerId = reader.ReadUInt();
                 int prefabId = reader.ReadInt();
                 bool sceneObject = reader.ReadBool();
-                bool visible = reader.ReadBool();
 
                 float xPos = reader.ReadFloat();
                 float yPos = reader.ReadFloat();
@@ -149,9 +146,8 @@ namespace MLAPI.NetworkingManagerComponents.Core
                     netManager.ConnectedClientsList.Add(netManager.ConnectedClients[ownerId]);
                 }
                 NetworkedObject netObject = SpawnManager.CreateSpawnedObject(prefabId, networkId, ownerId, isPlayerObject,
-                    new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), reader, visible, hasPayload, true);
+                    new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), reader, hasPayload, true);
 
-                netObject.SetLocalVisibility(visible);
                 netObject.sceneObject = sceneObject;
 
             }
@@ -219,33 +215,6 @@ namespace MLAPI.NetworkingManagerComponents.Core
             SpawnManager.SpawnedObjects[netId].OwnerClientId = ownerClientId;
         }
 
-        internal static void HandleSyncVarUpdate(uint clientId, BitReader reader, int channelId)
-        {
-            uint netId = reader.ReadUInt();
-            ushort orderIndex = reader.ReadUShort();
-
-            if (!SpawnManager.SpawnedObjects.ContainsKey(netId))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sync message recieved for a non existant object with id: " + netId);
-                return;
-            }
-            else if (SpawnManager.SpawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex) == null)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sync message recieved for a non existant behaviour");
-                return;
-            }
-
-            for (int i = 0; i < SpawnManager.SpawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).syncedVarFields.Count; i++)
-            {
-                if (!reader.ReadBool())
-                    continue;
-                SyncedVarField field = SpawnManager.SpawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).syncedVarFields[i];
-                SpawnManager.SpawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate(FieldTypeHelper.ReadFieldType(reader,
-                    field.FieldInfo.FieldType, field.FieldValue), i);
-            }
-            SpawnManager.SpawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).OnSyncVarUpdate();
-        }
-
         internal static void HandleAddObjects(uint clientId, BitReader reader, int channelId)
         {
             if (netManager.NetworkConfig.HandleObjectSpawning)
@@ -258,7 +227,6 @@ namespace MLAPI.NetworkingManagerComponents.Core
                     uint ownerId = reader.ReadUInt();
                     int prefabId = reader.ReadInt();
                     bool sceneObject = reader.ReadBool();
-                    bool visible = reader.ReadBool();
 
                     float xPos = reader.ReadFloat();
                     float yPos = reader.ReadFloat();
@@ -274,8 +242,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                         netManager.ConnectedClientsList.Add(netManager.ConnectedClients[ownerId]);
                     }
                     NetworkedObject netObject = SpawnManager.CreateSpawnedObject(prefabId, networkId, ownerId, isPlayerObject,
-                        new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), reader, visible, false, true);
-                    netObject.SetLocalVisibility(visible);
+                        new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), reader, false, true);
                     netObject.sceneObject = sceneObject;
 
                 }
@@ -351,15 +318,6 @@ namespace MLAPI.NetworkingManagerComponents.Core
             for (int i = 0; i < parameters.Length; i++)
                 methodParams[i] = FieldTypeHelper.ReadFieldType(reader, parameters[i].ParameterType);
             targetMethod.Invoke(behaviour, methodParams);
-        }
-
-        internal static void HandleSetVisibility(uint clientId, BitReader reader, int channelId)
-        {
-            uint networkId = reader.ReadUInt();
-            bool visibility = reader.ReadBool();
-            if (visibility)
-                SpawnManager.SpawnedObjects[networkId].SetFormattedSyncedVarData(reader);
-            SpawnManager.SpawnedObjects[networkId].SetLocalVisibility(visibility);
         }
 
         internal static void HandleNetworkedVarDelta(uint clientId, BitReader reader, int channelId)

@@ -104,7 +104,10 @@ namespace MLAPI.NetworkingManagerComponents.Binary
 
         private void PushPreZigZag<T>(T b)
         {
-            if (b is sbyte || b is short || b is int || b is long) Push(ZigZagEncode((long)(object)b)); //BOX
+            if (b is sbyte) Push(ZigZagEncode((sbyte)(object)b)); //BOX
+            if (b is ushort) Push(ZigZagEncode((ushort)(object)b)); //BOX
+            if (b is uint) Push(ZigZagEncode((uint)(object)b)); //BOX
+            if (b is ulong) Push(ZigZagEncode((long)(ulong)(object)b)); //BOX
             else Push(b);
         }
 

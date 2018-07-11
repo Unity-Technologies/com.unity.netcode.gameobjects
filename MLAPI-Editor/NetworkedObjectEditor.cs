@@ -46,23 +46,6 @@ namespace UnityEditor
                 EditorGUILayout.LabelField("isObjectOwner: ", networkedObject.isObjectOwner.ToString(), EditorStyles.label);
                 EditorGUILayout.LabelField("isPoolObject: ", networkedObject.isPooledObject.ToString(), EditorStyles.label);
                 EditorGUILayout.LabelField("isPlayerObject: ", networkedObject.isPlayerObject.ToString(), EditorStyles.label);
-
-                if (networkedObject.observers != null && networkedObject.observers.Count > 0)
-                {
-                    showObservers = EditorGUILayout.Foldout(showObservers, "Observers");
-                    if (showObservers)
-                    {
-                        EditorGUI.indentLevel += 1;
-                        foreach (var o in networkedObject.observers)
-                        {
-                            if (NetworkingManager.singleton.ConnectedClients[o].PlayerObject != null)
-                                EditorGUILayout.ObjectField("ClientId: " + o, NetworkingManager.singleton.ConnectedClients[o].PlayerObject, typeof(GameObject), false);
-                            else
-                                EditorGUILayout.TextField("ClientId: " + o, EditorStyles.label);
-                        }
-                        EditorGUI.indentLevel -= 1;
-                    }
-                }
             }
         }
     }
