@@ -1,5 +1,4 @@
-﻿using MLAPI;
-using MLAPI.Attributes;
+﻿using MLAPI.Attributes;
 using MLAPI.Data;
 using MLAPI.MonoBehaviours.Core;
 using System;
@@ -26,8 +25,13 @@ namespace UnityEditor
         {
             initialized = true;
 
+            syncedVarNames.Clear();
+            networkedVarNames.Clear();
+            networkedVarFields.Clear();
+            networkedVarObjects.Clear();
+
             syncedVarLabelGuiContent = new GUIContent("SyncedVar", "This variable has been marked with the [SyncedVar] attribute.");
-            networkedVarLabelGuiContent = new GUIContent("[NetworkedVar]", "This variable has been marked with the [SyncedVar] attribute.");
+            networkedVarLabelGuiContent = new GUIContent("NetworkedVar", "This variable is a NetworkedVar. It can not be serialized and can only be changed during runtime.");
 
             FieldInfo[] fields = script.GetClass().GetFields(BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy | BindingFlags.NonPublic);
             for (int i = 0; i < fields.Length; i++)
@@ -47,6 +51,16 @@ namespace UnityEditor
 
         void RenderNetworkedVar(int index)
         {
+            if (!networkedVarFields.ContainsKey(networkedVarNames[index]))
+            {
+                serializedObject.Update();
+                SerializedProperty scriptProperty = serializedObject.FindProperty("m_Script");
+                if (scriptProperty == null)
+                    return;
+
+                MonoScript targetScript = scriptProperty.objectReferenceValue as MonoScript;
+                Init(targetScript);
+            }
             Type type = networkedVarFields[networkedVarNames[index]].GetValue(target).GetType();
             Type genericType = type.GetGenericArguments()[0];
 
@@ -74,37 +88,30 @@ namespace UnityEditor
         {
             NetworkedVar<T> var = (NetworkedVar<T>)networkedVarFields[networkedVarNames[index]].GetValue(target);
             Type type = typeof(T);
-            ValueType val = var.Value;
+            object val = var.Value;
             string name = networkedVarNames[index];
             if (type == typeof(int))
-                val = EditorGUILayout.IntField(name, Convert.ToInt32(val));
+                val = EditorGUILayout.IntField(name, (int)val);
             else if (type == typeof(uint))
-                val = (uint)EditorGUILayout.IntField(name, Convert.ToInt32(val));
+                val = EditorGUILayout.LongField(name, (long)val);
             else if (type == typeof(short))
-                val = (short)EditorGUILayout.IntField(name, Convert.ToInt32(val));
+                val = EditorGUILayout.IntField(name, (int)val);
             else if (type == typeof(ushort))
-                val = (ushort)EditorGUILayout.IntField(name, Convert.ToInt32(val));
+                val = EditorGUILayout.IntField(name, (int)val);
             else if (type == typeof(sbyte))
-                val = (sbyte)EditorGUILayout.IntField(name, Convert.ToInt32(val));
+                val = EditorGUILayout.IntField(name, (int)val);
             else if (type == typeof(byte))
-                val = (byte)EditorGUILayout.IntField(name, Convert.ToInt32(val));
+                val = EditorGUILayout.IntField(name, (int)val);
             else if (type == typeof(long))
-                val = EditorGUILayout.LongField(name, Convert.ToInt64(val));
+                val = EditorGUILayout.LongField(name, (long)val);
             else if (type == typeof(ulong))
-                val = (ulong)EditorGUILayout.LongField(name, Convert.ToInt64(val));
+                val = EditorGUILayout.LongField(name, (long)val);
             else if (type == typeof(bool))
-                val = EditorGUILayout.Toggle(name, Convert.ToBoolean(val));
-            else if (type == typeof(char))
-            {
-                char[] chars = EditorGUILayout.TextField(name, Convert.ToString(val)).ToCharArray();
-                if (chars.Length > 0)
-                    val = chars[0];
-            }
-            // TODO - more value types here
+                val = EditorGUILayout.Toggle(name, (bool)val);
+            else if (type == typeof(string))
+                val = EditorGUILayout.TextField(name, (string)val);
             else
-            {
                 EditorGUILayout.LabelField("Type not renderable");
-            }
 
             var.Value = (T)val;
         }
