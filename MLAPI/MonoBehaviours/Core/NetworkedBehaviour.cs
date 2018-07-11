@@ -100,6 +100,7 @@ namespace MLAPI.MonoBehaviours.Core
         {
             CacheAttributedMethods();
             WarnUnityReflectionMethodUse();
+            NetworkedVarInit();
         }
 
         private void WarnUnityReflectionMethodUse()
@@ -679,7 +680,8 @@ namespace MLAPI.MonoBehaviours.Core
             if (syncVarInit)
                 return;
             syncVarInit = true;
-            FieldInfo[] sortedFields = GetType().GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy | BindingFlags.Instance).OrderBy(x => x.Name).ToArray();
+
+            FieldInfo[] sortedFields = GetFieldInfoForType(GetType());
             for (int i = 0; i < sortedFields.Length; i++)
             {
                 if(sortedFields[i].IsDefined(typeof(SyncedVar), true))
@@ -921,7 +923,163 @@ namespace MLAPI.MonoBehaviours.Core
             }
             return dirty;
         }
+
+        #endregion
+
+        #region NetworkedVar
+
+        private bool networkedVarInit = false;
+        private readonly List<HashSet<int>> channelMappedVarIndexes = new List<HashSet<int>>();
+        private readonly List<string> channelsForVarGroups = new List<string>();
+        internal readonly List<INetworkedVar> networkedVarFields = new List<INetworkedVar>();
+        private static readonly Dictionary<Type, FieldInfo[]> fieldTypes = new Dictionary<Type, FieldInfo[]>();
+
+        private static FieldInfo[] GetFieldInfoForType(Type type)
+        {
+            if (!fieldTypes.ContainsKey(type))
+                fieldTypes.Add(type, type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy | BindingFlags.Instance).OrderBy(x => x.Name).ToArray());
+            return fieldTypes[type];
+        }
         
+        internal void NetworkedVarInit()
+        {
+            if (networkedVarInit)
+                return;
+            networkedVarInit = true;
+
+            FieldInfo[] sortedFields = GetFieldInfoForType(GetType());
+            for (int i = 0; i < sortedFields.Length; i++)
+            {
+                Type fieldType = sortedFields[i].FieldType;
+                if (fieldType.HasInterface(typeof(INetworkedVar)))
+                {
+                    INetworkedVar instance = (INetworkedVar)sortedFields[i].GetValue(this);
+                    if (instance == null)
+                    {
+                        Type genericType = fieldType.MakeGenericType(fieldType.GetGenericArguments());
+                        instance = (INetworkedVar)Activator.CreateInstance(genericType, true);
+                        sortedFields[i].SetValue(this, instance);
+                    }
+                    
+                    instance.SetNetworkedBehaviour(this);
+                    networkedVarFields.Add(instance);
+                }
+            }
+
+            //Create index map for channels
+            Dictionary<string, int> firstLevelIndex = new Dictionary<string, int>();
+            int secondLevelCounter = 0;
+            for (int i = 0; i < networkedVarFields.Count; i++)
+            {
+                string channel = networkedVarFields[i].GetChannel(); //Cache this here. Some developers are stupid. You don't know what shit they will do in their methods
+                if (!firstLevelIndex.ContainsKey(channel))
+                {
+                    firstLevelIndex.Add(channel, secondLevelCounter);
+                    channelsForVarGroups.Add(channel);
+                    secondLevelCounter++;
+                }
+                if (firstLevelIndex[channel] >= channelMappedVarIndexes.Count)
+                    channelMappedVarIndexes.Add(new HashSet<int>());
+                channelMappedVarIndexes[firstLevelIndex[channel]].Add(i);
+            }
+        }
+
+        internal void NetworkedVarUpdate()
+        {
+            if (!networkedVarInit)
+                NetworkedVarInit();
+            //TODO: Do this efficiently.
+
+            for (int i = 0; i < NetworkingManager.singleton.ConnectedClientsList.Count; i++)
+            {
+                //This iterates over every "channel group".
+                for (int j = 0; j < channelMappedVarIndexes.Count; j++)
+                {
+                    using (BitWriter writer = BitWriter.Get())
+                    {
+                        writer.WriteUInt(networkId);
+                        writer.WriteUShort(networkedObject.GetOrderIndex(this));
+
+                        uint clientId = NetworkingManager.singleton.ConnectedClientsList[i].ClientId;
+                        for (int k = 0; k < networkedVarFields.Count; k++)
+                        {
+                            if (!channelMappedVarIndexes[j].Contains(k))
+                            {
+                                //This var does not belong to the currently iterating channel group.
+                                writer.WriteBool(false);
+                                continue;
+                            }
+
+                            bool isDirty = networkedVarFields[k].IsDirty(); //cache this here. You never know what operations users will do in the dirty methods
+                            writer.WriteBool(isDirty);
+                            if (isDirty && (!isServer || networkedVarFields[k].CanClientRead(clientId)))
+                            {
+                                networkedVarFields[k].WriteDelta(writer);
+                            }
+                        }
+
+                        if (isServer)
+                            InternalMessageHandler.Send(clientId, "MLAPI_NETWORKED_VAR_DELTA", channelsForVarGroups[j], writer, null);
+                        else
+                            InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerNetId, "MLAPI_NETWORKED_VAR_DELTA", channelsForVarGroups[j], writer, null);
+                    }
+                }
+            }
+
+            for (int i = 0; i < networkedVarFields.Count; i++)
+            {
+                networkedVarFields[i].ResetDirty();
+            }
+        }
+
+        internal void HandleNetworkedVarDeltas(BitReader reader, uint clientId)
+        {
+            for (int i = 0; i < networkedVarFields.Count; i++)
+            {
+                if (!reader.ReadBool())
+                    continue;
+
+                if (isServer && !networkedVarFields[i].CanClientWrite(clientId))
+                {
+                    //This client wrote somewhere they are not allowed. This is critical
+                    //We can't just skip this field. Because we don't actually know how to dummy read
+                    //That is, we don't know how many bytes to skip. Because the interface doesn't have a 
+                    //Read that gives us the value. Only a Read that applies the value straight away
+                    //A dummy read COULD be added to the interface for this situation, but it's just being too nice.
+                    //This is after all a developer fault. A critical error should be fine.
+                    // - TwoTen
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Client wrote to NetworkedVar without permission. No more variables can be read. This is critical");
+                    return;
+                }
+
+                networkedVarFields[i].ReadDelta(reader);
+            }
+        }
+
+        internal void HandleNetworkedVarUpdate(BitReader reader, uint clientId)
+        {
+            for (int i = 0; i < networkedVarFields.Count; i++)
+            {
+                if (!reader.ReadBool())
+                    continue;
+
+                if (isServer && !networkedVarFields[i].CanClientWrite(clientId))
+                {
+                    //This client wrote somewhere they are not allowed. This is critical
+                    //We can't just skip this field. Because we don't actually know how to dummy read
+                    //That is, we don't know how many bytes to skip. Because the interface doesn't have a 
+                    //Read that gives us the value. Only a Read that applies the value straight away
+                    //A dummy read COULD be added to the interface for this situation, but it's just being too nice.
+                    //This is after all a developer fault. A critical error should be fine.
+                    // - TwoTen
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Client wrote to NetworkedVar without permission. No more variables can be read. This is critical");
+                    return;
+                }
+
+                networkedVarFields[i].ReadField(reader);
+            }
+        }
+
         #endregion
 
         #region SEND METHODS

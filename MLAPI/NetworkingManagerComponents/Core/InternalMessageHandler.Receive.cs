@@ -105,7 +105,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                     float zRot = reader.ReadFloat();
 
                     NetworkedObject netObject = SpawnManager.CreateSpawnedObject(prefabId, networkId, ownerId, isPlayerObject,
-                        new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), reader, visible, false);
+                        new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), reader, visible, false, true);
                     netObject.SetLocalVisibility(visible);
                     netObject.sceneObject = sceneObject;
                     netObject.gameObject.SetActive(isActive);
@@ -149,7 +149,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                     netManager.ConnectedClientsList.Add(netManager.ConnectedClients[ownerId]);
                 }
                 NetworkedObject netObject = SpawnManager.CreateSpawnedObject(prefabId, networkId, ownerId, isPlayerObject,
-                    new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), reader, visible, hasPayload);
+                    new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), reader, visible, hasPayload, true);
 
                 netObject.SetLocalVisibility(visible);
                 netObject.sceneObject = sceneObject;
@@ -274,7 +274,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                         netManager.ConnectedClientsList.Add(netManager.ConnectedClients[ownerId]);
                     }
                     NetworkedObject netObject = SpawnManager.CreateSpawnedObject(prefabId, networkId, ownerId, isPlayerObject,
-                        new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), reader, visible, false);
+                        new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), reader, visible, false, true);
                     netObject.SetLocalVisibility(visible);
                     netObject.sceneObject = sceneObject;
 
@@ -360,6 +360,44 @@ namespace MLAPI.NetworkingManagerComponents.Core
             if (visibility)
                 SpawnManager.SpawnedObjects[networkId].SetFormattedSyncedVarData(reader);
             SpawnManager.SpawnedObjects[networkId].SetLocalVisibility(visibility);
+        }
+
+        internal static void HandleNetworkedVarDelta(uint clientId, BitReader reader, int channelId)
+        {
+            uint netId = reader.ReadUInt();
+            ushort orderIndex = reader.ReadUShort();
+
+            if (!SpawnManager.spawnedObjects.ContainsKey(netId))
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkedVar message recieved for a non existant object with id: " + netId);
+                return;
+            }
+            else if (SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex) == null)
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkedVar message recieved for a non existant behaviour");
+                return;
+            }
+
+            SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).HandleNetworkedVarDeltas(reader, clientId);
+        }
+
+        internal static void HandleNetworkedVarUpdate(uint clientId, BitReader reader, int channelId)
+        {
+            uint netId = reader.ReadUInt();
+            ushort orderIndex = reader.ReadUShort();
+
+            if (!SpawnManager.spawnedObjects.ContainsKey(netId))
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkedVar message recieved for a non existant object with id: " + netId);
+                return;
+            }
+            else if (SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex) == null)
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkedVar message recieved for a non existant behaviour");
+                return;
+            }
+
+            SpawnManager.spawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).HandleNetworkedVarUpdate(reader, clientId);
         }
     }
 }

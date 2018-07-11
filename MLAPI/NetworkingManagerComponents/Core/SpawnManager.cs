@@ -177,7 +177,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
         }
         */
 
-        internal static NetworkedObject CreateSpawnedObject(int networkedPrefabId, uint networkId, uint owner, bool playerObject, Vector3 position, Quaternion rotation, BitReader reader, bool readSyncedVar, bool readPayload)
+        internal static NetworkedObject CreateSpawnedObject(int networkedPrefabId, uint networkId, uint owner, bool playerObject, Vector3 position, Quaternion rotation, BitReader reader, bool readSyncedVar, bool readPayload, bool readNetworkedVar)
         {
             if (!netManager.NetworkConfig.NetworkPrefabNames.ContainsKey(networkedPrefabId))
             {
@@ -194,6 +194,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             }
 
             if (readSyncedVar) netObject.SetFormattedSyncedVarData(reader);
+            if (readNetworkedVar) netObject.SetNetworkedVarData(reader);
 
             netObject.NetworkedPrefabName = netManager.NetworkConfig.NetworkPrefabNames[networkedPrefabId];
             netObject.isSpawned = true;
@@ -210,7 +211,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             SpawnedObjects.Add(netObject.NetworkId, netObject);
             SpawnedObjectsList.Add(netObject);
             if (playerObject) NetworkingManager.singleton.ConnectedClients[owner].PlayerObject = netObject;
-            netObject.InvokeBehaviourNetworkSpawn(reader);
+            netObject.InvokeBehaviourNetworkSpawn(readPayload ? reader : null);
             return netObject;
         }
 
@@ -299,6 +300,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
                     if (netObject.observers.Contains(client.Key))
                         netObject.WriteFormattedSyncedVarData(writer);
+                    netObject.WriteNetworkedVarData(writer, client.Key);
 
                     if (payload != null) writer.WriteWriter(payload);
 
@@ -369,6 +371,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
                     if (netObject.observers.Contains(client.Key))
                         netObject.WriteFormattedSyncedVarData(writer);
+                    netObject.WriteNetworkedVarData(writer, client.Key);
 
                     if (payload != null) writer.WriteWriter(payload);
 

@@ -363,6 +363,8 @@ namespace MLAPI.MonoBehaviours.Core
             MessageManager.messageTypes.Add("MLAPI_RPC", 13);
             MessageManager.messageTypes.Add("MLAPI_TARGET", 14);
             MessageManager.messageTypes.Add("MLAPI_SET_VISIBILITY", 15);
+            MessageManager.messageTypes.Add("MLAPI_NETWORKED_VAR_DELTA", 16);
+            MessageManager.messageTypes.Add("MLAPI_NETWORKED_VAR_UPDATE", 17);
 
             //These are message types concidered to be user level since they belong to prototype components
             List<MessageType> messageTypes = new List<MessageType>(NetworkConfig.MessageTypes)
@@ -602,7 +604,7 @@ namespace MLAPI.MonoBehaviours.Core
             if (NetworkConfig.HandleObjectSpawning)
             {
                 prefabId = prefabId == -1 ? NetworkConfig.NetworkPrefabIds[NetworkConfig.PlayerPrefabName] : prefabId;
-                SpawnManager.CreateSpawnedObject(prefabId, 0, hostClientId, true, pos.GetValueOrDefault(), rot.GetValueOrDefault(), null, false, false);
+                SpawnManager.CreateSpawnedObject(prefabId, 0, hostClientId, true, pos.GetValueOrDefault(), rot.GetValueOrDefault(), null, false, false, false);
             }
 
             SpawnSceneObjects();
@@ -660,6 +662,7 @@ namespace MLAPI.MonoBehaviours.Core
             {
                 if((NetworkTime - lastSendTickTime >= (1f / NetworkConfig.SendTickrate)) || NetworkConfig.SendTickrate <= 0)
                 {
+                    NetworkedObject.NetworkedVarPrepareSend();
                     foreach (KeyValuePair<uint, NetworkedClient> pair in ConnectedClients)
                     {
                         byte error;
@@ -1011,6 +1014,13 @@ namespace MLAPI.MonoBehaviours.Core
                                 if (isClient)
                                     InternalMessageHandler.HandleSetVisibility(clientId, messageReader, channelId);
                                 break;
+                            case 16:
+                                // Handled on both client and server
+                                InternalMessageHandler.HandleNetworkedVarDelta(clientId, messageReader, channelId);
+                                break;
+                            case 17:
+                                InternalMessageHandler.HandleNetworkedVarUpdate(clientId, messageReader, channelId);
+                                break;
                         }
                         #endregion
                     }
@@ -1135,7 +1145,7 @@ namespace MLAPI.MonoBehaviours.Core
                 if(NetworkConfig.HandleObjectSpawning)
                 {
                     prefabId = prefabId == -1 ? NetworkConfig.NetworkPrefabIds[NetworkConfig.PlayerPrefabName] : prefabId;
-                    netObject = SpawnManager.CreateSpawnedObject(prefabId, 0, clientId, true, position, rotation, null, false, false);
+                    netObject = SpawnManager.CreateSpawnedObject(prefabId, 0, clientId, true, position, rotation, null, false, false, false);
                     ConnectedClients[clientId].PlayerObject = netObject;
                 }
 
@@ -1197,6 +1207,7 @@ namespace MLAPI.MonoBehaviours.Core
 
                             if (pair.Value.observers.Contains(clientId))
                                 pair.Value.WriteFormattedSyncedVarData(writer);
+                            pair.Value.WriteNetworkedVarData(writer, clientId);
                         }
                     }
                     InternalMessageHandler.Send(clientId, "MLAPI_CONNECTION_APPROVED", "MLAPI_INTERNAL", writer, null, null, null, true);
@@ -1235,6 +1246,7 @@ namespace MLAPI.MonoBehaviours.Core
 
                             if (ConnectedClients[clientId].PlayerObject.GetComponent<NetworkedObject>().observers.Contains(clientPair.Key))
                                 ConnectedClients[clientId].PlayerObject.GetComponent<NetworkedObject>().WriteFormattedSyncedVarData(writer);
+                            ConnectedClients[clientId].PlayerObject.GetComponent<NetworkedObject>().WriteNetworkedVarData(writer, clientPair.Key);
                         }
                         else
                         {

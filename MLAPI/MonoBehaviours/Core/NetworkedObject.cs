@@ -281,6 +281,44 @@ namespace MLAPI.MonoBehaviours.Core
             }
         }
 
+        internal static void NetworkedVarPrepareSend()
+        {
+            for (int i = 0; i < NetworkedBehaviours.Count; i++)
+            {
+                NetworkedBehaviours[i].NetworkedVarUpdate();
+            }
+        }
+        
+        internal void WriteNetworkedVarData(BitWriter writer, uint clientId)
+        {
+            for (int i = 0; i < childNetworkedBehaviours.Count; i++)
+            {
+                childNetworkedBehaviours[i].NetworkedVarInit();
+                if (childNetworkedBehaviours[i].networkedVarFields.Count == 0)
+                    continue;
+                for (int j = 0; j < childNetworkedBehaviours[i].networkedVarFields.Count; j++)
+                {
+                    bool canClientRead = childNetworkedBehaviours[i].networkedVarFields[j].CanClientRead(clientId);
+                    writer.WriteBool(canClientRead);
+                    if (canClientRead) childNetworkedBehaviours[i].networkedVarFields[j].WriteField(writer);
+                }
+            }
+        }
+
+        internal void SetNetworkedVarData(BitReader reader)
+        {
+            for (int i = 0; i < childNetworkedBehaviours.Count; i++)
+            {
+                childNetworkedBehaviours[i].NetworkedVarInit();
+                if (childNetworkedBehaviours[i].networkedVarFields.Count == 0)
+                    continue;
+                for (int j = 0; j < childNetworkedBehaviours[i].networkedVarFields.Count; j++)
+                {
+                    if (reader.ReadBool()) childNetworkedBehaviours[i].networkedVarFields[j].ReadField(reader);
+                }
+            }
+        }
+
 
         //Writes SyncedVar data in a formatted way so that the SetFormattedSyncedVarData method can read it.
         //The format doesn't NECCECARLY correspond with the "general syncedVar message layout" 
