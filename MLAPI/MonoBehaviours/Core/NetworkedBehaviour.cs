@@ -169,55 +169,6 @@ namespace MLAPI.MonoBehaviours.Core
 
         }
 
-        internal Dictionary<ulong, MethodInfo> cachedMethods = new Dictionary<ulong, MethodInfo>();
-        internal Dictionary<string, string> messageChannelName = new Dictionary<string, string>();
-
-        private List<MethodInfo> getMethodsRecursive(Type type, List<MethodInfo> list = null) {
-            if(list == null) {
-                list = new List<MethodInfo>();
-            }
-            if(type == typeof(NetworkedBehaviour)) {
-                return list;
-            }
-            list.AddRange(type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.FlattenHierarchy));
-            return getMethodsRecursive(type.BaseType, list); 
-        }
-
-        private void CacheAttributedMethods()
-        {
-            if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.Disabled)
-                return;
-
-            MethodInfo[] methods = getMethodsRecursive(GetType()).ToArray();
-            foreach (MethodInfo method in methods)
-            {
-                if (method.IsDefined(typeof(Command), true) || method.IsDefined(typeof(ClientRpc), true) || method.IsDefined(typeof(TargetRpc), true))
-                {
-                    ulong hash = 0;
-
-                    if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenTwoByte)
-                        hash = method.Name.GetStableHash16();
-                    else if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenFourByte)
-                        hash = method.Name.GetStableHash32();
-                    else if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenEightByte)
-                        hash = method.Name.GetStableHash64();
-
-                    if (cachedMethods.ContainsKey(hash))
-                    {
-                        MethodInfo previous = cachedMethods[hash];
-                        if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError(string.Format("Method {0} and {1} have the same hash.  Rename one of the methods or increase Attribute Message Mode", previous.Name, method.Name));
-                    }
-                    cachedMethods[hash] = method;
-                }
-                if (method.IsDefined(typeof(Command), true) && !messageChannelName.ContainsKey(method.Name))
-                    messageChannelName.Add(method.Name, ((Command[])method.GetCustomAttributes(typeof(Command), true))[0].channelName);
-                if (method.IsDefined(typeof(ClientRpc), true) && !messageChannelName.ContainsKey(method.Name))
-                    messageChannelName.Add(method.Name, ((ClientRpc[])method.GetCustomAttributes(typeof(ClientRpc), true))[0].channelName);
-                if (method.IsDefined(typeof(TargetRpc), true) && !messageChannelName.ContainsKey(method.Name))
-                    messageChannelName.Add(method.Name, ((TargetRpc[])method.GetCustomAttributes(typeof(TargetRpc), true))[0].channelName);
-            }
-        }
-
         /// <summary>
         /// Calls a Command method on server
         /// </summary>
@@ -360,146 +311,6 @@ namespace MLAPI.MonoBehaviours.Core
                 InternalMessageHandler.Send(OwnerClientId, "MLAPI_RPC", messageChannelName[methodName], writer, networkId);
             }
         }
-
-        #region ActionInvokes
-        /// <summary>
-        /// Calls a Command method on server
-        /// </summary>
-        /// <param name="method">Method to invoke</param>
-        public void InvokeCommand(Action method) {
-            InvokeCommand(method.Method.Name);
-        }
-        /// <summary>
-        /// Calls a Command method on server
-        /// </summary>
-        /// <param name="method">Method to invoke</param>
-        /// <param name="p1">Method parameter to send</param>
-        public void InvokeCommand<T1>(Action<T1> method, T1 p1) {
-            InvokeCommand(method.Method.Name, new object[] { p1 });
-        }
-        /// <summary>
-        /// Calls a Command method on server
-        /// </summary>
-        /// <param name="method">Method to invoke</param>
-        /// <param name="p1">Method parameter to send</param>
-        /// <param name="p2">Method parameter to send</param>
-        public void InvokeCommand<T1, T2>(Action<T1, T2> method, T1 p1, T2 p2) {
-            InvokeCommand(method.Method.Name, new object[] { p1, p2});
-        }
-        /// <summary>
-        /// Calls a Command method on server
-        /// </summary>
-        /// <param name="method">Method to invoke</param>
-        /// <param name="p1">Method parameter to send</param>
-        /// <param name="p2">Method parameter to send</param>
-        /// <param name="p3">Method parameter to send</param>
-        public void InvokeCommand<T1, T2, T3>(Action<T1, T2, T3> method, T1 p1, T2 p2, T3 p3) {
-            InvokeCommand(method.Method.Name, new object[] { p1, p2, p3 });
-        }
-        /// <summary>
-        /// Calls a Command method on server
-        /// </summary>
-        /// <param name="method">Method to invoke</param>
-        /// <param name="p1">Method parameter to send</param>
-        /// <param name="p2">Method parameter to send</param>
-        /// <param name="p3">Method parameter to send</param>
-        /// <param name="p4">Method parameter to send</param>
-        public void InvokeCommand<T1, T2, T3, T4>(Action<T1, T2, T3, T4> method, T1 p1, T2 p2, T3 p3, T4 p4) {
-            InvokeCommand(method.Method.Name, new object[] { p1, p2, p3, p4 });
-        }
-
-        /// <summary>
-        /// Calls a ClientRpc method on all clients
-        /// </summary>
-        /// <param name="method">Method to invoke</param>
-        public void InvokeClientRpc(Action method) {
-            InvokeClientRpc(method.Method.Name);
-        }
-        /// <summary>
-        /// Calls a ClientRpc method on all clients
-        /// </summary>
-        /// <param name="method">Method to invoke</param>
-        /// <param name="p1">Method parameter to send</param>
-        public void InvokeClientRpc<T1>(Action<T1> method, T1 p1) {
-            InvokeClientRpc(method.Method.Name, new object[] { p1 });
-        }
-        /// <summary>
-        /// Calls a ClientRpc method on all clients
-        /// </summary>
-        /// <param name="method">Method to invoke</param>
-        /// <param name="p1">Method parameter to send</param>
-        /// <param name="p2">Method parameter to send</param>
-        public void InvokeClientRpc<T1, T2>(Action<T1, T2> method, T1 p1, T2 p2) {
-            InvokeClientRpc(method.Method.Name, new object[] { p1, p2 });
-        }
-        /// <summary>
-        /// Calls a ClientRpc method on all clients
-        /// </summary>
-        /// <param name="method">Method to invoke</param>
-        /// <param name="p1">Method parameter to send</param>
-        /// <param name="p2">Method parameter to send</param>
-        /// <param name="p3">Method parameter to send</param>
-        public void InvokeClientRpc<T1, T2, T3>(Action<T1, T2, T3> method, T1 p1, T2 p2, T3 p3) {
-            InvokeClientRpc(method.Method.Name, new object[] { p1, p2, p3 });
-        }
-        /// <summary>
-        /// Calls a ClientRpc method on all clients
-        /// </summary>
-        /// <param name="method">Method to invoke</param>
-        /// <param name="p1">Method parameter to send</param>
-        /// <param name="p2">Method parameter to send</param>
-        /// <param name="p3">Method parameter to send</param>
-        /// <param name="p4">Method parameter to send</param>
-        public void InvokeClientRpc<T1, T2, T3, T4>(Action<T1, T2, T3, T4> method, T1 p1, T2 p2, T3 p3, T4 p4) {
-            InvokeClientRpc(method.Method.Name, new object[] { p1, p2, p3, p4 });
-        }
-
-        /// <summary>
-        /// Calls a TargetRpc method on the owner client
-        /// </summary>
-        /// <param name="method">Method to invoke</param>
-        public void InvokeTargetRpc(Action method) {
-            InvokeTargetRpc(method.Method.Name);
-        }
-        /// <summary>
-        /// Calls a TargetRpc method on the owner client
-        /// </summary>
-        /// <param name="p1">Method parameter to send</param>
-        /// <param name="method">Method to invoke</param>
-        public void InvokeTargetRpc<T1>(Action<T1> method, T1 p1) {
-            InvokeTargetRpc(method.Method.Name, new object[] { p1 });
-        }
-        /// <summary>
-        /// Calls a TargetRpc method on the owner client
-        /// </summary>
-        /// <param name="p1">Method parameter to send</param>
-        /// <param name="p2">Method parameter to send</param>
-        /// <param name="method">Method to invoke</param>
-        public void InvokeTargetRpc<T1, T2>(Action<T1, T2> method, T1 p1, T2 p2) {
-            InvokeTargetRpc(method.Method.Name, new object[] { p1, p2 });
-        }
-        /// <summary>
-        /// Calls a TargetRpc method on the owner client
-        /// </summary>
-        /// <param name="p1">Method parameter to send</param>
-        /// <param name="p2">Method parameter to send</param>
-        /// <param name="p3">Method parameter to send</param>
-        /// <param name="method">Method to invoke</param>
-        public void InvokeTargetRpc<T1, T2, T3>(System.Action<T1, T2, T3> method, T1 p1, T2 p2, T3 p3) {
-            InvokeTargetRpc(method.Method.Name, new object[] { p1, p2, p3 });
-        }
-        /// <summary>
-        /// Calls a TargetRpc method on the owner client
-        /// </summary>
-        /// <param name="p1">Method parameter to send</param>
-        /// <param name="p2">Method parameter to send</param>
-        /// <param name="p3">Method parameter to send</param>
-        /// <param name="p4">Method parameter to send</param>
-        /// <param name="method">Method to invoke</param>
-        public void InvokeTargetRpc<T1, T2, T3, T4>(System.Action<T1, T2, T3, T4> method, T1 p1, T2 p2, T3 p3, T4 p4) {
-            InvokeTargetRpc(method.Method.Name, new object[] { p1, p2, p3, p4 });
-        }
-        #endregion
 
         /// <summary>
         /// Registers a message handler
@@ -787,7 +598,63 @@ namespace MLAPI.MonoBehaviours.Core
 
         #endregion
 
+        //private static Dictionary<Type, MethodInfo[]> methods 
+        //Key = Type, Value is Dictionary of Key: MethodNameHash, Value: ChannelName
+        private static readonly Dictionary<Type, Dictionary<ulong, string>> MessageMethodHashToChannelName = new Dictionary<Type, Dictionary<ulong, string>>();
+        internal void CacheAttributes()
+        {
+            Type type = GetType();
+            if (MessageMethodHashToChannelName.ContainsKey(type)) return; //Already cached
+            MessageMethodHashToChannelName.Add(type, new Dictionary<ulong, string>());
+            MethodInfo[] methods = type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+            for (int i = 0; i < methods.Length; i++)
+            {
+                if (methods[i].IsDefined(typeof(ChannelSetting), true))
+                {
+                    ChannelSetting[] attributes = (ChannelSetting[])methods[i].GetCustomAttributes(typeof(ChannelSetting), true);
+                    if (attributes.Length > 1)
+                    {
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Having more than 1 ChannelSetting attribute per method is not supported.");
+                    }
+                    AttributeMessageMode mode = NetworkingManager.singleton.NetworkConfig.AttributeMessageMode;
+
+                    MessageMethodHashToChannelName[type].Add(mode == AttributeMessageMode.WovenTwoByte ?
+                        methods[i].Name.GetStableHash16() : mode == AttributeMessageMode.WovenFourByte ?
+                        methods[i].Name.GetStableHash32() : mode == AttributeMessageMode.WovenEightByte ?
+                        methods[i].Name.GetStableHash64() : 0, attributes[0].channel);
+                }
+            }
+        }
+
         #region SEND METHODS
+        public delegate void Action<T1, T2, T3, T4, T5>(T1 t1, T2 t2, T3 t3, T4 t4, T5 t5);
+        public delegate void Action<T1, T2, T3, T4, T5, T6>(T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6);
+        public delegate void Action<T1, T2, T3, T4, T5, T6, T7>(T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7);
+        public delegate void Action<T1, T2, T3, T4, T5, T6, T7, T8>(T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8);
+        public delegate void Action<T1, T2, T3, T4, T5, T6, T7, T8, T9>(T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9);
+        public delegate void Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10);
+
+        public void InvokeOnServer(Action method)
+        {
+        }
+
+        public void InvokeOnServer<T1>(Action<T1> method, T1 )
+
+
+        public void InvokeOnServer<T1, T2, T3, T4, T5, T6, T7, T8, T9>(Action<T1, T2, T3, T4> method, T1 param1, T2 param2, T3 param3)
+        {
+
+        }
+
+        [ChannelSetting(channel = "MyIChannel")]
+        public void InvokeOnServer<T1, T2, T3>(string s, T1 param1, T2 param2, T3 param3)
+        {
+            string channel = MessageToChannels.ContainsKey(s) ? MessageToChannels[]
+            InvokeOnServer(myMethod, "myStringParam", "MyChannel")
+        }
+
+        /*
+
         /// <summary>
         /// Sends a buffer to the server from client
         /// </summary>
@@ -1805,6 +1672,7 @@ namespace MLAPI.MonoBehaviours.Core
         {
             SendToClientsTarget(messageType, channelName, BinarySerializer.Serialize<T>(instance));
         }
+        */
         #endregion
 
         /// <summary>

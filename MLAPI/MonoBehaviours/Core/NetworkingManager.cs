@@ -259,6 +259,11 @@ namespace MLAPI.MonoBehaviours.Core
                 },
                 new Channel()
                 {
+                    Name = "MLAPI_DEFAULT_MESSAGE",
+                    Type = ChannelType.Reliable
+                },
+                new Channel()
+                {
                     Name = "MLAPI_POSITION_UPDATE",
                     Type = ChannelType.StateUpdate
                 },
