@@ -94,7 +94,8 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
         private static void OnSceneLoaded(AsyncOperation operation)
         {
-            List<NetworkedObject> objectsToKeep = SpawnManager.spawnedObjects.Values.ToList();
+            SceneManager.SetActiveScene(nextScene);
+            List<NetworkedObject> objectsToKeep = SpawnManager.SpawnedObjectsList;
             //The last loaded scene
             nextScene = SceneManager.GetSceneAt(SceneManager.sceneCount - 1);
             for (int i = 0; i < objectsToKeep.Count; i++)

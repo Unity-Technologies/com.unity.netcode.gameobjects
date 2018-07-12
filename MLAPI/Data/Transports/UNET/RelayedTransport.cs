@@ -6,18 +6,14 @@ namespace MLAPI.Data.Transports.UNET
 {
     class RelayedTransport : IUDPTransport
     {
-        public ChannelType InternalChannel { get => ChannelType.ReliableFragmentedSequenced; }
-
-        public uint HostDummyId { get => new NetId(0, 0, true, false).GetClientId(); }
-
-        public uint InvalidDummyId { get => new NetId(0, 0, false, true).GetClientId(); }
-
-        public uint ServerNetId { get => new NetId((byte)serverHostId, (ushort)serverConnectionId, false, false).GetClientId(); }
-
+        public ChannelType InternalChannel => ChannelType.ReliableFragmentedSequenced;
+        public uint HostDummyId => new NetId(0, 0, true, false).GetClientId();
+        public uint InvalidDummyId => new NetId(0, 0, false, true).GetClientId();
+        public uint ServerNetId => new NetId((byte)serverHostId, (ushort)serverConnectionId, false, false).GetClientId();
         public int serverConnectionId;
         public int serverHostId;
 
-        public static List<TransportHost> ServerTransports = new List<TransportHost>()
+        public static readonly List<TransportHost> ServerTransports = new List<TransportHost>()
         {
             new TransportHost()
             {
@@ -39,15 +35,10 @@ namespace MLAPI.Data.Transports.UNET
             NetId netId = new NetId(clientId);
             if (netId.IsHost() || netId.IsInvalid())
                 return;
-            byte error;
-            RelayTransport.Disconnect(netId.HostId, netId.ConnectionId, out error);
+            RelayTransport.Disconnect(netId.HostId, netId.ConnectionId, out byte error);
         }
 
-        public void DisconnectFromServer()
-        {
-            byte error;
-            RelayTransport.Disconnect(serverHostId, serverConnectionId, out error);
-        }
+        public void DisconnectFromServer() => RelayTransport.Disconnect(serverHostId, serverConnectionId, out byte error);
 
         public int GetCurrentRTT(uint clientId, out byte error)
         {
@@ -55,10 +46,7 @@ namespace MLAPI.Data.Transports.UNET
             return NetworkTransport.GetCurrentRTT(netId.HostId, netId.ConnectionId, out error);
         }
 
-        public int GetNetworkTimestamp()
-        {
-            return NetworkTransport.GetNetworkTimestamp();
-        }
+        public int GetNetworkTimestamp() => NetworkTransport.GetNetworkTimestamp();
 
         public int GetRemoteDelayTimeMS(uint clientId, int remoteTimestamp, out byte error)
         {
@@ -68,10 +56,7 @@ namespace MLAPI.Data.Transports.UNET
 
         public NetEventType PollReceive(out uint clientId, out int channelId, ref byte[] data, int bufferSize, out int receivedSize, out byte error)
         {
-            int hostId;
-            int connectionId;
-            byte err;
-            NetworkEventType eventType = RelayTransport.Receive(out hostId, out connectionId, out channelId, data, bufferSize, out receivedSize, out err);
+            NetworkEventType eventType = RelayTransport.Receive(out int hostId, out int connectionId, out channelId, data, bufferSize, out receivedSize, out byte err);
             clientId = new NetId((byte)hostId, (ushort)connectionId, false, false).GetClientId();
             NetworkError errorType = (NetworkError)err;
             if (errorType == NetworkError.Timeout)
@@ -109,10 +94,7 @@ namespace MLAPI.Data.Transports.UNET
                 RelayTransport.QueueMessageForSending(netId.HostId, netId.ConnectionId, channelId, dataBuffer, dataSize, out error);
         }
 
-        public void Shutdown()
-        {
-            NetworkTransport.Shutdown();
-        }
+        public void Shutdown() => NetworkTransport.Shutdown();
 
         public void SendQueue(uint clientId, out byte error)
         {

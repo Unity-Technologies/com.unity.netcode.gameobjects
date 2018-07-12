@@ -23,41 +23,36 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
 #if !DISABLE_CRYPTOGRAPHY
                 if (netManager.NetworkConfig.EncryptedChannelsHashSet.Contains(MessageManager.reverseChannels[channelId]))
-                    writer.WriteByteArray(CryptographyHelper.Encrypt(reader.ReadByteArray(), netManager.connectedClients[targetId].AesKey));
+                    writer.WriteByteArray(CryptographyHelper.Encrypt(reader.ReadByteArray(), netManager.ConnectedClients[targetId].AesKey));
                 else
 #endif
                     writer.WriteByteArray(reader.ReadByteArray());
 
                 writer.Finalize(ref FinalMessageBuffer);
 
-                byte error;
-                netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(targetId, ref FinalMessageBuffer, (int)writer.GetFinalizeSize(), channelId, false, out error);
+                netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(targetId, ref FinalMessageBuffer, (int)writer.GetFinalizeSize(), channelId, false, out byte error);
             }
         }
 
-        //RETURNS IF IT SUCCEDED OR FAILED BECAUSE OF NON-OBSERVER. ANY OTHER FAIL WILL RETURN TRUE
-        internal static bool Send(uint clientId, string messageType, string channelName, BitWriter messageWriter, uint? fromNetId, uint? networkId = null, ushort? orderId = null, bool skipQueue = false)
+        internal static void Send(uint clientId, string messageType, string channelName, BitWriter messageWriter, uint? networkId = null, ushort? orderId = null, bool skipQueue = false)
         {
             uint targetClientId = clientId;
             if (netManager.isHost && targetClientId == netManager.NetworkConfig.NetworkTransport.HostDummyId)
             {
                 //Don't invoke the message on our own machine. Instant stack overflow.
-                return true;
+                return;
             }
             else if (targetClientId == netManager.NetworkConfig.NetworkTransport.HostDummyId)
             {
                 //Client trying to send data to host
                 targetClientId = netManager.NetworkConfig.NetworkTransport.ServerNetId;
             }
-            //If we respect the observers, and the message is targeted (networkId != null) and the targetedNetworkId isnt observing the receiver. Then we return
-            if (netManager.isServer && fromNetId != null && !SpawnManager.spawnedObjects[fromNetId.Value].observers.Contains(clientId))
-                return false;
 
             bool isPassthrough = (!netManager.isServer && clientId != netManager.NetworkConfig.NetworkTransport.ServerNetId && netManager.NetworkConfig.AllowPassthroughMessages);
             if (isPassthrough && !netManager.NetworkConfig.PassthroughMessageHashSet.Contains(MessageManager.messageTypes[messageType]))
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The The MessageType " + messageType + " is not registered as an allowed passthrough message type");
-                return true;
+                return;
             }
 
             using (BitWriter writer = BitWriter.Get())
@@ -70,7 +65,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                     //This is an encrypted message.
                     byte[] encrypted;
                     if (netManager.isServer)
-                        encrypted = CryptographyHelper.Encrypt(messageWriter.Finalize(), netManager.connectedClients[clientId].AesKey);
+                        encrypted = CryptographyHelper.Encrypt(messageWriter.Finalize(), netManager.ConnectedClients[clientId].AesKey);
                     else
                         encrypted = CryptographyHelper.Encrypt(messageWriter.Finalize(), netManager.clientAesKey);
 
@@ -92,12 +87,10 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 else
                     netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(targetClientId, ref FinalMessageBuffer, (int)writer.GetFinalizeSize(), MessageManager.channels[channelName], false, out error);
                 NetworkProfiler.EndEvent();
-
-                return true;
             }
         }
 
-        internal static void Send(uint[] clientIds, string messageType, string channelName, BitWriter messageWriter, uint? fromNetId, uint? networkId = null, ushort? orderId = null)
+        internal static void Send(uint[] clientIds, string messageType, string channelName, BitWriter messageWriter, uint? networkId = null, ushort? orderId = null)
         {
             if (netManager.NetworkConfig.EncryptedChannelsHashSet.Contains(channelName))
             {
@@ -126,21 +119,16 @@ namespace MLAPI.NetworkingManagerComponents.Core
                         targetClientId = netManager.NetworkConfig.NetworkTransport.ServerNetId;
                     }
 
-                    //If we respect the observers, and the message is targeted (networkId != null) and the targetedNetworkId isnt observing the receiver. Then we continue
-                    if (netManager.isServer && fromNetId != null && !SpawnManager.spawnedObjects[fromNetId.Value].observers.Contains(clientIds[i]))
-                        continue;
-
                     writer.Finalize(ref FinalMessageBuffer);
 
                     NetworkProfiler.StartEvent(TickType.Send, (uint)messageWriter.GetFinalizeSize(), channelName, messageType);
-                    byte error;
-                    netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(targetClientId, ref FinalMessageBuffer, (int)writer.GetFinalizeSize(), channel, false, out error);
+                    netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(targetClientId, ref FinalMessageBuffer, (int)writer.GetFinalizeSize(), channel, false, out byte error);
                     NetworkProfiler.EndEvent();
                 }
             }
         }
 
-        internal static void Send(List<uint> clientIds, string messageType, string channelName, BitWriter messageWriter, uint? fromNetId, uint? networkId = null, ushort? orderId = null)
+        internal static void Send(List<uint> clientIds, string messageType, string channelName, BitWriter messageWriter, uint? networkId = null, ushort? orderId = null)
         {
             if (netManager.NetworkConfig.EncryptedChannelsHashSet.Contains(channelName))
             {
@@ -169,31 +157,21 @@ namespace MLAPI.NetworkingManagerComponents.Core
                         targetClientId = netManager.NetworkConfig.NetworkTransport.ServerNetId;
                     }
 
-                    //If we respect the observers, and the message is targeted (networkId != null) and the targetedNetworkId isnt observing the receiver. Then we continue
-                    if (netManager.isServer && fromNetId != null && !SpawnManager.spawnedObjects[fromNetId.Value].observers.Contains(clientIds[i]))
-                        continue;
-
                     writer.Finalize(ref FinalMessageBuffer);
 
                     NetworkProfiler.StartEvent(TickType.Send, (uint)messageWriter.GetFinalizeSize(), channelName, messageType);
-                     byte error;
-                    netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(targetClientId, ref FinalMessageBuffer, (int)writer.GetFinalizeSize(), channel, false, out error);
+                    netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(targetClientId, ref FinalMessageBuffer, (int)writer.GetFinalizeSize(), channel, false, out byte error);
                     NetworkProfiler.EndEvent();
                 }
             }
         }
 
-        private static List<uint> failedObservers = new List<uint>();
-        //RETURNS THE CLIENTIDS WHICH WAS NOT BEING OBSERVED
-        internal static ref List<uint> Send(string messageType, string channelName, BitWriter messageWriter, uint? fromNetId,  uint? networkId = null, ushort? orderId = null)
+        internal static void Send(string messageType, string channelName, BitWriter messageWriter,  uint? networkId = null, ushort? orderId = null)
         {
-            failedObservers.Clear();
-            if (netManager.connectedClients.Count == 0)
-                return ref failedObservers;
             if (netManager.NetworkConfig.EncryptedChannels.Contains(channelName))
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot send messages over encrypted channel to multiple clients");
-                return ref failedObservers;
+                return;
             }
 
             using (BitWriter writer = BitWriter.Get())
@@ -203,7 +181,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 writer.WriteWriter(messageWriter);
 
                 int channel = MessageManager.channels[channelName];
-                foreach (KeyValuePair<uint, NetworkedClient> pair in netManager.connectedClients)
+                foreach (KeyValuePair<uint, NetworkedClient> pair in netManager.ConnectedClients)
                 {
                     uint targetClientId = pair.Key;
                     if (netManager.isHost && targetClientId == netManager.NetworkConfig.NetworkTransport.HostDummyId)
@@ -217,32 +195,21 @@ namespace MLAPI.NetworkingManagerComponents.Core
                         targetClientId = netManager.NetworkConfig.NetworkTransport.ServerNetId;
                     }
 
-                    //If we respect the observers, and the message is targeted (networkId != null) and the targetedNetworkId isnt observing the receiver. Then we continue
-                    if (netManager.isServer && fromNetId != null && !SpawnManager.spawnedObjects[fromNetId.Value].observers.Contains(pair.Key))
-                    {
-                        failedObservers.Add(pair.Key);
-                        continue;
-                    }
-
                     writer.Finalize(ref FinalMessageBuffer);
 
                     NetworkProfiler.StartEvent(TickType.Send, (uint)messageWriter.GetFinalizeSize(), channelName, messageType);
-                    byte error;
-                    netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(targetClientId, ref FinalMessageBuffer, (int)writer.GetFinalizeSize(), channel, false, out error);
+                    netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(targetClientId, ref FinalMessageBuffer, (int)writer.GetFinalizeSize(), channel, false, out byte error);
                     NetworkProfiler.EndEvent();
                 }
-                return ref failedObservers;
             }
         }
 
-        //RETURNS THE CLIENTIDS WHICH WAS NOT BEING OBSERVED
-        internal static ref List<uint> Send(string messageType, string channelName, BitWriter messageWriter, uint clientIdToIgnore, uint? fromNetId, uint? networkId = null, ushort? orderId = null)
+        internal static void Send(string messageType, string channelName, BitWriter messageWriter, uint clientIdToIgnore, uint? networkId = null, ushort? orderId = null)
         {
-            failedObservers.Clear();
             if (netManager.NetworkConfig.EncryptedChannels.Contains(channelName))
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot send messages over encrypted channel to multiple clients");
-                return ref failedObservers;
+                return;
             }
 
             using (BitWriter writer = BitWriter.Get())
@@ -252,7 +219,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 writer.WriteWriter(messageWriter);
 
                 int channel = MessageManager.channels[channelName];
-                foreach (KeyValuePair<uint, NetworkedClient> pair in netManager.connectedClients)
+                foreach (KeyValuePair<uint, NetworkedClient> pair in netManager.ConnectedClients)
                 {
                     if (pair.Key == clientIdToIgnore)
                         continue;
@@ -269,21 +236,12 @@ namespace MLAPI.NetworkingManagerComponents.Core
                         targetClientId = netManager.NetworkConfig.NetworkTransport.ServerNetId;
                     }
 
-                    //If we respect the observers, and the message is targeted (networkId != null) and the targetedNetworkId isnt observing the receiver. Then we continue
-                    if (netManager.isServer && fromNetId != null && !SpawnManager.spawnedObjects[fromNetId.Value].observers.Contains(pair.Key))
-                    {
-                        failedObservers.Add(pair.Key);
-                        continue;
-                    }
-
                     writer.Finalize(ref FinalMessageBuffer);
 
                     NetworkProfiler.StartEvent(TickType.Send, (uint)messageWriter.GetFinalizeSize(), channelName, messageType);
-                    byte error;
-                    netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(targetClientId, ref FinalMessageBuffer, (int)writer.GetFinalizeSize(), channel, false, out error);
+                    netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(targetClientId, ref FinalMessageBuffer, (int)writer.GetFinalizeSize(), channel, false, out byte error);
                     NetworkProfiler.EndEvent();
                 }
-                return ref failedObservers;
             }
         }
 

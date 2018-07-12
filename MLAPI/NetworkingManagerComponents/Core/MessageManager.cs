@@ -16,13 +16,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
         internal static readonly Dictionary<ushort, int> messageHandlerCounter = new Dictionary<ushort, int>();
         internal static readonly Dictionary<ushort, Stack<int>> releasedMessageHandlerCounters = new Dictionary<ushort, Stack<int>>();
 
-        private static NetworkingManager netManager
-        {
-            get
-            {
-                return NetworkingManager.singleton;
-            }
-        }
+        private static NetworkingManager netManager => NetworkingManager.singleton;
 
         
         internal static int AddIncomingMessageHandler(string name, Action<uint, BitReader> action)

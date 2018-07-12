@@ -41,6 +41,9 @@ namespace MLAPI.Data
 
         internal static bool SequenceEquals(this Array a1, Array a2)
         {
+            if ((a1 == null) != (a2 == null)) return false;
+            if (a1 == null || a2 == null) return true;
+            if (a1.Length != a2.Length) return false;
             bool equal = true;
             object val1;
             object val2;
@@ -144,16 +147,14 @@ namespace MLAPI.Data
                     writer.WriteUShort((ushort)newValue);
                 else if (newValue is string)
                     writer.WriteString((string)newValue);
-                else if (newValue is Vector3)
+                else if (newValue is Vector3 vector3)
                 {
-                    Vector3 vector3 = (Vector3)newValue;
                     writer.WriteFloat(vector3.x);
                     writer.WriteFloat(vector3.y);
                     writer.WriteFloat(vector3.z);
                 }
-                else if (newValue is Vector2)
+                else if (newValue is Vector2 vector2)
                 {
-                    Vector2 vector2 = (Vector2)newValue;
                     writer.WriteFloat(vector2.x);
                     writer.WriteFloat(vector2.y);
                 }
@@ -254,26 +255,29 @@ namespace MLAPI.Data
                     return reader.ReadString();
                 else if (type == typeof(Vector3))
                 {
-                    Vector3 vector3 = new Vector3();
-                    vector3.x = reader.ReadFloat();
-                    vector3.x = reader.ReadFloat();
-                    vector3.y = reader.ReadFloat();
-                    return vector3;
+                    return new Vector3
+                    {
+                        x = reader.ReadFloat(),
+                        y = reader.ReadFloat(),
+                        z = reader.ReadFloat()
+                    };
                 }
                 else if (type == typeof(Vector2))
                 {
-                    Vector2 vector2 = new Vector2();
-                    vector2.x = reader.ReadFloat();
-                    vector2.x = reader.ReadFloat();
-                    return vector2;
+                    return new Vector2()
+                    {
+                        x = reader.ReadFloat(),
+                        y = reader.ReadFloat()
+                    };
                 }
                 else if (type == typeof(Quaternion))
                 {
-                    Vector3 euler = new Vector3();
-                    euler.x = reader.ReadFloat();
-                    euler.x = reader.ReadFloat();
-                    euler.y = reader.ReadFloat();
-                    return Quaternion.Euler(euler);
+                    return Quaternion.Euler(new Vector3
+                    {
+                        x = reader.ReadFloat(),
+                        y = reader.ReadFloat(),
+                        z = reader.ReadFloat()
+                    });
                 }
                 else
                 {

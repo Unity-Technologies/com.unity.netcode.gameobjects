@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using MLAPI.Data.Transports;
 using MLAPI.MonoBehaviours.Core;
+using System.Linq;
 
 namespace MLAPI.Data
 {
@@ -41,10 +42,12 @@ namespace MLAPI.Data
         /// <summary>
         /// Channels used by the NetworkedTransport
         /// </summary>
+        [HideInInspector]
         public List<Channel> Channels = new List<Channel>();
         /// <summary>
         /// Registered MessageTypes
         /// </summary>
+        [HideInInspector]
         public List<MessageType> MessageTypes = new List<MessageType>();
         internal HashSet<ushort> PassthroughMessageHashSet = new HashSet<ushort>();
         internal HashSet<string> EncryptedChannelsHashSet = new HashSet<string>();
@@ -52,6 +55,7 @@ namespace MLAPI.Data
         /// <summary>
         /// A list of SceneNames that can be used during networked games.
         /// </summary>
+        [HideInInspector]
         public List<string> RegisteredScenes = new List<string>();
         /// <summary>
         /// A list of spawnable prefabs
@@ -154,6 +158,18 @@ namespace MLAPI.Data
         /// </summary>
         public AttributeMessageMode AttributeMessageMode = AttributeMessageMode.Disabled;
 
+        private void Sort()
+        {
+            MessageTypes = MessageTypes.OrderBy(x => x.Name).ToList();
+            Channels = Channels.OrderBy(x => x.Name).ToList();
+            NetworkedPrefabs = NetworkedPrefabs.OrderBy(x => x.name).ToList();
+            RegisteredScenes.Sort();
+        }
+
+        /// <summary>
+        /// Returns a base64 encoded version of the config
+        /// </summary>
+        /// <returns></returns>
         public string ToBase64()
         {
             NetworkConfig config = this;
@@ -212,7 +228,12 @@ namespace MLAPI.Data
                 return Convert.ToBase64String(writer.Finalize());
             }
         }
-
+        
+        /// <summary>
+        /// Sets the NetworkConfig data with that from a base64 encoded version
+        /// </summary>
+        /// <param name="base64">The base64 encoded version</param>
+        /// <param name="createDummyObject">Wheter or not to create dummy objects for NetworkedPrefabs</param>
         public void FromBase64(string base64, bool createDummyObject = false)
         {
             NetworkConfig config = this;
@@ -296,16 +317,18 @@ namespace MLAPI.Data
             }
         }
 
-        private byte[] ConfigHash = null;
+        private ulong? ConfigHash = null;
         /// <summary>
         /// Gets a SHA256 hash of parts of the NetworkingConfiguration instance
         /// </summary>
         /// <param name="cache"></param>
         /// <returns></returns>
-        public byte[] GetConfig(bool cache = true)
+        public ulong GetConfig(bool cache = true)
         {
             if (ConfigHash != null && cache)
-                return ConfigHash;
+                return ConfigHash.Value;
+
+            Sort();
 
             using (BitWriter writer = BitWriter.Get())
             {
@@ -347,10 +370,10 @@ namespace MLAPI.Data
                 // Returns a 160 bit / 20 byte / 5 int checksum of the config
                 if (cache)
                 {
-                    ConfigHash = MessageDigest.SHA1_Opt(writer.Finalize()).ToArray();
-                    return ConfigHash;
+                    ConfigHash = writer.Finalize().GetStableHash64();
+                    return ConfigHash.Value;
                 }
-                return MessageDigest.SHA1_Opt(writer.Finalize()).ToArray();
+                return writer.Finalize().GetStableHash64();
             }
         }
 
@@ -359,19 +382,9 @@ namespace MLAPI.Data
         /// </summary>
         /// <param name="hash"></param>
         /// <returns></returns>
-        public bool CompareConfig(byte[] hash)
+        public bool CompareConfig(ulong hash)
         {
-            byte[] localConfigHash = GetConfig();
-
-            if (hash.Length != localConfigHash.Length)
-                return false;
-
-            for (int i = 0; i < hash.Length; i++)
-            {
-                if (hash[i] != localConfigHash[i])
-                    return false;
-            }
-            return true;
+            return hash == GetConfig();
         }
     }
 }

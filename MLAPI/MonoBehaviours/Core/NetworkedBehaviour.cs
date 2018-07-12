@@ -18,61 +18,31 @@ namespace MLAPI.MonoBehaviours.Core
         /// <summary>
         /// Gets if the object is the the personal clients player object
         /// </summary>
-        public bool isLocalPlayer
-        {
-            get
-            {
-                return networkedObject.isLocalPlayer;
-            }
-        }
+        public bool isLocalPlayer => networkedObject.isLocalPlayer;
         /// <summary>
-        /// Gets if the object is owned by the local player
+        /// Gets if the object is owned by the local player or if the object is the local player object
         /// </summary>
-        public bool isOwner
-        {
-            get
-            {
-                return networkedObject.isOwner;
-            }
-        }
+        public bool isOwner => networkedObject.isOwner;
+        /// <summary>
+        /// Gets if the object is owned by the local player and this is not a player object
+        /// </summary>
+        public bool isObjectOwner => networkedObject.isObjectOwner;
         /// <summary>
         /// Gets if we are executing as server
         /// </summary>
-        protected bool isServer
-        {
-            get
-            {
-                return NetworkingManager.singleton.isServer;
-            }
-        }
+        protected bool isServer => NetworkingManager.singleton.isServer;
         /// <summary>
         /// Gets if we are executing as client
         /// </summary>
-        protected bool isClient
-        {
-            get
-            {
-                return NetworkingManager.singleton.isClient;
-            }
-        }
+        protected bool isClient => NetworkingManager.singleton.isClient;
         /// <summary>
         /// Gets if we are executing as Host, I.E Server and Client
         /// </summary>
-        protected bool isHost
-        {
-            get
-            {
-                return NetworkingManager.singleton.isHost;
-            }
-        }
-
-        protected bool isOwnedByNoone
-        {
-            get
-            {
-                return networkedObject.isOwnedByNoone;
-            }
-        }
+        protected bool isHost => NetworkingManager.singleton.isHost;
+        /// <summary>
+        /// Gets wheter or not the object has a owner
+        /// </summary>
+        public bool hasOwner => networkedObject.hasOwner;
 
         /// <summary>
         /// Gets the NetworkedObject that owns this NetworkedBehaviour instance
@@ -92,26 +62,13 @@ namespace MLAPI.MonoBehaviours.Core
         /// <summary>
         /// Gets the NetworkId of the NetworkedObject that owns the NetworkedBehaviour instance
         /// </summary>
-        public uint networkId
-        {
-            get
-            {
-                return networkedObject.NetworkId;
-            }
-        }
+        public uint networkId => networkedObject.NetworkId;
         /// <summary>
         /// Gets the clientId that owns the NetworkedObject
         /// </summary>
-        public uint ownerClientId
-        {
-            get
-            {
-                return networkedObject.OwnerClientId;
-            }
-        }
+        public uint OwnerClientId => networkedObject.OwnerClientId;
 
-        //Change data type
-        private Dictionary<string, int> registeredMessageHandlers = new Dictionary<string, int>();
+        private readonly Dictionary<string, int> registeredMessageHandlers = new Dictionary<string, int>();
 
         private void OnEnable()
         {
@@ -121,7 +78,6 @@ namespace MLAPI.MonoBehaviours.Core
             NetworkedObject.NetworkedBehaviours.Add(this);
             OnEnabled();
         }
-
         internal bool networkedStartInvoked = false;
         /// <summary>
         /// Gets called when message handlers are ready to be registered and the networking is setup
@@ -131,6 +87,10 @@ namespace MLAPI.MonoBehaviours.Core
 
         }
 
+        /// <summary>
+        /// Gets called when message handlers are ready to be registered and the networking is setup. Provides a Payload if it was provided
+        /// </summary>
+        /// <param name="payloadReader"></param>
         public virtual void NetworkStart(BitReader payloadReader)
         {
             NetworkStart();
@@ -140,6 +100,7 @@ namespace MLAPI.MonoBehaviours.Core
         {
             CacheAttributedMethods();
             WarnUnityReflectionMethodUse();
+            NetworkedVarInit();
         }
 
         private void WarnUnityReflectionMethodUse()
@@ -162,16 +123,25 @@ namespace MLAPI.MonoBehaviours.Core
             }
         }
 
+        /// <summary>
+        /// Invoked when the object is Disabled
+        /// </summary>
         public virtual void OnDisabled()
         {
 
         }
 
+        /// <summary>
+        /// Invoked when the object is Destroyed
+        /// </summary>
         public virtual void OnDestroyed()
         {
 
         }
 
+        /// <summary>
+        /// Invoked when the object is Enabled
+        /// </summary>
         public virtual void OnEnabled()
         {
 
@@ -199,48 +169,8 @@ namespace MLAPI.MonoBehaviours.Core
 
         }
 
-        internal Dictionary<string, MethodInfo> cachedMethods = new Dictionary<string, MethodInfo>();
+        internal Dictionary<ulong, MethodInfo> cachedMethods = new Dictionary<ulong, MethodInfo>();
         internal Dictionary<string, string> messageChannelName = new Dictionary<string, string>();
-
-        /// <summary>
-        /// Called when a new client connects
-        /// </summary>
-        /// <param name="clientId">The clientId of the new client</param>
-        /// <returns>Wheter or not the object should be visible</returns>
-        public virtual bool OnCheckObserver(uint clientId)
-        {
-            return true;
-        }
-
-        /// <summary>
-        /// Called when observers are to be rebuilt
-        /// </summary>
-        /// <param name="observers">The observers to use</param>
-        /// <returns>Wheter or not we changed anything</returns>
-        public virtual bool OnRebuildObservers(HashSet<uint> observers)
-        {
-            return false;
-        }
-
-        /// <summary>
-        /// Triggers a "OnRebuildObservers" and updates the observers
-        /// </summary>
-        public void RebuildObservers()
-        {
-            networkedObject.RebuildObservers();
-        }
-
-        /// <summary>
-        /// Invoked when visibility changes
-        /// </summary>
-        /// <param name="visible"></param>
-        public virtual void OnSetLocalVisibility(bool visible)
-        {
-            Renderer[] renderers = GetComponentsInChildren<Renderer>();
-            for (int i = 0; i < renderers.Length; i++)
-                renderers[i].enabled = visible;
-        }
-
 
         private List<MethodInfo> getMethodsRecursive(Type type, List<MethodInfo> list = null) {
             if(list == null) {
@@ -259,20 +189,32 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
 
             MethodInfo[] methods = getMethodsRecursive(GetType()).ToArray();
-            for (int i = 0; i < methods.Length; i++)
+            foreach (MethodInfo method in methods)
             {
-                if (methods[i].IsDefined(typeof(Command), true) || methods[i].IsDefined(typeof(ClientRpc), true) || methods[i].IsDefined(typeof(TargetRpc), true))
+                if (method.IsDefined(typeof(Command), true) || method.IsDefined(typeof(ClientRpc), true) || method.IsDefined(typeof(TargetRpc), true))
                 {
-                    Data.Cache.RegisterMessageAttributeName(methods[i].Name, NetworkingManager.singleton.NetworkConfig.AttributeMessageMode);
-                    if (!cachedMethods.ContainsKey(methods[i].Name))
-                        cachedMethods.Add(methods[i].Name, methods[i]);
+                    ulong hash = 0;
+
+                    if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenTwoByte)
+                        hash = method.Name.GetStableHash16();
+                    else if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenFourByte)
+                        hash = method.Name.GetStableHash32();
+                    else if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenEightByte)
+                        hash = method.Name.GetStableHash64();
+
+                    if (cachedMethods.ContainsKey(hash))
+                    {
+                        MethodInfo previous = cachedMethods[hash];
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError(string.Format("Method {0} and {1} have the same hash.  Rename one of the methods or increase Attribute Message Mode", previous.Name, method.Name));
+                    }
+                    cachedMethods[hash] = method;
                 }
-                if (methods[i].IsDefined(typeof(Command), true) && !messageChannelName.ContainsKey(methods[i].Name))
-                    messageChannelName.Add(methods[i].Name, ((Command[])methods[i].GetCustomAttributes(typeof(Command), true))[0].channelName);
-                if (methods[i].IsDefined(typeof(ClientRpc), true) && !messageChannelName.ContainsKey(methods[i].Name))
-                    messageChannelName.Add(methods[i].Name, ((ClientRpc[])methods[i].GetCustomAttributes(typeof(ClientRpc), true))[0].channelName);
-                if (methods[i].IsDefined(typeof(TargetRpc), true) && !messageChannelName.ContainsKey(methods[i].Name))
-                    messageChannelName.Add(methods[i].Name, ((TargetRpc[])methods[i].GetCustomAttributes(typeof(TargetRpc), true))[0].channelName);
+                if (method.IsDefined(typeof(Command), true) && !messageChannelName.ContainsKey(method.Name))
+                    messageChannelName.Add(method.Name, ((Command[])method.GetCustomAttributes(typeof(Command), true))[0].channelName);
+                if (method.IsDefined(typeof(ClientRpc), true) && !messageChannelName.ContainsKey(method.Name))
+                    messageChannelName.Add(method.Name, ((ClientRpc[])method.GetCustomAttributes(typeof(ClientRpc), true))[0].channelName);
+                if (method.IsDefined(typeof(TargetRpc), true) && !messageChannelName.ContainsKey(method.Name))
+                    messageChannelName.Add(method.Name, ((TargetRpc[])method.GetCustomAttributes(typeof(TargetRpc), true))[0].channelName);
             }
         }
 
@@ -283,7 +225,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="methodParams">Method parameters to send</param>
         public void InvokeCommand(string methodName, params object[] methodParams)
         {
-            if (ownerClientId != NetworkingManager.singleton.MyClientId && !isLocalPlayer)
+            if (OwnerClientId != NetworkingManager.singleton.LocalClientId && !isLocalPlayer)
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot invoke command for object without ownership");
                 return;
@@ -298,18 +240,26 @@ namespace MLAPI.MonoBehaviours.Core
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Calling InvokeCommand is not allowed when AttributeMessageMode is set to disabled");
                 return;
             }
+
+            ulong hash = 0;
+            if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenTwoByte)
+                hash = methodName.GetStableHash16();
+            else if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenFourByte)
+                hash = methodName.GetStableHash32();
+            else if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenEightByte)
+                hash = methodName.GetStableHash64();
+
             if (NetworkingManager.singleton.isServer)
             {
                 if (isHost)
                 {
-                    cachedMethods[methodName].Invoke(this, methodParams);
+                    cachedMethods[hash].Invoke(this, methodParams);
                     return;
                 }
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot invoke commands from server");
                 return;
             }
 
-            ulong hash = Data.Cache.GetMessageAttributeHash(methodName, NetworkingManager.singleton.NetworkConfig.AttributeMessageMode);
             using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteUInt(networkId);
@@ -344,9 +294,17 @@ namespace MLAPI.MonoBehaviours.Core
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Calling InvokeClientRpc is not allowed when AttributeMessageMode is set to disabled");
                 return;
             }
-            if (isHost) cachedMethods[methodName].Invoke(this, methodParams);
 
-            ulong hash = Data.Cache.GetMessageAttributeHash(methodName, NetworkingManager.singleton.NetworkConfig.AttributeMessageMode);
+            ulong hash = 0;
+            if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenTwoByte)
+                hash = methodName.GetStableHash16();
+            else if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenFourByte)
+                hash = methodName.GetStableHash32();
+            else if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenEightByte)
+                hash = methodName.GetStableHash64();
+
+            if (isHost) cachedMethods[hash].Invoke(this, methodParams);
+
             using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteUInt(networkId);
@@ -381,9 +339,17 @@ namespace MLAPI.MonoBehaviours.Core
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Calling InvokeTargetRpc is not allowed when AttributeMessageMode is set to disabled");
                 return;
             }
-            if (isHost) cachedMethods[methodName].Invoke(this, methodParams);
 
-            ulong hash = Data.Cache.GetMessageAttributeHash(methodName, NetworkingManager.singleton.NetworkConfig.AttributeMessageMode);
+            ulong hash = 0;
+            if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenTwoByte)
+                hash = methodName.GetStableHash16();
+            else if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenFourByte)
+                hash = methodName.GetStableHash32();
+            else if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenEightByte)
+                hash = methodName.GetStableHash64();
+
+            if (isHost) cachedMethods[hash].Invoke(this, methodParams);
+
             using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteUInt(networkId);
@@ -391,7 +357,7 @@ namespace MLAPI.MonoBehaviours.Core
                 writer.WriteULong(hash);
                 for (int i = 0; i < methodParams.Length; i++)
                     FieldTypeHelper.WriteFieldType(writer, methodParams[i]);
-                InternalMessageHandler.Send(ownerClientId, "MLAPI_RPC", messageChannelName[methodName], writer, networkId);
+                InternalMessageHandler.Send(OwnerClientId, "MLAPI_RPC", messageChannelName[methodName], writer, networkId);
             }
         }
 
@@ -400,7 +366,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// Calls a Command method on server
         /// </summary>
         /// <param name="method">Method to invoke</param>
-        public void InvokeCommand(System.Action method) {
+        public void InvokeCommand(Action method) {
             InvokeCommand(method.Method.Name);
         }
         /// <summary>
@@ -408,7 +374,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// </summary>
         /// <param name="method">Method to invoke</param>
         /// <param name="p1">Method parameter to send</param>
-        public void InvokeCommand<T1>(System.Action<T1> method, T1 p1) {
+        public void InvokeCommand<T1>(Action<T1> method, T1 p1) {
             InvokeCommand(method.Method.Name, new object[] { p1 });
         }
         /// <summary>
@@ -417,7 +383,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="method">Method to invoke</param>
         /// <param name="p1">Method parameter to send</param>
         /// <param name="p2">Method parameter to send</param>
-        public void InvokeCommand<T1, T2>(System.Action<T1, T2> method, T1 p1, T2 p2) {
+        public void InvokeCommand<T1, T2>(Action<T1, T2> method, T1 p1, T2 p2) {
             InvokeCommand(method.Method.Name, new object[] { p1, p2});
         }
         /// <summary>
@@ -427,7 +393,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="p1">Method parameter to send</param>
         /// <param name="p2">Method parameter to send</param>
         /// <param name="p3">Method parameter to send</param>
-        public void InvokeCommand<T1, T2, T3>(System.Action<T1, T2, T3> method, T1 p1, T2 p2, T3 p3) {
+        public void InvokeCommand<T1, T2, T3>(Action<T1, T2, T3> method, T1 p1, T2 p2, T3 p3) {
             InvokeCommand(method.Method.Name, new object[] { p1, p2, p3 });
         }
         /// <summary>
@@ -438,7 +404,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="p2">Method parameter to send</param>
         /// <param name="p3">Method parameter to send</param>
         /// <param name="p4">Method parameter to send</param>
-        public void InvokeCommand<T1, T2, T3, T4>(System.Action<T1, T2, T3, T4> method, T1 p1, T2 p2, T3 p3, T4 p4) {
+        public void InvokeCommand<T1, T2, T3, T4>(Action<T1, T2, T3, T4> method, T1 p1, T2 p2, T3 p3, T4 p4) {
             InvokeCommand(method.Method.Name, new object[] { p1, p2, p3, p4 });
         }
 
@@ -446,7 +412,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// Calls a ClientRpc method on all clients
         /// </summary>
         /// <param name="method">Method to invoke</param>
-        public void InvokeClientRpc(System.Action method) {
+        public void InvokeClientRpc(Action method) {
             InvokeClientRpc(method.Method.Name);
         }
         /// <summary>
@@ -454,7 +420,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// </summary>
         /// <param name="method">Method to invoke</param>
         /// <param name="p1">Method parameter to send</param>
-        public void InvokeClientRpc<T1>(System.Action<T1> method, T1 p1) {
+        public void InvokeClientRpc<T1>(Action<T1> method, T1 p1) {
             InvokeClientRpc(method.Method.Name, new object[] { p1 });
         }
         /// <summary>
@@ -463,7 +429,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="method">Method to invoke</param>
         /// <param name="p1">Method parameter to send</param>
         /// <param name="p2">Method parameter to send</param>
-        public void InvokeClientRpc<T1, T2>(System.Action<T1, T2> method, T1 p1, T2 p2) {
+        public void InvokeClientRpc<T1, T2>(Action<T1, T2> method, T1 p1, T2 p2) {
             InvokeClientRpc(method.Method.Name, new object[] { p1, p2 });
         }
         /// <summary>
@@ -473,7 +439,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="p1">Method parameter to send</param>
         /// <param name="p2">Method parameter to send</param>
         /// <param name="p3">Method parameter to send</param>
-        public void InvokeClientRpc<T1, T2, T3>(System.Action<T1, T2, T3> method, T1 p1, T2 p2, T3 p3) {
+        public void InvokeClientRpc<T1, T2, T3>(Action<T1, T2, T3> method, T1 p1, T2 p2, T3 p3) {
             InvokeClientRpc(method.Method.Name, new object[] { p1, p2, p3 });
         }
         /// <summary>
@@ -484,7 +450,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="p2">Method parameter to send</param>
         /// <param name="p3">Method parameter to send</param>
         /// <param name="p4">Method parameter to send</param>
-        public void InvokeClientRpc<T1, T2, T3, T4>(System.Action<T1, T2, T3, T4> method, T1 p1, T2 p2, T3 p3, T4 p4) {
+        public void InvokeClientRpc<T1, T2, T3, T4>(Action<T1, T2, T3, T4> method, T1 p1, T2 p2, T3 p3, T4 p4) {
             InvokeClientRpc(method.Method.Name, new object[] { p1, p2, p3, p4 });
         }
 
@@ -492,14 +458,15 @@ namespace MLAPI.MonoBehaviours.Core
         /// Calls a TargetRpc method on the owner client
         /// </summary>
         /// <param name="method">Method to invoke</param>
-        public void InvokeTargetRpc(System.Action method) {
+        public void InvokeTargetRpc(Action method) {
             InvokeTargetRpc(method.Method.Name);
         }
         /// <summary>
         /// Calls a TargetRpc method on the owner client
         /// </summary>
         /// <param name="p1">Method parameter to send</param>
-        public void InvokeTargetRpc<T1>(System.Action<T1> method, T1 p1) {
+        /// <param name="method">Method to invoke</param>
+        public void InvokeTargetRpc<T1>(Action<T1> method, T1 p1) {
             InvokeTargetRpc(method.Method.Name, new object[] { p1 });
         }
         /// <summary>
@@ -507,7 +474,8 @@ namespace MLAPI.MonoBehaviours.Core
         /// </summary>
         /// <param name="p1">Method parameter to send</param>
         /// <param name="p2">Method parameter to send</param>
-        public void InvokeTargetRpc<T1, T2>(System.Action<T1, T2> method, T1 p1, T2 p2) {
+        /// <param name="method">Method to invoke</param>
+        public void InvokeTargetRpc<T1, T2>(Action<T1, T2> method, T1 p1, T2 p2) {
             InvokeTargetRpc(method.Method.Name, new object[] { p1, p2 });
         }
         /// <summary>
@@ -516,6 +484,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="p1">Method parameter to send</param>
         /// <param name="p2">Method parameter to send</param>
         /// <param name="p3">Method parameter to send</param>
+        /// <param name="method">Method to invoke</param>
         public void InvokeTargetRpc<T1, T2, T3>(System.Action<T1, T2, T3> method, T1 p1, T2 p2, T3 p3) {
             InvokeTargetRpc(method.Method.Name, new object[] { p1, p2, p3 });
         }
@@ -526,6 +495,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="p2">Method parameter to send</param>
         /// <param name="p3">Method parameter to send</param>
         /// <param name="p4">Method parameter to send</param>
+        /// <param name="method">Method to invoke</param>
         public void InvokeTargetRpc<T1, T2, T3, T4>(System.Action<T1, T2, T3, T4> method, T1 p1, T2 p2, T3 p3, T4 p4) {
             InvokeTargetRpc(method.Method.Name, new object[] { p1, p2, p3, p4 });
         }
@@ -586,10 +556,10 @@ namespace MLAPI.MonoBehaviours.Core
                 return -1;
             }
 
-            Action<uint, BitReader> convertedAction = (clientId, reader) =>
+            void convertedAction(uint clientId, BitReader reader)
             {
                 action.Invoke(clientId, reader.ReadByteArray());
-            };
+            }
 
             networkedObject.targetMessageActions[behaviourOrder].Add(messageType, convertedAction);
             int counter = MessageManager.AddIncomingMessageHandler(name, convertedAction);
@@ -647,7 +617,6 @@ namespace MLAPI.MonoBehaviours.Core
 
         private void OnDisable()
         {
-            NetworkedObject.NetworkedBehaviours.Remove(this);
             OnDisabled();
         }
 
@@ -657,262 +626,165 @@ namespace MLAPI.MonoBehaviours.Core
             {
                 DeregisterMessageHandler(pair.Key, pair.Value);
             }
+
+            NetworkedObject.NetworkedBehaviours.Remove(this); // O(n)
             OnDestroyed();
         }
 
-        #region SYNC_VAR
-        internal List<SyncedVarField> syncedVarFields = new List<SyncedVarField>();
-        private HashSet<uint> OutOfSyncClients = new HashSet<uint>();
-        private bool syncVarInit = false;
-        internal bool[] syncMask;
-        internal void SyncVarInit()
+        #region NetworkedVar
+
+        private bool networkedVarInit = false;
+        private readonly List<HashSet<int>> channelMappedVarIndexes = new List<HashSet<int>>();
+        private readonly List<string> channelsForVarGroups = new List<string>();
+        internal readonly List<INetworkedVar> networkedVarFields = new List<INetworkedVar>();
+        private static readonly Dictionary<Type, FieldInfo[]> fieldTypes = new Dictionary<Type, FieldInfo[]>();
+
+        private static FieldInfo[] GetFieldInfoForType(Type type)
         {
-            if (syncVarInit)
+            if (!fieldTypes.ContainsKey(type))
+                fieldTypes.Add(type, type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy | BindingFlags.Instance).OrderBy(x => x.Name).ToArray());
+            return fieldTypes[type];
+        }
+        
+        internal void NetworkedVarInit()
+        {
+            if (networkedVarInit)
                 return;
-            syncVarInit = true;
-            FieldInfo[] sortedFields = GetType().GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy | BindingFlags.Instance).OrderBy(x => x.Name).ToArray();
+            networkedVarInit = true;
+
+            FieldInfo[] sortedFields = GetFieldInfoForType(GetType());
             for (int i = 0; i < sortedFields.Length; i++)
             {
-                if(sortedFields[i].IsDefined(typeof(SyncedVar), true))
+                Type fieldType = sortedFields[i].FieldType;
+                if (fieldType.HasInterface(typeof(INetworkedVar)))
                 {
-                    SyncedVar attribute = ((SyncedVar)sortedFields[i].GetCustomAttributes(typeof(SyncedVar), true)[0]);
-
-                    MethodInfo hookMethod = null;
-
-                    if (!string.IsNullOrEmpty(attribute.hookMethodName))
-                        hookMethod = GetType().GetMethod(attribute.hookMethodName, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
-
-                    syncedVarFields.Add(new SyncedVarField()
+                    INetworkedVar instance = (INetworkedVar)sortedFields[i].GetValue(this);
+                    if (instance == null)
                     {
-                        Dirty = false,
-                        Target = attribute.target,
-                        FieldInfo = sortedFields[i],
-                        FieldValue = sortedFields[i].GetValue(this).SheepCopy(),
-                        HookMethod = hookMethod,
-                        Attribute = attribute
-                    });
-                }
-            }
-            syncMask = new bool[syncedVarFields.Count];
-        }
-
-        internal void OnSyncVarUpdate(object value, int fieldIndex)
-        {
-            syncedVarFields[fieldIndex].FieldInfo.SetValue(this, value);
-            if (syncedVarFields[fieldIndex].HookMethod != null)
-                syncedVarFields[fieldIndex].HookMethod.Invoke(this, null);
-        }
-
-        
-        internal void FlushSyncedVarsToClient(uint clientId)
-        {
-            //This NetworkedBehaviour has no SyncVars
-            if (syncedVarFields.Count == 0)
-                return;
-
-            using (BitWriter writer = BitWriter.Get())
-            {
-                //Write all indexes
-                int syncCount = 0;
-                for (int i = 0; i < syncedVarFields.Count; i++)
-                {
-                    if (!syncedVarFields[i].Target)
-                        syncCount++;
-                    else if (syncedVarFields[i].Target && ownerClientId == clientId)
-                        syncCount++;
-                }
-                if (syncCount == 0)
-                    return;
-                
-                writer.WriteUInt(networkId); //NetId
-                writer.WriteUShort(networkedObject.GetOrderIndex(this)); //Behaviour OrderIndex
-
-                bool[] mask = GetDirtyMask(false, clientId);
-
-                for (int i = 0; i < syncedVarFields.Count; i++)
-                {
-                    writer.WriteBool(mask[i]);
-                    if (syncedVarFields[i].Target && clientId != ownerClientId)
-                        continue;
-                    FieldTypeHelper.WriteFieldType(writer, syncedVarFields[i].FieldInfo.GetValue(this));
-                }
-                bool observed = InternalMessageHandler.Send(clientId, "MLAPI_SYNC_VAR_UPDATE", "MLAPI_INTERNAL", writer, networkId);
-                if (observed)
-                    OutOfSyncClients.Remove(clientId);
-            }
-        }
-
-        private ref bool[] GetDirtyMask(bool ignoreTarget, uint? clientId = null)
-        {
-            for (int i = 0; i < syncedVarFields.Count; i++)
-                syncMask[i] = (clientId == null && ignoreTarget && syncedVarFields[i].Dirty && !syncedVarFields[i].Target) ||
-                               (clientId == null && !ignoreTarget && syncedVarFields[i].Dirty) || 
-                                (clientId != null && !syncedVarFields[i].Target) || 
-                                 (clientId != null && syncedVarFields[i].Target && ownerClientId == clientId.Value);
-            return ref syncMask;
-        }
-
-        internal void SyncVarUpdate()
-        {
-            if (!syncVarInit)
-                SyncVarInit();
-            
-            if (!SetDirtyness())
-                return;
-
-            int nonTargetDirtyCount = 0;
-            int totalDirtyCount = 0;
-            int dirtyTargets = 0;
-            for (int i = 0; i < syncedVarFields.Count; i++)
-            {
-                if (syncedVarFields[i].Dirty)
-                    totalDirtyCount++;
-                if (syncedVarFields[i].Target && syncedVarFields[i].Dirty)
-                    dirtyTargets++;
-                if (syncedVarFields[i].Dirty && !syncedVarFields[i].Target)
-                    nonTargetDirtyCount++;
-            }
-
-            if (totalDirtyCount == 0)
-                return; //All up to date!
-
-            // If we don't have targets. We can send one big message, 
-            // thus only serializing it once. Otherwise, we have to create two messages. One for the non targets and one for the target
-            if (dirtyTargets == 0)
-            {
-                //It's sync time!
-                using (BitWriter writer = BitWriter.Get())
-                {
-                    //Write all indexes
-                    writer.WriteUInt(networkId); //NetId
-                    writer.WriteUShort(networkedObject.GetOrderIndex(this)); //Behaviour OrderIndex
-
-                    bool[] mask = GetDirtyMask(false);
-
-                    for (int i = 0; i < syncedVarFields.Count; i++)
-                    {
-                        writer.WriteBool(mask[i]);
-                        //Writes all the indexes of the dirty syncvars.
-                        if (syncedVarFields[i].Dirty == true)
-                        {
-                            object o = syncedVarFields[i].FieldInfo.GetValue(this).SheepCopy();
-                            FieldTypeHelper.WriteFieldType(writer, o, syncedVarFields[i].FieldValue);
-                            syncedVarFields[i].FieldValue = o; //FieldTypeHelper.GetReferenceArrayValue(syncedVarFields[i].FieldInfo.GetValue(this), syncedVarFields[i].FieldValue);
-                            syncedVarFields[i].Dirty = false;
-                            InvokeSyncvarMethodOnServer(syncedVarFields[i].HookMethod);
-                        }
+                        Type genericType = fieldType.MakeGenericType(fieldType.GetGenericArguments());
+                        instance = (INetworkedVar)Activator.CreateInstance(genericType, true);
+                        sortedFields[i].SetValue(this, instance);
                     }
-                    List<uint> stillDirtyIds = InternalMessageHandler.Send("MLAPI_SYNC_VAR_UPDATE", "MLAPI_INTERNAL", writer, networkId);
-                    if (stillDirtyIds != null)
-                    {
-                        for (int i = 0; i < stillDirtyIds.Count; i++)
-                            OutOfSyncClients.Add(stillDirtyIds[i]);
-                    }
+                    
+                    instance.SetNetworkedBehaviour(this);
+                    networkedVarFields.Add(instance);
                 }
             }
-            else
+
+            //Create index map for channels
+            Dictionary<string, int> firstLevelIndex = new Dictionary<string, int>();
+            int secondLevelCounter = 0;
+            for (int i = 0; i < networkedVarFields.Count; i++)
             {
-                if (!(isHost && ownerClientId == NetworkingManager.singleton.NetworkConfig.NetworkTransport.HostDummyId))
+                string channel = networkedVarFields[i].GetChannel(); //Cache this here. Some developers are stupid. You don't know what shit they will do in their methods
+                if (!firstLevelIndex.ContainsKey(channel))
                 {
-                    //It's sync time. This is the target receivers packet.
+                    firstLevelIndex.Add(channel, secondLevelCounter);
+                    channelsForVarGroups.Add(channel);
+                    secondLevelCounter++;
+                }
+                if (firstLevelIndex[channel] >= channelMappedVarIndexes.Count)
+                    channelMappedVarIndexes.Add(new HashSet<int>());
+                channelMappedVarIndexes[firstLevelIndex[channel]].Add(i);
+            }
+        }
+
+        internal void NetworkedVarUpdate()
+        {
+            if (!networkedVarInit)
+                NetworkedVarInit();
+            //TODO: Do this efficiently.
+
+            for (int i = 0; i < NetworkingManager.singleton.ConnectedClientsList.Count; i++)
+            {
+                //This iterates over every "channel group".
+                for (int j = 0; j < channelMappedVarIndexes.Count; j++)
+                {
                     using (BitWriter writer = BitWriter.Get())
                     {
-                        //Write all indexes
-                        writer.WriteUInt(networkId); //NetId
-                        writer.WriteUShort(networkedObject.GetOrderIndex(this)); //Behaviour OrderIndex
+                        writer.WriteUInt(networkId);
+                        writer.WriteUShort(networkedObject.GetOrderIndex(this));
 
-                        bool[] mask = GetDirtyMask(false);
-
-                        for (int i = 0; i < syncedVarFields.Count; i++)
+                        uint clientId = NetworkingManager.singleton.ConnectedClientsList[i].ClientId;
+                        for (int k = 0; k < networkedVarFields.Count; k++)
                         {
-                            writer.WriteBool(mask[i]);
-                            //Writes all the indexes of the dirty syncvars.
-                            if (syncedVarFields[i].Dirty == true)
+                            if (!channelMappedVarIndexes[j].Contains(k))
                             {
-                                object o = syncedVarFields[i].FieldInfo.GetValue(this).SheepCopy();
-                                FieldTypeHelper.WriteFieldType(writer, o, syncedVarFields[i].FieldValue);
-                                if (nonTargetDirtyCount == 0)
-                                {
-                                    //Only targeted SyncedVars were changed. Thus we need to set them as non dirty here since it wont be done by the next loop.
-                                    syncedVarFields[i].FieldValue = o; //FieldTypeHelper.GetReferenceArrayValue(syncedVarFields[i].FieldInfo.GetValue(this), syncedVarFields[i].FieldValue);
-                                    syncedVarFields[i].Dirty = false;
-                                    InvokeSyncvarMethodOnServer(syncedVarFields[i].HookMethod);
-                                }
+                                //This var does not belong to the currently iterating channel group.
+                                writer.WriteBool(false);
+                                continue;
+                            }
+
+                            bool isDirty = networkedVarFields[k].IsDirty(); //cache this here. You never know what operations users will do in the dirty methods
+                            writer.WriteBool(isDirty);
+                            if (isDirty && (!isServer || networkedVarFields[k].CanClientRead(clientId)))
+                            {
+                                networkedVarFields[k].WriteDelta(writer);
                             }
                         }
-                        bool observing = !InternalMessageHandler.Send(ownerClientId, "MLAPI_SYNC_VAR_UPDATE", "MLAPI_INTERNAL", writer, networkId); //Send only to target
-                        if (!observing)
-                            OutOfSyncClients.Add(ownerClientId);
-                    }
-                }
 
-                if (nonTargetDirtyCount == 0)
-                    return;
-
-                //It's sync time. This is the NON target receivers packet.
-                using (BitWriter writer = BitWriter.Get())
-                {
-                    //Write all indexes
-                    writer.WriteUInt(networkId); //NetId
-                    writer.WriteUShort(networkedObject.GetOrderIndex(this)); //Behaviour OrderIndex
-
-                    bool[] mask = GetDirtyMask(true);
-
-                    for (int i = 0; i < syncedVarFields.Count; i++)
-                    {
-                        writer.WriteBool(mask[i]);
-                        //Writes all the indexes of the dirty syncvars.
-                        if (syncedVarFields[i].Dirty == true && !syncedVarFields[i].Target)
-                        {
-                            object o = syncedVarFields[i].FieldInfo.GetValue(this).SheepCopy();
-                            FieldTypeHelper.WriteFieldType(writer, o, syncedVarFields[i].FieldValue);
-                            syncedVarFields[i].FieldValue = o; //FieldTypeHelper.GetReferenceArrayValue(syncedVarFields[i].FieldInfo.GetValue(this), syncedVarFields[i].FieldValue);
-                            syncedVarFields[i].Dirty = false;
-                            InvokeSyncvarMethodOnServer(syncedVarFields[i].HookMethod);
-                        }
-                    }
-                    List<uint> stillDirtyIds = InternalMessageHandler.Send("MLAPI_SYNC_VAR_UPDATE", "MLAPI_INTERNAL", writer, ownerClientId, networkId, null, null); // Send to everyone except target.
-                    if (stillDirtyIds != null)
-                    {
-                        for (int i = 0; i < stillDirtyIds.Count; i++)
-                            OutOfSyncClients.Add(stillDirtyIds[i]);
+                        if (isServer)
+                            InternalMessageHandler.Send(clientId, "MLAPI_NETWORKED_VAR_DELTA", channelsForVarGroups[j], writer, null);
+                        else
+                            InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerNetId, "MLAPI_NETWORKED_VAR_DELTA", channelsForVarGroups[j], writer, null);
                     }
                 }
             }
-        }
 
-        private void InvokeSyncvarMethodOnServer(MethodInfo hookMethod) 
-        {
-            if (isServer && hookMethod != null)
-                hookMethod.Invoke(this, null);
-        }
-
-        private bool SetDirtyness()
-        {
-            if (!isServer)
-                return false;
-
-            bool dirty = false;
-            for (int i = 0; i < syncedVarFields.Count; i++)
+            for (int i = 0; i < networkedVarFields.Count; i++)
             {
-                if (NetworkingManager.singleton.NetworkTime - syncedVarFields[i].Attribute.lastSyncTime < syncedVarFields[i].Attribute.syncDelay)
-                    continue;
-                //Big TODO. This will return true for reference objects. This NEEDS to be fixed. a better compare
-                if (!FieldTypeHelper.ObjectEqual(syncedVarFields[i].FieldInfo.GetValue(this), syncedVarFields[i].FieldValue))
-                {
-                    syncedVarFields[i].Dirty = true; //This fields value is out of sync!
-                    syncedVarFields[i].Attribute.lastSyncTime = NetworkingManager.singleton.NetworkTime;
-                    dirty = true;
-                }
-                else
-                {
-                    syncedVarFields[i].Attribute.lastSyncTime = NetworkingManager.singleton.NetworkTime;
-                    syncedVarFields[i].Dirty = false; //Up to date;
-                }
+                networkedVarFields[i].ResetDirty();
             }
-            return dirty;
         }
-        
+
+        internal void HandleNetworkedVarDeltas(BitReader reader, uint clientId)
+        {
+            for (int i = 0; i < networkedVarFields.Count; i++)
+            {
+                if (!reader.ReadBool())
+                    continue;
+
+                if (isServer && !networkedVarFields[i].CanClientWrite(clientId))
+                {
+                    //This client wrote somewhere they are not allowed. This is critical
+                    //We can't just skip this field. Because we don't actually know how to dummy read
+                    //That is, we don't know how many bytes to skip. Because the interface doesn't have a 
+                    //Read that gives us the value. Only a Read that applies the value straight away
+                    //A dummy read COULD be added to the interface for this situation, but it's just being too nice.
+                    //This is after all a developer fault. A critical error should be fine.
+                    // - TwoTen
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Client wrote to NetworkedVar without permission. No more variables can be read. This is critical");
+                    return;
+                }
+
+                networkedVarFields[i].ReadDelta(reader);
+            }
+        }
+
+        internal void HandleNetworkedVarUpdate(BitReader reader, uint clientId)
+        {
+            for (int i = 0; i < networkedVarFields.Count; i++)
+            {
+                if (!reader.ReadBool())
+                    continue;
+
+                if (isServer && !networkedVarFields[i].CanClientWrite(clientId))
+                {
+                    //This client wrote somewhere they are not allowed. This is critical
+                    //We can't just skip this field. Because we don't actually know how to dummy read
+                    //That is, we don't know how many bytes to skip. Because the interface doesn't have a 
+                    //Read that gives us the value. Only a Read that applies the value straight away
+                    //A dummy read COULD be added to the interface for this situation, but it's just being too nice.
+                    //This is after all a developer fault. A critical error should be fine.
+                    // - TwoTen
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Client wrote to NetworkedVar without permission. No more variables can be read. This is critical");
+                    return;
+                }
+
+                networkedVarFields[i].ReadField(reader);
+            }
+        }
+
         #endregion
 
         #region SEND METHODS
@@ -1010,7 +882,7 @@ namespace MLAPI.MonoBehaviours.Core
             using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteByteArray(data);
-                InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerNetId, messageType, channelName, writer, null, networkId, networkedObject.GetOrderIndex(this));
+                InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerNetId, messageType, channelName, writer, networkId, networkedObject.GetOrderIndex(this));
             }
         }
 
@@ -1037,7 +909,7 @@ namespace MLAPI.MonoBehaviours.Core
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Server can not send messages to server");
                 return;
             }
-            InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerNetId, messageType, channelName, writer, null, networkId, networkedObject.GetOrderIndex(this));
+            InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerNetId, messageType, channelName, writer, networkId, networkedObject.GetOrderIndex(this));
         }
 
         /// <summary>
@@ -1059,7 +931,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="channelName">User defined channelName</param>
         /// <param name="data">The binary data to send</param>
         /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToLocalClient(string messageType, string channelName, byte[] data, bool respectObservers = false)
+        protected void SendToLocalClient(string messageType, string channelName, byte[] data)
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
@@ -1076,11 +948,11 @@ namespace MLAPI.MonoBehaviours.Core
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
                 return;
             }
-            uint? fromNetId = respectObservers ? (uint?)networkId : null;
+
             using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteByteArray(data);
-                InternalMessageHandler.Send(ownerClientId, messageType, channelName, writer, fromNetId);
+                InternalMessageHandler.Send(OwnerClientId, messageType, channelName, writer);
             }
         }
 
@@ -1091,7 +963,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="channelName">User defined channelName</param>
         /// <param name="writer">The binary data to send</param>
         /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToLocalClient(string messageType, string channelName, BitWriter writer, bool respectObservers = false)
+        protected void SendToLocalClient(string messageType, string channelName, BitWriter writer)
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
@@ -1108,8 +980,7 @@ namespace MLAPI.MonoBehaviours.Core
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
                 return;
             }
-            uint? fromNetId = respectObservers ? (uint?)networkId : null;
-            InternalMessageHandler.Send(ownerClientId, messageType, channelName, writer, fromNetId);
+            InternalMessageHandler.Send(OwnerClientId, messageType, channelName, writer);
         }
 
         /// <summary>
@@ -1120,9 +991,9 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="channelName">User defined channelName</param>	
         /// <param name="instance">The instance to send</param>
         /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToLocalClient<T>(string messageType, string channelName, T instance, bool respectObservers = false)
+        protected void SendToLocalClient<T>(string messageType, string channelName, T instance)
         {
-            SendToLocalClient(messageType, channelName, BinarySerializer.Serialize<T>(instance), respectObservers);
+            SendToLocalClient(messageType, channelName, BinarySerializer.Serialize<T>(instance));
         }
 
         /// <summary>
@@ -1151,7 +1022,7 @@ namespace MLAPI.MonoBehaviours.Core
             using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteByteArray(data);
-                InternalMessageHandler.Send(ownerClientId, messageType, channelName, writer, null, networkId, networkedObject.GetOrderIndex(this));
+                InternalMessageHandler.Send(OwnerClientId, messageType, channelName, writer, networkId, networkedObject.GetOrderIndex(this));
             }
         }
 
@@ -1178,7 +1049,7 @@ namespace MLAPI.MonoBehaviours.Core
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
                 return;
             }
-            InternalMessageHandler.Send(ownerClientId, messageType, channelName, writer, null, networkId, networkedObject.GetOrderIndex(this));
+            InternalMessageHandler.Send(OwnerClientId, messageType, channelName, writer, networkId, networkedObject.GetOrderIndex(this));
         }
 
         /// <summary>gh
@@ -1200,7 +1071,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="channelName">User defined channelName</param>
         /// <param name="data">The binary data to send</param>
         /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToNonLocalClients(string messageType, string channelName, byte[] data, bool respectObservers = false)
+        protected void SendToNonLocalClients(string messageType, string channelName, byte[] data)
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
@@ -1217,11 +1088,10 @@ namespace MLAPI.MonoBehaviours.Core
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
                 return;
             }
-            uint? fromNetId = respectObservers ? (uint?)networkId : null;
             using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteByteArray(data);
-                InternalMessageHandler.Send(messageType, channelName, writer, ownerClientId, fromNetId, null, null);
+                InternalMessageHandler.Send(messageType, channelName, writer, OwnerClientId, null, null);
             }
         }
 
@@ -1232,7 +1102,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="channelName">User defined channelName</param>
         /// <param name="writer">The binary data to send</param>
         /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToNonLocalClients(string messageType, string channelName, BitWriter writer, bool respectObservers = false)
+        protected void SendToNonLocalClients(string messageType, string channelName, BitWriter writer)
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
@@ -1249,8 +1119,7 @@ namespace MLAPI.MonoBehaviours.Core
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
                 return;
             }
-            uint? fromNetId = respectObservers ? (uint?)networkId : null;
-            InternalMessageHandler.Send(messageType, channelName, writer, ownerClientId, fromNetId, null, null);
+            InternalMessageHandler.Send(messageType, channelName, writer);
         }
 
         /// <summary>
@@ -1261,9 +1130,9 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="channelName">User defined channelName</param>	
         /// <param name="instance">The instance to send</param>
         /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToNonLocalClients<T>(string messageType, string channelName, T instance, bool respectObservers = false)
+        protected void SendToNonLocalClients<T>(string messageType, string channelName, T instance)
         {
-            SendToNonLocalClients(messageType, channelName, BinarySerializer.Serialize<T>(instance), respectObservers);
+            SendToNonLocalClients(messageType, channelName, BinarySerializer.Serialize<T>(instance));
         }
 
         /// <summary>
@@ -1273,7 +1142,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="channelName">User defined channelName</param>
         /// <param name="data">The binary data to send</param>
         /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToNonLocalClientsTarget(string messageType, string channelName, byte[] data, bool respectObservers = false)
+        protected void SendToNonLocalClientsTarget(string messageType, string channelName, byte[] data)
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
@@ -1290,11 +1159,10 @@ namespace MLAPI.MonoBehaviours.Core
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
                 return;
             }
-            uint? fromNetId = respectObservers ? (uint?)networkId : null;
             using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteByteArray(data);
-                InternalMessageHandler.Send(messageType, channelName, writer, ownerClientId, fromNetId, networkId, networkedObject.GetOrderIndex(this));
+                InternalMessageHandler.Send(messageType, channelName, writer, OwnerClientId, networkId, networkedObject.GetOrderIndex(this));
             }
         }
 
@@ -1305,7 +1173,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="channelName">User defined channelName</param>
         /// <param name="writer">The binary data to send</param>
         /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToNonLocalClientsTarget(string messageType, string channelName, BitWriter writer, bool respectObservers = false)
+        protected void SendToNonLocalClientsTarget(string messageType, string channelName, BitWriter writer)
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
@@ -1322,8 +1190,7 @@ namespace MLAPI.MonoBehaviours.Core
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
                 return;
             }
-            uint? fromNetId = respectObservers ? (uint?)networkId : null;
-            InternalMessageHandler.Send(messageType, channelName, writer, ownerClientId, fromNetId, networkId, networkedObject.GetOrderIndex(this));
+            InternalMessageHandler.Send(messageType, channelName, writer, OwnerClientId, networkId, networkedObject.GetOrderIndex(this));
         }
 
         /// <summary>
@@ -1334,9 +1201,9 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="channelName">User defined channelName</param>	
         /// <param name="instance">The instance to send</param>
         /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToNonLocalClientsTarget<T>(string messageType, string channelName, T instance, bool respectObservers = false)
+        protected void SendToNonLocalClientsTarget<T>(string messageType, string channelName, T instance)
         {
-            SendToNonLocalClientsTarget(messageType, channelName, BinarySerializer.Serialize<T>(instance), respectObservers);
+            SendToNonLocalClientsTarget(messageType, channelName, BinarySerializer.Serialize<T>(instance));
         }
 
         /// <summary>
@@ -1347,7 +1214,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="channelName">User defined channelName</param>
         /// <param name="data">The binary data to send</param>
         /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToClient(uint clientId, string messageType, string channelName, byte[] data, bool respectObservers = false)
+        protected void SendToClient(uint clientId, string messageType, string channelName, byte[] data)
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
@@ -1364,11 +1231,11 @@ namespace MLAPI.MonoBehaviours.Core
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
                 return;
             }
-            uint? fromNetId = respectObservers ? (uint?)networkId : null;
+
             using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteByteArray(data);
-                InternalMessageHandler.Send(clientId, messageType, channelName, writer, fromNetId);
+                InternalMessageHandler.Send(clientId, messageType, channelName, writer);
             }
         }
 
@@ -1381,7 +1248,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="channelName">User defined channelName</param>
         /// <param name="writer">The binary data to send</param>
         /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToClient(uint clientId, string messageType, string channelName, BitWriter writer, bool respectObservers = false)
+        protected void SendToClient(uint clientId, string messageType, string channelName, BitWriter writer)
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
@@ -1398,8 +1265,8 @@ namespace MLAPI.MonoBehaviours.Core
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
                 return;
             }
-            uint? fromNetId = respectObservers ? (uint?)networkId : null;
-            InternalMessageHandler.Send(clientId, messageType, channelName, writer, fromNetId);
+
+            InternalMessageHandler.Send(clientId, messageType, channelName, writer);
         }
 
         /// <summary>
@@ -1411,9 +1278,9 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="channelName">User defined channelName</param>	
         /// <param name="instance">The instance to send</param>
         /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToClient<T>(int clientId, string messageType, string channelName, T instance, bool respectObservers = false)
+        protected void SendToClient<T>(int clientId, string messageType, string channelName, T instance)
         {
-            SendToClient(clientId, messageType, channelName, BinarySerializer.Serialize<T>(instance), respectObservers);
+            SendToClient(clientId, messageType, channelName, BinarySerializer.Serialize<T>(instance));
         }
 
         /// <summary>
@@ -1424,7 +1291,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="channelName">User defined channelName</param>
         /// <param name="data">The binary data to send</param>
         /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToClientTarget(uint clientId, string messageType, string channelName, byte[] data, bool respectObservers = false)
+        protected void SendToClientTarget(uint clientId, string messageType, string channelName, byte[] data)
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
@@ -1441,11 +1308,11 @@ namespace MLAPI.MonoBehaviours.Core
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
                 return;
             }
-            uint? fromNetId = respectObservers ? (uint?)networkId : null;
+
             using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteByteArray(data);
-                InternalMessageHandler.Send(clientId, messageType, channelName, writer, fromNetId, networkId, networkedObject.GetOrderIndex(this));
+                InternalMessageHandler.Send(clientId, messageType, channelName, writer, networkId, networkedObject.GetOrderIndex(this));
             }
         }
 
@@ -1457,7 +1324,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="channelName">User defined channelName</param>
         /// <param name="writer">The binary data to send</param>
         /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToClientTarget(uint clientId, string messageType, string channelName, BitWriter writer, bool respectObservers = false)
+        protected void SendToClientTarget(uint clientId, string messageType, string channelName, BitWriter writer)
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
@@ -1474,8 +1341,7 @@ namespace MLAPI.MonoBehaviours.Core
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
                 return;
             }
-            uint? fromNetId = respectObservers ? (uint?)networkId : null;
-            InternalMessageHandler.Send(clientId, messageType, channelName, writer, fromNetId, networkId, networkedObject.GetOrderIndex(this));
+            InternalMessageHandler.Send(clientId, messageType, channelName, writer, networkId, networkedObject.GetOrderIndex(this));
         }
 
         /// <summary>
@@ -1487,9 +1353,9 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="channelName">User defined channelName</param>	
         /// <param name="instance">The instance to send</param>
         /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToClientTarget<T>(int clientId, string messageType, string channelName, T instance, bool respectObservers = false)
+        protected void SendToClientTarget<T>(int clientId, string messageType, string channelName, T instance)
         {
-            SendToClientTarget(clientId, messageType, channelName, BinarySerializer.Serialize<T>(instance), respectObservers);
+            SendToClientTarget(clientId, messageType, channelName, BinarySerializer.Serialize<T>(instance));
         }
 
         /// <summary>
@@ -1500,7 +1366,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="channelName">User defined channelName</param>
         /// <param name="data">The binary data to send</param>
         /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToClients(uint[] clientIds, string messageType, string channelName, byte[] data, bool respectObservers = false)
+        protected void SendToClients(uint[] clientIds, string messageType, string channelName, byte[] data)
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
@@ -1517,11 +1383,11 @@ namespace MLAPI.MonoBehaviours.Core
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
                 return;
             }
-            uint? fromNetId = respectObservers ? (uint?)networkId : null;
+
             using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteByteArray(data);
-                InternalMessageHandler.Send(clientIds, messageType, channelName, writer, fromNetId);
+                InternalMessageHandler.Send(clientIds, messageType, channelName, writer);
             }
         }
 
@@ -1533,7 +1399,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="channelName">User defined channelName</param>
         /// <param name="writer">The binary data to send</param>
         /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToClients(uint[] clientIds, string messageType, string channelName, BitWriter writer, bool respectObservers = false)
+        protected void SendToClients(uint[] clientIds, string messageType, string channelName, BitWriter writer)
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
@@ -1550,8 +1416,8 @@ namespace MLAPI.MonoBehaviours.Core
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
                 return;
             }
-            uint? fromNetId = respectObservers ? (uint?)networkId : null;
-            InternalMessageHandler.Send(clientIds, messageType, channelName, writer, fromNetId);
+
+            InternalMessageHandler.Send(clientIds, messageType, channelName, writer);
         }
 
         /// <summary>
@@ -1563,9 +1429,9 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="channelName">User defined channelName</param>	
         /// <param name="instance">The instance to send</param>
         /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToClients<T>(int[] clientIds, string messageType, string channelName, T instance, bool respectObservers = false)
+        protected void SendToClients<T>(int[] clientIds, string messageType, string channelName, T instance)
         {
-            SendToClients(clientIds, messageType, channelName, BinarySerializer.Serialize<T>(instance), respectObservers);
+            SendToClients(clientIds, messageType, channelName, BinarySerializer.Serialize<T>(instance));
         }
 
         /// <summary>
@@ -1576,7 +1442,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="channelName">User defined channelName</param>
         /// <param name="data">The binary data to send</param>
         /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToClientsTarget(uint[] clientIds, string messageType, string channelName, byte[] data, bool respectObservers = false)
+        protected void SendToClientsTarget(uint[] clientIds, string messageType, string channelName, byte[] data)
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
@@ -1593,11 +1459,11 @@ namespace MLAPI.MonoBehaviours.Core
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
                 return;
             }
-            uint? fromNetId = respectObservers ? (uint?)networkId : null;
+
             using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteByteArray(data);
-                InternalMessageHandler.Send(clientIds, messageType, channelName, writer, fromNetId, networkId, networkedObject.GetOrderIndex(this));
+                InternalMessageHandler.Send(clientIds, messageType, channelName, writer, networkId, networkedObject.GetOrderIndex(this));
             }
         }
 
@@ -1609,7 +1475,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="channelName">User defined channelName</param>
         /// <param name="writer">The binary data to send</param>
         /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToClientsTarget(uint[] clientIds, string messageType, string channelName, BitWriter writer, bool respectObservers = false)
+        protected void SendToClientsTarget(uint[] clientIds, string messageType, string channelName, BitWriter writer)
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
@@ -1626,8 +1492,7 @@ namespace MLAPI.MonoBehaviours.Core
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
                 return;
             }
-            uint? fromNetId = respectObservers ? (uint?)networkId : null;
-            InternalMessageHandler.Send(clientIds, messageType, channelName, writer, fromNetId, networkId, networkedObject.GetOrderIndex(this));
+            InternalMessageHandler.Send(clientIds, messageType, channelName, writer, networkId, networkedObject.GetOrderIndex(this));
         }
 
         /// <summary>
@@ -1639,9 +1504,9 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="channelName">User defined channelName</param>	
         /// <param name="instance">The instance to send</param>
         /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToClientsTarget<T>(int[] clientIds, string messageType, string channelName, T instance, bool respectObservers = false)
+        protected void SendToClientsTarget<T>(int[] clientIds, string messageType, string channelName, T instance)
         {
-            SendToClientsTarget(clientIds, messageType, channelName, BinarySerializer.Serialize<T>(instance), respectObservers);
+            SendToClientsTarget(clientIds, messageType, channelName, BinarySerializer.Serialize<T>(instance));
         }
 
         /// <summary>
@@ -1652,7 +1517,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="channelName">User defined channelName</param>
         /// <param name="data">The binary data to send</param>
         /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToClients(List<uint> clientIds, string messageType, string channelName, byte[] data, bool respectObservers = false)
+        protected void SendToClients(List<uint> clientIds, string messageType, string channelName, byte[] data)
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
@@ -1669,11 +1534,11 @@ namespace MLAPI.MonoBehaviours.Core
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
                 return;
             }
-            uint? fromNetId = respectObservers ? (uint?)networkId : null;
+
             using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteByteArray(data);
-                InternalMessageHandler.Send(clientIds, messageType, channelName, writer, fromNetId);
+                InternalMessageHandler.Send(clientIds, messageType, channelName, writer);
             }
         }
 
@@ -1685,7 +1550,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="channelName">User defined channelName</param>
         /// <param name="writer">The binary data to send</param>
         /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToClients(List<uint> clientIds, string messageType, string channelName, BitWriter writer, bool respectObservers = false)
+        protected void SendToClients(List<uint> clientIds, string messageType, string channelName, BitWriter writer)
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
@@ -1702,8 +1567,8 @@ namespace MLAPI.MonoBehaviours.Core
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
                 return;
             }
-            uint? fromNetId = respectObservers ? (uint?)networkId : null;
-            InternalMessageHandler.Send(clientIds, messageType, channelName, writer, fromNetId);
+
+            InternalMessageHandler.Send(clientIds, messageType, channelName, writer);
         }
 
         /// <summary>
@@ -1715,9 +1580,9 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="channelName">User defined channelName</param>	
         /// <param name="instance">The instance to send</param>
         /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToClients<T>(List<int> clientIds, string messageType, string channelName, T instance, bool respectObservers = false)
+        protected void SendToClients<T>(List<int> clientIds, string messageType, string channelName, T instance)
         {
-            SendToClients(clientIds, messageType, channelName, BinarySerializer.Serialize<T>(instance), respectObservers);
+            SendToClients(clientIds, messageType, channelName, BinarySerializer.Serialize<T>(instance));
         }
 
         /// <summary>
@@ -1728,7 +1593,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="channelName">User defined channelName</param>
         /// <param name="data">The binary data to send</param>
         /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToClientsTarget(List<uint> clientIds, string messageType, string channelName, byte[] data, bool respectObservers = false)
+        protected void SendToClientsTarget(List<uint> clientIds, string messageType, string channelName, byte[] data)
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
@@ -1745,11 +1610,11 @@ namespace MLAPI.MonoBehaviours.Core
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
                 return;
             }
-            uint? fromNetId = respectObservers ? (uint?)networkId : null;
+
             using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteByteArray(data);
-                InternalMessageHandler.Send(clientIds, messageType, channelName, writer, fromNetId, networkId, networkedObject.GetOrderIndex(this));
+                InternalMessageHandler.Send(clientIds, messageType, channelName, writer, networkId, networkedObject.GetOrderIndex(this));
             }
         }
 
@@ -1761,7 +1626,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="channelName">User defined channelName</param>
         /// <param name="writer">The binary data to send</param>
         /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToClientsTarget(List<uint> clientIds, string messageType, string channelName, BitWriter writer, bool respectObservers = false)
+        protected void SendToClientsTarget(List<uint> clientIds, string messageType, string channelName, BitWriter writer)
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
@@ -1778,8 +1643,8 @@ namespace MLAPI.MonoBehaviours.Core
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
                 return;
             }
-            uint? fromNetId = respectObservers ? (uint?)networkId : null;
-            InternalMessageHandler.Send(clientIds, messageType, channelName, writer, fromNetId, networkId, networkedObject.GetOrderIndex(this));
+
+            InternalMessageHandler.Send(clientIds, messageType, channelName, writer, networkId, networkedObject.GetOrderIndex(this));
         }
 
         /// <summary>
@@ -1791,9 +1656,9 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="channelName">User defined channelName</param>	
         /// <param name="instance">The instance to send</param>
         /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToClientsTarget<T>(List<uint> clientIds, string messageType, string channelName, T instance, bool respectObservers = false)
+        protected void SendToClientsTarget<T>(List<uint> clientIds, string messageType, string channelName, T instance)
         {
-            SendToClientsTarget(clientIds, messageType, channelName, BinarySerializer.Serialize<T>(instance), respectObservers);
+            SendToClientsTarget(clientIds, messageType, channelName, BinarySerializer.Serialize<T>(instance));
         }
 
         /// <summary>
@@ -1803,7 +1668,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="channelName">User defined channelName</param>
         /// <param name="data">The binary data to send</param>
         /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToClients(string messageType, string channelName, byte[] data, bool respectObservers = false)
+        protected void SendToClients(string messageType, string channelName, byte[] data)
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
@@ -1820,11 +1685,11 @@ namespace MLAPI.MonoBehaviours.Core
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
                 return;
             }
-            uint? fromNetId = respectObservers ? (uint?)networkId : null;
+
             using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteByteArray(data);
-                InternalMessageHandler.Send(messageType, channelName, writer, fromNetId);
+                InternalMessageHandler.Send(messageType, channelName, writer);
             }
         }
 
@@ -1835,7 +1700,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="channelName">User defined channelName</param>
         /// <param name="writer">The binary data to send</param>
         /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToClients(string messageType, string channelName, BitWriter writer, bool respectObservers = false)
+        protected void SendToClients(string messageType, string channelName, BitWriter writer)
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
@@ -1852,8 +1717,8 @@ namespace MLAPI.MonoBehaviours.Core
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
                 return;
             }
-            uint? fromNetId = respectObservers ? (uint?)networkId : null;
-            InternalMessageHandler.Send(messageType, channelName, writer, fromNetId);
+
+            InternalMessageHandler.Send(messageType, channelName, writer);
         }
 
         /// <summary>
@@ -1864,9 +1729,9 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="channelName">User defined channelName</param>	
         /// <param name="instance">The instance to send</param>
         /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToClients<T>(string messageType, string channelName, T instance, bool respectObservers = false)
+        protected void SendToClients<T>(string messageType, string channelName, T instance)
         {
-            SendToClients(messageType, channelName, BinarySerializer.Serialize<T>(instance), respectObservers);
+            SendToClients(messageType, channelName, BinarySerializer.Serialize<T>(instance));
         }
 
         /// <summary>
@@ -1876,7 +1741,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="channelName">User defined channelName</param>
         /// <param name="data">The binary data to send</param>
         /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToClientsTarget(string messageType, string channelName, byte[] data, bool respectObservers = false)
+        protected void SendToClientsTarget(string messageType, string channelName, byte[] data)
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
@@ -1893,11 +1758,11 @@ namespace MLAPI.MonoBehaviours.Core
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
                 return;
             }
-            uint? fromNetId = respectObservers ? (uint?)networkId : null;
+
             using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteByteArray(data);
-                InternalMessageHandler.Send(messageType, channelName, writer, fromNetId, networkId, networkedObject.GetOrderIndex(this));
+                InternalMessageHandler.Send(messageType, channelName, writer, networkId, networkedObject.GetOrderIndex(this));
             }
         }
 
@@ -1908,7 +1773,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="channelName">User defined channelName</param>
         /// <param name="writer">The binary data to send</param>
         /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToClientsTarget(string messageType, string channelName, BitWriter writer, bool respectObservers = false)
+        protected void SendToClientsTarget(string messageType, string channelName, BitWriter writer)
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
@@ -1925,8 +1790,7 @@ namespace MLAPI.MonoBehaviours.Core
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
                 return;
             }
-            uint? fromNetId = respectObservers ? (uint?)networkId : null;
-            InternalMessageHandler.Send(messageType, channelName, writer, fromNetId, networkId, networkedObject.GetOrderIndex(this));
+            InternalMessageHandler.Send(messageType, channelName, writer, networkId, networkedObject.GetOrderIndex(this));
         }
 
         /// <summary>
@@ -1937,9 +1801,9 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="channelName">User defined channelName</param>	
         /// <param name="instance">The instance to send</param>
         /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToClientsTarget<T>(string messageType, string channelName, T instance, bool respectObservers = false)
+        protected void SendToClientsTarget<T>(string messageType, string channelName, T instance)
         {
-            SendToClientsTarget(messageType, channelName, BinarySerializer.Serialize<T>(instance), respectObservers);
+            SendToClientsTarget(messageType, channelName, BinarySerializer.Serialize<T>(instance));
         }
         #endregion
 
@@ -1950,7 +1814,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <returns></returns>
         protected NetworkedObject GetNetworkedObject(uint networkId)
         {
-            return SpawnManager.spawnedObjects[networkId];
+            return SpawnManager.SpawnedObjects[networkId];
         }
     }
 }

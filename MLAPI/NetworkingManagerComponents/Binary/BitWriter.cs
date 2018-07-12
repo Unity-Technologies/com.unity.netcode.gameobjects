@@ -102,7 +102,17 @@ namespace MLAPI.NetworkingManagerComponents.Binary
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The type \"" + b.GetType() + "\" is not supported by the Binary Serializer. It will be ignored");
         }
 
+        private void PushPreZigZag<T>(T b)
+        {
+            if (b is sbyte) Push(ZigZagEncode((sbyte)(object)b)); //BOX
+            if (b is ushort) Push(ZigZagEncode((ushort)(object)b)); //BOX
+            if (b is uint) Push(ZigZagEncode((uint)(object)b)); //BOX
+            if (b is ulong) Push(ZigZagEncode((long)(ulong)(object)b)); //BOX
+            else Push(b);
+        }
 
+        public void WriteValueTypeOrString<T>(T t)  => PushPreZigZag(t);
+        public void WriteValueType(ValueType v)     => Push(v);
         public void WriteBool(bool b)               => Push(b);
         public void WriteFloat(float f)             => Push(f);
         public void WriteDouble(double d)           => Push(d);

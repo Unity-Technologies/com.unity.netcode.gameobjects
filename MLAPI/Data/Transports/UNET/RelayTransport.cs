@@ -1,4 +1,5 @@
-﻿using MLAPI.MonoBehaviours.Core;
+﻿#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+using MLAPI.MonoBehaviours.Core;
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -25,9 +26,9 @@ namespace MLAPI.Data.Transports.UNET
         private static ushort port;
         private static List<ChannelQOS> channels = new List<ChannelQOS>();
 
-        public static bool Enabled { get { return NetworkingManager.singleton.NetworkConfig.RelayEnabled; } }
-        public static string RelayAddress { get { return NetworkingManager.singleton.NetworkConfig.RelayAddress; } }
-        public static ushort RelayPort { get { return NetworkingManager.singleton.NetworkConfig.RelayPort; } }
+        public static bool Enabled => NetworkingManager.singleton.NetworkConfig.RelayEnabled;
+        public static string RelayAddress => NetworkingManager.singleton.NetworkConfig.RelayAddress;
+        public static ushort RelayPort => NetworkingManager.singleton.NetworkConfig.RelayPort;
 
         public static int Connect(int hostId, string serverAddress, int serverPort, int exceptionConnectionId, out byte error)
         {
@@ -199,10 +200,7 @@ namespace MLAPI.Data.Transports.UNET
             return NetworkTransport.QueueMessageForSending(hostId, relayConnectionId, channelId, buffer, size, out error);
         }
 
-        public static bool SendQueuedMessages(int hostId, int connectionId, out byte error)
-        {
-            return NetworkTransport.SendQueuedMessages(hostId, relayConnectionId, out error);
-        }
+        public static bool SendQueuedMessages(int hostId, int connectionId, out byte error) => NetworkTransport.SendQueuedMessages(hostId, relayConnectionId, out error);
 
         public static NetworkEventType ReceiveFromHost(int hostId, out int connectionId, out int channelId, byte[] buffer, int bufferSize, out int receivedSize, out byte error)
         {
@@ -273,7 +271,7 @@ namespace MLAPI.Data.Transports.UNET
                     }
                 case NetworkEventType.DisconnectEvent:
                     {
-                        if ((NetworkError)error == NetworkError.CRCMismatch) Debug.LogError("[MLAPI.Relay] The MLAPI Relay detected a CRC missmatch. This could be due to the maxClients or other connectionConfig settings not being the same");
+                        if ((NetworkError)error == NetworkError.CRCMismatch) Debug.LogError("[MLAPI.Relay] The MLAPI Relay detected a CRC mismatch. This could be due to the maxClients or other connectionConfig settings not being the same");
                         return NetworkEventType.DisconnectEvent;
                     }
             }
@@ -330,3 +328,4 @@ namespace MLAPI.Data.Transports.UNET
         public InvalidConfigException(string issue) : base(issue) { }
     }
 }
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member

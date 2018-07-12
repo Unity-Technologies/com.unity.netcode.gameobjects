@@ -4,12 +4,6 @@ namespace MLAPI.NetworkingManagerComponents.Core
 {
     internal static partial class InternalMessageHandler
     {
-        private static NetworkingManager netManager
-        {
-            get
-            {
-                return NetworkingManager.singleton;
-            }
-        }
+        private static NetworkingManager netManager => NetworkingManager.singleton;
     }
 }
