@@ -133,6 +133,16 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         }
         */
 
+        private void PushPreZigZag<T>(T b)
+        {
+            if (b is sbyte) Push(ZigZagEncode((sbyte)(object)b)); //BOX
+            if (b is ushort) Push(ZigZagEncode((ushort)(object)b)); //BOX
+            if (b is uint) Push(ZigZagEncode((uint)(object)b)); //BOX
+            if (b is ulong) Push(ZigZagEncode((long)(ulong)(object)b)); //BOX
+            else Push(b);
+        }
+
+        public void WriteValueTypeOrString<T>(T t) => PushPreZigZag(t);
         public void WriteBool(bool b)               => Push(b);
         public void WriteFloat(float f)             => Push(f);
         public void WriteDouble(double d)           => Push(d);

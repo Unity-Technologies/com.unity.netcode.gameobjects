@@ -700,7 +700,7 @@ namespace MLAPI.MonoBehaviours.Core
                 //This iterates over every "channel group".
                 for (int j = 0; j < channelMappedVarIndexes.Count; j++)
                 {
-                    using (BitWriter writer = BitWriter.Get())
+                    using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
                     {
                         writer.WriteUInt(networkId);
                         writer.WriteUShort(networkedObject.GetOrderIndex(this));
@@ -737,7 +737,7 @@ namespace MLAPI.MonoBehaviours.Core
             }
         }
 
-        internal void HandleNetworkedVarDeltas(BitReader reader, uint clientId)
+        internal void HandleNetworkedVarDeltas(BitReaderDeprecated reader, uint clientId)
         {
             for (int i = 0; i < networkedVarFields.Count; i++)
             {
@@ -761,7 +761,7 @@ namespace MLAPI.MonoBehaviours.Core
             }
         }
 
-        internal void HandleNetworkedVarUpdate(BitReader reader, uint clientId)
+        internal void HandleNetworkedVarUpdate(BitReaderDeprecated reader, uint clientId)
         {
             for (int i = 0; i < networkedVarFields.Count; i++)
             {

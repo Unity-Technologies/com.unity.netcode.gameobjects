@@ -263,6 +263,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
                 );
         }
 
+        public sbyte ReadSByte() => (sbyte)ReadByte();
         /// <summary>
         /// Read an unsigned short (UInt16) from the stream.
         /// </summary>
@@ -821,7 +822,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         public ValueType ReadValueType<T>()
         {
             if (typeof(T) == typeof(float))
-                return ReadFloat();
+                return ReadSingle();
             else if (typeof(T) == typeof(double))
                 return ReadDouble();
             else if (typeof(T) == typeof(byte))
@@ -829,17 +830,17 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             else if (typeof(T) == typeof(sbyte))
                 return ReadSByte();
             else if (typeof(T) == typeof(short))
-                return ReadShort();
+                return ReadInt16();
             else if (typeof(T) == typeof(ushort))
-                return ReadUShort();
+                return ReadUInt16();
             else if (typeof(T) == typeof(int))
-                return ReadInt();
+                return ReadInt32();
             else if (typeof(T) == typeof(uint))
-                return ReadUInt();
+                return ReadUInt32();
             else if (typeof(T) == typeof(long))
-                return ReadLong();
+                return ReadInt64();
             else if (typeof(T) == typeof(ulong))
-                return ReadULong();
+                return ReadUInt64();
             
             return default(ValueType);
         }
@@ -860,36 +861,8 @@ namespace MLAPI.NetworkingManagerComponents.Binary
                 return default(T);
             }
         }
-        
-        public bool ReadBool()
-        {
-            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
-            uint[] writeTo = readTo == null || readTo.LongLength != knownLength ? new uint[knownLength] : readTo;
-            ulong data = bitSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
-            ulong rset;
-            long readToLength = readTo == null ? 0 : readTo.LongLength;
-            for (long i = 0; i < knownLength; ++i)
-            {
-                if (i >= readToLength || ReadBit())
-                {
-#if ARRAY_WRITE_PREMAP
-                    // Move to data section
-                    rset = bitSource.BitPosition;
-                    bitSource.BitPosition = data;
-#endif
-                    // Read datum
-                    writeTo[i] = ReadUInt32Packed();
-#if ARRAY_WRITE_PREMAP
-                    // Return to mapping section
-                    data = bitSource.BitPosition;
-                    bitSource.BitPosition = rset;
-#endif
-                }
-                else if (i < readTo.LongLength) writeTo[i] = readTo[i];
-            }
-            bitSource.BitPosition = data;
-            return writeTo;
-        }
+
+        public bool ReadBool() => ReadBit();
 
         public long[] ReadLongArray(long[] readTo = null, long knownLength = -1)
         {

@@ -7,6 +7,7 @@ using System.Text;
 
 namespace MLAPI.NetworkingManagerComponents.Binary
 {
+    [Obsolete]
     public class BitReaderDeprecated : IDisposable
     {
         private bool disposed;
@@ -61,6 +62,49 @@ namespace MLAPI.NetworkingManagerComponents.Binary
                 reader.disposed = false;
                 reader.readFrom = readFrom;
                 return reader;
+            }
+        }
+
+        public ValueType ReadValueType<T>()
+        {
+            if (typeof(T) == typeof(float))
+                return ReadFloat();
+            else if (typeof(T) == typeof(double))
+                return ReadDouble();
+            else if (typeof(T) == typeof(byte))
+                return ReadByte();
+            else if (typeof(T) == typeof(sbyte))
+                return ReadSByte();
+            else if (typeof(T) == typeof(short))
+                return ReadShort();
+            else if (typeof(T) == typeof(ushort))
+                return ReadUShort();
+            else if (typeof(T) == typeof(int))
+                return ReadInt();
+            else if (typeof(T) == typeof(uint))
+                return ReadUInt();
+            else if (typeof(T) == typeof(long))
+                return ReadLong();
+            else if (typeof(T) == typeof(ulong))
+                return ReadULong();
+
+            return default(ValueType);
+        }
+
+        public T ReadValueTypeOrString<T>()
+        {
+            if (typeof(T) == typeof(string))
+            {
+                return (T)(object)ReadString(); //BOX
+            }
+            else if (typeof(T).IsValueType)
+            {
+                ValueType type = ReadValueType<T>();
+                return (T)(object)type; //BOX
+            }
+            else
+            {
+                return default(T);
             }
         }
 

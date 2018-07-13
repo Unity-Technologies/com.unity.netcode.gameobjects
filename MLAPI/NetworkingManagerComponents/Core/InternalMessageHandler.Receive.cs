@@ -320,7 +320,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             targetMethod.Invoke(behaviour, methodParams);
         }
 
-        internal static void HandleNetworkedVarDelta(uint clientId, BitReader reader, int channelId)
+        internal static void HandleNetworkedVarDelta(uint clientId, BitReaderDeprecated reader, int channelId)
         {
             uint netId = reader.ReadUInt();
             ushort orderIndex = reader.ReadUShort();

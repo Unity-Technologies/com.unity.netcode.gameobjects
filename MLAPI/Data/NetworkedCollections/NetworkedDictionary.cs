@@ -75,7 +75,7 @@ namespace MLAPI.Data.NetworkedCollections
         }
 
         /// <inheritdoc />
-        public void ReadDelta(BitReader reader)
+        public void ReadDelta(BitReaderDeprecated reader)
         {
             ushort deltaCount = reader.ReadUShort();
             for (int i = 0; i < deltaCount; i++)
@@ -124,7 +124,7 @@ namespace MLAPI.Data.NetworkedCollections
         }
 
         /// <inheritdoc />
-        public void ReadField(BitReader reader)
+        public void ReadField(BitReaderDeprecated reader)
         {
             dictionary.Clear();
             ushort entryCount = reader.ReadUShort();
@@ -149,7 +149,7 @@ namespace MLAPI.Data.NetworkedCollections
         }
 
         /// <inheritdoc />
-        public void WriteDelta(BitWriter writer)
+        public void WriteDelta(BitWriterDeprecated writer)
         {
             writer.WriteUShort((ushort)dirtyEvents.Count);
             for (int i = 0; i < dirtyEvents.Count; i++)
@@ -192,7 +192,7 @@ namespace MLAPI.Data.NetworkedCollections
         }
 
         /// <inheritdoc />
-        public void WriteField(BitWriter writer)
+        public void WriteField(BitWriterDeprecated writer)
         {
             writer.WriteUShort((ushort)dictionary.Count);
             foreach (KeyValuePair<TKey, TValue> pair in dictionary)

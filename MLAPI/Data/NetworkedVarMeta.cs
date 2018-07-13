@@ -39,22 +39,22 @@ namespace MLAPI.Data
         /// Writes the dirty changes, that is, the changes since the variable was last dirty, to the writer
         /// </summary>
         /// <param name="writer">The writer to write the dirty changes to</param>
-        void WriteDelta(BitWriter writer);
+        void WriteDelta(BitWriterDeprecated writer);
         /// <summary>
         /// Writes the complete state of the variable to the writer
         /// </summary>
         /// <param name="writer">The writer to write the state to</param>
-        void WriteField(BitWriter writer);
+        void WriteField(BitWriterDeprecated writer);
         /// <summary>
         /// Reads the complete state from the reader and applies it
         /// </summary>
         /// <param name="reader">The reader to read the state from</param>
-        void ReadField(BitReader reader);
+        void ReadField(BitReaderDeprecated reader);
         /// <summary>
         /// Reads delta from the reader and applies them to the internal value
         /// </summary>
         /// <param name="reader">The reader to read the delta from</param>
-        void ReadDelta(BitReader reader);
+        void ReadDelta(BitReaderDeprecated reader);
         /// <summary>
         /// Sets NetworkedBehaviour the container belongs to.
         /// </summary>

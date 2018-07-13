@@ -862,7 +862,7 @@ namespace MLAPI.MonoBehaviours.Core
 
                 using (BitReaderDeprecated messageReader = readBuffer == null ? reader : BitReaderDeprecated.Get(readBuffer))
 #else
-                using (BitReader messageReader = reader)
+                using (BitReaderDeprecated messageReader = reader)
 #endif
                 {
                     if (isServer && isPassthrough && !NetworkConfig.PassthroughMessageHashSet.Contains(messageType))

@@ -357,9 +357,19 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         }
 
         // TODO: Implement CopyFrom() for BitStream with bitCount parameter
-        public void CopyFrom(BitStream s, int count, bool countBits)
+        public void CopyFrom(BitStream s, int dataCount, bool copyBits)
         {
-
+            if (!copyBits)
+            {
+                CopyFrom(s, dataCount);
+            }
+            else
+            {
+                ulong count = dataCount < 0 ? s.BitLength : (ulong)dataCount;
+                if (s.BitLength < count) throw new IndexOutOfRangeException("Attempted to read more data than is available");
+                Write(s.GetBuffer(), 0, (int)(count >> 3));
+                for (int i = (int)(count & 7); i >= 0; --i) WriteBit(s.ReadBit());
+            }
         }
 
         /// <summary>
