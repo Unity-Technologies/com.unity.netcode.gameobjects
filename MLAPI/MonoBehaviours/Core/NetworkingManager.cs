@@ -28,14 +28,17 @@ namespace MLAPI.MonoBehaviours.Core
         /// <summary>
         /// Gets or sets if the NetworkingManager should be marked as DontDestroyOnLoad
         /// </summary>
+        [HideInInspector]
         public bool DontDestroy = true;
         /// <summary>
         /// Gets or sets if the application should be set to run in background
         /// </summary>
+        [HideInInspector]
         public bool RunInBackground = true;
         /// <summary>
         /// The log level to use
         /// </summary>
+        [HideInInspector]
         public LogLevel LogLevel = LogLevel.Normal;
         /// <summary>
         /// The singleton instance of the NetworkingManager
@@ -121,6 +124,16 @@ namespace MLAPI.MonoBehaviours.Core
             if (NetworkConfig == null)
                 return; //May occur when the component is added            
 
+            //Sort lists
+            if (NetworkConfig.MessageTypes != null)
+                NetworkConfig.MessageTypes = NetworkConfig.MessageTypes.OrderBy(x => x.Name).ToList();
+            if (NetworkConfig.Channels != null)
+                NetworkConfig.Channels = NetworkConfig.Channels.OrderBy(x => x.Name).ToList();
+            if (NetworkConfig.NetworkedPrefabs != null)
+                NetworkConfig.NetworkedPrefabs = NetworkConfig.NetworkedPrefabs.OrderBy(x => x.name).ToList(); 
+            if (NetworkConfig.RegisteredScenes != null)
+                NetworkConfig.RegisteredScenes.Sort();
+
             if (NetworkConfig.EnableSceneSwitching && !NetworkConfig.RegisteredScenes.Contains(SceneManager.GetActiveScene().name))
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The active scene is not registered as a networked scene. The MLAPI has added it");
@@ -198,7 +211,8 @@ namespace MLAPI.MonoBehaviours.Core
             MessageManager.releasedMessageHandlerCounters.Clear();
             MessageManager.reverseChannels.Clear();
             MessageManager.reverseMessageTypes.Clear();
-            SpawnManager.spawnedObjects.Clear();
+            SpawnManager.SpawnedObjects.Clear();
+            SpawnManager.SpawnedObjectsList.Clear();
             SpawnManager.releasedNetworkObjectIds.Clear();
             NetworkPoolManager.Pools.Clear();
             NetworkPoolManager.PoolNamesToIndexes.Clear();
@@ -216,11 +230,11 @@ namespace MLAPI.MonoBehaviours.Core
 
             object settings = NetworkConfig.NetworkTransport.GetSettings(); //Gets a new "settings" object for the transport currently used.
 
-            if(NetworkConfig.HandleObjectSpawning)
+            if (NetworkConfig.HandleObjectSpawning)
             {
                 NetworkConfig.NetworkPrefabIds = new Dictionary<string, int>();
                 NetworkConfig.NetworkPrefabNames = new Dictionary<int, string>();
-                NetworkConfig.NetworkedPrefabs.OrderBy(x => x.name);
+                NetworkConfig.NetworkedPrefabs = NetworkConfig.NetworkedPrefabs.OrderBy(x => x.name).ToList();
                 HashSet<string> networkedPrefabName = new HashSet<string>();
                 for (int i = 0; i < NetworkConfig.NetworkedPrefabs.Count; i++)
                 {
@@ -304,6 +318,35 @@ namespace MLAPI.MonoBehaviours.Core
                 MessageManager.reverseChannels.Add(channelId, internalChannels[i].Name);
             }
 
+            NetworkConfig.RegisteredScenes.Sort();
+            if (NetworkConfig.EnableSceneSwitching)
+            {
+                for (int i = 0; i < NetworkConfig.RegisteredScenes.Count; i++)
+                {
+                    NetworkSceneManager.registeredSceneNames.Add(NetworkConfig.RegisteredScenes[i]);
+                    NetworkSceneManager.sceneIndexToString.Add((uint)i, NetworkConfig.RegisteredScenes[i]);
+                    NetworkSceneManager.sceneNameToIndex.Add(NetworkConfig.RegisteredScenes[i], (uint)i);
+                }
+
+                NetworkSceneManager.SetCurrentSceneIndex();
+            }
+
+            //Register user channels
+            NetworkConfig.Channels = NetworkConfig.Channels.OrderBy(x => x.Name).ToList();
+            for (int i = 0; i < NetworkConfig.Channels.Count; i++)
+            {
+                if(channelNames.Contains(NetworkConfig.Channels[i].Name))
+                {
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Duplicate channel name: " + NetworkConfig.Channels[i].Name);
+                    continue;
+                }
+                int channelId = NetworkConfig.NetworkTransport.AddChannel(NetworkConfig.Channels[i].Type, settings);
+                MessageManager.channels.Add(NetworkConfig.Channels[i].Name, channelId);
+                channelNames.Add(NetworkConfig.Channels[i].Name);
+                MessageManager.reverseChannels.Add(channelId, NetworkConfig.Channels[i].Name);
+            }
+
+            //Add internal messagetypes directly
             MessageManager.messageTypes.Add("MLAPI_CONNECTION_REQUEST", 0);
             MessageManager.messageTypes.Add("MLAPI_CONNECTION_APPROVED", 1);
             MessageManager.messageTypes.Add("MLAPI_ADD_OBJECT", 2);
@@ -313,14 +356,17 @@ namespace MLAPI.MonoBehaviours.Core
             MessageManager.messageTypes.Add("MLAPI_SPAWN_POOL_OBJECT", 6);
             MessageManager.messageTypes.Add("MLAPI_DESTROY_POOL_OBJECT", 7);
             MessageManager.messageTypes.Add("MLAPI_CHANGE_OWNER", 8);
-            MessageManager.messageTypes.Add("MLAPI_SYNC_VAR_UPDATE", 9);
+            //MessageManager.messageTypes.Add("MLAPI_SYNC_VAR_UPDATE", 9); //NOT IN USE
             MessageManager.messageTypes.Add("MLAPI_ADD_OBJECTS", 10);
             MessageManager.messageTypes.Add("MLAPI_TIME_SYNC", 11);
             MessageManager.messageTypes.Add("MLAPI_COMMAND", 12);
             MessageManager.messageTypes.Add("MLAPI_RPC", 13);
             MessageManager.messageTypes.Add("MLAPI_TARGET", 14);
-            MessageManager.messageTypes.Add("MLAPI_SET_VISIBILITY", 15);
+            //MessageManager.messageTypes.Add("MLAPI_SET_VISIBILITY", 15); //NOT IN USE
+            MessageManager.messageTypes.Add("MLAPI_NETWORKED_VAR_DELTA", 16);
+            MessageManager.messageTypes.Add("MLAPI_NETWORKED_VAR_UPDATE", 17);
 
+            //These are message types concidered to be user level since they belong to prototype components
             List<MessageType> messageTypes = new List<MessageType>(NetworkConfig.MessageTypes)
             {
                 new MessageType()
@@ -360,33 +406,10 @@ namespace MLAPI.MonoBehaviours.Core
                 }
             };
 
-            if (NetworkConfig.EnableSceneSwitching)
-            {
-                for (int i = 0; i < NetworkConfig.RegisteredScenes.Count; i++)
-                {
-                    NetworkSceneManager.registeredSceneNames.Add(NetworkConfig.RegisteredScenes[i]);
-                    NetworkSceneManager.sceneIndexToString.Add((uint)i, NetworkConfig.RegisteredScenes[i]);
-                    NetworkSceneManager.sceneNameToIndex.Add(NetworkConfig.RegisteredScenes[i], (uint)i);
-                }
+            //Sort user messages
+            messageTypes = messageTypes.OrderBy(x => x.Name).ToList();
 
-                NetworkSceneManager.SetCurrentSceneIndex();
-            }
-
-            //Register user channels
-            for (int i = 0; i < NetworkConfig.Channels.Count; i++)
-            {
-                if(channelNames.Contains(NetworkConfig.Channels[i].Name))
-                {
-                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Duplicate channel name: " + NetworkConfig.Channels[i].Name);
-                    continue;
-                }
-                int channelId = NetworkConfig.NetworkTransport.AddChannel(NetworkConfig.Channels[i].Type, settings);
-                MessageManager.channels.Add(NetworkConfig.Channels[i].Name, channelId);
-                channelNames.Add(NetworkConfig.Channels[i].Name);
-                MessageManager.reverseChannels.Add(channelId, NetworkConfig.Channels[i].Name);
-            }
-
-            //0-32 are reserved for MLAPI messages
+            //0-32 are reserved for MLAPI messages  
             ushort messageId = 32;
             for (ushort i = 0; i < messageTypes.Count; i++)
             {
@@ -639,6 +662,7 @@ namespace MLAPI.MonoBehaviours.Core
             {
                 if((NetworkTime - lastSendTickTime >= (1f / NetworkConfig.SendTickrate)) || NetworkConfig.SendTickrate <= 0)
                 {
+                    NetworkedObject.NetworkedVarPrepareSend();
                     foreach (KeyValuePair<uint, NetworkedClient> pair in ConnectedClients)
                     {
                         byte error;
@@ -694,7 +718,7 @@ namespace MLAPI.MonoBehaviours.Core
                                         if (NetworkConfig.ConnectionApproval)
                                             writer.WriteByteArray(NetworkConfig.ConnectionData);
 
-                                        InternalMessageHandler.Send(clientId, "MLAPI_CONNECTION_REQUEST", "MLAPI_INTERNAL", writer, null, null, null, true);
+                                        InternalMessageHandler.Send(clientId, "MLAPI_CONNECTION_REQUEST", "MLAPI_INTERNAL", writer, null, null, true);
                                     }
                                 }
                                 NetworkProfiler.EndEvent();
@@ -732,7 +756,6 @@ namespace MLAPI.MonoBehaviours.Core
                     NetworkProfiler.StartTick(TickType.Event);
                     eventOvershootCounter += ((NetworkTime - lastEventTickTime) - (1f / NetworkConfig.EventTickrate));
                     LagCompensationManager.AddFrames();
-                    NetworkedObject.InvokeSyncvarUpdate();
                     lastEventTickTime = NetworkTime;
                     NetworkProfiler.EndTick();
                 }
@@ -879,27 +902,27 @@ namespace MLAPI.MonoBehaviours.Core
                         //Custom message, invoke all message handlers
                         if (targeted)
                         {
-                            if (!SpawnManager.spawnedObjects.ContainsKey(targetNetworkId))
+                            if (!SpawnManager.SpawnedObjects.ContainsKey(targetNetworkId))
                             {
                                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("No target for message found");
                                 messageReader.Dispose();
                                 return;
                             }
-                            else if (!SpawnManager.spawnedObjects[targetNetworkId].targetMessageActions.ContainsKey(networkOrderId))
+                            else if (!SpawnManager.SpawnedObjects[targetNetworkId].targetMessageActions.ContainsKey(networkOrderId))
                             {
                                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("No target messageType for message found");
                                 messageReader.Dispose();
                                 return;
                             }
-                            else if (!SpawnManager.spawnedObjects[targetNetworkId].targetMessageActions[networkOrderId].ContainsKey(messageType))
+                            else if (!SpawnManager.SpawnedObjects[targetNetworkId].targetMessageActions[networkOrderId].ContainsKey(messageType))
                             {
                                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("No target found with the given messageType");
                                 messageReader.Dispose();
                                 return;
                             }
-                            if (SpawnManager.spawnedObjects[targetNetworkId].targetMessageActions[networkOrderId].ContainsKey(messageType))
+                            if (SpawnManager.SpawnedObjects[targetNetworkId].targetMessageActions[networkOrderId].ContainsKey(messageType))
                             {
-                                SpawnManager.spawnedObjects[targetNetworkId].targetMessageActions[networkOrderId][messageType].Invoke(clientId, messageReader);
+                                SpawnManager.SpawnedObjects[targetNetworkId].targetMessageActions[networkOrderId][messageType].Invoke(clientId, messageReader);
                             }
                         }
                         else
@@ -962,9 +985,7 @@ namespace MLAPI.MonoBehaviours.Core
                                 if (isClient)
                                     InternalMessageHandler.HandleChangeOwner(clientId, messageReader, channelId);
                                 break;
-                            case 9: //Syncvar
-                                if (isClient)
-                                    InternalMessageHandler.HandleSyncVarUpdate(clientId, messageReader, channelId);
+                            case 9: //UNUSED
                                 break;
                             case 10:
                                 if (isClient) //MLAPI_ADD_OBJECTS (plural)
@@ -986,9 +1007,14 @@ namespace MLAPI.MonoBehaviours.Core
                                 if (isClient)
                                     InternalMessageHandler.HandleTargetRpc(clientId, messageReader, channelId);
                                 break;
-                            case 15:
-                                if (isClient)
-                                    InternalMessageHandler.HandleSetVisibility(clientId, messageReader, channelId);
+                            case 15: //UNUSED
+                                break;
+                            case 16:
+                                // Handled on both client and server
+                                InternalMessageHandler.HandleNetworkedVarDelta(clientId, messageReader, channelId);
+                                break;
+                            case 17:
+                                InternalMessageHandler.HandleNetworkedVarUpdate(clientId, messageReader, channelId);
                                 break;
                         }
                         #endregion
@@ -1016,9 +1042,6 @@ namespace MLAPI.MonoBehaviours.Core
                 diffieHellmanPublicKeys.Remove(clientId);
 #endif
 
-            foreach (KeyValuePair<uint, NetworkedObject> pair in SpawnManager.spawnedObjects)
-                pair.Value.observers.Remove(clientId);
-
             NetworkConfig.NetworkTransport.DisconnectClient(clientId);
         }
 
@@ -1044,9 +1067,6 @@ namespace MLAPI.MonoBehaviours.Core
 
             if (isServer)
             {
-                foreach (KeyValuePair<uint, NetworkedObject> pair in SpawnManager.spawnedObjects)
-                    pair.Value.observers.Remove(clientId);
-
                 using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
                 {
                     writer.WriteUInt(clientId);
@@ -1118,7 +1138,7 @@ namespace MLAPI.MonoBehaviours.Core
                     ConnectedClients[clientId].PlayerObject = netObject;
                 }
 
-                int amountOfObjectsToSend = SpawnManager.spawnedObjects.Values.Count;
+                int amountOfObjectsToSend = SpawnManager.SpawnedObjects.Values.Count;
 
                 using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
                 {
@@ -1146,25 +1166,19 @@ namespace MLAPI.MonoBehaviours.Core
                         if (item.Key == clientId)
                             continue;
                         writer.WriteUInt(item.Key); //ClientId
-
-                        if (netObject != null)
-                            netObject.RebuildObservers(item.Key);
                     }
                     if (NetworkConfig.HandleObjectSpawning)
                     {
                         writer.WriteInt(amountOfObjectsToSend);
 
-                        foreach (KeyValuePair<uint, NetworkedObject> pair in SpawnManager.spawnedObjects)
+                        foreach (KeyValuePair<uint, NetworkedObject> pair in SpawnManager.SpawnedObjects)
                         {
-                            pair.Value.RebuildObservers(clientId); //Rebuilds observers for the new client
-
                             writer.WriteBool(pair.Value.isPlayerObject);
                             writer.WriteUInt(pair.Value.NetworkId);
                             writer.WriteUInt(pair.Value.OwnerClientId);
                             writer.WriteInt(NetworkConfig.NetworkPrefabIds[pair.Value.NetworkedPrefabName]);
                             writer.WriteBool(pair.Value.gameObject.activeInHierarchy);
                             writer.WriteBool(pair.Value.sceneObject == null ? true : pair.Value.sceneObject.Value);
-                            writer.WriteBool(pair.Value.observers.Contains(clientId));
 
                             writer.WriteFloat(pair.Value.transform.position.x);
                             writer.WriteFloat(pair.Value.transform.position.y);
@@ -1174,11 +1188,10 @@ namespace MLAPI.MonoBehaviours.Core
                             writer.WriteFloat(pair.Value.transform.rotation.eulerAngles.y);
                             writer.WriteFloat(pair.Value.transform.rotation.eulerAngles.z);
 
-                            if (pair.Value.observers.Contains(clientId))
-                                pair.Value.WriteFormattedSyncedVarData(writer);
+                            pair.Value.WriteNetworkedVarData(writer, clientId);
                         }
                     }
-                    InternalMessageHandler.Send(clientId, "MLAPI_CONNECTION_APPROVED", "MLAPI_INTERNAL", writer, null, null, null, true);
+                    InternalMessageHandler.Send(clientId, "MLAPI_CONNECTION_APPROVED", "MLAPI_INTERNAL", writer, null, null, true);
 
                     if (OnClientConnectedCallback != null)
                         OnClientConnectedCallback.Invoke(clientId);
@@ -1200,7 +1213,6 @@ namespace MLAPI.MonoBehaviours.Core
                             writer.WriteUInt(clientId);
                             writer.WriteInt(prefabId);
                             writer.WriteBool(false);
-                            writer.WriteBool(ConnectedClients[clientId].PlayerObject.GetComponent<NetworkedObject>().observers.Contains(clientPair.Key));
 
                             writer.WriteFloat(ConnectedClients[clientId].PlayerObject.transform.position.x);
                             writer.WriteFloat(ConnectedClients[clientId].PlayerObject.transform.position.y);
@@ -1212,8 +1224,7 @@ namespace MLAPI.MonoBehaviours.Core
 
                             writer.WriteBool(false); //No payload data
 
-                            if (ConnectedClients[clientId].PlayerObject.GetComponent<NetworkedObject>().observers.Contains(clientPair.Key))
-                                ConnectedClients[clientId].PlayerObject.GetComponent<NetworkedObject>().WriteFormattedSyncedVarData(writer);
+                            ConnectedClients[clientId].PlayerObject.GetComponent<NetworkedObject>().WriteNetworkedVarData(writer, clientPair.Key);
                         }
                         else
                         {
@@ -1620,7 +1631,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <returns>Returns the NetworkedObject</returns>
         public NetworkedObject GetNetworkedObject(uint networkId)
         {
-            return SpawnManager.spawnedObjects[networkId];
+            return SpawnManager.SpawnedObjects[networkId];
         }
 #endregion
     }

@@ -90,6 +90,10 @@
     <Compile Include="Attributes\TargetRpc.cs" />
     <Compile Include="Data\Channel.cs" />
     <Compile Include="Data\AttributeMessageMode.cs" />
+    <Compile Include="Data\NetworkedCollections\NetworkedDictionary.cs" />
+    <Compile Include="Data\NetworkedCollections\NetworkedList.cs" />
+    <Compile Include="Data\NetworkedVar.cs" />
+    <Compile Include="Data\NetworkedVarMeta.cs" />
     <Compile Include="Data\Transports\ChannelType.cs" />
     <Compile Include="Data\FieldType.cs" />
     <Compile Include="Attributes\SyncedVar.cs" />
@@ -106,10 +110,10 @@
     <Compile Include="Data\Transports\UNET\RelayTransport.cs" />
     <Compile Include="Data\Transports\UNET\TransportHost.cs" />
     <Compile Include="Data\Transports\UNET\UnetTransport.cs" />
+    <Compile Include="Data\TypeExtensions.cs" />
     <Compile Include="GlobalSuppressions.cs" />
     <Compile Include="MonoBehaviours\Prototyping\NetworkedAnimator.cs" />
     <Compile Include="MonoBehaviours\Prototyping\NetworkedNavMeshAgent.cs" />
-    <Compile Include="MonoBehaviours\Prototyping\NetworkedProximity.cs" />
     <Compile Include="NetworkingManagerComponents\Binary\Arithmetic.cs" />
     <Compile Include="NetworkingManagerComponents\Binary\BitReader.cs" />
     <Compile Include="NetworkingManagerComponents\Binary\BitWriter.cs" />
@@ -149,6 +153,5 @@
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
-  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

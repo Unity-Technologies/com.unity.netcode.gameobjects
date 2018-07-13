@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using MLAPI.Data.Transports;
 using MLAPI.MonoBehaviours.Core;
+using System.Linq;
 
 namespace MLAPI.Data
 {
@@ -41,10 +42,12 @@ namespace MLAPI.Data
         /// <summary>
         /// Channels used by the NetworkedTransport
         /// </summary>
+        [HideInInspector]
         public List<Channel> Channels = new List<Channel>();
         /// <summary>
         /// Registered MessageTypes
         /// </summary>
+        [HideInInspector]
         public List<MessageType> MessageTypes = new List<MessageType>();
         internal HashSet<ushort> PassthroughMessageHashSet = new HashSet<ushort>();
         internal HashSet<string> EncryptedChannelsHashSet = new HashSet<string>();
@@ -52,6 +55,7 @@ namespace MLAPI.Data
         /// <summary>
         /// A list of SceneNames that can be used during networked games.
         /// </summary>
+        [HideInInspector]
         public List<string> RegisteredScenes = new List<string>();
         /// <summary>
         /// A list of spawnable prefabs
@@ -153,6 +157,14 @@ namespace MLAPI.Data
         /// Decides how many bytes to use for Attribute messaging. Leave this to 2 bytes unless you are facing hash collisions
         /// </summary>
         public AttributeMessageMode AttributeMessageMode = AttributeMessageMode.Disabled;
+
+        private void Sort()
+        {
+            MessageTypes = MessageTypes.OrderBy(x => x.Name).ToList();
+            Channels = Channels.OrderBy(x => x.Name).ToList();
+            NetworkedPrefabs = NetworkedPrefabs.OrderBy(x => x.name).ToList();
+            RegisteredScenes.Sort();
+        }
 
         /// <summary>
         /// Returns a base64 encoded version of the config
@@ -315,6 +327,8 @@ namespace MLAPI.Data
         {
             if (ConfigHash != null && cache)
                 return ConfigHash.Value;
+
+            Sort();
 
             using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
             {

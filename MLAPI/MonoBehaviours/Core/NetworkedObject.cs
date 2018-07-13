@@ -1,5 +1,4 @@
-﻿using MLAPI.Data;
-using MLAPI.NetworkingManagerComponents.Binary;
+﻿using MLAPI.NetworkingManagerComponents.Binary;
 using MLAPI.NetworkingManagerComponents.Core;
 using System;
 using System.Collections.Generic;
@@ -13,6 +12,8 @@ namespace MLAPI.MonoBehaviours.Core
     [AddComponentMenu("MLAPI/NetworkedObject", -99)]
     public sealed class NetworkedObject : MonoBehaviour
     {
+        internal static readonly List<NetworkedBehaviour> NetworkedBehaviours = new List<NetworkedBehaviour>();
+
         private void OnValidate()
         {
             if (string.IsNullOrEmpty(NetworkedPrefabName))
@@ -84,85 +85,6 @@ namespace MLAPI.MonoBehaviours.Core
         /// </summary>
         public bool isSpawned { get; internal set; }
         internal bool? sceneObject = null;
-
-        /// <summary>
-        /// The current clients observing the object
-        /// </summary>
-        public readonly HashSet<uint> observers = new HashSet<uint>();
-        private readonly HashSet<uint> previousObservers = new HashSet<uint>();
-
-        internal void RebuildObservers(uint? clientId = null)
-        {
-            bool initial = clientId != null;
-            if (initial)
-            {
-                bool shouldBeAdded = true;
-                for (int i = 0; i < childNetworkedBehaviours.Count; i++)
-                {
-                    bool state = childNetworkedBehaviours[i].OnCheckObserver(clientId.Value);
-                    if (state == false)
-                    {
-                        shouldBeAdded = false;
-                        break;
-                    }
-                }
-                if (shouldBeAdded)
-                    observers.Add(clientId.Value);
-            }
-            else
-            {
-                previousObservers.Clear();
-                foreach (var item in observers)
-                    previousObservers.Add(item);
-                bool update = false;
-                for (int i = 0; i < childNetworkedBehaviours.Count; i++)
-                {
-                    bool changed = childNetworkedBehaviours[i].OnRebuildObservers(observers);
-                    if (changed)
-                    {
-                        update = true;
-                        break;
-                    }
-                }
-                if (update)
-                {
-                    foreach (KeyValuePair<uint, NetworkedClient> pair in NetworkingManager.singleton.ConnectedClients)
-                    {
-                        if (pair.Key == NetworkingManager.singleton.NetworkConfig.NetworkTransport.HostDummyId)
-                            continue;
-                        if ((previousObservers.Contains(pair.Key) && !observers.Contains(pair.Key)) ||
-                            (!previousObservers.Contains(pair.Key) && observers.Contains(pair.Key)))
-                        {
-                            //Something changed for this client.
-                            using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
-                            {
-                                writer.WriteUInt(NetworkId);
-                                writer.WriteBool(observers.Contains(pair.Key));
-
-                                if (observers.Contains(pair.Key))
-                                    WriteFormattedSyncedVarData(writer);
-
-                                InternalMessageHandler.Send(pair.Key, "MLAPI_SET_VISIBILITY", "MLAPI_INTERNAL", writer, null);
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    foreach (var item in previousObservers)
-                        observers.Add(item);
-                }
-                previousObservers.Clear();
-            }
-        }
-
-        internal void SetLocalVisibility(bool visibility)
-        {
-            for (int i = 0; i < childNetworkedBehaviours.Count; i++)
-            {
-                childNetworkedBehaviours[i].OnSetLocalVisibility(visibility);
-            }
-        }
 
         private void OnDestroy()
         {
@@ -247,7 +169,6 @@ namespace MLAPI.MonoBehaviours.Core
                 {
                     childNetworkedBehaviours[i].InternalNetworkStart();
                     childNetworkedBehaviours[i].NetworkStart(reader);
-                    childNetworkedBehaviours[i].SyncVarInit();
                     childNetworkedBehaviours[i].networkedStartInvoked = true;
                 }
             }
@@ -272,58 +193,41 @@ namespace MLAPI.MonoBehaviours.Core
             }
         }
 
-        internal static List<NetworkedBehaviour> NetworkedBehaviours = new List<NetworkedBehaviour>();
-        internal static void InvokeSyncvarUpdate()
+        internal static void NetworkedVarPrepareSend()
         {
             for (int i = 0; i < NetworkedBehaviours.Count; i++)
             {
-                NetworkedBehaviours[i].SyncVarUpdate();
+                NetworkedBehaviours[i].NetworkedVarUpdate();
             }
         }
-
-
-        //Writes SyncedVar data in a formatted way so that the SetFormattedSyncedVarData method can read it.
-        //The format doesn't NECCECARLY correspond with the "general syncedVar message layout" 
-        //as this should only be used for reading SyncedVar data that is to be read by the SetFormattedData method
-        //*
-        //The data contains every syncedvar on every behaviour that belongs to this object
-        internal void WriteFormattedSyncedVarData(BitWriterDeprecated writer)
+        
+        internal void WriteNetworkedVarData(BitWriterDeprecated writer, uint clientId)
         {
             for (int i = 0; i < childNetworkedBehaviours.Count; i++)
             {
-                childNetworkedBehaviours[i].SyncVarInit();
-                if (childNetworkedBehaviours[i].syncedVarFields.Count == 0)
+                childNetworkedBehaviours[i].NetworkedVarInit();
+                if (childNetworkedBehaviours[i].networkedVarFields.Count == 0)
                     continue;
-                writer.WriteUShort(GetOrderIndex(childNetworkedBehaviours[i])); //Write the behaviourId
-                for (int j = 0; j < childNetworkedBehaviours[i].syncedVarFields.Count; j++)
-                    FieldTypeHelper.WriteFieldType(writer, childNetworkedBehaviours[i].syncedVarFields[j].FieldValue);
-            }
-        }
-
-        //Reads formatted data that the "WriteFormattedSyncedVarData" has written and applies the values to SyncedVar fields
-        internal void SetFormattedSyncedVarData(BitReaderDeprecated reader)
-        {
-            for (int i = 0; i < childNetworkedBehaviours.Count; i++)
-            {
-                childNetworkedBehaviours[i].SyncVarInit();
-                if (childNetworkedBehaviours[i].syncedVarFields.Count == 0)
-                    continue;
-                NetworkedBehaviour behaviour = GetBehaviourAtOrderIndex(reader.ReadUShort());
-                for (int j = 0; j < childNetworkedBehaviours[i].syncedVarFields.Count; j++)
+                for (int j = 0; j < childNetworkedBehaviours[i].networkedVarFields.Count; j++)
                 {
-                    childNetworkedBehaviours[i].syncedVarFields[j].FieldInfo.SetValue(behaviour, 
-                        FieldTypeHelper.ReadFieldType(reader, childNetworkedBehaviours[i].syncedVarFields[j].FieldInfo.FieldType));
+                    bool canClientRead = childNetworkedBehaviours[i].networkedVarFields[j].CanClientRead(clientId);
+                    writer.WriteBool(canClientRead);
+                    if (canClientRead) childNetworkedBehaviours[i].networkedVarFields[j].WriteField(writer);
                 }
-                behaviour.OnSyncVarUpdate();
             }
         }
 
-        //Forces a SycnedVar update to a specific client.
-        internal void FlushSyncedVarsToClient(uint clientId)
+        internal void SetNetworkedVarData(BitReaderDeprecated reader)
         {
             for (int i = 0; i < childNetworkedBehaviours.Count; i++)
             {
-                childNetworkedBehaviours[i].FlushSyncedVarsToClient(clientId);
+                childNetworkedBehaviours[i].NetworkedVarInit();
+                if (childNetworkedBehaviours[i].networkedVarFields.Count == 0)
+                    continue;
+                for (int j = 0; j < childNetworkedBehaviours[i].networkedVarFields.Count; j++)
+                {
+                    if (reader.ReadBool()) childNetworkedBehaviours[i].networkedVarFields[j].ReadField(reader);
+                }
             }
         }
 

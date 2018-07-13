@@ -137,7 +137,7 @@ namespace MLAPI.MonoBehaviours.Prototyping
                             writer.Write(transform.rotation.eulerAngles.z);
                         }
                         if (isServer)
-                            SendToClientsTarget("MLAPI_OnRecieveTransformFromServer", "MLAPI_POSITION_UPDATE", positionUpdateBuffer, true);
+                            SendToClientsTarget("MLAPI_OnRecieveTransformFromServer", "MLAPI_POSITION_UPDATE", positionUpdateBuffer);
                         else
                             SendToServerTarget("MLAPI_OnRecieveTransformFromClient", "MLAPI_POSITION_UPDATE", positionUpdateBuffer);
                     }
@@ -278,7 +278,7 @@ namespace MLAPI.MonoBehaviours.Prototyping
                                     info.lastMissedPosition = null;
                                     info.lastMissedRotation = null;
                                     
-                                    SendToClientTarget(NetworkingManager.singleton.ConnectedClientsList[i].ClientId, "MLAPI_OnRecieveTransformFromServer", "MLAPI_POSITION_UPDATE", positionUpdateBuffer, true);
+                                    SendToClientTarget(NetworkingManager.singleton.ConnectedClientsList[i].ClientId, "MLAPI_OnRecieveTransformFromServer", "MLAPI_POSITION_UPDATE", positionUpdateBuffer);
                                 }
                                 else
                                 {
@@ -289,7 +289,7 @@ namespace MLAPI.MonoBehaviours.Prototyping
                         }
                         else
                         {
-                            SendToNonLocalClientsTarget("MLAPI_OnRecieveTransformFromServer", "MLAPI_POSITION_UPDATE", positionUpdateBuffer, true);
+                            SendToNonLocalClientsTarget("MLAPI_OnRecieveTransformFromServer", "MLAPI_POSITION_UPDATE", positionUpdateBuffer);
                         }
                     }
                 }
@@ -320,7 +320,7 @@ namespace MLAPI.MonoBehaviours.Prototyping
                     info.lastMissedPosition = null;
                     info.lastMissedRotation = null;
                                     
-                    SendToClientTarget(NetworkingManager.singleton.ConnectedClientsList[i].ClientId, "MLAPI_OnRecieveTransformFromServer", "MLAPI_POSITION_UPDATE", positionUpdateBuffer, true);
+                    SendToClientTarget(NetworkingManager.singleton.ConnectedClientsList[i].ClientId, "MLAPI_OnRecieveTransformFromServer", "MLAPI_POSITION_UPDATE", positionUpdateBuffer);
                 }
             }
         }
