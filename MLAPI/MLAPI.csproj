@@ -111,11 +111,11 @@
     <Compile Include="MonoBehaviours\Prototyping\NetworkedNavMeshAgent.cs" />
     <Compile Include="MonoBehaviours\Prototyping\NetworkedProximity.cs" />
     <Compile Include="NetworkingManagerComponents\Binary\Arithmetic.cs" />
-    <Compile Include="NetworkingManagerComponents\Binary\BinaryReader.cs" />
-    <Compile Include="NetworkingManagerComponents\Binary\BinaryWriter.cs" />
-    <Compile Include="NetworkingManagerComponents\Binary\BitStream.cs" />
-    <Compile Include="NetworkingManagerComponents\Binary\BitWriter.cs" />
     <Compile Include="NetworkingManagerComponents\Binary\BitReader.cs" />
+    <Compile Include="NetworkingManagerComponents\Binary\BitWriter.cs" />
+    <Compile Include="NetworkingManagerComponents\Binary\BitStream.cs" />
+    <Compile Include="NetworkingManagerComponents\Binary\BitWriterDeprecated.cs" />
+    <Compile Include="NetworkingManagerComponents\Binary\BitReaderDeprecated.cs" />
     <Compile Include="NetworkingManagerComponents\Binary\BinaryHelpers.cs" />
     <Compile Include="NetworkingManagerComponents\Binary\BinarySerializer.cs" />
     <Compile Include="NetworkingManagerComponents\Binary\ByteBool.cs" />

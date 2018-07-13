@@ -12,14 +12,14 @@ namespace MLAPI.NetworkingManagerComponents.Core
         internal static readonly Dictionary<string, ushort> messageTypes = new Dictionary<string, ushort>();
         internal static readonly Dictionary<ushort, string> reverseMessageTypes = new Dictionary<ushort, string>();
 
-        internal static readonly Dictionary<ushort, Dictionary<int, Action<uint, BitReader>>> messageCallbacks = new Dictionary<ushort, Dictionary<int, Action<uint, BitReader>>>();
+        internal static readonly Dictionary<ushort, Dictionary<int, Action<uint, BitReaderDeprecated>>> messageCallbacks = new Dictionary<ushort, Dictionary<int, Action<uint, BitReaderDeprecated>>>();
         internal static readonly Dictionary<ushort, int> messageHandlerCounter = new Dictionary<ushort, int>();
         internal static readonly Dictionary<ushort, Stack<int>> releasedMessageHandlerCounters = new Dictionary<ushort, Stack<int>>();
 
         private static NetworkingManager netManager => NetworkingManager.singleton;
 
         
-        internal static int AddIncomingMessageHandler(string name, Action<uint, BitReader> action)
+        internal static int AddIncomingMessageHandler(string name, Action<uint, BitReaderDeprecated> action)
         {
             if (messageTypes.ContainsKey(name))
             {
@@ -50,7 +50,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 }
                 else
                 {
-                    messageCallbacks.Add(messageTypes[name], new Dictionary<int, Action<uint, BitReader>>());
+                    messageCallbacks.Add(messageTypes[name], new Dictionary<int, Action<uint, BitReaderDeprecated>>());
                     messageHandlerCounter.Add(messageTypes[name], 1);
                     messageCallbacks[messageTypes[name]].Add(0, action);
                     return 0;

@@ -135,7 +135,7 @@ namespace MLAPI.MonoBehaviours.Prototyping
             }
         }
 
-        private void OnNavMeshStateUpdate(uint clientId, BitReader reader)
+        private void OnNavMeshStateUpdate(uint clientId, BitReaderDeprecated reader)
         {
             byte[] data = reader.ReadByteArray();
             using (MemoryStream stream = new MemoryStream(data))
@@ -169,7 +169,7 @@ namespace MLAPI.MonoBehaviours.Prototyping
             }
         }
 
-        private void OnNavMeshCorrectionUpdate(uint clientId, BitReader reader)
+        private void OnNavMeshCorrectionUpdate(uint clientId, BitReaderDeprecated reader)
         {
             byte[] data = reader.ReadByteArray();
             using (MemoryStream stream = new MemoryStream(data))

@@ -134,7 +134,7 @@ namespace MLAPI.MonoBehaviours.Core
                             (!previousObservers.Contains(pair.Key) && observers.Contains(pair.Key)))
                         {
                             //Something changed for this client.
-                            using (BitWriter writer = BitWriter.Get())
+                            using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
                             {
                                 writer.WriteUInt(NetworkId);
                                 writer.WriteBool(observers.Contains(pair.Key));
@@ -173,7 +173,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <summary>
         /// Spawns this GameObject across the network. Can only be called from the Server
         /// </summary>
-        public void Spawn(BitWriter spawnPayload = null)
+        public void Spawn(BitWriterDeprecated spawnPayload = null)
         {
             SpawnManager.SpawnObject(this, null, spawnPayload);
         }
@@ -191,7 +191,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// </summary>
         /// <param name="clientId">The clientId to own the object</param>
         /// <param name="spawnPayload">The writer containing the spawn payload</param>
-        public void SpawnWithOwnership(uint clientId, BitWriter spawnPayload = null)
+        public void SpawnWithOwnership(uint clientId, BitWriterDeprecated spawnPayload = null)
         {
             SpawnManager.SpawnObject(this, clientId, spawnPayload);
         }
@@ -201,7 +201,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// </summary>
         /// <param name="clientId">The clientId whos player object this is</param>
         /// <param name="spawnPayload">The writer containing the spawn payload</param>
-        public void SpawnAsPlayerObject(uint clientId, BitWriter spawnPayload = null)
+        public void SpawnAsPlayerObject(uint clientId, BitWriterDeprecated spawnPayload = null)
         {
             SpawnManager.SpawnPlayerObject(this, clientId, spawnPayload);
         }
@@ -238,7 +238,7 @@ namespace MLAPI.MonoBehaviours.Core
             }
         }
 
-        internal void InvokeBehaviourNetworkSpawn(BitReader reader)
+        internal void InvokeBehaviourNetworkSpawn(BitReaderDeprecated reader)
         {
             for (int i = 0; i < childNetworkedBehaviours.Count; i++)
             {
@@ -287,7 +287,7 @@ namespace MLAPI.MonoBehaviours.Core
         //as this should only be used for reading SyncedVar data that is to be read by the SetFormattedData method
         //*
         //The data contains every syncedvar on every behaviour that belongs to this object
-        internal void WriteFormattedSyncedVarData(BitWriter writer)
+        internal void WriteFormattedSyncedVarData(BitWriterDeprecated writer)
         {
             for (int i = 0; i < childNetworkedBehaviours.Count; i++)
             {
@@ -301,7 +301,7 @@ namespace MLAPI.MonoBehaviours.Core
         }
 
         //Reads formatted data that the "WriteFormattedSyncedVarData" has written and applies the values to SyncedVar fields
-        internal void SetFormattedSyncedVarData(BitReader reader)
+        internal void SetFormattedSyncedVarData(BitReaderDeprecated reader)
         {
             for (int i = 0; i < childNetworkedBehaviours.Count; i++)
             {
@@ -344,6 +344,6 @@ namespace MLAPI.MonoBehaviours.Core
         }
 
         //Key: behaviourOrderId, value key: messageType, value value callback 
-        internal Dictionary<ushort, Dictionary<ushort, Action<uint, BitReader>>> targetMessageActions = new Dictionary<ushort, Dictionary<ushort, Action<uint, BitReader>>>();
+        internal Dictionary<ushort, Dictionary<ushort, Action<uint, BitReaderDeprecated>>> targetMessageActions = new Dictionary<ushort, Dictionary<ushort, Action<uint, BitReaderDeprecated>>>();
     }
 }

@@ -9,7 +9,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
     internal static partial class InternalMessageHandler
     {
         internal static byte[] FinalMessageBuffer;
-        internal static void PassthroughSend(uint targetId, uint sourceId, ushort messageType, int channelId, BitReader reader, uint? networkId = null, ushort? orderId = null)
+        internal static void PassthroughSend(uint targetId, uint sourceId, ushort messageType, int channelId, BitReaderDeprecated reader, uint? networkId = null, ushort? orderId = null)
         {
             if (netManager.isHost && targetId == netManager.NetworkConfig.NetworkTransport.HostDummyId)
             {
@@ -17,7 +17,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 return;
             }
 
-            using (BitWriter writer = BitWriter.Get())
+            using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
             {
                 writer.WriteGenericMessageHeader(messageType, networkId != null, networkId.GetValueOrDefault(), orderId.GetValueOrDefault(), true, null, sourceId);
 
@@ -35,7 +35,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
         }
 
         //RETURNS IF IT SUCCEDED OR FAILED BECAUSE OF NON-OBSERVER. ANY OTHER FAIL WILL RETURN TRUE
-        internal static bool Send(uint clientId, string messageType, string channelName, BitWriter messageWriter, uint? fromNetId, uint? networkId = null, ushort? orderId = null, bool skipQueue = false)
+        internal static bool Send(uint clientId, string messageType, string channelName, BitWriterDeprecated messageWriter, uint? fromNetId, uint? networkId = null, ushort? orderId = null, bool skipQueue = false)
         {
             uint targetClientId = clientId;
             if (netManager.isHost && targetClientId == netManager.NetworkConfig.NetworkTransport.HostDummyId)
@@ -59,7 +59,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 return true;
             }
 
-            using (BitWriter writer = BitWriter.Get())
+            using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
             {
                 writer.WriteGenericMessageHeader(MessageManager.messageTypes[messageType], networkId != null, networkId.GetValueOrDefault(), orderId.GetValueOrDefault(), isPassthrough, clientId, null);
 
@@ -96,7 +96,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             }
         }
 
-        internal static void Send(uint[] clientIds, string messageType, string channelName, BitWriter messageWriter, uint? fromNetId, uint? networkId = null, ushort? orderId = null)
+        internal static void Send(uint[] clientIds, string messageType, string channelName, BitWriterDeprecated messageWriter, uint? fromNetId, uint? networkId = null, ushort? orderId = null)
         {
             if (netManager.NetworkConfig.EncryptedChannelsHashSet.Contains(channelName))
             {
@@ -104,7 +104,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 return;
             }
 
-            using (BitWriter writer = BitWriter.Get())
+            using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
             {
                 writer.WriteGenericMessageHeader(MessageManager.messageTypes[messageType], networkId != null, networkId.GetValueOrDefault(), orderId.GetValueOrDefault(), false, 0, 0);
 
@@ -138,7 +138,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             }
         }
 
-        internal static void Send(List<uint> clientIds, string messageType, string channelName, BitWriter messageWriter, uint? fromNetId, uint? networkId = null, ushort? orderId = null)
+        internal static void Send(List<uint> clientIds, string messageType, string channelName, BitWriterDeprecated messageWriter, uint? fromNetId, uint? networkId = null, ushort? orderId = null)
         {
             if (netManager.NetworkConfig.EncryptedChannelsHashSet.Contains(channelName))
             {
@@ -146,7 +146,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 return;
             }
 
-            using (BitWriter writer = BitWriter.Get())
+            using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
             {
                 writer.WriteGenericMessageHeader(MessageManager.messageTypes[messageType], networkId != null, networkId.GetValueOrDefault(), orderId.GetValueOrDefault(), false, 0, 0);
 
@@ -182,7 +182,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
         private static List<uint> failedObservers = new List<uint>();
         //RETURNS THE CLIENTIDS WHICH WAS NOT BEING OBSERVED
-        internal static ref List<uint> Send(string messageType, string channelName, BitWriter messageWriter, uint? fromNetId,  uint? networkId = null, ushort? orderId = null)
+        internal static ref List<uint> Send(string messageType, string channelName, BitWriterDeprecated messageWriter, uint? fromNetId,  uint? networkId = null, ushort? orderId = null)
         {
             failedObservers.Clear();
             if (netManager.ConnectedClients.Count == 0)
@@ -193,7 +193,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 return ref failedObservers;
             }
 
-            using (BitWriter writer = BitWriter.Get())
+            using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
             {
                 writer.WriteGenericMessageHeader(MessageManager.messageTypes[messageType], networkId != null, networkId.GetValueOrDefault(), orderId.GetValueOrDefault(), false, 0, 0);
 
@@ -232,7 +232,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
         }
 
         //RETURNS THE CLIENTIDS WHICH WAS NOT BEING OBSERVED
-        internal static ref List<uint> Send(string messageType, string channelName, BitWriter messageWriter, uint clientIdToIgnore, uint? fromNetId, uint? networkId = null, ushort? orderId = null)
+        internal static ref List<uint> Send(string messageType, string channelName, BitWriterDeprecated messageWriter, uint clientIdToIgnore, uint? fromNetId, uint? networkId = null, ushort? orderId = null)
         {
             failedObservers.Clear();
             if (netManager.NetworkConfig.EncryptedChannels.Contains(channelName))
@@ -241,7 +241,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 return ref failedObservers;
             }
 
-            using (BitWriter writer = BitWriter.Get())
+            using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
             {
                 writer.WriteGenericMessageHeader(MessageManager.messageTypes[messageType], networkId != null, networkId.GetValueOrDefault(), orderId.GetValueOrDefault(), false, 0, 0);
 
@@ -282,7 +282,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             }
         }
 
-        private static void WriteGenericMessageHeader(this BitWriter writer, ushort messageType, bool isTargeted, uint targetNetworkId, ushort behaviourIndex, bool isPassthrough, uint? passthroughTarget, uint? passthroughOrigin)
+        private static void WriteGenericMessageHeader(this BitWriterDeprecated writer, ushort messageType, bool isTargeted, uint targetNetworkId, ushort behaviourIndex, bool isPassthrough, uint? passthroughTarget, uint? passthroughOrigin)
         {
             writer.WriteUShort(messageType);
             writer.WriteBool(isTargeted);

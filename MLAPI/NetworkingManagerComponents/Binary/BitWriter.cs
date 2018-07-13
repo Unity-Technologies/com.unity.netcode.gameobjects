@@ -1,492 +1,988 @@
-﻿#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-using MLAPI.NetworkingManagerComponents.Core;
+﻿#define ARRAY_WRITE_PERMISSIVE  // Allow attempt to write "packed" byte array (calls WriteByteArray())
+#define ARRAY_RESOLVE_IMPLICIT  // Include WriteArray() method with automatic type resolution
+#define ARRAY_WRITE_PREMAP      // Create a prefixed array diff mapping
+#define ARRAY_DIFF_ALLOW_RESIZE // Whether or not to permit writing diffs of differently sized arrays
+
 using System;
 using System.Collections.Generic;
-using System.Reflection;
-using System.Runtime.InteropServices;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
 using System.Text;
+using UnityEngine;
 
 namespace MLAPI.NetworkingManagerComponents.Binary
 {
-    public sealed class BitWriter : IDisposable
+    // Improved version of BitWriter
+    public class BitWriter
     {
-        private struct Partial
-        {
-            public byte value;
-            public byte count;
-            public static readonly FieldInfo value_info = typeof(Partial).GetField("value");
-            public static readonly FieldInfo count_info = typeof(Partial).GetField("count");
+        protected readonly Stream sink;
+        protected readonly BitStream bitSink;
 
-            public Partial(byte value, byte count)
-            {
-                this.value = value;
-                this.count = count;
-            }
+        public BitWriter(Stream sink)
+        {
+            this.sink = sink;
+            bitSink = sink as BitStream;
         }
 
-        private static readonly Queue<BitWriter> writerPool = new Queue<BitWriter>();
-        
-        private static readonly float[] holder_f = new float[1];
-        private static readonly double[] holder_d = new double[1];
-        private static readonly ulong[] holder_u = new ulong[1];
-        private static readonly uint[] holder_i = new uint[1];
-        private static readonly List<Type> supportedTypes = new List<Type>()
-        {
-            typeof(bool),
-            typeof(byte),
-            typeof(sbyte),
-            typeof(char),
-            typeof(short),
-            typeof(ushort),
-            typeof(int),
-            typeof(uint),
-            typeof(long),
-            typeof(ulong),
-            typeof(float),
-            typeof(double),
-            typeof(decimal),
-            typeof(Partial)
-        };
 
-        private static readonly FieldInfo
-            dec_lo,
-            dec_mid,
-            dec_hi, 
-            dec_flags;
 
-        static BitWriter()
-        {
-            dec_lo = typeof(decimal).GetField("lo", BindingFlags.NonPublic);
-            dec_mid = typeof(decimal).GetField("mid", BindingFlags.NonPublic);
-            dec_hi = typeof(decimal).GetField("hi", BindingFlags.NonPublic);
-            dec_flags = typeof(decimal).GetField("flags", BindingFlags.NonPublic);
 
-            for (int i = 0; i < 10; i++)
-            {
-                writerPool.Enqueue(new BitWriter());
-            }
-        }
-
-        private readonly List<object> collect = new List<object>();
-        private bool outsidePool = false;
 
         /// <summary>
-        /// Allocates a new binary collector. This is only used when there are no more writers in the pool
+        /// Write single-precision floating point value to the stream
         /// </summary>
-        private BitWriter()
+        /// <param name="value">Value to write</param>
+        public void WriteSingle(float value)
         {
-
+            WriteUInt32(new UIntFloat
+            {
+                floatValue = value
+            }.uintValue);
         }
 
         /// <summary>
-        /// Returns a BitWriter from the pool
+        /// Write double-precision floating point value to the stream
         /// </summary>
-        /// <returns></returns>
-        public static BitWriter Get()
+        /// <param name="value">Value to write</param>
+        public void WriteDouble(double value)
         {
-            if (writerPool.Count == 0)
+            WriteUInt64(new UIntFloat
             {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("There are more than 10 BitWriters. Have you forgotten do dispose? (It will still work with worse performance)");
-                return new BitWriter() { outsidePool = true };
-            }
-            else
-                return writerPool.Dequeue();
-        }
-
-        public void Push<T>(T b)
-        {
-            if (b == null) collect.Add(b);
-            else if (b is string || b.GetType().IsArray || IsSupportedType(b.GetType()))
-                collect.Add(b is string ? Encoding.UTF8.GetBytes(b as string) : b as object);
-            else
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The type \"" + b.GetType() + "\" is not supported by the Binary Serializer. It will be ignored");
-        }
-
-        // Just use Push() and PushArray()
-        /*
-        public void WriteGeneric<T>(T t)
-        {
-            if (t is bool) WriteBool((t as bool?).Value);
-            else if (t is byte) WriteByte((t as byte?).Value);
-            else if (t is sbyte) WriteSByte((t as sbyte?).Value);
-            else if (t is ushort) WriteUShort((t as ushort?).Value);
-            else if (t is short) WriteShort((t as short?).Value);
-            else if (t is uint) WriteUInt((t as uint?).Value);
-            else if (t is int) WriteInt((t as int?).Value);
-            else if (t is ulong) WriteULong((t as ulong?).Value);
-            else if (t is long) WriteLong((t as long?).Value);
-            else if (t is float) WriteFloat((t as float?).Value);
-            else if (t is double) WriteDouble((t as double?).Value);
-            //else if (t is bool[]) WriteBoolArray(t as bool[]);
-            else if (t is byte[]) WriteByteArray(t as byte[]);
-            else if (t is sbyte[]) WriteSByteArray(t as sbyte[]);
-            else if (t is ushort[]) WriteUShortArray(t as ushort[]);
-            else if (t is short[]) WriteShortArray(t as short[]);
-            else if (t is uint[]) WriteUIntArray(t as uint[]);
-            else if (t is int[]) WriteIntArray(t as int[]);
-            else if (t is ulong[]) WriteULongArray(t as ulong[]);
-            else if (t is long[]) WriteLongArray(t as long[]);
-            else if (t is float[]) WriteFloatArray(t as float[]);
-            else if (t is double[]) WriteDoubleArray(t as double[]);
-            else if (t is string) WriteString(t as string);
-            else if (t is BitWriter) WriteWriter(t as BitWriter);
-        }
-        */
-
-        public void WriteBool(bool b)               => Push(b);
-        public void WriteFloat(float f)             => Push(f);
-        public void WriteDouble(double d)           => Push(d);
-        public void WriteByte(byte b)               => Push(b);
-        public void WriteUShort(ushort s)           => Push(s);
-        public void WriteUInt(uint i)               => Push(i);
-        public void WriteULong(ulong l)             => Push(l);
-        public void WriteSByte(sbyte b)             => Push(ZigZagEncode(b));
-        public void WriteShort(short s)             => Push(ZigZagEncode(s));
-        public void WriteInt(int i)                 => Push(ZigZagEncode(i));
-        public void WriteLong(long l)               => Push(ZigZagEncode(l));
-        public void WriteString(string s)           => Push(s);
-        public void WriteAlignBits()                => Push<object>(null);
-        public void WriteFloatArray(float[] f, bool known = false)                                  => PushArray(f, known);
-        public void WriteFloatArray(float[] f, int startIndex, int length, bool known = false)      => PushArray(f, startIndex, length, known);
-        public void WriteDoubleArray(double[] d, bool known = false)                                => PushArray(d, known);
-        public void WriteDoubleArray(double[] d, int startIndex, int length, bool known = false)    => PushArray(d, startIndex, length, known);
-        public void WriteByteArray(byte[] b, bool known = false)                                    => PushArray(b, known);
-        public void WriteByteArray(byte[] b, int startIndex, int length, bool known = false)        => PushArray(b, startIndex, length, known);
-        public void WriteUShortArray(ushort[] s, bool known = false)                                => PushArray(s, known);
-        public void WriteUShortArray(ushort[] s, int startIndex, int length, bool known = false)    => PushArray(s, startIndex, length, known);
-        public void WriteUIntArray(uint[] i, bool known = false)                                    => PushArray(i, known);
-        public void WriteUIntArray(uint[] i, int startIndex, int length, bool known = false)        => PushArray(i, startIndex, length, known);
-        public void WriteULongArray(ulong[] l, bool known = false)                                  => PushArray(l, known);
-        public void WriteULongArray(ulong[] l, int startIndex, int length, bool known = false)      => PushArray(l, startIndex, length, known);
-        public void WriteSByteArray(sbyte[] b, bool known = false)                                  => PushArray(b, known);
-        public void WriteSByteArray(sbyte[] b, int startIndex, int length, bool known = false)      => PushArray(b, startIndex, length, known);
-        public void WriteShortArray(short[] s, bool known = false)                                  => PushArray(s, known);
-        public void WriteShortArray(short[] s, int startIndex, int length, bool known = false)      => PushArray(s, startIndex, length, known);
-        public void WriteIntArray(int[] i, bool known = false)                                      => PushArray(i, known);
-        public void WriteIntArray(int[] i, int startIndex, int length, bool known = false)          => PushArray(i, startIndex, length, known);
-        public void WriteLongArray(long[] l, bool known = false)                                    => PushArray(l, known);
-        public void WriteLongArray(long[] l, int startIndex, int length, bool known = false)        => PushArray(l, startIndex, length, known);
-        public void WriteBits(byte value, int bits) => Push(new Partial(ReadNBits(value, 0, bits % 8), (byte)(bits%8))); // Suggestion: store (bits % 8) result?
-        public void WriteWriter(BitWriter writer)
-        {
-            for (int i = 0; i < writer.collect.Count; i++)
-            {
-                Push(writer.collect[i]);
-            }
-        }
-
-        public void PushArray<T>(T[] t, bool knownSize = false)
-        {
-            if (!knownSize) Push((uint)t.Length);
-            bool signed = IsSigned(t.GetType().GetElementType());
-            //int size = Marshal.SizeOf(t.GetType().GetElementType());
-            foreach (T t1 in t) Push(signed ? (object)ZigZagEncode(t1 as long? ?? t1 as int? ?? t1 as short? ?? t1 as sbyte? ?? 0) : (object)t1);
-        }
-
-        public void PushArray<T>(T[] t, int startIndex, int length, bool knownSize = false)
-        {
-            if (!knownSize) Push((uint)t.Length);
-            bool signed = IsSigned(t.GetType().GetElementType());
-            //int size = Marshal.SizeOf(t.GetType().GetElementType());
-            for (int i = startIndex; i < length; i++) Push(signed ? (object)ZigZagEncode(t[i] as long? ?? t[i] as int? ?? t[i] as short? ?? t[i] as sbyte? ?? 0) : (object)t[i]);
+                doubleValue = value
+            }.ulongValue);
         }
 
         /// <summary>
-        /// Serializes data, allocates an array and returns it
+        /// Write single-precision floating point value to the stream as a varint
         /// </summary>
-        /// <returns>Allocated array with written data</returns>
-        public byte[] Finalize()
+        /// <param name="value">Value to write</param>
+        public void WriteSinglePacked(float value)
         {
-            long bitCount = 0;
-            for (int i = 0; i < collect.Count; ++i) bitCount += collect[i] == null ? (8 - (bitCount % 8)) % 8 : GetBitCount(collect[i]);
-            byte[] buffer = new byte[((bitCount / 8) + (bitCount % 8 == 0 ? 0 : 1))];
-
-            long bitOffset = 0;
-            bool isAligned = true;
-            foreach (var item in collect)
-                if (item == null)
-                {
-                    bitOffset += (8 - (bitOffset % 8)) % 8;
-                    isAligned = true;
-                }
-                else Serialize(item, buffer, ref bitOffset, ref isAligned);
-
-            return buffer;
-        }
-
-        //The ref is not needed. It's purley there to indicate that it's treated as a reference inside the method.
-        /// <summary>
-        /// Writes data to the given buffer
-        /// </summary>
-        /// <param name="buffer"></param>
-        /// <returns>The amount of bytes written</returns>
-        public long Finalize(ref byte[] buffer)
-        {
-            if(buffer == null)
+            WriteUInt32Packed(new UIntFloat
             {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("no buffer provided");
-                return 0;
-            }
-            long bitCount = 0;
-            for (int i = 0; i < collect.Count; ++i) bitCount += collect[i] == null ? (8 - (bitCount % 8)) % 8 : GetBitCount(collect[i]);
-
-            if (buffer.Length < ((bitCount / 8) + (bitCount % 8 == 0 ? 0 : 1)))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The buffer size is not large enough");
-                return 0;
-            }
-            long bitOffset = 0;
-            bool isAligned = true;
-            foreach (var item in collect)
-                if (item == null)
-                {
-                    bitOffset += (8 - (bitOffset % 8)) % 8;
-                    isAligned = true;
-                }
-                else Serialize(item, buffer, ref bitOffset, ref isAligned);
-
-            return (bitCount / 8) + (bitCount % 8 == 0 ? 0 : 1);
+                floatValue = value
+            }.uintValue);
         }
 
         /// <summary>
-        /// Gets the size in bytes if you were to serialize now
+        /// Write double-precision floating point value to the stream as a varint
         /// </summary>
-        /// <returns>The size in bytes</returns>
-        public long GetFinalizeSize()
+        /// <param name="value">Value to write</param>
+        public void WriteDoublePacked(double value)
         {
-            long bitCount = 0;
-            for (int i = 0; i < collect.Count; ++i) bitCount += collect[i] == null ? (8 - (bitCount % 8)) % 8 : GetBitCount(collect[i]);
-            return ((bitCount / 8) + (bitCount % 8 == 0 ? 0 : 1));
+            WriteUInt64Packed(new UIntFloat
+            {
+                doubleValue = value
+            }.ulongValue);
         }
 
-        private static void Serialize<T>(T t, byte[] writeTo, ref long bitOffset, ref bool isAligned)
+        /// <summary>
+        /// Convenience method that writes two non-packed Vector3 from the ray to the stream
+        /// </summary>
+        /// <param name="ray">Ray to write</param>
+        public void WriteRay(Ray ray)
         {
-            Type type = t.GetType();
-            bool size = false;
-            if (type.IsArray)
-            {
-                var array = t as Array;
-                Serialize((uint)array.Length, writeTo, ref bitOffset, ref isAligned);
-                foreach (var element in array)
-                    Serialize(element, writeTo, ref bitOffset, ref isAligned);
-            }
-            else if (type == typeof(Partial))
-            {
-                byte count;
-                WriteByte(writeTo, (byte)Partial.value_info.GetValue(t), bitOffset, isAligned, count = (byte)Partial.count_info.GetValue(t));
-                bitOffset += count;
-                isAligned = bitOffset % 8 == 0;
-                return;
-            }
-            else if (IsSupportedType(type))
-            {
-                long offset = t is bool ? 1 : BytesToRead(t) * 8;
-                if (type == typeof(bool))
-                {
-                    WriteBit(writeTo, t as bool? ?? false, bitOffset);
-                    bitOffset += offset;
-                    isAligned = bitOffset % 8 == 0;
-                }
-                else if (type == typeof(decimal))
-                {
-                    WriteDynamic(writeTo, (int)dec_lo.GetValue(t), 4, bitOffset, isAligned);
-                    WriteDynamic(writeTo, (int)dec_mid.GetValue(t), 4, bitOffset + 32, isAligned);
-                    WriteDynamic(writeTo, (int)dec_hi.GetValue(t), 4, bitOffset + 64, isAligned);
-                    WriteDynamic(writeTo, (int)dec_flags.GetValue(t), 4, bitOffset + 96, isAligned);
-                    bitOffset += offset;
-                }
-                else if ((size = type == typeof(float)) || type == typeof(double))
-                {
-                    int bytes = size ? 4 : 8;
-                    Array type_holder = size ? holder_f as Array : holder_d as Array; // Fetch the preallocated array
-                    Array result_holder = size ? holder_i as Array : holder_u as Array;
-                    lock (result_holder)
-                        lock (type_holder)
-                        {
-                            // Clear artifacts
-                            if (size) result_holder.SetValue(0U, 0);
-                            else result_holder.SetValue(0UL, 0);
-                            type_holder.SetValue(t, 0); // Insert the value to convert into the preallocated holder array
-                            Buffer.BlockCopy(type_holder, 0, result_holder, 0, bytes); // Perform an internal copy to the byte-based holder
-
-                            // Since floating point flag bits are seemingly the highest bytes of the floating point values
-                            // and even very small values have them, we swap the endianness in the hopes of reducing the size
-                            if (size) Serialize(BinaryHelpers.SwapEndian((uint)result_holder.GetValue(0)), writeTo, ref bitOffset, ref isAligned);
-                            else Serialize(BinaryHelpers.SwapEndian((ulong)result_holder.GetValue(0)), writeTo, ref bitOffset, ref isAligned);
-                        }
-                }
-                else
-                {
-                    ulong value;
-                    if (t is byte)
-                    {
-                        WriteByte(writeTo, t as byte? ?? 0, bitOffset, isAligned);
-                        bitOffset += 8;
-                        return;
-                    }
-                    else if (t is ushort) value = t as ushort? ?? 0;
-                    else if (t is uint) value = t as uint? ?? 0;
-                    else value = t as ulong? ?? 0;
-
-                    if (value <= 240) WriteByte(writeTo, (byte)value, bitOffset, isAligned);
-                    else if (value <= 2287)
-                    {
-                        WriteByte(writeTo, (value - 240) / 256 + 241, bitOffset, isAligned);
-                        WriteByte(writeTo, (value - 240) % 256, bitOffset + 8, isAligned);
-                    }
-                    else if (value <= 67823)
-                    {
-                        WriteByte(writeTo, 249, bitOffset, isAligned);
-                        WriteByte(writeTo, (value - 2288) / 256, bitOffset + 8, isAligned);
-                        WriteByte(writeTo, (value - 2288) % 256, bitOffset + 16, isAligned);
-                    }
-                    else
-                    {
-                        WriteByte(writeTo, value & 255, bitOffset + 8, isAligned);
-                        WriteByte(writeTo, (value >> 8) & 255, bitOffset + 16, isAligned);
-                        WriteByte(writeTo, (value >> 16) & 255, bitOffset + 24, isAligned);
-                        if (value > 16777215)
-                        {
-                            WriteByte(writeTo, (value >> 24) & 255, bitOffset + 32, isAligned);
-                            if (value > 4294967295)
-                            {
-                                WriteByte(writeTo, (value >> 32) & 255, bitOffset + 40, isAligned);
-                                if (value > 1099511627775)
-                                {
-                                    WriteByte(writeTo, (value >> 40) & 255, bitOffset + 48, isAligned);
-                                    if (value > 281474976710655)
-                                    {
-                                        WriteByte(writeTo, (value >> 48) & 255, bitOffset + 56, isAligned);
-                                        if (value > 72057594037927935)
-                                        {
-                                            WriteByte(writeTo, 255, bitOffset, isAligned);
-                                            WriteByte(writeTo, (value >> 56) & 255, bitOffset + 64, isAligned);
-                                        }
-                                        else WriteByte(writeTo, 254, bitOffset, isAligned);
-                                    }
-                                    else WriteByte(writeTo, 253, bitOffset, isAligned);
-                                }
-                                else WriteByte(writeTo, 252, bitOffset, isAligned);
-                            }
-                            else WriteByte(writeTo, 251, bitOffset, isAligned);
-                        }
-                        else WriteByte(writeTo, 250, bitOffset, isAligned);
-                    }
-                    bitOffset += BytesToRead(value) * 8;
-                }
-            }
+            WriteVector3(ray.origin);
+            WriteVector3(ray.direction);
         }
 
-        private static byte Read7BitRange(byte higher, byte lower, int bottomBits) => (byte)((higher << bottomBits) & (lower & (0xFF << (8-bottomBits))));
-        private static byte ReadNBits(byte from, int offset, int count) => (byte)(from & ((0xFF >> (8-count)) << offset));
-
-        private static bool IsSigned(Type t) => t == typeof(sbyte) || t == typeof(short) || t == typeof(int) || t == typeof(long);
-
-        private static Type GetUnsignedType(Type t) =>
-            t == typeof(sbyte) ? typeof(byte) :
-            t == typeof(short) ? typeof(ushort) :
-            t == typeof(int) ? typeof(uint) :
-            t == typeof(long) ? typeof(ulong) :
-            null;
-        
-        public static ulong ZigZagEncode(long d) => (ulong)(((d >> 63) & 1) | (d << 1));
-
-        public static long GetBitCount<T>(T t)
+        /// <summary>
+        /// Convenience method that writes two packed Vector3 from the ray to the stream
+        /// </summary>
+        /// <param name="ray">Ray to write</param>
+        public void WriteRayPacked(Ray ray)
         {
-            Type type = t.GetType();
-            long count = 0;
-            if (type.IsArray)
-            {
-                Type elementType = type.GetElementType();
-
-                count += BytesToRead((t as Array).Length) * 8; // Int16 array size. Arrays shouldn't be syncing more than 65k elements
-
-                if (elementType == typeof(bool)) count += (t as Array).Length;
-                else
-                    foreach (var element in t as Array)
-                        count += GetBitCount(element);
-            }
-            else if (type == typeof(Partial)) return (byte)Partial.count_info.GetValue(t);
-            else if (IsSupportedType(type))
-            {
-                long ba = t is bool ? 1 : BytesToRead(t)*8;
-                if (ba == 0) count += Encoding.UTF8.GetByteCount(t as string);
-                else if (t is bool || t is decimal) count += ba;
-                else count += BytesToRead(t) * 8;
-            }
-            return count;
+            WriteVector3Packed(ray.origin);
+            WriteVector3Packed(ray.direction);
         }
 
-        private static void WriteBit(byte[] b, bool bit, long index)
-            => b[index / 8] = (byte)((b[index / 8] & ~(1 << (int)(index % 8))) | (bit ? 1 << (int)(index % 8) : 0));
-        private static void WriteByte(byte[] b, ulong value, long index, bool isAligned) => WriteByte(b, (byte)value, index, isAligned);
-        private static void WriteByte(byte[] b, byte value, long index, bool isAligned, byte bits = 8)
+        /// <summary>
+        /// Convenience method that writes four non-varint floats from the color to the stream
+        /// </summary>
+        /// <param name="color">Color to write</param>
+        public void WriteColor(Color color)
         {
-            if (isAligned) b[index / 8] = value;
+            WriteSingle(color.r);
+            WriteSingle(color.g);
+            WriteSingle(color.b);
+            WriteSingle(color.a);
+        }
+
+        /// <summary>
+        /// Convenience method that writes four varint floats from the color to the stream
+        /// </summary>
+        /// <param name="color">Color to write</param>
+        public void WriteColorPacked(Color color)
+        {
+            WriteSinglePacked(color.r);
+            WriteSinglePacked(color.g);
+            WriteSinglePacked(color.b);
+            WriteSinglePacked(color.a);
+        }
+
+        /// <summary>
+        /// Convenience method that writes four non-varint floats from the color to the stream
+        /// </summary>
+        /// <param name="color32">Color32 to write</param>
+        public void WriteColor32(Color32 color32)
+        {
+            WriteSingle(color32.r);
+            WriteSingle(color32.g);
+            WriteSingle(color32.b);
+            WriteSingle(color32.a);
+        }
+
+        /// <summary>
+        /// Convenience method that writes two non-varint floats from the vector to the stream
+        /// </summary>
+        /// <param name="vector2">Vector to write</param>
+        public void WriteVector2(Vector2 vector2)
+        {
+            WriteSingle(vector2.x);
+            WriteSingle(vector2.y);
+        }
+
+        /// <summary>
+        /// Convenience method that writes two varint floats from the vector to the stream
+        /// </summary>
+        /// <param name="vector2">Vector to write</param>
+        public void WriteVector2Packed(Vector2 vector2)
+        {
+            WriteSinglePacked(vector2.x);
+            WriteSinglePacked(vector2.y);
+        }
+
+        /// <summary>
+        /// Convenience method that writes three non-varint floats from the vector to the stream
+        /// </summary>
+        /// <param name="vector3">Vector to write</param>
+        public void WriteVector3(Vector3 vector3)
+        {
+            WriteSingle(vector3.x);
+            WriteSingle(vector3.y);
+            WriteSingle(vector3.z);
+        }
+
+        /// <summary>
+        /// Convenience method that writes three varint floats from the vector to the stream
+        /// </summary>
+        /// <param name="vector3">Vector to write</param>
+        public void WriteVector3Packed(Vector3 vector3)
+        {
+            WriteSinglePacked(vector3.x);
+            WriteSinglePacked(vector3.y);
+            WriteSinglePacked(vector3.z);
+        }
+
+        /// <summary>
+        /// Convenience method that writes four non-varint floats from the vector to the stream
+        /// </summary>
+        /// <param name="vector4">Vector to write</param>
+        public void WriteVector4(Vector4 vector4)
+        {
+            WriteSingle(vector4.x);
+            WriteSingle(vector4.y);
+            WriteSingle(vector4.z);
+            WriteSingle(vector4.w);
+        }
+
+        /// <summary>
+        /// Convenience method that writes four varint floats from the vector to the stream
+        /// </summary>
+        /// <param name="vector4">Vector to write</param>
+        public void WriteVector4Packed(Vector4 vector4)
+        {
+            WriteSinglePacked(vector4.x);
+            WriteSinglePacked(vector4.y);
+            WriteSinglePacked(vector4.z);
+            WriteSinglePacked(vector4.w);
+        }
+
+        /// <summary>
+        /// Write a single-precision floating point value to the stream. The value is between (inclusive) the minValue and maxValue.
+        /// </summary>
+        /// <param name="value">Value to write</param>
+        /// <param name="minValue">Minimum value that this value could be</param>
+        /// <param name="maxValue">Maximum possible value that this could be</param>
+        /// <param name="bytes">How many bytes the compressed result should occupy. Must be between 1 and 4 (inclusive)</param>
+        public void WriteRangedSingle(float value, float minValue, float maxValue, int bytes)
+        {
+            if (bytes < 1 || bytes > 4) throw new ArgumentOutOfRangeException("Result must occupy between 1 and 4 bytes!");
+            if (value < minValue || value > maxValue) throw new ArgumentOutOfRangeException("Given value does not match the given constraints!");
+            uint result = (uint)(((value + minValue) / (maxValue + minValue)) * ((0x100 * bytes) - 1));
+            for (int i = 0; i < bytes; ++i) sink.WriteByte((byte)(result >> (i << 3)));
+        }
+
+        /// <summary>
+        /// Write a double-precision floating point value to the stream. The value is between (inclusive) the minValue and maxValue.
+        /// </summary>
+        /// <param name="value">Value to write</param>
+        /// <param name="minValue">Minimum value that this value could be</param>
+        /// <param name="maxValue">Maximum possible value that this could be</param>
+        /// <param name="bytes">How many bytes the compressed result should occupy. Must be between 1 and 8 (inclusive)</param>
+        public void WriteRangedDouble(double value, double minValue, double maxValue, int bytes)
+        {
+            if (bytes < 1 || bytes > 8) throw new ArgumentOutOfRangeException("Result must occupy between 1 and 8 bytes!");
+            if (value < minValue || value > maxValue) throw new ArgumentOutOfRangeException("Given value does not match the given constraints!");
+            ulong result = (ulong)(((value + minValue) / (maxValue + minValue)) * ((0x100 * bytes) - 1));
+            for (int i = 0; i < bytes; ++i) WriteByte((byte)(result >> (i << 3)));
+        }
+
+        /// <summary>
+        /// Write a rotation to the stream.
+        /// </summary>
+        /// <param name="rotation">Rotation to write</param>
+        /// <param name="bytesPerAngle">How many bytes each written angle should occupy. Must be between 1 and 4 (inclusive)</param>
+        public void WriteRotation(Quaternion rotation, int bytesPerAngle)
+        {
+            if (bytesPerAngle < 1 || bytesPerAngle > 4) throw new ArgumentOutOfRangeException("Bytes per angle must be at least 1 byte and at most 4 bytes!");
+            if (bytesPerAngle == 4) WriteVector3(rotation.eulerAngles);
             else
             {
-                int byteIndex = (int)(index / 8);
-                int shift = (int)(index % 8);
-                byte upper_mask = (byte)(0xFF << shift);
-
-                b[byteIndex] = (byte)((b[byteIndex] & (byte)~upper_mask) | (value << shift));
-                if((8-shift)<bits) b[byteIndex + 1] = (byte)((b[byteIndex + 1] & upper_mask) | (value >> (8 - shift)));
+                Vector3 rot = rotation.eulerAngles;
+                WriteRangedSingle(rot.x, 0f, 360f, bytesPerAngle);
+                WriteRangedSingle(rot.y, 0f, 360f, bytesPerAngle);
+                WriteRangedSingle(rot.z, 0f, 360f, bytesPerAngle);
             }
         }
-        private static void WriteDynamic(byte[] b, int value, int byteCount, long index, bool isAligned)
+
+        public void WriteBit(bool bit) => bitSink.WriteBit(bit);
+
+        /// <summary>
+        /// Write the lower half (lower nibble) of a byte.
+        /// </summary>
+        /// <param name="value">Value containing nibble to write.</param>
+        public void WriteNibble(byte value) => WriteBits(value, 4);
+        /// <summary>
+        /// Write either the upper or lower nibble of a byte to the stream.
+        /// </summary>
+        /// <param name="value">Value holding the nibble</param>
+        /// <param name="upper">Whether or not the upper nibble should be written. True to write the four high bits, else writes the four low bits.</param>
+        public void WriteNibble(byte value, bool upper) => WriteNibble((byte)(value >> (upper ? 4 : 0)));
+
+        /// <summary>
+        /// Write s certain amount of bits to the stream.
+        /// </summary>
+        /// <param name="value">Value to get bits from.</param>
+        /// <param name="bitCount">Amount of bits to write</param>
+        public void WriteBits(ulong value, int bitCount)
         {
-            for (int i = 0; i < byteCount; ++i)
-                WriteByte(b, (byte)((value >> (8 * i)) & 0xFF), index + (8 * i), isAligned);
+            if (bitCount > 64) throw new ArgumentOutOfRangeException("Cannot read more than 64 bits from a 64-bit value!");
+            if (bitCount < 0) throw new ArgumentOutOfRangeException("Cannot read fewer than 0 bits!");
+            int count = 0;
+            for (; count + 8 < bitCount; count += 8) bitSink.WriteByte((byte)(value >> count));
+            for (; count < bitCount; ++count) bitSink.WriteBit((value & (1UL << count))!=0);
         }
 
-        private static int BytesToRead(object i)
-        {
-            if (i is byte) return 1;
-            bool size;
-            ulong integer;
-            if (i is decimal) return BytesToRead((int)dec_flags.GetValue(i)) + BytesToRead((int)dec_lo.GetValue(i)) + BytesToRead((int)dec_mid.GetValue(i)) + BytesToRead((int)dec_hi.GetValue(i));
-            if ((size = i is float) || i is double)
-            {
-                int bytes = size ? 4 : 8;
-                Array type_holder = size ? holder_f as Array : holder_d as Array; // Fetch the preallocated array
-                Array result_holder = size ? holder_i as Array : holder_u as Array;
-                lock (result_holder)
-                    lock (type_holder)
-                    {
-                        // Clear artifacts
-                        if (size) result_holder.SetValue(0U, 0);
-                        else result_holder.SetValue(0UL, 0);
 
-                        type_holder.SetValue(i, 0); // Insert the value to convert into the preallocated holder array
-                        Buffer.BlockCopy(type_holder, 0, result_holder, 0, bytes); // Perform an internal copy to the byte-based holder
-                        if(size) integer = BinaryHelpers.SwapEndian((uint)result_holder.GetValue(0));
-                        else integer = BinaryHelpers.SwapEndian((ulong)result_holder.GetValue(0));
-                    }
+        /// <summary>
+        /// Write bits to stream.
+        /// </summary>
+        /// <param name="value">Value to get bits from.</param>
+        /// <param name="bitCount">Amount of bits to write.</param>
+        public void WriteBits(byte value, int bitCount)
+        {
+            for (int i = 0; i < bitCount; ++i)
+                bitSink.WriteBit(((value >> i) & 1) != 0);
+        }
+
+        /// <summary>
+        /// Write a signed byte to the stream.
+        /// </summary>
+        /// <param name="value">Value to write</param>
+        public void WriteSByte(sbyte value) => WriteByte((byte)value);
+
+        /// <summary>
+        /// Write a single character to the stream.
+        /// </summary>
+        /// <param name="c">Character to write</param>
+        public void WriteChar(char c) => WriteUInt16(c);
+
+        /// <summary>
+        /// Write an unsigned short (UInt16) to the stream.
+        /// </summary>
+        /// <param name="value">Value to write</param>
+        public void WriteUInt16(ushort value)
+        {
+            sink.WriteByte((byte)value);
+            sink.WriteByte((byte)(value >> 8));
+        }
+        /// <summary>
+        /// Write a signed short (Int16) to the stream.
+        /// </summary>
+        /// <param name="value">Value to write</param>
+        public void WriteInt16(short value) => WriteUInt16((ushort)value);
+        /// <summary>
+        /// Write an unsigned int (UInt32) to the stream.
+        /// </summary>
+        /// <param name="value">Value to write</param>
+        public void WriteUInt32(uint value)
+        {
+            sink.WriteByte((byte)value);
+            sink.WriteByte((byte)(value >> 8));
+            sink.WriteByte((byte)(value >> 16));
+            sink.WriteByte((byte)(value >> 24));
+        }
+        /// <summary>
+        /// Write a signed int (Int32) to the stream.
+        /// </summary>
+        /// <param name="value">Value to write</param>
+        public void WriteInt32(int value) => WriteUInt32((uint)value);
+        /// <summary>
+        /// Write an unsigned long (UInt64) to the stream.
+        /// </summary>
+        /// <param name="value">Value to write</param>
+        public void WriteUInt64(ulong value)
+        {
+            sink.WriteByte((byte)value);
+            sink.WriteByte((byte)(value >> 8));
+            sink.WriteByte((byte)(value >> 16));
+            sink.WriteByte((byte)(value >> 24));
+            sink.WriteByte((byte)(value >> 32));
+            sink.WriteByte((byte)(value >> 40));
+            sink.WriteByte((byte)(value >> 48));
+            sink.WriteByte((byte)(value >> 56));
+        }
+        /// <summary>
+        /// Write a signed long (Int64) to the stream.
+        /// </summary>
+        /// <param name="value">Value to write</param>
+        public void WriteInt64(long value) => WriteUInt64((ulong)value);
+
+        /// <summary>
+        /// Write a signed short (Int16) as a ZigZag encoded varint to the stream.
+        /// </summary>
+        /// <param name="value">Value to write</param>
+        public void WriteInt16Packed(short value) => WriteInt64Packed(value);
+        /// <summary>
+        /// Write an unsigned short (UInt16) as a varint to the stream.
+        /// </summary>
+        /// <param name="value">Value to write</param>
+        public void WriteUInt16Packed(ushort value) => WriteUInt64Packed(value);
+        /// <summary>
+        /// Write a two-byte character as a varint to the stream.
+        /// </summary>
+        /// <param name="c">Value to write</param>
+        public void WriteCharPacked(char c) => WriteUInt16Packed(c);
+        /// <summary>
+        /// Write a signed int (Int32) as a ZigZag encoded varint to the stream.
+        /// </summary>
+        /// <param name="value">Value to write</param>
+        public void WriteInt32Packed(int value) => WriteInt64Packed(value);
+        /// <summary>
+        /// Write an unsigned int (UInt32) as a varint to the stream.
+        /// </summary>
+        /// <param name="value">Value to write</param>
+        public void WriteUInt32Packed(uint value) => WriteUInt64Packed(value);
+        /// <summary>
+        /// Write a signed long (Int64) as a ZigZag encoded varint to the stream.
+        /// </summary>
+        /// <param name="value">Value to write</param>
+        public void WriteInt64Packed(long value) => WriteUInt64Packed(Arithmetic.ZigZagEncode(value));
+        /// <summary>
+        /// Write an unsigned long (UInt64) as a varint to the stream.
+        /// </summary>
+        /// <param name="value">Value to write</param>
+        public void WriteUInt64Packed(ulong value)
+        {
+            if (value <= 240) WriteULongByte(value);
+            else if (value <= 2287)
+            {
+                WriteULongByte(((value - 240) >> 8) + 241);
+                WriteULongByte(value - 240);
             }
-            else integer = i as ulong? ?? i as uint? ?? i as ushort? ?? i as byte? ?? 0;
-            return
-                integer <= 240 ? 1 :
-                integer <= 2287 ? 2 :
-                integer <= 67823 ? 3 :
-                integer <= 16777215 ? 4 :
-                integer <= 4294967295 ? 5 :
-                integer <= 1099511627775 ? 6 :
-                integer <= 281474976710655 ? 7 :
-                integer <= 72057594037927935 ? 8 :
-                9;
+            else if (value <= 67823)
+            {
+                WriteULongByte(249);
+                WriteULongByte((value - 2288) >> 8);
+                WriteULongByte(value - 2288);
+            }
+            else
+            {
+                ulong header = 255;
+                ulong match = 0x00FF_FFFF_FFFF_FFFFUL;
+                while (value <= match)
+                {
+                    --header;
+                    match >>= 8;
+                }
+                WriteULongByte(header);
+                int max = (int)(header - 247);
+                for (int i = 0; i < max; ++i) WriteULongByte(value >> (i << 3));
+            }
         }
 
-        // Supported datatypes for serialization
-        private static bool IsSupportedType(Type t) => supportedTypes.Contains(t);
-        
-        public void Dispose()
+        /// <summary>
+        /// Write a byte (in an int format) to the stream.
+        /// </summary>
+        /// <param name="value">Value to write</param>
+        private void WriteIntByte(int value) => WriteByte((byte)value);
+        /// <summary>
+        /// Write a byte (in a ulong format) to the stream.
+        /// </summary>
+        /// <param name="byteValue">Value to write</param>
+        private void WriteULongByte(ulong byteValue) => WriteByte((byte)byteValue);
+        /// <summary>
+        /// Write a byte to the stream.
+        /// </summary>
+        /// <param name="value">Value to write</param>
+        public void WriteByte(byte value)
         {
-            if (!outsidePool)
+            sink.WriteByte(value);
+        }
+
+        // As it turns out, strings cannot be treated as char arrays, since strings use pointers to store data rather than C# arrays
+        public void WriteString(string s, bool oneByteChars = false)
+        {
+            WriteUInt32Packed((uint)s.Length);
+            int target = s.Length;
+            for (int i = 0; i < target; ++i)
+                if (oneByteChars) WriteByte((byte)s[i]);
+                else WriteChar(s[i]);
+        }
+
+        public void WriteStringPacked(string s)
+        {
+            WriteUInt32Packed((uint)s.Length);
+            int target = s.Length;
+            for (int i = 0; i < target; ++i) WriteCharPacked(s[i]);
+        }
+
+        public void WriteStringDiff(string write, string compare, bool oneByteChars = false)
+        {
+#if !ARRAY_DIFF_ALLOW_RESIZE
+            if (write.Length != compare.Length) throw new ArgumentException("Mismatched string lengths");
+#endif
+            WriteUInt32Packed((uint)write.Length);
+
+            // Premapping
+            int target;
+#if ARRAY_WRITE_PREMAP
+#if ARRAY_DIFF_ALLOW_RESIZE
+            target = Math.Min(write.Length, compare.Length);
+#else
+            target = a1.Length;
+#endif
+            for (int i = 0; i < target; ++i) WriteBit(write[i] != compare[i]);
+#else
+            target = write.Length;
+#endif
+            for (int i = 0; i < target; ++i)
             {
-                collect.Clear();
-                writerPool.Enqueue(this);
+
+                bool b = write[i] != compare[i];
+#if !ARRAY_WRITE_PREMAP
+                WriteBit(!b);
+#endif
+                if (b)
+                {
+                    if (oneByteChars) WriteByte((byte)write[i]);
+                    else WriteChar(write[i]);
+                }
+            }
+        }
+
+        public void WriteStringPackedDiff(string write, string compare)
+        {
+
+#if !ARRAY_DIFF_ALLOW_RESIZE
+            if (write.Length != compare.Length) throw new ArgumentException("Mismatched string lengths");
+#endif
+            WriteUInt32Packed((uint)write.Length);
+
+            // Premapping
+            int target;
+#if ARRAY_WRITE_PREMAP
+#if ARRAY_DIFF_ALLOW_RESIZE
+            target = Math.Min(write.Length, compare.Length);
+#else
+            target = a1.Length;
+#endif
+            for (int i = 0; i < target; ++i) WriteBit(write[i] != compare[i]);
+#else
+            target = write.Length;
+#endif
+            for (int i = 0; i < target; ++i)
+            {
+
+                bool b = write[i] != compare[i];
+#if !ARRAY_WRITE_PREMAP
+                WriteBit(!b);
+#endif
+                if (b) WriteCharPacked(write[i]);
+            }
+        }
+
+        private void CheckLengths(Array a1, Array a2)
+        {
+        }
+        [Conditional("ARRAY_WRITE_PREMAP")]
+        private void WritePremap(Array a1, Array a2)
+        {
+            long target;
+            target = Math.Min(a1.LongLength, a2.LongLength);
+            for (long i = 0; i < target; ++i) WriteBit(!a1.GetValue(i).Equals(a2.GetValue(i)));
+            // TODO: Byte-align here
+        }
+        private ulong WriteArraySize(Array a1, Array a2, long length)
+        {
+            ulong write = (ulong)(length >= 0 ? length : a1.LongLength);
+            if (length < 0)
+            {
+                if (length > a1.LongLength) throw new IndexOutOfRangeException("Cannot write more data than is available");
+                WriteUInt64Packed(write);
+            }
+            return write;
+        }
+
+
+        public void WriteByteArray(byte[] b, long count = -1)
+        {
+            ulong target = WriteArraySize(b, null, count);
+            for (ulong i = 0; i < target; ++i) sink.WriteByte(b[i]);
+        }
+
+        public void WriteByteArrayDiff(byte[] write, byte[] compare, long count = -1)
+        {
+            CheckLengths(write, compare);
+            long target = (long)WriteArraySize(write, compare, count);
+            WritePremap(write, compare);
+            for (long i = 0; i < target; ++i)
+            {
+                bool b = i >= compare.LongLength || write[i] != compare[i];
+#if !ARRAY_WRITE_PREMAP
+                WriteBit(b);
+#endif
+                if (b) WriteByte(write[i]);
+            }
+        }
+
+        public void WriteShortArray(short[] b, long count = -1)
+        {
+            ulong target = WriteArraySize(b, null, count);
+            for (ulong i = 0; i < target; ++i) WriteInt16(b[i]);
+        }
+
+        public void WriteShortArrayDiff(short[] write, short[] compare, long count = -1)
+        {
+            CheckLengths(write, compare);
+            long target = (long)WriteArraySize(write, compare, count);
+            WritePremap(write, compare);
+            for (long i = 0; i < target; ++i)
+            {
+                bool b = i >= compare.LongLength || write[i] != compare[i];
+#if !ARRAY_WRITE_PREMAP
+                WriteBit(!b);
+#endif
+                if (b) WriteInt16(write[i]);
+            }
+        }
+
+        public void WriteUShortArray(ushort[] b, long count = -1)
+        {
+            ulong target = WriteArraySize(b, null, count);
+            for (ulong i = 0; i < target; ++i) WriteUInt16(b[i]);
+        }
+
+        public void WriteUShortArrayDiff(ushort[] write, ushort[] compare, long count = -1)
+        {
+            CheckLengths(write, compare);
+            long target = (long)WriteArraySize(write, compare, count);
+            WritePremap(write, compare);
+            for (long i = 0; i < target; ++i)
+            {
+                bool b = i >= compare.LongLength || write[i] != compare[i];
+#if !ARRAY_WRITE_PREMAP
+                WriteBit(!b);
+#endif
+                if (b) WriteUInt16(write[i]);
+            }
+        }
+
+        public void WriteCharArray(char[] b, long count = -1)
+        {
+            ulong target = WriteArraySize(b, null, count);
+            for (ulong i = 0; i < target; ++i) WriteChar(b[i]);
+        }
+
+        public void WriteCharArrayDiff(char[] write, char[] compare, long count = -1)
+        {
+            CheckLengths(write, compare);
+            long target = (long)WriteArraySize(write, compare, count);
+            WritePremap(write, compare);
+            for (long i = 0; i < target; ++i)
+            {
+                bool b = i >= compare.LongLength || write[i] != compare[i];
+#if !ARRAY_WRITE_PREMAP
+                WriteBit(!b);
+#endif
+                if (b) WriteChar(write[i]);
+            }
+        }
+
+        public void WriteIntArray(int[] b, long count = -1)
+        {
+            ulong target = WriteArraySize(b, null, count);
+            for (ulong i = 0; i < target; ++i) WriteInt32(b[i]);
+        }
+
+        public void WriteIntArrayDiff(int[] write, int[] compare, long count = -1)
+        {
+            CheckLengths(write, compare);
+            long target = (long)WriteArraySize(write, compare, count);
+            WritePremap(write, compare);
+            for (long i = 0; i < target; ++i)
+            {
+                bool b = i >= compare.LongLength || write[i] != compare[i];
+#if !ARRAY_WRITE_PREMAP
+                WriteBit(!b);
+#endif
+                if (b) WriteInt32(write[i]);
+            }
+        }
+
+        public void WriteUIntArray(uint[] b, long count = -1)
+        {
+            ulong target = WriteArraySize(b, null, count);
+            for (ulong i = 0; i < target; ++i) WriteUInt32(b[i]);
+        }
+
+        public void WriteUIntArrayDiff(uint[] write, uint[] compare, long count = -1)
+        {
+            CheckLengths(write, compare);
+            long target = (long)WriteArraySize(write, compare, count);
+            WritePremap(write, compare);
+            for (long i = 0; i < target; ++i)
+            {
+                bool b = i >= compare.LongLength || write[i] != compare[i];
+#if !ARRAY_WRITE_PREMAP
+                WriteBit(!b);
+#endif
+                if (b) WriteUInt32(write[i]);
+            }
+        }
+
+        public void WriteLongArray(long[] b, long count = -1)
+        {
+            ulong target = WriteArraySize(b, null, count);
+            for (ulong i = 0; i < target; ++i) WriteInt64(b[i]);
+        }
+
+        public void WriteLongArrayDiff(long[] write, long[] compare, long count = -1)
+        {
+            CheckLengths(write, compare);
+            long target = (long)WriteArraySize(write, compare, count);
+            WritePremap(write, compare);
+            for (long i = 0; i < target; ++i)
+            {
+                bool b = i >= compare.LongLength || write[i] != compare[i];
+#if !ARRAY_WRITE_PREMAP
+                WriteBit(!b);
+#endif
+                if (b) WriteInt64(write[i]);
+            }
+        }
+
+        public void WriteULongArray(ulong[] b, long count = -1)
+        {
+            ulong target = WriteArraySize(b, null, count);
+            for (ulong i = 0; i < target; ++i) WriteUInt64(b[i]);
+        }
+
+        public void WriteULongArrayDiff(ulong[] write, ulong[] compare, long count = -1)
+        {
+            CheckLengths(write, compare);
+            long target = (long)WriteArraySize(write, compare, count);
+            WritePremap(write, compare);
+            for (long i = 0; i < target; ++i)
+            {
+                bool b = i >= compare.LongLength || write[i] != compare[i];
+#if !ARRAY_WRITE_PREMAP
+                WriteBit(!b);
+#endif
+                if (b) WriteUInt64(write[i]);
+            }
+        }
+
+        public void WriteFloatArray(float[] b, long count = -1)
+        {
+            ulong target = WriteArraySize(b, null, count);
+            for (ulong i = 0; i < target; ++i) WriteSingle(b[i]);
+        }
+
+        public void WriteFloatArrayDiff(float[] write, float[] compare, long count = -1)
+        {
+            CheckLengths(write, compare);
+            long target = (long)WriteArraySize(write, compare, count);
+            WritePremap(write, compare);
+            for (long i = 0; i < target; ++i)
+            {
+                bool b = i >= compare.LongLength || write[i] != compare[i];
+#if !ARRAY_WRITE_PREMAP
+                WriteBit(!b);
+#endif
+                if (b) WriteSingle(write[i]);
+            }
+        }
+
+        public void WriteDoubleArray(double[] b, long count = -1)
+        {
+            ulong target = WriteArraySize(b, null, count);
+            for (ulong i = 0; i < target; ++i) WriteDouble(b[i]);
+        }
+
+        public void WriteDoubleArrayDiff(double[] write, double[] compare, long count = -1)
+        {
+            CheckLengths(write, compare);
+            long target = (long)WriteArraySize(write, compare, count);
+            WritePremap(write, compare);
+            for (long i = 0; i < target; ++i)
+            {
+                bool b = i >= compare.LongLength || write[i] != compare[i];
+#if !ARRAY_WRITE_PREMAP
+                WriteBit(!b);
+#endif
+                if (b) WriteDouble(write[i]);
+            }
+        }
+
+
+
+
+
+        // Packed arrays
+#if ARRAY_RESOLVE_IMPLICIT
+        public void WriteArrayPacked(Array a, long count = -1)
+        {
+            Type arrayType = a.GetType();
+
+
+#if ARRAY_WRITE_PERMISSIVE
+            if (arrayType == typeof(byte[])) WriteByteArray(a as byte[], count);
+            else
+#endif
+            if (arrayType == typeof(short[])) WriteShortArrayPacked(a as short[], count);
+            else if (arrayType == typeof(ushort[])) WriteUShortArrayPacked(a as ushort[], count);
+            else if (arrayType == typeof(char[])) WriteCharArrayPacked(a as char[], count);
+            else if (arrayType == typeof(int[])) WriteIntArrayPacked(a as int[], count);
+            else if (arrayType == typeof(uint[])) WriteUIntArrayPacked(a as uint[], count);
+            else if (arrayType == typeof(long[])) WriteLongArrayPacked(a as long[], count);
+            else if (arrayType == typeof(ulong[])) WriteULongArrayPacked(a as ulong[], count);
+            else if (arrayType == typeof(float[])) WriteFloatArrayPacked(a as float[], count);
+            else if (arrayType == typeof(double[])) WriteDoubleArrayPacked(a as double[], count);
+            else throw new InvalidDataException("Unknown array type! Please serialize manually!");
+        }
+
+        public void WriteArrayPackedDiff(Array write, Array compare, long count = -1)
+        {
+            Type arrayType = write.GetType();
+            if (arrayType != compare.GetType()) throw new ArrayTypeMismatchException("Cannot write diff of two differing array types");
+
+#if ARRAY_WRITE_PERMISSIVE
+            if (arrayType == typeof(byte[])) WriteByteArrayDiff(write as byte[], compare as byte[], count);
+            else
+#endif
+            if (arrayType == typeof(short[])) WriteShortArrayPackedDiff(write as short[], compare as short[], count);
+            else if (arrayType == typeof(ushort[])) WriteUShortArrayPackedDiff(write as ushort[], compare as ushort[], count);
+            else if (arrayType == typeof(char[])) WriteCharArrayPackedDiff(write as char[], compare as char[], count);
+            else if (arrayType == typeof(int[])) WriteIntArrayPackedDiff(write as int[], compare as int[], count);
+            else if (arrayType == typeof(uint[])) WriteUIntArrayPackedDiff(write as uint[], compare as uint[], count);
+            else if (arrayType == typeof(long[])) WriteLongArrayPackedDiff(write as long[], compare as long[], count);
+            else if (arrayType == typeof(ulong[])) WriteULongArrayPackedDiff(write as ulong[], compare as ulong[], count);
+            else if (arrayType == typeof(float[])) WriteFloatArrayPackedDiff(write as float[], compare as float[], count);
+            else if (arrayType == typeof(double[])) WriteDoubleArrayPackedDiff(write as double[], compare as double[], count);
+            else throw new InvalidDataException("Unknown array type! Please serialize manually!");
+        }
+#endif
+
+        public void WriteShortArrayPacked(short[] b, long count = -1)
+        {
+            ulong target = WriteArraySize(b, null, count);
+            for (ulong i = 0; i < target; ++i) WriteInt16Packed(b[i]);
+        }
+
+        public void WriteShortArrayPackedDiff(short[] write, short[] compare, long count = -1)
+        {
+            CheckLengths(write, compare);
+            long target = (long)WriteArraySize(write, compare, count);
+            WritePremap(write, compare);
+            for (long i = 0; i < target; ++i)
+            {
+                bool b = i >= compare.LongLength || write[i] != compare[i];
+#if !ARRAY_WRITE_PREMAP
+                WriteBit(!b);
+#endif
+                if (b) WriteInt16Packed(write[i]);
+            }
+        }
+
+        public void WriteUShortArrayPacked(ushort[] b, long count = -1)
+        {
+            ulong target = WriteArraySize(b, null, count);
+            for (ulong i = 0; i < target; ++i) WriteUInt16Packed(b[i]);
+        }
+
+        public void WriteUShortArrayPackedDiff(ushort[] write, ushort[] compare, long count = -1)
+        {
+            CheckLengths(write, compare);
+            long target = (long)WriteArraySize(write, compare, count);
+            WritePremap(write, compare);
+            for (long i = 0; i < target; ++i)
+            {
+                bool b = i >= compare.LongLength || write[i] != compare[i];
+#if !ARRAY_WRITE_PREMAP
+                WriteBit(!b);
+#endif
+                if (b) WriteUInt16Packed(write[i]);
+            }
+        }
+
+        public void WriteCharArrayPacked(char[] b, long count = -1)
+        {
+            ulong target = WriteArraySize(b, null, count);
+            for (ulong i = 0; i < target; ++i) WriteCharPacked(b[i]);
+        }
+
+        public void WriteCharArrayPackedDiff(char[] write, char[] compare, long count = -1)
+        {
+            CheckLengths(write, compare);
+            long target = (long)WriteArraySize(write, compare, count);
+            WritePremap(write, compare);
+            for (long i = 0; i < target; ++i)
+            {
+                bool b = i >= compare.LongLength || write[i] != compare[i];
+#if !ARRAY_WRITE_PREMAP
+                WriteBit(!b);
+#endif
+                if (b) WriteCharPacked(write[i]);
+            }
+        }
+
+        public void WriteIntArrayPacked(int[] b, long count = -1)
+        {
+            ulong target = WriteArraySize(b, null, count);
+            for (ulong i = 0; i < target; ++i) WriteInt32Packed(b[i]);
+        }
+
+        public void WriteIntArrayPackedDiff(int[] write, int[] compare, long count = -1)
+        {
+            CheckLengths(write, compare);
+            long target = (long)WriteArraySize(write, compare, count);
+            WritePremap(write, compare);
+            for (long i = 0; i < target; ++i)
+            {
+                bool b = i >= compare.LongLength || write[i] != compare[i];
+#if !ARRAY_WRITE_PREMAP
+                WriteBit(!b);
+#endif
+                if (b) WriteInt32Packed(write[i]);
+            }
+        }
+
+        public void WriteUIntArrayPacked(uint[] b, long count = -1)
+        {
+            ulong target = WriteArraySize(b, null, count);
+            for (ulong i = 0; i < target; ++i) WriteUInt32Packed(b[i]);
+        }
+
+        public void WriteUIntArrayPackedDiff(uint[] write, uint[] compare, long count = -1)
+        {
+            CheckLengths(write, compare);
+            long target = (long)WriteArraySize(write, compare, count);
+            WritePremap(write, compare);
+            for (long i = 0; i < target; ++i)
+            {
+                bool b = i >= compare.LongLength || write[i] != compare[i];
+#if !ARRAY_WRITE_PREMAP
+                WriteBit(!b);
+#endif
+                if (b) WriteUInt32Packed(write[i]);
+            }
+        }
+
+        public void WriteLongArrayPacked(long[] b, long count = -1)
+        {
+            ulong target = WriteArraySize(b, null, count);
+            for (ulong i = 0; i < target; ++i) WriteInt64Packed(b[i]);
+        }
+
+        public void WriteLongArrayPackedDiff(long[] write, long[] compare, long count = -1)
+        {
+            CheckLengths(write, compare);
+            long target = (long)WriteArraySize(write, compare, count);
+            WritePremap(write, compare);
+            for (long i = 0; i < target; ++i)
+            {
+                bool b = i >= compare.LongLength || write[i] != compare[i];
+#if !ARRAY_WRITE_PREMAP
+                WriteBit(!b);
+#endif
+                if (b) WriteInt64Packed(write[i]);
+            }
+        }
+
+        public void WriteULongArrayPacked(ulong[] b, long count = -1)
+        {
+            ulong target = WriteArraySize(b, null, count);
+            for (ulong i = 0; i < target; ++i) WriteUInt64Packed(b[i]);
+        }
+
+        public void WriteULongArrayPackedDiff(ulong[] write, ulong[] compare, long count = -1)
+        {
+            CheckLengths(write, compare);
+            long target = (long)WriteArraySize(write, compare, count);
+            WritePremap(write, compare);
+            for (long i = 0; i < target; ++i)
+            {
+                bool b = i >= compare.LongLength || write[i] != compare[i];
+#if !ARRAY_WRITE_PREMAP
+                WriteBit(!b);
+#endif
+                if (b) WriteUInt64Packed(write[i]);
+            }
+        }
+
+        public void WriteFloatArrayPacked(float[] b, long count = -1)
+        {
+            ulong target = WriteArraySize(b, null, count);
+            for (ulong i = 0; i < target; ++i) WriteSinglePacked(b[i]);
+        }
+
+        public void WriteFloatArrayPackedDiff(float[] write, float[] compare, long count = -1)
+        {
+            CheckLengths(write, compare);
+            long target = (long)WriteArraySize(write, compare, count);
+            WritePremap(write, compare);
+            for (long i = 0; i < target; ++i)
+            {
+                bool b = i >= compare.LongLength || write[i] != compare[i];
+#if !ARRAY_WRITE_PREMAP
+                WriteBit(!b);
+#endif
+                if (b) WriteSinglePacked(write[i]);
+            }
+        }
+
+        public void WriteDoubleArrayPacked(double[] b, long count = -1)
+        {
+            ulong target = WriteArraySize(b, null, count);
+            for (ulong i = 0; i < target; ++i) WriteDoublePacked(b[i]);
+        }
+
+        public void WriteDoubleArrayPackedDiff(double[] write, double[] compare, long count = -1)
+        {
+            CheckLengths(write, compare);
+            long target = (long)WriteArraySize(write, compare, count);
+            WritePremap(write, compare);
+            for (long i = 0; i < target; ++i)
+            {
+                bool b = i >= compare.LongLength || write[i] != compare[i];
+#if !ARRAY_WRITE_PREMAP
+                WriteBit(!b);
+#endif
+                if (b) WriteDoublePacked(write[i]);
             }
         }
     }
 }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member

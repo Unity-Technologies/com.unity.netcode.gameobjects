@@ -58,8 +58,9 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
         {
             // stream should not grow when given a buffer
             BitStream bitStream = new BitStream(new byte[0]);
+            BitWriter bw = new BitWriter(bitStream);
             Assert.That(
-                () => { bitStream.WriteInt64(long.MaxValue); }, 
+                () => { bw.WriteInt64(long.MaxValue); }, 
                 Throws.TypeOf<NotSupportedException>());
         }
 
@@ -90,12 +91,14 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
             short svalue = -31934;
             ushort uvalue = 64893;
             BitStream outStream = new BitStream();
-            outStream.WriteInt16Packed(svalue);
-            outStream.WriteUInt16Packed(uvalue);
+            BitWriter bw = new BitWriter(outStream);
+            bw.WriteInt16Packed(svalue);
+            bw.WriteUInt16Packed(uvalue);
 
             BitStream inStream = new BitStream(outStream.GetBuffer());
-            Assert.That(inStream.ReadInt16Packed(), Is.EqualTo(svalue));
-            Assert.That(inStream.ReadUInt16Packed(), Is.EqualTo(uvalue));
+            BitReader br = new BitReader(inStream);
+            Assert.That(br.ReadInt16Packed(), Is.EqualTo(svalue));
+            Assert.That(br.ReadUInt16Packed(), Is.EqualTo(uvalue));
         }
 
 
@@ -105,12 +108,14 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
             int svalue = -100913642;
             uint uvalue = 1467867235;
             BitStream outStream = new BitStream();
-            outStream.WriteInt32Packed(svalue);
-            outStream.WriteUInt32Packed(uvalue);
+            BitWriter bw = new BitWriter(outStream);
+            bw.WriteInt32Packed(svalue);
+            bw.WriteUInt32Packed(uvalue);
 
             BitStream inStream = new BitStream(outStream.GetBuffer());
-            Assert.That(inStream.ReadInt32Packed(), Is.EqualTo(svalue));
-            Assert.That(inStream.ReadUInt32Packed(), Is.EqualTo(uvalue));
+            BitReader br = new BitReader(inStream);
+            Assert.That(br.ReadInt32Packed(), Is.EqualTo(svalue));
+            Assert.That(br.ReadUInt32Packed(), Is.EqualTo(uvalue));
         }
 
 
@@ -125,19 +130,21 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
             ulong uNumber3 = 235;
 
             BitStream outStream = new BitStream(buffer);
-            outStream.WriteInt64Packed(someNumber);
-            outStream.WriteUInt64Packed(uNumber);
-            outStream.WriteUInt64Packed(uNumber2);
-            outStream.WriteUInt64Packed(uNumber3);
+            BitWriter bw = new BitWriter(outStream);
+            bw.WriteInt64Packed(someNumber);
+            bw.WriteUInt64Packed(uNumber);
+            bw.WriteUInt64Packed(uNumber2);
+            bw.WriteUInt64Packed(uNumber3);
 
             // the bit should now be stored in the buffer,  lets see if it comes out
 
             BitStream inStream = new BitStream(buffer);
+            BitReader br = new BitReader(inStream);
 
-            Assert.That(inStream.ReadInt64Packed(), Is.EqualTo(someNumber));
-            Assert.That(inStream.ReadUInt64Packed(), Is.EqualTo(uNumber));
-            Assert.That(inStream.ReadUInt64Packed(), Is.EqualTo(uNumber2));
-            Assert.That(inStream.ReadUInt64Packed(), Is.EqualTo(uNumber3));
+            Assert.That(br.ReadInt64Packed(), Is.EqualTo(someNumber));
+            Assert.That(br.ReadUInt64Packed(), Is.EqualTo(uNumber));
+            Assert.That(br.ReadUInt64Packed(), Is.EqualTo(uNumber2));
+            Assert.That(br.ReadUInt64Packed(), Is.EqualTo(uNumber3));
         }
 
         [Test]
@@ -205,10 +212,12 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
 
 
             BitStream outStream = new BitStream(buffer);
-            outStream.WriteInt16(someNumber);
+            BitWriter bw = new BitWriter(outStream);
+            bw.WriteInt16(someNumber);
 
             BitStream inStream = new BitStream(buffer);
-            short result = inStream.ReadInt16();
+            BitReader br = new BitReader(inStream);
+            short result = br.ReadInt16();
 
             Assert.That(result, Is.EqualTo(someNumber));
         }
@@ -222,10 +231,12 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
 
 
             BitStream outStream = new BitStream(buffer);
-            outStream.WriteInt32(someNumber);
+            BitWriter bw = new BitWriter(outStream);
+            bw.WriteInt32(someNumber);
 
             BitStream inStream = new BitStream(buffer);
-            int result = inStream.ReadInt32();
+            BitReader br = new BitReader(inStream);
+            int result = br.ReadInt32();
 
             Assert.That(result, Is.EqualTo(someNumber));
         }
@@ -239,10 +250,12 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
 
 
             BitStream outStream = new BitStream(buffer);
-            outStream.WriteInt64(someNumber);
+            BitWriter bw = new BitWriter(outStream);
+            bw.WriteInt64(someNumber);
 
             BitStream inStream = new BitStream(buffer);
-            long result = inStream.ReadInt64();
+            BitReader br = new BitReader(inStream);
+            long result = br.ReadInt64();
 
             Assert.That(result, Is.EqualTo(someNumber));
         }
@@ -256,15 +269,17 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
             short someNumber2 = 9322;
 
             BitStream outStream = new BitStream(buffer);
-            outStream.WriteInt16(someNumber);
-            outStream.WriteInt16(someNumber2);
+            BitWriter bw = new BitWriter(outStream);
+            bw.WriteInt16(someNumber);
+            bw.WriteInt16(someNumber2);
 
 
             // the bit should now be stored in the buffer,  lets see if it comes out
 
             BitStream inStream = new BitStream(buffer);
-            short result = inStream.ReadInt16();
-            short result2 = inStream.ReadInt16();
+            BitReader br = new BitReader(inStream);
+            short result = br.ReadInt16();
+            short result2 = br.ReadInt16();
 
             Assert.That(result, Is.EqualTo(someNumber));
             Assert.That(result2, Is.EqualTo(someNumber2));
@@ -309,13 +324,15 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
         {
             float somenumber = 0.1f;
             BitStream outStream = new BitStream();
+            BitWriter bw = new BitWriter(outStream);
 
-            outStream.WriteSingle(somenumber);
+            bw.WriteSingle(somenumber);
             byte[] buffer = outStream.GetBuffer();
 
             BitStream inStream = new BitStream(buffer);
+            BitReader br = new BitReader(inStream);
 
-            Assert.That(inStream.ReadSingle(), Is.EqualTo(somenumber));
+            Assert.That(br.ReadSingle(), Is.EqualTo(somenumber));
         }
 
         [Test]
@@ -323,13 +340,15 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
         {
             double somenumber = Math.PI;
             BitStream outStream = new BitStream();
+            BitWriter bw = new BitWriter(outStream);
 
-            outStream.WriteDouble(somenumber);
+            bw.WriteDouble(somenumber);
             byte[] buffer = outStream.GetBuffer();
 
             BitStream inStream = new BitStream(buffer);
+            BitReader br = new BitReader(inStream);
 
-            Assert.That(inStream.ReadDouble(), Is.EqualTo(somenumber));
+            Assert.That(br.ReadDouble(), Is.EqualTo(somenumber));
 
         }
 
@@ -338,13 +357,15 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
         {
             float somenumber = (float)Math.PI;
             BitStream outStream = new BitStream();
+            BitWriter bw = new BitWriter(outStream);
 
-            outStream.WriteSinglePacked(somenumber);
+            bw.WriteSinglePacked(somenumber);
             byte[] buffer = outStream.GetBuffer();
 
             BitStream inStream = new BitStream(buffer);
+            BitReader br = new BitReader(inStream);
 
-            Assert.That(inStream.ReadSinglePacked(), Is.EqualTo(somenumber));
+            Assert.That(br.ReadSinglePacked(), Is.EqualTo(somenumber));
         }
 
         [Test]
@@ -352,13 +373,15 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
         {
             double somenumber = Math.PI;
             BitStream outStream = new BitStream();
+            BitWriter bw = new BitWriter(outStream);
 
-            outStream.WriteDoublePacked(somenumber);
+            bw.WriteDoublePacked(somenumber);
             byte[] buffer = outStream.GetBuffer();
 
             BitStream inStream = new BitStream(buffer);
+            BitReader br = new BitReader(inStream);
 
-            Assert.That(inStream.ReadDoublePacked(), Is.EqualTo(somenumber));
+            Assert.That(br.ReadDoublePacked(), Is.EqualTo(somenumber));
 
         }
 
@@ -366,34 +389,36 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
         public void TestWriteMisaligned()
         {
             BitStream outStream = new BitStream();
-            outStream.WriteBit(true);
-            outStream.WriteBit(false);
+            BitWriter bw = new BitWriter(outStream);
+            bw.WriteBit(true);
+            bw.WriteBit(false);
             // now the stream is misalligned,  lets write some bytes
-            outStream.WriteByte(244);
-            outStream.WriteByte(123);
-            outStream.WriteInt16(-5457);
-            outStream.WriteUInt64(4773753249);
-            outStream.WriteUInt64Packed(5435285812313212);
-            outStream.WriteInt64Packed(-5435285812313212);
-            outStream.WriteBit(true);
-            outStream.WriteByte(1);
-            outStream.WriteByte(0);
+            bw.WriteByte(244);
+            bw.WriteByte(123);
+            bw.WriteInt16(-5457);
+            bw.WriteUInt64(4773753249);
+            bw.WriteUInt64Packed(5435285812313212);
+            bw.WriteInt64Packed(-5435285812313212);
+            bw.WriteBit(true);
+            bw.WriteByte(1);
+            bw.WriteByte(0);
 
             byte[] buffer = outStream.GetBuffer();
 
             BitStream inStream = new BitStream(buffer);
+            BitReader br = new BitReader(inStream);
 
-            Assert.That(inStream.ReadBit(), Is.True);
-            Assert.That(inStream.ReadBit(), Is.False);
-            Assert.That(inStream.ReadByte(), Is.EqualTo(244));
-            Assert.That(inStream.ReadByte(), Is.EqualTo(123));
-            Assert.That(inStream.ReadInt16(), Is.EqualTo(-5457));
-            Assert.That(inStream.ReadUInt64(), Is.EqualTo(4773753249));
-            Assert.That(inStream.ReadUInt64Packed(), Is.EqualTo(5435285812313212));
-            Assert.That(inStream.ReadInt64Packed(), Is.EqualTo(-5435285812313212));
-            Assert.That(inStream.ReadBit(), Is.True);
-            Assert.That(inStream.ReadByte(), Is.EqualTo(1));
-            Assert.That(inStream.ReadByte(), Is.EqualTo(0));
+            Assert.That(br.ReadBit(), Is.True);
+            Assert.That(br.ReadBit(), Is.False);
+            Assert.That(br.ReadByte(), Is.EqualTo(244));
+            Assert.That(br.ReadByte(), Is.EqualTo(123));
+            Assert.That(br.ReadInt16(), Is.EqualTo(-5457));
+            Assert.That(br.ReadUInt64(), Is.EqualTo(4773753249));
+            Assert.That(br.ReadUInt64Packed(), Is.EqualTo(5435285812313212));
+            Assert.That(br.ReadInt64Packed(), Is.EqualTo(-5435285812313212));
+            Assert.That(br.ReadBit(), Is.True);
+            Assert.That(br.ReadByte(), Is.EqualTo(1));
+            Assert.That(br.ReadByte(), Is.EqualTo(0));
         }
 
         [Test]
@@ -402,13 +427,15 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
             ulong somevalue = 0b1100101010011;
 
             BitStream outStream = new BitStream();
-            outStream.WriteBits(somevalue, 5);
+            BitWriter bw = new BitWriter(outStream);
+            bw.WriteBits(somevalue, 5);
 
             byte[] buffer = outStream.GetBuffer();
 
             BitStream inStream = new BitStream(buffer);
+            BitReader br = new BitReader(inStream);
 
-            Assert.That(inStream.ReadBits(5), Is.EqualTo(0b10011));
+            Assert.That(br.ReadBits(5), Is.EqualTo(0b10011));
             //Assert.Fail("There is no way to read back the bits");
 
         }
@@ -419,13 +446,15 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
             byte somevalue = 0b1010011;
 
             BitStream outStream = new BitStream();
-            outStream.WriteNibble(somevalue);
+            BitWriter bw = new BitWriter(outStream);
+            bw.WriteNibble(somevalue);
 
             byte[] buffer = outStream.GetBuffer();
 
             BitStream inStream = new BitStream(buffer);
+            BitReader br = new BitReader(inStream);
 
-            Assert.That(inStream.ReadNibble(), Is.EqualTo(0b0011));
+            Assert.That(br.ReadNibble(), Is.EqualTo(0b0011));
             //Assert.Fail("There is no way to read back Nibbles");
         }
 
@@ -433,7 +462,8 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
         public void TestReadWriteMissaligned()
         {
             BitStream outStream = new BitStream();
-            outStream.WriteBit(true);
+            BitWriter bw = new BitWriter(outStream);
+            bw.WriteBit(true);
             byte[] writeBytes = new byte[16] {0, 5, 2, 54, 192, 60, 214, 65, 95, 2, 43, 62, 252, 190, 45, 2};
             outStream.Write(writeBytes);
             
@@ -452,14 +482,16 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
             double[] doubleOutData = new double[] { 0.02, 0.06, 1E40, 256.0 };
 
             BitStream outStream = new BitStream();
-            outStream.WriteByteArray(byteOutData);
-            outStream.WriteIntArray(intOutData);
-            outStream.WriteDoubleArray(doubleOutData);
+            BitWriter bw = new BitWriter(outStream);
+            bw.WriteByteArray(byteOutData);
+            bw.WriteIntArray(intOutData);
+            bw.WriteDoubleArray(doubleOutData);
 
             BitStream inStream = new BitStream(outStream.GetBuffer());
-            byte[] byteInData = inStream.ReadByteArray();
-            int[] intInData = inStream.ReadIntArray();
-            double[] doubleInData = inStream.ReadDoubleArray();
+            BitReader br = new BitReader(inStream);
+            byte[] byteInData = br.ReadByteArray();
+            int[] intInData = br.ReadIntArray();
+            double[] doubleInData = br.ReadDoubleArray();
 
             Assert.That(byteOutData, Is.EqualTo(byteInData));
             Assert.That(intOutData, Is.EqualTo(intInData));
@@ -474,14 +506,16 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
             double[] doubleOutData = new double[] { 0.02, 0.06, 1E40, 256.0 };
 
             BitStream outStream = new BitStream();
-            outStream.WriteShortArrayPacked(byteOutData);
-            outStream.WriteIntArrayPacked(intOutData);
-            outStream.WriteDoubleArrayPacked(doubleOutData);
+            BitWriter bw = new BitWriter(outStream);
+            bw.WriteShortArrayPacked(byteOutData);
+            bw.WriteIntArrayPacked(intOutData);
+            bw.WriteDoubleArrayPacked(doubleOutData);
 
             BitStream inStream = new BitStream(outStream.GetBuffer());
-            short[] byteInData = inStream.ReadShortArrayPacked();
-            int[] intInData = inStream.ReadIntArrayPacked();
-            double[] doubleInData = inStream.ReadDoubleArrayPacked();
+            BitReader br = new BitReader(inStream);
+            short[] byteInData = br.ReadShortArrayPacked();
+            int[] intInData = br.ReadIntArrayPacked();
+            double[] doubleInData = br.ReadDoubleArrayPacked();
 
             Assert.That(byteOutData, Is.EqualTo(byteInData));
             Assert.That(intOutData, Is.EqualTo(intInData));
@@ -505,15 +539,17 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
 
             // Serialize
             BitStream outStream = new BitStream();
-            outStream.WriteByteArrayDiff(byteOutData, byteOutDiffData);
-            outStream.WriteIntArrayDiff(intOutData, intOutDiffData);
-            outStream.WriteDoubleArrayDiff(doubleOutData, doubleOutDiffData);
+            BitWriter bw = new BitWriter(outStream);
+            bw.WriteByteArrayDiff(byteOutData, byteOutDiffData);
+            bw.WriteIntArrayDiff(intOutData, intOutDiffData);
+            bw.WriteDoubleArrayDiff(doubleOutData, doubleOutDiffData);
 
             // Deserialize
             BitStream inStream = new BitStream(outStream.GetBuffer());
-            byte[] byteInData = inStream.ReadByteArrayDiff(byteOutDiffData);
-            int[] intInData = inStream.ReadIntArrayDiff(intOutDiffData);
-            double[] doubleInData = inStream.ReadDoubleArrayDiff(doubleOutDiffData);
+            BitReader br = new BitReader(inStream);
+            byte[] byteInData = br.ReadByteArrayDiff(byteOutDiffData);
+            int[] intInData = br.ReadIntArrayDiff(intOutDiffData);
+            double[] doubleInData = br.ReadDoubleArrayDiff(doubleOutDiffData);
 
             // Compare
             Assert.That(byteInData, Is.EqualTo(byteOutData));
@@ -538,15 +574,17 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
 
             // Serialize
             BitStream outStream = new BitStream();
-            outStream.WriteLongArrayPackedDiff(longOutData, longOutDiffData);
-            outStream.WriteIntArrayPackedDiff(intOutData, intOutDiffData);
-            outStream.WriteDoubleArrayPackedDiff(doubleOutData, doubleOutDiffData);
+            BitWriter bw = new BitWriter(outStream);
+            bw.WriteLongArrayPackedDiff(longOutData, longOutDiffData);
+            bw.WriteIntArrayPackedDiff(intOutData, intOutDiffData);
+            bw.WriteDoubleArrayPackedDiff(doubleOutData, doubleOutDiffData);
 
             // Deserialize
             BitStream inStream = new BitStream(outStream.GetBuffer());
-            long[] longInData = inStream.ReadLongArrayPackedDiff(longOutDiffData);
-            int[] intInData = inStream.ReadIntArrayPackedDiff(intOutDiffData);
-            double[] doubleInData = inStream.ReadDoubleArrayPackedDiff(doubleOutDiffData);
+            BitReader br = new BitReader(inStream);
+            long[] longInData = br.ReadLongArrayPackedDiff(longOutDiffData);
+            int[] intInData = br.ReadIntArrayPackedDiff(intOutDiffData);
+            double[] doubleInData = br.ReadDoubleArrayPackedDiff(doubleOutDiffData);
 
             // Compare
             Assert.That(longInData, Is.EqualTo(longOutData));
@@ -559,12 +597,14 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
         {
             string testString = "Hello, World";
             BitStream outStream = new BitStream();
-            outStream.WriteString(testString);
-            outStream.WriteString(testString, true);
+            BitWriter bw = new BitWriter(outStream);
+            bw.WriteString(testString);
+            bw.WriteString(testString, true);
 
             BitStream inStream = new BitStream(outStream.GetBuffer());
-            StringBuilder readBuilder = inStream.ReadString();
-            StringBuilder readBuilderSingle = inStream.ReadString(true);
+            BitReader br = new BitReader(inStream);
+            StringBuilder readBuilder = br.ReadString();
+            StringBuilder readBuilderSingle = br.ReadString(true);
 
             Assert.That(readBuilder.ToString(), Is.EqualTo(testString));
             Assert.That(readBuilderSingle.ToString(), Is.EqualTo(testString));
@@ -575,10 +615,12 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
         {
             string testString = "Hello, World";
             BitStream outStream = new BitStream();
-            outStream.WriteStringPacked(testString);
+            BitWriter bw = new BitWriter(outStream);
+            bw.WriteStringPacked(testString);
 
             BitStream inStream = new BitStream(outStream.GetBuffer());
-            StringBuilder readBuilder = inStream.ReadStringPacked();
+            BitReader br = new BitReader(inStream);
+            StringBuilder readBuilder = br.ReadStringPacked();
 
             Assert.That(readBuilder.ToString(), Is.EqualTo(testString));
         }
@@ -589,20 +631,22 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
             string testString =     "Hello, World";  // The simulated "new" value of testString
             string originalString = "Heyo,  World";  // This is what testString supposedly changed *from*
             BitStream outStream = new BitStream();
-            outStream.WriteStringDiff(testString, originalString);
-            outStream.WriteStringDiff(testString, originalString, true);
+            BitWriter bw = new BitWriter(outStream);
+            bw.WriteStringDiff(testString, originalString);
+            bw.WriteStringDiff(testString, originalString, true);
 
             BitStream inStream = new BitStream(outStream.GetBuffer());
+            BitReader br = new BitReader(inStream);
             // Read regular diff
-            StringBuilder readBuilder = inStream.ReadStringDiff(originalString);
+            StringBuilder readBuilder = br.ReadStringDiff(originalString);
 
             // Read diff directly to StringBuilder
             inStream.BitPosition = 0;
             StringBuilder stringCompare = new StringBuilder(originalString);
-            inStream.ReadStringDiff(stringCompare);
+            br.ReadStringDiff(stringCompare);
 
             // Read single-byte diff
-            StringBuilder byteBuilder = inStream.ReadStringDiff(originalString, true);
+            StringBuilder byteBuilder = br.ReadStringDiff(originalString, true);
 
             Assert.That(readBuilder.ToString(), Is.EqualTo(testString));
             Assert.That(stringCompare.ToString(), Is.EqualTo(testString));
@@ -615,16 +659,18 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
             string testString = "Hello, World";  // The simulated "new" value of testString
             string originalString = "Heyo,  World";  // This is what testString supposedly changed *from*
             BitStream outStream = new BitStream();
-            outStream.WriteStringPackedDiff(testString, originalString);
+            BitWriter bw = new BitWriter(outStream);
+            bw.WriteStringPackedDiff(testString, originalString);
 
             BitStream inStream = new BitStream(outStream.GetBuffer());
+            BitReader br = new BitReader(inStream);
             // Read regular diff
-            StringBuilder readBuilder = inStream.ReadStringPackedDiff(originalString);
+            StringBuilder readBuilder = br.ReadStringPackedDiff(originalString);
 
             // Read diff directly to StringBuilder
             inStream.BitPosition = 0;
             StringBuilder stringCompare = new StringBuilder(originalString);
-            inStream.ReadStringPackedDiff(stringCompare);
+            br.ReadStringPackedDiff(stringCompare);
 
             Assert.That(readBuilder.ToString(), Is.EqualTo(testString));
             Assert.That(stringCompare.ToString(), Is.EqualTo(testString));

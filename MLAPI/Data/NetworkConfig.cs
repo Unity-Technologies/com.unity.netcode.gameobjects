@@ -161,7 +161,7 @@ namespace MLAPI.Data
         public string ToBase64()
         {
             NetworkConfig config = this;
-            using (BitWriter writer = BitWriter.Get())
+            using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
             {
                 writer.WriteUShort(config.ProtocolVersion);
                 writer.WriteBits((byte)config.Transport, 5);
@@ -226,7 +226,7 @@ namespace MLAPI.Data
         {
             NetworkConfig config = this;
             byte[] binary = Convert.FromBase64String(base64);
-            using (BitReader reader = BitReader.Get(binary))
+            using (BitReaderDeprecated reader = BitReaderDeprecated.Get(binary))
             {
                 config.ProtocolVersion = reader.ReadUShort();
                 config.Transport = (DefaultTransport)reader.ReadBits(5);
@@ -316,7 +316,7 @@ namespace MLAPI.Data
             if (ConfigHash != null && cache)
                 return ConfigHash.Value;
 
-            using (BitWriter writer = BitWriter.Get())
+            using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
             {
                 writer.WriteUShort(ProtocolVersion);
                 for (int i = 0; i < Channels.Count; i++)
