@@ -93,7 +93,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
                 return writerPool.Dequeue();
         }
 
-        private void Push<T>(T b)
+        public void Push<T>(T b)
         {
             if (b == null) collect.Add(b);
             else if (b is string || b.GetType().IsArray || IsSupportedType(b.GetType()))
@@ -102,6 +102,36 @@ namespace MLAPI.NetworkingManagerComponents.Binary
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The type \"" + b.GetType() + "\" is not supported by the Binary Serializer. It will be ignored");
         }
 
+        // Just use Push() and PushArray()
+        /*
+        public void WriteGeneric<T>(T t)
+        {
+            if (t is bool) WriteBool((t as bool?).Value);
+            else if (t is byte) WriteByte((t as byte?).Value);
+            else if (t is sbyte) WriteSByte((t as sbyte?).Value);
+            else if (t is ushort) WriteUShort((t as ushort?).Value);
+            else if (t is short) WriteShort((t as short?).Value);
+            else if (t is uint) WriteUInt((t as uint?).Value);
+            else if (t is int) WriteInt((t as int?).Value);
+            else if (t is ulong) WriteULong((t as ulong?).Value);
+            else if (t is long) WriteLong((t as long?).Value);
+            else if (t is float) WriteFloat((t as float?).Value);
+            else if (t is double) WriteDouble((t as double?).Value);
+            //else if (t is bool[]) WriteBoolArray(t as bool[]);
+            else if (t is byte[]) WriteByteArray(t as byte[]);
+            else if (t is sbyte[]) WriteSByteArray(t as sbyte[]);
+            else if (t is ushort[]) WriteUShortArray(t as ushort[]);
+            else if (t is short[]) WriteShortArray(t as short[]);
+            else if (t is uint[]) WriteUIntArray(t as uint[]);
+            else if (t is int[]) WriteIntArray(t as int[]);
+            else if (t is ulong[]) WriteULongArray(t as ulong[]);
+            else if (t is long[]) WriteLongArray(t as long[]);
+            else if (t is float[]) WriteFloatArray(t as float[]);
+            else if (t is double[]) WriteDoubleArray(t as double[]);
+            else if (t is string) WriteString(t as string);
+            else if (t is BitWriter) WriteWriter(t as BitWriter);
+        }
+        */
 
         public void WriteBool(bool b)               => Push(b);
         public void WriteFloat(float f)             => Push(f);
@@ -145,7 +175,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             }
         }
 
-        private void PushArray<T>(T[] t, bool knownSize = false)
+        public void PushArray<T>(T[] t, bool knownSize = false)
         {
             if (!knownSize) Push((uint)t.Length);
             bool signed = IsSigned(t.GetType().GetElementType());
@@ -153,7 +183,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             foreach (T t1 in t) Push(signed ? (object)ZigZagEncode(t1 as long? ?? t1 as int? ?? t1 as short? ?? t1 as sbyte? ?? 0) : (object)t1);
         }
 
-        private void PushArray<T>(T[] t, int startIndex, int length, bool knownSize = false)
+        public void PushArray<T>(T[] t, int startIndex, int length, bool knownSize = false)
         {
             if (!knownSize) Push((uint)t.Length);
             bool signed = IsSigned(t.GetType().GetElementType());
