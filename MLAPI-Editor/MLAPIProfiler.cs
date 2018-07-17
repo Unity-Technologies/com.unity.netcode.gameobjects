@@ -31,7 +31,7 @@ namespace UnityEditor
         int captureCount = 100;
         float showMax = 0;
         float showMin = 0;
-        AnimationCurve curve = AnimationCurve.Constant(0, 1, 0);
+        AnimationCurve curve = AnimationCurve.Linear(0, 0, 1, 0);
         readonly List<ProfilerTick> currentTicks = new List<ProfilerTick>();
         float lastDrawn = 0;
         class ProfilerContainer
