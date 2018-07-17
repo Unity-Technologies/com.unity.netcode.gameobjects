@@ -40,6 +40,7 @@ public class AppveyorBuild
 [InitializeOnLoad]
 public class MLAPIEditor : EditorWindow
 {
+    private const string API_URL = "https://api.github.com/repos/MidLevel/MLAPI/releases";
     private GithubRelease[] releases = new GithubRelease[0];
     private bool[] foldoutStatus = new bool[0];
     private string currentVersion
@@ -221,7 +222,7 @@ public class MLAPIEditor : EditorWindow
     {
         lastUpdated = DateTime.Now.Ticks;
 
-        WWW www = new WWW("https://api.github.com/repos/TwoTenPvP/MLAPI/releases");
+        WWW www = new WWW(API_URL);
         isFetching = true;
         while (!www.isDone && string.IsNullOrEmpty(www.error))
         {
