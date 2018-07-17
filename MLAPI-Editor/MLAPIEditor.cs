@@ -68,6 +68,7 @@ public class MLAPIEditor : EditorWindow
     private bool isFetching = false;
     private bool isParsing = false;
     private bool canRefetch => !(isFetching || isParsing);
+    private string statusMessage;
 
     private int tab;
 
@@ -80,7 +81,7 @@ public class MLAPIEditor : EditorWindow
     Vector2 scrollPos = Vector2.zero;
     private void OnGUI()
     {
-        GUILayout.BeginArea(new Rect(5, 0, position.width - 5, position.height - 60));
+        GUILayout.BeginArea(new Rect(5, 0, position.width - 5, position.height - (40 + ((string.IsNullOrEmpty(statusMessage) ? 0 : 20) + (canRefetch ? 20 : 0)))));
         scrollPos = GUILayout.BeginScrollView(scrollPos);
         tab = GUILayout.Toolbar(tab, new string[] { "GitHub", "Commits" });
         if (tab == 0)
@@ -120,7 +121,7 @@ public class MLAPIEditor : EditorWindow
                         EditorGUILayout.LabelField("Release date: " + DateTime.Parse(DateTime.Parse(releases[i].published_at).ToString()), EditorStyles.miniBoldLabel);
 
                         if (currentVersion != releases[i].tag_name && GUILayout.Button("Install"))
-                            InstallRelease(i);
+                            EditorCoroutine.Start(InstallRelease(i));
 
                         EditorGUI.indentLevel--;
                     }
@@ -129,19 +130,20 @@ public class MLAPIEditor : EditorWindow
         }
         else if (tab == 1)
         {
-            EditorGUILayout.LabelField("Not yet implemented. The rest API for AppVeyor is proper garbage and is needed to grab the artifact download URLs", EditorStyles.wordWrappedLabel);
+            EditorGUILayout.LabelField("Not yet implemented. The rest API for AppVeyor is proper garbage and is needed to grab the artifact download URLs", EditorStyles.wordWrappedMiniLabel);
         }
         GUILayout.EndScrollView();
         GUILayout.EndArea();
 
-        GUILayout.BeginArea(new Rect(5, position.height - 60, position.width - 5, 60));
+        GUILayout.BeginArea(new Rect(5, position.height - (40 + ((string.IsNullOrEmpty(statusMessage) ? 0 : 20) + (canRefetch ? 20 : 0))), position.width - 5, (60 + ((string.IsNullOrEmpty(statusMessage) ? 0 : 20) + (canRefetch ? 20 : 0)))));
 
         string lastUpdatedString = lastUpdated == 0 ? "Never" : new DateTime(lastUpdated).ToShortTimeString();
         GUILayout.Label("Last checked: " + lastUpdatedString, EditorStyles.centeredGreyMiniLabel);
 
-        string fetchButton = isFetching ? "Fetching..." : isParsing ? "Parsing..." : "Fetch releases";
-        if (GUILayout.Button(fetchButton) && canRefetch)
+        if (canRefetch && GUILayout.Button("Fetch releases"))
             EditorCoroutine.Start(GetReleases());
+        if (!string.IsNullOrEmpty(statusMessage))
+            GUILayout.Label(statusMessage, EditorStyles.centeredGreyMiniLabel);
         if (GUILayout.Button("Reset defaults"))
         {
             releases = new GithubRelease[0];
@@ -158,31 +160,64 @@ public class MLAPIEditor : EditorWindow
         Repaint();
     }
 
-    private void InstallRelease(int index)
+    private IEnumerator InstallRelease(int index)
     {
+        statusMessage = "Cleaning lib folder";
+        yield return null;
+
+        if (Directory.Exists(Application.dataPath + "/MLAPI/Lib/"))
+            Directory.Delete(Application.dataPath + "/MLAPI/Lib/", true);
+
+        Directory.CreateDirectory(Application.dataPath + "/MLAPI/Lib/");
+
+        bool downloadFail = false;
         for (int i = 0; i < releases[index].assets.Length; i++)
         {
             WWW www = new WWW(releases[index].assets[i].browser_download_url);
             while (!www.isDone && string.IsNullOrEmpty(www.error))
             {
-                EditorGUI.ProgressBar(new Rect(5, position.height - 60, position.width, 20), www.progress, "Installing " + i + "/" + releases[index].assets.Length);
+                statusMessage = "Downloading " + releases[index].assets[i].name + "(" + (i + 1) + "/" + releases[index].assets.Length + ") " + www.progress + "%";
+                yield return null;
             }
 
-            if (!Directory.Exists(Application.dataPath + "/MLAPI/Lib/"))
-                Directory.CreateDirectory(Application.dataPath + "/MLAPI/Lib/");
+            if (!string.IsNullOrEmpty(www.error))
+            {
+                //Some kind of error
+                downloadFail = true;
+                statusMessage = "Failed to download asset " + releases[index].assets[i].name + ". Error: " + www.error;
+                double startTime = EditorApplication.timeSinceStartup;
+                //Basically = yield return new WaitForSeconds(5);
+                while (EditorApplication.timeSinceStartup - startTime <= 5f)
+                    yield return null;
+                statusMessage = "";
+            }
+            else
+            {
+                statusMessage = "Writing " + releases[index].assets[i].name + " to disk";
+                yield return null;
 
-            File.WriteAllBytes(Application.dataPath + "/MLAPI/Lib/" + releases[index].assets[i].name, www.bytes);
+                File.WriteAllBytes(Application.dataPath + "/MLAPI/Lib/" + releases[index].assets[i].name, www.bytes);
 
-            if (releases[index].assets[i].name.EndsWith(".unitypackage"))
-                AssetDatabase.ImportPackage(Application.dataPath + "/MLAPI/Lib/" + releases[index].assets[i].name, false);
+                if (releases[index].assets[i].name.EndsWith(".unitypackage"))
+                {
+                    statusMessage = "Installing " + releases[index].assets[i].name;
+                    yield return null;
+                    AssetDatabase.ImportPackage(Application.dataPath + "/MLAPI/Lib/" + releases[index].assets[i].name, false);
+                }
+
+                yield return null;
+            }
         }
 
-        currentVersion = releases[index].tag_name;
+        yield return null;
+        statusMessage = "";
+        if (!downloadFail)
+            currentVersion = releases[index].tag_name; //Only set this if there was no fail. This is to allow them to still retry the download
         AssetDatabase.Refresh();
     }
 
 
-    IEnumerator GetReleases()
+    private IEnumerator GetReleases()
     {
         lastUpdated = DateTime.Now.Ticks;
 
@@ -190,61 +225,82 @@ public class MLAPIEditor : EditorWindow
         isFetching = true;
         while (!www.isDone && string.IsNullOrEmpty(www.error))
         {
+            statusMessage = "Fetching releases " + www.progress + "%";
             yield return null;
         }
-        isFetching = false;
-        isParsing = true;
-        string json = www.text;
 
-        //This makes it from a json array to the individual objects in the array. 
-        //The JSON serializer cant take arrays. We have to split it up outselves.
-        List<string> releasesJson = new List<string>();
-        int depth = 0;
-        StringBuilder builder = new StringBuilder();
-        for (int i = 1; i < json.Length - 1; i++)
+        if (!string.IsNullOrEmpty(www.error))
         {
-            if (json[i] == '[')
-                depth++;
-            else if (json[i] == ']')
-                depth--;
-            else if (json[i] == '{')
-                depth++;
-            else if (json[i] == '}')
-                depth--;
-
-            if ((depth == 0 && json[i] != ',') || depth > 0)
-                builder.Append(json[i]);
-
-            if (depth == 0 && json[i] == ',')
-            {
-                releasesJson.Add(builder.ToString());
-                builder.Length = 0;
-            }
-
-            //Parse in smaller batches
-            if (i % (json.Length / 30) == 0)
-            {
+            //Some kind of error
+            statusMessage = "Failed to fetch releases. Error: " + www.error;
+            double startTime = EditorApplication.timeSinceStartup;
+            //Basically = yield return new WaitForSeconds(5);
+            while (EditorApplication.timeSinceStartup - startTime <= 5f)
                 yield return null;
-            }
+            statusMessage = "";
         }
-
-        releases = new GithubRelease[releasesJson.Count];
-        foldoutStatus = new bool[releasesJson.Count];
-
-        for (int i = 0; i < releasesJson.Count; i++)
+        else
         {
-            releases[i] = JsonUtility.FromJson<GithubRelease>(releasesJson[i]);
-            if (i == 0)
-                foldoutStatus[i] = true;
-            else
-                foldoutStatus[i] = false;
+            isFetching = false;
+            isParsing = true;
+            string json = www.text;
 
-            if (i % (releasesJson.Count / 30f) == 0)
+            //This makes it from a json array to the individual objects in the array. 
+            //The JSON serializer cant take arrays. We have to split it up outselves.
+            List<string> releasesJson = new List<string>();
+            int depth = 0;
+            StringBuilder builder = new StringBuilder();
+            for (int i = 1; i < json.Length - 1; i++)
             {
-                yield return null;
+                if (json[i] == '[')
+                    depth++;
+                else if (json[i] == ']')
+                    depth--;
+                else if (json[i] == '{')
+                    depth++;
+                else if (json[i] == '}')
+                    depth--;
+
+                if ((depth == 0 && json[i] != ',') || depth > 0)
+                    builder.Append(json[i]);
+
+                if (depth == 0 && json[i] == ',')
+                {
+                    releasesJson.Add(builder.ToString());
+                    builder.Length = 0;
+                }
+
+                //Parse in smaller batches
+                if (i % (json.Length / 100) == 0)
+                {
+                    statusMessage = "Splitting JSON " + (i / (float)json.Length) * 100f + "%";
+                    yield return null;
+                }
+
+                statusMessage = "";
             }
+
+            releases = new GithubRelease[releasesJson.Count];
+            foldoutStatus = new bool[releasesJson.Count];
+
+            for (int i = 0; i < releasesJson.Count; i++)
+            {
+                releases[i] = JsonUtility.FromJson<GithubRelease>(releasesJson[i]);
+                if (i == 0)
+                    foldoutStatus[i] = true;
+                else
+                    foldoutStatus[i] = false;
+
+                if (i % (releasesJson.Count / 30f) == 0)
+                {
+                    yield return null;
+                    statusMessage = "Parsing JSON " + (i / (float)releasesJson.Count) * 100f + "%";
+                }
+            }
+
+            statusMessage = "";
+            isParsing = false;
         }
-        isParsing = false;
     }
 
     public class EditorCoroutine
