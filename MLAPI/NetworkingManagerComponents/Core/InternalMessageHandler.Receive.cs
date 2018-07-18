@@ -258,68 +258,6 @@ namespace MLAPI.NetworkingManagerComponents.Core
             netManager.NetworkTime = netTime + (msDelay / 1000f);
         }
 
-        internal static void HandleCommand(uint clientId, BitReader reader, int channelId)
-        {
-            if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.Disabled)
-                return;
-
-            uint networkId = reader.ReadUInt();
-            ushort orderId = reader.ReadUShort();
-            ulong hash = reader.ReadULong();
-            NetworkedBehaviour behaviour = SpawnManager.SpawnedObjects[networkId].GetBehaviourAtOrderIndex(orderId);
-            if (clientId != behaviour.OwnerClientId)
-                return; // Not owner
-            MethodInfo targetMethod = null;
-            if (behaviour.cachedMethods.ContainsKey(hash))
-                targetMethod = behaviour.cachedMethods[hash];
-            else return; //No method
-            ParameterInfo[] parameters = targetMethod.GetParameters();
-            object[] methodParams = new object[parameters.Length];
-            for (int i = 0; i < parameters.Length; i++)
-                methodParams[i] = FieldTypeHelper.ReadFieldType(reader, parameters[i].ParameterType);
-            targetMethod.Invoke(behaviour, methodParams);
-        }
-
-        internal static void HandleRpc(uint clientId, BitReader reader, int channelId)
-        {
-            if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.Disabled)     
-                return;
-
-            uint networkId = reader.ReadUInt();
-            ushort orderId = reader.ReadUShort();
-            ulong hash = reader.ReadULong();
-            NetworkedBehaviour behaviour = SpawnManager.SpawnedObjects[networkId].GetBehaviourAtOrderIndex(orderId);
-            MethodInfo targetMethod = null;
-            if (behaviour.cachedMethods.ContainsKey(hash))
-                targetMethod = behaviour.cachedMethods[hash];
-            else return; //No method
-            ParameterInfo[] parameters = targetMethod.GetParameters();
-            object[] methodParams = new object[parameters.Length];
-            for (int i = 0; i < parameters.Length; i++)
-                methodParams[i] = FieldTypeHelper.ReadFieldType(reader, parameters[i].ParameterType);
-            targetMethod.Invoke(behaviour, methodParams);
-        }
-
-        internal static void HandleTargetRpc(uint clientId, BitReader reader, int channelId)
-        {
-            if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.Disabled)
-                return;
-
-            uint networkId = reader.ReadUInt();
-            ushort orderId = reader.ReadUShort();
-            ulong hash = reader.ReadULong();
-            NetworkedBehaviour behaviour = SpawnManager.SpawnedObjects[networkId].GetBehaviourAtOrderIndex(orderId);
-            MethodInfo targetMethod = null;
-            if (behaviour.cachedMethods.ContainsKey(hash))
-                targetMethod = behaviour.cachedMethods[hash];
-            else return; //No method
-            ParameterInfo[] parameters = targetMethod.GetParameters();
-            object[] methodParams = new object[parameters.Length];
-            for (int i = 0; i < parameters.Length; i++)
-                methodParams[i] = FieldTypeHelper.ReadFieldType(reader, parameters[i].ParameterType);
-            targetMethod.Invoke(behaviour, methodParams);
-        }
-
         internal static void HandleNetworkedVarDelta(uint clientId, BitReader reader, int channelId)
         {
             uint netId = reader.ReadUInt();
@@ -356,6 +294,26 @@ namespace MLAPI.NetworkingManagerComponents.Core
             }
 
             SpawnManager.SpawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).HandleNetworkedVarUpdate(reader, clientId);
+        }
+        
+        internal static void HandleServerRPC(uint clientId, BitReader reader, int channelId)
+        {
+            uint networkId = reader.ReadUInt();
+            ushort behaviourId = reader.ReadUShort();
+            ulong hash = reader.ReadULong();
+            
+            NetworkedBehaviour behaviour = SpawnManager.SpawnedObjects[networkId].GetBehaviourAtOrderIndex(behaviourId);
+            behaviour.OnRemoteServerRPC(hash, clientId, reader);
+        }
+        
+        internal static void HandleClientRPC(uint clientId, BitReader reader, int channelId)
+        {
+            uint networkId = reader.ReadUInt();
+            ushort behaviourId = reader.ReadUShort();
+            ulong hash = reader.ReadULong();
+            
+            NetworkedBehaviour behaviour = SpawnManager.SpawnedObjects[networkId].GetBehaviourAtOrderIndex(behaviourId);
+            behaviour.OnRemoteClientRPC(hash, clientId, reader);
         }
     }
 }

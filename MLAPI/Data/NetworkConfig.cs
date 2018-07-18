@@ -45,14 +45,6 @@ namespace MLAPI.Data
         [HideInInspector]
         public List<Channel> Channels = new List<Channel>();
         /// <summary>
-        /// Registered MessageTypes
-        /// </summary>
-        [HideInInspector]
-        public List<MessageType> MessageTypes = new List<MessageType>();
-        internal HashSet<ushort> PassthroughMessageHashSet = new HashSet<ushort>();
-        internal HashSet<string> EncryptedChannelsHashSet = new HashSet<string>();
-        internal List<string> EncryptedChannels = new List<string>();
-        /// <summary>
         /// A list of SceneNames that can be used during networked games.
         /// </summary>
         [HideInInspector]
@@ -73,7 +65,7 @@ namespace MLAPI.Data
         /// <summary>
         /// The size of the receive message buffer. This is the max message size.
         /// </summary>
-        public int MessageBufferSize = 65535;
+        public int MessageBufferSize = 1024;
         /// <summary>
         /// Amount of times per second the receive queue is emptied and all messages inside are processed.
         /// </summary>
@@ -142,10 +134,6 @@ namespace MLAPI.Data
         [TextArea]
         public string RSAPublicKey = "<RSAKeyValue><Modulus>vBEvOQki/EftWOgwh4G8/nFRvcDJLylc8P7Dhz5m/hpkkNtAMzizNKYUrGbs7sYWlEuMYBOWrzkIDGOMoOsYc9uCi+8EcmNoHDlIhK5yNfZUexYBF551VbvZ625LSBR7kmBxkyo4IPuA09fYCHeUFm3prt4h6aTD0Hjc7ZsJHUU=</Modulus><Exponent>EQ==</Exponent></RSAKeyValue>"; //CHANGE THESE FOR PRODUCTION!
         /// <summary>
-        /// Wheter or not to allow any type of passthrough messages
-        /// </summary>
-        public bool AllowPassthroughMessages = true;
-        /// <summary>
         /// Wheter or not to enable scene switching
         /// </summary>
         public bool EnableSceneSwitching = true;
@@ -156,11 +144,10 @@ namespace MLAPI.Data
         /// <summary>
         /// Decides how many bytes to use for Attribute messaging. Leave this to 2 bytes unless you are facing hash collisions
         /// </summary>
-        public AttributeMessageMode AttributeMessageMode = AttributeMessageMode.Disabled;
+        public AttributeMessageMode AttributeMessageMode = AttributeMessageMode.WovenTwoByte;
 
         private void Sort()
         {
-            MessageTypes = MessageTypes.OrderBy(x => x.Name).ToList();
             Channels = Channels.OrderBy(x => x.Name).ToList();
             NetworkedPrefabs = NetworkedPrefabs.OrderBy(x => x.name).ToList();
             RegisteredScenes.Sort();
@@ -184,13 +171,6 @@ namespace MLAPI.Data
                     writer.WriteString(config.Channels[i].Name);
                     writer.WriteBool(config.Channels[i].Encrypted);
                     writer.WriteBits((byte)config.Channels[i].Type, 5);
-                }
-
-                writer.WriteUShort((ushort)config.MessageTypes.Count);
-                for (int i = 0; i < config.MessageTypes.Count; i++)
-                {
-                    writer.WriteString(config.MessageTypes[i].Name);
-                    writer.WriteBool(config.MessageTypes[i].Passthrough);
                 }
 
                 writer.WriteUShort((ushort)config.RegisteredScenes.Count);
@@ -220,7 +200,6 @@ namespace MLAPI.Data
                 writer.WriteBool(config.HandleObjectSpawning);
                 writer.WriteBool(config.EnableEncryption);
                 writer.WriteBool(config.SignKeyExchange);
-                writer.WriteBool(config.AllowPassthroughMessages);
                 writer.WriteBool(config.EnableSceneSwitching);
                 writer.WriteBool(config.EnableTimeResync);
                 writer.WriteBits((byte)config.AttributeMessageMode, 3);
@@ -254,18 +233,6 @@ namespace MLAPI.Data
                         Type = (ChannelType)reader.ReadBits(5)
                     };
                     config.Channels.Add(channel);
-                }
-
-                ushort messageTypeCount = reader.ReadUShort();
-                config.MessageTypes.Clear();
-                for (int i = 0; i < messageTypeCount; i++)
-                {
-                    MessageType messageType = new MessageType()
-                    {
-                        Name = reader.ReadString(),
-                        Passthrough = reader.ReadBool()
-                    };
-                    config.MessageTypes.Add(messageType);
                 }
 
                 ushort sceneCount = reader.ReadUShort();
@@ -310,7 +277,6 @@ namespace MLAPI.Data
                 config.HandleObjectSpawning = reader.ReadBool();
                 config.EnableEncryption = reader.ReadBool();
                 config.SignKeyExchange = reader.ReadBool();
-                config.AllowPassthroughMessages = reader.ReadBool();
                 config.EnableSceneSwitching = reader.ReadBool();
                 config.EnableTimeResync = reader.ReadBool();
                 config.AttributeMessageMode = (AttributeMessageMode)reader.ReadBits(3);
@@ -333,18 +299,14 @@ namespace MLAPI.Data
             using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteUShort(ProtocolVersion);
+                writer.WriteString(MLAPIConstants.MLAPI_PROTOCOL_VERSION);
+                
                 for (int i = 0; i < Channels.Count; i++)
                 {
                     writer.WriteString(Channels[i].Name);
                     writer.WriteByte((byte)Channels[i].Type);
                     if (EnableEncryption)
                         writer.WriteBool(Channels[i].Encrypted);
-                }
-                for (int i = 0; i < MessageTypes.Count; i++)
-                {
-                    writer.WriteString(MessageTypes[i].Name);
-                    if (AllowPassthroughMessages)
-                        writer.WriteBool(MessageTypes[i].Passthrough);
                 }
                 if (EnableSceneSwitching)
                 {
@@ -362,7 +324,6 @@ namespace MLAPI.Data
                 }
                 writer.WriteBool(HandleObjectSpawning);
                 writer.WriteBool(EnableEncryption);
-                writer.WriteBool(AllowPassthroughMessages);
                 writer.WriteBool(EnableSceneSwitching);
                 writer.WriteBool(SignKeyExchange);
                 writer.WriteBits((byte)AttributeMessageMode, 3);
