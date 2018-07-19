@@ -532,8 +532,6 @@ namespace MLAPI.MonoBehaviours.Core
         
         internal void SendServerRPCPerformance(ulong hash, BitWriter writer)
         {
-            Type type = GetType(); //This is cached by CLR
-            
             if (!isClient)
             {
                 //We are ONLY a server.
@@ -554,8 +552,6 @@ namespace MLAPI.MonoBehaviours.Core
 
         internal void SendClientRPCPerformance(ulong hash,  List<uint> clientIds, BitWriter writer)
         {
-            Type type = GetType(); //This is cached by CLR
-            
             if (!isServer)
             {
                 //We are NOT a server.
