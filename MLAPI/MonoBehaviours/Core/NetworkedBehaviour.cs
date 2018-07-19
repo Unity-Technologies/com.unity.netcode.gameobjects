@@ -358,8 +358,8 @@ namespace MLAPI.MonoBehaviours.Core
         #region MESSAGING_SYSTEM
         private static readonly Dictionary<Type, Dictionary<ulong, ClientRPC>> CachedClientRpcs = new Dictionary<Type, Dictionary<ulong, ClientRPC>>();
         private static readonly Dictionary<Type, Dictionary<ulong, ServerRPC>> CachedServerRpcs = new Dictionary<Type, Dictionary<ulong, ServerRPC>>();
-        private static readonly HashSet<Type> CachedTypes = new HashSet<Type>();
         private static readonly Dictionary<ulong, string> HashResults = new Dictionary<ulong, string>();
+        private static readonly HashSet<Type> CachedTypes = new HashSet<Type>();
 
         private ulong HashMethodName(string name)
         {
@@ -562,30 +562,63 @@ namespace MLAPI.MonoBehaviours.Core
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Only clients and host can invoke ClientRPC");
                 return;
             }
-            
-            for (int i = 0; i < clientIds.Count; i++)
+
+            using (BitWriter rpcWriter = BitWriter.Get())
             {
-                if (isHost && clientIds[i] == NetworkingManager.singleton.LocalClientId)
+                writer.WriteUInt(networkId);
+                writer.WriteUShort(networkedObject.GetOrderIndex(this));
+                writer.WriteULong(hash);
+
+                writer.WriteWriter(writer);
+
+                for (int i = 0; i < clientIds.Count; i++)
+                {
+                    if (isHost && clientIds[i] == NetworkingManager.singleton.LocalClientId)
+                    {
+                        using (BitReader reader = BitReader.Get(writer.Finalize()))
+                        {
+                            InvokeClientRPCLocal(hash, NetworkingManager.singleton.LocalClientId, reader);
+                        }
+                    }
+                    else
+                    {
+                        InternalMessageHandler.Send(clientIds[i], "MLAPI_CLIENT_RPC", "MLAPI_USER_CHANNEL", rpcWriter);
+                    }
+                }
+            }
+        }
+
+        internal void SendClientRPCPerformance(ulong hash, uint clientId, BitWriter writer)
+        {
+            Type type = GetType(); //This is cached by CLR
+
+            if (!isServer)
+            {
+                //We are NOT a server.
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Only clients and host can invoke ClientRPC");
+                return;
+            }
+
+            using (BitWriter rpcWriter = BitWriter.Get())
+            {
+                writer.WriteUInt(networkId);
+                writer.WriteUShort(networkedObject.GetOrderIndex(this));
+                writer.WriteULong(hash);
+
+                writer.WriteWriter(writer);
+
+                if (isHost && clientId == NetworkingManager.singleton.LocalClientId)
                 {
                     using (BitReader reader = BitReader.Get(writer.Finalize()))
                     {
-                        InvokeClientRPCLocal(hash, NetworkingManager.singleton.LocalClientId, reader);   
+                        InvokeClientRPCLocal(hash, NetworkingManager.singleton.LocalClientId, reader);
                     }
                 }
                 else
                 {
-                    using (BitWriter rpcWriter = BitWriter.Get())
-                    {
-                        writer.WriteUInt(networkId);
-                        writer.WriteUShort(networkedObject.GetOrderIndex(this));
-                        writer.WriteULong(hash);
-                        
-                        writer.WriteWriter(writer);
-                        
-                        InternalMessageHandler.Send(clientIds[i], "MLAPI_CLIENT_RPC", "MLAPI_USER_CHANNEL", rpcWriter);
-                    }
+                    InternalMessageHandler.Send(clientId, "MLAPI_CLIENT_RPC", "MLAPI_USER_CHANNEL", rpcWriter);
                 }
-            } 
+            }
         }
         #endregion
 
@@ -596,47 +629,64 @@ namespace MLAPI.MonoBehaviours.Core
         public delegate void Action<T1, T2, T3, T4, T5, T6, T7, T8>(T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8);
         public delegate void Action<T1, T2, T3, T4, T5, T6, T7, T8, T9>(T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9);
         public delegate void Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10);
-       
-        //BOXED
-        public void InvokeServerRPC(Action method)
+
+        //BOXED SERVER RPC
+        public void InvokeServerRpc(string methodName, params object[] parameters)
+        {
+            SendServerRPCBoxed(HashMethodName(methodName), parameters);
+        }
+
+        public void InvokeServerRpc(Action method)
         {
             SendServerRPCBoxed(HashMethodName(method.Method.Name));
         }
         
-        public void InvokeServerRPC<T1>(Action<T1> method, T1 t1)
+        public void InvokeServerRpc<T1>(Action<T1> method, T1 t1)
         {
             SendServerRPCBoxed(HashMethodName(method.Method.Name), t1);
         }
-        
-        public void InvokeClientRPC(Action method, List<uint> clientIds)
+
+        public void InvokeServerRpc<T1>(Action<T1> method, T1 t1)
+        {
+            SendServerRPCBoxed(HashMethodName(method.Method.Name), t1);
+        }
+
+        //BOXED CLIENT RPC
+        public void InvokeClientRpc(Action method, List<uint> clientIds)
         {
             SendClientRPCBoxed(HashMethodName(method.Method.Name), clientIds);
         }
         
-        public void InvokeClientRPC<T1>(Action<T1> method, List<uint> clientIds, T1 t1)
+        public void InvokeClientRpc<T1>(Action<T1> method, List<uint> clientIds, T1 t1)
         {
             SendClientRPCBoxed(HashMethodName(method.Method.Name), clientIds, t1);
         }
         
-        //Performance
-        public void InvokeServerRPC(RpcDelegate method, BitWriter writer)
+        //PERFORMANCE SERVER RPC
+        public void InvokeServerRpc(RpcDelegate method, BitWriter writer)
         {
             SendServerRPCPerformance(HashMethodName(method.Method.Name), writer);
         }
-        
-        public void InvokeClientRPC(RpcDelegate method, BitWriter writer)
-        {
-            SendServerRPCPerformance(HashMethodName(method.Method.Name), writer);
-        }
-        
-        public void InvokeServerRPC(string methodName, BitWriter writer)
+
+        public void InvokeServerRpc(string methodName, BitWriter writer)
         {
             SendServerRPCPerformance(HashMethodName(methodName), writer);
         }
+
+        //PERFORMANCE CLIENT RPC
+        public void InvokeClientRpc(RpcDelegate method, BitWriter writer)
+        {
+            SendServerRPCPerformance(HashMethodName(method.Method.Name), writer);
+        }
         
-        public void InvokeClientRPC(string methodName, List<uint> clientIds, BitWriter writer)
+        public void InvokeClientRpc(string methodName, List<uint> clientIds, BitWriter writer)
         {
             SendClientRPCPerformance(HashMethodName(methodName), clientIds, writer);
+        }
+
+        public void InvokeClientRpcOnOwner(string methodName, BitWriter writer)
+        {
+            SendClientRPCPerformance(HashMethodName(methodName), OwnerClientId, writer);
         }
         #endregion
 
