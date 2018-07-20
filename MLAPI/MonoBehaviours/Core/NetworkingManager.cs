@@ -280,9 +280,6 @@ namespace MLAPI.MonoBehaviours.Core
 #endif
             MessageManager.channels.Clear();
             MessageManager.messageTypes.Clear();
-            MessageManager.messageCallbacks.Clear();
-            MessageManager.messageHandlerCounter.Clear();
-            MessageManager.releasedMessageHandlerCounters.Clear();
             MessageManager.reverseChannels.Clear();
             MessageManager.reverseMessageTypes.Clear();
             SpawnManager.SpawnedObjects.Clear();
