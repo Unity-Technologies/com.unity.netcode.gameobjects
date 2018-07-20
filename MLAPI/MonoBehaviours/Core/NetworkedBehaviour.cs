@@ -559,7 +559,7 @@ namespace MLAPI.MonoBehaviours.Core
                 }
             }
             
-            InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerNetId, "MLAPI_SERVER_RPC", "MLAPI_USER_CHANNEL", writer);
+            InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerNetId, "MLAPI_SERVER_RPC", "MLAPI_DEFAULT_MESSAGE", writer);
         }
 
         internal void SendClientRPCPerformance(ulong hash,  List<uint> clientIds, BitWriter writer)
@@ -592,7 +592,7 @@ namespace MLAPI.MonoBehaviours.Core
                         }
                         else
                         {
-                            InternalMessageHandler.Send(NetworkingManager.singleton.ConnectedClientsList[i].ClientId, "MLAPI_CLIENT_RPC", "MLAPI_USER_CHANNEL", rpcWriter);
+                            InternalMessageHandler.Send(NetworkingManager.singleton.ConnectedClientsList[i].ClientId, "MLAPI_CLIENT_RPC", "MLAPI_DEFAULT_MESSAGE", rpcWriter);
                         }
                     }
                 }
@@ -609,8 +609,7 @@ namespace MLAPI.MonoBehaviours.Core
                         }
                         else
                         {
-                            InternalMessageHandler.Send(clientIds[i], "MLAPI_CLIENT_RPC", "MLAPI_USER_CHANNEL", rpcWriter);
-                        }
+                            InternalMessageHandler.Send(clientIds[i], "MLAPI_CLIENT_RPC", "MLAPI_DEFAULT_MESSAGE", rpcWriter);}
                     }
                 }
             }
@@ -642,7 +641,7 @@ namespace MLAPI.MonoBehaviours.Core
                 }
                 else
                 {
-                    InternalMessageHandler.Send(clientId, "MLAPI_CLIENT_RPC", "MLAPI_USER_CHANNEL", rpcWriter);
+                    InternalMessageHandler.Send(clientId, "MLAPI_CLIENT_RPC", "MLAPI_DEFAULT_MESSAGE", rpcWriter);
                 }
             }
         }
