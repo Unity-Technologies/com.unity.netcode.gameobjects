@@ -315,5 +315,10 @@ namespace MLAPI.NetworkingManagerComponents.Core
             NetworkedBehaviour behaviour = SpawnManager.SpawnedObjects[networkId].GetBehaviourAtOrderIndex(behaviourId);
             behaviour.OnRemoteClientRPC(hash, clientId, reader);
         }
+        
+        internal static void HandleCustomMessage(uint clientId, BitReader reader, int channelId)
+        {
+            NetworkingManager.singleton.InvokeOnIncommingCustomMessage(clientId, reader);
+        }
     }
 }

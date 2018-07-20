@@ -19,5 +19,6 @@
         public const ushort MLAPI_NETWORKED_VAR_UPDATE = 12;
         public const ushort MLAPI_SERVER_RPC = 13;
         public const ushort MLAPI_CLIENT_RPC = 14;
+        public const ushort MLAPI_CUSTOM_MESSAGE = 15;
     }
 }

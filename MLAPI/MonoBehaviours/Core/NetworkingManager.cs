@@ -45,6 +45,10 @@ namespace MLAPI.MonoBehaviours.Core
         /// </summary>
         public static NetworkingManager singleton { get; private set; }
         /// <summary>
+        /// Gets the networkId of the server
+        /// </summary>
+        public uint ServerNetId => NetworkConfig.NetworkTransport.ServerNetId;
+        /// <summary>
         /// The clientId the server calls the local client by, only valid for clients
         /// </summary>
         public uint LocalClientId 
@@ -123,6 +127,62 @@ namespace MLAPI.MonoBehaviours.Core
         /// The current NetworkingConfiguration
         /// </summary>
         public NetworkConfig NetworkConfig;
+        /// <summary>
+        /// Delegate used for incomming custom messages
+        /// </summary>
+        /// <param name="clientId">The clientId that sent the message</param>
+        /// <param name="reader">The reader containing the message data</param>
+        public delegate void CustomMessageDelegete(uint clientId, BitReader reader);
+        /// <summary>
+        /// Event invoked when custom messages arrive
+        /// </summary>
+        public event CustomMessageDelegete OnIncommingCustomMessage;
+
+        internal void InvokeOnIncommingCustomMessage(uint clientId, BitReader reader)
+        {
+            if (OnIncommingCustomMessage != null) OnIncommingCustomMessage(clientId, reader);
+        }
+
+        /// <summary>
+        /// Sends custom message to a list of clients
+        /// </summary>
+        /// <param name="clientIds">The clients to send to, sends to everyone if null</param>
+        /// <param name="writer">The message writer containing the data</param>
+        /// <param name="channel">The channel to send the data on</param>
+        public void SendCustomMessage(List<uint> clientIds, BitWriter writer, string channel = "MLAPI_DEFAULT_MESSAGE")
+        {
+            if (!isServer)
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogWarning("Can not send custom message to multiple users as a client");
+                return;
+            }
+            if (clientIds == null)
+            {
+                for (int i = 0; i < ConnectedClientsList.Count; i++)
+                {
+                    InternalMessageHandler.Send(ConnectedClientsList[i].ClientId, "MLAPI_CUSTOM_MESSAGE", channel, writer);
+                }
+            }
+            else
+            {
+                for (int i = 0; i < clientIds.Count; i++)
+                {
+                    InternalMessageHandler.Send(clientIds[i], "MLAPI_CUSTOM_MESSAGE", channel, writer);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Sends a custom message to a specific client
+        /// </summary>
+        /// <param name="clientId">The client to send the message to</param>
+        /// <param name="writer">The message writer containing the data</param>
+        /// <param name="channel">The channel tos end the data on</param>
+        public void SendCustomMessage(uint clientId, BitWriter writer, string channel = "MLAPI_DEFAULT_MESSAGE")
+        {
+            InternalMessageHandler.Send(clientId, "MLAPI_CUSTOM_MESSAGE", channel, writer);
+        }
+
 
 #if !DISABLE_CRYPTOGRAPHY
         internal EllipticDiffieHellman clientDiffieHellman;
@@ -363,6 +423,7 @@ namespace MLAPI.MonoBehaviours.Core
             MessageManager.messageTypes.Add("MLAPI_NETWORKED_VAR_UPDATE", MLAPIConstants.MLAPI_NETWORKED_VAR_UPDATE);
             MessageManager.messageTypes.Add("MLAPI_SERVER_RPC", MLAPIConstants.MLAPI_SERVER_RPC);
             MessageManager.messageTypes.Add("MLAPI_CLIENT_RPC", MLAPIConstants.MLAPI_CLIENT_RPC);
+            MessageManager.messageTypes.Add("MLAPI_CUSTOM_MESSAGE", MLAPIConstants.MLAPI_CUSTOM_MESSAGE);
 
             return settings;
         }
@@ -755,7 +816,6 @@ namespace MLAPI.MonoBehaviours.Core
                 {
                     #region INTERNAL MESSAGE
 
-                    //MLAPI message
                     switch (messageType)
                     {
                         case MLAPIConstants.MLAPI_CONNECTION_REQUEST:
@@ -802,6 +862,9 @@ namespace MLAPI.MonoBehaviours.Core
                             break;
                         case MLAPIConstants.MLAPI_CLIENT_RPC:
                             if (isClient) InternalMessageHandler.HandleClientRPC(clientId, reader, channelId);
+                            break;
+                        case MLAPIConstants.MLAPI_CUSTOM_MESSAGE:
+                            InternalMessageHandler.HandleCustomMessage(clientId, reader, channelId);
                             break;
                     }
 
