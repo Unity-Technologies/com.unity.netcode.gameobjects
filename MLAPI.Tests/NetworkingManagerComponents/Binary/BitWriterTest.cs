@@ -12,7 +12,7 @@ namespace MLAPI.Tests.NetworkingManagerComponents.Binary
         [Test]
         public void TestWritingTrue()
         {
-            BitWriterDeprecated bitWriter = BitWriterDeprecated.Get();
+            BitWriter bitWriter = BitWriter.Get();
 
             bitWriter.WriteBool(true);
 

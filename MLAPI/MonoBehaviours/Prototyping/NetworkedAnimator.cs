@@ -250,7 +250,7 @@ namespace MLAPI.MonoBehaviours.Prototyping
             if (i == 5) param5 = p;
         }
 
-        private void HandleAnimMsg(uint clientId, BitReaderDeprecated reader)
+        private void HandleAnimMsg(uint clientId, BitReader reader)
         {
             // usually transitions will be triggered by parameters, if not, play anims directly.
             // NOTE: this plays "animations", not transitions, so any transitions will be skipped.
@@ -287,7 +287,7 @@ namespace MLAPI.MonoBehaviours.Prototyping
             }
         }
 
-        private void HandleAnimParamsMsg(uint clientId, BitReaderDeprecated reader)
+        private void HandleAnimParamsMsg(uint clientId, BitReader reader)
         {
             byte[] data = reader.ReadByteArray();
             if (isServer)
@@ -314,7 +314,7 @@ namespace MLAPI.MonoBehaviours.Prototyping
             }
         }
 
-        private void HandleAnimTriggerMsg(uint clientId, BitReaderDeprecated reader)
+        private void HandleAnimTriggerMsg(uint clientId, BitReader reader)
         {
             byte[] data = reader.ReadByteArray();
             if (isServer)

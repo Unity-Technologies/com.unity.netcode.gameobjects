@@ -178,7 +178,7 @@ namespace MLAPI.MonoBehaviours.Prototyping
             if (isServer && EnableRange && EnableNonProvokedResendChecks) CheckForMissedSends();
         }
 
-        private void OnRecieveTransformFromServer(uint clientId, BitReaderDeprecated reader)
+        private void OnRecieveTransformFromServer(uint clientId, BitReader reader)
         {
             if (!enabled) return;
             
@@ -204,7 +204,7 @@ namespace MLAPI.MonoBehaviours.Prototyping
             }
         }
 
-        private void OnRecieveTransformFromClient(uint clientId, BitReaderDeprecated reader)
+        private void OnRecieveTransformFromClient(uint clientId, BitReader reader)
         {
             if (!enabled) return;
             

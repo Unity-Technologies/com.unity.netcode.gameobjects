@@ -9,7 +9,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
 {
     internal static partial class InternalMessageHandler
     {
-        internal static void HandleConnectionRequest(uint clientId, BitReaderDeprecated reader, int channelId)
+        internal static void HandleConnectionRequest(uint clientId, BitReader reader, int channelId)
         {
             ulong configHash = reader.ReadULong();
             if (!netManager.NetworkConfig.CompareConfig(configHash))
@@ -38,7 +38,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             }
         }
 
-        internal static void HandleConnectionApproved(uint clientId, BitReaderDeprecated reader, int channelId)
+        internal static void HandleConnectionApproved(uint clientId, BitReader reader, int channelId)
         {
             netManager.LocalClientId = reader.ReadUInt();
             uint sceneIndex = 0;
@@ -120,7 +120,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 netManager.OnClientConnectedCallback.Invoke(netManager.LocalClientId);
         }
 
-        internal static void HandleAddObject(uint clientId, BitReaderDeprecated reader, int channelId)
+        internal static void HandleAddObject(uint clientId, BitReader reader, int channelId)
         {
             if (netManager.NetworkConfig.HandleObjectSpawning)
             {
@@ -158,24 +158,24 @@ namespace MLAPI.NetworkingManagerComponents.Core
             }
         }
 
-        internal static void HandleClientDisconnect(uint clientId, BitReaderDeprecated reader, int channelId)
+        internal static void HandleClientDisconnect(uint clientId, BitReader reader, int channelId)
         {
             uint disconnectedClientId = reader.ReadUInt();
             netManager.OnClientDisconnectFromServer(disconnectedClientId);
         }
 
-        internal static void HandleDestroyObject(uint clientId, BitReaderDeprecated reader, int channelId)
+        internal static void HandleDestroyObject(uint clientId, BitReader reader, int channelId)
         {
             uint netId = reader.ReadUInt();
             SpawnManager.OnDestroyObject(netId, true);
         }
 
-        internal static void HandleSwitchScene(uint clientId, BitReaderDeprecated reader, int channelId)
+        internal static void HandleSwitchScene(uint clientId, BitReader reader, int channelId)
         {
             NetworkSceneManager.OnSceneSwitch(reader.ReadUInt());
         }
 
-        internal static void HandleSpawnPoolObject(uint clientId, BitReaderDeprecated reader, int channelId)
+        internal static void HandleSpawnPoolObject(uint clientId, BitReader reader, int channelId)
         {
             uint netId = reader.ReadUInt();
 
@@ -192,13 +192,13 @@ namespace MLAPI.NetworkingManagerComponents.Core
             SpawnManager.SpawnedObjects[netId].gameObject.SetActive(true);
         }
 
-        internal static void HandleDestroyPoolObject(uint clientId, BitReaderDeprecated reader, int channelId)
+        internal static void HandleDestroyPoolObject(uint clientId, BitReader reader, int channelId)
         {
             uint netId = reader.ReadUInt();
             SpawnManager.SpawnedObjects[netId].gameObject.SetActive(false);
         }
 
-        internal static void HandleChangeOwner(uint clientId, BitReaderDeprecated reader, int channelId)
+        internal static void HandleChangeOwner(uint clientId, BitReader reader, int channelId)
         {
             uint netId = reader.ReadUInt();
             uint ownerClientId = reader.ReadUInt();
@@ -215,7 +215,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             SpawnManager.SpawnedObjects[netId].OwnerClientId = ownerClientId;
         }
 
-        internal static void HandleAddObjects(uint clientId, BitReaderDeprecated reader, int channelId)
+        internal static void HandleAddObjects(uint clientId, BitReader reader, int channelId)
         {
             if (netManager.NetworkConfig.HandleObjectSpawning)
             {
@@ -249,7 +249,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             }
         }
 
-        internal static void HandleTimeSync(uint clientId, BitReaderDeprecated reader, int channelId)
+        internal static void HandleTimeSync(uint clientId, BitReader reader, int channelId)
         {
             float netTime = reader.ReadFloat();
             int timestamp = reader.ReadInt();
@@ -258,7 +258,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             netManager.NetworkTime = netTime + (msDelay / 1000f);
         }
 
-        internal static void HandleCommand(uint clientId, BitReaderDeprecated reader, int channelId)
+        internal static void HandleCommand(uint clientId, BitReader reader, int channelId)
         {
             if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.Disabled)
                 return;
@@ -280,7 +280,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             targetMethod.Invoke(behaviour, methodParams);
         }
 
-        internal static void HandleRpc(uint clientId, BitReaderDeprecated reader, int channelId)
+        internal static void HandleRpc(uint clientId, BitReader reader, int channelId)
         {
             if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.Disabled)     
                 return;
@@ -300,7 +300,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             targetMethod.Invoke(behaviour, methodParams);
         }
 
-        internal static void HandleTargetRpc(uint clientId, BitReaderDeprecated reader, int channelId)
+        internal static void HandleTargetRpc(uint clientId, BitReader reader, int channelId)
         {
             if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.Disabled)
                 return;
@@ -320,7 +320,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             targetMethod.Invoke(behaviour, methodParams);
         }
 
-        internal static void HandleNetworkedVarDelta(uint clientId, BitReaderDeprecated reader, int channelId)
+        internal static void HandleNetworkedVarDelta(uint clientId, BitReader reader, int channelId)
         {
             uint netId = reader.ReadUInt();
             ushort orderIndex = reader.ReadUShort();
@@ -339,7 +339,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             SpawnManager.SpawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).HandleNetworkedVarDeltas(reader, clientId);
         }
 
-        internal static void HandleNetworkedVarUpdate(uint clientId, BitReaderDeprecated reader, int channelId)
+        internal static void HandleNetworkedVarUpdate(uint clientId, BitReader reader, int channelId)
         {
             uint netId = reader.ReadUInt();
             ushort orderIndex = reader.ReadUShort();

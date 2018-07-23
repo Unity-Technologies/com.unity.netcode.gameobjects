@@ -91,7 +91,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// Gets called when message handlers are ready to be registered and the networking is setup. Provides a Payload if it was provided
         /// </summary>
         /// <param name="payloadReader"></param>
-        public virtual void NetworkStart(BitReaderDeprecated payloadReader)
+        public virtual void NetworkStart(BitReader payloadReader)
         {
             NetworkStart();
         }
@@ -260,7 +260,7 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
 
-            using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
+            using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteUInt(networkId);
                 writer.WriteUShort(networkedObject.GetOrderIndex(this));
@@ -305,7 +305,7 @@ namespace MLAPI.MonoBehaviours.Core
 
             if (isHost) cachedMethods[hash].Invoke(this, methodParams);
 
-            using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
+            using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteUInt(networkId);
                 writer.WriteUShort(networkedObject.GetOrderIndex(this));
@@ -350,7 +350,7 @@ namespace MLAPI.MonoBehaviours.Core
 
             if (isHost) cachedMethods[hash].Invoke(this, methodParams);
 
-            using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
+            using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteUInt(networkId);
                 writer.WriteUShort(networkedObject.GetOrderIndex(this));
@@ -507,7 +507,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="name">The MessageType to register</param>
         /// <param name="action">The callback to get invoked whenever a message is received</param>
         /// <returns>HandlerId for the messageHandler that can be used to deregister the messageHandler</returns>
-        protected int RegisterMessageHandler(string name, Action<uint, BitReaderDeprecated> action)
+        protected int RegisterMessageHandler(string name, Action<uint, BitReader> action)
         {
             if (!MessageManager.messageTypes.ContainsKey(name))
             {
@@ -518,7 +518,7 @@ namespace MLAPI.MonoBehaviours.Core
             ushort behaviourOrder = networkedObject.GetOrderIndex(this);
 
             if (!networkedObject.targetMessageActions.ContainsKey(behaviourOrder))
-                networkedObject.targetMessageActions.Add(behaviourOrder, new Dictionary<ushort, Action<uint, BitReaderDeprecated>>());
+                networkedObject.targetMessageActions.Add(behaviourOrder, new Dictionary<ushort, Action<uint, BitReader>>());
             if (networkedObject.targetMessageActions[behaviourOrder].ContainsKey(messageType))
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Each NetworkedBehaviour can only register one callback per instance per message type");
@@ -549,14 +549,14 @@ namespace MLAPI.MonoBehaviours.Core
             ushort behaviourOrder = networkedObject.GetOrderIndex(this);
 
             if (!networkedObject.targetMessageActions.ContainsKey(behaviourOrder))
-                networkedObject.targetMessageActions.Add(behaviourOrder, new Dictionary<ushort, Action<uint, BitReaderDeprecated>>());
+                networkedObject.targetMessageActions.Add(behaviourOrder, new Dictionary<ushort, Action<uint, BitReader>>());
             if (networkedObject.targetMessageActions[behaviourOrder].ContainsKey(messageType))
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Each NetworkedBehaviour can only register one callback per instance per message type");
                 return -1;
             }
 
-            void convertedAction(uint clientId, BitReaderDeprecated reader)
+            void convertedAction(uint clientId, BitReader reader)
             {
                 action.Invoke(clientId, reader.ReadByteArray());
             }
@@ -700,7 +700,7 @@ namespace MLAPI.MonoBehaviours.Core
                 //This iterates over every "channel group".
                 for (int j = 0; j < channelMappedVarIndexes.Count; j++)
                 {
-                    using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
+                    using (BitWriter writer = BitWriter.Get())
                     {
                         writer.WriteUInt(networkId);
                         writer.WriteUShort(networkedObject.GetOrderIndex(this));
@@ -737,7 +737,7 @@ namespace MLAPI.MonoBehaviours.Core
             }
         }
 
-        internal void HandleNetworkedVarDeltas(BitReaderDeprecated reader, uint clientId)
+        internal void HandleNetworkedVarDeltas(BitReader reader, uint clientId)
         {
             for (int i = 0; i < networkedVarFields.Count; i++)
             {
@@ -761,7 +761,7 @@ namespace MLAPI.MonoBehaviours.Core
             }
         }
 
-        internal void HandleNetworkedVarUpdate(BitReaderDeprecated reader, uint clientId)
+        internal void HandleNetworkedVarUpdate(BitReader reader, uint clientId)
         {
             for (int i = 0; i < networkedVarFields.Count; i++)
             {
@@ -811,7 +811,7 @@ namespace MLAPI.MonoBehaviours.Core
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Server can not send messages to server");
                 return;
             }
-            using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
+            using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteByteArray(data);
                 InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerNetId, messageType, channelName, writer, null);
@@ -824,7 +824,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="messageType">User defined messageType</param>
         /// <param name="channelName">User defined channelName</param>
         /// <param name="writer">The binary data to send</param>
-        protected void SendToServer(string messageType, string channelName, BitWriterDeprecated writer)
+        protected void SendToServer(string messageType, string channelName, BitWriter writer)
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
@@ -879,7 +879,7 @@ namespace MLAPI.MonoBehaviours.Core
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Server can not send messages to server");
                 return;
             }
-            using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
+            using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteByteArray(data);
                 InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerNetId, messageType, channelName, writer, networkId, networkedObject.GetOrderIndex(this));
@@ -892,7 +892,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="messageType">User defined messageType</param>
         /// <param name="channelName">User defined channelName</param>
         /// <param name="writer">The binary data to send</param>
-        protected void SendToServerTarget(string messageType, string channelName, BitWriterDeprecated writer)
+        protected void SendToServerTarget(string messageType, string channelName, BitWriter writer)
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
@@ -949,7 +949,7 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
 
-            using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
+            using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteByteArray(data);
                 InternalMessageHandler.Send(OwnerClientId, messageType, channelName, writer);
@@ -963,7 +963,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="channelName">User defined channelName</param>
         /// <param name="writer">The binary data to send</param>
         /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToLocalClient(string messageType, string channelName, BitWriterDeprecated writer)
+        protected void SendToLocalClient(string messageType, string channelName, BitWriter writer)
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
@@ -1019,7 +1019,7 @@ namespace MLAPI.MonoBehaviours.Core
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
                 return;
             }
-            using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
+            using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteByteArray(data);
                 InternalMessageHandler.Send(OwnerClientId, messageType, channelName, writer, networkId, networkedObject.GetOrderIndex(this));
@@ -1032,7 +1032,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="messageType">User defined messageType</param>
         /// <param name="channelName">User defined channelName</param>
         /// <param name="writer">The binary data to send</param>
-        protected void SendToLocalClientTarget(string messageType, string channelName, BitWriterDeprecated writer)
+        protected void SendToLocalClientTarget(string messageType, string channelName, BitWriter writer)
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
@@ -1088,7 +1088,7 @@ namespace MLAPI.MonoBehaviours.Core
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
                 return;
             }
-            using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
+            using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteByteArray(data);
                 InternalMessageHandler.Send(messageType, channelName, writer, OwnerClientId, null, null);
@@ -1102,7 +1102,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="channelName">User defined channelName</param>
         /// <param name="writer">The binary data to send</param>
         /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToNonLocalClients(string messageType, string channelName, BitWriterDeprecated writer)
+        protected void SendToNonLocalClients(string messageType, string channelName, BitWriter writer)
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
@@ -1159,7 +1159,7 @@ namespace MLAPI.MonoBehaviours.Core
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
                 return;
             }
-            using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
+            using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteByteArray(data);
                 InternalMessageHandler.Send(messageType, channelName, writer, OwnerClientId, networkId, networkedObject.GetOrderIndex(this));
@@ -1173,7 +1173,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="channelName">User defined channelName</param>
         /// <param name="writer">The binary data to send</param>
         /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToNonLocalClientsTarget(string messageType, string channelName, BitWriterDeprecated writer)
+        protected void SendToNonLocalClientsTarget(string messageType, string channelName, BitWriter writer)
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
@@ -1232,7 +1232,7 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
 
-            using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
+            using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteByteArray(data);
                 InternalMessageHandler.Send(clientId, messageType, channelName, writer);
@@ -1248,7 +1248,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="channelName">User defined channelName</param>
         /// <param name="writer">The binary data to send</param>
         /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToClient(uint clientId, string messageType, string channelName, BitWriterDeprecated writer)
+        protected void SendToClient(uint clientId, string messageType, string channelName, BitWriter writer)
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
@@ -1309,7 +1309,7 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
 
-            using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
+            using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteByteArray(data);
                 InternalMessageHandler.Send(clientId, messageType, channelName, writer, networkId, networkedObject.GetOrderIndex(this));
@@ -1324,7 +1324,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="channelName">User defined channelName</param>
         /// <param name="writer">The binary data to send</param>
         /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToClientTarget(uint clientId, string messageType, string channelName, BitWriterDeprecated writer)
+        protected void SendToClientTarget(uint clientId, string messageType, string channelName, BitWriter writer)
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
@@ -1384,7 +1384,7 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
 
-            using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
+            using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteByteArray(data);
                 InternalMessageHandler.Send(clientIds, messageType, channelName, writer);
@@ -1399,7 +1399,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="channelName">User defined channelName</param>
         /// <param name="writer">The binary data to send</param>
         /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToClients(uint[] clientIds, string messageType, string channelName, BitWriterDeprecated writer)
+        protected void SendToClients(uint[] clientIds, string messageType, string channelName, BitWriter writer)
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
@@ -1460,7 +1460,7 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
 
-            using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
+            using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteByteArray(data);
                 InternalMessageHandler.Send(clientIds, messageType, channelName, writer, networkId, networkedObject.GetOrderIndex(this));
@@ -1475,7 +1475,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="channelName">User defined channelName</param>
         /// <param name="writer">The binary data to send</param>
         /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToClientsTarget(uint[] clientIds, string messageType, string channelName, BitWriterDeprecated writer)
+        protected void SendToClientsTarget(uint[] clientIds, string messageType, string channelName, BitWriter writer)
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
@@ -1535,7 +1535,7 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
 
-            using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
+            using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteByteArray(data);
                 InternalMessageHandler.Send(clientIds, messageType, channelName, writer);
@@ -1550,7 +1550,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="channelName">User defined channelName</param>
         /// <param name="writer">The binary data to send</param>
         /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToClients(List<uint> clientIds, string messageType, string channelName, BitWriterDeprecated writer)
+        protected void SendToClients(List<uint> clientIds, string messageType, string channelName, BitWriter writer)
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
@@ -1611,7 +1611,7 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
 
-            using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
+            using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteByteArray(data);
                 InternalMessageHandler.Send(clientIds, messageType, channelName, writer, networkId, networkedObject.GetOrderIndex(this));
@@ -1626,7 +1626,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="channelName">User defined channelName</param>
         /// <param name="writer">The binary data to send</param>
         /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToClientsTarget(List<uint> clientIds, string messageType, string channelName, BitWriterDeprecated writer)
+        protected void SendToClientsTarget(List<uint> clientIds, string messageType, string channelName, BitWriter writer)
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
@@ -1686,7 +1686,7 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
 
-            using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
+            using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteByteArray(data);
                 InternalMessageHandler.Send(messageType, channelName, writer);
@@ -1700,7 +1700,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="channelName">User defined channelName</param>
         /// <param name="writer">The binary data to send</param>
         /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToClients(string messageType, string channelName, BitWriterDeprecated writer)
+        protected void SendToClients(string messageType, string channelName, BitWriter writer)
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
@@ -1759,7 +1759,7 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
 
-            using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
+            using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteByteArray(data);
                 InternalMessageHandler.Send(messageType, channelName, writer, networkId, networkedObject.GetOrderIndex(this));
@@ -1773,7 +1773,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <param name="channelName">User defined channelName</param>
         /// <param name="writer">The binary data to send</param>
         /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToClientsTarget(string messageType, string channelName, BitWriterDeprecated writer)
+        protected void SendToClientsTarget(string messageType, string channelName, BitWriter writer)
         {
             if (!MessageManager.messageTypes.ContainsKey(messageType))
             {
