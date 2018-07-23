@@ -1,73 +1,828 @@
-﻿#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-using MLAPI.NetworkingManagerComponents.Core;
+﻿#define ARRAY_WRITE_PERMISSIVE  // Allow attempt to write "packed" byte array (calls WriteByteArray())
+#define ARRAY_RESOLVE_IMPLICIT  // Include WriteArray() method with automatic type resolution
+#define ARRAY_WRITE_PREMAP      // Create a prefixed array diff mapping
+#define ARRAY_DIFF_ALLOW_RESIZE // Whether or not to permit writing diffs of differently sized arrays
+
 using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
+using System.IO;
+using System.Linq;
 using System.Text;
+using UnityEngine;
 
 namespace MLAPI.NetworkingManagerComponents.Binary
 {
-    public class BitReader : IDisposable
+    public class BitReader
     {
-        private bool disposed;
-        private delegate T Getter<T>();
-        private static readonly float[] holder_f = new float[1];
-        private static readonly double[] holder_d = new double[1];
-        private static readonly ulong[] holder_u = new ulong[1];
-        private static readonly uint[] holder_i = new uint[1];
+        protected readonly Stream source;
+        protected readonly BitStream bitSource;
 
-        private byte[] readFrom;
-        private long bitCount = 0;
-
-        private static int pools = 0;
-        private static readonly Queue<BitReader> readerPool = new Queue<BitReader>();
-
-        public ulong Remaining
+        public BitReader(Stream source)
         {
-            get
-            {
-                return BitLength - (ulong)bitCount;
-            }
+            this.source = source;
+            bitSource = source as BitStream;
         }
 
-        public ulong BitLength
+
+        public int ReadByte() => source.ReadByte();
+        public byte ReadByteDirect() => (byte)source.ReadByte();
+        public bool ReadBit() => bitSource.ReadBit();
+
+        /// <summary>
+        /// Read a single-precision floating point value from the stream.
+        /// </summary>
+        /// <returns>The read value</returns>
+        public float ReadSingle()
         {
-            get
+            return new UIntFloat
             {
-                return (ulong)readFrom.Length * 8UL;
-            }
+                uintValue = ReadUInt32()
+            }.floatValue;
         }
 
-        private BitReader(byte[] readFrom)
+
+        /// <summary>
+        /// Read a double-precision floating point value from the stream.
+        /// </summary>
+        /// <returns>The read value</returns>
+        public double ReadDouble()
         {
-            this.readFrom = readFrom;
-            disposed = false;
+            return new UIntFloat
+            {
+                ulongValue = ReadUInt64()
+            }.doubleValue;
         }
 
-        public static BitReader Get(byte[] readFrom)
+        /// <summary>
+        /// Read a single-precision floating point value from the stream from a varint
+        /// </summary>
+        /// <returns>The read value</returns>
+        public float ReadSinglePacked()
         {
-            if (readerPool.Count == 0)
+            return new UIntFloat
             {
-                if (pools > 10)
-                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("There are more than 10 BitReaders. Have you forgotten do dispose? (More readers hurt performance)");
-                BitReader reader = new BitReader(readFrom);
-                reader.disposed = false;
-                pools++;
-                return reader;
-            }
-            else
+                uintValue = ReadUInt32Packed()
+            }.floatValue;
+        }
+
+        /// <summary>
+        /// Read a double-precision floating point value from the stream as a varint
+        /// </summary>
+        /// <returns>The read value</returns>
+        public double ReadDoublePacked()
+        {
+            return new UIntFloat
             {
-                BitReader reader = readerPool.Dequeue();
-                reader.disposed = false;
-                reader.readFrom = readFrom;
-                return reader;
+                ulongValue = ReadUInt64Packed()
+            }.doubleValue;
+        }
+
+        /// <summary>
+        /// Read a Vector2 from the stream.
+        /// </summary>
+        /// <returns>The Vector2 read from the stream.</returns>
+        public Vector2 ReadVector2() => new Vector2(ReadSingle(), ReadSingle());
+
+        /// <summary>
+        /// Read a Vector2 from the stream.
+        /// </summary>
+        /// <returns>The Vector2 read from the stream.</returns>
+        public Vector2 ReadVector2Packed() => new Vector2(ReadSinglePacked(), ReadSinglePacked());
+
+        /// <summary>
+        /// Read a Vector3 from the stream.
+        /// </summary>
+        /// <returns>The Vector3 read from the stream.</returns>
+        public Vector3 ReadVector3() => new Vector3(ReadSingle(), ReadSingle(), ReadSingle());
+
+        /// <summary>
+        /// Read a Vector3 from the stream.
+        /// </summary>
+        /// <returns>The Vector3 read from the stream.</returns>
+        public Vector3 ReadVector3Packed() => new Vector3(ReadSinglePacked(), ReadSinglePacked(), ReadSinglePacked());
+
+        /// <summary>
+        /// Read a Vector4 from the stream.
+        /// </summary>
+        /// <returns>The Vector4 read from the stream.</returns>
+        public Vector4 ReadVector4() => new Vector4(ReadSingle(), ReadSingle(), ReadSingle(), ReadSingle());
+
+        /// <summary>
+        /// Read a Vector4 from the stream.
+        /// </summary>
+        /// <returns>The Vector4 read from the stream.</returns>
+        public Vector4 ReadVector4Packed() => new Vector4(ReadSinglePacked(), ReadSinglePacked(), ReadSinglePacked(), ReadSinglePacked());
+
+        /// <summary>
+        /// Read a Color from the stream.
+        /// </summary>
+        /// <returns>The Color read from the stream.</returns>
+        public Color ReadColor() => new Color(ReadSingle(), ReadSingle(), ReadSingle(), ReadSingle());
+
+        /// <summary>
+        /// Read a Color from the stream.
+        /// </summary>
+        /// <returns>The Color read from the stream.</returns>
+        public Color ReadColorPacked() => new Color(ReadSinglePacked(), ReadSinglePacked(), ReadSinglePacked(), ReadSinglePacked());
+
+        /// <summary>
+        /// Read a Color32 from the stream.
+        /// </summary>
+        /// <returns>The Color32 read from the stream.</returns>
+        public Color32 ReadColor32() => new Color32((byte)ReadByte(), (byte)ReadByte(), (byte)ReadByte(), (byte)ReadByte());
+
+        /// <summary>
+        /// Read a Ray from the stream.
+        /// </summary>
+        /// <returns>The Ray read from the stream.</returns>
+        public Ray ReadRay() => new Ray(ReadVector3(), ReadVector3());
+
+        /// <summary>
+        /// Read a Ray from the stream.
+        /// </summary>
+        /// <returns>The Ray read from the stream.</returns>
+        public Ray ReadRayPacked() => new Ray(ReadVector3Packed(), ReadVector3Packed());
+
+        /// <summary>
+        /// Read a single-precision floating point value from the stream. The value is between (inclusive) the minValue and maxValue.
+        /// </summary>
+        /// <param name="minValue">Minimum value that this value could be</param>
+        /// <param name="maxValue">Maximum possible value that this could be</param>
+        /// <param name="bytes">How many bytes the compressed value occupies. Must be between 1 and 4 (inclusive)</param>
+        /// <returns>The read value</returns>
+        public float ReadRangedSingle(float minValue, float maxValue, int bytes)
+        {
+            if (bytes < 1 || bytes > 4) throw new ArgumentOutOfRangeException("Result must occupy between 1 and 4 bytes!");
+            uint read = 0;
+            for (int i = 0; i < bytes; ++i) read |= (uint)ReadByte() << (i << 3);
+            return (((float)read / ((0x100 * bytes) - 1)) * (minValue + maxValue)) - minValue;
+        }
+
+        /// <summary>
+        /// read a double-precision floating point value from the stream. The value is between (inclusive) the minValue and maxValue.
+        /// </summary>
+        /// <param name="minValue">Minimum value that this value could be</param>
+        /// <param name="maxValue">Maximum possible value that this could be</param>
+        /// <param name="bytes">How many bytes the compressed value occupies. Must be between 1 and 8 (inclusive)</param>
+        /// <returns>The read value</returns>
+        public double ReadRangedDouble(double minValue, double maxValue, int bytes)
+        {
+            if (bytes < 1 || bytes > 8) throw new ArgumentOutOfRangeException("Result must occupy between 1 and 8 bytes!");
+            ulong read = 0;
+            for (int i = 0; i < bytes; ++i) read |= (ulong)ReadByte() << (i << 3);
+            return (((double)read / ((0x100 * bytes) - 1)) * (minValue + maxValue)) - minValue;
+        }
+
+        /// <summary>
+        /// Read a rotation from the stream.
+        /// </summary>
+        /// <param name="bytesPerAngle">How many bytes each angle occupies. Must be between 1 and 4 (inclusive)</param>
+        /// <returns>The rotation read from the stream</returns>
+        public Quaternion ReadRotation(int bytesPerAngle)
+        {
+            if (bytesPerAngle < 1 || bytesPerAngle > 4) throw new ArgumentOutOfRangeException("Bytes per angle must be at least 1 byte and at most 4 bytes!");
+            if (bytesPerAngle == 4) return Quaternion.Euler(ReadVector3());
+            else return Quaternion.Euler(
+                ReadRangedSingle(0f, 360f, bytesPerAngle),  // X
+                ReadRangedSingle(0f, 360f, bytesPerAngle),  // Y
+                ReadRangedSingle(0f, 360f, bytesPerAngle)   // Z
+                );
+        }
+
+        /// <summary>
+        /// Read a certain amount of bits from the stream.
+        /// </summary>
+        /// <param name="bitCount">How many bits to read. Minimum 0, maximum 8.</param>
+        /// <returns>The bits that were read</returns>
+        public ulong ReadBits(int bitCount)
+        {
+            if (bitCount > 64) throw new ArgumentOutOfRangeException("Cannot read more than 64 bits into a 64-bit value!");
+            if (bitCount < 0) throw new ArgumentOutOfRangeException("Cannot read fewer than 0 bits!");
+            ulong read = 0;
+            for (int i = 0; i + 8 < bitCount; i += 8) read |= (ulong)ReadByte() << i;
+            read |= (ulong)ReadByteBits(bitCount & 7) << (bitCount & ~7);
+            return read;
+        }
+
+        /// <summary>
+        /// Read a certain amount of bits from the stream.
+        /// </summary>
+        /// <param name="bitCount">How many bits to read. Minimum 0, maximum 64.</param>
+        /// <returns>The bits that were read</returns>
+        public byte ReadByteBits(int bitCount)
+{
+            if (bitCount > 8)
+                throw new ArgumentOutOfRangeException("Cannot read more than 8 bits into an 8-bit value!")
+;
+            if (bitCount < 0)
+                throw new ArgumentOutOfRangeException("Cannot read fewer than 0 bits!")
+;
+            int result = 0;
+            ByteBool convert = new ByteBool();
+            for (int i = 0; i < bitCount; ++i)
+                result |= convert.Collapse(ReadBit()) << i
+;
+            return (byte)result
+;
+}
+
+        /// <summary>
+        /// Read a nibble (4 bits) from the stream.
+        /// </summary>
+        /// <param name="asUpper">Whether or not the nibble should be left-shifted by 4 bits</param>
+        /// <returns>The nibble that was read</returns>
+        public byte ReadNibble(bool asUpper)
+{
+            ByteBool convert = new ByteBool()
+;
+            byte result = (byte)(
+                 convert.Collapse(ReadBit())       |
+                (convert.Collapse(ReadBit()) << 1) |
+                (convert.Collapse(ReadBit()) << 2) |
+                (convert.Collapse(ReadBit()) << 3)
+                )
+;
+            if (asUpper) result <<= 4;
+            return result
+;
+}
+
+        // Marginally faster than the one that accepts a bool
+        /// <summary>
+        /// Read a nibble (4 bits) from the stream.
+        /// </summary>
+        /// <returns>The nibble that was read</returns>
+        public byte ReadNibble()
+        {
+            ByteBool convert = new ByteBool();
+            return (byte)(
+                convert.Collapse(ReadBit()) | 
+                (convert.Collapse(ReadBit()) << 1) |
+                (convert.Collapse(ReadBit()) << 2) |
+                (convert.Collapse(ReadBit()) << 3)
+                );
+        }
+
+        public sbyte ReadSByte() => (sbyte)ReadByte();
+        /// <summary>
+        /// Read an unsigned short (UInt16) from the stream.
+        /// </summary>
+        /// <returns>Value read from stream.</returns>
+        public ushort ReadUInt16() => (ushort)(ReadByte() | (ReadByte() << 8));
+        /// <summary>
+        /// Read a signed short (Int16) from the stream.
+        /// </summary>
+        /// <returns>Value read from stream.</returns>
+        public short ReadInt16() => (short)ReadUInt16();
+        /// <summary>
+        /// Read a single character from the stream
+        /// </summary>
+        /// <returns>Value read from stream.</returns>
+        public char ReadChar() => (char)ReadUInt16();
+        /// <summary>
+        /// Read an unsigned int (UInt32) from the stream.
+        /// </summary>
+        /// <returns>Value read from stream.</returns>
+        public uint ReadUInt32() => (uint)(ReadByte() | (ReadByte() << 8) | (ReadByte() << 16) | (ReadByte() << 24));
+        /// <summary>
+        /// Read a signed int (Int32) from the stream.
+        /// </summary>
+        /// <returns>Value read from stream.</returns>
+        public int ReadInt32() => (int)ReadUInt32();
+        /// <summary>
+        /// Read an unsigned long (UInt64) from the stream.
+        /// </summary>
+        /// <returns>Value read from stream.</returns>
+        public ulong ReadUInt64() => (
+                ((uint)ReadByte()) |
+                ((ulong)ReadByte() << 8) |
+                ((ulong)ReadByte() << 16) |
+                ((ulong)ReadByte() << 24) |
+                ((ulong)ReadByte() << 32) |
+                ((ulong)ReadByte() << 40) |
+                ((ulong)ReadByte() << 48) |
+                ((ulong)ReadByte() << 56)
+                );
+        /// <summary>
+        /// Read a signed long (Int64) from the stream.
+        /// </summary>
+        /// <returns>Value read from stream.</returns>
+        public long ReadInt64() => (long)ReadUInt64();
+
+        /// <summary>
+        /// Read a ZigZag encoded varint signed short (Int16) from the stream.
+        /// </summary>
+        /// <returns>Decoded un-varinted value.</returns>
+        public short ReadInt16Packed() => (short)Arithmetic.ZigZagDecode(ReadUInt64Packed());
+        /// <summary>
+        /// Read a varint unsigned short (UInt16) from the stream.
+        /// </summary>
+        /// <returns>Un-varinted value.</returns>
+        public ushort ReadUInt16Packed() => (ushort)ReadUInt64Packed();
+        /// <summary>
+        /// Read a varint two-byte character from the stream.
+        /// </summary>
+        /// <returns>Un-varinted value.</returns>
+        public char ReadCharPacked() => (char)ReadUInt16Packed();
+        /// <summary>
+        /// Read a ZigZag encoded varint signed int (Int32) from the stream.
+        /// </summary>
+        /// <returns>Decoded un-varinted value.</returns>
+        public int ReadInt32Packed() => (int)Arithmetic.ZigZagDecode(ReadUInt64Packed());
+        /// <summary>
+        /// Read a varint unsigned int (UInt32) from the stream.
+        /// </summary>
+        /// <returns>Un-varinted value.</returns>
+        public uint ReadUInt32Packed() => (uint)ReadUInt64Packed();
+        /// <summary>
+        /// Read a ZigZag encoded varint signed long(Int64) from the stream.
+        /// </summary>
+        /// <returns>Decoded un-varinted value.</returns>
+        public long ReadInt64Packed() => Arithmetic.ZigZagDecode(ReadUInt64Packed());
+        /// <summary>
+        /// Read a varint unsigned long (UInt64) from the stream.
+        /// </summary>
+        /// <returns>Un-varinted value.</returns>
+        public ulong ReadUInt64Packed()
+        {
+            ulong header = ReadByteDirect();
+            if (header <= 240) return header;
+            if (header <= 248) return 240 + ((header - 241) << 8) + ReadByteDirect();
+            if (header == 249) return 2288UL + (ulong)(ReadByte() << 8) + ReadByteDirect();
+            ulong res = ReadByteDirect() | ((ulong)ReadByteDirect() << 8) | ((ulong)ReadByte() << 16);
+            int cmp = 2;
+            int hdr = (int)(header - 247);
+            while (hdr > ++cmp) res |= (ulong)ReadByte() << (cmp << 3);
+            return res;
+        }
+
+
+
+
+
+
+        // Read arrays
+        public StringBuilder ReadString(bool oneByteChars) => ReadString(null, oneByteChars);
+        public StringBuilder ReadString(StringBuilder builder = null, bool oneByteChars = false)
+        {
+            int expectedLength = (int)ReadUInt32Packed();
+            if (builder == null) builder = new StringBuilder(expectedLength);
+            else if (builder.Capacity + builder.Length < expectedLength) builder.Capacity = expectedLength + builder.Length;
+            for (int i = 0; i < expectedLength; ++i)
+                builder.Insert(i, oneByteChars ? (char)ReadByte() : ReadChar());
+            return builder;
+        }
+
+        public StringBuilder ReadStringPacked(StringBuilder builder = null)
+        {
+            int expectedLength = (int)ReadUInt32Packed();
+            if (builder == null) builder = new StringBuilder(expectedLength);
+            else if (builder.Capacity + builder.Length < expectedLength) builder.Capacity = expectedLength + builder.Length;
+            for (int i = 0; i < expectedLength; ++i)
+                builder.Insert(i, ReadCharPacked());
+            return builder;
+        }
+
+        public StringBuilder ReadStringDiff(string compare, bool oneByteChars = false) => ReadStringDiff(null, compare, oneByteChars);
+        public StringBuilder ReadStringDiff(StringBuilder builder, string compare, bool oneByteChars = false)
+        {
+            int expectedLength = (int)ReadUInt32Packed();
+            if (builder == null) builder = new StringBuilder(expectedLength);
+            else if (builder.Capacity < expectedLength) builder.Capacity = expectedLength;
+            ulong dBlockStart = bitSource.BitPosition + (ulong)(compare == null ? 0 : Math.Min(expectedLength, compare.Length));
+            ulong mapStart;
+            int compareLength = compare == null ? 0 : compare.Length;
+            for (int i = 0; i < expectedLength; ++i)
+            {
+                if (i >= compareLength || ReadBit())
+                {
+#if ARRAY_WRITE_PREMAP
+                    // Move to data section
+                    mapStart = bitSource.BitPosition;
+                    bitSource.BitPosition = dBlockStart;
+#endif
+                    // Read datum
+                    builder.Insert(i, oneByteChars ? (char)ReadByte() : ReadChar());
+#if ARRAY_WRITE_PREMAP
+                    dBlockStart = bitSource.BitPosition;
+                    // Return to mapping section
+                    bitSource.BitPosition = mapStart;
+#endif
+                }
+                else if (i < compareLength) builder.Insert(i, compare[i]);
             }
+            bitSource.BitPosition = dBlockStart;
+            return builder;
+        }
+
+        public StringBuilder ReadStringDiff(StringBuilder compareAndBuffer, bool oneByteChars = false)
+        {
+            int expectedLength = (int)ReadUInt32Packed();
+            if (compareAndBuffer == null) throw new ArgumentNullException("Buffer cannot be null");
+            else if (compareAndBuffer.Capacity < expectedLength) compareAndBuffer.Capacity = expectedLength;
+            ulong dBlockStart = bitSource.BitPosition + (ulong)Math.Min(expectedLength, compareAndBuffer.Length);
+            ulong mapStart;
+            for (int i = 0; i < expectedLength; ++i)
+            {
+                if (i >= compareAndBuffer.Length || ReadBit())
+                {
+#if ARRAY_WRITE_PREMAP
+                    // Move to data section
+                    mapStart = bitSource.BitPosition;
+                    bitSource.BitPosition = dBlockStart;
+#endif
+                    // Read datum
+                    compareAndBuffer.Remove(i, 1);
+                    compareAndBuffer.Insert(i, oneByteChars ? (char)ReadByte() : ReadChar());
+#if ARRAY_WRITE_PREMAP
+                    dBlockStart = bitSource.BitPosition;
+                    // Return to mapping section
+                    bitSource.BitPosition = mapStart;
+#endif
+                }
+            }
+            bitSource.BitPosition = dBlockStart;
+            return compareAndBuffer;
+        }
+
+        public StringBuilder ReadStringPackedDiff(string compare) => ReadStringPackedDiff(null, compare);
+        public StringBuilder ReadStringPackedDiff(StringBuilder builder, string compare)
+        {
+            int expectedLength = (int)ReadUInt32Packed();
+            if (builder == null) builder = new StringBuilder(expectedLength);
+            else if (builder.Capacity < expectedLength) builder.Capacity = expectedLength;
+            ulong dBlockStart = bitSource.BitPosition + (ulong)(compare == null ? 0 : Math.Min(expectedLength, compare.Length));
+            ulong mapStart;
+            int compareLength = compare == null ? 0 : compare.Length;
+            for (int i = 0; i < expectedLength; ++i)
+            {
+                if (i >= compareLength || ReadBit())
+                {
+#if ARRAY_WRITE_PREMAP
+                    // Move to data section
+                    mapStart = bitSource.BitPosition;
+                    bitSource.BitPosition = dBlockStart;
+#endif
+                    // Read datum
+                    builder.Insert(i, ReadCharPacked());
+#if ARRAY_WRITE_PREMAP
+                    dBlockStart = bitSource.BitPosition;
+                    // Return to mapping section
+                    bitSource.BitPosition = mapStart;
+#endif
+                }
+                else if (i < compareLength) builder.Insert(i, compare[i]);
+            }
+            bitSource.BitPosition = dBlockStart;
+            return builder;
+        }
+
+        public StringBuilder ReadStringPackedDiff(StringBuilder compareAndBuffer)
+        {
+            int expectedLength = (int)ReadUInt32Packed();
+            if (compareAndBuffer == null) throw new ArgumentNullException("Buffer cannot be null");
+            else if (compareAndBuffer.Capacity < expectedLength) compareAndBuffer.Capacity = expectedLength;
+            ulong dBlockStart = bitSource.BitPosition + (ulong)Math.Min(expectedLength, compareAndBuffer.Length);
+            ulong mapStart;
+            for (int i = 0; i < expectedLength; ++i)
+            {
+                if (i >= compareAndBuffer.Length || ReadBit())
+                {
+#if ARRAY_WRITE_PREMAP
+                    // Move to data section
+                    mapStart = bitSource.BitPosition;
+                    bitSource.BitPosition = dBlockStart;
+#endif
+                    // Read datum
+                    compareAndBuffer.Remove(i, 1);
+                    compareAndBuffer.Insert(i, ReadCharPacked());
+#if ARRAY_WRITE_PREMAP
+                    dBlockStart = bitSource.BitPosition;
+                    // Return to mapping section
+                    bitSource.BitPosition = mapStart;
+#endif
+                }
+            }
+            bitSource.BitPosition = dBlockStart;
+            return compareAndBuffer;
+        }
+
+        public byte[] ReadByteArray(byte[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            if (readTo == null || readTo.LongLength != knownLength) readTo = new byte[knownLength];
+            for (long i = 0; i < knownLength; ++i) readTo[i] = ReadByteDirect();
+            return readTo;
+        }
+
+        public byte[] ReadByteArrayDiff(byte[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            byte[] writeTo = readTo == null || readTo.LongLength != knownLength ? new byte[knownLength] : readTo;
+            ulong dBlockStart = bitSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
+            ulong mapStart;
+            long readToLength = readTo == null ? 0 : readTo.LongLength;
+            for (long i = 0; i < knownLength; ++i)
+            {
+                if (i >= readToLength || ReadBit())
+                {
+#if ARRAY_WRITE_PREMAP
+                    // Move to data section
+                    mapStart = bitSource.BitPosition;
+                    bitSource.BitPosition = dBlockStart;
+#endif
+                    // Read datum
+                    writeTo[i] = ReadByteDirect();
+#if ARRAY_WRITE_PREMAP
+                    dBlockStart = bitSource.BitPosition;
+                    // Return to mapping section
+                    bitSource.BitPosition = mapStart;
+#endif
+                }
+                else if (i < readTo.LongLength) writeTo[i] = readTo[i];
+            }
+            bitSource.BitPosition = dBlockStart;
+            return writeTo;
+        }
+
+        public short[] ReadShortArray(short[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            if (readTo == null || readTo.LongLength != knownLength) readTo = new short[knownLength];
+            for (long i = 0; i < knownLength; ++i) readTo[i] = ReadInt16();
+            return readTo;
+        }
+
+        public short[] ReadShortArrayPacked(short[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            if (readTo == null || readTo.LongLength != knownLength) readTo = new short[knownLength];
+            for (long i = 0; i < knownLength; ++i) readTo[i] = ReadInt16Packed();
+            return readTo;
+        }
+
+        public short[] ReadShortArrayDiff(short[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            short[] writeTo = readTo == null || readTo.LongLength != knownLength ? new short[knownLength] : readTo;
+            ulong dBlockStart = bitSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
+            ulong mapStart;
+            long readToLength = readTo == null ? 0 : readTo.LongLength;
+            for (long i = 0; i < knownLength; ++i)
+            {
+                if (i >= readToLength || ReadBit())
+                {
+#if ARRAY_WRITE_PREMAP
+                    // Move to data section
+                    mapStart = bitSource.BitPosition;
+                    bitSource.BitPosition = dBlockStart;
+#endif
+                    // Read datum
+                    writeTo[i] = ReadInt16();
+#if ARRAY_WRITE_PREMAP
+                    dBlockStart = bitSource.BitPosition;
+                    // Return to mapping section
+                    bitSource.BitPosition = mapStart;
+#endif
+                }
+                else if (i < readTo.LongLength) writeTo[i] = readTo[i];
+            }
+            bitSource.BitPosition = dBlockStart;
+            return writeTo;
+        }
+
+        public short[] ReadShortArrayPackedDiff(short[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            short[] writeTo = readTo == null || readTo.LongLength != knownLength ? new short[knownLength] : readTo;
+            ulong data = bitSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
+            ulong rset;
+            long readToLength = readTo == null ? 0 : readTo.LongLength;
+            for (long i = 0; i < knownLength; ++i)
+            {
+                if (i >= readToLength || ReadBit())
+                {
+#if ARRAY_WRITE_PREMAP
+                    // Move to data section
+                    rset = bitSource.BitPosition;
+                    bitSource.BitPosition = data;
+#endif
+                    // Read datum
+                    writeTo[i] = ReadInt16Packed();
+#if ARRAY_WRITE_PREMAP
+                    // Return to mapping section
+                    data = bitSource.BitPosition;
+                    bitSource.BitPosition = rset;
+#endif
+                }
+                else if (i < readTo.LongLength) writeTo[i] = readTo[i];
+            }
+            bitSource.BitPosition = data;
+            return writeTo;
+        }
+
+        public ushort[] ReadUShortArray(ushort[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            if (readTo == null || readTo.LongLength != knownLength) readTo = new ushort[knownLength];
+            for (long i = 0; i < knownLength; ++i) readTo[i] = ReadUInt16();
+            return readTo;
+        }
+
+        public ushort[] ReadUShortArrayPacked(ushort[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            if (readTo == null || readTo.LongLength != knownLength) readTo = new ushort[knownLength];
+            for (long i = 0; i < knownLength; ++i) readTo[i] = ReadUInt16Packed();
+            return readTo;
+        }
+
+        public ushort[] ReadUShortArrayDiff(ushort[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            ushort[] writeTo = readTo == null || readTo.LongLength != knownLength ? new ushort[knownLength] : readTo;
+            ulong dBlockStart = bitSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
+            ulong mapStart;
+            long readToLength = readTo == null ? 0 : readTo.LongLength;
+            for (long i = 0; i < knownLength; ++i)
+            {
+                if (i >= readToLength || ReadBit())
+                {
+#if ARRAY_WRITE_PREMAP
+                    // Move to data section
+                    mapStart = bitSource.BitPosition;
+                    bitSource.BitPosition = dBlockStart;
+#endif
+                    // Read datum
+                    writeTo[i] = ReadUInt16();
+#if ARRAY_WRITE_PREMAP
+                    dBlockStart = bitSource.BitPosition;
+                    // Return to mapping section
+                    bitSource.BitPosition = mapStart;
+#endif
+                }
+                else if (i < readTo.LongLength) writeTo[i] = readTo[i];
+            }
+            bitSource.BitPosition = dBlockStart;
+            return writeTo;
+        }
+
+        public ushort[] ReadUShortArrayPackedDiff(ushort[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            ushort[] writeTo = readTo == null || readTo.LongLength != knownLength ? new ushort[knownLength] : readTo;
+            ulong data = bitSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
+            ulong rset;
+            long readToLength = readTo == null ? 0 : readTo.LongLength;
+            for (long i = 0; i < knownLength; ++i)
+            {
+                if (i >= readToLength || ReadBit())
+                {
+#if ARRAY_WRITE_PREMAP
+                    // Move to data section
+                    rset = bitSource.BitPosition;
+                    bitSource.BitPosition = data;
+#endif
+                    // Read datum
+                    writeTo[i] = ReadUInt16Packed();
+#if ARRAY_WRITE_PREMAP
+                    // Return to mapping section
+                    data = bitSource.BitPosition;
+                    bitSource.BitPosition = rset;
+#endif
+                }
+                else if (i < readTo.LongLength) writeTo[i] = readTo[i];
+            }
+            bitSource.BitPosition = data;
+            return writeTo;
+        }
+
+        public int[] ReadIntArray(int[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            if (readTo == null || readTo.LongLength != knownLength) readTo = new int[knownLength];
+            for (long i = 0; i < knownLength; ++i) readTo[i] = ReadInt32();
+            return readTo;
+        }
+
+        public int[] ReadIntArrayPacked(int[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            if (readTo == null || readTo.LongLength != knownLength) readTo = new int[knownLength];
+            for (long i = 0; i < knownLength; ++i) readTo[i] = ReadInt32Packed();
+            return readTo;
+        }
+
+        public int[] ReadIntArrayDiff(int[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            int[] writeTo = readTo == null || readTo.LongLength != knownLength ? new int[knownLength] : readTo;
+            ulong dBlockStart = bitSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
+            ulong mapStart;
+            long readToLength = readTo == null ? 0 : readTo.LongLength;
+            for (long i = 0; i < knownLength; ++i)
+            {
+                if (i >= readToLength || ReadBit())
+                {
+#if ARRAY_WRITE_PREMAP
+                    // Move to data section
+                    mapStart = bitSource.BitPosition;
+                    bitSource.BitPosition = dBlockStart;
+#endif
+                    // Read datum
+                    writeTo[i] = ReadInt32();
+#if ARRAY_WRITE_PREMAP
+                    dBlockStart = bitSource.BitPosition;
+                    // Return to mapping section
+                    bitSource.BitPosition = mapStart;
+#endif
+                }
+                else if (i < readTo.LongLength) writeTo[i] = readTo[i];
+            }
+            bitSource.BitPosition = dBlockStart;
+            return writeTo;
+        }
+
+        public int[] ReadIntArrayPackedDiff(int[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            int[] writeTo = readTo == null || readTo.LongLength != knownLength ? new int[knownLength] : readTo;
+            ulong data = bitSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
+            ulong rset;
+            long readToLength = readTo == null ? 0 : readTo.LongLength;
+            for (long i = 0; i < knownLength; ++i)
+            {
+                if (i >= readToLength || ReadBit())
+                {
+#if ARRAY_WRITE_PREMAP
+                    // Move to data section
+                    rset = bitSource.BitPosition;
+                    bitSource.BitPosition = data;
+#endif
+                    // Read datum
+                    writeTo[i] = ReadInt32Packed();
+#if ARRAY_WRITE_PREMAP
+                    // Return to mapping section
+                    data = bitSource.BitPosition;
+                    bitSource.BitPosition = rset;
+#endif
+                }
+                else if (i < readTo.LongLength) writeTo[i] = readTo[i];
+            }
+            bitSource.BitPosition = data;
+            return writeTo;
+        }
+
+        public uint[] ReadUIntArray(uint[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            if (readTo == null || readTo.LongLength != knownLength) readTo = new uint[knownLength];
+            for (long i = 0; i < knownLength; ++i) readTo[i] = ReadUInt32();
+            return readTo;
+        }
+
+        public uint[] ReadUIntArrayPacked(uint[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            if (readTo == null || readTo.LongLength != knownLength) readTo = new uint[knownLength];
+            for (long i = 0; i < knownLength; ++i) readTo[i] = ReadUInt32Packed();
+            return readTo;
+        }
+
+        public uint[] ReadUIntArrayDiff(uint[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            uint[] writeTo = readTo == null || readTo.LongLength != knownLength ? new uint[knownLength] : readTo;
+            ulong dBlockStart = bitSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
+            ulong mapStart;
+            long readToLength = readTo == null ? 0 : readTo.LongLength;
+            for (long i = 0; i < knownLength; ++i)
+            {
+                if (i >= readToLength || ReadBit())
+                {
+#if ARRAY_WRITE_PREMAP
+                    // Move to data section
+                    mapStart = bitSource.BitPosition;
+                    bitSource.BitPosition = dBlockStart;
+#endif
+                    // Read datum
+                    writeTo[i] = ReadUInt32();
+#if ARRAY_WRITE_PREMAP
+                    dBlockStart = bitSource.BitPosition;
+                    // Return to mapping section
+                    bitSource.BitPosition = mapStart;
+#endif
+                }
+                else if (i < readTo.LongLength) writeTo[i] = readTo[i];
+            }
+            bitSource.BitPosition = dBlockStart;
+            return writeTo;
         }
 
         public ValueType ReadValueType<T>()
         {
             if (typeof(T) == typeof(float))
-                return ReadFloat();
+                return ReadSingle();
             else if (typeof(T) == typeof(double))
                 return ReadDouble();
             else if (typeof(T) == typeof(byte))
@@ -75,17 +830,17 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             else if (typeof(T) == typeof(sbyte))
                 return ReadSByte();
             else if (typeof(T) == typeof(short))
-                return ReadShort();
+                return ReadInt16();
             else if (typeof(T) == typeof(ushort))
-                return ReadUShort();
+                return ReadUInt16();
             else if (typeof(T) == typeof(int))
-                return ReadInt();
+                return ReadInt32();
             else if (typeof(T) == typeof(uint))
-                return ReadUInt();
+                return ReadUInt32();
             else if (typeof(T) == typeof(long))
-                return ReadLong();
+                return ReadInt64();
             else if (typeof(T) == typeof(ulong))
-                return ReadULong();
+                return ReadUInt64();
             
             return default(ValueType);
         }
@@ -106,140 +861,311 @@ namespace MLAPI.NetworkingManagerComponents.Binary
                 return default(T);
             }
         }
-        
-        public bool ReadBool()
+
+        public bool ReadBool() => ReadBit();
+
+        public long[] ReadLongArray(long[] readTo = null, long knownLength = -1)
         {
-            bool result = (readFrom[bitCount / 8] & (byte)(1 << (int)(bitCount % 8))) != 0;
-            ++bitCount;
-            return result;
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            if (readTo == null || readTo.LongLength != knownLength) readTo = new long[knownLength];
+            for (long i = 0; i < knownLength; ++i) readTo[i] = ReadInt64();
+            return readTo;
         }
 
-        public float ReadFloat() => ReadFloating<float>();
-        public double ReadDouble() => ReadFloating<double>();
-        public byte ReadByte()
+        public long[] ReadLongArrayPacked(long[] readTo = null, long knownLength = -1)
         {
-            int shift = (int)(bitCount % 8);
-            int index = (int)(bitCount / 8);
-            byte lower_mask = (byte)(0xFF << shift);
-            byte upper_mask = (byte)~lower_mask;
-            byte result = (byte)(((readFrom[index] & lower_mask) >> shift) | (shift == 0 ? 0 : (readFrom[index + 1] & upper_mask) << (8 - shift)));
-            bitCount += 8;
-            return result;
-        }
-        public void SkipPadded()     => bitCount += (8 - (bitCount % 8)) % 8;
-        public ushort ReadUShort()   => (ushort)ReadULong();
-        public uint ReadUInt()       => (uint)ReadULong();
-        public sbyte ReadSByte()     => (sbyte)ZigZagDecode(ReadULong());
-        public short ReadShort()     => (short)ZigZagDecode(ReadULong());
-        public int ReadInt()         => (int)ZigZagDecode(ReadULong());
-        public long ReadLong()       => ZigZagDecode(ReadULong());
-
-        public float[] ReadFloatArray(int known = -1)                   => ReadArray(ReadFloat, known);
-        public uint ReadFloatArray(float[] buffer, int known = -1)      => ReadArray(ReadFloat, buffer, known);
-        public double[] ReadDoubleArray(int known = -1)                 => ReadArray(ReadDouble, known);
-        public uint ReadDoubleArray(double[] buffer, int known = -1)    => ReadArray(ReadDouble, buffer, known);
-        public byte[] ReadByteArray(int known = -1)                     => ReadArray(ReadByte, known);
-        public uint ReadByteArray(byte[] buffer, int known = -1)        => ReadArray(ReadByte, buffer, known);
-        public ushort[] ReadUShortArray(int known = -1)                 => ReadArray(ReadUShort, known);
-        public uint ReadUShortArray(ushort[] buffer, int known = -1)    => ReadArray(ReadUShort, buffer, known);
-        public uint[] ReadUIntArray(int known = -1)                     => ReadArray(ReadUInt, known);
-        public uint ReadUIntArray(uint[] buffer, int known = -1)        => ReadArray(ReadUInt, buffer, known);
-        public ulong[] ReadULongArray(int known = -1)                   => ReadArray(ReadULong, known);
-        public uint ReadULongArray(ulong[] buffer, int known = -1)      => ReadArray(ReadULong, buffer, known);
-        public sbyte[] ReadSByteArray(int known = -1)                   => ReadArray(ReadSByte, known);
-        public uint ReadSByteArray(sbyte[] buffer, int known = -1)      => ReadArray(ReadSByte, buffer, known);
-        public short[] ReadShortArray(int known = -1)                   => ReadArray(ReadShort, known);
-        public uint ReadShortArray(short[] buffer, int known = -1)      => ReadArray(ReadShort, buffer, known);
-        public int[] ReadIntArray(int known = -1)                       => ReadArray(ReadInt, known);
-        public uint ReadIntArray(int[] buffer, int known = -1)          => ReadArray(ReadInt, buffer, known);
-        public long[] ReadLongArray(int known = -1)                     => ReadArray(ReadLong, known);
-        public uint ReadLongArray(long[] buffer, int known = -1)        => ReadArray(ReadLong, buffer, known);
-        public string ReadString()                                      => Encoding.UTF8.GetString(ReadByteArray());
-        public byte ReadBits(int bits)
-        {
-            byte b = 0;
-            for (int i = 0; --bits >= 0; ++i)
-                b |= (byte)((ReadBool() ? 1 : 0) << i);
-            return b;
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            if (readTo == null || readTo.LongLength != knownLength) readTo = new long[knownLength];
+            for (long i = 0; i < knownLength; ++i) readTo[i] = ReadInt64Packed();
+            return readTo;
         }
 
-        public ulong ReadULong()
+        public long[] ReadLongArrayDiff(long[] readTo = null, long knownLength = -1)
         {
-            ulong header = ReadByte();
-            if (header <= 240) return header;
-            if (header <= 248) return 240 + 256 * (header - 241) + ReadByte();
-            if (header == 249) return 2288 + 256UL * ReadByte() + ReadByte();
-            ulong res = ReadByte() | ((ulong)ReadByte() << 8) | ((ulong)ReadByte() << 16);
-            if(header > 250)
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            long[] writeTo = readTo == null || readTo.LongLength != knownLength ? new long[knownLength] : readTo;
+            ulong dBlockStart = bitSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
+            ulong mapStart;
+            long readToLength = readTo == null ? 0 : readTo.LongLength;
+            for (long i = 0; i < knownLength; ++i)
             {
-                res |= (ulong) ReadByte() << 24;
-                if(header > 251)
+                if (i >= readToLength || ReadBit())
                 {
-                    res |= (ulong)ReadByte() << 32;
-                    if(header > 252)
-                    {
-                        res |= (ulong)ReadByte() << 40;
-                        if (header > 253)
-                        {
-                            res |= (ulong)ReadByte() << 48;
-                            if (header > 254) res |= (ulong)ReadByte() << 56;
-                        }
-                    }
+#if ARRAY_WRITE_PREMAP
+                    // Move to data section
+                    mapStart = bitSource.BitPosition;
+                    bitSource.BitPosition = dBlockStart;
+#endif
+                    // Read datum
+                    writeTo[i] = ReadInt64();
+#if ARRAY_WRITE_PREMAP
+                    dBlockStart = bitSource.BitPosition;
+                    // Return to mapping section
+                    bitSource.BitPosition = mapStart;
+#endif
                 }
+                else if (i < readTo.LongLength) writeTo[i] = readTo[i];
             }
-            return res;
+            bitSource.BitPosition = dBlockStart;
+            return writeTo;
         }
 
-        private T[] ReadArray<T>(Getter<T> g, int knownSize = -1)
+        public long[] ReadLongArrayPackedDiff(long[] readTo = null, long knownLength = -1)
         {
-            T[] result = new T[knownSize > 0 ? (uint)knownSize : ReadUInt()];
-            for (ushort s = 0; s < result.Length; ++s)
-                result[s] = g();
-            return result;
-        }
-
-        private uint ReadArray<T>(Getter<T> g, T[] buffer, int knownSize = -1)
-        {
-            uint size = knownSize > 0 ? (uint)knownSize : ReadUInt();
-            /*
-            if (buffer.Length < size)
-                throw new ArgumentException("Buffer size is too small");
-                */
-            for (ushort s = 0; s < size; ++s)
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            long[] writeTo = readTo == null || readTo.LongLength != knownLength ? new long[knownLength] : readTo;
+            ulong data = bitSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
+            ulong rset;
+            long readToLength = readTo == null ? 0 : readTo.LongLength;
+            for (long i = 0; i < knownLength; ++i)
             {
-                if (s > buffer.Length)
-                    break; //The buffer is too small. We still give the correct size so it can be re-read
-                buffer[s] = g();   
-            }
-            return size;
-        }
-
-        private T ReadFloating<T>()
-        {
-            int size = Marshal.SizeOf(typeof(T));
-            Array type_holder = size == 4 ? holder_f as Array : holder_d as Array;
-            Array result_holder = size == 4 ? holder_i as Array : holder_u as Array;
-            T result;
-            lock(result_holder)
-                lock (type_holder)
+                if (i >= readToLength || ReadBit())
                 {
-                    if (size == 4) result_holder.SetValue(BinaryHelpers.SwapEndian(ReadUInt()), 0);
-                    else result_holder.SetValue(BinaryHelpers.SwapEndian(ReadULong()), 0);
-                    Buffer.BlockCopy(result_holder, 0, type_holder, 0, size);
-                    result = (T)type_holder.GetValue(0);
+#if ARRAY_WRITE_PREMAP
+                    // Move to data section
+                    rset = bitSource.BitPosition;
+                    bitSource.BitPosition = data;
+#endif
+                    // Read datum
+                    writeTo[i] = ReadInt64Packed();
+#if ARRAY_WRITE_PREMAP
+                    // Return to mapping section
+                    data = bitSource.BitPosition;
+                    bitSource.BitPosition = rset;
+#endif
                 }
-            return result;
+                else if (i < readTo.LongLength) writeTo[i] = readTo[i];
+            }
+            bitSource.BitPosition = data;
+            return writeTo;
         }
-        private static long ZigZagDecode(ulong d) => (long)(((d & 1) << 63) | (d >> 1));
 
-        public void Dispose()
+        public ulong[] ReadULongArray(ulong[] readTo = null, long knownLength = -1)
         {
-            readFrom = null; //Give to GC
-            bitCount = 0;
-            if (disposed) return; //this is already in the pool
-            disposed = true;
-            readerPool.Enqueue(this);
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            if (readTo == null || readTo.LongLength != knownLength) readTo = new ulong[knownLength];
+            for (long i = 0; i < knownLength; ++i) readTo[i] = ReadUInt64();
+            return readTo;
+        }
+
+        public ulong[] ReadULongArrayPacked(ulong[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            if (readTo == null || readTo.LongLength != knownLength) readTo = new ulong[knownLength];
+            for (long i = 0; i < knownLength; ++i) readTo[i] = ReadUInt64Packed();
+            return readTo;
+        }
+
+        public ulong[] ReadULongArrayDiff(ulong[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            ulong[] writeTo = readTo == null || readTo.LongLength != knownLength ? new ulong[knownLength] : readTo;
+            ulong dBlockStart = bitSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
+            ulong mapStart;
+            long readToLength = readTo == null ? 0 : readTo.LongLength;
+            for (long i = 0; i < knownLength; ++i)
+            {
+                if (i >= readToLength || ReadBit())
+                {
+#if ARRAY_WRITE_PREMAP
+                    // Move to data section
+                    mapStart = bitSource.BitPosition;
+                    bitSource.BitPosition = dBlockStart;
+#endif
+                    // Read datum
+                    writeTo[i] = ReadUInt64();
+#if ARRAY_WRITE_PREMAP
+                    dBlockStart = bitSource.BitPosition;
+                    // Return to mapping section
+                    bitSource.BitPosition = mapStart;
+#endif
+                }
+                else if (i < readTo.LongLength) writeTo[i] = readTo[i];
+            }
+            bitSource.BitPosition = dBlockStart;
+            return writeTo;
+        }
+
+        public ulong[] ReadULongArrayPackedDiff(ulong[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            ulong[] writeTo = readTo == null || readTo.LongLength != knownLength ? new ulong[knownLength] : readTo;
+            ulong data = bitSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
+            ulong rset;
+            long readToLength = readTo == null ? 0 : readTo.LongLength;
+            for (long i = 0; i < knownLength; ++i)
+            {
+                if (i >= readToLength || ReadBit())
+                {
+#if ARRAY_WRITE_PREMAP
+                    // Move to data section
+                    rset = bitSource.BitPosition;
+                    bitSource.BitPosition = data;
+#endif
+                    // Read datum
+                    writeTo[i] = ReadUInt64Packed();
+#if ARRAY_WRITE_PREMAP
+                    // Return to mapping section
+                    data = bitSource.BitPosition;
+                    bitSource.BitPosition = rset;
+#endif
+                }
+                else if (i < readTo.LongLength) writeTo[i] = readTo[i];
+            }
+            bitSource.BitPosition = data;
+            return writeTo;
+        }
+
+        public float[] ReadFloatArray(float[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            if (readTo == null || readTo.LongLength != knownLength) readTo = new float[knownLength];
+            for (long i = 0; i < knownLength; ++i) readTo[i] = ReadSingle();
+            return readTo;
+        }
+
+        public float[] ReadFloatArrayPacked(float[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            if (readTo == null || readTo.LongLength != knownLength) readTo = new float[knownLength];
+            for (long i = 0; i < knownLength; ++i) readTo[i] = ReadSinglePacked();
+            return readTo;
+        }
+
+        public float[] ReadFloatArrayDiff(float[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            float[] writeTo = readTo == null || readTo.LongLength != knownLength ? new float[knownLength] : readTo;
+            ulong dBlockStart = bitSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
+            ulong mapStart;
+            long readToLength = readTo == null ? 0 : readTo.LongLength;
+            for (long i = 0; i < knownLength; ++i)
+            {
+                if (i >= readToLength || ReadBit())
+                {
+#if ARRAY_WRITE_PREMAP
+                    // Move to data section
+                    mapStart = bitSource.BitPosition;
+                    bitSource.BitPosition = dBlockStart;
+#endif
+                    // Read datum
+                    writeTo[i] = ReadSingle();
+#if ARRAY_WRITE_PREMAP
+                    dBlockStart = bitSource.BitPosition;
+                    // Return to mapping section
+                    bitSource.BitPosition = mapStart;
+#endif
+                }
+                else if (i < readTo.LongLength) writeTo[i] = readTo[i];
+            }
+            bitSource.BitPosition = dBlockStart;
+            return writeTo;
+        }
+
+        public float[] ReadFloatArrayPackedDiff(float[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            float[] writeTo = readTo == null || readTo.LongLength != knownLength ? new float[knownLength] : readTo;
+            ulong data = bitSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
+            ulong rset;
+            long readToLength = readTo == null ? 0 : readTo.LongLength;
+            for (long i = 0; i < knownLength; ++i)
+            {
+                if (i >= readToLength || ReadBit())
+                {
+#if ARRAY_WRITE_PREMAP
+                    // Move to data section
+                    rset = bitSource.BitPosition;
+                    bitSource.BitPosition = data;
+#endif
+                    // Read datum
+                    readTo[i] = ReadSinglePacked();
+#if ARRAY_WRITE_PREMAP
+                    // Return to mapping section
+                    data = bitSource.BitPosition;
+                    bitSource.BitPosition = rset;
+#endif
+                }
+                else if (i < readTo.LongLength) writeTo[i] = readTo[i];
+            }
+            bitSource.BitPosition = data;
+            return writeTo;
+        }
+
+        public double[] ReadDoubleArray(double[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            if (readTo == null || readTo.LongLength != knownLength) readTo = new double[knownLength];
+            for (long i = 0; i < knownLength; ++i) readTo[i] = ReadDouble();
+            return readTo;
+        }
+
+        public double[] ReadDoubleArrayPacked(double[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            if (readTo == null || readTo.LongLength != knownLength) readTo = new double[knownLength];
+            for (long i = 0; i < knownLength; ++i) readTo[i] = ReadDoublePacked();
+            return readTo;
+        }
+
+        public double[] ReadDoubleArrayDiff(double[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            double[] writeTo = readTo == null || readTo.LongLength != knownLength ? new double[knownLength] : readTo;
+            ulong dBlockStart = bitSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
+            ulong mapStart;
+            long readToLength = readTo == null ? 0 : readTo.LongLength;
+            for (long i = 0; i < knownLength; ++i)
+            {
+                if (i >= readToLength || ReadBit())
+                {
+#if ARRAY_WRITE_PREMAP
+                    // Move to data section
+                    mapStart = bitSource.BitPosition;
+                    bitSource.BitPosition = dBlockStart;
+#endif
+                    // Read datum
+                    writeTo[i] = ReadDouble();
+#if ARRAY_WRITE_PREMAP
+                    dBlockStart = bitSource.BitPosition;
+                    // Return to mapping section
+                    bitSource.BitPosition = mapStart;
+#endif
+                }
+                else if (i < readTo.LongLength) writeTo[i] = readTo[i];
+            }
+            bitSource.BitPosition = dBlockStart;
+            return writeTo;
+        }
+
+        public double[] ReadDoubleArrayPackedDiff(double[] readTo = null, long knownLength = -1)
+        {
+            if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
+            double[] writeTo = readTo == null || readTo.LongLength != knownLength ? new double[knownLength] : readTo;
+            ulong data = bitSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
+            ulong rset;
+            long readToLength = readTo == null ? 0 : readTo.LongLength;
+            for (long i = 0; i < knownLength; ++i)
+            {
+                if (i >= readToLength || ReadBit())
+                {
+#if ARRAY_WRITE_PREMAP
+                    // Move to data section
+                    rset = bitSource.BitPosition;
+                    bitSource.BitPosition = data;
+#endif
+                    // Read datum
+                    writeTo[i] = ReadDoublePacked();
+#if ARRAY_WRITE_PREMAP
+                    // Return to mapping section
+                    data = bitSource.BitPosition;
+                    bitSource.BitPosition = rset;
+#endif
+                }
+                else if (i < readTo.LongLength) writeTo[i] = readTo[i];
+            }
+            bitSource.BitPosition = data;
+            return writeTo;
         }
     }
 }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
