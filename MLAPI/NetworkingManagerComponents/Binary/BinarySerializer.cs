@@ -57,7 +57,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             if (preMethod != null)
                 preMethod.Invoke(instance, null);
 
-            using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
+            using (BitWriter writer = BitWriter.Get())
             {
                 for (int i = 0; i < sortedFields.Length; i++)
                 {
@@ -96,7 +96,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
                 postDeserialize.Add(instance.GetType().FullName, postMethod);
             }
 
-            using (BitReaderDeprecated reader = BitReaderDeprecated.Get(binary))
+            using (BitReader reader = BitReader.Get(binary))
             {
                 for (int i = 0; i < sortedFields.Length; i++)
                     sortedFields[i].SetValue(instance, FieldTypeHelper.ReadFieldType(reader, sortedFields[i].FieldType));
@@ -114,7 +114,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// <typeparam name="T">The type to return</typeparam>
         /// <param name="reader">The reader to deserialize</param>
         /// <returns>An instance of T</returns>
-        public static T Deserialize<T>(BitReaderDeprecated reader) where T : new()
+        public static T Deserialize<T>(BitReader reader) where T : new()
         {
             T instance = new T();
 
@@ -148,7 +148,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             return instance;
         }
 
-        internal static void Serialize(object instance, BitWriterDeprecated writer)
+        internal static void Serialize(object instance, BitWriter writer)
         {
             FieldInfo[] sortedFields;
             MethodInfo preMethod;
@@ -176,7 +176,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
                 FieldTypeHelper.WriteFieldType(writer, sortedFields[i].GetValue(instance));
         }
 
-        internal static object Deserialize(BitReaderDeprecated reader, Type type)
+        internal static object Deserialize(BitReader reader, Type type)
         {
             object instance = Activator.CreateInstance(type);
             FieldInfo[] sortedFields;

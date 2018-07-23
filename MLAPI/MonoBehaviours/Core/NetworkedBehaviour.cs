@@ -91,14 +91,14 @@ namespace MLAPI.MonoBehaviours.Core
         /// Gets called when message handlers are ready to be registered and the networking is setup. Provides a Payload if it was provided
         /// </summary>
         /// <param name="payloadReader"></param>
-        public virtual void NetworkStart(BitReaderDeprecated payloadReader)
+        public virtual void NetworkStart(BitReader payloadReader)
         {
             NetworkStart();
         }
 
         internal void InternalNetworkStart()
         {
-            CacheAttributedMethods();
+            CacheAttributes();
             WarnUnityReflectionMethodUse();
             NetworkedVarInit();
         }
@@ -169,433 +169,6 @@ namespace MLAPI.MonoBehaviours.Core
 
         }
 
-        internal Dictionary<ulong, MethodInfo> cachedMethods = new Dictionary<ulong, MethodInfo>();
-        internal Dictionary<string, string> messageChannelName = new Dictionary<string, string>();
-
-        private List<MethodInfo> getMethodsRecursive(Type type, List<MethodInfo> list = null) {
-            if(list == null) {
-                list = new List<MethodInfo>();
-            }
-            if(type == typeof(NetworkedBehaviour)) {
-                return list;
-            }
-            list.AddRange(type.GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.FlattenHierarchy));
-            return getMethodsRecursive(type.BaseType, list); 
-        }
-
-        private void CacheAttributedMethods()
-        {
-            if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.Disabled)
-                return;
-
-            MethodInfo[] methods = getMethodsRecursive(GetType()).ToArray();
-            foreach (MethodInfo method in methods)
-            {
-                if (method.IsDefined(typeof(Command), true) || method.IsDefined(typeof(ClientRpc), true) || method.IsDefined(typeof(TargetRpc), true))
-                {
-                    ulong hash = 0;
-
-                    if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenTwoByte)
-                        hash = method.Name.GetStableHash16();
-                    else if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenFourByte)
-                        hash = method.Name.GetStableHash32();
-                    else if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenEightByte)
-                        hash = method.Name.GetStableHash64();
-
-                    if (cachedMethods.ContainsKey(hash))
-                    {
-                        MethodInfo previous = cachedMethods[hash];
-                        if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError(string.Format("Method {0} and {1} have the same hash.  Rename one of the methods or increase Attribute Message Mode", previous.Name, method.Name));
-                    }
-                    cachedMethods[hash] = method;
-                }
-                if (method.IsDefined(typeof(Command), true) && !messageChannelName.ContainsKey(method.Name))
-                    messageChannelName.Add(method.Name, ((Command[])method.GetCustomAttributes(typeof(Command), true))[0].channelName);
-                if (method.IsDefined(typeof(ClientRpc), true) && !messageChannelName.ContainsKey(method.Name))
-                    messageChannelName.Add(method.Name, ((ClientRpc[])method.GetCustomAttributes(typeof(ClientRpc), true))[0].channelName);
-                if (method.IsDefined(typeof(TargetRpc), true) && !messageChannelName.ContainsKey(method.Name))
-                    messageChannelName.Add(method.Name, ((TargetRpc[])method.GetCustomAttributes(typeof(TargetRpc), true))[0].channelName);
-            }
-        }
-
-        /// <summary>
-        /// Calls a Command method on server
-        /// </summary>
-        /// <param name="methodName">Method name to invoke</param>
-        /// <param name="methodParams">Method parameters to send</param>
-        public void InvokeCommand(string methodName, params object[] methodParams)
-        {
-            if (OwnerClientId != NetworkingManager.singleton.LocalClientId && !isLocalPlayer)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot invoke command for object without ownership");
-                return;
-            }
-            if (!methodName.StartsWith("Cmd"))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid Command name. Command methods have to start with Cmd");
-                return;
-            }
-            if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.Disabled)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Calling InvokeCommand is not allowed when AttributeMessageMode is set to disabled");
-                return;
-            }
-
-            ulong hash = 0;
-            if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenTwoByte)
-                hash = methodName.GetStableHash16();
-            else if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenFourByte)
-                hash = methodName.GetStableHash32();
-            else if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenEightByte)
-                hash = methodName.GetStableHash64();
-
-            if (NetworkingManager.singleton.isServer)
-            {
-                if (isHost)
-                {
-                    cachedMethods[hash].Invoke(this, methodParams);
-                    return;
-                }
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot invoke commands from server");
-                return;
-            }
-
-            using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
-            {
-                writer.WriteUInt(networkId);
-                writer.WriteUShort(networkedObject.GetOrderIndex(this));
-                writer.WriteULong(hash);
-                for (int i = 0; i < methodParams.Length; i++)
-                    FieldTypeHelper.WriteFieldType(writer, methodParams[i]);
-
-                InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerNetId, "MLAPI_COMMAND", messageChannelName[methodName], writer, null);
-            }
-        }
-
-        /// <summary>
-        /// Calls a ClientRpc method on all clients
-        /// </summary>
-        /// <param name="methodName">Method name to invoke</param>
-        /// <param name="methodParams">Method parameters to send</param>
-        public void InvokeClientRpc(string methodName, params object[] methodParams)
-        {
-            if (!NetworkingManager.singleton.isServer)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot invoke ClientRpc from client");
-                return;
-            }
-            if (!methodName.StartsWith("Rpc"))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid Command name. Command methods have to start with Cmd");
-                return;
-            }
-            if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.Disabled)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Calling InvokeClientRpc is not allowed when AttributeMessageMode is set to disabled");
-                return;
-            }
-
-            ulong hash = 0;
-            if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenTwoByte)
-                hash = methodName.GetStableHash16();
-            else if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenFourByte)
-                hash = methodName.GetStableHash32();
-            else if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenEightByte)
-                hash = methodName.GetStableHash64();
-
-            if (isHost) cachedMethods[hash].Invoke(this, methodParams);
-
-            using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
-            {
-                writer.WriteUInt(networkId);
-                writer.WriteUShort(networkedObject.GetOrderIndex(this));
-                writer.WriteULong(hash);
-
-                for (int i = 0; i < methodParams.Length; i++)
-                    FieldTypeHelper.WriteFieldType(writer, methodParams[i]);
-                InternalMessageHandler.Send("MLAPI_RPC", messageChannelName[methodName], writer, networkId);
-            }
-        }
-
-        /// <summary>
-        /// Calls a TargetRpc method on the owner client
-        /// </summary>
-        /// <param name="methodName">Method name to invoke</param>
-        /// <param name="methodParams">Method parameters to send</param>
-        public void InvokeTargetRpc(string methodName, params object[] methodParams)
-        {
-            if (!NetworkingManager.singleton.isServer)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot invoke ClientRpc from client");
-                return;
-            }
-            if (!methodName.StartsWith("Target"))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid Command name. Command methods have to start with Cmd");
-                return;
-            }
-            if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.Disabled)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Calling InvokeTargetRpc is not allowed when AttributeMessageMode is set to disabled");
-                return;
-            }
-
-            ulong hash = 0;
-            if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenTwoByte)
-                hash = methodName.GetStableHash16();
-            else if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenFourByte)
-                hash = methodName.GetStableHash32();
-            else if (NetworkingManager.singleton.NetworkConfig.AttributeMessageMode == AttributeMessageMode.WovenEightByte)
-                hash = methodName.GetStableHash64();
-
-            if (isHost) cachedMethods[hash].Invoke(this, methodParams);
-
-            using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
-            {
-                writer.WriteUInt(networkId);
-                writer.WriteUShort(networkedObject.GetOrderIndex(this));
-                writer.WriteULong(hash);
-                for (int i = 0; i < methodParams.Length; i++)
-                    FieldTypeHelper.WriteFieldType(writer, methodParams[i]);
-                InternalMessageHandler.Send(OwnerClientId, "MLAPI_RPC", messageChannelName[methodName], writer, networkId);
-            }
-        }
-
-        #region ActionInvokes
-        /// <summary>
-        /// Calls a Command method on server
-        /// </summary>
-        /// <param name="method">Method to invoke</param>
-        public void InvokeCommand(Action method) {
-            InvokeCommand(method.Method.Name);
-        }
-        /// <summary>
-        /// Calls a Command method on server
-        /// </summary>
-        /// <param name="method">Method to invoke</param>
-        /// <param name="p1">Method parameter to send</param>
-        public void InvokeCommand<T1>(Action<T1> method, T1 p1) {
-            InvokeCommand(method.Method.Name, new object[] { p1 });
-        }
-        /// <summary>
-        /// Calls a Command method on server
-        /// </summary>
-        /// <param name="method">Method to invoke</param>
-        /// <param name="p1">Method parameter to send</param>
-        /// <param name="p2">Method parameter to send</param>
-        public void InvokeCommand<T1, T2>(Action<T1, T2> method, T1 p1, T2 p2) {
-            InvokeCommand(method.Method.Name, new object[] { p1, p2});
-        }
-        /// <summary>
-        /// Calls a Command method on server
-        /// </summary>
-        /// <param name="method">Method to invoke</param>
-        /// <param name="p1">Method parameter to send</param>
-        /// <param name="p2">Method parameter to send</param>
-        /// <param name="p3">Method parameter to send</param>
-        public void InvokeCommand<T1, T2, T3>(Action<T1, T2, T3> method, T1 p1, T2 p2, T3 p3) {
-            InvokeCommand(method.Method.Name, new object[] { p1, p2, p3 });
-        }
-        /// <summary>
-        /// Calls a Command method on server
-        /// </summary>
-        /// <param name="method">Method to invoke</param>
-        /// <param name="p1">Method parameter to send</param>
-        /// <param name="p2">Method parameter to send</param>
-        /// <param name="p3">Method parameter to send</param>
-        /// <param name="p4">Method parameter to send</param>
-        public void InvokeCommand<T1, T2, T3, T4>(Action<T1, T2, T3, T4> method, T1 p1, T2 p2, T3 p3, T4 p4) {
-            InvokeCommand(method.Method.Name, new object[] { p1, p2, p3, p4 });
-        }
-
-        /// <summary>
-        /// Calls a ClientRpc method on all clients
-        /// </summary>
-        /// <param name="method">Method to invoke</param>
-        public void InvokeClientRpc(Action method) {
-            InvokeClientRpc(method.Method.Name);
-        }
-        /// <summary>
-        /// Calls a ClientRpc method on all clients
-        /// </summary>
-        /// <param name="method">Method to invoke</param>
-        /// <param name="p1">Method parameter to send</param>
-        public void InvokeClientRpc<T1>(Action<T1> method, T1 p1) {
-            InvokeClientRpc(method.Method.Name, new object[] { p1 });
-        }
-        /// <summary>
-        /// Calls a ClientRpc method on all clients
-        /// </summary>
-        /// <param name="method">Method to invoke</param>
-        /// <param name="p1">Method parameter to send</param>
-        /// <param name="p2">Method parameter to send</param>
-        public void InvokeClientRpc<T1, T2>(Action<T1, T2> method, T1 p1, T2 p2) {
-            InvokeClientRpc(method.Method.Name, new object[] { p1, p2 });
-        }
-        /// <summary>
-        /// Calls a ClientRpc method on all clients
-        /// </summary>
-        /// <param name="method">Method to invoke</param>
-        /// <param name="p1">Method parameter to send</param>
-        /// <param name="p2">Method parameter to send</param>
-        /// <param name="p3">Method parameter to send</param>
-        public void InvokeClientRpc<T1, T2, T3>(Action<T1, T2, T3> method, T1 p1, T2 p2, T3 p3) {
-            InvokeClientRpc(method.Method.Name, new object[] { p1, p2, p3 });
-        }
-        /// <summary>
-        /// Calls a ClientRpc method on all clients
-        /// </summary>
-        /// <param name="method">Method to invoke</param>
-        /// <param name="p1">Method parameter to send</param>
-        /// <param name="p2">Method parameter to send</param>
-        /// <param name="p3">Method parameter to send</param>
-        /// <param name="p4">Method parameter to send</param>
-        public void InvokeClientRpc<T1, T2, T3, T4>(Action<T1, T2, T3, T4> method, T1 p1, T2 p2, T3 p3, T4 p4) {
-            InvokeClientRpc(method.Method.Name, new object[] { p1, p2, p3, p4 });
-        }
-
-        /// <summary>
-        /// Calls a TargetRpc method on the owner client
-        /// </summary>
-        /// <param name="method">Method to invoke</param>
-        public void InvokeTargetRpc(Action method) {
-            InvokeTargetRpc(method.Method.Name);
-        }
-        /// <summary>
-        /// Calls a TargetRpc method on the owner client
-        /// </summary>
-        /// <param name="p1">Method parameter to send</param>
-        /// <param name="method">Method to invoke</param>
-        public void InvokeTargetRpc<T1>(Action<T1> method, T1 p1) {
-            InvokeTargetRpc(method.Method.Name, new object[] { p1 });
-        }
-        /// <summary>
-        /// Calls a TargetRpc method on the owner client
-        /// </summary>
-        /// <param name="p1">Method parameter to send</param>
-        /// <param name="p2">Method parameter to send</param>
-        /// <param name="method">Method to invoke</param>
-        public void InvokeTargetRpc<T1, T2>(Action<T1, T2> method, T1 p1, T2 p2) {
-            InvokeTargetRpc(method.Method.Name, new object[] { p1, p2 });
-        }
-        /// <summary>
-        /// Calls a TargetRpc method on the owner client
-        /// </summary>
-        /// <param name="p1">Method parameter to send</param>
-        /// <param name="p2">Method parameter to send</param>
-        /// <param name="p3">Method parameter to send</param>
-        /// <param name="method">Method to invoke</param>
-        public void InvokeTargetRpc<T1, T2, T3>(System.Action<T1, T2, T3> method, T1 p1, T2 p2, T3 p3) {
-            InvokeTargetRpc(method.Method.Name, new object[] { p1, p2, p3 });
-        }
-        /// <summary>
-        /// Calls a TargetRpc method on the owner client
-        /// </summary>
-        /// <param name="p1">Method parameter to send</param>
-        /// <param name="p2">Method parameter to send</param>
-        /// <param name="p3">Method parameter to send</param>
-        /// <param name="p4">Method parameter to send</param>
-        /// <param name="method">Method to invoke</param>
-        public void InvokeTargetRpc<T1, T2, T3, T4>(System.Action<T1, T2, T3, T4> method, T1 p1, T2 p2, T3 p3, T4 p4) {
-            InvokeTargetRpc(method.Method.Name, new object[] { p1, p2, p3, p4 });
-        }
-        #endregion
-
-        /// <summary>
-        /// Registers a message handler
-        /// </summary>
-        /// <param name="name">The MessageType to register</param>
-        /// <param name="action">The callback to get invoked whenever a message is received</param>
-        /// <returns>HandlerId for the messageHandler that can be used to deregister the messageHandler</returns>
-        protected int RegisterMessageHandler(string name, Action<uint, BitReaderDeprecated> action)
-        {
-            if (!MessageManager.messageTypes.ContainsKey(name))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The messageType " + name + " is not registered");
-                return -1;
-            }
-            ushort messageType = MessageManager.messageTypes[name];
-            ushort behaviourOrder = networkedObject.GetOrderIndex(this);
-
-            if (!networkedObject.targetMessageActions.ContainsKey(behaviourOrder))
-                networkedObject.targetMessageActions.Add(behaviourOrder, new Dictionary<ushort, Action<uint, BitReaderDeprecated>>());
-            if (networkedObject.targetMessageActions[behaviourOrder].ContainsKey(messageType))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Each NetworkedBehaviour can only register one callback per instance per message type");
-                return -1;
-            }
-
-            networkedObject.targetMessageActions[behaviourOrder].Add(messageType, action);
-            int counter = MessageManager.AddIncomingMessageHandler(name, action);
-            registeredMessageHandlers.Add(name, counter);
-            return counter;
-        }
-
-        /// <summary>
-        /// Registers a message handler
-        /// </summary>
-        /// <param name="name">The MessageType to register</param>
-        /// <param name="action">The callback to get invoked whenever a message is received</param>
-        /// <returns>HandlerId for the messageHandler that can be used to deregister the messageHandler</returns>
-        [Obsolete("The overload (uint, byte[]) for RegisterMessageHandler is obsolete, use (uint, BitReader) instead")]
-        protected int RegisterMessageHandler(string name, Action<uint, byte[]> action)
-        {
-            if (!MessageManager.messageTypes.ContainsKey(name))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The messageType " + name + " is not registered");
-                return -1;
-            }
-            ushort messageType = MessageManager.messageTypes[name];
-            ushort behaviourOrder = networkedObject.GetOrderIndex(this);
-
-            if (!networkedObject.targetMessageActions.ContainsKey(behaviourOrder))
-                networkedObject.targetMessageActions.Add(behaviourOrder, new Dictionary<ushort, Action<uint, BitReaderDeprecated>>());
-            if (networkedObject.targetMessageActions[behaviourOrder].ContainsKey(messageType))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Each NetworkedBehaviour can only register one callback per instance per message type");
-                return -1;
-            }
-
-            void convertedAction(uint clientId, BitReaderDeprecated reader)
-            {
-                action.Invoke(clientId, reader.ReadByteArray());
-            }
-
-            networkedObject.targetMessageActions[behaviourOrder].Add(messageType, convertedAction);
-            int counter = MessageManager.AddIncomingMessageHandler(name, convertedAction);
-            registeredMessageHandlers.Add(name, counter);
-            return counter;
-        }
-
-        /// <summary>
-        /// Deserializes a message that has been serialized by the BinarySerializer. This is the same as calling BinarySerializer.Deserialize
-        /// </summary>
-        /// <typeparam name="T">The type</typeparam>
-        /// <param name="binary">The serialized version</param>
-        /// <returns>Instance of type</returns>
-        protected T DeserializeMessage<T>(byte[] binary) where T : new()
-        {
-            return BinarySerializer.Deserialize<T>(binary);
-        }
-
-        /// <summary>
-        /// Deregisters a given message handler
-        /// </summary>
-        /// <param name="name">The MessageType to deregister</param>
-        /// <param name="counter">The messageHandlerId to deregister</param>
-        protected void DeregisterMessageHandler(string name, int counter)
-        {
-            MessageManager.RemoveIncomingMessageHandler(name, counter);
-            ushort messageType = MessageManager.messageTypes[name];
-            ushort behaviourOrder = networkedObject.GetOrderIndex(this);
-
-            if (networkedObject.targetMessageActions.ContainsKey(behaviourOrder) && 
-                networkedObject.targetMessageActions[behaviourOrder].ContainsKey(messageType))
-            {
-                networkedObject.targetMessageActions[behaviourOrder].Remove(messageType);
-            }
-        }
-
         /// <summary>
         /// Gets behaviourId for this NetworkedBehaviour on this NetworkedObject
         /// </summary>
@@ -622,11 +195,6 @@ namespace MLAPI.MonoBehaviours.Core
 
         private void OnDestroy()
         {
-            foreach (KeyValuePair<string, int> pair in registeredMessageHandlers)
-            {
-                DeregisterMessageHandler(pair.Key, pair.Value);
-            }
-
             NetworkedObject.NetworkedBehaviours.Remove(this); // O(n)
             OnDestroyed();
         }
@@ -700,7 +268,7 @@ namespace MLAPI.MonoBehaviours.Core
                 //This iterates over every "channel group".
                 for (int j = 0; j < channelMappedVarIndexes.Count; j++)
                 {
-                    using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
+                    using (BitWriter writer = BitWriter.Get())
                     {
                         writer.WriteUInt(networkId);
                         writer.WriteUShort(networkedObject.GetOrderIndex(this));
@@ -724,9 +292,9 @@ namespace MLAPI.MonoBehaviours.Core
                         }
 
                         if (isServer)
-                            InternalMessageHandler.Send(clientId, "MLAPI_NETWORKED_VAR_DELTA", channelsForVarGroups[j], writer, null);
+                            InternalMessageHandler.Send(clientId, "MLAPI_NETWORKED_VAR_DELTA", channelsForVarGroups[j], writer);
                         else
-                            InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerNetId, "MLAPI_NETWORKED_VAR_DELTA", channelsForVarGroups[j], writer, null);
+                            InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerNetId, "MLAPI_NETWORKED_VAR_DELTA", channelsForVarGroups[j], writer);
                     }
                 }
             }
@@ -737,7 +305,7 @@ namespace MLAPI.MonoBehaviours.Core
             }
         }
 
-        internal void HandleNetworkedVarDeltas(BitReaderDeprecated reader, uint clientId)
+        internal void HandleNetworkedVarDeltas(BitReader reader, uint clientId)
         {
             for (int i = 0; i < networkedVarFields.Count; i++)
             {
@@ -761,7 +329,7 @@ namespace MLAPI.MonoBehaviours.Core
             }
         }
 
-        internal void HandleNetworkedVarUpdate(BitReaderDeprecated reader, uint clientId)
+        internal void HandleNetworkedVarUpdate(BitReader reader, uint clientId)
         {
             for (int i = 0; i < networkedVarFields.Count; i++)
             {
@@ -787,1023 +355,2016 @@ namespace MLAPI.MonoBehaviours.Core
 
         #endregion
 
+        #region MESSAGING_SYSTEM
+        private static readonly Dictionary<Type, Dictionary<ulong, ClientRPC>> CachedClientRpcs = new Dictionary<Type, Dictionary<ulong, ClientRPC>>();
+        private static readonly Dictionary<Type, Dictionary<ulong, ServerRPC>> CachedServerRpcs = new Dictionary<Type, Dictionary<ulong, ServerRPC>>();
+        private static readonly Dictionary<ulong, string> HashResults = new Dictionary<ulong, string>();
+        private static readonly HashSet<Type> CachedTypes = new HashSet<Type>();
+
+        private ulong HashMethodName(string name)
+        {
+            AttributeMessageMode mode = NetworkingManager.singleton.NetworkConfig.AttributeMessageMode;
+            
+            if (mode == AttributeMessageMode.WovenTwoByte)
+                return name.GetStableHash16();
+            if (mode == AttributeMessageMode.WovenFourByte)
+                return name.GetStableHash32();
+            if (mode == AttributeMessageMode.WovenEightByte)
+                return name.GetStableHash64();
+
+            return 0;
+        }
+        
+        private void CacheAttributes()
+        {
+            Type type = GetType();
+            if (CachedTypes.Contains(type)) return; //Already cached
+            
+            CachedTypes.Add(type);
+            CachedClientRpcs.Add(type, new Dictionary<ulong, ClientRPC>());
+            CachedServerRpcs.Add(type, new Dictionary<ulong, ServerRPC>());
+            
+            MethodInfo[] methods = type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+            for (int i = 0; i < methods.Length; i++)
+            {
+                if (methods[i].IsDefined(typeof(ServerRPC), true))
+                {
+                    ServerRPC[] attributes = (ServerRPC[])methods[i].GetCustomAttributes(typeof(ServerRPC), true);
+                    if (attributes.Length > 1)
+                    {
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Having more than 1 ServerRPC attribute per method is not supported.");
+                    }
+
+                    ParameterInfo[] parameters = methods[i].GetParameters();
+                    if (parameters.Length == 2 && parameters[0].ParameterType == typeof(uint) && parameters[1].ParameterType == typeof(BitReader))
+                    {
+                        //use delegate
+                        attributes[0].rpcDelegate = (RpcDelegate)Delegate.CreateDelegate(typeof(RpcDelegate), this, methods[i], true);
+                    }
+                    else
+                    {
+                        attributes[0].reflectionMethod = new ReflectionMehtod(methods[i]);
+                    }
+                    
+                    ulong hash = HashMethodName(methods[i].Name);
+                    if (HashResults.ContainsKey(hash) && HashResults[hash] != methods[i].Name)
+                    {
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Hash collision detected for RPC method. The method \"" + methods[i].Name + "\" collides with the method \"" + HashResults[hash] + "\". This can be solved by increasing the amount of bytes to use for hashing in the NetworkConfig or changing the name of one of the conflicting methods.");
+                    }
+                    else
+                    {
+                        HashResults.Add(hash, methods[i].Name);
+                    }
+
+                    CachedServerRpcs[type].Add(hash, attributes[0]);
+                }
+                
+                if (methods[i].IsDefined(typeof(ClientRPC), true))
+                {
+                    ClientRPC[] attributes = (ClientRPC[])methods[i].GetCustomAttributes(typeof(ClientRPC), true);
+                    if (attributes.Length > 1)
+                    {
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Having more than 1 ClientRPC attribute per method is not supported.");
+                    }
+
+                    ParameterInfo[] parameters = methods[i].GetParameters();
+                    if (parameters.Length == 2 && parameters[0].ParameterType == typeof(uint) && parameters[1].ParameterType == typeof(BitReader))
+                    {
+                        //use delegate
+                        attributes[0].rpcDelegate = (RpcDelegate)Delegate.CreateDelegate(typeof(RpcDelegate), this, methods[i], true);
+                    }
+                    else
+                    {
+                        attributes[0].reflectionMethod = new ReflectionMehtod(methods[i]);
+                    }
+                    
+                    CachedClientRpcs[type].Add(HashMethodName(methods[i].Name), attributes[0]);
+                }     
+            }
+        }
+
+        internal void OnRemoteServerRPC(ulong hash, uint senderClientId, BitReader reader)
+        {
+            if (!CachedServerRpcs.ContainsKey(GetType()) || !CachedServerRpcs[GetType()].ContainsKey(hash))
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("ServerRPC request method not found");
+                return;
+            }
+            InvokeServerRPCLocal(hash, senderClientId, reader);
+        }
+        
+        internal void OnRemoteClientRPC(ulong hash, uint senderClientId, BitReader reader)
+        {
+            if (!CachedServerRpcs.ContainsKey(GetType()) || !CachedServerRpcs[GetType()].ContainsKey(hash))
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("ServerRPC request method not found");
+                return;
+            }
+            InvokeClientRPCLocal(hash, senderClientId, reader);
+        }
+
+        private void InvokeServerRPCLocal(ulong hash, uint senderClientId, BitReader reader)
+        {
+            if (!CachedServerRpcs.ContainsKey(GetType()) || !CachedServerRpcs[GetType()].ContainsKey(hash))
+                return;
+            
+            ServerRPC rpc = CachedServerRpcs[GetType()][hash];
+
+            if (rpc.RequireOwnership && senderClientId != OwnerClientId)
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Only owner can invoke ServerRPC that is marked to require ownership");
+                return;
+            }
+            
+            if (rpc.reflectionMethod != null)
+            {
+                rpc.reflectionMethod.Invoke(this, reader);
+            }
+
+            if (rpc.rpcDelegate != null)
+            {
+                rpc.rpcDelegate(senderClientId, reader);
+            }
+        }
+
+        private void InvokeClientRPCLocal(ulong hash, uint senderClientId, BitReader reader)
+        {
+            if (!CachedClientRpcs.ContainsKey(GetType()) || !CachedClientRpcs[GetType()].ContainsKey(hash))
+                return;
+            
+            ClientRPC rpc = CachedClientRpcs[GetType()][hash];
+            
+            if (rpc.reflectionMethod != null)
+            {
+                rpc.reflectionMethod.Invoke(this, reader);
+            }
+
+            if (rpc.rpcDelegate != null)
+            {
+                rpc.rpcDelegate(senderClientId, reader);
+            }
+        }
+        
+        //Technically boxed writes are not needed. But save LOC for the non performance sends.
+        internal void SendServerRPCBoxed(ulong hash, params object[] parameters)
+        {
+            using (BitWriter writer = BitWriter.Get())
+            {
+                for (int i = 0; i < parameters.Length; i++)
+                {
+                    writer.WriteObject(parameters[i]);
+                }
+                SendServerRPCPerformance(hash, writer);
+            }
+        }
+        
+        internal void SendClientRPCBoxed(ulong hash, List<uint> clientIds, params object[] parameters)
+        {
+            using (BitWriter writer = BitWriter.Get())
+            {
+                for (int i = 0; i < parameters.Length; i++)
+                {
+                    writer.WriteObject(parameters[i]);
+                }
+                SendClientRPCPerformance(hash, clientIds, writer);
+            }
+        }
+
+        internal void SendClientRPCBoxed(ulong hash, uint clientId, params object[] parameters)
+        {
+            using (BitWriter writer = BitWriter.Get())
+            {
+                for (int i = 0; i < parameters.Length; i++)
+                {
+                    writer.WriteObject(parameters[i]);
+                }
+                SendClientRPCPerformance(hash, clientId, writer);
+            }
+        }
+
+        internal void SendServerRPCPerformance(ulong hash, BitWriter writer)
+        {
+            if (!isClient)
+            {
+                //We are ONLY a server.
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Only server and host can invoke ServerRPC");
+                return;
+            }
+
+            if (isHost)
+            {
+                using (BitReader reader = BitReader.Get(writer.Finalize()))
+                {
+                    InvokeServerRPCLocal(hash, NetworkingManager.singleton.LocalClientId, reader);   
+                }
+            }
+            
+            InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerNetId, "MLAPI_SERVER_RPC", "MLAPI_DEFAULT_MESSAGE", writer);
+        }
+
+        internal void SendClientRPCPerformance(ulong hash,  List<uint> clientIds, BitWriter writer)
+        {            
+            if (!isServer)
+            {
+                //We are NOT a server.
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Only clients and host can invoke ClientRPC");
+                return;
+            }
+
+            using (BitWriter rpcWriter = BitWriter.Get())
+            {
+                writer.WriteUInt(networkId);
+                writer.WriteUShort(networkedObject.GetOrderIndex(this));
+                writer.WriteULong(hash);
+
+                writer.WriteWriter(writer);
+
+                if (clientIds == null)
+                {
+                    for (int i = 0; i < NetworkingManager.singleton.ConnectedClientsList.Count; i++)
+                    {
+                        if (isHost && NetworkingManager.singleton.ConnectedClientsList[i].ClientId == NetworkingManager.singleton.LocalClientId)
+                        {
+                            using (BitReader reader = BitReader.Get(writer.Finalize()))
+                            {
+                                InvokeClientRPCLocal(hash, NetworkingManager.singleton.LocalClientId, reader);
+                            }
+                        }
+                        else
+                        {
+                            InternalMessageHandler.Send(NetworkingManager.singleton.ConnectedClientsList[i].ClientId, "MLAPI_CLIENT_RPC", "MLAPI_DEFAULT_MESSAGE", rpcWriter);
+                        }
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < clientIds.Count; i++)
+                    {
+                        if (isHost && clientIds[i] == NetworkingManager.singleton.LocalClientId)
+                        {
+                            using (BitReader reader = BitReader.Get(writer.Finalize()))
+                            {
+                                InvokeClientRPCLocal(hash, NetworkingManager.singleton.LocalClientId, reader);
+                            }
+                        }
+                        else
+                        {
+                            InternalMessageHandler.Send(clientIds[i], "MLAPI_CLIENT_RPC", "MLAPI_DEFAULT_MESSAGE", rpcWriter);}
+                    }
+                }
+            }
+        }
+
+        internal void SendClientRPCPerformance(ulong hash, uint clientId, BitWriter writer)
+        {
+            if (!isServer)
+            {
+                //We are NOT a server.
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Only clients and host can invoke ClientRPC");
+                return;
+            }
+
+            using (BitWriter rpcWriter = BitWriter.Get())
+            {
+                writer.WriteUInt(networkId);
+                writer.WriteUShort(networkedObject.GetOrderIndex(this));
+                writer.WriteULong(hash);
+
+                writer.WriteWriter(writer);
+
+                if (isHost && clientId == NetworkingManager.singleton.LocalClientId)
+                {
+                    using (BitReader reader = BitReader.Get(writer.Finalize()))
+                    {
+                        InvokeClientRPCLocal(hash, NetworkingManager.singleton.LocalClientId, reader);
+                    }
+                }
+                else
+                {
+                    InternalMessageHandler.Send(clientId, "MLAPI_CLIENT_RPC", "MLAPI_DEFAULT_MESSAGE", rpcWriter);
+                }
+            }
+        }
+        #endregion
+
         #region SEND METHODS
-        /// <summary>
-        /// Sends a buffer to the server from client
-        /// </summary>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>
-        /// <param name="data">The binary data to send</param>
-        protected void SendToServer(string messageType, string channelName, byte[] data)
+        public delegate void Action();
+        public delegate void Action<T1>(T1 t1);
+        public delegate void Action<T1, T2>(T1 t1, T2 t2);
+        public delegate void Action<T1, T2, T3>(T1 t1, T2 t2, T3 t3);
+        public delegate void Action<T1, T2, T3, T4>(T1 t1, T2 t2, T3 t3, T4 t4);
+        public delegate void Action<T1, T2, T3, T4, T5>(T1 t1, T2 t2, T3 t3, T4 t4, T5 t5);
+        public delegate void Action<T1, T2, T3, T4, T5, T6>(T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6);
+        public delegate void Action<T1, T2, T3, T4, T5, T6, T7>(T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7);
+        public delegate void Action<T1, T2, T3, T4, T5, T6, T7, T8>(T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8);
+        public delegate void Action<T1, T2, T3, T4, T5, T6, T7, T8, T9>(T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9);
+        public delegate void Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10);
+        public delegate void Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11);
+        public delegate void Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12);
+        public delegate void Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>(T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13);
+        public delegate void Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>(T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14);
+        public delegate void Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>(T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15);
+        public delegate void Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>(T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16);
+        public delegate void Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17>(T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17);
+        public delegate void Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18>(T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18);
+        public delegate void Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19>(T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19);
+        public delegate void Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20>(T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20);
+        public delegate void Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21>(T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21);
+        public delegate void Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22>(T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22);
+        public delegate void Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23>(T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23);
+        public delegate void Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24>(T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24);
+        public delegate void Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25>(T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25);
+        public delegate void Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26>(T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26);
+        public delegate void Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27>(T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27);
+        public delegate void Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28>(T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27, T28 t28);
+        public delegate void Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29>(T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27, T28 t28, T29 t29);
+        public delegate void Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30>(T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27, T28 t28, T29 t29, T30 t30);
+        public delegate void Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31>(T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27, T28 t28, T29 t29, T30 t30, T31 t31);
+        public delegate void Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31, T32>(T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27, T28 t28, T29 t29, T30 t30, T31 t31, T32 t32);
+
+        
+        //BOXED CLIENT RPC
+        public void InvokeClientRpc(string methodName, List<uint> clientIds)
         {
-            if (!MessageManager.messageTypes.ContainsKey(messageType))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
-                return;
-            }
-            if (MessageManager.messageTypes[messageType] < 32)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
-                return;
-            }
-            if (isServer)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Server can not send messages to server");
-                return;
-            }
-            using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
-            {
-                writer.WriteByteArray(data);
-                InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerNetId, messageType, channelName, writer, null);
-            }
+            SendClientRPCBoxed(HashMethodName(methodName), clientIds);
         }
 
-        /// <summary>
-        /// Sends a buffer to the server from client
-        /// </summary>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>
-        /// <param name="writer">The binary data to send</param>
-        protected void SendToServer(string messageType, string channelName, BitWriterDeprecated writer)
+        public void InvokeClientRpc(Action method, List<uint> clientIds)
         {
-            if (!MessageManager.messageTypes.ContainsKey(messageType))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
-                return;
-            }
-            if (MessageManager.messageTypes[messageType] < 32)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
-                return;
-            }
-            if (isServer)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Server can not send messages to server");
-                return;
-            }
-            InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerNetId, messageType, channelName, writer, null);
+            SendClientRPCBoxed(HashMethodName(method.Method.Name), clientIds);
         }
 
-        /// <summary>
-        /// Sends a binary serialized class to the server from client 
-        /// </summary>
-        /// <typeparam name="T">The class type to send</typeparam>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>
-        /// <param name="instance">The instance to send</param>
-        protected void SendToServer<T>(string messageType, string channelName, T instance)
+        public void InvokeClientRpcOnOwner(Action method)
         {
-            SendToServer(messageType, channelName, BinarySerializer.Serialize<T>(instance));
+            SendClientRPCBoxed(HashMethodName(method.Method.Name), OwnerClientId);
         }
 
-        /// <summary>
-        /// Sends a buffer to the server from client. Only handlers on this NetworkedBehaviour will get invoked
-        /// </summary>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>
-        /// <param name="data">The binary data to send</param>
-        protected void SendToServerTarget(string messageType, string channelName, byte[] data)
+        public void InvokeClientRpcOnEveryone(Action method)
         {
-            if (!MessageManager.messageTypes.ContainsKey(messageType))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
-                return;
-            }
-            if (MessageManager.messageTypes[messageType] < 32)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
-                return;
-            }
-            if (isServer)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Server can not send messages to server");
-                return;
-            }
-            using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
-            {
-                writer.WriteByteArray(data);
-                InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerNetId, messageType, channelName, writer, networkId, networkedObject.GetOrderIndex(this));
-            }
+            SendClientRPCBoxed(HashMethodName(method.Method.Name), null);
+        }
+	    
+	    public void InvokeClientRpcOnClient(Action method, uint clientId)
+	    {
+		    SendClientRPCBoxed(HashMethodName(method.Method.Name), clientId);
+	    }
+		
+	    public void InvokeClientRpcOnClient(string methodName, uint clientId)
+	    {
+		    SendClientRPCBoxed(HashMethodName(methodName), clientId);
+	    }
+
+		public void InvokeClientRpc<T1>(string methodName, List<uint> clientIds, T1 t1)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientIds, t1);
+		}
+		
+		public void InvokeClientRpc<T1>(Action<T1> method, List<uint> clientIds, T1 t1)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientIds, t1);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1>(Action<T1> method, T1 t1)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), OwnerClientId, t1);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1>(string methodName, T1 t1)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), OwnerClientId, t1);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1>(Action<T1> method, T1 t1)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), null, t1);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1>(string methodName, T1 t1)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), null, t1);
+		}
+		
+		public void InvokeClientRpcOnClient<T1>(Action<T1> method, uint clientId, T1 t1)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientId, t1);
+		}
+		
+		public void InvokeClientRpcOnClient<T1>(string methodName, uint clientId, T1 t1)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientId, t1);
+		}
+		
+		public void InvokeClientRpc<T1, T2>(string methodName, List<uint> clientIds, T1 t1, T2 t2)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientIds, t1, t2);
+		}
+		
+		public void InvokeClientRpc<T1, T2>(Action<T1, T2> method, List<uint> clientIds, T1 t1, T2 t2)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientIds, t1, t2);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2>(Action<T1, T2> method, T1 t1, T2 t2)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), OwnerClientId, t1, t2);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2>(string methodName, T1 t1, T2 t2)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), OwnerClientId, t1, t2);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2>(Action<T1, T2> method, T1 t1, T2 t2)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), null, t1, t2);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2>(string methodName, T1 t1, T2 t2)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), null, t1, t2);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2>(Action<T1, T2> method, uint clientId, T1 t1, T2 t2)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientId, t1, t2);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2>(string methodName, uint clientId, T1 t1, T2 t2)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientId, t1, t2);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3>(string methodName, List<uint> clientIds, T1 t1, T2 t2, T3 t3)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientIds, t1, t2, t3);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3>(Action<T1, T2, T3> method, List<uint> clientIds, T1 t1, T2 t2, T3 t3)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientIds, t1, t2, t3);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3>(Action<T1, T2, T3> method, T1 t1, T2 t2, T3 t3)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), OwnerClientId, t1, t2, t3);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3>(string methodName, T1 t1, T2 t2, T3 t3)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), OwnerClientId, t1, t2, t3);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3>(Action<T1, T2, T3> method, T1 t1, T2 t2, T3 t3)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), null, t1, t2, t3);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3>(string methodName, T1 t1, T2 t2, T3 t3)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), null, t1, t2, t3);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3>(Action<T1, T2, T3> method, uint clientId, T1 t1, T2 t2, T3 t3)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientId, t1, t2, t3);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3>(string methodName, uint clientId, T1 t1, T2 t2, T3 t3)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientId, t1, t2, t3);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4>(string methodName, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientIds, t1, t2, t3, t4);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4>(Action<T1, T2, T3, T4> method, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientIds, t1, t2, t3, t4);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4>(Action<T1, T2, T3, T4> method, T1 t1, T2 t2, T3 t3, T4 t4)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), OwnerClientId, t1, t2, t3, t4);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), OwnerClientId, t1, t2, t3, t4);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4>(Action<T1, T2, T3, T4> method, T1 t1, T2 t2, T3 t3, T4 t4)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), null, t1, t2, t3, t4);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), null, t1, t2, t3, t4);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4>(Action<T1, T2, T3, T4> method, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientId, t1, t2, t3, t4);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4>(string methodName, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientId, t1, t2, t3, t4);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4, T5>(string methodName, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientIds, t1, t2, t3, t4, t5);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4, T5>(Action<T1, T2, T3, T4, T5> method, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientIds, t1, t2, t3, t4, t5);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4, T5>(Action<T1, T2, T3, T4, T5> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), OwnerClientId, t1, t2, t3, t4, t5);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4, T5>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), OwnerClientId, t1, t2, t3, t4, t5);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4, T5>(Action<T1, T2, T3, T4, T5> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), null, t1, t2, t3, t4, t5);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4, T5>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), null, t1, t2, t3, t4, t5);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4, T5>(Action<T1, T2, T3, T4, T5> method, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientId, t1, t2, t3, t4, t5);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4, T5>(string methodName, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientId, t1, t2, t3, t4, t5);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4, T5, T6>(string methodName, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientIds, t1, t2, t3, t4, t5, t6);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4, T5, T6>(Action<T1, T2, T3, T4, T5, T6> method, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientIds, t1, t2, t3, t4, t5, t6);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4, T5, T6>(Action<T1, T2, T3, T4, T5, T6> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), OwnerClientId, t1, t2, t3, t4, t5, t6);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4, T5, T6>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), OwnerClientId, t1, t2, t3, t4, t5, t6);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4, T5, T6>(Action<T1, T2, T3, T4, T5, T6> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), null, t1, t2, t3, t4, t5, t6);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4, T5, T6>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), null, t1, t2, t3, t4, t5, t6);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4, T5, T6>(Action<T1, T2, T3, T4, T5, T6> method, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientId, t1, t2, t3, t4, t5, t6);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4, T5, T6>(string methodName, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientId, t1, t2, t3, t4, t5, t6);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4, T5, T6, T7>(string methodName, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientIds, t1, t2, t3, t4, t5, t6, t7);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4, T5, T6, T7>(Action<T1, T2, T3, T4, T5, T6, T7> method, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientIds, t1, t2, t3, t4, t5, t6, t7);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4, T5, T6, T7>(Action<T1, T2, T3, T4, T5, T6, T7> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), OwnerClientId, t1, t2, t3, t4, t5, t6, t7);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4, T5, T6, T7>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), OwnerClientId, t1, t2, t3, t4, t5, t6, t7);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4, T5, T6, T7>(Action<T1, T2, T3, T4, T5, T6, T7> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), null, t1, t2, t3, t4, t5, t6, t7);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4, T5, T6, T7>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), null, t1, t2, t3, t4, t5, t6, t7);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4, T5, T6, T7>(Action<T1, T2, T3, T4, T5, T6, T7> method, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientId, t1, t2, t3, t4, t5, t6, t7);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4, T5, T6, T7>(string methodName, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientId, t1, t2, t3, t4, t5, t6, t7);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4, T5, T6, T7, T8>(string methodName, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientIds, t1, t2, t3, t4, t5, t6, t7, t8);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4, T5, T6, T7, T8>(Action<T1, T2, T3, T4, T5, T6, T7, T8> method, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientIds, t1, t2, t3, t4, t5, t6, t7, t8);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4, T5, T6, T7, T8>(Action<T1, T2, T3, T4, T5, T6, T7, T8> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), OwnerClientId, t1, t2, t3, t4, t5, t6, t7, t8);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4, T5, T6, T7, T8>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), OwnerClientId, t1, t2, t3, t4, t5, t6, t7, t8);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4, T5, T6, T7, T8>(Action<T1, T2, T3, T4, T5, T6, T7, T8> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), null, t1, t2, t3, t4, t5, t6, t7, t8);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4, T5, T6, T7, T8>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), null, t1, t2, t3, t4, t5, t6, t7, t8);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4, T5, T6, T7, T8>(Action<T1, T2, T3, T4, T5, T6, T7, T8> method, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientId, t1, t2, t3, t4, t5, t6, t7, t8);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4, T5, T6, T7, T8>(string methodName, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientId, t1, t2, t3, t4, t5, t6, t7, t8);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9>(string methodName, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientIds, t1, t2, t3, t4, t5, t6, t7, t8, t9);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9> method, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientIds, t1, t2, t3, t4, t5, t6, t7, t8, t9);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4, T5, T6, T7, T8, T9>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), OwnerClientId, t1, t2, t3, t4, t5, t6, t7, t8, t9);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4, T5, T6, T7, T8, T9>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), OwnerClientId, t1, t2, t3, t4, t5, t6, t7, t8, t9);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4, T5, T6, T7, T8, T9>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), null, t1, t2, t3, t4, t5, t6, t7, t8, t9);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4, T5, T6, T7, T8, T9>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), null, t1, t2, t3, t4, t5, t6, t7, t8, t9);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4, T5, T6, T7, T8, T9>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9> method, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientId, t1, t2, t3, t4, t5, t6, t7, t8, t9);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4, T5, T6, T7, T8, T9>(string methodName, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientId, t1, t2, t3, t4, t5, t6, t7, t8, t9);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(string methodName, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientIds, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> method, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientIds, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), OwnerClientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), OwnerClientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), null, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), null, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> method, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(string methodName, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(string methodName, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientIds, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> method, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientIds, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), OwnerClientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), OwnerClientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), null, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), null, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> method, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(string methodName, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(string methodName, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientIds, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> method, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientIds, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), OwnerClientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), OwnerClientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), null, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), null, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> method, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(string methodName, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>(string methodName, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientIds, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> method, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientIds, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), OwnerClientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), OwnerClientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), null, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), null, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> method, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>(string methodName, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>(string methodName, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientIds, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> method, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientIds, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), OwnerClientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), OwnerClientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), null, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), null, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> method, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>(string methodName, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>(string methodName, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientIds, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> method, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientIds, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), OwnerClientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), OwnerClientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), null, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), null, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> method, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>(string methodName, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>(string methodName, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientIds, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16> method, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientIds, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), OwnerClientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), OwnerClientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), null, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), null, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16> method, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>(string methodName, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17>(string methodName, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientIds, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17> method, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientIds, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), OwnerClientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), OwnerClientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), null, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), null, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17> method, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17>(string methodName, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18>(string methodName, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientIds, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18> method, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientIds, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), OwnerClientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), OwnerClientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), null, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), null, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18> method, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18>(string methodName, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19>(string methodName, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientIds, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19> method, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientIds, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), OwnerClientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), OwnerClientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), null, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), null, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19> method, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19>(string methodName, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20>(string methodName, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientIds, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20> method, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientIds, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), OwnerClientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), OwnerClientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), null, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), null, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20> method, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20>(string methodName, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21>(string methodName, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientIds, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21> method, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientIds, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), OwnerClientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), OwnerClientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), null, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), null, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21> method, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21>(string methodName, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22>(string methodName, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientIds, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22> method, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientIds, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), OwnerClientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), OwnerClientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), null, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), null, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22> method, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22>(string methodName, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23>(string methodName, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientIds, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23> method, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientIds, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), OwnerClientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), OwnerClientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), null, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), null, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23> method, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23>(string methodName, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24>(string methodName, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientIds, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24> method, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientIds, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), OwnerClientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), OwnerClientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), null, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), null, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24> method, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24>(string methodName, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25>(string methodName, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientIds, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25> method, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientIds, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), OwnerClientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), OwnerClientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), null, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), null, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25> method, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25>(string methodName, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26>(string methodName, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientIds, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26> method, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientIds, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), OwnerClientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), OwnerClientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), null, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), null, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26> method, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26>(string methodName, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27>(string methodName, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientIds, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27> method, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientIds, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), OwnerClientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), OwnerClientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), null, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), null, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27> method, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27>(string methodName, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28>(string methodName, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27, T28 t28)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientIds, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28> method, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27, T28 t28)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientIds, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27, T28 t28)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), OwnerClientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27, T28 t28)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), OwnerClientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27, T28 t28)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), null, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27, T28 t28)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), null, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28> method, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27, T28 t28)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28>(string methodName, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27, T28 t28)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29>(string methodName, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27, T28 t28, T29 t29)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientIds, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29> method, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27, T28 t28, T29 t29)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientIds, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27, T28 t28, T29 t29)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), OwnerClientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27, T28 t28, T29 t29)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), OwnerClientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27, T28 t28, T29 t29)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), null, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27, T28 t28, T29 t29)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), null, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29> method, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27, T28 t28, T29 t29)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29>(string methodName, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27, T28 t28, T29 t29)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30>(string methodName, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27, T28 t28, T29 t29, T30 t30)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientIds, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30> method, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27, T28 t28, T29 t29, T30 t30)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientIds, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27, T28 t28, T29 t29, T30 t30)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), OwnerClientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27, T28 t28, T29 t29, T30 t30)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), OwnerClientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27, T28 t28, T29 t29, T30 t30)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), null, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27, T28 t28, T29 t29, T30 t30)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), null, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30> method, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27, T28 t28, T29 t29, T30 t30)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30>(string methodName, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27, T28 t28, T29 t29, T30 t30)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31>(string methodName, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27, T28 t28, T29 t29, T30 t30, T31 t31)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientIds, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31> method, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27, T28 t28, T29 t29, T30 t30, T31 t31)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientIds, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27, T28 t28, T29 t29, T30 t30, T31 t31)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), OwnerClientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27, T28 t28, T29 t29, T30 t30, T31 t31)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), OwnerClientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27, T28 t28, T29 t29, T30 t30, T31 t31)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), null, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27, T28 t28, T29 t29, T30 t30, T31 t31)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), null, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31> method, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27, T28 t28, T29 t29, T30 t30, T31 t31)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31>(string methodName, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27, T28 t28, T29 t29, T30 t30, T31 t31)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31, T32>(string methodName, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27, T28 t28, T29 t29, T30 t30, T31 t31, T32 t32)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientIds, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t32);
+		}
+		
+		public void InvokeClientRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31, T32>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31, T32> method, List<uint> clientIds, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27, T28 t28, T29 t29, T30 t30, T31 t31, T32 t32)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientIds, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t32);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31, T32>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31, T32> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27, T28 t28, T29 t29, T30 t30, T31 t31, T32 t32)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), OwnerClientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t32);
+		}
+		
+		public void InvokeClientRpcOnOwner<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31, T32>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27, T28 t28, T29 t29, T30 t30, T31 t31, T32 t32)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), OwnerClientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t32);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31, T32>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31, T32> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27, T28 t28, T29 t29, T30 t30, T31 t31, T32 t32)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), null, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t32);
+		}
+		
+		public void InvokeClientRpcOnEveryone<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31, T32>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27, T28 t28, T29 t29, T30 t30, T31 t31, T32 t32)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), null, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t32);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31, T32>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31, T32> method, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27, T28 t28, T29 t29, T30 t30, T31 t31, T32 t32)
+		{
+			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t32);
+		}
+		
+		public void InvokeClientRpcOnClient<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31, T32>(string methodName, uint clientId, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27, T28 t28, T29 t29, T30 t30, T31 t31, T32 t32)
+		{
+			SendClientRPCBoxed(HashMethodName(methodName), clientId, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t32);
+		}
+
+        //BOXED SERVER RPC
+        public void InvokeServerRpc(string methodName)
+        {
+            SendServerRPCBoxed(HashMethodName(methodName));
         }
 
-        /// <summary>
-        /// Sends a buffer to the server from client. Only handlers on this NetworkedBehaviour will get invoked
-        /// </summary>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>
-        /// <param name="writer">The binary data to send</param>
-        protected void SendToServerTarget(string messageType, string channelName, BitWriterDeprecated writer)
+        public void InvokeServerRpc(Action method)
         {
-            if (!MessageManager.messageTypes.ContainsKey(messageType))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
-                return;
-            }
-            if (MessageManager.messageTypes[messageType] < 32)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
-                return;
-            }
-            if (isServer)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Server can not send messages to server");
-                return;
-            }
-            InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerNetId, messageType, channelName, writer, networkId, networkedObject.GetOrderIndex(this));
+            SendServerRPCBoxed(HashMethodName(method.Method.Name));
+        }
+        
+		public void InvokeServerRpc<T1>(Action<T1> method, T1 t1)
+		{
+			SendServerRPCBoxed(HashMethodName(method.Method.Name), t1);
+		}
+		
+		public void InvokeServerRpc<T1>(string methodName, T1 t1)
+		{
+			SendServerRPCBoxed(HashMethodName(methodName), t1);
+		}
+		
+		public void InvokeServerRpc<T1, T2>(Action<T1, T2> method, T1 t1, T2 t2)
+		{
+			SendServerRPCBoxed(HashMethodName(method.Method.Name), t1, t2);
+		}
+		
+		public void InvokeServerRpc<T1, T2>(string methodName, T1 t1, T2 t2)
+		{
+			SendServerRPCBoxed(HashMethodName(methodName), t1, t2);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3>(Action<T1, T2, T3> method, T1 t1, T2 t2, T3 t3)
+		{
+			SendServerRPCBoxed(HashMethodName(method.Method.Name), t1, t2, t3);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3>(string methodName, T1 t1, T2 t2, T3 t3)
+		{
+			SendServerRPCBoxed(HashMethodName(methodName), t1, t2, t3);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4>(Action<T1, T2, T3, T4> method, T1 t1, T2 t2, T3 t3, T4 t4)
+		{
+			SendServerRPCBoxed(HashMethodName(method.Method.Name), t1, t2, t3, t4);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4)
+		{
+			SendServerRPCBoxed(HashMethodName(methodName), t1, t2, t3, t4);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4, T5>(Action<T1, T2, T3, T4, T5> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5)
+		{
+			SendServerRPCBoxed(HashMethodName(method.Method.Name), t1, t2, t3, t4, t5);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4, T5>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5)
+		{
+			SendServerRPCBoxed(HashMethodName(methodName), t1, t2, t3, t4, t5);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4, T5, T6>(Action<T1, T2, T3, T4, T5, T6> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6)
+		{
+			SendServerRPCBoxed(HashMethodName(method.Method.Name), t1, t2, t3, t4, t5, t6);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4, T5, T6>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6)
+		{
+			SendServerRPCBoxed(HashMethodName(methodName), t1, t2, t3, t4, t5, t6);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4, T5, T6, T7>(Action<T1, T2, T3, T4, T5, T6, T7> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7)
+		{
+			SendServerRPCBoxed(HashMethodName(method.Method.Name), t1, t2, t3, t4, t5, t6, t7);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4, T5, T6, T7>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7)
+		{
+			SendServerRPCBoxed(HashMethodName(methodName), t1, t2, t3, t4, t5, t6, t7);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4, T5, T6, T7, T8>(Action<T1, T2, T3, T4, T5, T6, T7, T8> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8)
+		{
+			SendServerRPCBoxed(HashMethodName(method.Method.Name), t1, t2, t3, t4, t5, t6, t7, t8);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4, T5, T6, T7, T8>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8)
+		{
+			SendServerRPCBoxed(HashMethodName(methodName), t1, t2, t3, t4, t5, t6, t7, t8);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9)
+		{
+			SendServerRPCBoxed(HashMethodName(method.Method.Name), t1, t2, t3, t4, t5, t6, t7, t8, t9);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9)
+		{
+			SendServerRPCBoxed(HashMethodName(methodName), t1, t2, t3, t4, t5, t6, t7, t8, t9);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10)
+		{
+			SendServerRPCBoxed(HashMethodName(method.Method.Name), t1, t2, t3, t4, t5, t6, t7, t8, t9, t10);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10)
+		{
+			SendServerRPCBoxed(HashMethodName(methodName), t1, t2, t3, t4, t5, t6, t7, t8, t9, t10);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11)
+		{
+			SendServerRPCBoxed(HashMethodName(method.Method.Name), t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11)
+		{
+			SendServerRPCBoxed(HashMethodName(methodName), t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12)
+		{
+			SendServerRPCBoxed(HashMethodName(method.Method.Name), t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12)
+		{
+			SendServerRPCBoxed(HashMethodName(methodName), t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13)
+		{
+			SendServerRPCBoxed(HashMethodName(method.Method.Name), t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13)
+		{
+			SendServerRPCBoxed(HashMethodName(methodName), t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14)
+		{
+			SendServerRPCBoxed(HashMethodName(method.Method.Name), t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14)
+		{
+			SendServerRPCBoxed(HashMethodName(methodName), t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15)
+		{
+			SendServerRPCBoxed(HashMethodName(method.Method.Name), t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15)
+		{
+			SendServerRPCBoxed(HashMethodName(methodName), t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16)
+		{
+			SendServerRPCBoxed(HashMethodName(method.Method.Name), t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16)
+		{
+			SendServerRPCBoxed(HashMethodName(methodName), t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17)
+		{
+			SendServerRPCBoxed(HashMethodName(method.Method.Name), t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17)
+		{
+			SendServerRPCBoxed(HashMethodName(methodName), t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18)
+		{
+			SendServerRPCBoxed(HashMethodName(method.Method.Name), t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18)
+		{
+			SendServerRPCBoxed(HashMethodName(methodName), t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19)
+		{
+			SendServerRPCBoxed(HashMethodName(method.Method.Name), t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19)
+		{
+			SendServerRPCBoxed(HashMethodName(methodName), t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20)
+		{
+			SendServerRPCBoxed(HashMethodName(method.Method.Name), t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20)
+		{
+			SendServerRPCBoxed(HashMethodName(methodName), t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21)
+		{
+			SendServerRPCBoxed(HashMethodName(method.Method.Name), t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21)
+		{
+			SendServerRPCBoxed(HashMethodName(methodName), t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22)
+		{
+			SendServerRPCBoxed(HashMethodName(method.Method.Name), t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22)
+		{
+			SendServerRPCBoxed(HashMethodName(methodName), t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23)
+		{
+			SendServerRPCBoxed(HashMethodName(method.Method.Name), t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23)
+		{
+			SendServerRPCBoxed(HashMethodName(methodName), t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24)
+		{
+			SendServerRPCBoxed(HashMethodName(method.Method.Name), t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24)
+		{
+			SendServerRPCBoxed(HashMethodName(methodName), t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25)
+		{
+			SendServerRPCBoxed(HashMethodName(method.Method.Name), t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25)
+		{
+			SendServerRPCBoxed(HashMethodName(methodName), t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26)
+		{
+			SendServerRPCBoxed(HashMethodName(method.Method.Name), t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26)
+		{
+			SendServerRPCBoxed(HashMethodName(methodName), t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27)
+		{
+			SendServerRPCBoxed(HashMethodName(method.Method.Name), t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27)
+		{
+			SendServerRPCBoxed(HashMethodName(methodName), t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27, T28 t28)
+		{
+			SendServerRPCBoxed(HashMethodName(method.Method.Name), t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27, T28 t28)
+		{
+			SendServerRPCBoxed(HashMethodName(methodName), t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27, T28 t28, T29 t29)
+		{
+			SendServerRPCBoxed(HashMethodName(method.Method.Name), t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27, T28 t28, T29 t29)
+		{
+			SendServerRPCBoxed(HashMethodName(methodName), t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27, T28 t28, T29 t29, T30 t30)
+		{
+			SendServerRPCBoxed(HashMethodName(method.Method.Name), t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27, T28 t28, T29 t29, T30 t30)
+		{
+			SendServerRPCBoxed(HashMethodName(methodName), t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27, T28 t28, T29 t29, T30 t30, T31 t31)
+		{
+			SendServerRPCBoxed(HashMethodName(method.Method.Name), t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27, T28 t28, T29 t29, T30 t30, T31 t31)
+		{
+			SendServerRPCBoxed(HashMethodName(methodName), t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31, T32>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31, T32> method, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27, T28 t28, T29 t29, T30 t30, T31 t31, T32 t32)
+		{
+			SendServerRPCBoxed(HashMethodName(method.Method.Name), t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t32);
+		}
+		
+		public void InvokeServerRpc<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31, T32>(string methodName, T1 t1, T2 t2, T3 t3, T4 t4, T5 t5, T6 t6, T7 t7, T8 t8, T9 t9, T10 t10, T11 t11, T12 t12, T13 t13, T14 t14, T15 t15, T16 t16, T17 t17, T18 t18, T19 t19, T20 t20, T21 t21, T22 t22, T23 t23, T24 t24, T25 t25, T26 t26, T27 t27, T28 t28, T29 t29, T30 t30, T31 t31, T32 t32)
+		{
+			SendServerRPCBoxed(HashMethodName(methodName), t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t32);
+		}
+
+        //PERFORMANCE SERVER RPC
+        public void InvokeServerRpc(RpcDelegate method, BitWriter writer)
+        {
+            SendServerRPCPerformance(HashMethodName(method.Method.Name), writer);
         }
 
-        /// <summary>
-        /// Sends a binary serialized class to the server from client. Only handlers on this NetworkedBehaviour will get invoked
-        /// </summary>
-        /// <typeparam name="T">The class type to send</typeparam>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>
-        /// <param name="instance">The instance to send</param>
-        protected void SendToServerTarget<T>(string messageType, string channelName, T instance)
+        public void InvokeServerRpc(string methodName, BitWriter writer)
         {
-            SendToServerTarget(messageType, channelName, BinarySerializer.Serialize<T>(instance));
+            SendServerRPCPerformance(HashMethodName(methodName), writer);
         }
 
-        /// <summary>
-        /// Sends a buffer to the client that owns this object from the server.
-        /// </summary>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>
-        /// <param name="data">The binary data to send</param>
-        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToLocalClient(string messageType, string channelName, byte[] data)
+        //PERFORMANCE CLIENT RPC
+        public void InvokeClientRpc(RpcDelegate method, List<uint> clientIds, BitWriter writer)
         {
-            if (!MessageManager.messageTypes.ContainsKey(messageType))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
-                return;
-            }
-            if (MessageManager.messageTypes[messageType] < 32)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
-                return;
-            }
-            if (!isServer && (!NetworkingManager.singleton.NetworkConfig.AllowPassthroughMessages || !NetworkingManager.singleton.NetworkConfig.PassthroughMessageHashSet.Contains(MessageManager.messageTypes[messageType])))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
-                return;
-            }
-
-            using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
-            {
-                writer.WriteByteArray(data);
-                InternalMessageHandler.Send(OwnerClientId, messageType, channelName, writer);
-            }
+            SendClientRPCPerformance(HashMethodName(method.Method.Name), clientIds, writer);
         }
 
-        /// <summary>
-        /// Sends a buffer to the client that owns this object from the server.
-        /// </summary>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>
-        /// <param name="writer">The binary data to send</param>
-        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToLocalClient(string messageType, string channelName, BitWriterDeprecated writer)
+        public void InvokeClientRpcOnOwner(RpcDelegate method, BitWriter writer)
         {
-            if (!MessageManager.messageTypes.ContainsKey(messageType))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
-                return;
-            }
-            if (MessageManager.messageTypes[messageType] < 32)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
-                return;
-            }
-            if (!isServer && (!NetworkingManager.singleton.NetworkConfig.AllowPassthroughMessages || !NetworkingManager.singleton.NetworkConfig.PassthroughMessageHashSet.Contains(MessageManager.messageTypes[messageType])))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
-                return;
-            }
-            InternalMessageHandler.Send(OwnerClientId, messageType, channelName, writer);
+            SendClientRPCPerformance(HashMethodName(method.Method.Name), OwnerClientId, writer);
         }
 
-        /// <summary>
-        /// Sends a binary serialized class to the client that owns this object from the server.
-        /// </summary>
-        /// <typeparam name="T">The class type to send</typeparam>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>	
-        /// <param name="instance">The instance to send</param>
-        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToLocalClient<T>(string messageType, string channelName, T instance)
+        public void InvokeClientRpcOnEveryone(RpcDelegate method, BitWriter writer)
         {
-            SendToLocalClient(messageType, channelName, BinarySerializer.Serialize<T>(instance));
+            SendClientRPCPerformance(HashMethodName(method.Method.Name), null, writer);
         }
 
-        /// <summary>
-        /// Sends a buffer to the client that owns this object from the server. Only handlers on this NetworkedBehaviour will get invoked
-        /// </summary>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>
-        /// <param name="data">The binary data to send</param>
-        protected void SendToLocalClientTarget(string messageType, string channelName, byte[] data)
+        public void InvokeClientRpc(string methodName, List<uint> clientIds, BitWriter writer)
         {
-            if (!MessageManager.messageTypes.ContainsKey(messageType))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
-                return;
-            }
-            if (MessageManager.messageTypes[messageType] < 32)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
-                return;
-            }
-            if (!isServer && (!NetworkingManager.singleton.NetworkConfig.AllowPassthroughMessages || !NetworkingManager.singleton.NetworkConfig.PassthroughMessageHashSet.Contains(MessageManager.messageTypes[messageType])))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
-                return;
-            }
-            using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
-            {
-                writer.WriteByteArray(data);
-                InternalMessageHandler.Send(OwnerClientId, messageType, channelName, writer, networkId, networkedObject.GetOrderIndex(this));
-            }
+            SendClientRPCPerformance(HashMethodName(methodName), clientIds, writer);
         }
 
-        /// <summary>
-        /// Sends a buffer to the client that owns this object from the server. Only handlers on this NetworkedBehaviour will get invoked
-        /// </summary>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>
-        /// <param name="writer">The binary data to send</param>
-        protected void SendToLocalClientTarget(string messageType, string channelName, BitWriterDeprecated writer)
+        public void InvokeClientRpcOnOwner(string methodName, BitWriter writer)
         {
-            if (!MessageManager.messageTypes.ContainsKey(messageType))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
-                return;
-            }
-            if (MessageManager.messageTypes[messageType] < 32)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
-                return;
-            }
-            if (!isServer && (!NetworkingManager.singleton.NetworkConfig.AllowPassthroughMessages || !NetworkingManager.singleton.NetworkConfig.PassthroughMessageHashSet.Contains(MessageManager.messageTypes[messageType])))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
-                return;
-            }
-            InternalMessageHandler.Send(OwnerClientId, messageType, channelName, writer, networkId, networkedObject.GetOrderIndex(this));
+            SendClientRPCPerformance(HashMethodName(methodName), OwnerClientId, writer);
         }
 
-        /// <summary>gh
-        /// Sends a buffer to the client that owns this object from the server. Only handlers on this NetworkedBehaviour will get invoked
-        /// </summary>
-        /// <typeparam name="T">The class type to send</typeparam>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>	
-        /// <param name="instance">The instance to send</param>
-        protected void SendToLocalClientTarget<T>(string messageType, string channelName, T instance)
+        public void InvokeClientRpcOnEveryone(string methodName, BitWriter writer)
         {
-            SendToLocalClientTarget(messageType, channelName, BinarySerializer.Serialize<T>(instance));
-        }
-
-        /// <summary>
-        /// Sends a buffer to all clients except to the owner object from the server
-        /// </summary>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>
-        /// <param name="data">The binary data to send</param>
-        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToNonLocalClients(string messageType, string channelName, byte[] data)
-        {
-            if (!MessageManager.messageTypes.ContainsKey(messageType))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
-                return;
-            }
-            if (MessageManager.messageTypes[messageType] < 32)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
-                return;
-            }
-            if (!isServer)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
-                return;
-            }
-            using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
-            {
-                writer.WriteByteArray(data);
-                InternalMessageHandler.Send(messageType, channelName, writer, OwnerClientId, null, null);
-            }
-        }
-
-        /// <summary>
-        /// Sends a buffer to all clients except to the owner object from the server
-        /// </summary>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>
-        /// <param name="writer">The binary data to send</param>
-        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToNonLocalClients(string messageType, string channelName, BitWriterDeprecated writer)
-        {
-            if (!MessageManager.messageTypes.ContainsKey(messageType))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
-                return;
-            }
-            if (MessageManager.messageTypes[messageType] < 32)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
-                return;
-            }
-            if (!isServer)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
-                return;
-            }
-            InternalMessageHandler.Send(messageType, channelName, writer);
-        }
-
-        /// <summary>
-        /// Sends a binary serialized class to all clients except to the owner object from the server
-        /// </summary>
-        /// <typeparam name="T">The class type to send</typeparam>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>	
-        /// <param name="instance">The instance to send</param>
-        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToNonLocalClients<T>(string messageType, string channelName, T instance)
-        {
-            SendToNonLocalClients(messageType, channelName, BinarySerializer.Serialize<T>(instance));
-        }
-
-        /// <summary>
-        /// Sends a buffer to all clients except to the owner object from the server. Only handlers on this NetworkedBehaviour will get invoked
-        /// </summary>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>
-        /// <param name="data">The binary data to send</param>
-        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToNonLocalClientsTarget(string messageType, string channelName, byte[] data)
-        {
-            if (!MessageManager.messageTypes.ContainsKey(messageType))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
-                return;
-            }
-            if (MessageManager.messageTypes[messageType] < 32)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
-                return;
-            }
-            if (!isServer)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
-                return;
-            }
-            using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
-            {
-                writer.WriteByteArray(data);
-                InternalMessageHandler.Send(messageType, channelName, writer, OwnerClientId, networkId, networkedObject.GetOrderIndex(this));
-            }
-        }
-
-        /// <summary>
-        /// Sends a buffer to all clients except to the owner object from the server. Only handlers on this NetworkedBehaviour will get invoked
-        /// </summary>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>
-        /// <param name="writer">The binary data to send</param>
-        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToNonLocalClientsTarget(string messageType, string channelName, BitWriterDeprecated writer)
-        {
-            if (!MessageManager.messageTypes.ContainsKey(messageType))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
-                return;
-            }
-            if (MessageManager.messageTypes[messageType] < 32)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
-                return;
-            }
-            if (!isServer)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
-                return;
-            }
-            InternalMessageHandler.Send(messageType, channelName, writer, OwnerClientId, networkId, networkedObject.GetOrderIndex(this));
-        }
-
-        /// <summary>
-        /// Sends a binary serialized class to all clients except to the owner object from the server. Only handlers on this NetworkedBehaviour will get invoked
-        /// </summary>
-        /// <typeparam name="T">The class type to send</typeparam>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>	
-        /// <param name="instance">The instance to send</param>
-        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToNonLocalClientsTarget<T>(string messageType, string channelName, T instance)
-        {
-            SendToNonLocalClientsTarget(messageType, channelName, BinarySerializer.Serialize<T>(instance));
-        }
-
-        /// <summary>
-        /// Sends a buffer to a client with a given clientId from Server
-        /// </summary>
-        /// <param name="clientId">The clientId to send the message to</param>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>
-        /// <param name="data">The binary data to send</param>
-        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToClient(uint clientId, string messageType, string channelName, byte[] data)
-        {
-            if (!MessageManager.messageTypes.ContainsKey(messageType))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
-                return;
-            }
-            if (MessageManager.messageTypes[messageType] < 32)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
-                return;
-            }
-            if (!isServer && (!NetworkingManager.singleton.NetworkConfig.AllowPassthroughMessages || !NetworkingManager.singleton.NetworkConfig.PassthroughMessageHashSet.Contains(MessageManager.messageTypes[messageType])))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
-                return;
-            }
-
-            using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
-            {
-                writer.WriteByteArray(data);
-                InternalMessageHandler.Send(clientId, messageType, channelName, writer);
-            }
-        }
-
-
-        /// <summary>
-        /// Sends a buffer to a client with a given clientId from Server
-        /// </summary>
-        /// <param name="clientId">The clientId to send the message to</param>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>
-        /// <param name="writer">The binary data to send</param>
-        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToClient(uint clientId, string messageType, string channelName, BitWriterDeprecated writer)
-        {
-            if (!MessageManager.messageTypes.ContainsKey(messageType))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
-                return;
-            }
-            if (MessageManager.messageTypes[messageType] < 32)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
-                return;
-            }
-            if (!isServer && (!NetworkingManager.singleton.NetworkConfig.AllowPassthroughMessages || !NetworkingManager.singleton.NetworkConfig.PassthroughMessageHashSet.Contains(MessageManager.messageTypes[messageType])))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
-                return;
-            }
-
-            InternalMessageHandler.Send(clientId, messageType, channelName, writer);
-        }
-
-        /// <summary>
-        /// Sends a binary serialized class to a client with a given clientId from Server
-        /// </summary>
-        /// <typeparam name="T">The class type to send</typeparam>
-        /// <param name="clientId">The clientId to send the message to</param>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>	
-        /// <param name="instance">The instance to send</param>
-        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToClient<T>(int clientId, string messageType, string channelName, T instance)
-        {
-            SendToClient(clientId, messageType, channelName, BinarySerializer.Serialize<T>(instance));
-        }
-
-        /// <summary>
-        /// Sends a buffer to a client with a given clientId from Server. Only handlers on this NetworkedBehaviour will get invoked
-        /// </summary>
-        /// <param name="clientId">The clientId to send the message to</param>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>
-        /// <param name="data">The binary data to send</param>
-        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToClientTarget(uint clientId, string messageType, string channelName, byte[] data)
-        {
-            if (!MessageManager.messageTypes.ContainsKey(messageType))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
-                return;
-            }
-            if (MessageManager.messageTypes[messageType] < 32)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
-                return;
-            }
-            if (!isServer && (!NetworkingManager.singleton.NetworkConfig.AllowPassthroughMessages || !NetworkingManager.singleton.NetworkConfig.PassthroughMessageHashSet.Contains(MessageManager.messageTypes[messageType])))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
-                return;
-            }
-
-            using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
-            {
-                writer.WriteByteArray(data);
-                InternalMessageHandler.Send(clientId, messageType, channelName, writer, networkId, networkedObject.GetOrderIndex(this));
-            }
-        }
-
-        /// <summary>
-        /// Sends a buffer to a client with a given clientId from Server. Only handlers on this NetworkedBehaviour will get invoked
-        /// </summary>
-        /// <param name="clientId">The clientId to send the message to</param>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>
-        /// <param name="writer">The binary data to send</param>
-        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToClientTarget(uint clientId, string messageType, string channelName, BitWriterDeprecated writer)
-        {
-            if (!MessageManager.messageTypes.ContainsKey(messageType))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
-                return;
-            }
-            if (MessageManager.messageTypes[messageType] < 32)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
-                return;
-            }
-            if (!isServer && (!NetworkingManager.singleton.NetworkConfig.AllowPassthroughMessages || !NetworkingManager.singleton.NetworkConfig.PassthroughMessageHashSet.Contains(MessageManager.messageTypes[messageType])))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
-                return;
-            }
-            InternalMessageHandler.Send(clientId, messageType, channelName, writer, networkId, networkedObject.GetOrderIndex(this));
-        }
-
-        /// <summary>
-        /// Sends a buffer to a client with a given clientId from Server. Only handlers on this NetworkedBehaviour will get invoked
-        /// </summary>
-        /// <typeparam name="T">The class type to send</typeparam>
-        /// <param name="clientId">The clientId to send the message to</param>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>	
-        /// <param name="instance">The instance to send</param>
-        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToClientTarget<T>(int clientId, string messageType, string channelName, T instance)
-        {
-            SendToClientTarget(clientId, messageType, channelName, BinarySerializer.Serialize<T>(instance));
-        }
-
-        /// <summary>
-        /// Sends a buffer to multiple clients from the server
-        /// </summary>
-        /// <param name="clientIds">The clientId's to send to</param>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>
-        /// <param name="data">The binary data to send</param>
-        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToClients(uint[] clientIds, string messageType, string channelName, byte[] data)
-        {
-            if (!MessageManager.messageTypes.ContainsKey(messageType))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
-                return;
-            }
-            if (MessageManager.messageTypes[messageType] < 32)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
-                return;
-            }
-            if (!isServer)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
-                return;
-            }
-
-            using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
-            {
-                writer.WriteByteArray(data);
-                InternalMessageHandler.Send(clientIds, messageType, channelName, writer);
-            }
-        }
-
-        /// <summary>
-        /// Sends a buffer to multiple clients from the server
-        /// </summary>
-        /// <param name="clientIds">The clientId's to send to</param>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>
-        /// <param name="writer">The binary data to send</param>
-        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToClients(uint[] clientIds, string messageType, string channelName, BitWriterDeprecated writer)
-        {
-            if (!MessageManager.messageTypes.ContainsKey(messageType))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
-                return;
-            }
-            if (MessageManager.messageTypes[messageType] < 32)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
-                return;
-            }
-            if (!isServer)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
-                return;
-            }
-
-            InternalMessageHandler.Send(clientIds, messageType, channelName, writer);
-        }
-
-        /// <summary>
-        /// Sends a binary serialized class to multiple clients from the server
-        /// </summary>
-        /// <typeparam name="T">The class type to send</typeparam>
-        /// <param name="clientIds">The clientId's to send to</param>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>	
-        /// <param name="instance">The instance to send</param>
-        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToClients<T>(int[] clientIds, string messageType, string channelName, T instance)
-        {
-            SendToClients(clientIds, messageType, channelName, BinarySerializer.Serialize<T>(instance));
-        }
-
-        /// <summary>
-        /// Sends a buffer to multiple clients from the server. Only handlers on this NetworkedBehaviour will get invoked
-        /// </summary>
-        /// <param name="clientIds">The clientId's to send to</param>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>
-        /// <param name="data">The binary data to send</param>
-        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToClientsTarget(uint[] clientIds, string messageType, string channelName, byte[] data)
-        {
-            if (!MessageManager.messageTypes.ContainsKey(messageType))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
-                return;
-            }
-            if (MessageManager.messageTypes[messageType] < 32)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
-                return;
-            }
-            if (!isServer)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
-                return;
-            }
-
-            using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
-            {
-                writer.WriteByteArray(data);
-                InternalMessageHandler.Send(clientIds, messageType, channelName, writer, networkId, networkedObject.GetOrderIndex(this));
-            }
-        }
-
-        /// <summary>
-        /// Sends a buffer to multiple clients from the server. Only handlers on this NetworkedBehaviour will get invoked
-        /// </summary>
-        /// <param name="clientIds">The clientId's to send to</param>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>
-        /// <param name="writer">The binary data to send</param>
-        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToClientsTarget(uint[] clientIds, string messageType, string channelName, BitWriterDeprecated writer)
-        {
-            if (!MessageManager.messageTypes.ContainsKey(messageType))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
-                return;
-            }
-            if (MessageManager.messageTypes[messageType] < 32)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
-                return;
-            }
-            if (!isServer)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
-                return;
-            }
-            InternalMessageHandler.Send(clientIds, messageType, channelName, writer, networkId, networkedObject.GetOrderIndex(this));
-        }
-
-        /// <summary>
-        /// Sends a buffer to multiple clients from the server. Only handlers on this NetworkedBehaviour will get invoked
-        /// </summary>
-        /// <typeparam name="T">The class type to send</typeparam>
-        /// <param name="clientIds">The clientId's to send to</param>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>	
-        /// <param name="instance">The instance to send</param>
-        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToClientsTarget<T>(int[] clientIds, string messageType, string channelName, T instance)
-        {
-            SendToClientsTarget(clientIds, messageType, channelName, BinarySerializer.Serialize<T>(instance));
-        }
-
-        /// <summary>
-        /// Sends a buffer to multiple clients from the server
-        /// </summary>
-        /// <param name="clientIds">The clientId's to send to</param>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>
-        /// <param name="data">The binary data to send</param>
-        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToClients(List<uint> clientIds, string messageType, string channelName, byte[] data)
-        {
-            if (!MessageManager.messageTypes.ContainsKey(messageType))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
-                return;
-            }
-            if (MessageManager.messageTypes[messageType] < 32)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
-                return;
-            }
-            if (!isServer)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
-                return;
-            }
-
-            using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
-            {
-                writer.WriteByteArray(data);
-                InternalMessageHandler.Send(clientIds, messageType, channelName, writer);
-            }
-        }
-
-        /// <summary>
-        /// Sends a buffer to multiple clients from the server
-        /// </summary>
-        /// <param name="clientIds">The clientId's to send to</param>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>
-        /// <param name="writer">The binary data to send</param>
-        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToClients(List<uint> clientIds, string messageType, string channelName, BitWriterDeprecated writer)
-        {
-            if (!MessageManager.messageTypes.ContainsKey(messageType))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
-                return;
-            }
-            if (MessageManager.messageTypes[messageType] < 32)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
-                return;
-            }
-            if (!isServer)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
-                return;
-            }
-
-            InternalMessageHandler.Send(clientIds, messageType, channelName, writer);
-        }
-
-        /// <summary>
-        /// Sends a binary serialized class to multiple clients from the server
-        /// </summary>
-        /// <typeparam name="T">The class type to send</typeparam>
-        /// <param name="clientIds">The clientId's to send to</param>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>	
-        /// <param name="instance">The instance to send</param>
-        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToClients<T>(List<int> clientIds, string messageType, string channelName, T instance)
-        {
-            SendToClients(clientIds, messageType, channelName, BinarySerializer.Serialize<T>(instance));
-        }
-
-        /// <summary>
-        /// Sends a buffer to multiple clients from the server. Only handlers on this NetworkedBehaviour will get invoked
-        /// </summary>
-        /// <param name="clientIds">The clientId's to send to</param>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>
-        /// <param name="data">The binary data to send</param>
-        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToClientsTarget(List<uint> clientIds, string messageType, string channelName, byte[] data)
-        {
-            if (!MessageManager.messageTypes.ContainsKey(messageType))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
-                return;
-            }
-            if (MessageManager.messageTypes[messageType] < 32)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
-                return;
-            }
-            if (!isServer)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
-                return;
-            }
-
-            using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
-            {
-                writer.WriteByteArray(data);
-                InternalMessageHandler.Send(clientIds, messageType, channelName, writer, networkId, networkedObject.GetOrderIndex(this));
-            }
-        }
-
-        /// <summary>
-        /// Sends a buffer to multiple clients from the server. Only handlers on this NetworkedBehaviour will get invoked
-        /// </summary>
-        /// <param name="clientIds">The clientId's to send to</param>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>
-        /// <param name="writer">The binary data to send</param>
-        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToClientsTarget(List<uint> clientIds, string messageType, string channelName, BitWriterDeprecated writer)
-        {
-            if (!MessageManager.messageTypes.ContainsKey(messageType))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
-                return;
-            }
-            if (MessageManager.messageTypes[messageType] < 32)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
-                return;
-            }
-            if (!isServer)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
-                return;
-            }
-
-            InternalMessageHandler.Send(clientIds, messageType, channelName, writer, networkId, networkedObject.GetOrderIndex(this));
-        }
-
-        /// <summary>
-        /// Sends a buffer to multiple clients from the server. Only handlers on this NetworkedBehaviour will get invoked
-        /// </summary>
-        /// <typeparam name="T">The class type to send</typeparam>
-        /// <param name="clientIds">The clientId's to send to</param>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>	
-        /// <param name="instance">The instance to send</param>
-        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToClientsTarget<T>(List<uint> clientIds, string messageType, string channelName, T instance)
-        {
-            SendToClientsTarget(clientIds, messageType, channelName, BinarySerializer.Serialize<T>(instance));
-        }
-
-        /// <summary>
-        /// Sends a buffer to all clients from the server
-        /// </summary>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>
-        /// <param name="data">The binary data to send</param>
-        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToClients(string messageType, string channelName, byte[] data)
-        {
-            if (!MessageManager.messageTypes.ContainsKey(messageType))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
-                return;
-            }
-            if (MessageManager.messageTypes[messageType] < 32)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
-                return;
-            }
-            if (!isServer)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
-                return;
-            }
-
-            using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
-            {
-                writer.WriteByteArray(data);
-                InternalMessageHandler.Send(messageType, channelName, writer);
-            }
-        }
-
-        /// <summary>
-        /// Sends a buffer to all clients from the server
-        /// </summary>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>
-        /// <param name="writer">The binary data to send</param>
-        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToClients(string messageType, string channelName, BitWriterDeprecated writer)
-        {
-            if (!MessageManager.messageTypes.ContainsKey(messageType))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
-                return;
-            }
-            if (MessageManager.messageTypes[messageType] < 32)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
-                return;
-            }
-            if (!isServer)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
-                return;
-            }
-
-            InternalMessageHandler.Send(messageType, channelName, writer);
-        }
-
-        /// <summary>
-        /// Sends a buffer to all clients from the server
-        /// </summary>
-        /// <typeparam name="T">The class type to send</typeparam>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>	
-        /// <param name="instance">The instance to send</param>
-        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToClients<T>(string messageType, string channelName, T instance)
-        {
-            SendToClients(messageType, channelName, BinarySerializer.Serialize<T>(instance));
-        }
-
-        /// <summary>
-        /// Sends a buffer to all clients from the server. Only handlers on this NetworkedBehaviour will get invoked
-        /// </summary>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>
-        /// <param name="data">The binary data to send</param>
-        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToClientsTarget(string messageType, string channelName, byte[] data)
-        {
-            if (!MessageManager.messageTypes.ContainsKey(messageType))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
-                return;
-            }
-            if (MessageManager.messageTypes[messageType] < 32)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
-                return;
-            }
-            if (!isServer)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
-                return;
-            }
-
-            using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
-            {
-                writer.WriteByteArray(data);
-                InternalMessageHandler.Send(messageType, channelName, writer, networkId, networkedObject.GetOrderIndex(this));
-            }
-        }
-
-        /// <summary>
-        /// Sends a buffer to all clients from the server. Only handlers on this NetworkedBehaviour will get invoked
-        /// </summary>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>
-        /// <param name="writer">The binary data to send</param>
-        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToClientsTarget(string messageType, string channelName, BitWriterDeprecated writer)
-        {
-            if (!MessageManager.messageTypes.ContainsKey(messageType))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
-                return;
-            }
-            if (MessageManager.messageTypes[messageType] < 32)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
-                return;
-            }
-            if (!isServer)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
-                return;
-            }
-            InternalMessageHandler.Send(messageType, channelName, writer, networkId, networkedObject.GetOrderIndex(this));
-        }
-
-        /// <summary>
-        /// Sends a buffer to all clients from the server. Only handlers on this NetworkedBehaviour will get invoked
-        /// </summary>
-        /// <typeparam name="T">The class type to send</typeparam>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>	
-        /// <param name="instance">The instance to send</param>
-        /// <param name="respectObservers">If this is true, the message will only be sent to clients observing the sender object</param>
-        protected void SendToClientsTarget<T>(string messageType, string channelName, T instance)
-        {
-            SendToClientsTarget(messageType, channelName, BinarySerializer.Serialize<T>(instance));
+            SendClientRPCPerformance(HashMethodName(methodName), null, writer);
         }
         #endregion
 

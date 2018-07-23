@@ -74,12 +74,12 @@ namespace MLAPI.Data
             return (!t.IsValueType && t != typeof(string)) || (t.IsArray && IsRefType(t.GetElementType()));
         }
 
-        internal static void WriteFieldType(BitWriterDeprecated writer, object newValue)
+        internal static void WriteFieldType(BitWriter writer, object newValue)
         {
             WriteFieldType(writer, newValue, null);
         }
 
-        internal static void WriteFieldType(BitWriterDeprecated writer, object newValue, object oldValue)
+        internal static void WriteFieldType(BitWriter writer, object newValue, object oldValue)
         {
             oldValue = null;
             Type newValueType = newValue.GetType();
@@ -172,12 +172,12 @@ namespace MLAPI.Data
             }
         }
 
-        internal static object ReadFieldType(BitReaderDeprecated reader, Type type)
+        internal static object ReadFieldType(BitReader reader, Type type)
         {
             return ReadFieldType(reader, type, null);
         }
 
-        internal static object ReadFieldType(BitReaderDeprecated reader, Type type, object oldObject)
+        internal static object ReadFieldType(BitReader reader, Type type, object oldObject)
         {
             CheckForReferenceTypes(type);
             if (type.IsArray)

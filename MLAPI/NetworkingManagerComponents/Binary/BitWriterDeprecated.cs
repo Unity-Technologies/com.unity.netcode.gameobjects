@@ -8,6 +8,7 @@ using System.Text;
 
 namespace MLAPI.NetworkingManagerComponents.Binary
 {
+    [Obsolete]
     public sealed class BitWriterDeprecated : IDisposable
     {
         private struct Partial

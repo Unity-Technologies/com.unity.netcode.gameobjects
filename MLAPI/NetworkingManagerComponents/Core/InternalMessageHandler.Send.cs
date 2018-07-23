@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using MLAPI.Data;
 using MLAPI.Data.NetworkProfiler;
+using MLAPI.MonoBehaviours.Core;
 using MLAPI.NetworkingManagerComponents.Binary;
 using MLAPI.NetworkingManagerComponents.Cryptography;
 
@@ -9,32 +10,8 @@ namespace MLAPI.NetworkingManagerComponents.Core
     internal static partial class InternalMessageHandler
     {
         internal static byte[] FinalMessageBuffer;
-        internal static void PassthroughSend(uint targetId, uint sourceId, ushort messageType, int channelId, BitReaderDeprecated reader, uint? networkId = null, ushort? orderId = null)
-        {
-            if (netManager.isHost && targetId == netManager.NetworkConfig.NetworkTransport.HostDummyId)
-            {
-                //Host trying to send data to it's own client
-                return;
-            }
 
-            using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
-            {
-                writer.WriteGenericMessageHeader(messageType, networkId != null, networkId.GetValueOrDefault(), orderId.GetValueOrDefault(), true, null, sourceId);
-
-#if !DISABLE_CRYPTOGRAPHY
-                if (netManager.NetworkConfig.EncryptedChannelsHashSet.Contains(MessageManager.reverseChannels[channelId]))
-                    writer.WriteByteArray(CryptographyHelper.Encrypt(reader.ReadByteArray(), netManager.ConnectedClients[targetId].AesKey));
-                else
-#endif
-                    writer.WriteByteArray(reader.ReadByteArray());
-
-                writer.Finalize(ref FinalMessageBuffer);
-
-                netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(targetId, ref FinalMessageBuffer, (int)writer.GetFinalizeSize(), channelId, false, out byte error);
-            }
-        }
-
-        internal static void Send(uint clientId, string messageType, string channelName, BitWriterDeprecated messageWriter, uint? networkId = null, ushort? orderId = null, bool skipQueue = false)
+        internal static void Send(uint clientId, string messageType, string channelName, BitWriter messageWriter, bool skipQueue = false)
         {
             uint targetClientId = clientId;
             if (netManager.isHost && targetClientId == netManager.NetworkConfig.NetworkTransport.HostDummyId)
@@ -48,35 +25,10 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 targetClientId = netManager.NetworkConfig.NetworkTransport.ServerNetId;
             }
 
-            bool isPassthrough = (!netManager.isServer && clientId != netManager.NetworkConfig.NetworkTransport.ServerNetId && netManager.NetworkConfig.AllowPassthroughMessages);
-            if (isPassthrough && !netManager.NetworkConfig.PassthroughMessageHashSet.Contains(MessageManager.messageTypes[messageType]))
+            using (BitWriter writer = BitWriter.Get())
             {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The The MessageType " + messageType + " is not registered as an allowed passthrough message type");
-                return;
-            }
-
-            using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
-            {
-                writer.WriteGenericMessageHeader(MessageManager.messageTypes[messageType], networkId != null, networkId.GetValueOrDefault(), orderId.GetValueOrDefault(), isPassthrough, clientId, null);
-
-#if !DISABLE_CRYPTOGRAPHY
-                if (netManager.NetworkConfig.EncryptedChannelsHashSet.Contains(channelName))
-                {
-                    //This is an encrypted message.
-                    byte[] encrypted;
-                    if (netManager.isServer)
-                        encrypted = CryptographyHelper.Encrypt(messageWriter.Finalize(), netManager.ConnectedClients[clientId].AesKey);
-                    else
-                        encrypted = CryptographyHelper.Encrypt(messageWriter.Finalize(), netManager.clientAesKey);
-
-                    writer.WriteByteArray(encrypted);
-                }
-                else
-#endif
-                    writer.WriteWriter(messageWriter);
-
-                if (isPassthrough)
-                    targetClientId = netManager.NetworkConfig.NetworkTransport.ServerNetId;
+                writer.WriteUShort(MessageManager.messageTypes[messageType]);
+                writer.WriteWriter(messageWriter);
 
                 writer.Finalize(ref FinalMessageBuffer);
 
@@ -90,177 +42,69 @@ namespace MLAPI.NetworkingManagerComponents.Core
             }
         }
 
-        internal static void Send(uint[] clientIds, string messageType, string channelName, BitWriterDeprecated messageWriter, uint? networkId = null, ushort? orderId = null)
+        internal static void Send(string messageType, string channelName, BitWriter messageWriter)
         {
-            if (netManager.NetworkConfig.EncryptedChannelsHashSet.Contains(channelName))
+            using (BitWriter writer = BitWriter.Get())
             {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot send messages over encrypted channel to multiple clients");
-                return;
-            }
-
-            using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
-            {
-                writer.WriteGenericMessageHeader(MessageManager.messageTypes[messageType], networkId != null, networkId.GetValueOrDefault(), orderId.GetValueOrDefault(), false, 0, 0);
-
+                writer.WriteUShort(MessageManager.messageTypes[messageType]);
                 writer.WriteWriter(messageWriter);
 
-                int channel = MessageManager.channels[channelName];
-                for (int i = 0; i < clientIds.Length; i++)
+                writer.Finalize(ref FinalMessageBuffer);
+
+                NetworkProfiler.StartEvent(TickType.Send, (uint)messageWriter.GetFinalizeSize(), channelName, messageType);
+                for (int i = 0; i < netManager.ConnectedClientsList.Count; i++)
                 {
-                    uint targetClientId = clientIds[i];
+                    uint targetClientId = netManager.ConnectedClientsList[i].ClientId;
                     if (netManager.isHost && targetClientId == netManager.NetworkConfig.NetworkTransport.HostDummyId)
                     {
                         //Don't invoke the message on our own machine. Instant stack overflow.
-                        continue;
+                        return;
                     }
                     else if (targetClientId == netManager.NetworkConfig.NetworkTransport.HostDummyId)
                     {
                         //Client trying to send data to host
                         targetClientId = netManager.NetworkConfig.NetworkTransport.ServerNetId;
                     }
-
-                    writer.Finalize(ref FinalMessageBuffer);
-
-                    NetworkProfiler.StartEvent(TickType.Send, (uint)messageWriter.GetFinalizeSize(), channelName, messageType);
-                    netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(targetClientId, ref FinalMessageBuffer, (int)writer.GetFinalizeSize(), channel, false, out byte error);
-                    NetworkProfiler.EndEvent();
+                    
+                    byte error;
+                    netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(targetClientId, ref FinalMessageBuffer, (int)writer.GetFinalizeSize(), MessageManager.channels[channelName], false, out error);
                 }
+                NetworkProfiler.EndEvent();
             }
         }
-
-        internal static void Send(List<uint> clientIds, string messageType, string channelName, BitWriterDeprecated messageWriter, uint? networkId = null, ushort? orderId = null)
+        
+        internal static void Send(string messageType, string channelName, uint clientIdToIgnore, BitWriter messageWriter)
         {
-            if (netManager.NetworkConfig.EncryptedChannelsHashSet.Contains(channelName))
+            using (BitWriter writer = BitWriter.Get())
             {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot send messages over encrypted channel to multiple clients");
-                return;
-            }
-
-            using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
-            {
-                writer.WriteGenericMessageHeader(MessageManager.messageTypes[messageType], networkId != null, networkId.GetValueOrDefault(), orderId.GetValueOrDefault(), false, 0, 0);
-
+                writer.WriteUShort(MessageManager.messageTypes[messageType]);
                 writer.WriteWriter(messageWriter);
 
-                int channel = MessageManager.channels[channelName];
-                for (int i = 0; i < clientIds.Count; i++)
+                writer.Finalize(ref FinalMessageBuffer);
+
+                NetworkProfiler.StartEvent(TickType.Send, (uint)messageWriter.GetFinalizeSize(), channelName, messageType);
+                for (int i = 0; i < netManager.ConnectedClientsList.Count; i++)
                 {
-                    uint targetClientId = clientIds[i];
+                    uint targetClientId = netManager.ConnectedClientsList[i].ClientId;
+                    if (targetClientId == clientIdToIgnore)
+                        continue;
+                    
                     if (netManager.isHost && targetClientId == netManager.NetworkConfig.NetworkTransport.HostDummyId)
                     {
                         //Don't invoke the message on our own machine. Instant stack overflow.
-                        continue;
+                        return;
                     }
                     else if (targetClientId == netManager.NetworkConfig.NetworkTransport.HostDummyId)
                     {
                         //Client trying to send data to host
                         targetClientId = netManager.NetworkConfig.NetworkTransport.ServerNetId;
                     }
-
-                    writer.Finalize(ref FinalMessageBuffer);
-
-                    NetworkProfiler.StartEvent(TickType.Send, (uint)messageWriter.GetFinalizeSize(), channelName, messageType);
-                    netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(targetClientId, ref FinalMessageBuffer, (int)writer.GetFinalizeSize(), channel, false, out byte error);
-                    NetworkProfiler.EndEvent();
+                    
+                    byte error;
+                    netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(targetClientId, ref FinalMessageBuffer, (int)writer.GetFinalizeSize(), MessageManager.channels[channelName], false, out error);
                 }
+                NetworkProfiler.EndEvent();
             }
-        }
-
-        internal static void Send(string messageType, string channelName, BitWriterDeprecated messageWriter,  uint? networkId = null, ushort? orderId = null)
-        {
-            if (netManager.NetworkConfig.EncryptedChannels.Contains(channelName))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot send messages over encrypted channel to multiple clients");
-                return;
-            }
-
-            using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
-            {
-                writer.WriteGenericMessageHeader(MessageManager.messageTypes[messageType], networkId != null, networkId.GetValueOrDefault(), orderId.GetValueOrDefault(), false, 0, 0);
-
-                writer.WriteWriter(messageWriter);
-
-                int channel = MessageManager.channels[channelName];
-                foreach (KeyValuePair<uint, NetworkedClient> pair in netManager.ConnectedClients)
-                {
-                    uint targetClientId = pair.Key;
-                    if (netManager.isHost && targetClientId == netManager.NetworkConfig.NetworkTransport.HostDummyId)
-                    {
-                        //Don't invoke the message on our own machine. Instant stack overflow.
-                        continue;
-                    }
-                    else if (targetClientId == netManager.NetworkConfig.NetworkTransport.HostDummyId)
-                    {
-                        //Client trying to send data to host
-                        targetClientId = netManager.NetworkConfig.NetworkTransport.ServerNetId;
-                    }
-
-                    writer.Finalize(ref FinalMessageBuffer);
-
-                    NetworkProfiler.StartEvent(TickType.Send, (uint)messageWriter.GetFinalizeSize(), channelName, messageType);
-                    netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(targetClientId, ref FinalMessageBuffer, (int)writer.GetFinalizeSize(), channel, false, out byte error);
-                    NetworkProfiler.EndEvent();
-                }
-            }
-        }
-
-        internal static void Send(string messageType, string channelName, BitWriterDeprecated messageWriter, uint clientIdToIgnore, uint? networkId = null, ushort? orderId = null)
-        {
-            if (netManager.NetworkConfig.EncryptedChannels.Contains(channelName))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot send messages over encrypted channel to multiple clients");
-                return;
-            }
-
-            using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
-            {
-                writer.WriteGenericMessageHeader(MessageManager.messageTypes[messageType], networkId != null, networkId.GetValueOrDefault(), orderId.GetValueOrDefault(), false, 0, 0);
-
-                writer.WriteWriter(messageWriter);
-
-                int channel = MessageManager.channels[channelName];
-                foreach (KeyValuePair<uint, NetworkedClient> pair in netManager.ConnectedClients)
-                {
-                    if (pair.Key == clientIdToIgnore)
-                        continue;
-
-                    uint targetClientId = pair.Key;
-                    if (netManager.isHost && targetClientId == netManager.NetworkConfig.NetworkTransport.HostDummyId)
-                    {
-                        //Don't invoke the message on our own machine. Instant stack overflow.
-                        continue;
-                    }
-                    else if (targetClientId == netManager.NetworkConfig.NetworkTransport.HostDummyId)
-                    {
-                        //Client trying to send data to host
-                        targetClientId = netManager.NetworkConfig.NetworkTransport.ServerNetId;
-                    }
-
-                    writer.Finalize(ref FinalMessageBuffer);
-
-                    NetworkProfiler.StartEvent(TickType.Send, (uint)messageWriter.GetFinalizeSize(), channelName, messageType);
-                    netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(targetClientId, ref FinalMessageBuffer, (int)writer.GetFinalizeSize(), channel, false, out byte error);
-                    NetworkProfiler.EndEvent();
-                }
-            }
-        }
-
-        private static void WriteGenericMessageHeader(this BitWriterDeprecated writer, ushort messageType, bool isTargeted, uint targetNetworkId, ushort behaviourIndex, bool isPassthrough, uint? passthroughTarget, uint? passthroughOrigin)
-        {
-            writer.WriteUShort(messageType);
-            writer.WriteBool(isTargeted);
-            if (isTargeted)
-            {
-                writer.WriteUInt(targetNetworkId);
-                writer.WriteUShort(behaviourIndex);
-            }
-            writer.WriteBool(isPassthrough);
-            if (isPassthrough)
-            {
-                if (passthroughTarget != null) writer.WriteUInt(passthroughTarget.Value);
-                if (passthroughOrigin != null) writer.WriteUInt(passthroughOrigin.Value);
-            }
-            writer.WriteAlignBits();
         }
     }
 }

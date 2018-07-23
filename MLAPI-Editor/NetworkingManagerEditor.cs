@@ -13,9 +13,6 @@ public class NetworkingManagerEditor : Editor
     private SerializedProperty LogLevelProperty;
     private SerializedProperty NetworkConfigProperty;
 
-
-
-
     private ReorderableList networkPrefabsList;
     private ReorderableList channelsList;
     private ReorderableList messageTypesList;
@@ -84,6 +81,7 @@ public class NetworkingManagerEditor : Editor
             EditorGUI.LabelField(rect, "NetworkedPrefabs (Auto Sorted)");
         };
 
+        /*
         messageTypesList = new ReorderableList(serializedObject, serializedObject.FindProperty("NetworkConfig").FindPropertyRelative("MessageTypes"), true, true, true, true);
         messageTypesList.drawElementCallback = (Rect rect, int index, bool isActive, bool isFocused) =>
         {
@@ -110,6 +108,7 @@ public class NetworkingManagerEditor : Editor
         messageTypesList.drawHeaderCallback = (Rect rect) => {
             EditorGUI.LabelField(rect, "MessageTypes (Auto Sorted)");
         };
+        */
 
 
         channelsList = new ReorderableList(serializedObject, serializedObject.FindProperty("NetworkConfig").FindPropertyRelative("Channels"), true, true, true, true);

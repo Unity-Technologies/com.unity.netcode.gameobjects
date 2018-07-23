@@ -67,12 +67,12 @@ namespace MLAPI.NetworkingManagerComponents.Core
             NetworkingManager.singleton.ConnectedClients[netObject.OwnerClientId].OwnedObjects.RemoveAll(x => x.NetworkId == netId);
             netObject.OwnerClientId = NetworkingManager.singleton.NetworkConfig.NetworkTransport.InvalidDummyId;
 
-            using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
+            using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteUInt(netId);
                 writer.WriteUInt(netObject.OwnerClientId);
 
-                InternalMessageHandler.Send("MLAPI_CHANGE_OWNER", "MLAPI_INTERNAL", writer, null);
+                InternalMessageHandler.Send("MLAPI_CHANGE_OWNER", "MLAPI_INTERNAL", writer);
             }
         }
 
@@ -88,12 +88,12 @@ namespace MLAPI.NetworkingManagerComponents.Core
             NetworkingManager.singleton.ConnectedClients[clientId].OwnedObjects.Add(netObject);
             netObject.OwnerClientId = clientId;
 
-            using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
+            using (BitWriter writer = BitWriter.Get())
             {
                 writer.WriteUInt(netId);
                 writer.WriteUInt(clientId);
 
-                InternalMessageHandler.Send("MLAPI_CHANGE_OWNER", "MLAPI_INTERNAL", writer, null);
+                InternalMessageHandler.Send("MLAPI_CHANGE_OWNER", "MLAPI_INTERNAL", writer);
             }
         }
 
@@ -131,53 +131,8 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 }
             }
         }
-        /*
-        internal static void FlushSceneObjects()
-        {
-            if (!NetworkingManager.singleton.isServer)
-                return;
 
-            //This loop is bad. For each client, we loop over every object twice.
-            foreach (KeyValuePair<uint, NetworkedClient> client in netManager.connectedClients)
-            {
-                int sceneObjects = 0;
-                foreach (var netObject in SpawnManager.spawnedObjects)
-                    if (netObject.Value.sceneObject == null || netObject.Value.sceneObject == true)
-                        sceneObjects++;
-
-                using (BitWriter writer = BitWriter.Get())
-                {
-                    writer.WriteUShort((ushort)sceneObjects);
-                    foreach (var netObject in SpawnManager.spawnedObjects)
-                    {
-                        if (netObject.Value.sceneObject == null || netObject.Value.sceneObject == true)
-                        {
-                            writer.WriteBool(false); //isLocalPlayer
-                            writer.WriteUInt(netObject.Value.NetworkId);
-                            writer.WriteUInt(netObject.Value.OwnerClientId);
-                            writer.WriteInt(NetworkingManager.singleton.NetworkConfig.NetworkPrefabIds[netObject.Value.NetworkedPrefabName]);
-                            writer.WriteBool(netObject.Value.sceneObject == null ? true : netObject.Value.sceneObject.Value);
-                            writer.WriteBool(netObject.Value.observers.Contains(client.Key));
-
-                            writer.WriteFloat(netObject.Value.transform.position.x);
-                            writer.WriteFloat(netObject.Value.transform.position.y);
-                            writer.WriteFloat(netObject.Value.transform.position.z);
-
-                            writer.WriteFloat(netObject.Value.transform.rotation.eulerAngles.x);
-                            writer.WriteFloat(netObject.Value.transform.rotation.eulerAngles.y);
-                            writer.WriteFloat(netObject.Value.transform.rotation.eulerAngles.z);
-
-                            if (netObject.Value.observers.Contains(client.Key))
-                                netObject.Value.WriteFormattedSyncedVarData(writer);
-                        }
-                    }
-                    InternalMessageHandler.Send(client.Key, "MLAPI_ADD_OBJECTS", "MLAPI_INTERNAL", writer, null);
-                }
-            }
-        }
-        */
-
-        internal static NetworkedObject CreateSpawnedObject(int networkedPrefabId, uint networkId, uint owner, bool playerObject, Vector3 position, Quaternion rotation, BitReaderDeprecated reader, bool readPayload, bool readNetworkedVar)
+        internal static NetworkedObject CreateSpawnedObject(int networkedPrefabId, uint networkId, uint owner, bool playerObject, Vector3 position, Quaternion rotation, BitReader reader, bool readPayload, bool readNetworkedVar)
         {
             if (!netManager.NetworkConfig.NetworkPrefabNames.ContainsKey(networkedPrefabId))
             {
@@ -236,7 +191,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
         }
 
         //Server only
-        internal static void SpawnPlayerObject(NetworkedObject netObject, uint clientId, BitWriterDeprecated payload = null)
+        internal static void SpawnPlayerObject(NetworkedObject netObject, uint clientId, BitWriter payload = null)
         {
             if (netObject.isSpawned)
             {
@@ -273,11 +228,11 @@ namespace MLAPI.NetworkingManagerComponents.Core
             netManager.ConnectedClients[clientId].PlayerObject = netObject;
 
             if (payload == null) netObject.InvokeBehaviourNetworkSpawn(null);
-            else using (BitReaderDeprecated payloadReader = BitReaderDeprecated.Get(payload.Finalize())) netObject.InvokeBehaviourNetworkSpawn(payloadReader);
+            else using (BitReader payloadReader = BitReader.Get(payload.Finalize())) netObject.InvokeBehaviourNetworkSpawn(payloadReader);
 
             foreach (var client in netManager.ConnectedClients)
             {
-                using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
+                using (BitWriter writer = BitWriter.Get())
                 {
                     writer.WriteBool(true);
                     writer.WriteUInt(netObject.NetworkId);
@@ -299,12 +254,12 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
                     if (payload != null) writer.WriteWriter(payload);
 
-                    InternalMessageHandler.Send(client.Key, "MLAPI_ADD_OBJECT", "MLAPI_INTERNAL", writer, null);
+                    InternalMessageHandler.Send(client.Key, "MLAPI_ADD_OBJECT", "MLAPI_INTERNAL", writer);
                 }
             }
         }
 
-        internal static void SpawnObject(NetworkedObject netObject, uint? clientOwnerId = null, BitWriterDeprecated payload = null)
+        internal static void SpawnObject(NetworkedObject netObject, uint? clientOwnerId = null, BitWriter payload = null)
         {
             if (netObject.isSpawned)
             {
@@ -340,11 +295,11 @@ namespace MLAPI.NetworkingManagerComponents.Core
             }
 
             if (payload == null) netObject.InvokeBehaviourNetworkSpawn(null);
-            else using (BitReaderDeprecated payloadReader = BitReaderDeprecated.Get(payload.Finalize())) netObject.InvokeBehaviourNetworkSpawn(payloadReader);    
+            else using (BitReader payloadReader = BitReader.Get(payload.Finalize())) netObject.InvokeBehaviourNetworkSpawn(payloadReader);    
 
             foreach (var client in netManager.ConnectedClients)
             {
-                using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
+                using (BitWriter writer = BitWriter.Get())
                 {
                     writer.WriteBool(false);
                     writer.WriteUInt(netObject.NetworkId);
@@ -366,7 +321,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
 
                     if (payload != null) writer.WriteWriter(payload);
 
-                    InternalMessageHandler.Send(client.Key, "MLAPI_ADD_OBJECT", "MLAPI_INTERNAL", writer, null);
+                    InternalMessageHandler.Send(client.Key, "MLAPI_ADD_OBJECT", "MLAPI_INTERNAL", writer);
                 }
             }
         }
@@ -388,11 +343,11 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 releasedNetworkObjectIds.Push(networkId);
                 if (SpawnedObjects[networkId] != null)
                 {
-                    using (BitWriterDeprecated writer = BitWriterDeprecated.Get())
+                    using (BitWriter writer = BitWriter.Get())
                     {
                         writer.WriteUInt(networkId);
 
-                        InternalMessageHandler.Send("MLAPI_DESTROY_OBJECT", "MLAPI_INTERNAL", writer, null);
+                        InternalMessageHandler.Send("MLAPI_DESTROY_OBJECT", "MLAPI_INTERNAL", writer);
                     }
                 }
             }

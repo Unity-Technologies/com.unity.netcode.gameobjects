@@ -2,6 +2,7 @@
 using System;
 using System.Security.Cryptography;
 using System.IO;
+using MLAPI.MonoBehaviours.Core;
 
 namespace MLAPI.NetworkingManagerComponents.Cryptography
 {
@@ -10,28 +11,30 @@ namespace MLAPI.NetworkingManagerComponents.Cryptography
     /// </summary>
     public static class CryptographyHelper
     {
+        internal static byte[] EncryptionBuffer;
+        private static readonly byte[] IVBuffer = new byte[16];
         /// <summary>
         /// Decrypts a message with AES with a given key and a salt that is encoded as the first 16 bytes of the buffer
         /// </summary>
         /// <param name="encryptedBuffer">The buffer with the salt</param>
         /// <param name="key">The key to use</param>
         /// <returns>The decrypted byte array</returns>
-        public static byte[] Decrypt(byte[] encryptedBuffer, byte[] key)
+        public static Stream Decrypt(byte[] encryptedBuffer, uint clientId)
         {
-            byte[] iv = new byte[16];
-            Array.Copy(encryptedBuffer, 0, iv, 0, 16);
+            Array.Copy(IVBuffer, 0, IVBuffer, 0, 16);
 
-            using (MemoryStream stream = new MemoryStream())
+            using (MemoryStream stream = new MemoryStream(EncryptionBuffer))
             {
                 using (RijndaelManaged aes = new RijndaelManaged())
                 {
-                    aes.IV = iv;
-                    aes.Key = key;
+                    aes.IV = IVBuffer;
+                    aes.Key = NetworkingManager.singleton.ConnectedClients[clientId].AesKey;
                     using (CryptoStream cs = new CryptoStream(stream, aes.CreateDecryptor(), CryptoStreamMode.Write))
                     {
                         cs.Write(encryptedBuffer, 16, encryptedBuffer.Length - 16);
                     }
-                    return stream.ToArray();
+
+                    return stream;
                 }
             }
         }
@@ -42,23 +45,21 @@ namespace MLAPI.NetworkingManagerComponents.Cryptography
         /// <param name="clearBuffer">The buffer to be encrypted</param>
         /// <param name="key">The key to use</param>
         /// <returns>The encrypted byte array with encoded salt</returns>
-        public static byte[] Encrypt(byte[] clearBuffer, byte[] key)
+        public static Stream Encrypt(byte[] clearBuffer, uint clientId)
         {
             using (MemoryStream stream = new MemoryStream())
             {
                 using (RijndaelManaged aes = new RijndaelManaged())
                 {
-                    aes.Key = key;
+                    aes.Key = NetworkingManager.singleton.ConnectedClients[clientId].AesKey;;
                     aes.GenerateIV();
+                    stream.Write(aes.IV, 0, 16);
                     using (CryptoStream cs = new CryptoStream(stream, aes.CreateEncryptor(), CryptoStreamMode.Write))
                     {
                         cs.Write(clearBuffer, 0, clearBuffer.Length);
                     }
-                    byte[] encrypted = stream.ToArray();
-                    byte[] final = new byte[encrypted.Length + 16];
-                    Array.Copy(aes.IV, final, 16);
-                    Array.Copy(encrypted, 0, final, 16, encrypted.Length);
-                    return final;
+
+                    return stream;
                 }
             }
         }

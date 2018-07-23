@@ -90,6 +90,7 @@
     <Compile Include="Attributes\TargetRpc.cs" />
     <Compile Include="Data\Channel.cs" />
     <Compile Include="Data\AttributeMessageMode.cs" />
+    <Compile Include="Data\MLAPIConstants.cs" />
     <Compile Include="Data\NetworkedCollections\NetworkedDictionary.cs" />
     <Compile Include="Data\NetworkedCollections\NetworkedList.cs" />
     <Compile Include="Data\NetworkedVar.cs" />
