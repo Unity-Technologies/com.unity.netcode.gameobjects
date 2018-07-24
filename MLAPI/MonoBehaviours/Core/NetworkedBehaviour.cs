@@ -568,15 +568,12 @@ namespace MLAPI.MonoBehaviours.Core
 		        messageWriter.WriteUInt64Packed(hash);
 
 		        stream.CopyFrom(messageStream);
-		        
-		        if (isHost)
-		        {
-					using (PooledBitStream localStream = PooledBitStream.Get())
-					{
-						localStream.CopyFrom(messageStream);
-						InvokeServerRPCLocal(hash, NetworkingManager.singleton.LocalClientId, localStream);
-					}
-		        }
+
+				if (isHost)
+				{
+					messageStream.Position = 0;
+					InvokeServerRPCLocal(hash, NetworkingManager.singleton.LocalClientId, messageStream);
+				}
             
 		        InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerNetId, "MLAPI_SERVER_RPC", "MLAPI_DEFAULT_MESSAGE", stream);
 	        }
@@ -606,6 +603,7 @@ namespace MLAPI.MonoBehaviours.Core
                     {
                         if (isHost && NetworkingManager.singleton.ConnectedClientsList[i].ClientId == NetworkingManager.singleton.LocalClientId)
                         {
+							messageStream.Position = 0;
                             InvokeClientRPCLocal(hash, NetworkingManager.singleton.LocalClientId, messageStream);
                         }
                         else
@@ -620,11 +618,8 @@ namespace MLAPI.MonoBehaviours.Core
                     {
                         if (isHost && clientIds[i] == NetworkingManager.singleton.LocalClientId)
                         {
-	                        using (PooledBitStream localStream = PooledBitStream.Get())
-	                        {
-								localStream.CopyFrom(messageStream);
-								InvokeClientRPCLocal(hash, NetworkingManager.singleton.LocalClientId, localStream);   
-	                        }
+							messageStream.Position = 0;
+							InvokeClientRPCLocal(hash, NetworkingManager.singleton.LocalClientId, messageStream);
                         }
                         else
                         {
@@ -653,14 +648,11 @@ namespace MLAPI.MonoBehaviours.Core
 
                 stream.CopyFrom(messageStream);
 
-                if (isHost && clientId == NetworkingManager.singleton.LocalClientId)
-                {
-					using (PooledBitStream localStream = PooledBitStream.Get())
-					{
-						localStream.CopyFrom(messageStream);
-						InvokeClientRPCLocal(hash, NetworkingManager.singleton.LocalClientId, localStream);
-					}
-                }
+				if (isHost && clientId == NetworkingManager.singleton.LocalClientId)
+				{
+					messageStream.Position = 0;
+					InvokeClientRPCLocal(hash, NetworkingManager.singleton.LocalClientId, messageStream);
+				}
                 else
                 {
                     InternalMessageHandler.Send(clientId, "MLAPI_CLIENT_RPC", "MLAPI_DEFAULT_MESSAGE", stream);
