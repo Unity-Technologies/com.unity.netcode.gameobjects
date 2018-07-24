@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System.Reflection;
-using MLAPI.Attributes;
 using System.Linq;
 using MLAPI.Data;
 using MLAPI.NetworkingManagerComponents.Binary;
 using MLAPI.NetworkingManagerComponents.Core;
+using System.IO;
 
 namespace MLAPI.MonoBehaviours.Core
 {
@@ -24,10 +24,6 @@ namespace MLAPI.MonoBehaviours.Core
         /// </summary>
         public bool isOwner => networkedObject.isOwner;
         /// <summary>
-        /// Gets if the object is owned by the local player and this is not a player object
-        /// </summary>
-        public bool isObjectOwner => networkedObject.isObjectOwner;
-        /// <summary>
         /// Gets if we are executing as server
         /// </summary>
         protected bool isServer => NetworkingManager.singleton.isServer;
@@ -42,7 +38,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <summary>
         /// Gets wheter or not the object has a owner
         /// </summary>
-        public bool hasOwner => networkedObject.hasOwner;
+		public bool isOwnedByServer => networkedObject.isOwnedByServer;
 
         /// <summary>
         /// Gets the NetworkedObject that owns this NetworkedBehaviour instance
@@ -75,6 +71,7 @@ namespace MLAPI.MonoBehaviours.Core
             if (_networkedObject == null)
                 _networkedObject = GetComponentInParent<NetworkedObject>();
 
+            CacheAttributes();
             NetworkedObject.NetworkedBehaviours.Add(this);
             OnEnabled();
         }
@@ -91,7 +88,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// Gets called when message handlers are ready to be registered and the networking is setup. Provides a Payload if it was provided
         /// </summary>
         /// <param name="payloadReader"></param>
-        public virtual void NetworkStart(BitReader payloadReader)
+        public virtual void NetworkStart(Stream stream)
         {
             NetworkStart();
         }
@@ -268,10 +265,11 @@ namespace MLAPI.MonoBehaviours.Core
                 //This iterates over every "channel group".
                 for (int j = 0; j < channelMappedVarIndexes.Count; j++)
                 {
-                    using (BitWriter writer = BitWriter.Get())
+                    using (PooledBitStream stream = PooledBitStream.Get())
                     {
-                        writer.WriteUInt(networkId);
-                        writer.WriteUShort(networkedObject.GetOrderIndex(this));
+                        BitWriter writer = new BitWriter(stream);
+                        writer.WriteUInt32Packed(networkId);
+                        writer.WriteUInt16Packed(networkedObject.GetOrderIndex(this));
 
                         uint clientId = NetworkingManager.singleton.ConnectedClientsList[i].ClientId;
                         for (int k = 0; k < networkedVarFields.Count; k++)
@@ -287,14 +285,14 @@ namespace MLAPI.MonoBehaviours.Core
                             writer.WriteBool(isDirty);
                             if (isDirty && (!isServer || networkedVarFields[k].CanClientRead(clientId)))
                             {
-                                networkedVarFields[k].WriteDelta(writer);
+                                networkedVarFields[k].WriteDelta(stream);
                             }
                         }
 
                         if (isServer)
-                            InternalMessageHandler.Send(clientId, "MLAPI_NETWORKED_VAR_DELTA", channelsForVarGroups[j], writer);
+                            InternalMessageHandler.Send(clientId, "MLAPI_NETWORKED_VAR_DELTA", channelsForVarGroups[j], stream);
                         else
-                            InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerNetId, "MLAPI_NETWORKED_VAR_DELTA", channelsForVarGroups[j], writer);
+							InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerClientId, "MLAPI_NETWORKED_VAR_DELTA", channelsForVarGroups[j], stream);
                     }
                 }
             }
@@ -305,8 +303,9 @@ namespace MLAPI.MonoBehaviours.Core
             }
         }
 
-        internal void HandleNetworkedVarDeltas(BitReader reader, uint clientId)
+        internal void HandleNetworkedVarDeltas(Stream stream, uint clientId)
         {
+            BitReader reader = new BitReader(stream);
             for (int i = 0; i < networkedVarFields.Count; i++)
             {
                 if (!reader.ReadBool())
@@ -325,12 +324,13 @@ namespace MLAPI.MonoBehaviours.Core
                     return;
                 }
 
-                networkedVarFields[i].ReadDelta(reader);
+                networkedVarFields[i].ReadDelta(stream);
             }
         }
 
-        internal void HandleNetworkedVarUpdate(BitReader reader, uint clientId)
+        internal void HandleNetworkedVarUpdate(Stream stream, uint clientId)
         {
+            BitReader reader = new BitReader(stream);
             for (int i = 0; i < networkedVarFields.Count; i++)
             {
                 if (!reader.ReadBool())
@@ -349,7 +349,7 @@ namespace MLAPI.MonoBehaviours.Core
                     return;
                 }
 
-                networkedVarFields[i].ReadField(reader);
+                networkedVarFields[i].ReadField(stream);
             }
         }
 
@@ -396,7 +396,7 @@ namespace MLAPI.MonoBehaviours.Core
                     }
 
                     ParameterInfo[] parameters = methods[i].GetParameters();
-                    if (parameters.Length == 2 && parameters[0].ParameterType == typeof(uint) && parameters[1].ParameterType == typeof(BitReader))
+                    if (parameters.Length == 2 && parameters[0].ParameterType == typeof(uint) && parameters[1].ParameterType == typeof(Stream))
                     {
                         //use delegate
                         attributes[0].rpcDelegate = (RpcDelegate)Delegate.CreateDelegate(typeof(RpcDelegate), this, methods[i], true);
@@ -428,7 +428,7 @@ namespace MLAPI.MonoBehaviours.Core
                     }
 
                     ParameterInfo[] parameters = methods[i].GetParameters();
-                    if (parameters.Length == 2 && parameters[0].ParameterType == typeof(uint) && parameters[1].ParameterType == typeof(BitReader))
+                    if (parameters.Length == 2 && parameters[0].ParameterType == typeof(uint) && parameters[1].ParameterType == typeof(Stream))
                     {
                         //use delegate
                         attributes[0].rpcDelegate = (RpcDelegate)Delegate.CreateDelegate(typeof(RpcDelegate), this, methods[i], true);
@@ -443,27 +443,27 @@ namespace MLAPI.MonoBehaviours.Core
             }
         }
 
-        internal void OnRemoteServerRPC(ulong hash, uint senderClientId, BitReader reader)
+        internal void OnRemoteServerRPC(ulong hash, uint senderClientId, Stream stream)
         {
             if (!CachedServerRpcs.ContainsKey(GetType()) || !CachedServerRpcs[GetType()].ContainsKey(hash))
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("ServerRPC request method not found");
                 return;
             }
-            InvokeServerRPCLocal(hash, senderClientId, reader);
+            InvokeServerRPCLocal(hash, senderClientId, stream);
         }
         
-        internal void OnRemoteClientRPC(ulong hash, uint senderClientId, BitReader reader)
+        internal void OnRemoteClientRPC(ulong hash, uint senderClientId, Stream stream)
         {
-            if (!CachedServerRpcs.ContainsKey(GetType()) || !CachedServerRpcs[GetType()].ContainsKey(hash))
+            if (!CachedClientRpcs.ContainsKey(GetType()) || !CachedClientRpcs[GetType()].ContainsKey(hash))
             {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("ServerRPC request method not found");
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("ClientRPC request method not found");
                 return;
             }
-            InvokeClientRPCLocal(hash, senderClientId, reader);
+            InvokeClientRPCLocal(hash, senderClientId, stream);
         }
 
-        private void InvokeServerRPCLocal(ulong hash, uint senderClientId, BitReader reader)
+        private void InvokeServerRPCLocal(ulong hash, uint senderClientId, Stream stream)
         {
             if (!CachedServerRpcs.ContainsKey(GetType()) || !CachedServerRpcs[GetType()].ContainsKey(hash))
                 return;
@@ -478,16 +478,16 @@ namespace MLAPI.MonoBehaviours.Core
             
             if (rpc.reflectionMethod != null)
             {
-                rpc.reflectionMethod.Invoke(this, reader);
+                rpc.reflectionMethod.Invoke(this, stream);
             }
 
             if (rpc.rpcDelegate != null)
             {
-                rpc.rpcDelegate(senderClientId, reader);
+                rpc.rpcDelegate(senderClientId, stream);
             }
         }
 
-        private void InvokeClientRPCLocal(ulong hash, uint senderClientId, BitReader reader)
+        private void InvokeClientRPCLocal(ulong hash, uint senderClientId, Stream stream)
         {
             if (!CachedClientRpcs.ContainsKey(GetType()) || !CachedClientRpcs[GetType()].ContainsKey(hash))
                 return;
@@ -496,53 +496,57 @@ namespace MLAPI.MonoBehaviours.Core
             
             if (rpc.reflectionMethod != null)
             {
-                rpc.reflectionMethod.Invoke(this, reader);
+                rpc.reflectionMethod.Invoke(this, stream);
             }
 
             if (rpc.rpcDelegate != null)
             {
-                rpc.rpcDelegate(senderClientId, reader);
+                rpc.rpcDelegate(senderClientId, stream);
             }
         }
         
         //Technically boxed writes are not needed. But save LOC for the non performance sends.
         internal void SendServerRPCBoxed(ulong hash, params object[] parameters)
         {
-            using (BitWriter writer = BitWriter.Get())
+            using (PooledBitStream stream = PooledBitStream.Get())
             {
+                BitWriter writer = new BitWriter(stream);
+
                 for (int i = 0; i < parameters.Length; i++)
                 {
-                    writer.WriteObject(parameters[i]);
+                    writer.WriteObjectPacked(parameters[i]);
                 }
-                SendServerRPCPerformance(hash, writer);
+                SendServerRPCPerformance(hash, stream);
             }
         }
         
         internal void SendClientRPCBoxed(ulong hash, List<uint> clientIds, params object[] parameters)
         {
-            using (BitWriter writer = BitWriter.Get())
+            using (PooledBitStream stream = PooledBitStream.Get())
             {
+                BitWriter writer = new BitWriter(stream);
                 for (int i = 0; i < parameters.Length; i++)
                 {
-                    writer.WriteObject(parameters[i]);
+                    writer.WriteObjectPacked(parameters[i]);
                 }
-                SendClientRPCPerformance(hash, clientIds, writer);
+                SendClientRPCPerformance(hash, clientIds, stream);
             }
         }
 
         internal void SendClientRPCBoxed(ulong hash, uint clientId, params object[] parameters)
         {
-            using (BitWriter writer = BitWriter.Get())
+            using (PooledBitStream stream = PooledBitStream.Get())
             {
+                BitWriter writer = new BitWriter(stream);
                 for (int i = 0; i < parameters.Length; i++)
                 {
-                    writer.WriteObject(parameters[i]);
+                    writer.WriteObjectPacked(parameters[i]);
                 }
-                SendClientRPCPerformance(hash, clientId, writer);
+                SendClientRPCPerformance(hash, clientId, stream);
             }
         }
 
-        internal void SendServerRPCPerformance(ulong hash, BitWriter writer)
+        internal void SendServerRPCPerformance(ulong hash, Stream messageStream)
         {
             if (!isClient)
             {
@@ -551,18 +555,26 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
 
-            if (isHost)
-            {
-                using (BitReader reader = BitReader.Get(writer.Finalize()))
-                {
-                    InvokeServerRPCLocal(hash, NetworkingManager.singleton.LocalClientId, reader);   
-                }
-            }
+	        using (PooledBitStream stream = PooledBitStream.Get())
+	        {
+		        BitWriter messageWriter = new BitWriter(stream);
+		        messageWriter.WriteUInt32Packed(networkId);
+		        messageWriter.WriteUInt16Packed(networkedObject.GetOrderIndex(this));
+		        messageWriter.WriteUInt64Packed(hash);
+
+		        stream.CopyFrom(messageStream);
+
+				if (isHost)
+				{
+					messageStream.Position = 0;
+					InvokeServerRPCLocal(hash, NetworkingManager.singleton.LocalClientId, messageStream);
+				}
             
-            InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerNetId, "MLAPI_SERVER_RPC", "MLAPI_DEFAULT_MESSAGE", writer);
+				InternalMessageHandler.Send(NetworkingManager.singleton.ServerClientId, "MLAPI_SERVER_RPC", "MLAPI_DEFAULT_MESSAGE", stream);
+	        }
         }
 
-        internal void SendClientRPCPerformance(ulong hash,  List<uint> clientIds, BitWriter writer)
+        internal void SendClientRPCPerformance(ulong hash,  List<uint> clientIds, Stream messageStream)
         {            
             if (!isServer)
             {
@@ -571,13 +583,14 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
 
-            using (BitWriter rpcWriter = BitWriter.Get())
+            using (PooledBitStream stream = PooledBitStream.Get())
             {
-                writer.WriteUInt(networkId);
-                writer.WriteUShort(networkedObject.GetOrderIndex(this));
-                writer.WriteULong(hash);
+                BitWriter messageWriter = new BitWriter(stream);
+                messageWriter.WriteUInt32Packed(networkId);
+                messageWriter.WriteUInt16Packed(networkedObject.GetOrderIndex(this));
+                messageWriter.WriteUInt64Packed(hash);
 
-                writer.WriteWriter(writer);
+                stream.CopyFrom(messageStream);
 
                 if (clientIds == null)
                 {
@@ -585,14 +598,12 @@ namespace MLAPI.MonoBehaviours.Core
                     {
                         if (isHost && NetworkingManager.singleton.ConnectedClientsList[i].ClientId == NetworkingManager.singleton.LocalClientId)
                         {
-                            using (BitReader reader = BitReader.Get(writer.Finalize()))
-                            {
-                                InvokeClientRPCLocal(hash, NetworkingManager.singleton.LocalClientId, reader);
-                            }
+							messageStream.Position = 0;
+                            InvokeClientRPCLocal(hash, NetworkingManager.singleton.LocalClientId, messageStream);
                         }
                         else
                         {
-                            InternalMessageHandler.Send(NetworkingManager.singleton.ConnectedClientsList[i].ClientId, "MLAPI_CLIENT_RPC", "MLAPI_DEFAULT_MESSAGE", rpcWriter);
+                            InternalMessageHandler.Send(NetworkingManager.singleton.ConnectedClientsList[i].ClientId, "MLAPI_CLIENT_RPC", "MLAPI_DEFAULT_MESSAGE", stream);
                         }
                     }
                 }
@@ -602,20 +613,19 @@ namespace MLAPI.MonoBehaviours.Core
                     {
                         if (isHost && clientIds[i] == NetworkingManager.singleton.LocalClientId)
                         {
-                            using (BitReader reader = BitReader.Get(writer.Finalize()))
-                            {
-                                InvokeClientRPCLocal(hash, NetworkingManager.singleton.LocalClientId, reader);
-                            }
+							messageStream.Position = 0;
+							InvokeClientRPCLocal(hash, NetworkingManager.singleton.LocalClientId, messageStream);
                         }
                         else
                         {
-                            InternalMessageHandler.Send(clientIds[i], "MLAPI_CLIENT_RPC", "MLAPI_DEFAULT_MESSAGE", rpcWriter);}
+                            InternalMessageHandler.Send(clientIds[i], "MLAPI_CLIENT_RPC", "MLAPI_DEFAULT_MESSAGE", stream);
+                        }
                     }
                 }
             }
         }
 
-        internal void SendClientRPCPerformance(ulong hash, uint clientId, BitWriter writer)
+        internal void SendClientRPCPerformance(ulong hash, uint clientId, Stream messageStream)
         {
             if (!isServer)
             {
@@ -624,24 +634,23 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
 
-            using (BitWriter rpcWriter = BitWriter.Get())
+            using (PooledBitStream stream = PooledBitStream.Get())
             {
-                writer.WriteUInt(networkId);
-                writer.WriteUShort(networkedObject.GetOrderIndex(this));
-                writer.WriteULong(hash);
+                BitWriter writer = new BitWriter(stream);
+                writer.WriteUInt32Packed(networkId);
+                writer.WriteUInt16Packed(networkedObject.GetOrderIndex(this));
+                writer.WriteUInt64Packed(hash);
 
-                writer.WriteWriter(writer);
+                stream.CopyFrom(messageStream);
 
-                if (isHost && clientId == NetworkingManager.singleton.LocalClientId)
-                {
-                    using (BitReader reader = BitReader.Get(writer.Finalize()))
-                    {
-                        InvokeClientRPCLocal(hash, NetworkingManager.singleton.LocalClientId, reader);
-                    }
-                }
+				if (isHost && clientId == NetworkingManager.singleton.LocalClientId)
+				{
+					messageStream.Position = 0;
+					InvokeClientRPCLocal(hash, NetworkingManager.singleton.LocalClientId, messageStream);
+				}
                 else
                 {
-                    InternalMessageHandler.Send(clientId, "MLAPI_CLIENT_RPC", "MLAPI_DEFAULT_MESSAGE", rpcWriter);
+                    InternalMessageHandler.Send(clientId, "MLAPI_CLIENT_RPC", "MLAPI_DEFAULT_MESSAGE", stream);
                 }
             }
         }
@@ -2326,45 +2335,55 @@ namespace MLAPI.MonoBehaviours.Core
 		}
 
         //PERFORMANCE SERVER RPC
-        public void InvokeServerRpc(RpcDelegate method, BitWriter writer)
+        public void InvokeServerRpc(RpcDelegate method, Stream stream)
         {
-            SendServerRPCPerformance(HashMethodName(method.Method.Name), writer);
+            SendServerRPCPerformance(HashMethodName(method.Method.Name), stream);
         }
 
-        public void InvokeServerRpc(string methodName, BitWriter writer)
+        public void InvokeServerRpc(string methodName, Stream stream)
         {
-            SendServerRPCPerformance(HashMethodName(methodName), writer);
+            SendServerRPCPerformance(HashMethodName(methodName), stream);
         }
 
         //PERFORMANCE CLIENT RPC
-        public void InvokeClientRpc(RpcDelegate method, List<uint> clientIds, BitWriter writer)
+        public void InvokeClientRpc(RpcDelegate method, List<uint> clientIds, Stream stream)
         {
-            SendClientRPCPerformance(HashMethodName(method.Method.Name), clientIds, writer);
+            SendClientRPCPerformance(HashMethodName(method.Method.Name), clientIds, stream);
         }
 
-        public void InvokeClientRpcOnOwner(RpcDelegate method, BitWriter writer)
+        public void InvokeClientRpcOnOwner(RpcDelegate method, Stream stream)
         {
-            SendClientRPCPerformance(HashMethodName(method.Method.Name), OwnerClientId, writer);
+            SendClientRPCPerformance(HashMethodName(method.Method.Name), OwnerClientId, stream);
         }
 
-        public void InvokeClientRpcOnEveryone(RpcDelegate method, BitWriter writer)
+        public void InvokeClientRpcOnClient(RpcDelegate method, uint clientId, Stream stream)
         {
-            SendClientRPCPerformance(HashMethodName(method.Method.Name), null, writer);
+            SendClientRPCPerformance(HashMethodName(method.Method.Name), clientId, stream);
         }
 
-        public void InvokeClientRpc(string methodName, List<uint> clientIds, BitWriter writer)
+        public void InvokeClientRpcOnEveryone(RpcDelegate method, Stream stream)
         {
-            SendClientRPCPerformance(HashMethodName(methodName), clientIds, writer);
+            SendClientRPCPerformance(HashMethodName(method.Method.Name), null, stream);
         }
 
-        public void InvokeClientRpcOnOwner(string methodName, BitWriter writer)
+        public void InvokeClientRpc(string methodName, List<uint> clientIds, Stream stream)
         {
-            SendClientRPCPerformance(HashMethodName(methodName), OwnerClientId, writer);
+            SendClientRPCPerformance(HashMethodName(methodName), clientIds, stream);
         }
 
-        public void InvokeClientRpcOnEveryone(string methodName, BitWriter writer)
+        public void InvokeClientRpcOnClient(string methodName, uint clientId, Stream stream)
         {
-            SendClientRPCPerformance(HashMethodName(methodName), null, writer);
+            SendClientRPCPerformance(HashMethodName(methodName), clientId, stream);
+        }
+
+        public void InvokeClientRpcOnOwner(string methodName, Stream stream)
+        {
+            SendClientRPCPerformance(HashMethodName(methodName), OwnerClientId, stream);
+        }
+
+        public void InvokeClientRpcOnEveryone(string methodName, Stream stream)
+        {
+            SendClientRPCPerformance(HashMethodName(methodName), null, stream);
         }
         #endregion
 

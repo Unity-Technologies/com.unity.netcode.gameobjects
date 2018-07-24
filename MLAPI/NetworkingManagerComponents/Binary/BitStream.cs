@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Diagnostics;
 using System.IO;
-using System.Runtime.InteropServices;
-using System.Text;
-using UnityEngine;
 using static MLAPI.NetworkingManagerComponents.Binary.Arithmetic;
 
 
@@ -12,9 +8,8 @@ namespace MLAPI.NetworkingManagerComponents.Binary
     /// <summary>
     /// A stream that can be used at the bit level
     /// </summary>
-    public sealed class BitStream : Stream
-    {
-        
+    public class BitStream : Stream
+    {     
         const int initialCapacity = 16;
         const float initialGrowthFactor = 2.0f;
         private byte[] target;

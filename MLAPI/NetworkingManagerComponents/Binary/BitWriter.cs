@@ -25,9 +25,111 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             bitSink = sink as BitStream;
         }
 
+        public void WriteObjectPacked(object value)
+        {
+            if (value is byte)
+            {
+                WriteByte((byte)value);
+                return;
+            }
+            else if (value is byte)
+            {
+                WriteSByte((sbyte)value);
+                return;
+            }
+            else if (value is ushort)
+            {
+                WriteUInt16Packed((ushort)value);
+                return;
+            }
+            else if (value is short)
+            {
+                WriteInt16Packed((short)value);
+                return;
+            }
+            else if (value is int)
+            {
+                WriteInt32Packed((int)value);
+                return;
+            }
+            else if (value is uint)
+            {
+                WriteUInt32Packed((uint)value);
+                return;
+            }
+            else if (value is long)
+            {
+                WriteInt64Packed((long)value);
+                return;
+            }
+            else if (value is ulong)
+            {
+                WriteUInt64Packed((ulong)value);
+                return;
+            }
+            else if (value is float)
+            {
+                WriteSinglePacked((float)value);
+                return;
+            }
+            else if (value is double)
+            {
+                WriteDoublePacked((double)value);
+                return;
+            }
+            else if (value is string)
+            {
+                WriteStringPacked((string)value);
+                return;
+            }
+            else if (value is bool)
+            {
+                WriteBit((bool)value);
+                return;
+            }
+            else if (value is Vector2)
+            {
+                WriteVector2Packed((Vector2)value);
+                return;
+            }
+            else if (value is Vector3)
+            {
+                WriteVector3Packed((Vector3)value);
+                return;
+            }
+            else if (value is Vector4)
+            {
+                WriteVector4Packed((Vector4)value);
+                return;
+            }
+            else if (value is Color)
+            {
+                WriteColorPacked((Color)value);
+                return;
+            }
+            else if (value is Color32)
+            {
+                WriteColor32((Color32)value);
+                return;
+            }
+            else if (value is Ray)
+            {
+                WriteRayPacked((Ray)value);
+                return;
+            }
+            else if (value is Quaternion)
+            {
+                WriteRotation((Quaternion)value, 3);
+                return;
+            }
+            else if (value is char)
+            {
+                WriteCharPacked((char)value);
+                return;
+            }
 
-
-
+            throw new ArgumentException("BitWriter cannot write type " + value.GetType().Name);
+        }
 
         /// <summary>
         /// Write single-precision floating point value to the stream
@@ -248,6 +350,8 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         }
 
         public void WriteBit(bool bit) => bitSink.WriteBit(bit);
+
+        public void WriteBool(bool value) => WriteBit(value);
 
         /// <summary>
         /// Write the lower half (lower nibble) of a byte.

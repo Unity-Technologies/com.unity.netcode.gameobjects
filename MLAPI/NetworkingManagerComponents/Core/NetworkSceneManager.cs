@@ -58,11 +58,12 @@ namespace MLAPI.NetworkingManagerComponents.Core
             AsyncOperation sceneLoad = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
             sceneLoad.completed += OnSceneLoaded;
 
-            using (BitWriter writer = BitWriter.Get())
+            using (PooledBitStream stream = PooledBitStream.Get())
             {
-                writer.WriteUInt(sceneNameToIndex[sceneName]);
+                BitWriter writer = new BitWriter(stream);
+                writer.WriteUInt32Packed(sceneNameToIndex[sceneName]);
 
-                InternalMessageHandler.Send("MLAPI_SWITCH_SCENE", "MLAPI_INTERNAL", writer);
+                InternalMessageHandler.Send("MLAPI_SWITCH_SCENE", "MLAPI_INTERNAL", stream);
             }
         }
 

@@ -7,9 +7,7 @@ namespace MLAPI.Data.Transports.UNET
     class RelayedTransport : IUDPTransport
     {
         public ChannelType InternalChannel => ChannelType.ReliableFragmentedSequenced;
-        public uint HostDummyId => new NetId(0, 0, true, false).GetClientId();
-        public uint InvalidDummyId => new NetId(0, 0, false, true).GetClientId();
-        public uint ServerNetId => new NetId((byte)serverHostId, (ushort)serverConnectionId, false, false).GetClientId();
+		public uint ServerClientId => new NetId(0, 0, true).GetClientId();
         public int serverConnectionId;
         public int serverHostId;
 
@@ -33,7 +31,7 @@ namespace MLAPI.Data.Transports.UNET
         public void DisconnectClient(uint clientId)
         {
             NetId netId = new NetId(clientId);
-            if (netId.IsHost() || netId.IsInvalid())
+			if (netId.IsServer())
                 return;
             RelayTransport.Disconnect(netId.HostId, netId.ConnectionId, out byte error);
         }
@@ -43,6 +41,11 @@ namespace MLAPI.Data.Transports.UNET
         public int GetCurrentRTT(uint clientId, out byte error)
         {
             NetId netId = new NetId(clientId);
+			if (netId.IsServer())
+            {
+                netId.ConnectionId = (ushort)serverConnectionId;
+                netId.HostId = (byte)serverHostId;
+            }
             return NetworkTransport.GetCurrentRTT(netId.HostId, netId.ConnectionId, out error);
         }
 
@@ -51,13 +54,18 @@ namespace MLAPI.Data.Transports.UNET
         public int GetRemoteDelayTimeMS(uint clientId, int remoteTimestamp, out byte error)
         {
             NetId netId = new NetId(clientId);
+			if (netId.IsServer())
+            {
+                netId.ConnectionId = (ushort)serverConnectionId;
+                netId.HostId = (byte)serverHostId;
+            }
             return NetworkTransport.GetRemoteDelayTimeMS(netId.HostId, netId.ConnectionId, remoteTimestamp, out error);
         }
 
         public NetEventType PollReceive(out uint clientId, out int channelId, ref byte[] data, int bufferSize, out int receivedSize, out byte error)
         {
             NetworkEventType eventType = RelayTransport.Receive(out int hostId, out int connectionId, out channelId, data, bufferSize, out receivedSize, out byte err);
-            clientId = new NetId((byte)hostId, (ushort)connectionId, false, false).GetClientId();
+            clientId = new NetId((byte)hostId, (ushort)connectionId, false).GetClientId();
             NetworkError errorType = (NetworkError)err;
             if (errorType == NetworkError.Timeout)
                 eventType = NetworkEventType.DisconnectEvent; //In UNET. Timeouts are not disconnects. We have to translate that here.
@@ -80,13 +88,13 @@ namespace MLAPI.Data.Transports.UNET
             return NetEventType.Nothing;
         }
 
-        public void QueueMessageForSending(uint clientId, ref byte[] dataBuffer, int dataSize, int channelId, bool skipqueue, out byte error)
+        public void QueueMessageForSending(uint clientId, byte[] dataBuffer, int dataSize, int channelId, bool skipqueue, out byte error)
         {
             NetId netId = new NetId(clientId);
-            if (netId.IsHost() || netId.IsInvalid())
+			if (netId.IsServer())
             {
-                error = 0;
-                return;
+                netId.ConnectionId = (ushort)serverConnectionId;
+                netId.HostId = (byte)serverHostId;
             }
             if (skipqueue)
                 RelayTransport.Send(netId.HostId, netId.ConnectionId, channelId, dataBuffer, dataSize, out error);
@@ -99,6 +107,11 @@ namespace MLAPI.Data.Transports.UNET
         public void SendQueue(uint clientId, out byte error)
         {
             NetId netId = new NetId(clientId);
+			if (netId.IsServer())
+            {
+                netId.ConnectionId = (ushort)serverConnectionId;
+                netId.HostId = (byte)serverHostId;
+            }
             RelayTransport.SendQueuedMessages(netId.HostId, netId.ConnectionId, out error);
         }
 

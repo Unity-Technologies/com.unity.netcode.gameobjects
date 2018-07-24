@@ -28,6 +28,51 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         public byte ReadByteDirect() => (byte)source.ReadByte();
         public bool ReadBit() => bitSource.ReadBit();
 
+        public object ReadObjectPacked(Type type)
+        {
+            if (type == typeof(byte))
+                return ReadByte();
+            if (type == typeof(sbyte))
+                return ReadSByte();
+            if (type == typeof(ushort))
+                return ReadUInt16Packed();
+            if (type == typeof(short))
+                return ReadInt16Packed();
+            if (type == typeof(int))
+                return ReadInt32Packed();
+            if (type == typeof(uint))
+                return ReadUInt32Packed();
+            if (type == typeof(long))
+                return ReadInt64Packed();
+            if (type == typeof(ulong))
+                return ReadUInt64Packed();
+            if (type == typeof(float))
+                return ReadSinglePacked();
+            if (type == typeof(double))
+                return ReadDoublePacked();
+            if (type == typeof(string))
+                return ReadStringPacked();
+            if (type == typeof(bool))
+                return ReadBool();
+            if (type == typeof(Vector2))
+                return ReadVector2Packed();
+            if (type == typeof(Vector3))
+                return ReadVector3Packed();
+            if (type == typeof(Vector4))
+                return ReadVector4Packed();
+            if (type == typeof(Color))
+                return ReadColorPacked();
+            if (type == typeof(Color32))
+                return ReadColor32();
+            if (type == typeof(Ray))
+                return ReadRayPacked();
+            if (type == typeof(Quaternion))
+                return ReadRotation(3);
+            if (type == typeof(char))
+                return ReadCharPacked();
+            throw new ArgumentException("BitReader cannot read type " + type.Name);
+        }
+
         /// <summary>
         /// Read a single-precision floating point value from the stream.
         /// </summary>
@@ -355,11 +400,6 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             while (hdr > ++cmp) res |= (ulong)ReadByte() << (cmp << 3);
             return res;
         }
-
-
-
-
-
 
         // Read arrays
         public StringBuilder ReadString(bool oneByteChars) => ReadString(null, oneByteChars);
@@ -817,49 +857,6 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             }
             bitSource.BitPosition = dBlockStart;
             return writeTo;
-        }
-
-        public ValueType ReadValueType<T>()
-        {
-            if (typeof(T) == typeof(float))
-                return ReadSingle();
-            else if (typeof(T) == typeof(double))
-                return ReadDouble();
-            else if (typeof(T) == typeof(byte))
-                return ReadByte();
-            else if (typeof(T) == typeof(sbyte))
-                return ReadSByte();
-            else if (typeof(T) == typeof(short))
-                return ReadInt16();
-            else if (typeof(T) == typeof(ushort))
-                return ReadUInt16();
-            else if (typeof(T) == typeof(int))
-                return ReadInt32();
-            else if (typeof(T) == typeof(uint))
-                return ReadUInt32();
-            else if (typeof(T) == typeof(long))
-                return ReadInt64();
-            else if (typeof(T) == typeof(ulong))
-                return ReadUInt64();
-            
-            return default(ValueType);
-        }
-
-        public T ReadValueTypeOrString<T>()
-        {
-            if (typeof(T) == typeof(string))
-            {
-                return (T)(object)ReadString(); //BOX
-            }
-            else if (typeof(T).IsValueType)
-            {
-                ValueType type = ReadValueType<T>();
-                return (T)(object)type; //BOX
-            }
-            else
-            {
-                return default(T);
-            }
         }
 
         public bool ReadBool() => ReadBit();
