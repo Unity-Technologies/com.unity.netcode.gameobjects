@@ -712,7 +712,7 @@ namespace MLAPI.MonoBehaviours.Core
                             case NetEventType.Data:
                                 if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Incomming Data From " + clientId + " : " + receivedSize + " bytes");
 
-                                HandleIncomingData(clientId, messageBuffer, channelId, (uint)receivedSize);
+                                HandleIncomingData(clientId, messageBuffer, channelId, receivedSize);
                                 break;
                             case NetEventType.Disconnect:
                                 NetworkProfiler.StartEvent(TickType.Receive, 0, "NONE", "TRANSPORT_DISCONNECT");
@@ -782,17 +782,18 @@ namespace MLAPI.MonoBehaviours.Core
             }
         }
 
-        private void HandleIncomingData(uint clientId, byte[] data, int channelId, uint totalSize)
+        private void HandleIncomingData(uint clientId, byte[] data, int channelId, int totalSize)
         {
             if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Unwrapping Data Header");
-            using (NetworkingManagerComponents.Binary.BitStream stream = new NetworkingManagerComponents.Binary.BitStream(data))
+			using (NetworkingManagerComponents.Binary.BitStream stream = new NetworkingManagerComponents.Binary.BitStream(data))
             {
+				stream.SetLength(totalSize);
                 BitReader reader = new BitReader(stream);
 
                 ushort messageType = reader.ReadUInt16Packed();
 
                 uint headerByteSize = (uint)Arithmetic.VarIntSize(messageType);
-                NetworkProfiler.StartEvent(TickType.Receive, totalSize - headerByteSize, channelId, messageType);
+                NetworkProfiler.StartEvent(TickType.Receive, (uint)(totalSize - headerByteSize), channelId, messageType);
 
                 if (LogHelper.CurrentLogLevel <= LogLevel.Developer)
                     LogHelper.LogInfo("Data Header: messageType=" + messageType);
@@ -804,68 +805,61 @@ namespace MLAPI.MonoBehaviours.Core
                     return;
                 }
 
-                if (messageType >= 32)
-                {
-                    
-                }
-                else
-                {
-                    #region INTERNAL MESSAGE
+				#region INTERNAL MESSAGE
 
-                    switch (messageType)
-                    {
-                        case MLAPIConstants.MLAPI_CONNECTION_REQUEST:
-                            if (isServer) InternalMessageHandler.HandleConnectionRequest(clientId, stream, channelId);
-                            break;
-                        case MLAPIConstants.MLAPI_CONNECTION_APPROVED:
-                            if (isClient) InternalMessageHandler.HandleConnectionApproved(clientId, stream, channelId);
-                            break;
-                        case MLAPIConstants.MLAPI_ADD_OBJECT:
-                            if (isClient) InternalMessageHandler.HandleAddObject(clientId, stream, channelId);
-                            break;
-                        case MLAPIConstants.MLAPI_CLIENT_DISCONNECT:
-                            if (isClient) InternalMessageHandler.HandleClientDisconnect(clientId, stream, channelId);
-                            break;
-                        case MLAPIConstants.MLAPI_DESTROY_OBJECT:
-                            if (isClient) InternalMessageHandler.HandleDestroyObject(clientId, stream, channelId);
-                            break;
-                        case MLAPIConstants.MLAPI_SWITCH_SCENE:
-                            if (isClient) InternalMessageHandler.HandleSwitchScene(clientId, stream, channelId);
-                            break;
-                        case MLAPIConstants.MLAPI_SPAWN_POOL_OBJECT:
-                            if (isClient) InternalMessageHandler.HandleSpawnPoolObject(clientId, stream, channelId);
-                            break;
-                        case MLAPIConstants.MLAPI_DESTROY_POOL_OBJECT:
-                            if (isClient) InternalMessageHandler.HandleDestroyPoolObject(clientId, stream, channelId);
-                            break;
-                        case MLAPIConstants.MLAPI_CHANGE_OWNER:
-                            if (isClient) InternalMessageHandler.HandleChangeOwner(clientId, stream, channelId);
-                            break;
-                        case MLAPIConstants.MLAPI_ADD_OBJECTS:
-                            if (isClient) InternalMessageHandler.HandleAddObjects(clientId, stream, channelId);
-                            break;
-                        case MLAPIConstants.MLAPI_TIME_SYNC:
-                            if (isClient) InternalMessageHandler.HandleTimeSync(clientId, stream, channelId);
-                            break;
-                        case MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA:
-                            InternalMessageHandler.HandleNetworkedVarDelta(clientId, stream, channelId);
-                            break;
-                        case MLAPIConstants.MLAPI_NETWORKED_VAR_UPDATE:
-                            InternalMessageHandler.HandleNetworkedVarUpdate(clientId, stream, channelId);
-                            break;
-                        case MLAPIConstants.MLAPI_SERVER_RPC:
-                            if (isServer) InternalMessageHandler.HandleServerRPC(clientId, stream, channelId);
-                            break;
-                        case MLAPIConstants.MLAPI_CLIENT_RPC:
-                            if (isClient) InternalMessageHandler.HandleClientRPC(clientId, stream, channelId);
-                            break;
-                        case MLAPIConstants.MLAPI_CUSTOM_MESSAGE:
-                            InternalMessageHandler.HandleCustomMessage(clientId, stream, channelId);
-                            break;
-                    }
-
-                    #endregion
+                switch (messageType)
+                {
+                    case MLAPIConstants.MLAPI_CONNECTION_REQUEST:
+                        if (isServer) InternalMessageHandler.HandleConnectionRequest(clientId, stream, channelId);
+                        break;
+                    case MLAPIConstants.MLAPI_CONNECTION_APPROVED:
+                        if (isClient) InternalMessageHandler.HandleConnectionApproved(clientId, stream, channelId);
+                        break;
+                    case MLAPIConstants.MLAPI_ADD_OBJECT:
+                        if (isClient) InternalMessageHandler.HandleAddObject(clientId, stream, channelId);
+                        break;
+                    case MLAPIConstants.MLAPI_CLIENT_DISCONNECT:
+                        if (isClient) InternalMessageHandler.HandleClientDisconnect(clientId, stream, channelId);
+                        break;
+                    case MLAPIConstants.MLAPI_DESTROY_OBJECT:
+                        if (isClient) InternalMessageHandler.HandleDestroyObject(clientId, stream, channelId);
+                        break;
+                    case MLAPIConstants.MLAPI_SWITCH_SCENE:
+                        if (isClient) InternalMessageHandler.HandleSwitchScene(clientId, stream, channelId);
+                        break;
+                    case MLAPIConstants.MLAPI_SPAWN_POOL_OBJECT:
+                        if (isClient) InternalMessageHandler.HandleSpawnPoolObject(clientId, stream, channelId);
+                        break;
+                    case MLAPIConstants.MLAPI_DESTROY_POOL_OBJECT:
+                        if (isClient) InternalMessageHandler.HandleDestroyPoolObject(clientId, stream, channelId);
+                        break;
+                    case MLAPIConstants.MLAPI_CHANGE_OWNER:
+                        if (isClient) InternalMessageHandler.HandleChangeOwner(clientId, stream, channelId);
+                        break;
+                    case MLAPIConstants.MLAPI_ADD_OBJECTS:
+                        if (isClient) InternalMessageHandler.HandleAddObjects(clientId, stream, channelId);
+                        break;
+                    case MLAPIConstants.MLAPI_TIME_SYNC:
+                        if (isClient) InternalMessageHandler.HandleTimeSync(clientId, stream, channelId);
+                        break;
+                    case MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA:
+                        InternalMessageHandler.HandleNetworkedVarDelta(clientId, stream, channelId);
+                        break;
+                    case MLAPIConstants.MLAPI_NETWORKED_VAR_UPDATE:
+                        InternalMessageHandler.HandleNetworkedVarUpdate(clientId, stream, channelId);
+                        break;
+                    case MLAPIConstants.MLAPI_SERVER_RPC:
+                        if (isServer) InternalMessageHandler.HandleServerRPC(clientId, stream, channelId);
+                        break;
+                    case MLAPIConstants.MLAPI_CLIENT_RPC:
+                        if (isClient) InternalMessageHandler.HandleClientRPC(clientId, stream, channelId);
+                        break;
+                    case MLAPIConstants.MLAPI_CUSTOM_MESSAGE:
+                        InternalMessageHandler.HandleCustomMessage(clientId, stream, channelId);
+                        break;
                 }
+
+                #endregion
 
                 NetworkProfiler.EndEvent();
             }
