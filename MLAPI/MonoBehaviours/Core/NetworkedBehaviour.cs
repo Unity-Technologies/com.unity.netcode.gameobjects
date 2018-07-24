@@ -460,9 +460,9 @@ namespace MLAPI.MonoBehaviours.Core
         
         internal void OnRemoteClientRPC(ulong hash, uint senderClientId, Stream stream)
         {
-            if (!CachedServerRpcs.ContainsKey(GetType()) || !CachedServerRpcs[GetType()].ContainsKey(hash))
+            if (!CachedClientRpcs.ContainsKey(GetType()) || !CachedClientRpcs[GetType()].ContainsKey(hash))
             {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("ServerRPC request method not found");
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("ClientRPC request method not found");
                 return;
             }
             InvokeClientRPCLocal(hash, senderClientId, stream);
@@ -551,7 +551,7 @@ namespace MLAPI.MonoBehaviours.Core
             }
         }
 
-        internal void SendServerRPCPerformance(ulong hash, Stream stream)
+        internal void SendServerRPCPerformance(ulong hash, Stream messageStream)
         {
             if (!isClient)
             {
@@ -560,12 +560,22 @@ namespace MLAPI.MonoBehaviours.Core
                 return;
             }
 
-            if (isHost)
-            {
-                InvokeServerRPCLocal(hash, NetworkingManager.singleton.LocalClientId, stream);
-            }
+	        using (PooledBitStream stream = PooledBitStream.Get())
+	        {
+		        BitWriter messageWriter = new BitWriter(stream);
+		        messageWriter.WriteUInt32Packed(networkId);
+		        messageWriter.WriteUInt16Packed(networkedObject.GetOrderIndex(this));
+		        messageWriter.WriteUInt64Packed(hash);
+
+		        stream.CopyFrom(messageStream);
+		        
+		        if (isHost)
+		        {
+			        InvokeServerRPCLocal(hash, NetworkingManager.singleton.LocalClientId, messageStream);
+		        }
             
-            InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerNetId, "MLAPI_SERVER_RPC", "MLAPI_DEFAULT_MESSAGE", stream);
+		        InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerNetId, "MLAPI_SERVER_RPC", "MLAPI_DEFAULT_MESSAGE", stream);
+	        }
         }
 
         internal void SendClientRPCPerformance(ulong hash,  List<uint> clientIds, Stream messageStream)
@@ -592,7 +602,7 @@ namespace MLAPI.MonoBehaviours.Core
                     {
                         if (isHost && NetworkingManager.singleton.ConnectedClientsList[i].ClientId == NetworkingManager.singleton.LocalClientId)
                         {
-                            InvokeClientRPCLocal(hash, NetworkingManager.singleton.LocalClientId, stream);
+                            InvokeClientRPCLocal(hash, NetworkingManager.singleton.LocalClientId, messageStream);
                         }
                         else
                         {
@@ -606,7 +616,7 @@ namespace MLAPI.MonoBehaviours.Core
                     {
                         if (isHost && clientIds[i] == NetworkingManager.singleton.LocalClientId)
                         {
-                            InvokeClientRPCLocal(hash, NetworkingManager.singleton.LocalClientId, stream);
+                            InvokeClientRPCLocal(hash, NetworkingManager.singleton.LocalClientId, messageStream);
                         }
                         else
                         {
@@ -637,7 +647,7 @@ namespace MLAPI.MonoBehaviours.Core
 
                 if (isHost && clientId == NetworkingManager.singleton.LocalClientId)
                 {
-                    InvokeClientRPCLocal(hash, NetworkingManager.singleton.LocalClientId, stream);
+                    InvokeClientRPCLocal(hash, NetworkingManager.singleton.LocalClientId, messageStream);
                 }
                 else
                 {
