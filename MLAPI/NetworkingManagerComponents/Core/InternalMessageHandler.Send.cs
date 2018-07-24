@@ -12,18 +12,6 @@ namespace MLAPI.NetworkingManagerComponents.Core
     {
         internal static void Send(uint clientId, string messageType, string channelName, Stream messageStream, bool skipQueue = false)
         {
-            uint targetClientId = clientId;
-            if (netManager.isHost && targetClientId == netManager.NetworkConfig.NetworkTransport.HostDummyId)
-            {
-                //Don't invoke the message on our own machine. Instant stack overflow.
-                return;
-            }
-            else if (targetClientId == netManager.NetworkConfig.NetworkTransport.HostDummyId)
-            {
-                //Client trying to send data to host
-                targetClientId = netManager.NetworkConfig.NetworkTransport.ServerNetId;
-            }
-
             using (PooledBitStream stream = PooledBitStream.Get())
             {
                 BitWriter writer = new BitWriter(stream);
@@ -33,9 +21,9 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 NetworkProfiler.StartEvent(TickType.Send, (uint)stream.Length, channelName, messageType);
                 byte error;
                 if (skipQueue)
-                    netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(targetClientId, stream.GetBuffer(), (int)stream.Length, MessageManager.channels[channelName], true, out error);
+                    netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(clientId, stream.GetBuffer(), (int)stream.Length, MessageManager.channels[channelName], true, out error);
                 else
-                    netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(targetClientId, stream.GetBuffer(), (int)stream.Length, MessageManager.channels[channelName], false, out error);
+					netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(clientId, stream.GetBuffer(), (int)stream.Length, MessageManager.channels[channelName], false, out error);
                 NetworkProfiler.EndEvent();
             }
         }
@@ -51,20 +39,8 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 NetworkProfiler.StartEvent(TickType.Send, (uint)stream.Length, channelName, messageType);
                 for (int i = 0; i < netManager.ConnectedClientsList.Count; i++)
                 {
-                    uint targetClientId = netManager.ConnectedClientsList[i].ClientId;
-                    if (netManager.isHost && targetClientId == netManager.NetworkConfig.NetworkTransport.HostDummyId)
-                    {
-                        //Don't invoke the message on our own machine. Instant stack overflow.
-                        return;
-                    }
-                    else if (targetClientId == netManager.NetworkConfig.NetworkTransport.HostDummyId)
-                    {
-                        //Client trying to send data to host
-                        targetClientId = netManager.NetworkConfig.NetworkTransport.ServerNetId;
-                    }
-                    
                     byte error;
-                    netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(targetClientId, stream.GetBuffer(), (int)stream.Length, MessageManager.channels[channelName], false, out error);
+					netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(netManager.ConnectedClientsList[i].ClientId, stream.GetBuffer(), (int)stream.Length, MessageManager.channels[channelName], false, out error);
                 }
                 NetworkProfiler.EndEvent();
             }
@@ -81,23 +57,11 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 NetworkProfiler.StartEvent(TickType.Send, (uint)stream.Length, channelName, messageType);
                 for (int i = 0; i < netManager.ConnectedClientsList.Count; i++)
                 {
-                    uint targetClientId = netManager.ConnectedClientsList[i].ClientId;
-                    if (targetClientId == clientIdToIgnore)
+					if (netManager.ConnectedClientsList[i].ClientId == clientIdToIgnore)
                         continue;
                     
-                    if (netManager.isHost && targetClientId == netManager.NetworkConfig.NetworkTransport.HostDummyId)
-                    {
-                        //Don't invoke the message on our own machine. Instant stack overflow.
-                        return;
-                    }
-                    else if (targetClientId == netManager.NetworkConfig.NetworkTransport.HostDummyId)
-                    {
-                        //Client trying to send data to host
-                        targetClientId = netManager.NetworkConfig.NetworkTransport.ServerNetId;
-                    }
-                    
                     byte error;
-                    netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(targetClientId, stream.GetBuffer(), (int)stream.Length, MessageManager.channels[channelName], false, out error);
+					netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(netManager.ConnectedClientsList[i].ClientId, stream.GetBuffer(), (int)stream.Length, MessageManager.channels[channelName], false, out error);
                 }
                 NetworkProfiler.EndEvent();
             }

@@ -107,10 +107,9 @@ namespace MLAPI.MonoBehaviours.Prototyping
 
         private void Update()
         {
-            if(isOwner || isLocalPlayer || (OwnerClientId == NetworkingManager.singleton.NetworkConfig.NetworkTransport.InvalidDummyId && isServer))
+			if (isOwner)
             {
-                //We own the object OR we are server and the object is not owned by anyone OR we are the object.
-                if(NetworkingManager.singleton.NetworkTime - lastSendTime >= (1f / FixedSendsPerSecond) && (Vector3.Distance(transform.position, lastSentPos) > MinMeters || Quaternion.Angle(transform.rotation, lastSentRot) > MinDegrees))
+                if (NetworkingManager.singleton.NetworkTime - lastSendTime >= (1f / FixedSendsPerSecond) && (Vector3.Distance(transform.position, lastSentPos) > MinMeters || Quaternion.Angle(transform.rotation, lastSentRot) > MinDegrees))
                 {
                     lastSendTime = NetworkingManager.singleton.NetworkTime;
                     lastSentPos = transform.position;
@@ -137,7 +136,7 @@ namespace MLAPI.MonoBehaviours.Prototyping
             else
             {
                 //If we are server and interpolation is turned on for server OR we are not server and interpolation is turned on
-                if((isServer && InterpolateServer && InterpolatePosition) || (!isServer && InterpolatePosition))
+                if ((isServer && InterpolateServer && InterpolatePosition) || (!isServer && InterpolatePosition))
                 {
                     if(Vector3.Distance(transform.position, lerpEndPos) > SnapDistance)
                     {

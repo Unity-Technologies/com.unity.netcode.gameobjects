@@ -10,17 +10,9 @@
         /// </summary>
         ChannelType InternalChannel { get; }
         /// <summary>
-        /// The clientId to use when you want to send to the server from client
+        /// The clientId the transport identifies as the server, should be constant
         /// </summary>
-        uint ServerNetId { get; }
-        /// <summary>
-        /// A dummy clientId to represent the host client
-        /// </summary>
-        uint HostDummyId { get; }
-        /// <summary>
-        /// A invalid clientId to represent a clientId of server
-        /// </summary>
-        uint InvalidDummyId { get; }
+        uint ServerClientId { get; }
         /// <summary>
         /// Queues a message for sending.
         /// </summary>

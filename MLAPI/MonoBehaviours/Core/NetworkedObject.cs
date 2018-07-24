@@ -36,13 +36,13 @@ namespace MLAPI.MonoBehaviours.Core
             get
             {
                 if (_ownerClientId == null)
-                    return NetworkingManager.singleton.NetworkConfig.NetworkTransport.InvalidDummyId;
+					return NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerClientId;
                 else
                     return _ownerClientId.Value;
             }
             internal set
             {
-                if (value == NetworkingManager.singleton.NetworkConfig.NetworkTransport.InvalidDummyId)
+				if (value == NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerClientId)
                     _ownerClientId = null;
                 else
                     _ownerClientId = value;
@@ -68,19 +68,15 @@ namespace MLAPI.MonoBehaviours.Core
         /// <summary>
         /// Gets if the object is the the personal clients player object
         /// </summary>
-        public bool isLocalPlayer => isPlayerObject && (OwnerClientId == NetworkingManager.singleton.LocalClientId || (OwnerClientId == NetworkingManager.singleton.NetworkConfig.NetworkTransport.HostDummyId && NetworkingManager.singleton.isHost));
-        /// <summary>
-        /// Gets if the object is owned by the local player or if the object is the local player object
-        /// </summary>
-        public bool isOwner => isLocalPlayer || isObjectOwner;
-        /// <summary>
-        /// Gets if the object is owned by the local player and this is not a player object
-        /// </summary>
-        public bool isObjectOwner => !isPlayerObject && (OwnerClientId == NetworkingManager.singleton.LocalClientId || (OwnerClientId == NetworkingManager.singleton.NetworkConfig.NetworkTransport.HostDummyId && NetworkingManager.singleton.isHost));
+		public bool isLocalPlayer => isPlayerObject && OwnerClientId == NetworkingManager.singleton.LocalClientId;
+		/// <summary>
+		/// Gets if the object is owned by the local player or if the object is the local player object
+		/// </summary>
+		public bool isOwner => OwnerClientId == NetworkingManager.singleton.LocalClientId;
         /// <summary>
         /// Gets wheter or not the object is owned by anyone
         /// </summary>
-        public bool hasOwner => OwnerClientId != NetworkingManager.singleton.NetworkConfig.NetworkTransport.InvalidDummyId;
+		public bool isOwnedByServer => OwnerClientId == NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerClientId;
         /// <summary>
         /// Gets if the object has yet been spawned across the network
         /// </summary>

@@ -25,10 +25,6 @@ namespace MLAPI.MonoBehaviours.Core
         /// </summary>
         public bool isOwner => networkedObject.isOwner;
         /// <summary>
-        /// Gets if the object is owned by the local player and this is not a player object
-        /// </summary>
-        public bool isObjectOwner => networkedObject.isObjectOwner;
-        /// <summary>
         /// Gets if we are executing as server
         /// </summary>
         protected bool isServer => NetworkingManager.singleton.isServer;
@@ -43,7 +39,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <summary>
         /// Gets wheter or not the object has a owner
         /// </summary>
-        public bool hasOwner => networkedObject.hasOwner;
+		public bool isOwnedByServer => networkedObject.isOwnedByServer;
 
         /// <summary>
         /// Gets the NetworkedObject that owns this NetworkedBehaviour instance
@@ -297,7 +293,7 @@ namespace MLAPI.MonoBehaviours.Core
                         if (isServer)
                             InternalMessageHandler.Send(clientId, "MLAPI_NETWORKED_VAR_DELTA", channelsForVarGroups[j], stream);
                         else
-                            InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerNetId, "MLAPI_NETWORKED_VAR_DELTA", channelsForVarGroups[j], stream);
+							InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerClientId, "MLAPI_NETWORKED_VAR_DELTA", channelsForVarGroups[j], stream);
                     }
                 }
             }
@@ -575,7 +571,7 @@ namespace MLAPI.MonoBehaviours.Core
 					InvokeServerRPCLocal(hash, NetworkingManager.singleton.LocalClientId, messageStream);
 				}
             
-		        InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerNetId, "MLAPI_SERVER_RPC", "MLAPI_DEFAULT_MESSAGE", stream);
+				InternalMessageHandler.Send(NetworkingManager.singleton.ServerClientId, "MLAPI_SERVER_RPC", "MLAPI_DEFAULT_MESSAGE", stream);
 	        }
         }
 

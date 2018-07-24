@@ -48,7 +48,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <summary>
         /// Gets the networkId of the server
         /// </summary>
-        public uint ServerNetId => NetworkConfig.NetworkTransport.ServerNetId;
+		public uint ServerClientId => NetworkConfig.NetworkTransport.ServerClientId;
         /// <summary>
         /// The clientId the server calls the local client by, only valid for clients
         /// </summary>
@@ -56,12 +56,8 @@ namespace MLAPI.MonoBehaviours.Core
         {
             get
             {
-                if (isHost)
-                    return NetworkConfig.NetworkTransport.HostDummyId;
-                if (isServer)
-                    return NetworkConfig.NetworkTransport.InvalidDummyId;
-                
-                return localClientId;
+                if (isServer) return NetworkConfig.NetworkTransport.ServerClientId;
+				else return localClientId;
             }
             internal set
             {
@@ -508,8 +504,7 @@ namespace MLAPI.MonoBehaviours.Core
                 if(!disconnectedIds.Contains(pair.Key))
                 {
                     disconnectedIds.Add(pair.Key);
-                    if (pair.Key == NetworkConfig.NetworkTransport.HostDummyId ||
-                        pair.Key == NetworkConfig.NetworkTransport.InvalidDummyId)
+					if (pair.Key == NetworkConfig.NetworkTransport.ServerClientId)
                         continue;
 
                     NetworkConfig.NetworkTransport.DisconnectClient(pair.Key);
@@ -520,9 +515,9 @@ namespace MLAPI.MonoBehaviours.Core
                 if (!disconnectedIds.Contains(clientId))
                 {
                     disconnectedIds.Add(clientId);
-                    if (clientId == NetworkConfig.NetworkTransport.HostDummyId ||
-                        clientId == NetworkConfig.NetworkTransport.InvalidDummyId)
+					if (clientId == NetworkConfig.NetworkTransport.ServerClientId)
                         continue;
+					
                     NetworkConfig.NetworkTransport.DisconnectClient(clientId);
                 }
             }
@@ -580,7 +575,7 @@ namespace MLAPI.MonoBehaviours.Core
             isClient = true;
             isListening = true;
 
-            uint hostClientId = NetworkConfig.NetworkTransport.HostDummyId;
+			uint hostClientId = NetworkConfig.NetworkTransport.ServerClientId;
             ConnectedClients.Add(hostClientId, new NetworkedClient()
             {
                 ClientId = hostClientId

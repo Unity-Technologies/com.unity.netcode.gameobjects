@@ -66,7 +66,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
             }
             NetworkedObject netObject = SpawnManager.SpawnedObjects[netId];
             NetworkingManager.singleton.ConnectedClients[netObject.OwnerClientId].OwnedObjects.RemoveAll(x => x.NetworkId == netId);
-            netObject.OwnerClientId = NetworkingManager.singleton.NetworkConfig.NetworkTransport.InvalidDummyId;
+			netObject.OwnerClientId = NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerClientId;
 
             using (PooledBitStream stream = PooledBitStream.Get())
             {
@@ -336,8 +336,8 @@ namespace MLAPI.NetworkingManagerComponents.Core
         {
             if (!SpawnedObjects.ContainsKey(networkId) || (netManager != null && !netManager.NetworkConfig.HandleObjectSpawning))
                 return;
-            if (SpawnedObjects[networkId].OwnerClientId != NetworkingManager.singleton.NetworkConfig.NetworkTransport.InvalidDummyId && 
-                !SpawnedObjects[networkId].isPlayerObject && netManager.ConnectedClients.ContainsKey(SpawnedObjects[networkId].OwnerClientId))
+			if (!SpawnedObjects[networkId].isOwnedByServer && !SpawnedObjects[networkId].isPlayerObject && 
+			    netManager.ConnectedClients.ContainsKey(SpawnedObjects[networkId].OwnerClientId))
             {
                 //Someone owns it.
                 netManager.ConnectedClients[SpawnedObjects[networkId].OwnerClientId].OwnedObjects.RemoveAll(x => x.NetworkId == networkId);
