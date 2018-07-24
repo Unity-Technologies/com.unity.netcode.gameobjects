@@ -25,8 +25,17 @@ namespace MLAPI.NetworkingManagerComponents.Binary
 
 
         public int ReadByte() => source.ReadByte();
+
         public byte ReadByteDirect() => (byte)source.ReadByte();
+
         public bool ReadBit() => bitSource.ReadBit();
+
+        public bool ReadBool() => ReadBit();
+
+        public void SkipPadBits()
+        {
+            while (!bitSource.BitAligned) ReadBit();
+        }
 
         public object ReadObjectPacked(Type type)
         {
@@ -858,8 +867,6 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             bitSource.BitPosition = dBlockStart;
             return writeTo;
         }
-
-        public bool ReadBool() => ReadBit();
 
         public long[] ReadLongArray(long[] readTo = null, long knownLength = -1)
         {

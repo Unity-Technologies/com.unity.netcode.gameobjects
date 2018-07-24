@@ -353,6 +353,11 @@ namespace MLAPI.NetworkingManagerComponents.Binary
 
         public void WriteBool(bool value) => WriteBit(value);
 
+        public void WritePadBits()
+        {
+            while (!bitSink.BitAligned) WriteBit(false);
+        }
+
         /// <summary>
         /// Write the lower half (lower nibble) of a byte.
         /// </summary>
