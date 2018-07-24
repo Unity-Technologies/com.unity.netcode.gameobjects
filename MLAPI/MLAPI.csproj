@@ -84,10 +84,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Attributes\BinaryIgnore.cs" />
-    <Compile Include="Attributes\ClientRpc.cs" />
-    <Compile Include="Attributes\Command.cs" />
-    <Compile Include="Attributes\TargetRpc.cs" />
     <Compile Include="Data\Channel.cs" />
     <Compile Include="Data\AttributeMessageMode.cs" />
     <Compile Include="Data\MLAPIConstants.cs" />
@@ -96,7 +92,6 @@
     <Compile Include="Data\NetworkedVar.cs" />
     <Compile Include="Data\NetworkedVarMeta.cs" />
     <Compile Include="Data\Transports\ChannelType.cs" />
-    <Compile Include="Attributes\SyncedVar.cs" />
     <Compile Include="Data\FixedQueue.cs" />
     <Compile Include="Data\Transports\DefaultTransport.cs" />
     <Compile Include="Data\Transports\IUDPTransport.cs" />
@@ -105,7 +100,6 @@
     <Compile Include="Data\NetworkConfig.cs" />
     <Compile Include="Data\NetworkedPrefab.cs" />
     <Compile Include="Data\NetworkPool.cs" />
-    <Compile Include="Data\SyncedVarField.cs" />
     <Compile Include="Data\TrackedPointData.cs" />
     <Compile Include="Data\Transports\UNET\RelayTransport.cs" />
     <Compile Include="Data\Transports\UNET\TransportHost.cs" />
@@ -141,7 +135,6 @@
     <Compile Include="NetworkingManagerComponents\Core\SpawnManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Data\Transports\UNET\NetId.cs" />
-    <Compile Include="NetworkingManagerComponents\Binary\MessageChunker.cs" />
     <Compile Include="Data\MessageType.cs" />
     <Compile Include="NetworkingManagerComponents\Core\InternalMessageHandler.Send.cs" />
     <Compile Include="NetworkingManagerComponents\Core\InternalMessageHandler.Receive.cs" />

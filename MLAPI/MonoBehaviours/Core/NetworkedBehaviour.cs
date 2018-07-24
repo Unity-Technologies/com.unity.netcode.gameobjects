@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System.Reflection;
-using MLAPI.Attributes;
 using System.Linq;
 using MLAPI.Data;
 using MLAPI.NetworkingManagerComponents.Binary;

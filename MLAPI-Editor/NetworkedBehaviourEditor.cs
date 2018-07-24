@@ -1,5 +1,4 @@
-﻿using MLAPI.Attributes;
-using MLAPI.Data;
+﻿using MLAPI.Data;
 using MLAPI.MonoBehaviours.Core;
 using System;
 using System.Collections.Generic;
@@ -13,33 +12,25 @@ namespace UnityEditor
     public class NetworkedBehaviourEditor : Editor
     {
         private bool initialized;
-        private HashSet<string> syncedVarNames = new HashSet<string>();
         private List<string> networkedVarNames = new List<string>();
         private Dictionary<string, FieldInfo> networkedVarFields = new Dictionary<string, FieldInfo>();
         private Dictionary<string, object> networkedVarObjects = new Dictionary<string, object>();
-
-        private GUIContent syncedVarLabelGuiContent;
+        
         private GUIContent networkedVarLabelGuiContent;
 
         private void Init(MonoScript script)
         {
             initialized = true;
-
-            syncedVarNames.Clear();
+            
             networkedVarNames.Clear();
             networkedVarFields.Clear();
             networkedVarObjects.Clear();
 
-            syncedVarLabelGuiContent = new GUIContent("SyncedVar", "This variable has been marked with the [SyncedVar] attribute.");
             networkedVarLabelGuiContent = new GUIContent("NetworkedVar", "This variable is a NetworkedVar. It can not be serialized and can only be changed during runtime.");
 
             FieldInfo[] fields = script.GetClass().GetFields(BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy | BindingFlags.NonPublic);
             for (int i = 0; i < fields.Length; i++)
             {
-                Attribute[] attributes = (Attribute[])fields[i].GetCustomAttributes(typeof(SyncedVar), true);
-                if (attributes.Length > 0)
-                    syncedVarNames.Add(fields[i].Name);
-
                 Type ft = fields[i].FieldType;
                 if (ft.IsGenericType && ft.GetGenericTypeDefinition() == typeof(NetworkedVar<>))
                 {
@@ -139,17 +130,13 @@ namespace UnityEditor
             bool expanded = true;
             while (property.NextVisible(expanded))
             {
-                bool isSyncVar = syncedVarNames.Contains(property.name);
                 if (property.propertyType == SerializedPropertyType.ObjectReference)
                 {
                     if (property.name == "m_Script")
                         EditorGUI.BeginDisabledGroup(true);
 
                     EditorGUILayout.PropertyField(property, true);
-
-                    if (isSyncVar)
-                        GUILayout.Label(syncedVarLabelGuiContent, EditorStyles.miniLabel, GUILayout.Width(EditorStyles.miniLabel.CalcSize(syncedVarLabelGuiContent).x));
-
+                                   
                     if (property.name == "m_Script")
                         EditorGUI.EndDisabledGroup();
                 }
@@ -157,10 +144,6 @@ namespace UnityEditor
                 {
                     EditorGUILayout.BeginHorizontal();
                     EditorGUILayout.PropertyField(property, true);
-
-                    if (isSyncVar)
-                        GUILayout.Label(syncedVarLabelGuiContent, EditorStyles.miniLabel, GUILayout.Width(EditorStyles.miniLabel.CalcSize(syncedVarLabelGuiContent).x));
-
                     EditorGUILayout.EndHorizontal();
                 }
                 expanded = false;

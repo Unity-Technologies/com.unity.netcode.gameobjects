@@ -37,9 +37,38 @@ namespace UnityEditor
         class ProfilerContainer
         {
             public ProfilerTick[] ticks;
-        }
 
-        private void StopRecording()
+            public byte[] ToBytes()
+			{
+				MLAPI.NetworkingManagerComponents.Binary.BitStream stream = new MLAPI.NetworkingManagerComponents.Binary.BitStream();
+				BitWriter writer = new BitWriter(stream);
+				writer.WriteUInt16Packed((ushort)ticks.Length);
+
+				for (int i = 0; i < ticks.Length; i++)
+				{
+					ticks[i].SerializeToStream(stream);
+				}
+
+				return stream.ToArray();
+			}
+
+			public static ProfilerContainer FromBytes(byte[] bytes)
+			{
+				ProfilerContainer container = new ProfilerContainer();
+				MLAPI.NetworkingManagerComponents.Binary.BitStream stream = new MLAPI.NetworkingManagerComponents.Binary.BitStream(bytes);
+				BitReader reader = new BitReader(stream);
+				ushort count = reader.ReadUInt16Packed();
+				container.ticks = new ProfilerTick[count];
+                for (int i = 0; i < count; i++)
+				{
+					container.ticks[i] = ProfilerTick.FromStream(stream);
+				}
+
+				return container;
+			}
+		}
+
+		private void StopRecording()
         {
             NetworkProfiler.Stop();
         }
@@ -94,7 +123,7 @@ namespace UnityEditor
                 string path = EditorUtility.OpenFilePanel("Choose a NetworkProfiler file", "", "");
                 if (!string.IsNullOrEmpty(path))
                 {
-                    ProfilerTick[] ticks = BinarySerializer.Deserialize<ProfilerContainer>(File.ReadAllBytes(path)).ticks;
+					ProfilerTick[] ticks = ProfilerContainer.FromBytes(File.ReadAllBytes(path)).ticks;
                     if (ticks.Length >= 2)
                     {
                         curve = AnimationCurve.Constant(ticks[0].EventId, ticks[(ticks.Length - 1)].EventId, 0);
@@ -130,7 +159,7 @@ namespace UnityEditor
                 ProfilerTick[] ticks = new ProfilerTick[ticksInRange];
                 for (int i = min; i < max; i++) ticks[i - min] = currentTicks[i];
                 string path = EditorUtility.SaveFilePanel("Save NetworkProfiler data", "", "networkProfilerData", "");
-                if (!string.IsNullOrEmpty(path)) File.WriteAllBytes(path, BinarySerializer.Serialize(new ProfilerContainer() { ticks = ticks }));
+				if (!string.IsNullOrEmpty(path)) File.WriteAllBytes(path, new ProfilerContainer() { ticks = ticks }.ToBytes());
             }
 
             EditorGUILayout.EndHorizontal();
