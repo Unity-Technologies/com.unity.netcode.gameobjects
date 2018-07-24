@@ -96,7 +96,6 @@
     <Compile Include="Data\NetworkedVar.cs" />
     <Compile Include="Data\NetworkedVarMeta.cs" />
     <Compile Include="Data\Transports\ChannelType.cs" />
-    <Compile Include="Data\FieldType.cs" />
     <Compile Include="Attributes\SyncedVar.cs" />
     <Compile Include="Data\FixedQueue.cs" />
     <Compile Include="Data\Transports\DefaultTransport.cs" />
@@ -122,8 +121,8 @@
     <Compile Include="NetworkingManagerComponents\Binary\BitWriterDeprecated.cs" />
     <Compile Include="NetworkingManagerComponents\Binary\BitReaderDeprecated.cs" />
     <Compile Include="NetworkingManagerComponents\Binary\BinaryHelpers.cs" />
-    <Compile Include="NetworkingManagerComponents\Binary\BinarySerializer.cs" />
     <Compile Include="NetworkingManagerComponents\Binary\ByteBool.cs" />
+    <Compile Include="NetworkingManagerComponents\Binary\ResourcePool.cs" />
     <Compile Include="NetworkingManagerComponents\Binary\UIntFloat.cs" />
     <Compile Include="NetworkingManagerComponents\Core\LogHelper.cs" />
     <Compile Include="NetworkingManagerComponents\Cryptography\CryptographyHelper.cs" />

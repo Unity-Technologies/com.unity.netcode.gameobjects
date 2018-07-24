@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System.IO;
+using System.Reflection;
 using System.Security.Cryptography;
 using MLAPI.Data;
 using MLAPI.MonoBehaviours.Core;
@@ -9,9 +10,10 @@ namespace MLAPI.NetworkingManagerComponents.Core
 {
     internal static partial class InternalMessageHandler
     {
-        internal static void HandleConnectionRequest(uint clientId, BitReader reader, int channelId)
+        internal static void HandleConnectionRequest(uint clientId, Stream stream, int channelId)
         {
-            ulong configHash = reader.ReadULong();
+            BitReader reader = new BitReader(stream);
+            ulong configHash = reader.ReadUInt64Packed();
             if (!netManager.NetworkConfig.CompareConfig(configHash))
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkConfiguration mismatch. The configuration between the server and client does not match");
@@ -38,12 +40,13 @@ namespace MLAPI.NetworkingManagerComponents.Core
             }
         }
 
-        internal static void HandleConnectionApproved(uint clientId, BitReader reader, int channelId)
+        internal static void HandleConnectionApproved(uint clientId, Stream stream, int channelId)
         {
-            netManager.LocalClientId = reader.ReadUInt();
+            BitReader reader = new BitReader(stream);
+            netManager.LocalClientId = reader.ReadUInt32Packed();
             uint sceneIndex = 0;
             if (netManager.NetworkConfig.EnableSceneSwitching)
-                sceneIndex = reader.ReadUInt();
+                sceneIndex = reader.ReadUInt32Packed();
 
 #if !DISABLE_CRYPTOGRAPHY
             if (netManager.NetworkConfig.EnableEncryption)
@@ -69,42 +72,42 @@ namespace MLAPI.NetworkingManagerComponents.Core
             }
 #endif
 
-            float netTime = reader.ReadFloat();
-            int remoteStamp = reader.ReadInt();
+            float netTime = reader.ReadSinglePacked();
+            int remoteStamp = reader.ReadInt32Packed();
             int msDelay = NetworkingManager.singleton.NetworkConfig.NetworkTransport.GetRemoteDelayTimeMS(clientId, remoteStamp, out byte error);
             netManager.NetworkTime = netTime + (msDelay / 1000f);
 
             netManager.ConnectedClients.Add(netManager.LocalClientId, new NetworkedClient() { ClientId = netManager.LocalClientId });
-            int clientCount = reader.ReadInt();
+            int clientCount = reader.ReadInt32Packed();
             for (int i = 0; i < clientCount; i++)
             {
-                uint _clientId = reader.ReadUInt();
+                uint _clientId = reader.ReadUInt32Packed();
                 netManager.ConnectedClients.Add(_clientId, new NetworkedClient() { ClientId = _clientId });
                 netManager.ConnectedClientsList.Add(netManager.ConnectedClients[_clientId]);
             }
             if (netManager.NetworkConfig.HandleObjectSpawning)
             {
                 SpawnManager.DestroySceneObjects();
-                int objectCount = reader.ReadInt();
+                int objectCount = reader.ReadInt32Packed();
                 for (int i = 0; i < objectCount; i++)
                 {
                     bool isPlayerObject = reader.ReadBool();
-                    uint networkId = reader.ReadUInt();
-                    uint ownerId = reader.ReadUInt();
-                    int prefabId = reader.ReadInt();
+                    uint networkId = reader.ReadUInt32Packed();
+                    uint ownerId = reader.ReadUInt32Packed();
+                    int prefabId = reader.ReadInt32Packed();
                     bool isActive = reader.ReadBool();
                     bool sceneObject = reader.ReadBool();
 
-                    float xPos = reader.ReadFloat();
-                    float yPos = reader.ReadFloat();
-                    float zPos = reader.ReadFloat();
+                    float xPos = reader.ReadSinglePacked();
+                    float yPos = reader.ReadSinglePacked();
+                    float zPos = reader.ReadSinglePacked();
 
-                    float xRot = reader.ReadFloat();
-                    float yRot = reader.ReadFloat();
-                    float zRot = reader.ReadFloat();
+                    float xRot = reader.ReadSinglePacked();
+                    float yRot = reader.ReadSinglePacked();
+                    float zRot = reader.ReadSinglePacked();
 
                     NetworkedObject netObject = SpawnManager.CreateSpawnedObject(prefabId, networkId, ownerId, isPlayerObject,
-                        new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), reader, false, true);
+                        new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), stream, false, true);
                     netObject.sceneObject = sceneObject;
                     netObject.gameObject.SetActive(isActive);
                 }
@@ -120,23 +123,24 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 netManager.OnClientConnectedCallback.Invoke(netManager.LocalClientId);
         }
 
-        internal static void HandleAddObject(uint clientId, BitReader reader, int channelId)
+        internal static void HandleAddObject(uint clientId, Stream stream, int channelId)
         {
+            BitReader reader = new BitReader(stream);
             if (netManager.NetworkConfig.HandleObjectSpawning)
             {
                 bool isPlayerObject = reader.ReadBool();
-                uint networkId = reader.ReadUInt();
-                uint ownerId = reader.ReadUInt();
-                int prefabId = reader.ReadInt();
+                uint networkId = reader.ReadUInt32Packed();
+                uint ownerId = reader.ReadUInt32Packed();
+                int prefabId = reader.ReadInt32Packed();
                 bool sceneObject = reader.ReadBool();
 
-                float xPos = reader.ReadFloat();
-                float yPos = reader.ReadFloat();
-                float zPos = reader.ReadFloat();
+                float xPos = reader.ReadSinglePacked();
+                float yPos = reader.ReadSinglePacked();
+                float zPos = reader.ReadSinglePacked();
 
-                float xRot = reader.ReadFloat();
-                float yRot = reader.ReadFloat();
-                float zRot = reader.ReadFloat();
+                float xRot = reader.ReadSinglePacked();
+                float yRot = reader.ReadSinglePacked();
+                float zRot = reader.ReadSinglePacked();
 
                 bool hasPayload = reader.ReadBool();
 
@@ -146,62 +150,68 @@ namespace MLAPI.NetworkingManagerComponents.Core
                     netManager.ConnectedClientsList.Add(netManager.ConnectedClients[ownerId]);
                 }
                 NetworkedObject netObject = SpawnManager.CreateSpawnedObject(prefabId, networkId, ownerId, isPlayerObject,
-                    new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), reader, hasPayload, true);
+                    new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), stream, hasPayload, true);
 
                 netObject.sceneObject = sceneObject;
 
             }
             else
             {
-                uint ownerId = reader.ReadUInt();
+                uint ownerId = reader.ReadUInt32Packed();
                 netManager.ConnectedClients.Add(ownerId, new NetworkedClient() { ClientId = ownerId });
             }
         }
 
-        internal static void HandleClientDisconnect(uint clientId, BitReader reader, int channelId)
+        internal static void HandleClientDisconnect(uint clientId, Stream stream, int channelId)
         {
-            uint disconnectedClientId = reader.ReadUInt();
+            BitReader reader = new BitReader(stream);
+            uint disconnectedClientId = reader.ReadUInt32Packed();
             netManager.OnClientDisconnectFromServer(disconnectedClientId);
         }
 
-        internal static void HandleDestroyObject(uint clientId, BitReader reader, int channelId)
+        internal static void HandleDestroyObject(uint clientId, Stream stream, int channelId)
         {
-            uint netId = reader.ReadUInt();
+            BitReader reader = new BitReader(stream);
+            uint netId = reader.ReadUInt32Packed();
             SpawnManager.OnDestroyObject(netId, true);
         }
 
-        internal static void HandleSwitchScene(uint clientId, BitReader reader, int channelId)
+        internal static void HandleSwitchScene(uint clientId, Stream stream, int channelId)
         {
-            NetworkSceneManager.OnSceneSwitch(reader.ReadUInt());
+            BitReader reader = new BitReader(stream);
+            NetworkSceneManager.OnSceneSwitch(reader.ReadUInt32Packed());
         }
 
-        internal static void HandleSpawnPoolObject(uint clientId, BitReader reader, int channelId)
+        internal static void HandleSpawnPoolObject(uint clientId, Stream stream, int channelId)
         {
-            uint netId = reader.ReadUInt();
+            BitReader reader = new BitReader(stream);
+            uint netId = reader.ReadUInt32Packed();
 
-            float xPos = reader.ReadFloat();
-            float yPos = reader.ReadFloat();
-            float zPos = reader.ReadFloat();
+            float xPos = reader.ReadSinglePacked();
+            float yPos = reader.ReadSinglePacked();
+            float zPos = reader.ReadSinglePacked();
 
-            float xRot = reader.ReadFloat();
-            float yRot = reader.ReadFloat();
-            float zRot = reader.ReadFloat();
+            float xRot = reader.ReadSinglePacked();
+            float yRot = reader.ReadSinglePacked();
+            float zRot = reader.ReadSinglePacked();
 
             SpawnManager.SpawnedObjects[netId].transform.position = new Vector3(xPos, yPos, zPos);
             SpawnManager.SpawnedObjects[netId].transform.rotation = Quaternion.Euler(xRot, yRot, zRot);
             SpawnManager.SpawnedObjects[netId].gameObject.SetActive(true);
         }
 
-        internal static void HandleDestroyPoolObject(uint clientId, BitReader reader, int channelId)
+        internal static void HandleDestroyPoolObject(uint clientId, Stream stream, int channelId)
         {
-            uint netId = reader.ReadUInt();
+            BitReader reader = new BitReader(stream);
+            uint netId = reader.ReadUInt32Packed();
             SpawnManager.SpawnedObjects[netId].gameObject.SetActive(false);
         }
 
-        internal static void HandleChangeOwner(uint clientId, BitReader reader, int channelId)
+        internal static void HandleChangeOwner(uint clientId, Stream stream, int channelId)
         {
-            uint netId = reader.ReadUInt();
-            uint ownerClientId = reader.ReadUInt();
+            BitReader reader = new BitReader(stream);
+            uint netId = reader.ReadUInt32Packed();
+            uint ownerClientId = reader.ReadUInt32Packed();
             if (SpawnManager.SpawnedObjects[netId].OwnerClientId == netManager.LocalClientId)
             {
                 //We are current owner.
@@ -215,26 +225,27 @@ namespace MLAPI.NetworkingManagerComponents.Core
             SpawnManager.SpawnedObjects[netId].OwnerClientId = ownerClientId;
         }
 
-        internal static void HandleAddObjects(uint clientId, BitReader reader, int channelId)
+        internal static void HandleAddObjects(uint clientId, Stream stream, int channelId)
         {
+            BitReader reader = new BitReader(stream);
             if (netManager.NetworkConfig.HandleObjectSpawning)
             {
-                ushort objectCount = reader.ReadUShort();
+                ushort objectCount = reader.ReadUInt16Packed();
                 for (int i = 0; i < objectCount; i++)
                 {
                     bool isPlayerObject = reader.ReadBool();
-                    uint networkId = reader.ReadUInt();
-                    uint ownerId = reader.ReadUInt();
-                    int prefabId = reader.ReadInt();
+                    uint networkId = reader.ReadUInt32Packed();
+                    uint ownerId = reader.ReadUInt32Packed();
+                    int prefabId = reader.ReadInt32Packed();
                     bool sceneObject = reader.ReadBool();
 
-                    float xPos = reader.ReadFloat();
-                    float yPos = reader.ReadFloat();
-                    float zPos = reader.ReadFloat();
+                    float xPos = reader.ReadSinglePacked();
+                    float yPos = reader.ReadSinglePacked();
+                    float zPos = reader.ReadSinglePacked();
 
-                    float xRot = reader.ReadFloat();
-                    float yRot = reader.ReadFloat();
-                    float zRot = reader.ReadFloat();
+                    float xRot = reader.ReadSinglePacked();
+                    float yRot = reader.ReadSinglePacked();
+                    float zRot = reader.ReadSinglePacked();
 
                     if (isPlayerObject)
                     {
@@ -242,26 +253,28 @@ namespace MLAPI.NetworkingManagerComponents.Core
                         netManager.ConnectedClientsList.Add(netManager.ConnectedClients[ownerId]);
                     }
                     NetworkedObject netObject = SpawnManager.CreateSpawnedObject(prefabId, networkId, ownerId, isPlayerObject,
-                        new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), reader, false, true);
+                        new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), stream, false, true);
                     netObject.sceneObject = sceneObject;
 
                 }
             }
         }
 
-        internal static void HandleTimeSync(uint clientId, BitReader reader, int channelId)
+        internal static void HandleTimeSync(uint clientId, Stream stream, int channelId)
         {
-            float netTime = reader.ReadFloat();
-            int timestamp = reader.ReadInt();
+            BitReader reader = new BitReader(stream);
+            float netTime = reader.ReadSinglePacked();
+            int timestamp = reader.ReadInt32Packed();
 
             int msDelay = NetworkingManager.singleton.NetworkConfig.NetworkTransport.GetRemoteDelayTimeMS(clientId, timestamp, out byte error);
             netManager.NetworkTime = netTime + (msDelay / 1000f);
         }
 
-        internal static void HandleNetworkedVarDelta(uint clientId, BitReader reader, int channelId)
+        internal static void HandleNetworkedVarDelta(uint clientId, Stream stream, int channelId)
         {
-            uint netId = reader.ReadUInt();
-            ushort orderIndex = reader.ReadUShort();
+            BitReader reader = new BitReader(stream);
+            uint netId = reader.ReadUInt32Packed();
+            ushort orderIndex = reader.ReadUInt16Packed();
 
             if (!SpawnManager.SpawnedObjects.ContainsKey(netId))
             {
@@ -274,13 +287,14 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 return;
             }
 
-            SpawnManager.SpawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).HandleNetworkedVarDeltas(reader, clientId);
+            SpawnManager.SpawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).HandleNetworkedVarDeltas(stream, clientId);
         }
 
-        internal static void HandleNetworkedVarUpdate(uint clientId, BitReader reader, int channelId)
+        internal static void HandleNetworkedVarUpdate(uint clientId, Stream stream, int channelId)
         {
-            uint netId = reader.ReadUInt();
-            ushort orderIndex = reader.ReadUShort();
+            BitReader reader = new BitReader(stream);
+            uint netId = reader.ReadUInt32Packed();
+            ushort orderIndex = reader.ReadUInt16Packed();
 
             if (!SpawnManager.SpawnedObjects.ContainsKey(netId))
             {
@@ -293,32 +307,34 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 return;
             }
 
-            SpawnManager.SpawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).HandleNetworkedVarUpdate(reader, clientId);
+            SpawnManager.SpawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).HandleNetworkedVarUpdate(stream, clientId);
         }
         
-        internal static void HandleServerRPC(uint clientId, BitReader reader, int channelId)
+        internal static void HandleServerRPC(uint clientId, Stream stream, int channelId)
         {
-            uint networkId = reader.ReadUInt();
-            ushort behaviourId = reader.ReadUShort();
-            ulong hash = reader.ReadULong();
+            BitReader reader = new BitReader(stream);
+            uint networkId = reader.ReadUInt32Packed();
+            ushort behaviourId = reader.ReadUInt16Packed();
+            ulong hash = reader.ReadUInt64Packed();
             
             NetworkedBehaviour behaviour = SpawnManager.SpawnedObjects[networkId].GetBehaviourAtOrderIndex(behaviourId);
-            behaviour.OnRemoteServerRPC(hash, clientId, reader);
+            behaviour.OnRemoteServerRPC(hash, clientId, stream);
         }
         
-        internal static void HandleClientRPC(uint clientId, BitReader reader, int channelId)
+        internal static void HandleClientRPC(uint clientId, Stream stream, int channelId)
         {
-            uint networkId = reader.ReadUInt();
-            ushort behaviourId = reader.ReadUShort();
-            ulong hash = reader.ReadULong();
+            BitReader reader = new BitReader(stream);
+            uint networkId = reader.ReadUInt32Packed();
+            ushort behaviourId = reader.ReadUInt16Packed();
+            ulong hash = reader.ReadUInt64Packed();
             
             NetworkedBehaviour behaviour = SpawnManager.SpawnedObjects[networkId].GetBehaviourAtOrderIndex(behaviourId);
-            behaviour.OnRemoteClientRPC(hash, clientId, reader);
+            behaviour.OnRemoteClientRPC(hash, clientId, stream);
         }
         
-        internal static void HandleCustomMessage(uint clientId, BitReader reader, int channelId)
+        internal static void HandleCustomMessage(uint clientId, Stream stream, int channelId)
         {
-            NetworkingManager.singleton.InvokeOnIncommingCustomMessage(clientId, reader);
+            NetworkingManager.singleton.InvokeOnIncommingCustomMessage(clientId, stream);
         }
     }
 }

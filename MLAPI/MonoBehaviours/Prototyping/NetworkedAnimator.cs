@@ -97,9 +97,9 @@ namespace MLAPI.MonoBehaviours.Prototyping
         /// </summary>
         public override void NetworkStart()
         {
-            RegisterMessageHandler("MLAPI_HandleAnimationMessage", HandleAnimMsg);
-            RegisterMessageHandler("MLAPI_HandleAnimationParameterMessage", HandleAnimParamsMsg);
-            RegisterMessageHandler("MLAPI_HandleAnimationTriggerMessage", HandleAnimTriggerMsg);
+            //RegisterMessageHandler("MLAPI_HandleAnimationMessage", HandleAnimMsg);
+            //RegisterMessageHandler("MLAPI_HandleAnimationParameterMessage", HandleAnimParamsMsg);
+            //RegisterMessageHandler("MLAPI_HandleAnimationTriggerMessage", HandleAnimTriggerMsg);
         }
 
         /// <summary>
@@ -138,7 +138,7 @@ namespace MLAPI.MonoBehaviours.Prototyping
                 }
                 if(isServer)
                 {
-                    if(EnableProximity)
+                    if (EnableProximity)
                     {
                         List<uint> clientsInProximity = new List<uint>();
                         foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.ConnectedClients)
@@ -146,14 +146,15 @@ namespace MLAPI.MonoBehaviours.Prototyping
                             if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
                                 clientsInProximity.Add(client.Key);
                         }
-                        SendToClientsTarget(clientsInProximity ,"MLAPI_HandleAnimationMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
+                        //SendToClientsTarget(clientsInProximity ,"MLAPI_HandleAnimationMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
                     }
                     else
-                        SendToNonLocalClientsTarget("MLAPI_HandleAnimationMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
+                        new System.Exception();
+                        //SendToNonLocalClientsTarget("MLAPI_HandleAnimationMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
                 }
                 else
                 {
-                    SendToServerTarget("MLAPI_HandleAnimationMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
+                    //SendToServerTarget("MLAPI_HandleAnimationMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
                 }
             }
         }
@@ -215,14 +216,15 @@ namespace MLAPI.MonoBehaviours.Prototyping
                                 if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
                                     clientsInProximity.Add(client.Key);
                             }
-                            SendToClientsTarget(clientsInProximity, "MLAPI_HandleAnimationParameterMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
+                            //SendToClientsTarget(clientsInProximity, "MLAPI_HandleAnimationParameterMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
                         }
                         else
-                            SendToNonLocalClientsTarget("MLAPI_HandleAnimationParameterMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
+                            new System.Exception();
+                            //SendToNonLocalClientsTarget("MLAPI_HandleAnimationParameterMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
                     }
                     else
                     {
-                        SendToServerTarget("MLAPI_HandleAnimationParameterMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
+                        //SendToServerTarget("MLAPI_HandleAnimationParameterMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
                     }
                 }
             }
@@ -267,10 +269,11 @@ namespace MLAPI.MonoBehaviours.Prototyping
                         if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
                             clientsInProximity.Add(client.Key);
                     }
-                    SendToClientsTarget(clientsInProximity, "MLAPI_HandleAnimationMessage", "MLAPI_ANIMATION_UPDATE", data);
+                    //SendToClientsTarget(clientsInProximity, "MLAPI_HandleAnimationMessage", "MLAPI_ANIMATION_UPDATE", data);
                 }
                 else
-                    SendToNonLocalClientsTarget("MLAPI_HandleAnimationMessage", "MLAPI_ANIMATION_UPDATE", data);
+                    new System.Exception();
+                    //SendToNonLocalClientsTarget("MLAPI_HandleAnimationMessage", "MLAPI_ANIMATION_UPDATE", data);
             }
             using (MemoryStream stream = new MemoryStream(data))
             {
@@ -300,10 +303,11 @@ namespace MLAPI.MonoBehaviours.Prototyping
                         if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
                             clientsInProximity.Add(client.Key);
                     }
-                    SendToClientsTarget(clientsInProximity, "MLAPI_HandleAnimationParameterMessage", "MLAPI_ANIMATION_UPDATE", data);
+                    //SendToClientsTarget(clientsInProximity, "MLAPI_HandleAnimationParameterMessage", "MLAPI_ANIMATION_UPDATE", data);
                 }
                 else
-                    SendToNonLocalClientsTarget("MLAPI_HandleAnimationParameterMessage", "MLAPI_ANIMATION_UPDATE", data);
+                    new System.Exception();
+                //SendToNonLocalClientsTarget("MLAPI_HandleAnimationParameterMessage", "MLAPI_ANIMATION_UPDATE", data);
             }
             using (MemoryStream stream = new MemoryStream(data))
             {
@@ -327,10 +331,11 @@ namespace MLAPI.MonoBehaviours.Prototyping
                         if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
                             clientsInProximity.Add(client.Key);
                     }
-                    SendToClientsTarget(clientsInProximity, "MLAPI_HandleAnimationTriggerMessage", "MLAPI_ANIMATION_UPDATE", data);
+                    //SendToClientsTarget(clientsInProximity, "MLAPI_HandleAnimationTriggerMessage", "MLAPI_ANIMATION_UPDATE", data);
                 }
                 else
-                    SendToNonLocalClientsTarget("MLAPI_HandleAnimationTriggerMessage", "MLAPI_ANIMATION_UPDATE", data);
+                    new System.Exception();
+                //SendToNonLocalClientsTarget("MLAPI_HandleAnimationTriggerMessage", "MLAPI_ANIMATION_UPDATE", data);
             }
             using (MemoryStream stream = new MemoryStream(data))
             {
@@ -445,14 +450,15 @@ namespace MLAPI.MonoBehaviours.Prototyping
                                 if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
                                     clientsInProximity.Add(client.Key);
                             }
-                            SendToClientsTarget(clientsInProximity, "MLAPI_HandleAnimationTriggerMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
+                            //SendToClientsTarget(clientsInProximity, "MLAPI_HandleAnimationTriggerMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
                         }
                         else
-                            SendToNonLocalClientsTarget("MLAPI_HandleAnimationTriggerMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
+                            new System.Exception();
+                        //SendToNonLocalClientsTarget("MLAPI_HandleAnimationTriggerMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
                     }
                     else
                     {
-                        SendToServerTarget("MLAPI_HandleAnimationTriggerMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
+                        //SendToServerTarget("MLAPI_HandleAnimationTriggerMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
                     }
                 }
             }

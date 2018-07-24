@@ -82,7 +82,7 @@ namespace MLAPI.Data.Transports.UNET
             return NetEventType.Nothing;
         }
 
-        public void QueueMessageForSending(uint clientId, ref byte[] dataBuffer, int dataSize, int channelId, bool skipqueue, out byte error)
+        public void QueueMessageForSending(uint clientId, byte[] dataBuffer, int dataSize, int channelId, bool skipqueue, out byte error)
         {
             NetId netId = new NetId(clientId);
             if (netId.IsHost() || netId.IsInvalid())

@@ -30,7 +30,7 @@
         /// <param name="channelId">The channelId to send on</param>
         /// <param name="skipQueue">Wheter or not Send will have to be called for this message to be sent</param>
         /// <param name="error">Error byte. Does nothhing</param>
-        void QueueMessageForSending(uint clientId, ref byte[] dataBuffer, int dataSize, int channelId, bool skipQueue, out byte error);
+        void QueueMessageForSending(uint clientId, byte[] dataBuffer, int dataSize, int channelId, bool skipQueue, out byte error);
         /// <summary>
         /// Sends queued messages for a specific clientId
         /// </summary>

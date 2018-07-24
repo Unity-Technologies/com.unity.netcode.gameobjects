@@ -2,6 +2,7 @@
 using MLAPI.NetworkingManagerComponents.Core;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 
 namespace MLAPI.MonoBehaviours.Core
@@ -95,7 +96,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <summary>
         /// Spawns this GameObject across the network. Can only be called from the Server
         /// </summary>
-        public void Spawn(BitWriter spawnPayload = null)
+        public void Spawn(Stream spawnPayload = null)
         {
             SpawnManager.SpawnObject(this, null, spawnPayload);
         }
@@ -113,7 +114,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// </summary>
         /// <param name="clientId">The clientId to own the object</param>
         /// <param name="spawnPayload">The writer containing the spawn payload</param>
-        public void SpawnWithOwnership(uint clientId, BitWriter spawnPayload = null)
+        public void SpawnWithOwnership(uint clientId, Stream spawnPayload = null)
         {
             SpawnManager.SpawnObject(this, clientId, spawnPayload);
         }
@@ -123,7 +124,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// </summary>
         /// <param name="clientId">The clientId whos player object this is</param>
         /// <param name="spawnPayload">The writer containing the spawn payload</param>
-        public void SpawnAsPlayerObject(uint clientId, BitWriter spawnPayload = null)
+        public void SpawnAsPlayerObject(uint clientId, Stream spawnPayload = null)
         {
             SpawnManager.SpawnPlayerObject(this, clientId, spawnPayload);
         }
@@ -160,7 +161,7 @@ namespace MLAPI.MonoBehaviours.Core
             }
         }
 
-        internal void InvokeBehaviourNetworkSpawn(BitReader reader)
+        internal void InvokeBehaviourNetworkSpawn(Stream stream)
         {
             for (int i = 0; i < childNetworkedBehaviours.Count; i++)
             {
@@ -168,7 +169,7 @@ namespace MLAPI.MonoBehaviours.Core
                 if(!childNetworkedBehaviours[i].networkedStartInvoked)
                 {
                     childNetworkedBehaviours[i].InternalNetworkStart();
-                    childNetworkedBehaviours[i].NetworkStart(reader);
+                    childNetworkedBehaviours[i].NetworkStart(stream);
                     childNetworkedBehaviours[i].networkedStartInvoked = true;
                 }
             }
@@ -201,8 +202,9 @@ namespace MLAPI.MonoBehaviours.Core
             }
         }
         
-        internal void WriteNetworkedVarData(BitWriter writer, uint clientId)
+        internal void WriteNetworkedVarData(Stream stream, uint clientId)
         {
+            BitWriter writer = new BitWriter(stream);
             for (int i = 0; i < childNetworkedBehaviours.Count; i++)
             {
                 childNetworkedBehaviours[i].NetworkedVarInit();
@@ -212,13 +214,14 @@ namespace MLAPI.MonoBehaviours.Core
                 {
                     bool canClientRead = childNetworkedBehaviours[i].networkedVarFields[j].CanClientRead(clientId);
                     writer.WriteBool(canClientRead);
-                    if (canClientRead) childNetworkedBehaviours[i].networkedVarFields[j].WriteField(writer);
+                    if (canClientRead) childNetworkedBehaviours[i].networkedVarFields[j].WriteField(stream);
                 }
             }
         }
 
-        internal void SetNetworkedVarData(BitReader reader)
+        internal void SetNetworkedVarData(Stream stream)
         {
+            BitReader reader = new BitReader(stream);
             for (int i = 0; i < childNetworkedBehaviours.Count; i++)
             {
                 childNetworkedBehaviours[i].NetworkedVarInit();
@@ -226,7 +229,7 @@ namespace MLAPI.MonoBehaviours.Core
                     continue;
                 for (int j = 0; j < childNetworkedBehaviours[i].networkedVarFields.Count; j++)
                 {
-                    if (reader.ReadBool()) childNetworkedBehaviours[i].networkedVarFields[j].ReadField(reader);
+                    if (reader.ReadBool()) childNetworkedBehaviours[i].networkedVarFields[j].ReadField(stream);
                 }
             }
         }

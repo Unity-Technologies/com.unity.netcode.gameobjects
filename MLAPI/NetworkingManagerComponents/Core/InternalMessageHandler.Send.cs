@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 using MLAPI.Data;
 using MLAPI.Data.NetworkProfiler;
 using MLAPI.MonoBehaviours.Core;
@@ -9,9 +10,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
 {
     internal static partial class InternalMessageHandler
     {
-        internal static byte[] FinalMessageBuffer;
-
-        internal static void Send(uint clientId, string messageType, string channelName, BitWriter messageWriter, bool skipQueue = false)
+        internal static void Send(uint clientId, string messageType, string channelName, Stream messageStream, bool skipQueue = false)
         {
             uint targetClientId = clientId;
             if (netManager.isHost && targetClientId == netManager.NetworkConfig.NetworkTransport.HostDummyId)
@@ -25,33 +24,31 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 targetClientId = netManager.NetworkConfig.NetworkTransport.ServerNetId;
             }
 
-            using (BitWriter writer = BitWriter.Get())
+            using (PooledBitStream stream = PooledBitStream.Get())
             {
-                writer.WriteUShort(MessageManager.messageTypes[messageType]);
-                writer.WriteWriter(messageWriter);
+                BitWriter writer = new BitWriter(stream);
+                writer.WriteUInt16Packed(MessageManager.messageTypes[messageType]);
+                stream.CopyFrom(messageStream);
 
-                writer.Finalize(ref FinalMessageBuffer);
-
-                NetworkProfiler.StartEvent(TickType.Send, (uint)messageWriter.GetFinalizeSize(), channelName, messageType);
+                NetworkProfiler.StartEvent(TickType.Send, (uint)stream.Length, channelName, messageType);
                 byte error;
                 if (skipQueue)
-                    netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(targetClientId, ref FinalMessageBuffer, (int)writer.GetFinalizeSize(), MessageManager.channels[channelName], true, out error);
+                    netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(targetClientId, stream.GetBuffer(), (int)stream.Length, MessageManager.channels[channelName], true, out error);
                 else
-                    netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(targetClientId, ref FinalMessageBuffer, (int)writer.GetFinalizeSize(), MessageManager.channels[channelName], false, out error);
+                    netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(targetClientId, stream.GetBuffer(), (int)stream.Length, MessageManager.channels[channelName], false, out error);
                 NetworkProfiler.EndEvent();
             }
         }
 
-        internal static void Send(string messageType, string channelName, BitWriter messageWriter)
+        internal static void Send(string messageType, string channelName, Stream messageStream)
         {
-            using (BitWriter writer = BitWriter.Get())
+            using (PooledBitStream stream = PooledBitStream.Get())
             {
-                writer.WriteUShort(MessageManager.messageTypes[messageType]);
-                writer.WriteWriter(messageWriter);
+                BitWriter writer = new BitWriter(stream);
+                writer.WriteUInt16Packed(MessageManager.messageTypes[messageType]);
+                stream.CopyFrom(messageStream);
 
-                writer.Finalize(ref FinalMessageBuffer);
-
-                NetworkProfiler.StartEvent(TickType.Send, (uint)messageWriter.GetFinalizeSize(), channelName, messageType);
+                NetworkProfiler.StartEvent(TickType.Send, (uint)stream.Length, channelName, messageType);
                 for (int i = 0; i < netManager.ConnectedClientsList.Count; i++)
                 {
                     uint targetClientId = netManager.ConnectedClientsList[i].ClientId;
@@ -67,22 +64,21 @@ namespace MLAPI.NetworkingManagerComponents.Core
                     }
                     
                     byte error;
-                    netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(targetClientId, ref FinalMessageBuffer, (int)writer.GetFinalizeSize(), MessageManager.channels[channelName], false, out error);
+                    netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(targetClientId, stream.GetBuffer(), (int)stream.Length, MessageManager.channels[channelName], false, out error);
                 }
                 NetworkProfiler.EndEvent();
             }
         }
         
-        internal static void Send(string messageType, string channelName, uint clientIdToIgnore, BitWriter messageWriter)
+        internal static void Send(string messageType, string channelName, uint clientIdToIgnore, Stream messageStream)
         {
-            using (BitWriter writer = BitWriter.Get())
+            using (PooledBitStream stream = PooledBitStream.Get())
             {
-                writer.WriteUShort(MessageManager.messageTypes[messageType]);
-                writer.WriteWriter(messageWriter);
+                BitWriter writer = new BitWriter(stream);
+                writer.WriteUInt16Packed(MessageManager.messageTypes[messageType]);
+                stream.CopyFrom(messageStream);
 
-                writer.Finalize(ref FinalMessageBuffer);
-
-                NetworkProfiler.StartEvent(TickType.Send, (uint)messageWriter.GetFinalizeSize(), channelName, messageType);
+                NetworkProfiler.StartEvent(TickType.Send, (uint)stream.Length, channelName, messageType);
                 for (int i = 0; i < netManager.ConnectedClientsList.Count; i++)
                 {
                     uint targetClientId = netManager.ConnectedClientsList[i].ClientId;
@@ -101,7 +97,7 @@ namespace MLAPI.NetworkingManagerComponents.Core
                     }
                     
                     byte error;
-                    netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(targetClientId, ref FinalMessageBuffer, (int)writer.GetFinalizeSize(), MessageManager.channels[channelName], false, out error);
+                    netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(targetClientId, stream.GetBuffer(), (int)stream.Length, MessageManager.channels[channelName], false, out error);
                 }
                 NetworkProfiler.EndEvent();
             }

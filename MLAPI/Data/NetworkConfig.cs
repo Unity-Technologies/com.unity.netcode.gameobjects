@@ -157,6 +157,7 @@ namespace MLAPI.Data
         /// Returns a base64 encoded version of the config
         /// </summary>
         /// <returns></returns>
+        /*
         public string ToBase64()
         {
             NetworkConfig config = this;
@@ -282,6 +283,7 @@ namespace MLAPI.Data
                 config.AttributeMessageMode = (AttributeMessageMode)reader.ReadBits(3);
             }
         }
+        */
 
         private ulong? ConfigHash = null;
         /// <summary>
@@ -296,9 +298,10 @@ namespace MLAPI.Data
 
             Sort();
 
-            using (BitWriter writer = BitWriter.Get())
+            using (PooledBitStream stream = PooledBitStream.Get())
             {
-                writer.WriteUShort(ProtocolVersion);
+                BitWriter writer = new BitWriter(stream);
+                writer.WriteUInt16Packed(ProtocolVersion);
                 writer.WriteString(MLAPIConstants.MLAPI_PROTOCOL_VERSION);
                 
                 for (int i = 0; i < Channels.Count; i++)
@@ -331,10 +334,10 @@ namespace MLAPI.Data
                 // Returns a 160 bit / 20 byte / 5 int checksum of the config
                 if (cache)
                 {
-                    ConfigHash = writer.Finalize().GetStableHash64();
+                    ConfigHash = stream.ToArray().GetStableHash64();
                     return ConfigHash.Value;
                 }
-                return writer.Finalize().GetStableHash64();
+                return stream.ToArray().GetStableHash64();
             }
         }
 

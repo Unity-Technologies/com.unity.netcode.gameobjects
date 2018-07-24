@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Reflection;
 using MLAPI.NetworkingManagerComponents.Binary;
 
@@ -12,7 +13,7 @@ namespace MLAPI.Data
         WovenEightByte
     }
     
-    public delegate void RpcDelegate(uint clientId, BitReader reader);
+    public delegate void RpcDelegate(uint clientId, Stream stream);
 
     public class ReflectionMehtod
     {
@@ -33,12 +34,12 @@ namespace MLAPI.Data
             }
         }
 
-        public void Invoke(object instance, BitReader reader)
+        public void Invoke(object instance, Stream stream)
         {
+            BitReader reader = new BitReader(stream);
             for (int i = 0; i < parameterTypes.Length; i++)
             {
-                //TODO: BitReader ReadType
-                parameterRefs[i] = reader.ReadObject(parameterTypes[i]);
+                parameterRefs[i] = reader.ReadObjectPacked(parameterTypes[i]);
             }
             
             method.Invoke(instance, parameterRefs);

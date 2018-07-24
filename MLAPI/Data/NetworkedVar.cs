@@ -2,6 +2,7 @@
 using MLAPI.MonoBehaviours.Core;
 using System.Collections.Generic;
 using UnityEngine;
+using System.IO;
 
 namespace MLAPI.Data
 {
@@ -117,7 +118,7 @@ namespace MLAPI.Data
         /// Writes the variable to the writer
         /// </summary>
         /// <param name="writer">The writer to write the value to</param>
-        public void WriteDelta(BitWriter writer) => WriteField(writer); //The NetworkedVar is built for simple data types and has no delta.
+        public void WriteDelta(Stream stream) => WriteField(stream); //The NetworkedVar is built for simple data types and has no delta.
 
         /// <inheritdoc />
         public bool CanClientWrite(uint clientId)
@@ -144,7 +145,7 @@ namespace MLAPI.Data
         /// Reads value from the reader and applies it
         /// </summary>
         /// <param name="reader">The reader to read the value from</param>
-        public void ReadDelta(BitReader reader) => ReadField(reader); //The NetworkedVar is built for simple data types and has no delta.
+        public void ReadDelta(Stream stream) => ReadField(stream); //The NetworkedVar is built for simple data types and has no delta.
 
         /// <inheritdoc />
         public void SetNetworkedBehaviour(NetworkedBehaviour behaviour)
@@ -153,18 +154,20 @@ namespace MLAPI.Data
         }
 
         /// <inheritdoc />
-        public void ReadField(BitReader reader)
+        public void ReadField(Stream stream)
         {
+            BitReader reader = new BitReader(stream);
             T previousValue = InternalValue;
-            InternalValue = reader.ReadValueTypeOrString<T>();
+            InternalValue = (T)reader.ReadObjectPacked((typeof(T)));
             if (OnValueChanged != null)
                 OnValueChanged(previousValue, InternalValue);
         }
         
         /// <inheritdoc />
-        public void WriteField(BitWriter writer)
+        public void WriteField(Stream stream)
         {
-            writer.WriteValueTypeOrString(InternalValue);
+            BitWriter writer = new BitWriter(stream);
+            writer.WriteObjectPacked(InternalValue); //BOX
         }
 
         /// <inheritdoc />

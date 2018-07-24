@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using MLAPI.MonoBehaviours.Core;
 using MLAPI.NetworkingManagerComponents.Binary;
 
@@ -126,9 +127,10 @@ namespace MLAPI.Data.NetworkedCollections
         }
 
         /// <inheritdoc />
-        public void WriteDelta(BitWriter writer)
+        public void WriteDelta(Stream stream)
         {
-            writer.WriteUShort((ushort)dirtyEvents.Count);
+            BitWriter writer = new BitWriter(stream);
+            writer.WriteUInt16Packed((ushort)dirtyEvents.Count);
             for (int i = 0; i < dirtyEvents.Count; i++)
             {
                 writer.WriteBits((byte)dirtyEvents[i].eventType, 3);
@@ -137,29 +139,29 @@ namespace MLAPI.Data.NetworkedCollections
                     //Fuck me these signatures are proper aids
                     case NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.Add:
                         {
-                            writer.WriteValueTypeOrString(dirtyEvents[i].value);
+                            writer.WriteObjectPacked(dirtyEvents[i].value); //BOX
                         }
                         break;
                     case NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.Insert:
                         {
-                            writer.WriteInt(dirtyEvents[i].index);
-                            writer.WriteValueTypeOrString(dirtyEvents[i].value);
+                            writer.WriteInt32Packed(dirtyEvents[i].index);
+                            writer.WriteObjectPacked(dirtyEvents[i].value); //BOX
                         }
                         break;
                     case NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.Remove:
                         {
-                            writer.WriteValueTypeOrString(dirtyEvents[i].value);
+                            writer.WriteObjectPacked(dirtyEvents[i].value); //BOX
                         }
                         break;
                     case NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.RemoveAt:
                         {
-                            writer.WriteInt(dirtyEvents[i].index);
+                            writer.WriteInt32Packed(dirtyEvents[i].index);
                         }
                         break;
                     case NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.Value:
                         {
-                            writer.WriteInt(dirtyEvents[i].index);
-                            writer.WriteValueTypeOrString(dirtyEvents[i].value);
+                            writer.WriteInt32Packed(dirtyEvents[i].index);
+                            writer.WriteObjectPacked(dirtyEvents[i].value); //BOX
                         }
 
                         break;
@@ -173,30 +175,33 @@ namespace MLAPI.Data.NetworkedCollections
         }
 
         /// <inheritdoc />
-        public void WriteField(BitWriter writer)
+        public void WriteField(Stream stream)
         {
-            writer.WriteUShort((ushort)list.Count);
+            BitWriter writer = new BitWriter(stream);
+            writer.WriteUInt16Packed((ushort)list.Count);
             for (int i = 0; i < list.Count; i++)
             {
-                writer.WriteValueTypeOrString(list[i]);
+                writer.WriteObjectPacked(list[i]); //BOX
             }
         }
 
         /// <inheritdoc />
-        public void ReadField(BitReader reader)
+        public void ReadField(Stream stream)
         {
+            BitReader reader = new BitReader(stream);
             list.Clear();
-            ushort count = reader.ReadUShort();
+            ushort count = reader.ReadUInt16Packed();
             for (int i = 0; i < count; i++)
             {
-                list.Add(reader.ReadValueTypeOrString<T>());
+                list.Add((T)reader.ReadObjectPacked(typeof(T))); //BOX
             }
         }
 
         /// <inheritdoc />
-        public void ReadDelta(BitReader reader)
+        public void ReadDelta(Stream stream)
         {
-            ushort deltaCount = reader.ReadUShort();
+            BitReader reader = new BitReader(stream);
+            ushort deltaCount = reader.ReadUInt16Packed();
             for (int i = 0; i < deltaCount; i++)
             {
                 NetworkedListEvent<T>.NetworkedListEventType eventType = (NetworkedListEvent<T>.NetworkedListEventType)reader.ReadBits(3);
@@ -204,30 +209,30 @@ namespace MLAPI.Data.NetworkedCollections
                 {
                     case NetworkedListEvent<T>.NetworkedListEventType.Add:
                         {
-                            list.Add(reader.ReadValueTypeOrString<T>());
+                            list.Add((T)reader.ReadObjectPacked(typeof(T))); //BOX
                         }
                         break;
                     case NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.Insert:
                         {
-                            int index = reader.ReadInt();
-                            list.Insert(index, reader.ReadValueTypeOrString<T>());
+                            int index = reader.ReadInt32Packed();
+                            list.Insert(index, (T)reader.ReadObjectPacked(typeof(T))); //BOX
                         }
                         break;
                     case NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.Remove:
                         {
-                            list.Remove(reader.ReadValueTypeOrString<T>());
+                            list.Remove((T)reader.ReadObjectPacked(typeof(T))); //BOX
                         }
                         break;
                     case NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.RemoveAt:
                         {
-                            int index = reader.ReadInt();
+                            int index = reader.ReadInt32Packed();
                             list.RemoveAt(index);
                         }
                         break;
                     case NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.Value:
                         {
-                            int index = reader.ReadInt();
-                            if (index < list.Count) list[index] = reader.ReadValueTypeOrString<T>();
+                            int index = reader.ReadInt32Packed();
+                            if (index < list.Count) list[index] = (T)reader.ReadObjectPacked(typeof(T)); //BOX
                         }
                         break;
                     case NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.Clear:
