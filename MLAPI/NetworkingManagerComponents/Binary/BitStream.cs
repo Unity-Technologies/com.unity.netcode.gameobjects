@@ -347,11 +347,16 @@ namespace MLAPI.Serialization
             if (s is BitStream b) Write(b.target, 0, count < 0 ? (int)b.Length : count);
             else
             {
+                long currentPosition = s.Position;
+                s.Position = 0;
+                
                 int read;
                 bool readToEnd = count < 0;
                 while ((readToEnd || count-- > 0) && (read = s.ReadByte()) != -1)
                     _WriteIntByte(read);
                 UpdateLength();
+
+                s.Position = currentPosition;
             }
         }
 
