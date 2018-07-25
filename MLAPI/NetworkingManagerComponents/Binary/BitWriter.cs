@@ -361,13 +361,21 @@ namespace MLAPI.Serialization
         /// Writes a single bit
         /// </summary>
         /// <param name="bit"></param>
-        public void WriteBit(bool bit) => bitSink.WriteBit(bit);
+        public void WriteBit(bool bit)
+        {
+            if (bitSink == null) throw new InvalidOperationException("Cannot write bits on a non BitStream stream");
+            bitSink.WriteBit(bit);
+        }
 
         /// <summary>
         /// Writes a bool as a single bit
         /// </summary>
         /// <param name="value"></param>
-        public void WriteBool(bool value) => WriteBit(value);
+        public void WriteBool(bool value)
+        {
+            if (bitSink == null) sink.WriteByte(value ? (byte)1 : (byte)0);
+            else WriteBit(value);
+        }
 
         /// <summary>
         /// Writes pad bits to make the underlying stream aligned
@@ -396,6 +404,7 @@ namespace MLAPI.Serialization
         /// <param name="bitCount">Amount of bits to write</param>
         public void WriteBits(ulong value, int bitCount)
         {
+            if (bitSink == null) throw new InvalidOperationException("Cannot write bits on a non BitStream stream");
             if (bitCount > 64) throw new ArgumentOutOfRangeException("Cannot read more than 64 bits from a 64-bit value!");
             if (bitCount < 0) throw new ArgumentOutOfRangeException("Cannot read fewer than 0 bits!");
             int count = 0;
@@ -411,6 +420,7 @@ namespace MLAPI.Serialization
         /// <param name="bitCount">Amount of bits to write.</param>
         public void WriteBits(byte value, int bitCount)
         {
+            if (bitSink == null) throw new InvalidOperationException("Cannot write bits on a non BitStream stream");
             for (int i = 0; i < bitCount; ++i)
                 bitSink.WriteBit(((value >> i) & 1) != 0);
         }

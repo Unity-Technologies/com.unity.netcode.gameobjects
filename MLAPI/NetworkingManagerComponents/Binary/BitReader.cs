@@ -45,19 +45,28 @@ namespace MLAPI.Serialization
         /// Reads a single bit
         /// </summary>
         /// <returns>The bit read</returns>
-        public bool ReadBit() => bitSource.ReadBit();
+        public bool ReadBit()
+        {
+            if (bitSource == null) throw new InvalidOperationException("Cannot read bits on a non BitStream stream");
+            return bitSource.ReadBit();
+        }
 
         /// <summary>
         /// Reads a single bit
         /// </summary>
         /// <returns>The bit read</returns>
-        public bool ReadBool() => ReadBit();
+        public bool ReadBool()
+        {
+            if (bitSource == null) return source.ReadByte() != 0;
+            else return ReadBit();
+        }
 
         /// <summary>
         /// Skips pad bits and aligns the position to the next byte
         /// </summary>
         public void SkipPadBits()
         {
+            if (bitSource == null) throw new InvalidOperationException("Cannot read bits on a non BitStream stream");
             while (!bitSource.BitAligned) ReadBit();
         }
 
@@ -279,6 +288,7 @@ namespace MLAPI.Serialization
         /// <returns>The bits that were read</returns>
         public ulong ReadBits(int bitCount)
         {
+            if (bitSource == null) throw new InvalidOperationException("Cannot read bits on a non BitStream stream");
             if (bitCount > 64) throw new ArgumentOutOfRangeException("Cannot read more than 64 bits into a 64-bit value!");
             if (bitCount < 0) throw new ArgumentOutOfRangeException("Cannot read fewer than 0 bits!");
             ulong read = 0;
@@ -293,21 +303,17 @@ namespace MLAPI.Serialization
         /// <param name="bitCount">How many bits to read. Minimum 0, maximum 64.</param>
         /// <returns>The bits that were read</returns>
         public byte ReadByteBits(int bitCount)
-{
-            if (bitCount > 8)
-                throw new ArgumentOutOfRangeException("Cannot read more than 8 bits into an 8-bit value!")
-;
-            if (bitCount < 0)
-                throw new ArgumentOutOfRangeException("Cannot read fewer than 0 bits!")
-;
+        {
+            if (bitSource == null) throw new InvalidOperationException("Cannot read bits on a non BitStream stream");
+            if (bitCount > 8) throw new ArgumentOutOfRangeException("Cannot read more than 8 bits into an 8-bit value!");
+            if (bitCount < 0) throw new ArgumentOutOfRangeException("Cannot read fewer than 0 bits!");
+            
             int result = 0;
             ByteBool convert = new ByteBool();
             for (int i = 0; i < bitCount; ++i)
-                result |= convert.Collapse(ReadBit()) << i
-;
-            return (byte)result
-;
-}
+                result |= convert.Collapse(ReadBit()) << i;
+            return (byte) result;
+        }
 
         /// <summary>
         /// Read a nibble (4 bits) from the stream.
@@ -315,20 +321,20 @@ namespace MLAPI.Serialization
         /// <param name="asUpper">Whether or not the nibble should be left-shifted by 4 bits</param>
         /// <returns>The nibble that was read</returns>
         public byte ReadNibble(bool asUpper)
-{
-            ByteBool convert = new ByteBool()
-;
-            byte result = (byte)(
-                 convert.Collapse(ReadBit())       |
+        {
+            if (bitSource == null) throw new InvalidOperationException("Cannot read bits on a non BitStream stream");
+            ByteBool convert = new ByteBool();
+            
+            byte result = (byte) (
+                convert.Collapse(ReadBit()) |
                 (convert.Collapse(ReadBit()) << 1) |
                 (convert.Collapse(ReadBit()) << 2) |
                 (convert.Collapse(ReadBit()) << 3)
-                )
-;
+            );
             if (asUpper) result <<= 4;
-            return result
-;
-}
+            return result;
+
+        }
 
         // Marginally faster than the one that accepts a bool
         /// <summary>
@@ -337,13 +343,14 @@ namespace MLAPI.Serialization
         /// <returns>The nibble that was read</returns>
         public byte ReadNibble()
         {
+            if (bitSource == null) throw new InvalidOperationException("Cannot read bits on a non BitStream stream");
             ByteBool convert = new ByteBool();
-            return (byte)(
-                convert.Collapse(ReadBit()) | 
+            return (byte) (
+                convert.Collapse(ReadBit()) |
                 (convert.Collapse(ReadBit()) << 1) |
                 (convert.Collapse(ReadBit()) << 2) |
                 (convert.Collapse(ReadBit()) << 3)
-                );
+            );
         }
 
         public sbyte ReadSByte() => (sbyte)ReadByte();
@@ -464,6 +471,7 @@ namespace MLAPI.Serialization
         public StringBuilder ReadStringDiff(string compare, bool oneByteChars = false) => ReadStringDiff(null, compare, oneByteChars);
         public StringBuilder ReadStringDiff(StringBuilder builder, string compare, bool oneByteChars = false)
         {
+            if (bitSource == null) throw new InvalidOperationException("Cannot read bits on a non BitStream stream");
             int expectedLength = (int)ReadUInt32Packed();
             if (builder == null) builder = new StringBuilder(expectedLength);
             else if (builder.Capacity < expectedLength) builder.Capacity = expectedLength;
@@ -495,6 +503,7 @@ namespace MLAPI.Serialization
 
         public StringBuilder ReadStringDiff(StringBuilder compareAndBuffer, bool oneByteChars = false)
         {
+            if (bitSource == null) throw new InvalidOperationException("Cannot read bits on a non BitStream stream");
             int expectedLength = (int)ReadUInt32Packed();
             if (compareAndBuffer == null) throw new ArgumentNullException("Buffer cannot be null");
             else if (compareAndBuffer.Capacity < expectedLength) compareAndBuffer.Capacity = expectedLength;
@@ -526,6 +535,7 @@ namespace MLAPI.Serialization
         public StringBuilder ReadStringPackedDiff(string compare) => ReadStringPackedDiff(null, compare);
         public StringBuilder ReadStringPackedDiff(StringBuilder builder, string compare)
         {
+            if (bitSource == null) throw new InvalidOperationException("Cannot read bits on a non BitStream stream");
             int expectedLength = (int)ReadUInt32Packed();
             if (builder == null) builder = new StringBuilder(expectedLength);
             else if (builder.Capacity < expectedLength) builder.Capacity = expectedLength;
@@ -557,6 +567,7 @@ namespace MLAPI.Serialization
 
         public StringBuilder ReadStringPackedDiff(StringBuilder compareAndBuffer)
         {
+            if (bitSource == null) throw new InvalidOperationException("Cannot read bits on a non BitStream stream");
             int expectedLength = (int)ReadUInt32Packed();
             if (compareAndBuffer == null) throw new ArgumentNullException("Buffer cannot be null");
             else if (compareAndBuffer.Capacity < expectedLength) compareAndBuffer.Capacity = expectedLength;
@@ -595,6 +606,7 @@ namespace MLAPI.Serialization
 
         public byte[] ReadByteArrayDiff(byte[] readTo = null, long knownLength = -1)
         {
+            if (bitSource == null) throw new InvalidOperationException("Cannot read bits on a non BitStream stream");
             if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
             byte[] writeTo = readTo == null || readTo.LongLength != knownLength ? new byte[knownLength] : readTo;
             ulong dBlockStart = bitSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
@@ -641,6 +653,7 @@ namespace MLAPI.Serialization
 
         public short[] ReadShortArrayDiff(short[] readTo = null, long knownLength = -1)
         {
+            if (bitSource == null) throw new InvalidOperationException("Cannot read bits on a non BitStream stream");
             if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
             short[] writeTo = readTo == null || readTo.LongLength != knownLength ? new short[knownLength] : readTo;
             ulong dBlockStart = bitSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
@@ -671,6 +684,7 @@ namespace MLAPI.Serialization
 
         public short[] ReadShortArrayPackedDiff(short[] readTo = null, long knownLength = -1)
         {
+            if (bitSource == null) throw new InvalidOperationException("Cannot read bits on a non BitStream stream");
             if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
             short[] writeTo = readTo == null || readTo.LongLength != knownLength ? new short[knownLength] : readTo;
             ulong data = bitSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
@@ -717,6 +731,7 @@ namespace MLAPI.Serialization
 
         public ushort[] ReadUShortArrayDiff(ushort[] readTo = null, long knownLength = -1)
         {
+            if (bitSource == null) throw new InvalidOperationException("Cannot read bits on a non BitStream stream");
             if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
             ushort[] writeTo = readTo == null || readTo.LongLength != knownLength ? new ushort[knownLength] : readTo;
             ulong dBlockStart = bitSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
@@ -747,6 +762,7 @@ namespace MLAPI.Serialization
 
         public ushort[] ReadUShortArrayPackedDiff(ushort[] readTo = null, long knownLength = -1)
         {
+            if (bitSource == null) throw new InvalidOperationException("Cannot read bits on a non BitStream stream");
             if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
             ushort[] writeTo = readTo == null || readTo.LongLength != knownLength ? new ushort[knownLength] : readTo;
             ulong data = bitSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
@@ -793,6 +809,7 @@ namespace MLAPI.Serialization
 
         public int[] ReadIntArrayDiff(int[] readTo = null, long knownLength = -1)
         {
+            if (bitSource == null) throw new InvalidOperationException("Cannot read bits on a non BitStream stream");
             if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
             int[] writeTo = readTo == null || readTo.LongLength != knownLength ? new int[knownLength] : readTo;
             ulong dBlockStart = bitSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
@@ -823,6 +840,7 @@ namespace MLAPI.Serialization
 
         public int[] ReadIntArrayPackedDiff(int[] readTo = null, long knownLength = -1)
         {
+            if (bitSource == null) throw new InvalidOperationException("Cannot read bits on a non BitStream stream");
             if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
             int[] writeTo = readTo == null || readTo.LongLength != knownLength ? new int[knownLength] : readTo;
             ulong data = bitSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
@@ -869,6 +887,7 @@ namespace MLAPI.Serialization
 
         public uint[] ReadUIntArrayDiff(uint[] readTo = null, long knownLength = -1)
         {
+            if (bitSource == null) throw new InvalidOperationException("Cannot read bits on a non BitStream stream");
             if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
             uint[] writeTo = readTo == null || readTo.LongLength != knownLength ? new uint[knownLength] : readTo;
             ulong dBlockStart = bitSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
@@ -915,6 +934,7 @@ namespace MLAPI.Serialization
 
         public long[] ReadLongArrayDiff(long[] readTo = null, long knownLength = -1)
         {
+            if (bitSource == null) throw new InvalidOperationException("Cannot read bits on a non BitStream stream");
             if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
             long[] writeTo = readTo == null || readTo.LongLength != knownLength ? new long[knownLength] : readTo;
             ulong dBlockStart = bitSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
@@ -945,6 +965,7 @@ namespace MLAPI.Serialization
 
         public long[] ReadLongArrayPackedDiff(long[] readTo = null, long knownLength = -1)
         {
+            if (bitSource == null) throw new InvalidOperationException("Cannot read bits on a non BitStream stream");
             if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
             long[] writeTo = readTo == null || readTo.LongLength != knownLength ? new long[knownLength] : readTo;
             ulong data = bitSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
@@ -991,6 +1012,7 @@ namespace MLAPI.Serialization
 
         public ulong[] ReadULongArrayDiff(ulong[] readTo = null, long knownLength = -1)
         {
+            if (bitSource == null) throw new InvalidOperationException("Cannot read bits on a non BitStream stream");
             if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
             ulong[] writeTo = readTo == null || readTo.LongLength != knownLength ? new ulong[knownLength] : readTo;
             ulong dBlockStart = bitSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
@@ -1021,6 +1043,7 @@ namespace MLAPI.Serialization
 
         public ulong[] ReadULongArrayPackedDiff(ulong[] readTo = null, long knownLength = -1)
         {
+            if (bitSource == null) throw new InvalidOperationException("Cannot read bits on a non BitStream stream");
             if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
             ulong[] writeTo = readTo == null || readTo.LongLength != knownLength ? new ulong[knownLength] : readTo;
             ulong data = bitSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
@@ -1067,6 +1090,7 @@ namespace MLAPI.Serialization
 
         public float[] ReadFloatArrayDiff(float[] readTo = null, long knownLength = -1)
         {
+            if (bitSource == null) throw new InvalidOperationException("Cannot read bits on a non BitStream stream");
             if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
             float[] writeTo = readTo == null || readTo.LongLength != knownLength ? new float[knownLength] : readTo;
             ulong dBlockStart = bitSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
@@ -1097,6 +1121,7 @@ namespace MLAPI.Serialization
 
         public float[] ReadFloatArrayPackedDiff(float[] readTo = null, long knownLength = -1)
         {
+            if (bitSource == null) throw new InvalidOperationException("Cannot read bits on a non BitStream stream");
             if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
             float[] writeTo = readTo == null || readTo.LongLength != knownLength ? new float[knownLength] : readTo;
             ulong data = bitSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
@@ -1143,6 +1168,7 @@ namespace MLAPI.Serialization
 
         public double[] ReadDoubleArrayDiff(double[] readTo = null, long knownLength = -1)
         {
+            if (bitSource == null) throw new InvalidOperationException("Cannot read bits on a non BitStream stream");
             if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
             double[] writeTo = readTo == null || readTo.LongLength != knownLength ? new double[knownLength] : readTo;
             ulong dBlockStart = bitSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
@@ -1173,6 +1199,7 @@ namespace MLAPI.Serialization
 
         public double[] ReadDoubleArrayPackedDiff(double[] readTo = null, long knownLength = -1)
         {
+            if (bitSource == null) throw new InvalidOperationException("Cannot read bits on a non BitStream stream");
             if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
             double[] writeTo = readTo == null || readTo.LongLength != knownLength ? new double[knownLength] : readTo;
             ulong data = bitSource.BitPosition + (ulong)(readTo == null ? 0 : Math.Min(knownLength, readTo.LongLength));
