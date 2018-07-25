@@ -83,9 +83,6 @@ namespace MLAPI
         /// </summary>
         public bool isSpawned { get; internal set; }
         internal bool? sceneObject = null;
-        [HideInInspector]
-        [SerializeField]
-        public uint? SceneId = null;
 
         private void OnDestroy()
         {
