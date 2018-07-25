@@ -14,7 +14,7 @@ namespace MLAPI.MonoBehaviours.Prototyping
     [AddComponentMenu("MLAPI/NetworkedTransform")]
     public class NetworkedTransform : NetworkedBehaviour
     {
-        public class ClientSendInfo
+        internal class ClientSendInfo
         {
             public uint clientId;
             public float lastSent;
@@ -22,6 +22,9 @@ namespace MLAPI.MonoBehaviours.Prototyping
             public Quaternion? lastMissedRotation;
         }
 
+        /// <summary>
+        /// The base amount of sends per seconds to use when range is disabled
+        /// </summary>
         [Range(0, 120)]
         public float FixedSendsPerSecond = 20f;
         /// <summary>
@@ -51,6 +54,9 @@ namespace MLAPI.MonoBehaviours.Prototyping
         /// The min degrees to rotate before a send it sent
         /// </summary>
         public float MinDegrees = 1.5f;
+        /// <summary>
+        /// Enables extrapolation
+        /// </summary>
         public bool ExtrapolatePosition = true;
         private float lerpT;
         private Vector3 lerpStartPos;
@@ -62,13 +68,30 @@ namespace MLAPI.MonoBehaviours.Prototyping
         private Vector3 lastSentPos;
         private Quaternion lastSentRot;
         
+        /// <summary>
+        /// Enables range based send rate
+        /// </summary>
         public bool EnableRange;
+        /// <summary>
+        /// Checks for missed sends without provocation. Provocation being a client inside it's normal SendRate
+        /// </summary>
         public bool EnableNonProvokedResendChecks;
+        /// <summary>
+        /// The curve to use to calculate the send rate
+        /// </summary>
         public AnimationCurve DistanceSendrate = AnimationCurve.Constant(0, 500, 20);
         private readonly Dictionary<uint, ClientSendInfo> clientSendInfo = new Dictionary<uint, ClientSendInfo>();
 
+        /// <summary>
+        /// The delegate used to check if a move is valid
+        /// </summary>
+        /// <param name="oldPos">The previous position</param>
+        /// <param name="newPos">The new requested position</param>
+        /// <returns>Returns wheter or not the move is valid</returns>
         public delegate bool MoveValidationDelegate(Vector3 oldPos, Vector3 newPos);
-
+        /// <summary>
+        /// If set, moves will only be accepted if the custom delegate returns true
+        /// </summary>
         public MoveValidationDelegate IsMoveValidDelegate = null;
 
         private void OnValidate()
@@ -311,6 +334,11 @@ namespace MLAPI.MonoBehaviours.Prototyping
             }
         }
 
+        /// <summary>
+        /// Teleports the transform to the given position and rotation
+        /// </summary>
+        /// <param name="position">The position to teleport to</param>
+        /// <param name="rotation">The rotation to teleport to</param>
         public void Teleport(Vector3 position, Quaternion rotation)
         {   
             if (InterpolateServer && isServer || isClient)

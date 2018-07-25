@@ -87,7 +87,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <summary>
         /// Gets called when message handlers are ready to be registered and the networking is setup. Provides a Payload if it was provided
         /// </summary>
-        /// <param name="payloadReader"></param>
+        /// <param name="stream">The stream containing the spawn payload</param>
         public virtual void NetworkStart(Stream stream)
         {
             NetworkStart();
@@ -657,6 +657,7 @@ namespace MLAPI.MonoBehaviours.Core
         #endregion
 
         #region SEND METHODS
+        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
         public delegate void Action();
         public delegate void Action<T1>(T1 t1);
         public delegate void Action<T1, T2>(T1 t1, T2 t2);
@@ -2385,6 +2386,7 @@ namespace MLAPI.MonoBehaviours.Core
         {
             SendClientRPCPerformance(HashMethodName(methodName), null, stream);
         }
+        #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
         #endregion
 
         /// <summary>

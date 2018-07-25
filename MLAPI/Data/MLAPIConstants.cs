@@ -1,9 +1,13 @@
 ﻿namespace MLAPI.Data
 {
+    /// <summary>
+    /// A static class containing MLAPI constants
+    /// </summary>
     public static class MLAPIConstants
     {
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
         public const string MLAPI_PROTOCOL_VERSION = "2.0.0";
-        
+
         public const ushort MLAPI_CONNECTION_REQUEST = 0;
         public const ushort MLAPI_CONNECTION_APPROVED = 1;
         public const ushort MLAPI_ADD_OBJECT = 2;
@@ -20,5 +24,6 @@
         public const ushort MLAPI_SERVER_RPC = 13;
         public const ushort MLAPI_CLIENT_RPC = 14;
         public const ushort MLAPI_CUSTOM_MESSAGE = 15;
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
     }
 }

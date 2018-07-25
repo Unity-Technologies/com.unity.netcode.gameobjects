@@ -169,6 +169,10 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         /// <returns>A byte from the buffer or, if a byte can't be read, -1.</returns>
         public override int ReadByte() => CanRead ? BitAligned ? ReadByteAligned() : ReadByteMisaligned() : -1;
 
+        /// <summary>
+        /// Peeks a byte without advancing the position
+        /// </summary>
+        /// <returns>The peeked byte</returns>
         public int PeekByte() =>
             CanRead ?
                 BitAligned ?
@@ -352,18 +356,24 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         }
 
         // TODO: Implement CopyFrom() for BitStream with bitCount parameter
-        public void CopyFrom(BitStream s, int dataCount, bool copyBits)
+        /// <summary>
+        /// Copys the bits from the provided BitStream
+        /// </summary>
+        /// <param name="stream">The stream to copy from</param>
+        /// <param name="dataCount">The amount of data copy</param>
+        /// <param name="copyBits">Wheter or not to copy at the bit level rather than the byte level</param>
+        public void CopyFrom(BitStream stream, int dataCount, bool copyBits)
         {
             if (!copyBits)
             {
-                CopyFrom(s, dataCount);
+                CopyFrom(stream, dataCount);
             }
             else
             {
-                ulong count = dataCount < 0 ? s.BitLength : (ulong)dataCount;
-                if (s.BitLength < count) throw new IndexOutOfRangeException("Attempted to read more data than is available");
-                Write(s.GetBuffer(), 0, (int)(count >> 3));
-                for (int i = (int)(count & 7); i >= 0; --i) WriteBit(s.ReadBit());
+                ulong count = dataCount < 0 ? stream.BitLength : (ulong)dataCount;
+                if (stream.BitLength < count) throw new IndexOutOfRangeException("Attempted to read more data than is available");
+                Write(stream.GetBuffer(), 0, (int)(count >> 3));
+                for (int i = (int)(count & 7); i >= 0; --i) WriteBit(stream.ReadBit());
             }
         }
 

@@ -12,23 +12,6 @@ namespace MLAPI.Data.NetworkedCollections
     /// <typeparam name="T">The type for the list</typeparam>
     public class NetworkedList<T> : IList<T>, INetworkedVar
     {
-        internal struct NetworkedListEvent<T>
-        {
-            internal enum NetworkedListEventType
-            {
-                Add,
-                Insert,
-                Remove,
-                RemoveAt,
-                Value,
-                Clear
-            }
-            
-            internal NetworkedListEventType eventType;
-            internal T value;
-            internal int index;
-        }
-        
         private readonly IList<T> list = new List<T>();
         private List<NetworkedListEvent<T>> dirtyEvents = new List<NetworkedListEvent<T>>();
         private NetworkedBehaviour networkedBehaviour;
@@ -40,24 +23,39 @@ namespace MLAPI.Data.NetworkedCollections
         /// The settings for this container
         /// </summary>
         public readonly NetworkedVarSettings Settings = new NetworkedVarSettings();
-        
-        
+
+        /// <summary>
+        /// Creates a NetworkedList with the default value and settings
+        /// </summary>
         public NetworkedList()
         {
             
         }
-        
+
+        /// <summary>
+        /// Creates a NetworkedList with the default value and custom settings
+        /// </summary>
+        /// <param name="settings">The settings to use for the NetworkedList</param>
         public NetworkedList(NetworkedVarSettings settings)
         {
             this.Settings = settings;
         }
-        
+
+        /// <summary>
+        /// Creates a NetworkedList with a custom value and custom settings
+        /// </summary>
+        /// <param name="settings">The settings to use for the NetworkedList</param>
+        /// <param name="value">The initial value to use for the NetworkedList</param>
         public NetworkedList(NetworkedVarSettings settings, IList<T> value)
         {
             this.Settings = settings;
             this.list = value;
         }
-        
+
+        /// <summary>
+        /// Creates a NetworkedList with a custom value and the default settings
+        /// </summary>
+        /// <param name="value">The initial value to use for the NetworkedList</param>
         public NetworkedList(IList<T> value)
         {
             this.list = value;
@@ -137,35 +135,35 @@ namespace MLAPI.Data.NetworkedCollections
                 switch (dirtyEvents[i].eventType)
                 {
                     //Fuck me these signatures are proper aids
-                    case NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.Add:
+                    case NetworkedListEvent<T>.NetworkedListEventType.Add:
                         {
                             writer.WriteObjectPacked(dirtyEvents[i].value); //BOX
                         }
                         break;
-                    case NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.Insert:
+                    case NetworkedListEvent<T>.NetworkedListEventType.Insert:
                         {
                             writer.WriteInt32Packed(dirtyEvents[i].index);
                             writer.WriteObjectPacked(dirtyEvents[i].value); //BOX
                         }
                         break;
-                    case NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.Remove:
+                    case NetworkedListEvent<T>.NetworkedListEventType.Remove:
                         {
                             writer.WriteObjectPacked(dirtyEvents[i].value); //BOX
                         }
                         break;
-                    case NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.RemoveAt:
+                    case NetworkedListEvent<T>.NetworkedListEventType.RemoveAt:
                         {
                             writer.WriteInt32Packed(dirtyEvents[i].index);
                         }
                         break;
-                    case NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.Value:
+                    case NetworkedListEvent<T>.NetworkedListEventType.Value:
                         {
                             writer.WriteInt32Packed(dirtyEvents[i].index);
                             writer.WriteObjectPacked(dirtyEvents[i].value); //BOX
                         }
 
                         break;
-                    case NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.Clear:
+                    case NetworkedListEvent<T>.NetworkedListEventType.Clear:
                         {
                             //Nothing has to be written
                         }
@@ -212,30 +210,30 @@ namespace MLAPI.Data.NetworkedCollections
                             list.Add((T)reader.ReadObjectPacked(typeof(T))); //BOX
                         }
                         break;
-                    case NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.Insert:
+                    case NetworkedListEvent<T>.NetworkedListEventType.Insert:
                         {
                             int index = reader.ReadInt32Packed();
                             list.Insert(index, (T)reader.ReadObjectPacked(typeof(T))); //BOX
                         }
                         break;
-                    case NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.Remove:
+                    case NetworkedListEvent<T>.NetworkedListEventType.Remove:
                         {
                             list.Remove((T)reader.ReadObjectPacked(typeof(T))); //BOX
                         }
                         break;
-                    case NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.RemoveAt:
+                    case NetworkedListEvent<T>.NetworkedListEventType.RemoveAt:
                         {
                             int index = reader.ReadInt32Packed();
                             list.RemoveAt(index);
                         }
                         break;
-                    case NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.Value:
+                    case NetworkedListEvent<T>.NetworkedListEventType.Value:
                         {
                             int index = reader.ReadInt32Packed();
                             if (index < list.Count) list[index] = (T)reader.ReadObjectPacked(typeof(T)); //BOX
                         }
                         break;
-                    case NetworkedList<T>.NetworkedListEvent<T>.NetworkedListEventType.Clear:
+                    case NetworkedListEvent<T>.NetworkedListEventType.Clear:
                         {
                             //Read nothing
                             list.Clear();
@@ -363,5 +361,22 @@ namespace MLAPI.Data.NetworkedCollections
                 });
             }
         }
+    }
+
+    internal struct NetworkedListEvent<T>
+    {
+        internal enum NetworkedListEventType
+        {
+            Add,
+            Insert,
+            Remove,
+            RemoveAt,
+            Value,
+            Clear
+        }
+
+        internal NetworkedListEventType eventType;
+        internal T value;
+        internal int index;
     }
 }

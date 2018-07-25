@@ -13,22 +13,6 @@ namespace MLAPI.Data.NetworkedCollections
     /// <typeparam name="TValue">The type for the dctionary values</typeparam>
     public class NetworkedDictionary<TKey, TValue> : IDictionary<TKey, TValue>, INetworkedVar
     {
-        internal struct NetworkedDictionaryEvent<TKey, TValue>
-        {
-            internal enum NetworkedListEventType
-            {
-                Add,
-                Remove,
-                RemovePair,
-                Clear,
-                Value
-            }
-
-            internal NetworkedListEventType eventType;
-            internal TKey key;
-            internal TValue value;
-        }
-
         /// <summary>
         /// Gets the last time the variable was synced
         /// </summary>
@@ -40,23 +24,39 @@ namespace MLAPI.Data.NetworkedCollections
         private readonly IDictionary<TKey, TValue> dictionary = new Dictionary<TKey, TValue>();
         private NetworkedBehaviour networkedBehaviour;
         private readonly List<NetworkedDictionaryEvent<TKey, TValue>> dirtyEvents = new List<NetworkedDictionaryEvent<TKey, TValue>>();
-        
+
+        /// <summary>
+        /// Creates a NetworkedDictionary with the default value and settings
+        /// </summary>
         public NetworkedDictionary()
         {
             
         }
-        
+
+        /// <summary>
+        /// Creates a NetworkedDictionary with the default value and custom settings
+        /// </summary>
+        /// <param name="settings">The settings to use for the NetworkedDictionary</param>
         public NetworkedDictionary(NetworkedVarSettings settings)
         {
             this.Settings = settings;
         }
-        
+
+        /// <summary>
+        /// Creates a NetworkedDictionary with a custom value and custom settings
+        /// </summary>
+        /// <param name="settings">The settings to use for the NetworkedDictionary</param>
+        /// <param name="value">The initial value to use for the NetworkedDictionary</param>
         public NetworkedDictionary(NetworkedVarSettings settings, IDictionary<TKey, TValue> value)
         {
             this.Settings = settings;
             this.dictionary = value;
         }
-        
+
+        /// <summary>
+        /// Creates a NetworkedDictionary with a custom value and the default settings
+        /// </summary>
+        /// <param name="value">The initial value to use for the NetworkedDictionary</param>
         public NetworkedDictionary(IDictionary<TKey, TValue> value)
         {
             this.dictionary = value;
@@ -382,5 +382,21 @@ namespace MLAPI.Data.NetworkedCollections
         {
             return dictionary.GetEnumerator();
         }
+    }
+
+    internal struct NetworkedDictionaryEvent<TKey, TValue>
+    {
+        internal enum NetworkedListEventType
+        {
+            Add,
+            Remove,
+            RemovePair,
+            Clear,
+            Value
+        }
+
+        internal NetworkedListEventType eventType;
+        internal TKey key;
+        internal TValue value;
     }
 }

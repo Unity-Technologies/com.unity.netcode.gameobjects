@@ -4,27 +4,35 @@
 #define ARRAY_DIFF_ALLOW_RESIZE // Whether or not to permit writing diffs of differently sized arrays
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Text;
 using UnityEngine;
 
 namespace MLAPI.NetworkingManagerComponents.Binary
 {
     // Improved version of BitWriter
+    /// <summary>
+    /// A BinaryWriter that can do bit wise manipulation when backed by a BitStream
+    /// </summary>
     public class BitWriter
     {
-        protected readonly Stream sink;
-        protected readonly BitStream bitSink;
+        private readonly Stream sink;
+        private readonly BitStream bitSink;
 
-        public BitWriter(Stream sink)
+        /// <summary>
+        /// Creates a new BitWriter backed by a given stream
+        /// </summary>
+        /// <param name="stream">The stream to use for writing</param>
+        public BitWriter(Stream stream)
         {
-            this.sink = sink;
-            bitSink = sink as BitStream;
+            sink = stream;
+            bitSink = stream as BitStream;
         }
 
+        /// <summary>
+        /// Writes a boxed object in a packed format
+        /// </summary>
+        /// <param name="value">The object to write</param>
         public void WriteObjectPacked(object value)
         {
             if (value is byte)
@@ -349,10 +357,21 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             }
         }
 
+        /// <summary>
+        /// Writes a single bit
+        /// </summary>
+        /// <param name="bit"></param>
         public void WriteBit(bool bit) => bitSink.WriteBit(bit);
 
+        /// <summary>
+        /// Writes a bool as a single bit
+        /// </summary>
+        /// <param name="value"></param>
         public void WriteBool(bool value) => WriteBit(value);
 
+        /// <summary>
+        /// Writes pad bits to make the underlying stream aligned
+        /// </summary>
         public void WritePadBits()
         {
             while (!bitSink.BitAligned) WriteBit(false);
@@ -542,6 +561,11 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         }
 
         // As it turns out, strings cannot be treated as char arrays, since strings use pointers to store data rather than C# arrays
+        /// <summary>
+        /// Writes a string
+        /// </summary>
+        /// <param name="s">The string to write</param>
+        /// <param name="oneByteChars">Wheter or not to use one byte per character. This will only allow ASCII</param>
         public void WriteString(string s, bool oneByteChars = false)
         {
             WriteUInt32Packed((uint)s.Length);
@@ -551,6 +575,10 @@ namespace MLAPI.NetworkingManagerComponents.Binary
                 else WriteChar(s[i]);
         }
 
+        /// <summary>
+        /// Writes a string in a packed format
+        /// </summary>
+        /// <param name="s"></param>
         public void WriteStringPacked(string s)
         {
             WriteUInt32Packed((uint)s.Length);
@@ -558,6 +586,12 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             for (int i = 0; i < target; ++i) WriteCharPacked(s[i]);
         }
 
+        /// <summary>
+        /// Writes the diff between two strings
+        /// </summary>
+        /// <param name="write">The new array</param>
+        /// <param name="compare">The previous array to use for diff</param>
+        /// <param name="oneByteChars">Wheter or not to use single byte chars. This will only allow ASCII characters</param>
         public void WriteStringDiff(string write, string compare, bool oneByteChars = false)
         {
 #if !ARRAY_DIFF_ALLOW_RESIZE
@@ -592,6 +626,11 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             }
         }
 
+        /// <summary>
+        /// Writes the diff between two strings in a packed format
+        /// </summary>
+        /// <param name="write">The new string</param>
+        /// <param name="compare">The previous string to use for diff</param>
         public void WriteStringPackedDiff(string write, string compare)
         {
 
@@ -645,13 +684,23 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             return write;
         }
 
-
+        /// <summary>
+        /// Writes a byte array
+        /// </summary>
+        /// <param name="b">The array to write</param>
+        /// <param name="count">The amount of elements to write</param>
         public void WriteByteArray(byte[] b, long count = -1)
         {
             ulong target = WriteArraySize(b, null, count);
             for (ulong i = 0; i < target; ++i) sink.WriteByte(b[i]);
         }
 
+        /// <summary>
+        /// Writes the diff between two byte arrays
+        /// </summary>
+        /// <param name="write">The new array</param>
+        /// <param name="compare">The previous array to use for diff</param>
+        /// <param name="count">The amount of elements to write</param>
         public void WriteByteArrayDiff(byte[] write, byte[] compare, long count = -1)
         {
             CheckLengths(write, compare);
@@ -667,12 +716,23 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             }
         }
 
+        /// <summary>
+        /// Writes a short array
+        /// </summary>
+        /// <param name="b">The array to write</param>
+        /// <param name="count">The amount of elements to write</param>
         public void WriteShortArray(short[] b, long count = -1)
         {
             ulong target = WriteArraySize(b, null, count);
             for (ulong i = 0; i < target; ++i) WriteInt16(b[i]);
         }
 
+        /// <summary>
+        /// Writes the diff between two short arrays
+        /// </summary>
+        /// <param name="write">The new array</param>
+        /// <param name="compare">The previous array to use for diff</param>
+        /// <param name="count">The amount of elements to write</param>
         public void WriteShortArrayDiff(short[] write, short[] compare, long count = -1)
         {
             CheckLengths(write, compare);
@@ -688,12 +748,23 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             }
         }
 
+        /// <summary>
+        /// Writes a ushort array
+        /// </summary>
+        /// <param name="b">The array to write</param>
+        /// <param name="count">The amount of elements to write</param>
         public void WriteUShortArray(ushort[] b, long count = -1)
         {
             ulong target = WriteArraySize(b, null, count);
             for (ulong i = 0; i < target; ++i) WriteUInt16(b[i]);
         }
 
+        /// <summary>
+        /// Writes the diff between two ushort arrays
+        /// </summary>
+        /// <param name="write">The new array</param>
+        /// <param name="compare">The previous array to use for diff</param>
+        /// <param name="count">The amount of elements to write</param>
         public void WriteUShortArrayDiff(ushort[] write, ushort[] compare, long count = -1)
         {
             CheckLengths(write, compare);
@@ -709,12 +780,23 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             }
         }
 
+        /// <summary>
+        /// Writes a char array
+        /// </summary>
+        /// <param name="b">The array to write</param>
+        /// <param name="count">The amount of elements to write</param>
         public void WriteCharArray(char[] b, long count = -1)
         {
             ulong target = WriteArraySize(b, null, count);
             for (ulong i = 0; i < target; ++i) WriteChar(b[i]);
         }
 
+        /// <summary>
+        /// Writes the diff between two char arrays
+        /// </summary>
+        /// <param name="write">The new array</param>
+        /// <param name="compare">The previous array to use for diff</param>
+        /// <param name="count">The amount of elements to write</param>
         public void WriteCharArrayDiff(char[] write, char[] compare, long count = -1)
         {
             CheckLengths(write, compare);
@@ -730,12 +812,23 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             }
         }
 
+        /// <summary>
+        /// Writes a int array
+        /// </summary>
+        /// <param name="b">The array to write</param>
+        /// <param name="count">The amount of elements to write</param>
         public void WriteIntArray(int[] b, long count = -1)
         {
             ulong target = WriteArraySize(b, null, count);
             for (ulong i = 0; i < target; ++i) WriteInt32(b[i]);
         }
 
+        /// <summary>
+        /// Writes the diff between two int arrays
+        /// </summary>
+        /// <param name="write">The new array</param>
+        /// <param name="compare">The previous array to use for diff</param>
+        /// <param name="count">The amount of elements to write</param>
         public void WriteIntArrayDiff(int[] write, int[] compare, long count = -1)
         {
             CheckLengths(write, compare);
@@ -751,12 +844,23 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             }
         }
 
+        /// <summary>
+        /// Writes a uint array
+        /// </summary>
+        /// <param name="b">The array to write</param>
+        /// <param name="count">The amount of elements to write</param>
         public void WriteUIntArray(uint[] b, long count = -1)
         {
             ulong target = WriteArraySize(b, null, count);
             for (ulong i = 0; i < target; ++i) WriteUInt32(b[i]);
         }
 
+        /// <summary>
+        /// Writes the diff between two uint arrays
+        /// </summary>
+        /// <param name="write">The new array</param>
+        /// <param name="compare">The previous array to use for diff</param>
+        /// <param name="count">The amount of elements to write</param>
         public void WriteUIntArrayDiff(uint[] write, uint[] compare, long count = -1)
         {
             CheckLengths(write, compare);
@@ -772,12 +876,23 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             }
         }
 
+        /// <summary>
+        /// Writes a long array
+        /// </summary>
+        /// <param name="b">The array to write</param>
+        /// <param name="count">The amount of elements to write</param>
         public void WriteLongArray(long[] b, long count = -1)
         {
             ulong target = WriteArraySize(b, null, count);
             for (ulong i = 0; i < target; ++i) WriteInt64(b[i]);
         }
 
+        /// <summary>
+        /// Writes the diff between two long arrays
+        /// </summary>
+        /// <param name="write">The new array</param>
+        /// <param name="compare">The previous array to use for diff</param>
+        /// <param name="count">The amount of elements to write</param>
         public void WriteLongArrayDiff(long[] write, long[] compare, long count = -1)
         {
             CheckLengths(write, compare);
@@ -793,12 +908,23 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             }
         }
 
+        /// <summary>
+        /// Writes a ulong array
+        /// </summary>
+        /// <param name="b">The array to write</param>
+        /// <param name="count">The amount of elements to write</param>
         public void WriteULongArray(ulong[] b, long count = -1)
         {
             ulong target = WriteArraySize(b, null, count);
             for (ulong i = 0; i < target; ++i) WriteUInt64(b[i]);
         }
 
+        /// <summary>
+        /// Writes the diff between two ulong arrays
+        /// </summary>
+        /// <param name="write">The new array</param>
+        /// <param name="compare">The previous array to use for diff</param>
+        /// <param name="count">The amount of elements to write</param>
         public void WriteULongArrayDiff(ulong[] write, ulong[] compare, long count = -1)
         {
             CheckLengths(write, compare);
@@ -814,12 +940,23 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             }
         }
 
+        /// <summary>
+        /// Writes a float array
+        /// </summary>
+        /// <param name="b">The array to write</param>
+        /// <param name="count">The amount of elements to write</param>
         public void WriteFloatArray(float[] b, long count = -1)
         {
             ulong target = WriteArraySize(b, null, count);
             for (ulong i = 0; i < target; ++i) WriteSingle(b[i]);
         }
 
+        /// <summary>
+        /// Writes the diff between two float arrays
+        /// </summary>
+        /// <param name="write">The new array</param>
+        /// <param name="compare">The previous array to use for diff</param>
+        /// <param name="count">The amount of elements to write</param>
         public void WriteFloatArrayDiff(float[] write, float[] compare, long count = -1)
         {
             CheckLengths(write, compare);
@@ -835,12 +972,23 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             }
         }
 
+        /// <summary>
+        /// Writes a double array
+        /// </summary>
+        /// <param name="b">The array to write</param>
+        /// <param name="count">The amount of elements to write</param>
         public void WriteDoubleArray(double[] b, long count = -1)
         {
             ulong target = WriteArraySize(b, null, count);
             for (ulong i = 0; i < target; ++i) WriteDouble(b[i]);
         }
 
+        /// <summary>
+        /// Writes the diff between two double arrays
+        /// </summary>
+        /// <param name="write">The new array</param>
+        /// <param name="compare">The previous array to use for diff</param>
+        /// <param name="count">The amount of elements to write</param>
         public void WriteDoubleArrayDiff(double[] write, double[] compare, long count = -1)
         {
             CheckLengths(write, compare);
@@ -862,6 +1010,11 @@ namespace MLAPI.NetworkingManagerComponents.Binary
 
         // Packed arrays
 #if ARRAY_RESOLVE_IMPLICIT
+        /// <summary>
+        /// Writes an array in a packed format
+        /// </summary>
+        /// <param name="a">The array to write</param>
+        /// <param name="count">The amount of elements to write</param>
         public void WriteArrayPacked(Array a, long count = -1)
         {
             Type arrayType = a.GetType();
@@ -883,6 +1036,12 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             else throw new InvalidDataException("Unknown array type! Please serialize manually!");
         }
 
+        /// <summary>
+        /// Writes the diff between two arrays in a packed format
+        /// </summary>
+        /// <param name="write">The new array</param>
+        /// <param name="compare">The previous array to use for diff</param>
+        /// <param name="count">The amount of elements to write</param>
         public void WriteArrayPackedDiff(Array write, Array compare, long count = -1)
         {
             Type arrayType = write.GetType();
@@ -905,12 +1064,23 @@ namespace MLAPI.NetworkingManagerComponents.Binary
         }
 #endif
 
+        /// <summary>
+        /// Writes a short array in a packed format
+        /// </summary>
+        /// <param name="b">The array to write</param>
+        /// <param name="count">The amount of elements to write</param>
         public void WriteShortArrayPacked(short[] b, long count = -1)
         {
             ulong target = WriteArraySize(b, null, count);
             for (ulong i = 0; i < target; ++i) WriteInt16Packed(b[i]);
         }
 
+        /// <summary>
+        /// Writes the diff between two short arrays in a packed format
+        /// </summary>
+        /// <param name="write">The new array</param>
+        /// <param name="compare">The previous array to use for diff</param>
+        /// <param name="count">The amount of elements to write</param>
         public void WriteShortArrayPackedDiff(short[] write, short[] compare, long count = -1)
         {
             CheckLengths(write, compare);
@@ -926,12 +1096,23 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             }
         }
 
+        /// <summary>
+        /// Writes a ushort array in a packed format
+        /// </summary>
+        /// <param name="b">The array to write</param>
+        /// <param name="count">The amount of elements to write</param>
         public void WriteUShortArrayPacked(ushort[] b, long count = -1)
         {
             ulong target = WriteArraySize(b, null, count);
             for (ulong i = 0; i < target; ++i) WriteUInt16Packed(b[i]);
         }
 
+        /// <summary>
+        /// Writes the diff between two ushort arrays in a packed format
+        /// </summary>
+        /// <param name="write">The new array</param>
+        /// <param name="compare">The previous array to use for diff</param>
+        /// <param name="count">The amount of elements to write</param>
         public void WriteUShortArrayPackedDiff(ushort[] write, ushort[] compare, long count = -1)
         {
             CheckLengths(write, compare);
@@ -947,12 +1128,23 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             }
         }
 
+        /// <summary>
+        /// Writes a char array in a packed format
+        /// </summary>
+        /// <param name="b">The array to write</param>
+        /// <param name="count">The amount of elements to write</param>
         public void WriteCharArrayPacked(char[] b, long count = -1)
         {
             ulong target = WriteArraySize(b, null, count);
             for (ulong i = 0; i < target; ++i) WriteCharPacked(b[i]);
         }
 
+        /// <summary>
+        /// Writes the diff between two char arrays in a packed format
+        /// </summary>
+        /// <param name="write">The new array</param>
+        /// <param name="compare">The previous array to use for diff</param>
+        /// <param name="count">The amount of elements to write</param>
         public void WriteCharArrayPackedDiff(char[] write, char[] compare, long count = -1)
         {
             CheckLengths(write, compare);
@@ -968,12 +1160,23 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             }
         }
 
+        /// <summary>
+        /// Writes a int array in a packed format
+        /// </summary>
+        /// <param name="b">The array to write</param>
+        /// <param name="count">The amount of elements to write</param>
         public void WriteIntArrayPacked(int[] b, long count = -1)
         {
             ulong target = WriteArraySize(b, null, count);
             for (ulong i = 0; i < target; ++i) WriteInt32Packed(b[i]);
         }
 
+        /// <summary>
+        /// Writes the diff between two int arrays
+        /// </summary>
+        /// <param name="write">The new array</param>
+        /// <param name="compare">The previous array to use for diff</param>
+        /// <param name="count">The amount of elements to write</param>
         public void WriteIntArrayPackedDiff(int[] write, int[] compare, long count = -1)
         {
             CheckLengths(write, compare);
@@ -989,12 +1192,23 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             }
         }
 
+        /// <summary>
+        /// Writes a uint array in a packed format
+        /// </summary>
+        /// <param name="b">The array to write</param>
+        /// <param name="count">The amount of elements to write</param>
         public void WriteUIntArrayPacked(uint[] b, long count = -1)
         {
             ulong target = WriteArraySize(b, null, count);
             for (ulong i = 0; i < target; ++i) WriteUInt32Packed(b[i]);
         }
 
+        /// <summary>
+        /// Writes the diff between two uing arrays in a packed format
+        /// </summary>
+        /// <param name="write">The new array</param>
+        /// <param name="compare">The previous array to use for diff</param>
+        /// <param name="count">The amount of elements to write</param>
         public void WriteUIntArrayPackedDiff(uint[] write, uint[] compare, long count = -1)
         {
             CheckLengths(write, compare);
@@ -1010,12 +1224,23 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             }
         }
 
+        /// <summary>
+        /// Writes a long array in a packed format
+        /// </summary>
+        /// <param name="b">The array to write</param>
+        /// <param name="count">The amount of elements to write</param>
         public void WriteLongArrayPacked(long[] b, long count = -1)
         {
             ulong target = WriteArraySize(b, null, count);
             for (ulong i = 0; i < target; ++i) WriteInt64Packed(b[i]);
         }
 
+        /// <summary>
+        /// Writes the diff between two long arrays in a packed format
+        /// </summary>
+        /// <param name="write">The new array</param>
+        /// <param name="compare">The previous array to use for diff</param>
+        /// <param name="count">The amount of elements to write</param>
         public void WriteLongArrayPackedDiff(long[] write, long[] compare, long count = -1)
         {
             CheckLengths(write, compare);
@@ -1031,12 +1256,23 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             }
         }
 
+        /// <summary>
+        /// Writes a ulong array in a packed format
+        /// </summary>
+        /// <param name="b">The array to write</param>
+        /// <param name="count">The amount of elements to write</param>
         public void WriteULongArrayPacked(ulong[] b, long count = -1)
         {
             ulong target = WriteArraySize(b, null, count);
             for (ulong i = 0; i < target; ++i) WriteUInt64Packed(b[i]);
         }
 
+        /// <summary>
+        /// Writes the diff between two ulong arrays in a packed format
+        /// </summary>
+        /// <param name="write">The new array</param>
+        /// <param name="compare">The previous array to use for diff</param>
+        /// <param name="count">The amount of elements to write</param>
         public void WriteULongArrayPackedDiff(ulong[] write, ulong[] compare, long count = -1)
         {
             CheckLengths(write, compare);
@@ -1052,12 +1288,23 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             }
         }
 
+        /// <summary>
+        /// Writes a float array in a packed format
+        /// </summary>
+        /// <param name="b">The array to write</param>
+        /// <param name="count">The amount of elements to write</param>
         public void WriteFloatArrayPacked(float[] b, long count = -1)
         {
             ulong target = WriteArraySize(b, null, count);
             for (ulong i = 0; i < target; ++i) WriteSinglePacked(b[i]);
         }
 
+        /// <summary>
+        /// Writes the diff between two float arrays in a packed format
+        /// </summary>
+        /// <param name="write">The new array</param>
+        /// <param name="compare">The previous array to use for diff</param>
+        /// <param name="count">The amount of elements to write</param>
         public void WriteFloatArrayPackedDiff(float[] write, float[] compare, long count = -1)
         {
             CheckLengths(write, compare);
@@ -1073,12 +1320,23 @@ namespace MLAPI.NetworkingManagerComponents.Binary
             }
         }
 
+        /// <summary>
+        /// Writes a double array in a packed format
+        /// </summary>
+        /// <param name="b">The array to write</param>
+        /// <param name="count">The amount of elements to write</param>
         public void WriteDoubleArrayPacked(double[] b, long count = -1)
         {
             ulong target = WriteArraySize(b, null, count);
             for (ulong i = 0; i < target; ++i) WriteDoublePacked(b[i]);
         }
 
+        /// <summary>
+        /// Writes the diff between two double arrays in a packed format
+        /// </summary>
+        /// <param name="write">The new array</param>
+        /// <param name="compare">The previous array to use for diff</param>
+        /// <param name="count">The amount of elements to write</param>
         public void WriteDoubleArrayPackedDiff(double[] write, double[] compare, long count = -1)
         {
             CheckLengths(write, compare);

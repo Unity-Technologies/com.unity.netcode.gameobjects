@@ -32,7 +32,10 @@ namespace MLAPI.Data.NetworkProfiler
         /// </summary>
         public readonly List<TickEvent> Events = new List<TickEvent>();
         
-
+        /// <summary>
+        /// Writes the current ProfilerTick to the stream
+        /// </summary>
+        /// <param name="stream">The stream containing</param>
 		public void SerializeToStream(Stream stream)
 		{
 			BitWriter writer = new BitWriter(stream);
@@ -44,6 +47,11 @@ namespace MLAPI.Data.NetworkProfiler
 			}
 		}
 
+        /// <summary>
+        /// Creates a ProfilerTick from data in the provided stream
+        /// </summary>
+        /// <param name="stream">The stream containing the ProfilerTick data</param>
+        /// <returns>The ProfilerTick with data read from the stream</returns>
 		public static ProfilerTick FromStream(Stream stream)
 		{
 			ProfilerTick tick = new ProfilerTick();
@@ -135,6 +143,10 @@ namespace MLAPI.Data.NetworkProfiler
         /// </summary>
         public bool Closed;
 
+        /// <summary>
+        /// Writes the TickEvent data to the stream
+        /// </summary>
+        /// <param name="stream">The stream to write the TickEvent data to</param>
         public void SerializeToStream(Stream stream)
 		{
 			BitWriter writer = new BitWriter(stream);
@@ -145,16 +157,23 @@ namespace MLAPI.Data.NetworkProfiler
 			writer.WriteBool(Closed);
 		}
 
+        /// <summary>
+        /// Creates a TickEvent from data in the provided stream
+        /// </summary>
+        /// <param name="stream">The stream containing the TickEvent data</param>
+        /// <returns>The TickEvent with data read from the stream</returns>
         public static TickEvent FromStream(Stream stream)
 		{
 			BitReader reader = new BitReader(stream);
-			TickEvent @event = new TickEvent();
-			@event.EventType = (TickType)reader.ReadByte();
-			@event.Bytes = reader.ReadUInt32Packed();
-			@event.ChannelName = reader.ReadStringPacked().ToString();
-			@event.MessageType = reader.ReadStringPacked().ToString();
-			@event.Closed = reader.ReadBool();
-			return @event;
+            TickEvent @event = new TickEvent
+            {
+                EventType = (TickType)reader.ReadByte(),
+                Bytes = reader.ReadUInt32Packed(),
+                ChannelName = reader.ReadStringPacked().ToString(),
+                MessageType = reader.ReadStringPacked().ToString(),
+                Closed = reader.ReadBool()
+            };
+            return @event;
         }
     }
 }

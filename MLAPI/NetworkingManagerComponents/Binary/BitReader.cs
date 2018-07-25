@@ -4,39 +4,67 @@
 #define ARRAY_DIFF_ALLOW_RESIZE // Whether or not to permit writing diffs of differently sized arrays
 
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text;
 using UnityEngine;
 
 namespace MLAPI.NetworkingManagerComponents.Binary
 {
+    /// <summary>
+    /// A BinaryReader that can do bit wise manipulation when backed by a BitStream
+    /// </summary>
     public class BitReader
     {
-        protected readonly Stream source;
-        protected readonly BitStream bitSource;
+        private readonly Stream source;
+        private readonly BitStream bitSource;
 
-        public BitReader(Stream source)
+        /// <summary>
+        /// Creates a new BitReader backed by a given stream
+        /// </summary>
+        /// <param name="stream">The stream to read from</param>
+        public BitReader(Stream stream)
         {
-            this.source = source;
-            bitSource = source as BitStream;
+            this.source = stream;
+            bitSource = stream as BitStream;
         }
 
-
+        /// <summary>
+        /// Reads a single byte
+        /// </summary>
+        /// <returns>The byte read as an integer</returns>
         public int ReadByte() => source.ReadByte();
 
+        /// <summary>
+        /// Reads a byte
+        /// </summary>
+        /// <returns>The byte read</returns>
         public byte ReadByteDirect() => (byte)source.ReadByte();
 
+        /// <summary>
+        /// Reads a single bit
+        /// </summary>
+        /// <returns>The bit read</returns>
         public bool ReadBit() => bitSource.ReadBit();
 
+        /// <summary>
+        /// Reads a single bit
+        /// </summary>
+        /// <returns>The bit read</returns>
         public bool ReadBool() => ReadBit();
 
+        /// <summary>
+        /// Skips pad bits and aligns the position to the next byte
+        /// </summary>
         public void SkipPadBits()
         {
             while (!bitSource.BitAligned) ReadBit();
         }
 
+        /// <summary>
+        /// Reads a single boxed object of a given type in a packed format
+        /// </summary>
+        /// <param name="type">The type to read</param>
+        /// <returns>Returns the boxed read object</returns>
         public object ReadObjectPacked(Type type)
         {
             if (type == typeof(byte))

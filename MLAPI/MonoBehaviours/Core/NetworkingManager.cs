@@ -128,7 +128,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// Delegate used for incomming custom messages
         /// </summary>
         /// <param name="clientId">The clientId that sent the message</param>
-        /// <param name="reader">The reader containing the message data</param>
+        /// <param name="stream">The stream containing the message data</param>
         public delegate void CustomMessageDelegete(uint clientId, Stream stream);
         /// <summary>
         /// Event invoked when custom messages arrive
@@ -144,7 +144,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// Sends custom message to a list of clients
         /// </summary>
         /// <param name="clientIds">The clients to send to, sends to everyone if null</param>
-        /// <param name="writer">The message writer containing the data</param>
+        /// <param name="stream">The message stream containing the data</param>
         /// <param name="channel">The channel to send the data on</param>
         public void SendCustomMessage(List<uint> clientIds, Stream stream, string channel = "MLAPI_DEFAULT_MESSAGE")
         {
@@ -173,7 +173,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// Sends a custom message to a specific client
         /// </summary>
         /// <param name="clientId">The client to send the message to</param>
-        /// <param name="writer">The message writer containing the data</param>
+        /// <param name="stream">The message stream containing the data</param>
         /// <param name="channel">The channel tos end the data on</param>
         public void SendCustomMessage(uint clientId, Stream stream, string channel = "MLAPI_DEFAULT_MESSAGE")
         {

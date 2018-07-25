@@ -9,7 +9,7 @@ namespace MLAPI.NetworkingManagerComponents.Binary
     /// <summary>
     /// A struct with a explicit memory layout. The struct has 4 fields. float,uint,double and ulong.
     /// Every field has the same starting point in memory. If you insert a float value, it can be extracted as a uint.
-    /// This is to allow for lockless & garbage free conversion from float to uint and double to ulong.
+    /// This is to allow for lockless and garbage free conversion from float to uint and double to ulong.
     /// This allows for VarInt encoding and other integer encodings.
     /// </summary>
     [StructLayout(LayoutKind.Explicit)]

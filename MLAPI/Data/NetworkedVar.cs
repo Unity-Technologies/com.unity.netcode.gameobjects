@@ -36,22 +36,38 @@ namespace MLAPI.Data
         public OnValueChangedDelegate OnValueChanged;
         private NetworkedBehaviour networkedBehaviour;
      
+        /// <summary>
+        /// Creates a NetworkedVar with the default value and settings
+        /// </summary>
         public NetworkedVar()
         {
             
         }
-        
+
+        /// <summary>
+        /// Creates a NetworkedVar with the default value and custom settings
+        /// </summary>
+        /// <param name="settings">The settings to use for the NetworkedVar</param>
         public NetworkedVar(NetworkedVarSettings settings)
         {
             this.Settings = settings;
         }
-        
+
+        /// <summary>
+        /// Creates a NetworkedVar with a custom value and custom settings
+        /// </summary>
+        /// <param name="settings">The settings to use for the NetworkedVar</param>
+        /// <param name="value">The initial value to use for the NetworkedVar</param>
         public NetworkedVar(NetworkedVarSettings settings, T value)
         {
             this.Settings = settings;
             this.InternalValue = value;
         }
-        
+
+        /// <summary>
+        /// Creates a NetworkedVar with a custom value and the default settings
+        /// </summary>
+        /// <param name="value">The initial value to use for the NetworkedVar</param>
         public NetworkedVar(T value)
         {
             this.InternalValue = value;
@@ -117,7 +133,7 @@ namespace MLAPI.Data
         /// <summary>
         /// Writes the variable to the writer
         /// </summary>
-        /// <param name="writer">The writer to write the value to</param>
+        /// <param name="stream">The stream to write the value to</param>
         public void WriteDelta(Stream stream) => WriteField(stream); //The NetworkedVar is built for simple data types and has no delta.
 
         /// <inheritdoc />
@@ -144,7 +160,7 @@ namespace MLAPI.Data
         /// <summary>
         /// Reads value from the reader and applies it
         /// </summary>
-        /// <param name="reader">The reader to read the value from</param>
+        /// <param name="stream">The stream to read the value from</param>
         public void ReadDelta(Stream stream) => ReadField(stream); //The NetworkedVar is built for simple data types and has no delta.
 
         /// <inheritdoc />
