@@ -1,6 +1,7 @@
 ﻿using MLAPI.Data;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using MLAPI.Logging;
 using MLAPI.Serialization;
 using UnityEngine;
@@ -92,16 +93,6 @@ namespace MLAPI.Prototyping
         }
 
         /// <summary>
-        /// Registers message handlers
-        /// </summary>
-        public override void NetworkStart()
-        {
-            //RegisterMessageHandler("MLAPI_HandleAnimationMessage", HandleAnimMsg);
-            //RegisterMessageHandler("MLAPI_HandleAnimationParameterMessage", HandleAnimParamsMsg);
-            //RegisterMessageHandler("MLAPI_HandleAnimationTriggerMessage", HandleAnimTriggerMsg);
-        }
-
-        /// <summary>
         /// TODO
         /// </summary>
         public void ResetParameterOptions()
@@ -127,14 +118,13 @@ namespace MLAPI.Prototyping
                 return;
             }
 
-            using(MemoryStream stream = new MemoryStream())
+            using (PooledBitStream stream = PooledBitStream.Get())
             {
-                using (BinaryWriter writer = new BinaryWriter(stream))
-                {
-                    writer.Write(stateHash);
-                    writer.Write(normalizedTime);
-                    WriteParameters(writer, false);
-                }
+                BitWriter writer = new BitWriter(stream);
+                writer.WriteInt32Packed(stateHash);
+                writer.WriteSinglePacked(normalizedTime);
+                WriteParameters(stream, false);
+                
                 if(isServer)
                 {
                     if (EnableProximity)
@@ -145,15 +135,18 @@ namespace MLAPI.Prototyping
                             if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
                                 clientsInProximity.Add(client.Key);
                         }
-                        //SendToClientsTarget(clientsInProximity ,"MLAPI_HandleAnimationMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
+                        InvokeClientRpc(HandleAnimMsg, clientsInProximity, stream);
                     }
                     else
-                        new System.Exception();
-                        //SendToNonLocalClientsTarget("MLAPI_HandleAnimationMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
+                    {
+                        List<uint> clientIds = NetworkingManager.singleton.ConnectedClientsList.Select(x => x.ClientId).ToList(); //BAD
+                        clientIds.Remove(OwnerClientId);
+                        InvokeClientRpc(HandleAnimMsg, clientIds, stream);
+                    }
                 }
                 else
                 {
-                    //SendToServerTarget("MLAPI_HandleAnimationMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
+                    InvokeServerRpc(HandleAnimMsg, stream);
                 }
             }
         }
@@ -199,12 +192,10 @@ namespace MLAPI.Prototyping
             {
                 sendTimer = NetworkingManager.singleton.NetworkTime + sendRate;
 
-                using(MemoryStream stream = new MemoryStream())
+                using (PooledBitStream stream = PooledBitStream.Get())
                 {
-                    using(BinaryWriter writer = new BinaryWriter(stream))
-                    {
-                        WriteParameters(writer, true);
-                    }
+                    WriteParameters(stream, true);
+                    
                     if (isServer)
                     {
                         if (EnableProximity)
@@ -215,15 +206,18 @@ namespace MLAPI.Prototyping
                                 if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
                                     clientsInProximity.Add(client.Key);
                             }
-                            //SendToClientsTarget(clientsInProximity, "MLAPI_HandleAnimationParameterMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
+                            InvokeClientRpc(HandleAnimParamsMsg, clientsInProximity, stream);
                         }
                         else
-                            new System.Exception();
-                            //SendToNonLocalClientsTarget("MLAPI_HandleAnimationParameterMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
+                        {
+                            List<uint> clientIds = NetworkingManager.singleton.ConnectedClientsList.Select(x => x.ClientId).ToList(); //BAD
+                            clientIds.Remove(OwnerClientId);
+                            InvokeClientRpc(HandleAnimParamsMsg, clientIds, stream);
+                        }
                     }
                     else
                     {
-                        //SendToServerTarget("MLAPI_HandleAnimationParameterMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
+                        InvokeServerRpc(HandleAnimParamsMsg, stream);
                     }
                 }
             }
@@ -251,13 +245,13 @@ namespace MLAPI.Prototyping
             if (i == 5) param5 = p;
         }
 
-        private void HandleAnimMsg(uint clientId, BitReader reader)
+        [ClientRPC]
+        [ServerRPC]
+        private void HandleAnimMsg(uint clientId, Stream stream)
         {
             // usually transitions will be triggered by parameters, if not, play anims directly.
             // NOTE: this plays "animations", not transitions, so any transitions will be skipped.
             // NOTE: there is no API to play a transition(?)
-            byte[] data = reader.ReadByteArray();
-
             if(isServer)
             {
                 if (EnableProximity)
@@ -268,30 +262,30 @@ namespace MLAPI.Prototyping
                         if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
                             clientsInProximity.Add(client.Key);
                     }
-                    //SendToClientsTarget(clientsInProximity, "MLAPI_HandleAnimationMessage", "MLAPI_ANIMATION_UPDATE", data);
+                    InvokeClientRpc(HandleAnimMsg, clientsInProximity, stream);
                 }
                 else
-                    new System.Exception();
-                    //SendToNonLocalClientsTarget("MLAPI_HandleAnimationMessage", "MLAPI_ANIMATION_UPDATE", data);
-            }
-            using (MemoryStream stream = new MemoryStream(data))
-            {
-                using (BinaryReader bReader = new BinaryReader(stream))
                 {
-                    int stateHash = bReader.ReadInt32();
-                    float normalizedTime = bReader.ReadSingle();
-                    if(stateHash != 0)
-                    {
-                        animator.Play(stateHash, 0, normalizedTime);
-                    }
-                    ReadParameters(bReader, false);
+                    List<uint> clientIds = NetworkingManager.singleton.ConnectedClientsList.Select(x => x.ClientId).ToList(); //BAD
+                    clientIds.Remove(OwnerClientId);
+                    InvokeClientRpc(HandleAnimMsg, clientIds, stream);
                 }
             }
+            
+            BitReader reader = new BitReader(stream);
+            int stateHash = reader.ReadInt32Packed();
+            float normalizedTime = reader.ReadSinglePacked();
+            if(stateHash != 0)
+            {
+                animator.Play(stateHash, 0, normalizedTime);
+            }
+            ReadParameters(stream, false);
         }
-
-        private void HandleAnimParamsMsg(uint clientId, BitReader reader)
+        
+        [ClientRPC]
+        [ServerRPC]
+        private void HandleAnimParamsMsg(uint clientId, Stream stream)
         {
-            byte[] data = reader.ReadByteArray();
             if (isServer)
             {
                 if (EnableProximity)
@@ -302,24 +296,23 @@ namespace MLAPI.Prototyping
                         if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
                             clientsInProximity.Add(client.Key);
                     }
-                    //SendToClientsTarget(clientsInProximity, "MLAPI_HandleAnimationParameterMessage", "MLAPI_ANIMATION_UPDATE", data);
+                    InvokeClientRpc(HandleAnimParamsMsg, clientsInProximity, stream);
                 }
                 else
-                    new System.Exception();
-                //SendToNonLocalClientsTarget("MLAPI_HandleAnimationParameterMessage", "MLAPI_ANIMATION_UPDATE", data);
-            }
-            using (MemoryStream stream = new MemoryStream(data))
-            {
-                using (BinaryReader bReader = new BinaryReader(stream))
                 {
-                    ReadParameters(bReader, true);
+                    List<uint> clientIds = NetworkingManager.singleton.ConnectedClientsList.Select(x => x.ClientId).ToList(); //BAD
+                    clientIds.Remove(OwnerClientId);
+                    InvokeClientRpc(HandleAnimParamsMsg, clientIds, stream);
                 }
             }
+            
+            ReadParameters(stream, true);
         }
 
-        private void HandleAnimTriggerMsg(uint clientId, BitReader reader)
+        [ClientRPC]
+        [ServerRPC]
+        private void HandleAnimTriggerMsg(uint clientId, Stream stream)
         {
-            byte[] data = reader.ReadByteArray();
             if (isServer)
             {
                 if (EnableProximity)
@@ -330,23 +323,24 @@ namespace MLAPI.Prototyping
                         if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
                             clientsInProximity.Add(client.Key);
                     }
-                    //SendToClientsTarget(clientsInProximity, "MLAPI_HandleAnimationTriggerMessage", "MLAPI_ANIMATION_UPDATE", data);
+                    InvokeClientRpc(HandleAnimTriggerMsg, clientsInProximity, stream);
                 }
                 else
-                    new System.Exception();
-                //SendToNonLocalClientsTarget("MLAPI_HandleAnimationTriggerMessage", "MLAPI_ANIMATION_UPDATE", data);
-            }
-            using (MemoryStream stream = new MemoryStream(data))
-            {
-                using (BinaryReader bReader = new BinaryReader(stream))
                 {
-                    animator.SetTrigger(bReader.ReadInt32());
+                    List<uint> clientIds = NetworkingManager.singleton.ConnectedClientsList.Select(x => x.ClientId).ToList(); //BAD
+                    clientIds.Remove(OwnerClientId);
+                    InvokeClientRpc(HandleAnimTriggerMsg, clientIds, stream);
                 }
             }
+            
+            BitReader reader = new BitReader(stream);
+            animator.SetTrigger(reader.ReadInt32Packed());
         }
 
-        private void WriteParameters(BinaryWriter writer, bool autoSend)
+        private void WriteParameters(Stream stream, bool autoSend)
         {
+            BitWriter writer = new BitWriter(stream);
+            
             if (animatorParameters == null)       
                 animatorParameters = animator.parameters;
 
@@ -358,29 +352,31 @@ namespace MLAPI.Prototyping
                 AnimatorControllerParameter par = animatorParameters[i];
                 if (par.type == AnimatorControllerParameterType.Int)
                 {
-                    writer.Write((uint)animator.GetInteger(par.nameHash));
+                    writer.WriteUInt32Packed((uint)animator.GetInteger(par.nameHash));
 
                     SetSendTrackingParam(par.name + ":" + animator.GetInteger(par.nameHash), i);
                 }
 
                 if (par.type == AnimatorControllerParameterType.Float)
                 {
-                    writer.Write(animator.GetFloat(par.nameHash));
+                    writer.WriteSinglePacked(animator.GetFloat(par.nameHash));
 
                     SetSendTrackingParam(par.name + ":" + animator.GetFloat(par.nameHash), i);
                 }
 
                 if (par.type == AnimatorControllerParameterType.Bool)
                 {
-                    writer.Write(animator.GetBool(par.nameHash));
+                    writer.WriteBool(animator.GetBool(par.nameHash));
 
                     SetSendTrackingParam(par.name + ":" + animator.GetBool(par.nameHash), i);
                 }
             }
         }
 
-        private void ReadParameters(BinaryReader reader, bool autoSend)
+        private void ReadParameters(Stream stream, bool autoSend)
         {
+            BitReader reader = new BitReader(stream);
+            
             if (animatorParameters == null)
                 animatorParameters = animator.parameters;
 
@@ -392,7 +388,7 @@ namespace MLAPI.Prototyping
                 AnimatorControllerParameter par = animatorParameters[i];
                 if (par.type == AnimatorControllerParameterType.Int)
                 {
-                    int newValue = (int)reader.ReadUInt32();
+                    int newValue = (int)reader.ReadUInt32Packed();
                     animator.SetInteger(par.nameHash, newValue);
 
                     SetRecvTrackingParam(par.name + ":" + newValue, i);
@@ -400,7 +396,7 @@ namespace MLAPI.Prototyping
 
                 if (par.type == AnimatorControllerParameterType.Float)
                 {
-                    float newFloatValue = reader.ReadSingle();
+                    float newFloatValue = reader.ReadSinglePacked();
                     animator.SetFloat(par.nameHash, newFloatValue);
 
                     SetRecvTrackingParam(par.name + ":" + newFloatValue, i);
@@ -408,7 +404,7 @@ namespace MLAPI.Prototyping
 
                 if (par.type == AnimatorControllerParameterType.Bool)
                 {
-                    bool newBoolValue = reader.ReadBoolean();
+                    bool newBoolValue = reader.ReadBool();
                     animator.SetBool(par.nameHash, newBoolValue);
 
                     SetRecvTrackingParam(par.name + ":" + newBoolValue, i);
@@ -433,12 +429,11 @@ namespace MLAPI.Prototyping
         {
             if (isLocalPlayer || isOwner)
             {
-                using (MemoryStream stream = new MemoryStream())
+                using (PooledBitStream stream = PooledBitStream.Get())
                 {
-                    using (BinaryWriter writer = new BinaryWriter(stream))
-                    {
-                        writer.Write(hash);
-                    }
+                    BitWriter writer = new BitWriter(stream);
+                    writer.WriteInt32Packed(hash);
+                    
                     if (isServer)
                     {
                         if (EnableProximity)
@@ -449,15 +444,18 @@ namespace MLAPI.Prototyping
                                 if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
                                     clientsInProximity.Add(client.Key);
                             }
-                            //SendToClientsTarget(clientsInProximity, "MLAPI_HandleAnimationTriggerMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
+                            InvokeClientRpc(HandleAnimTriggerMsg, clientsInProximity, stream);
                         }
                         else
-                            new System.Exception();
-                        //SendToNonLocalClientsTarget("MLAPI_HandleAnimationTriggerMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
+                        {
+                            List<uint> clientIds = NetworkingManager.singleton.ConnectedClientsList.Select(x => x.ClientId).ToList(); //BAD
+                            clientIds.Remove(OwnerClientId);
+                            InvokeClientRpc(HandleAnimTriggerMsg, clientIds, stream);
+                        }
                     }
                     else
                     {
-                        //SendToServerTarget("MLAPI_HandleAnimationTriggerMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
+                        InvokeServerRpc(HandleAnimTriggerMsg, stream);
                     }
                 }
             }

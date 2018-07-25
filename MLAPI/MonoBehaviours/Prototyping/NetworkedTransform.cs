@@ -284,7 +284,6 @@ namespace MLAPI.Prototyping
                             info.lastMissedRotation = null;
 
                             InvokeClientRpcOnClient(OnRecieveTransformFromServer, NetworkingManager.singleton.ConnectedClientsList[i].ClientId, writeStream);
-                            //SendToClientTarget(NetworkingManager.singleton.ConnectedClientsList[i].ClientId, "MLAPI_OnRecieveTransformFromServer", "MLAPI_POSITION_UPDATE", positionUpdateBuffer);
                         }
                         else
                         {
@@ -298,7 +297,6 @@ namespace MLAPI.Prototyping
                     List<uint> clientIds = new List<uint>(NetworkingManager.singleton.ConnectedClientsList.Select(x => x.ClientId).ToList());
                     clientIds.Remove(OwnerClientId); //TODO: SORT WITH BETTER OVERLOADS
                     InvokeClientRpc(OnRecieveTransformFromServer, clientIds, writeStream);
-                    //SendToNonLocalClientsTarget("MLAPI_OnRecieveTransformFromServer", "MLAPI_POSITION_UPDATE", positionUpdateBuffer);
                 }
             }
         }
@@ -323,12 +321,26 @@ namespace MLAPI.Prototyping
                                 
                 if (NetworkingManager.singleton.NetworkTime - info.lastSent >= GetTimeForLerp(receiverPosition, senderPosition))
                 {
+                    Vector3 pos = NetworkingManager.singleton.ConnectedClients[OwnerClientId].PlayerObject.transform.position;
+                    Vector3 rot = NetworkingManager.singleton.ConnectedClients[OwnerClientId].PlayerObject.transform.rotation.eulerAngles;
+                    
                     info.lastSent = NetworkingManager.singleton.NetworkTime;
                     info.lastMissedPosition = null;
                     info.lastMissedRotation = null;
                     
-
-                    //SendToClientTarget(NetworkingManager.singleton.ConnectedClientsList[i].ClientId, "MLAPI_OnRecieveTransformFromServer", "MLAPI_POSITION_UPDATE", positionUpdateBuffer);
+                    using (PooledBitStream stream = PooledBitStream.Get())
+                    {   
+                        BitWriter writer = new BitWriter(stream);
+                        writer.WriteSinglePacked(pos.x);
+                        writer.WriteSinglePacked(pos.y);
+                        writer.WriteSinglePacked(pos.z);
+                        
+                        writer.WriteSinglePacked(rot.x);
+                        writer.WriteSinglePacked(rot.y);
+                        writer.WriteSinglePacked(rot.z);
+                        
+                        InvokeClientRpcOnClient(OnRecieveTransformFromServer, NetworkingManager.singleton.ConnectedClientsList[i].ClientId, stream);
+                    }
                 }
             }
         }

@@ -12,7 +12,12 @@ namespace MLAPI.Configuration
         WovenFourByte,
         WovenEightByte
     }
-    
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+}
+
+namespace MLAPI
+{
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
     public delegate void RpcDelegate(uint clientId, Stream stream);
 
     public class ReflectionMehtod
