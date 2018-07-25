@@ -1,10 +1,10 @@
-﻿using MLAPI.Data;
-using MLAPI.MonoBehaviours.Core;
-using MLAPI.NetworkingManagerComponents.Binary;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using MLAPI.Internal;
+using MLAPI.Logging;
+using MLAPI.Serialization;
 using UnityEngine;
 
-namespace MLAPI.NetworkingManagerComponents.Core
+namespace MLAPI.Components
 {
     /// <summary>
     /// Main class for managing network pools

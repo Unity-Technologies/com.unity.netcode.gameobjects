@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace MLAPI.NetworkingManagerComponents.Binary
+namespace MLAPI.Serialization
 {
     /// <summary>
     /// Static class containing PooledBitStreams

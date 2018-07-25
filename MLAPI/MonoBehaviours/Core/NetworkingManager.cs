@@ -5,16 +5,21 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 using System.Security.Cryptography;
-using MLAPI.NetworkingManagerComponents.Cryptography;
-using MLAPI.NetworkingManagerComponents.Core;
+using MLAPI.Logging;
 using UnityEngine.SceneManagement;
-using MLAPI.NetworkingManagerComponents.Binary;
-using MLAPI.Data.Transports;
-using MLAPI.Data.Transports.UNET;
-using MLAPI.Data.NetworkProfiler;
 using System.IO;
+using MLAPI.Collections;
+using MLAPI.Components;
+using MLAPI.Configuration;
+using MLAPI.Cryptography;
+using MLAPI.Internal;
+using MLAPI.Profiler;
+using MLAPI.Serialization;
+using MLAPI.Transports;
+using MLAPI.Transports.UNET;
+using BitStream = MLAPI.Serialization.BitStream;
 
-namespace MLAPI.MonoBehaviours.Core
+namespace MLAPI
 {
     /// <summary>
     /// The main component of the library
@@ -780,7 +785,7 @@ namespace MLAPI.MonoBehaviours.Core
         private void HandleIncomingData(uint clientId, byte[] data, int channelId, int totalSize)
         {
             if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Unwrapping Data Header");
-			using (NetworkingManagerComponents.Binary.BitStream stream = new NetworkingManagerComponents.Binary.BitStream(data))
+			using (BitStream stream = new BitStream(data))
             {
 				stream.SetLength(totalSize);
                 BitReader reader = new BitReader(stream);

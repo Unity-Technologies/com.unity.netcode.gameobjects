@@ -1,8 +1,10 @@
-﻿using MLAPI.Data.NetworkProfiler;
-using MLAPI.NetworkingManagerComponents.Binary;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
+using MLAPI.Collections;
+using MLAPI.Profiler;
+using MLAPI.Serialization;
 using UnityEngine;
+using BitStream = MLAPI.Serialization.BitStream;
 
 namespace UnityEditor
 {
@@ -40,7 +42,7 @@ namespace UnityEditor
 
             public byte[] ToBytes()
 			{
-				MLAPI.NetworkingManagerComponents.Binary.BitStream stream = new MLAPI.NetworkingManagerComponents.Binary.BitStream();
+				BitStream stream = new BitStream();
 				BitWriter writer = new BitWriter(stream);
 				writer.WriteUInt16Packed((ushort)ticks.Length);
 
@@ -55,7 +57,7 @@ namespace UnityEditor
 			public static ProfilerContainer FromBytes(byte[] bytes)
 			{
 				ProfilerContainer container = new ProfilerContainer();
-				MLAPI.NetworkingManagerComponents.Binary.BitStream stream = new MLAPI.NetworkingManagerComponents.Binary.BitStream(bytes);
+				BitStream stream = new BitStream(bytes);
 				BitReader reader = new BitReader(stream);
 				ushort count = reader.ReadUInt16Packed();
 				container.ticks = new ProfilerTick[count];

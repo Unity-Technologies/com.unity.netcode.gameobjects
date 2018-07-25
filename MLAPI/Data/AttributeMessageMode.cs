@@ -1,9 +1,9 @@
 ﻿using System;
 using System.IO;
 using System.Reflection;
-using MLAPI.NetworkingManagerComponents.Binary;
+using MLAPI.Serialization;
 
-namespace MLAPI.Data
+namespace MLAPI.Configuration
 {
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
     public enum AttributeMessageMode

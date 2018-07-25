@@ -2,7 +2,6 @@
 using UnityEngine;
 using UnityEditorInternal;
 using MLAPI;
-using MLAPI.MonoBehaviours.Core;
 
 [CustomEditor(typeof(NetworkingManager), true)]
 [CanEditMultipleObjects]

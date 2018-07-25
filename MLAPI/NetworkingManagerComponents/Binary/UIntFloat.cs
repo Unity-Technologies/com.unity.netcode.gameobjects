@@ -4,7 +4,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace MLAPI.NetworkingManagerComponents.Binary
+namespace MLAPI.Serialization
 {
     /// <summary>
     /// A struct with a explicit memory layout. The struct has 4 fields. float,uint,double and ulong.

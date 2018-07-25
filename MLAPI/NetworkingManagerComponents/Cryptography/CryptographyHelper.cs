@@ -2,9 +2,8 @@
 using System;
 using System.Security.Cryptography;
 using System.IO;
-using MLAPI.MonoBehaviours.Core;
 
-namespace MLAPI.NetworkingManagerComponents.Cryptography
+namespace MLAPI.Cryptography
 {
     /// <summary>
     /// Helper class for encryption purposes

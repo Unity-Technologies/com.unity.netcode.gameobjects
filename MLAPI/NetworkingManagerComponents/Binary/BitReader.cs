@@ -6,9 +6,10 @@
 using System;
 using System.IO;
 using System.Text;
+using MLAPI.Internal;
 using UnityEngine;
 
-namespace MLAPI.NetworkingManagerComponents.Binary
+namespace MLAPI.Serialization
 {
     /// <summary>
     /// A BinaryReader that can do bit wise manipulation when backed by a BitStream

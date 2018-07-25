@@ -1,7 +1,7 @@
 ﻿using System;
-namespace MLAPI.Tests.NetworkingManagerComponents.Binary
+namespace MLAPI.Tests.Serialization
 {
-    using MLAPI.NetworkingManagerComponents.Binary;
+    using MLAPI.Serialization;
     using NUnit.Framework;
     using System.Text;
 

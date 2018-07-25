@@ -1,8 +1,6 @@
-﻿using MLAPI.MonoBehaviours.Core;
-using MLAPI.NetworkingManagerComponents.Binary;
-using System.IO;
+﻿using System.IO;
 
-namespace MLAPI.Data
+namespace MLAPI.NetworkedVar
 {
 
     /// <summary>

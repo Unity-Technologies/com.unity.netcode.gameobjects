@@ -1,8 +1,9 @@
 ﻿using System.Collections.Generic;
-using MLAPI.NetworkingManagerComponents.Core;
+using MLAPI.Internal;
+using MLAPI.Profiler;
 using UnityEngine;
 
-namespace MLAPI.Data.NetworkProfiler
+namespace MLAPI.Collections
 {
     /// <summary>
     /// NetworkProfiler for profiling network traffic

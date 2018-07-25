@@ -1,10 +1,10 @@
-﻿using MLAPI.MonoBehaviours.Core;
+﻿#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 using System.Collections.Generic;
 using UnityEngine.Networking;
 
-namespace MLAPI.Data.Transports.UNET
+namespace MLAPI.Transports.UNET
 {
-    class RelayedTransport : IUDPTransport
+    public class RelayedTransport : IUDPTransport
     {
         public ChannelType InternalChannel => ChannelType.ReliableFragmentedSequenced;
 		public uint ServerClientId => new NetId(0, 0, true).GetClientId();
@@ -174,3 +174,5 @@ namespace MLAPI.Data.Transports.UNET
         }
     }
 }
+
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member

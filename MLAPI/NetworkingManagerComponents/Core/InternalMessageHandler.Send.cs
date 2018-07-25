@@ -1,12 +1,9 @@
-﻿using System.Collections.Generic;
-using System.IO;
-using MLAPI.Data;
-using MLAPI.Data.NetworkProfiler;
-using MLAPI.MonoBehaviours.Core;
-using MLAPI.NetworkingManagerComponents.Binary;
-using MLAPI.NetworkingManagerComponents.Cryptography;
+﻿using System.IO;
+using MLAPI.Collections;
+using MLAPI.Profiler;
+using MLAPI.Serialization;
 
-namespace MLAPI.NetworkingManagerComponents.Core
+namespace MLAPI.Internal
 {
     internal static partial class InternalMessageHandler
     {

@@ -1,5 +1,5 @@
 ﻿#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-namespace MLAPI.NetworkingManagerComponents.Binary
+namespace MLAPI.Serialization
 {
     public static class Arithmetic
     {

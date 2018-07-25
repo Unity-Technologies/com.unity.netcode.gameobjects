@@ -1,12 +1,11 @@
 ﻿#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-using MLAPI.NetworkingManagerComponents.Core;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Text;
+using MLAPI.Logging;
 
-namespace MLAPI.NetworkingManagerComponents.Binary
+namespace MLAPI.Serialization
 {
     [Obsolete]
     public sealed class BitWriterDeprecated : IDisposable

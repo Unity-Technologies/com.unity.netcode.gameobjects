@@ -1,12 +1,11 @@
 ﻿using MLAPI.Data;
-using MLAPI.MonoBehaviours.Core;
-using MLAPI.NetworkingManagerComponents.Binary;
 using System.Collections.Generic;
 using System.IO;
+using MLAPI.Serialization;
 using UnityEngine;
 using UnityEngine.AI;
 
-namespace MLAPI.MonoBehaviours.Prototyping
+namespace MLAPI.Prototyping
 {
     /// <summary>
     /// A prototype component for syncing navmeshagents

@@ -1,12 +1,11 @@
 ﻿using System.Collections.Generic;
-using MLAPI.MonoBehaviours.Core;
-using MLAPI.NetworkingManagerComponents.Binary;
 using System.IO;
 using UnityEngine;
-using MLAPI.Data;
 using System.Linq;
+using MLAPI.Configuration;
+using MLAPI.Serialization;
 
-namespace MLAPI.MonoBehaviours.Prototyping
+namespace MLAPI.Prototyping
 {
     /// <summary>
     /// A prototype component for syncing transforms

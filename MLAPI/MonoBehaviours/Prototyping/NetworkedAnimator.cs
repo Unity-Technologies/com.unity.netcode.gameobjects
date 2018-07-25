@@ -1,12 +1,11 @@
 ﻿using MLAPI.Data;
-using MLAPI.MonoBehaviours.Core;
-using MLAPI.NetworkingManagerComponents.Binary;
-using MLAPI.NetworkingManagerComponents.Core;
 using System.Collections.Generic;
 using System.IO;
+using MLAPI.Logging;
+using MLAPI.Serialization;
 using UnityEngine;
 
-namespace MLAPI.MonoBehaviours.Prototyping
+namespace MLAPI.Prototyping
 {
     /// <summary>
     /// A prototype component for syncing animations

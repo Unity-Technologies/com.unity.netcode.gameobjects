@@ -8,7 +8,7 @@ using System.Diagnostics;
 using System.IO;
 using UnityEngine;
 
-namespace MLAPI.NetworkingManagerComponents.Binary
+namespace MLAPI.Serialization
 {
     // Improved version of BitWriter
     /// <summary>

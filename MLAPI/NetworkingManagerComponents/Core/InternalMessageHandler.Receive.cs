@@ -1,12 +1,12 @@
 ﻿using System.IO;
-using System.Reflection;
 using System.Security.Cryptography;
+using MLAPI.Components;
 using MLAPI.Data;
-using MLAPI.MonoBehaviours.Core;
-using MLAPI.NetworkingManagerComponents.Binary;
+using MLAPI.Logging;
+using MLAPI.Serialization;
 using UnityEngine;
 
-namespace MLAPI.NetworkingManagerComponents.Core
+namespace MLAPI.Internal
 {
     internal static partial class InternalMessageHandler
     {

@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace MLAPI.Data
+namespace MLAPI.Collections
 {
     /// <summary>
     /// Queue with a fixed size

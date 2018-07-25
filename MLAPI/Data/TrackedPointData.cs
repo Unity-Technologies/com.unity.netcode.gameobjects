@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace MLAPI.Data
+namespace MLAPI.Internal
 {
     internal struct TrackedPointData
     {

@@ -1,10 +1,10 @@
-﻿using MLAPI.NetworkingManagerComponents.Binary;
-using MLAPI.MonoBehaviours.Core;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
+using MLAPI.NetworkedVar;
+using MLAPI.Serialization;
 
-namespace MLAPI.Data
+namespace MLAPI
 {
     /// <summary>
     /// A variable that can be synchronized over the network.

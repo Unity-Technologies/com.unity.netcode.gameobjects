@@ -1,9 +1,9 @@
 ﻿using System;
 using System.IO;
-using static MLAPI.NetworkingManagerComponents.Binary.Arithmetic;
+using static MLAPI.Serialization.Arithmetic;
 
 
-namespace MLAPI.NetworkingManagerComponents.Binary
+namespace MLAPI.Serialization
 {
     /// <summary>
     /// A stream that can be used at the bit level

@@ -4,11 +4,15 @@ using UnityEngine;
 using System.Reflection;
 using System.Linq;
 using MLAPI.Data;
-using MLAPI.NetworkingManagerComponents.Binary;
-using MLAPI.NetworkingManagerComponents.Core;
 using System.IO;
+using MLAPI.Components;
+using MLAPI.Configuration;
+using MLAPI.Internal;
+using MLAPI.Logging;
+using MLAPI.NetworkedVar;
+using MLAPI.Serialization;
 
-namespace MLAPI.MonoBehaviours.Core
+namespace MLAPI
 {
     /// <summary>
     /// The base class to override to write networked code. Inherits MonoBehaviour

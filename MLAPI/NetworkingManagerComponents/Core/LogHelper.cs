@@ -1,7 +1,6 @@
-﻿using MLAPI.MonoBehaviours.Core;
-using UnityEngine;
+﻿using UnityEngine;
 
-namespace MLAPI.NetworkingManagerComponents.Core
+namespace MLAPI.Logging
 {
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
     public enum LogLevel

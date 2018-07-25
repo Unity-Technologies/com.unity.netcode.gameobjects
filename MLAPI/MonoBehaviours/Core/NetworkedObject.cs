@@ -1,11 +1,12 @@
-﻿using MLAPI.NetworkingManagerComponents.Binary;
-using MLAPI.NetworkingManagerComponents.Core;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using MLAPI.Components;
+using MLAPI.Logging;
+using MLAPI.Serialization;
 using UnityEngine;
 
-namespace MLAPI.MonoBehaviours.Core
+namespace MLAPI
 {
     /// <summary>
     /// A component used to identify that a GameObject is networked

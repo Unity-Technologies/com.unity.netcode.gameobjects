@@ -1,4 +1,4 @@
-﻿namespace MLAPI.Data.Transports.UNET
+﻿namespace MLAPI.Transports.UNET
 {
     /// <summary>
     /// Represents a ClientId structure

@@ -1,9 +1,6 @@
-﻿using MLAPI.MonoBehaviours.Core;
-using MLAPI.NetworkingManagerComponents.Binary;
-using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
-namespace MLAPI.NetworkingManagerComponents.Core
+namespace MLAPI.Internal
 {
     internal static class MessageManager
     {

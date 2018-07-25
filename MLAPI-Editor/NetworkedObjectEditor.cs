@@ -1,4 +1,4 @@
-﻿using MLAPI.MonoBehaviours.Core;
+﻿using MLAPI;
 using UnityEngine;
 
 namespace UnityEditor

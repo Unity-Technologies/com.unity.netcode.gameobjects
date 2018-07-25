@@ -1,4 +1,4 @@
-﻿namespace MLAPI.Data.Transports
+﻿namespace MLAPI.Transports
 {
     /// <summary>
     /// A UDP transport

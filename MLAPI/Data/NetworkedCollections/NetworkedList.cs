@@ -1,10 +1,9 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using MLAPI.MonoBehaviours.Core;
-using MLAPI.NetworkingManagerComponents.Binary;
+using MLAPI.Serialization;
 
-namespace MLAPI.Data.NetworkedCollections
+namespace MLAPI.NetworkedVar.Collections
 {
     /// <summary>
     /// Event based networkedVar container for syncing Lists

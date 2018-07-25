@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.IO;
-using MLAPI.NetworkingManagerComponents.Binary;
+using MLAPI.Serialization;
 
-namespace MLAPI.Data.NetworkProfiler
+namespace MLAPI.Profiler
 {
 	/// <summary>
 	/// The type of Tick

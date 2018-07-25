@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using IntXLib;
 
-namespace MLAPI.NetworkingManagerComponents.Cryptography
+namespace MLAPI.Cryptography
 {
     internal class CurvePoint
     {

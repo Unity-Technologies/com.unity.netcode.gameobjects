@@ -4,7 +4,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace MLAPI.NetworkingManagerComponents.Binary
+namespace MLAPI.Internal
 {
     [StructLayout(LayoutKind.Explicit)]
     internal struct ByteBool

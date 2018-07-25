@@ -1,5 +1,4 @@
 ﻿#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-using MLAPI.MonoBehaviours.Core;
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -7,7 +6,7 @@ using System.Text;
 using UnityEngine;
 using UnityEngine.Networking;
 
-namespace MLAPI.Data.Transports.UNET
+namespace MLAPI.Transports.UNET
 {
     public static class RelayTransport
     {

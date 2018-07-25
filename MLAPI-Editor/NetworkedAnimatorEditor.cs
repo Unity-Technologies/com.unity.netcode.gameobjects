@@ -1,5 +1,5 @@
-﻿using MLAPI.MonoBehaviours.Prototyping;
-using System;
+﻿using System;
+using MLAPI.Prototyping;
 using UnityEditor.Animations;
 using UnityEngine;
 
