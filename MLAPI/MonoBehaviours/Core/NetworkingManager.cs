@@ -162,14 +162,14 @@ namespace MLAPI
             {
                 for (int i = 0; i < ConnectedClientsList.Count; i++)
                 {
-                    InternalMessageHandler.Send(ConnectedClientsList[i].ClientId, "MLAPI_CUSTOM_MESSAGE", channel, stream);
+                    InternalMessageHandler.Send(ConnectedClientsList[i].ClientId, MLAPIConstants.MLAPI_CUSTOM_MESSAGE, channel, stream);
                 }
             }
             else
             {
                 for (int i = 0; i < clientIds.Count; i++)
                 {
-                    InternalMessageHandler.Send(clientIds[i], "MLAPI_CUSTOM_MESSAGE", channel, stream);
+                    InternalMessageHandler.Send(clientIds[i], MLAPIConstants.MLAPI_CUSTOM_MESSAGE, channel, stream);
                 }
             }
         }
@@ -182,7 +182,7 @@ namespace MLAPI
         /// <param name="channel">The channel tos end the data on</param>
         public void SendCustomMessage(uint clientId, Stream stream, string channel = "MLAPI_DEFAULT_MESSAGE")
         {
-            InternalMessageHandler.Send(clientId, "MLAPI_CUSTOM_MESSAGE", channel, stream);
+            InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_CUSTOM_MESSAGE, channel, stream);
         }
 
 
@@ -281,9 +281,7 @@ namespace MLAPI
             diffieHellmanPublicKeys.Clear();
 #endif
             MessageManager.channels.Clear();
-            MessageManager.messageTypes.Clear();
             MessageManager.reverseChannels.Clear();
-            MessageManager.reverseMessageTypes.Clear();
             SpawnManager.SpawnedObjects.Clear();
             SpawnManager.SpawnedObjectsList.Clear();
             SpawnManager.releasedNetworkObjectIds.Clear();
@@ -403,24 +401,6 @@ namespace MLAPI
                 channelNames.Add(NetworkConfig.Channels[i].Name);
                 MessageManager.reverseChannels.Add(channelId, NetworkConfig.Channels[i].Name);
             }
-
-            //Add internal messagetypes directly
-            MessageManager.messageTypes.Add("MLAPI_CONNECTION_REQUEST", MLAPIConstants.MLAPI_CONNECTION_REQUEST);
-            MessageManager.messageTypes.Add("MLAPI_CONNECTION_APPROVED", MLAPIConstants.MLAPI_CONNECTION_APPROVED);
-            MessageManager.messageTypes.Add("MLAPI_ADD_OBJECT", MLAPIConstants.MLAPI_ADD_OBJECT);
-            MessageManager.messageTypes.Add("MLAPI_CLIENT_DISCONNECT", MLAPIConstants.MLAPI_CLIENT_DISCONNECT);
-            MessageManager.messageTypes.Add("MLAPI_DESTROY_OBJECT", MLAPIConstants.MLAPI_DESTROY_OBJECT);
-            MessageManager.messageTypes.Add("MLAPI_SWITCH_SCENE", MLAPIConstants.MLAPI_SWITCH_SCENE);
-            MessageManager.messageTypes.Add("MLAPI_SPAWN_POOL_OBJECT", MLAPIConstants.MLAPI_SPAWN_POOL_OBJECT);
-            MessageManager.messageTypes.Add("MLAPI_DESTROY_POOL_OBJECT", MLAPIConstants.MLAPI_DESTROY_POOL_OBJECT);
-            MessageManager.messageTypes.Add("MLAPI_CHANGE_OWNER", MLAPIConstants.MLAPI_CHANGE_OWNER);
-            MessageManager.messageTypes.Add("MLAPI_ADD_OBJECTS", MLAPIConstants.MLAPI_ADD_OBJECTS);
-            MessageManager.messageTypes.Add("MLAPI_TIME_SYNC", MLAPIConstants.MLAPI_TIME_SYNC);
-            MessageManager.messageTypes.Add("MLAPI_NETWORKED_VAR_DELTA", MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA);
-            MessageManager.messageTypes.Add("MLAPI_NETWORKED_VAR_UPDATE", MLAPIConstants.MLAPI_NETWORKED_VAR_UPDATE);
-            MessageManager.messageTypes.Add("MLAPI_SERVER_RPC", MLAPIConstants.MLAPI_SERVER_RPC);
-            MessageManager.messageTypes.Add("MLAPI_CLIENT_RPC", MLAPIConstants.MLAPI_CLIENT_RPC);
-            MessageManager.messageTypes.Add("MLAPI_CUSTOM_MESSAGE", MLAPIConstants.MLAPI_CUSTOM_MESSAGE);
 
             return settings;
         }
@@ -703,7 +683,7 @@ namespace MLAPI
                                         if (NetworkConfig.ConnectionApproval)
                                             writer.WriteByteArray(NetworkConfig.ConnectionData);
 
-                                        InternalMessageHandler.Send(clientId, "MLAPI_CONNECTION_REQUEST", "MLAPI_INTERNAL", stream, true);
+                                        InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_CONNECTION_REQUEST, "MLAPI_INTERNAL", stream, true);
                                     }
                                 }
                                 NetworkProfiler.EndEvent();
@@ -789,7 +769,7 @@ namespace MLAPI
 				stream.SetLength(totalSize);
                 BitReader reader = new BitReader(stream);
 
-                ushort messageType = reader.ReadUInt16Packed();
+                byte messageType = reader.ReadByteDirect();
 
                 uint headerByteSize = (uint)Arithmetic.VarIntSize(messageType);
                 NetworkProfiler.StartEvent(TickType.Receive, (uint)(totalSize - headerByteSize), channelId, messageType);
@@ -911,7 +891,7 @@ namespace MLAPI
                 {
                     BitWriter writer = new BitWriter(stream);
                     writer.WriteUInt32Packed(clientId);
-                    InternalMessageHandler.Send("MLAPI_CLIENT_DISCONNECT", "MLAPI_INTERNAL", clientId, stream);
+                    InternalMessageHandler.Send(MLAPIConstants.MLAPI_CLIENT_DISCONNECT, "MLAPI_INTERNAL", clientId, stream);
                 }
             }
         }
@@ -926,7 +906,7 @@ namespace MLAPI
                 writer.WriteSinglePacked(NetworkTime);
                 int timestamp = NetworkConfig.NetworkTransport.GetNetworkTimestamp();
                 writer.WriteInt32Packed(timestamp);
-                InternalMessageHandler.Send("MLAPI_TIME_SYNC", "MLAPI_TIME_SYNC", stream);
+                InternalMessageHandler.Send(MLAPIConstants.MLAPI_TIME_SYNC, "MLAPI_TIME_SYNC", stream);
             }
         }
 
@@ -1035,7 +1015,7 @@ namespace MLAPI
                             pair.Value.WriteNetworkedVarData(stream, clientId);
                         }
                     }
-                    InternalMessageHandler.Send(clientId, "MLAPI_CONNECTION_APPROVED", "MLAPI_INTERNAL", stream, true);
+                    InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_CONNECTION_APPROVED, "MLAPI_INTERNAL", stream, true);
 
                     if (OnClientConnectedCallback != null)
                         OnClientConnectedCallback.Invoke(clientId);
@@ -1075,7 +1055,7 @@ namespace MLAPI
                         {
                             writer.WriteUInt32Packed(clientId);
                         }
-                        InternalMessageHandler.Send(clientPair.Key, "MLAPI_ADD_OBJECT", "MLAPI_INTERNAL", stream);
+                        InternalMessageHandler.Send(clientPair.Key, MLAPIConstants.MLAPI_ADD_OBJECT, "MLAPI_INTERNAL", stream);
                     }
                 }
             }

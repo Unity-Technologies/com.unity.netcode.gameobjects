@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using MLAPI.Data;
 using MLAPI.Internal;
 using MLAPI.Profiler;
 using UnityEngine;
@@ -112,14 +113,14 @@ namespace MLAPI.Collections
             CurrentTick = null;
         }
         
-        internal static void StartEvent(TickType eventType, uint bytes, int channelId, ushort messageId)
+        internal static void StartEvent(TickType eventType, uint bytes, int channelId, byte messageType)
         {
             if (!isRunning)
                 return;
             if (CurrentTick == null)
                 return;
             string channelName = MessageManager.reverseChannels.ContainsKey(channelId) ? MessageManager.reverseChannels[channelId] : "INVALID_CHANNEL";
-            string messageName = MessageManager.reverseMessageTypes.ContainsKey(messageId) ? MessageManager.reverseMessageTypes[messageId] : "INVALID_MESSAGE_TYPE";
+            string messageName = MLAPIConstants.MESSAGE_NAMES.Length < messageType ? MLAPIConstants.MESSAGE_NAMES[messageType] : "INVALID_MESSAGE_TYPE";
 
             CurrentTick.StartEvent(eventType, bytes, channelName, messageName);
         }

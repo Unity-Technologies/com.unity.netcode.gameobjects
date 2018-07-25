@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using MLAPI.Data;
 using MLAPI.Internal;
 using MLAPI.Logging;
 using MLAPI.Serialization;
@@ -79,7 +80,7 @@ namespace MLAPI.Components
                 writer.WriteSinglePacked(rotation.eulerAngles.y);
                 writer.WriteSinglePacked(rotation.eulerAngles.z);
 
-                InternalMessageHandler.Send("MLAPI_SPAWN_POOL_OBJECT", "MLAPI_INTERNAL", stream);
+                InternalMessageHandler.Send(MLAPIConstants.MLAPI_SPAWN_POOL_OBJECT, "MLAPI_INTERNAL", stream);
             }
             return netObject;
         }
@@ -101,7 +102,7 @@ namespace MLAPI.Components
                 BitWriter writer = new BitWriter(stream);
                 writer.WriteUInt32Packed(netObject.NetworkId);
 
-                InternalMessageHandler.Send("MLAPI_DESTROY_POOL_OBJECT", "MLAPI_INTERNAL", stream);
+                InternalMessageHandler.Send(MLAPIConstants.MLAPI_DESTROY_POOL_OBJECT, "MLAPI_INTERNAL", stream);
             }
         }
     }

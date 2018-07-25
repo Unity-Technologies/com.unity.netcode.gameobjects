@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using MLAPI.Data;
 using MLAPI.Internal;
 using MLAPI.Logging;
 using MLAPI.Serialization;
@@ -63,7 +64,7 @@ namespace MLAPI.Components
                 BitWriter writer = new BitWriter(stream);
                 writer.WriteUInt32Packed(sceneNameToIndex[sceneName]);
 
-                InternalMessageHandler.Send("MLAPI_SWITCH_SCENE", "MLAPI_INTERNAL", stream);
+                InternalMessageHandler.Send(MLAPIConstants.MLAPI_SWITCH_SCENE, "MLAPI_INTERNAL", stream);
             }
         }
 
