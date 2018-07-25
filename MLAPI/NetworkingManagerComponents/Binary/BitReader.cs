@@ -353,6 +353,10 @@ namespace MLAPI.Serialization
             );
         }
 
+        /// <summary>
+        /// Reads a signed byte
+        /// </summary>
+        /// <returns>Value read from stream.</returns>
         public sbyte ReadSByte() => (sbyte)ReadByte();
         /// <summary>
         /// Read an unsigned short (UInt16) from the stream.
@@ -446,6 +450,7 @@ namespace MLAPI.Serialization
             return res;
         }
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
         // Read arrays
         public StringBuilder ReadString(bool oneByteChars) => ReadString(null, oneByteChars);
         public StringBuilder ReadString(StringBuilder builder = null, bool oneByteChars = false)
@@ -1227,5 +1232,6 @@ namespace MLAPI.Serialization
             bitSource.BitPosition = data;
             return writeTo;
         }
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
     }
 }
