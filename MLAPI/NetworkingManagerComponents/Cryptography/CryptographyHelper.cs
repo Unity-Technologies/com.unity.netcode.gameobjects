@@ -1,7 +1,7 @@
 ﻿#if !DISABLE_CRYPTOGRAPHY
-using System;
 using System.Security.Cryptography;
 using System.IO;
+using MLAPI.Serialization;
 
 namespace MLAPI.Cryptography
 {
@@ -10,30 +10,28 @@ namespace MLAPI.Cryptography
     /// </summary>
     public static class CryptographyHelper
     {
-        internal static byte[] EncryptionBuffer;
         private static readonly byte[] IVBuffer = new byte[16];
         /// <summary>
         /// Decrypts a message with AES with a given key and a salt that is encoded as the first 16 bytes of the buffer
         /// </summary>
-        /// <param name="encryptedBuffer">The buffer with the salt</param>
+        /// <param name="encryptedStream">The encrypted stream</param>
         /// <param name="clientId">The clientId whose AES key to use</param>
-        /// <returns>The decrypted byte array</returns>
-        public static Stream Decrypt(byte[] encryptedBuffer, uint clientId)
+        /// <returns>The decrypted stream</returns>
+        public static Stream DecryptStream(Stream encryptedStream, uint clientId)
         {
-            Array.Copy(IVBuffer, 0, IVBuffer, 0, 16);
-
-            using (MemoryStream stream = new MemoryStream(EncryptionBuffer))
+            encryptedStream.Read(IVBuffer, 0, 16);
+            
+            using (RijndaelManaged aes = new RijndaelManaged())
             {
-                using (RijndaelManaged aes = new RijndaelManaged())
+                aes.IV = IVBuffer;
+                aes.Key = NetworkingManager.singleton.ConnectedClients[clientId].AesKey;
+                using (CryptoStream cs = new CryptoStream(encryptedStream, aes.CreateDecryptor(), CryptoStreamMode.Read))
                 {
-                    aes.IV = IVBuffer;
-                    aes.Key = NetworkingManager.singleton.ConnectedClients[clientId].AesKey;
-                    using (CryptoStream cs = new CryptoStream(stream, aes.CreateDecryptor(), CryptoStreamMode.Write))
+                    using (PooledBitStream outStream = PooledBitStream.Get())
                     {
-                        cs.Write(encryptedBuffer, 16, encryptedBuffer.Length - 16);
+                        outStream.CopyFrom(cs);
+                        return outStream;
                     }
-
-                    return stream;
                 }
             }
         }
@@ -41,24 +39,24 @@ namespace MLAPI.Cryptography
         /// <summary>
         /// Encrypts a message with AES with a given key and a random salt that gets encoded as the first 16 bytes of the encrypted buffer
         /// </summary>
-        /// <param name="clearBuffer">The buffer to be encrypted</param>
+        /// <param name="clearStream">The stream to be encrypted</param>
         /// <param name="clientId">The clientId whose AES key to use</param>
-        /// <returns>The encrypted byte array with encoded salt</returns>
-        public static Stream Encrypt(byte[] clearBuffer, uint clientId)
+        /// <returns>The encrypted stream with encoded salt</returns>
+        public static Stream EncryptStream(Stream clearStream, uint clientId)
         {
-            using (MemoryStream stream = new MemoryStream())
+            using (RijndaelManaged aes = new RijndaelManaged())
             {
-                using (RijndaelManaged aes = new RijndaelManaged())
+                aes.Key = NetworkingManager.singleton.ConnectedClients[clientId].AesKey;;
+                aes.GenerateIV();
+                
+                using (CryptoStream cs = new CryptoStream(clearStream, aes.CreateEncryptor(), CryptoStreamMode.Read))
                 {
-                    aes.Key = NetworkingManager.singleton.ConnectedClients[clientId].AesKey;;
-                    aes.GenerateIV();
-                    stream.Write(aes.IV, 0, 16);
-                    using (CryptoStream cs = new CryptoStream(stream, aes.CreateEncryptor(), CryptoStreamMode.Write))
+                    using (PooledBitStream outStream = PooledBitStream.Get())
                     {
-                        cs.Write(clearBuffer, 0, clearBuffer.Length);
+                        outStream.Write(aes.IV, 0, 16);
+                        outStream.CopyFrom(cs);
+                        return outStream;
                     }
-
-                    return stream;
                 }
             }
         }

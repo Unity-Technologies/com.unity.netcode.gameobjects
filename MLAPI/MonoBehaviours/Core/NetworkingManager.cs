@@ -292,7 +292,6 @@ namespace MLAPI
             NetworkSceneManager.registeredSceneNames.Clear();
             NetworkSceneManager.sceneIndexToString.Clear();
             NetworkSceneManager.sceneNameToIndex.Clear();
-            CryptographyHelper.EncryptionBuffer = new byte[NetworkConfig.MessageBufferSize];
 
             if (NetworkConfig.Transport == DefaultTransport.UNET)
                 NetworkConfig.NetworkTransport = new UnetTransport();
