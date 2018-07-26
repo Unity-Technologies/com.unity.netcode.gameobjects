@@ -421,7 +421,7 @@ namespace MLAPI
                     ulong hash = HashMethodName(methods[i].Name);
                     if (HashResults.ContainsKey(hash) && HashResults[hash] != methods[i].Name)
                     {
-                        if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Hash collision detected for RPC method. The method \"" + methods[i].Name + "\" collides with the method \"" + HashResults[hash] + "\". This can be solved by increasing the amount of bytes to use for hashing in the NetworkConfig or changing the name of one of the conflicting methods.");
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError($"Hash collision detected for RPC method. The method \"{methods[i].Name}\" collides with the method \"{HashResults[hash]}\". This can be solved by increasing the amount of bytes to use for hashing in the NetworkConfig or changing the name of one of the conflicting methods.");
                     }
                     else if (!HashResults.ContainsKey(hash))
                     {
@@ -453,7 +453,7 @@ namespace MLAPI
                     ulong hash = HashMethodName(methods[i].Name);
                     if (HashResults.ContainsKey(hash) && HashResults[hash] != methods[i].Name)
                     {
-                        if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Hash collision detected for RPC method. The method \"" + methods[i].Name + "\" collides with the method \"" + HashResults[hash] + "\". This can be solved by increasing the amount of bytes to use for hashing in the NetworkConfig or changing the name of one of the conflicting methods.");
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError($"Hash collision detected for RPC method. The method \"{methods[i].Name}\" collides with the method \"{HashResults[hash]}\". This can be solved by increasing the amount of bytes to use for hashing in the NetworkConfig or changing the name of one of the conflicting methods.");
                     }
                     else if (!HashResults.ContainsKey(hash))
                     {
@@ -774,7 +774,9 @@ namespace MLAPI
         #endregion
 
         #region SEND METHODS
+        #pragma warning disable HAA0101 // Array allocation for params parameter
         #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+        #pragma warning disable HAA0601 // Value type to reference type conversion causing boxing allocation
         /// <exclude />
         public delegate void Action();
         /// <exclude />
@@ -2774,6 +2776,9 @@ namespace MLAPI
 		{
 			SendServerRPCBoxed(HashMethodName(methodName), t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t32);
 		}
+
+        #pragma warning restore HAA0101 // Array allocation for params parameter
+        #pragma warning restore HAA0601 // Value type to reference type conversion causing boxing allocation
 
         //PERFORMANCE SERVER RPC
         public void InvokeServerRpc(RpcDelegate method, Stream stream)

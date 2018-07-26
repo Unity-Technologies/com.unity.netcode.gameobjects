@@ -67,7 +67,11 @@ namespace MLAPI.Components
                 return;
             }
             NetworkedObject netObject = SpawnManager.SpawnedObjects[netId];
-            NetworkingManager.singleton.ConnectedClients[netObject.OwnerClientId].OwnedObjects.RemoveAll(x => x.NetworkId == netId);
+            for (int i = NetworkingManager.singleton.ConnectedClients[netObject.OwnerClientId].OwnedObjects.Count - 1; i > -1; i--)
+            {
+                if (NetworkingManager.singleton.ConnectedClients[netObject.OwnerClientId].OwnedObjects[i].NetworkId == netId)
+                    NetworkingManager.singleton.ConnectedClients[netObject.OwnerClientId].OwnedObjects.RemoveAt(i);
+            }
 			netObject.OwnerClientId = NetworkingManager.singleton.ServerClientId;
 
             using (PooledBitStream stream = PooledBitStream.Get())
@@ -88,7 +92,11 @@ namespace MLAPI.Components
                 return;
             }
             NetworkedObject netObject = SpawnManager.SpawnedObjects[netId];
-            NetworkingManager.singleton.ConnectedClients[netObject.OwnerClientId].OwnedObjects.RemoveAll(x => x.NetworkId == netId);
+            for (int i = NetworkingManager.singleton.ConnectedClients[netObject.OwnerClientId].OwnedObjects.Count - 1; i > -1; i--)
+            {
+                if (NetworkingManager.singleton.ConnectedClients[netObject.OwnerClientId].OwnedObjects[i].NetworkId == netId)
+                    NetworkingManager.singleton.ConnectedClients[netObject.OwnerClientId].OwnedObjects.RemoveAt(i);
+            }
             NetworkingManager.singleton.ConnectedClients[clientId].OwnedObjects.Add(netObject);
             netObject.OwnerClientId = clientId;
 
@@ -342,7 +350,11 @@ namespace MLAPI.Components
 			    netManager.ConnectedClients.ContainsKey(SpawnedObjects[networkId].OwnerClientId))
             {
                 //Someone owns it.
-                netManager.ConnectedClients[SpawnedObjects[networkId].OwnerClientId].OwnedObjects.RemoveAll(x => x.NetworkId == networkId);
+                for (int i = NetworkingManager.singleton.ConnectedClients[SpawnedObjects[networkId].OwnerClientId].OwnedObjects.Count - 1; i > -1; i--)
+                {
+                    if (NetworkingManager.singleton.ConnectedClients[SpawnedObjects[networkId].OwnerClientId].OwnedObjects[i].NetworkId == networkId)
+                        NetworkingManager.singleton.ConnectedClients[SpawnedObjects[networkId].OwnerClientId].OwnedObjects.RemoveAt(i);
+                }
             }
             SpawnedObjects[networkId].isSpawned = false;
 
@@ -365,7 +377,11 @@ namespace MLAPI.Components
             if (destroyGameObject && go != null)
                 MonoBehaviour.Destroy(go);
             SpawnedObjects.Remove(networkId);
-            SpawnedObjectsList.RemoveAll(x => x.NetworkId == networkId);
+            for (int i = SpawnedObjectsList.Count - 1; i > -1; i--)
+            {
+                if (SpawnedObjectsList[i].NetworkId == networkId)
+                    SpawnedObjectsList.RemoveAt(i);
+            }
         }
     }
 }

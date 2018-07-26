@@ -18,6 +18,7 @@ using MLAPI.Serialization;
 using MLAPI.Transports;
 using MLAPI.Transports.UNET;
 using BitStream = MLAPI.Serialization.BitStream;
+using System.Runtime.CompilerServices;
 
 namespace MLAPI
 {
@@ -691,7 +692,7 @@ namespace MLAPI
                                 NetworkProfiler.EndEvent();
                                 break;
                             case NetEventType.Data:
-                                if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Incomming Data From " + clientId + " : " + receivedSize + " bytes");
+                                if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo($"Incomming Data From {clientId} : {receivedSize} bytes");
 
                                 HandleIncomingData(clientId, messageBuffer, channelId, receivedSize);
                                 break;
@@ -846,6 +847,9 @@ namespace MLAPI
             }
         }
 
+#if NET45
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         internal void DisconnectClient(uint clientId)
         {
             if (!isServer)
@@ -856,8 +860,12 @@ namespace MLAPI
 
             if (ConnectedClients.ContainsKey(clientId))
                 ConnectedClients.Remove(clientId);
-      
-            ConnectedClientsList.RemoveAll(x => x.ClientId == clientId); // :(
+
+            for (int i = ConnectedClientsList.Count - 1; i > -1; i--)
+            {
+                if (ConnectedClientsList[i].ClientId == clientId)
+                    ConnectedClientsList.RemoveAt(i);
+            }
 
 #if !DISABLE_CRYPTOGRAPHY
             if (diffieHellmanPublicKeys.ContainsKey(clientId))
@@ -883,7 +891,15 @@ namespace MLAPI
                             Destroy(ConnectedClients[clientId].OwnedObjects[i].gameObject);
                     }
                 }
-                ConnectedClientsList.RemoveAll(x => x.ClientId == clientId);
+
+                for (int i = 0; i < ConnectedClientsList.Count; i++)
+                {
+                    if (ConnectedClientsList[i].ClientId == clientId)
+                    {
+                        ConnectedClientsList.RemoveAt(i);
+                        break;
+                    }
+                }
                 ConnectedClients.Remove(clientId);
             }
 
