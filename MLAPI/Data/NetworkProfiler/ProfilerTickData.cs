@@ -38,13 +38,15 @@ namespace MLAPI.Profiling
         /// <param name="stream">The stream containing</param>
 		public void SerializeToStream(Stream stream)
 		{
-			BitWriter writer = new BitWriter(stream);
-			writer.WriteUInt16Packed((ushort)Events.Count);
+            using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+            {
+                writer.WriteUInt16Packed((ushort)Events.Count);
 
-			for (int i = 0; i < Events.Count; i++)
-			{
-				Events[i].SerializeToStream(stream);
-			}
+                for (int i = 0; i < Events.Count; i++)
+                {
+                    Events[i].SerializeToStream(stream);
+                }
+            }
 		}
 
         /// <summary>
@@ -56,14 +58,16 @@ namespace MLAPI.Profiling
 		{
 			ProfilerTick tick = new ProfilerTick();
 
-			BitReader reader = new BitReader(stream);
-			ushort count = reader.ReadUInt16Packed();
-            for (int i = 0; i < count; i++)
-			{
-				tick.Events.Add(TickEvent.FromStream(stream));
-			}
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
+            {
+                ushort count = reader.ReadUInt16Packed();
+                for (int i = 0; i < count; i++)
+                {
+                    tick.Events.Add(TickEvent.FromStream(stream));
+                }
 
-			return tick;
+                return tick;
+            }
 		}
 
 		internal void EndEvent()
@@ -149,12 +153,14 @@ namespace MLAPI.Profiling
         /// <param name="stream">The stream to write the TickEvent data to</param>
         public void SerializeToStream(Stream stream)
 		{
-			BitWriter writer = new BitWriter(stream);
-			writer.WriteByte((byte)EventType);
-			writer.WriteUInt32Packed(Bytes);
-			writer.WriteStringPacked(ChannelName);
-			writer.WriteStringPacked(MessageType);
-			writer.WriteBool(Closed);
+            using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+            {
+                writer.WriteByte((byte)EventType);
+                writer.WriteUInt32Packed(Bytes);
+                writer.WriteStringPacked(ChannelName);
+                writer.WriteStringPacked(MessageType);
+                writer.WriteBool(Closed);
+            }
 		}
 
         /// <summary>
@@ -164,16 +170,18 @@ namespace MLAPI.Profiling
         /// <returns>The TickEvent with data read from the stream</returns>
         public static TickEvent FromStream(Stream stream)
 		{
-			BitReader reader = new BitReader(stream);
-            TickEvent @event = new TickEvent
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
-                EventType = (TickType)reader.ReadByte(),
-                Bytes = reader.ReadUInt32Packed(),
-                ChannelName = reader.ReadStringPacked().ToString(),
-                MessageType = reader.ReadStringPacked().ToString(),
-                Closed = reader.ReadBool()
-            };
-            return @event;
+                TickEvent @event = new TickEvent
+                {
+                    EventType = (TickType)reader.ReadByte(),
+                    Bytes = reader.ReadUInt32Packed(),
+                    ChannelName = reader.ReadStringPacked().ToString(),
+                    MessageType = reader.ReadStringPacked().ToString(),
+                    Closed = reader.ReadBool()
+                };
+                return @event;
+            }
         }
     }
 }

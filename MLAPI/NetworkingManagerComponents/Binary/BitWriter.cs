@@ -16,14 +16,24 @@ namespace MLAPI.Serialization
     /// </summary>
     public class BitWriter
     {
-        private readonly Stream sink;
-        private readonly BitStream bitSink;
+        private Stream sink;
+        private BitStream bitSink;
 
         /// <summary>
         /// Creates a new BitWriter backed by a given stream
         /// </summary>
         /// <param name="stream">The stream to use for writing</param>
         public BitWriter(Stream stream)
+        {
+            sink = stream;
+            bitSink = stream as BitStream;
+        }
+
+        /// <summary>
+        /// Changes the underlying stream the writer is writing to
+        /// </summary>
+        /// <param name="stream">The stream to write to</param>
+        public void SetStream(Stream stream)
         {
             sink = stream;
             bitSink = stream as BitStream;

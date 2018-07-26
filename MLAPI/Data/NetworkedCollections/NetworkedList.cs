@@ -126,47 +126,49 @@ namespace MLAPI.NetworkedVar.Collections
         /// <inheritdoc />
         public void WriteDelta(Stream stream)
         {
-            BitWriter writer = new BitWriter(stream);
-            writer.WriteUInt16Packed((ushort)dirtyEvents.Count);
-            for (int i = 0; i < dirtyEvents.Count; i++)
+            using (PooledBitWriter writer = PooledBitWriter.Get(stream))
             {
-                writer.WriteBits((byte)dirtyEvents[i].eventType, 3);
-                switch (dirtyEvents[i].eventType)
+                writer.WriteUInt16Packed((ushort)dirtyEvents.Count);
+                for (int i = 0; i < dirtyEvents.Count; i++)
                 {
-                    //Fuck me these signatures are proper aids
-                    case NetworkedListEvent<T>.NetworkedListEventType.Add:
-                        {
-                            writer.WriteObjectPacked(dirtyEvents[i].value); //BOX
-                        }
-                        break;
-                    case NetworkedListEvent<T>.NetworkedListEventType.Insert:
-                        {
-                            writer.WriteInt32Packed(dirtyEvents[i].index);
-                            writer.WriteObjectPacked(dirtyEvents[i].value); //BOX
-                        }
-                        break;
-                    case NetworkedListEvent<T>.NetworkedListEventType.Remove:
-                        {
-                            writer.WriteObjectPacked(dirtyEvents[i].value); //BOX
-                        }
-                        break;
-                    case NetworkedListEvent<T>.NetworkedListEventType.RemoveAt:
-                        {
-                            writer.WriteInt32Packed(dirtyEvents[i].index);
-                        }
-                        break;
-                    case NetworkedListEvent<T>.NetworkedListEventType.Value:
-                        {
-                            writer.WriteInt32Packed(dirtyEvents[i].index);
-                            writer.WriteObjectPacked(dirtyEvents[i].value); //BOX
-                        }
+                    writer.WriteBits((byte)dirtyEvents[i].eventType, 3);
+                    switch (dirtyEvents[i].eventType)
+                    {
+                        //Fuck me these signatures are proper aids
+                        case NetworkedListEvent<T>.NetworkedListEventType.Add:
+                            {
+                                writer.WriteObjectPacked(dirtyEvents[i].value); //BOX
+                            }
+                            break;
+                        case NetworkedListEvent<T>.NetworkedListEventType.Insert:
+                            {
+                                writer.WriteInt32Packed(dirtyEvents[i].index);
+                                writer.WriteObjectPacked(dirtyEvents[i].value); //BOX
+                            }
+                            break;
+                        case NetworkedListEvent<T>.NetworkedListEventType.Remove:
+                            {
+                                writer.WriteObjectPacked(dirtyEvents[i].value); //BOX
+                            }
+                            break;
+                        case NetworkedListEvent<T>.NetworkedListEventType.RemoveAt:
+                            {
+                                writer.WriteInt32Packed(dirtyEvents[i].index);
+                            }
+                            break;
+                        case NetworkedListEvent<T>.NetworkedListEventType.Value:
+                            {
+                                writer.WriteInt32Packed(dirtyEvents[i].index);
+                                writer.WriteObjectPacked(dirtyEvents[i].value); //BOX
+                            }
 
-                        break;
-                    case NetworkedListEvent<T>.NetworkedListEventType.Clear:
-                        {
-                            //Nothing has to be written
-                        }
-                        break;
+                            break;
+                        case NetworkedListEvent<T>.NetworkedListEventType.Clear:
+                            {
+                                //Nothing has to be written
+                            }
+                            break;
+                    }
                 }
             }
         }
@@ -174,70 +176,76 @@ namespace MLAPI.NetworkedVar.Collections
         /// <inheritdoc />
         public void WriteField(Stream stream)
         {
-            BitWriter writer = new BitWriter(stream);
-            writer.WriteUInt16Packed((ushort)list.Count);
-            for (int i = 0; i < list.Count; i++)
+            using (PooledBitWriter writer = PooledBitWriter.Get(stream))
             {
-                writer.WriteObjectPacked(list[i]); //BOX
+                writer.WriteUInt16Packed((ushort)list.Count);
+                for (int i = 0; i < list.Count; i++)
+                {
+                    writer.WriteObjectPacked(list[i]); //BOX
+                }
             }
         }
 
         /// <inheritdoc />
         public void ReadField(Stream stream)
         {
-            BitReader reader = new BitReader(stream);
-            list.Clear();
-            ushort count = reader.ReadUInt16Packed();
-            for (int i = 0; i < count; i++)
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
-                list.Add((T)reader.ReadObjectPacked(typeof(T))); //BOX
+                list.Clear();
+                ushort count = reader.ReadUInt16Packed();
+                for (int i = 0; i < count; i++)
+                {
+                    list.Add((T)reader.ReadObjectPacked(typeof(T))); //BOX
+                }
             }
         }
 
         /// <inheritdoc />
         public void ReadDelta(Stream stream)
         {
-            BitReader reader = new BitReader(stream);
-            ushort deltaCount = reader.ReadUInt16Packed();
-            for (int i = 0; i < deltaCount; i++)
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
-                NetworkedListEvent<T>.NetworkedListEventType eventType = (NetworkedListEvent<T>.NetworkedListEventType)reader.ReadBits(3);
-                switch (eventType)
+                ushort deltaCount = reader.ReadUInt16Packed();
+                for (int i = 0; i < deltaCount; i++)
                 {
-                    case NetworkedListEvent<T>.NetworkedListEventType.Add:
-                        {
-                            list.Add((T)reader.ReadObjectPacked(typeof(T))); //BOX
-                        }
-                        break;
-                    case NetworkedListEvent<T>.NetworkedListEventType.Insert:
-                        {
-                            int index = reader.ReadInt32Packed();
-                            list.Insert(index, (T)reader.ReadObjectPacked(typeof(T))); //BOX
-                        }
-                        break;
-                    case NetworkedListEvent<T>.NetworkedListEventType.Remove:
-                        {
-                            list.Remove((T)reader.ReadObjectPacked(typeof(T))); //BOX
-                        }
-                        break;
-                    case NetworkedListEvent<T>.NetworkedListEventType.RemoveAt:
-                        {
-                            int index = reader.ReadInt32Packed();
-                            list.RemoveAt(index);
-                        }
-                        break;
-                    case NetworkedListEvent<T>.NetworkedListEventType.Value:
-                        {
-                            int index = reader.ReadInt32Packed();
-                            if (index < list.Count) list[index] = (T)reader.ReadObjectPacked(typeof(T)); //BOX
-                        }
-                        break;
-                    case NetworkedListEvent<T>.NetworkedListEventType.Clear:
-                        {
-                            //Read nothing
-                            list.Clear();
-                        }
-                        break;
+                    NetworkedListEvent<T>.NetworkedListEventType eventType = (NetworkedListEvent<T>.NetworkedListEventType)reader.ReadBits(3);
+                    switch (eventType)
+                    {
+                        case NetworkedListEvent<T>.NetworkedListEventType.Add:
+                            {
+                                list.Add((T)reader.ReadObjectPacked(typeof(T))); //BOX
+                            }
+                            break;
+                        case NetworkedListEvent<T>.NetworkedListEventType.Insert:
+                            {
+                                int index = reader.ReadInt32Packed();
+                                list.Insert(index, (T)reader.ReadObjectPacked(typeof(T))); //BOX
+                            }
+                            break;
+                        case NetworkedListEvent<T>.NetworkedListEventType.Remove:
+                            {
+                                list.Remove((T)reader.ReadObjectPacked(typeof(T))); //BOX
+                            }
+                            break;
+                        case NetworkedListEvent<T>.NetworkedListEventType.RemoveAt:
+                            {
+                                int index = reader.ReadInt32Packed();
+                                list.RemoveAt(index);
+                            }
+                            break;
+                        case NetworkedListEvent<T>.NetworkedListEventType.Value:
+                            {
+                                int index = reader.ReadInt32Packed();
+                                if (index < list.Count) list[index] = (T)reader.ReadObjectPacked(typeof(T)); //BOX
+                            }
+                            break;
+                        case NetworkedListEvent<T>.NetworkedListEventType.Clear:
+                            {
+                                //Read nothing
+                                list.Clear();
+                            }
+                            break;
+                    }
                 }
             }
         }

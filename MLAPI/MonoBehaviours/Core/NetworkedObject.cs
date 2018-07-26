@@ -201,32 +201,36 @@ namespace MLAPI
         
         internal void WriteNetworkedVarData(Stream stream, uint clientId)
         {
-            BitWriter writer = new BitWriter(stream);
-            for (int i = 0; i < childNetworkedBehaviours.Count; i++)
+            using (PooledBitWriter writer = PooledBitWriter.Get(stream))
             {
-                childNetworkedBehaviours[i].NetworkedVarInit();
-                if (childNetworkedBehaviours[i].networkedVarFields.Count == 0)
-                    continue;
-                for (int j = 0; j < childNetworkedBehaviours[i].networkedVarFields.Count; j++)
+                for (int i = 0; i < childNetworkedBehaviours.Count; i++)
                 {
-                    bool canClientRead = childNetworkedBehaviours[i].networkedVarFields[j].CanClientRead(clientId);
-                    writer.WriteBool(canClientRead);
-                    if (canClientRead) childNetworkedBehaviours[i].networkedVarFields[j].WriteField(stream);
+                    childNetworkedBehaviours[i].NetworkedVarInit();
+                    if (childNetworkedBehaviours[i].networkedVarFields.Count == 0)
+                        continue;
+                    for (int j = 0; j < childNetworkedBehaviours[i].networkedVarFields.Count; j++)
+                    {
+                        bool canClientRead = childNetworkedBehaviours[i].networkedVarFields[j].CanClientRead(clientId);
+                        writer.WriteBool(canClientRead);
+                        if (canClientRead) childNetworkedBehaviours[i].networkedVarFields[j].WriteField(stream);
+                    }
                 }
             }
         }
 
         internal void SetNetworkedVarData(Stream stream)
         {
-            BitReader reader = new BitReader(stream);
-            for (int i = 0; i < childNetworkedBehaviours.Count; i++)
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
-                childNetworkedBehaviours[i].NetworkedVarInit();
-                if (childNetworkedBehaviours[i].networkedVarFields.Count == 0)
-                    continue;
-                for (int j = 0; j < childNetworkedBehaviours[i].networkedVarFields.Count; j++)
+                for (int i = 0; i < childNetworkedBehaviours.Count; i++)
                 {
-                    if (reader.ReadBool()) childNetworkedBehaviours[i].networkedVarFields[j].ReadField(stream);
+                    childNetworkedBehaviours[i].NetworkedVarInit();
+                    if (childNetworkedBehaviours[i].networkedVarFields.Count == 0)
+                        continue;
+                    for (int j = 0; j < childNetworkedBehaviours[i].networkedVarFields.Count; j++)
+                    {
+                        if (reader.ReadBool()) childNetworkedBehaviours[i].networkedVarFields[j].ReadField(stream);
+                    }
                 }
             }
         }

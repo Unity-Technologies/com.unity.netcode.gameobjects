@@ -12,17 +12,19 @@ namespace MLAPI.Internal
             if (NetworkingManager.singleton.isServer && clientId == NetworkingManager.singleton.ServerClientId) return;
             using (PooledBitStream stream = PooledBitStream.Get())
             {
-                BitWriter writer = new BitWriter(stream);
-                writer.WriteByte(messageType);
-                stream.CopyFrom(messageStream);
+                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                {
+                    writer.WriteByte(messageType);
+                    stream.CopyFrom(messageStream);
 
-                NetworkProfiler.StartEvent(TickType.Send, (uint)stream.Length, channelName, MLAPIConstants.MESSAGE_NAMES[messageType]);
-                byte error;
-                if (skipQueue)
-                    netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(clientId, stream.GetBuffer(), (int)stream.Length, MessageManager.channels[channelName], true, out error);
-                else
-					netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(clientId, stream.GetBuffer(), (int)stream.Length, MessageManager.channels[channelName], false, out error);
-                NetworkProfiler.EndEvent();
+                    NetworkProfiler.StartEvent(TickType.Send, (uint)stream.Length, channelName, MLAPIConstants.MESSAGE_NAMES[messageType]);
+                    byte error;
+                    if (skipQueue)
+                        netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(clientId, stream.GetBuffer(), (int)stream.Length, MessageManager.channels[channelName], true, out error);
+                    else
+                        netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(clientId, stream.GetBuffer(), (int)stream.Length, MessageManager.channels[channelName], false, out error);
+                    NetworkProfiler.EndEvent();
+                }
             }
         }
 
@@ -30,18 +32,20 @@ namespace MLAPI.Internal
         {
             using (PooledBitStream stream = PooledBitStream.Get())
             {
-                BitWriter writer = new BitWriter(stream);
-                writer.WriteByte(messageType);
-                stream.CopyFrom(messageStream);
-
-                NetworkProfiler.StartEvent(TickType.Send, (uint)stream.Length, channelName, MLAPIConstants.MESSAGE_NAMES[messageType]);
-                for (int i = 0; i < netManager.ConnectedClientsList.Count; i++)
+                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                 {
-                    if (NetworkingManager.singleton.isServer && netManager.ConnectedClientsList[i].ClientId == NetworkingManager.singleton.ServerClientId) continue;
-                    byte error;
-					netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(netManager.ConnectedClientsList[i].ClientId, stream.GetBuffer(), (int)stream.Length, MessageManager.channels[channelName], false, out error);
+                    writer.WriteByte(messageType);
+                    stream.CopyFrom(messageStream);
+
+                    NetworkProfiler.StartEvent(TickType.Send, (uint)stream.Length, channelName, MLAPIConstants.MESSAGE_NAMES[messageType]);
+                    for (int i = 0; i < netManager.ConnectedClientsList.Count; i++)
+                    {
+                        if (NetworkingManager.singleton.isServer && netManager.ConnectedClientsList[i].ClientId == NetworkingManager.singleton.ServerClientId) continue;
+                        byte error;
+                        netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(netManager.ConnectedClientsList[i].ClientId, stream.GetBuffer(), (int)stream.Length, MessageManager.channels[channelName], false, out error);
+                    }
+                    NetworkProfiler.EndEvent();
                 }
-                NetworkProfiler.EndEvent();
             }
         }
         
@@ -49,21 +53,23 @@ namespace MLAPI.Internal
         {
             using (PooledBitStream stream = PooledBitStream.Get())
             {
-                BitWriter writer = new BitWriter(stream);
-                writer.WriteByte(messageType);
-                stream.CopyFrom(messageStream);
-
-                NetworkProfiler.StartEvent(TickType.Send, (uint)stream.Length, channelName, MLAPIConstants.MESSAGE_NAMES[messageType]);
-                for (int i = 0; i < netManager.ConnectedClientsList.Count; i++)
+                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                 {
-					if (netManager.ConnectedClientsList[i].ClientId == clientIdToIgnore || 
-                        (NetworkingManager.singleton.isServer && netManager.ConnectedClientsList[i].ClientId == NetworkingManager.singleton.ServerClientId))
-                        continue;
-                    
-                    byte error;
-					netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(netManager.ConnectedClientsList[i].ClientId, stream.GetBuffer(), (int)stream.Length, MessageManager.channels[channelName], false, out error);
+                    writer.WriteByte(messageType);
+                    stream.CopyFrom(messageStream);
+
+                    NetworkProfiler.StartEvent(TickType.Send, (uint)stream.Length, channelName, MLAPIConstants.MESSAGE_NAMES[messageType]);
+                    for (int i = 0; i < netManager.ConnectedClientsList.Count; i++)
+                    {
+                        if (netManager.ConnectedClientsList[i].ClientId == clientIdToIgnore ||
+                            (NetworkingManager.singleton.isServer && netManager.ConnectedClientsList[i].ClientId == NetworkingManager.singleton.ServerClientId))
+                            continue;
+
+                        byte error;
+                        netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(netManager.ConnectedClientsList[i].ClientId, stream.GetBuffer(), (int)stream.Length, MessageManager.channels[channelName], false, out error);
+                    }
+                    NetworkProfiler.EndEvent();
                 }
-                NetworkProfiler.EndEvent();
             }
         }
     }

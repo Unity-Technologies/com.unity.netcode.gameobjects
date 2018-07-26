@@ -54,34 +54,36 @@ namespace MLAPI.Prototyping
                 lastDestination = agent.destination;
                 using (PooledBitStream stream = PooledBitStream.Get())
                 {
-                    BitWriter writer = new BitWriter(stream);
-                    
-                    writer.WriteSinglePacked(agent.destination.x);
-                    writer.WriteSinglePacked(agent.destination.y);
-                    writer.WriteSinglePacked(agent.destination.z);
-
-                    writer.WriteSinglePacked(agent.velocity.x);
-                    writer.WriteSinglePacked(agent.velocity.y);
-                    writer.WriteSinglePacked(agent.velocity.z);
-
-                    writer.WriteSinglePacked(transform.position.x);
-                    writer.WriteSinglePacked(transform.position.y);
-                    writer.WriteSinglePacked(transform.position.z);
-                    
-                    
-                    if (!EnableProximity)
+                    using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                     {
-                        InvokeClientRpcOnEveryone(OnNavMeshStateUpdate, stream);
-                    }
-                    else
-                    {
-                        List<uint> proximityClients = new List<uint>();
-                        foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.ConnectedClients)
+
+                        writer.WriteSinglePacked(agent.destination.x);
+                        writer.WriteSinglePacked(agent.destination.y);
+                        writer.WriteSinglePacked(agent.destination.z);
+
+                        writer.WriteSinglePacked(agent.velocity.x);
+                        writer.WriteSinglePacked(agent.velocity.y);
+                        writer.WriteSinglePacked(agent.velocity.z);
+
+                        writer.WriteSinglePacked(transform.position.x);
+                        writer.WriteSinglePacked(transform.position.y);
+                        writer.WriteSinglePacked(transform.position.z);
+
+
+                        if (!EnableProximity)
                         {
-                            if (Vector3.Distance(client.Value.PlayerObject.transform.position, transform.position) <= ProximityRange)
-                                proximityClients.Add(client.Key);
+                            InvokeClientRpcOnEveryone(OnNavMeshStateUpdate, stream);
                         }
-                        InvokeClientRpc(OnNavMeshStateUpdate, proximityClients, stream);
+                        else
+                        {
+                            List<uint> proximityClients = new List<uint>();
+                            foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.ConnectedClients)
+                            {
+                                if (Vector3.Distance(client.Value.PlayerObject.transform.position, transform.position) <= ProximityRange)
+                                    proximityClients.Add(client.Key);
+                            }
+                            InvokeClientRpc(OnNavMeshStateUpdate, proximityClients, stream);
+                        }
                     }
                 }
             }
@@ -90,29 +92,31 @@ namespace MLAPI.Prototyping
             {
                 using (PooledBitStream stream = PooledBitStream.Get())
                 {
-                    BitWriter writer = new BitWriter(stream);
-                    writer.WriteSinglePacked(agent.velocity.x);
-                    writer.WriteSinglePacked(agent.velocity.y);
-                    writer.WriteSinglePacked(agent.velocity.z);
-
-                    writer.WriteSinglePacked(transform.position.x);
-                    writer.WriteSinglePacked(transform.position.y);
-                    writer.WriteSinglePacked(transform.position.z);
-                    
-
-                    if (!EnableProximity)
+                    using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                     {
-                        InvokeClientRpcOnEveryone(OnNavMeshCorrectionUpdate, stream);
-                    }
-                    else
-                    {
-                        List<uint> proximityClients = new List<uint>();
-                        foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.ConnectedClients)
+                        writer.WriteSinglePacked(agent.velocity.x);
+                        writer.WriteSinglePacked(agent.velocity.y);
+                        writer.WriteSinglePacked(agent.velocity.z);
+
+                        writer.WriteSinglePacked(transform.position.x);
+                        writer.WriteSinglePacked(transform.position.y);
+                        writer.WriteSinglePacked(transform.position.z);
+
+
+                        if (!EnableProximity)
                         {
-                            if (Vector3.Distance(client.Value.PlayerObject.transform.position, transform.position) <= ProximityRange)
-                                proximityClients.Add(client.Key);
+                            InvokeClientRpcOnEveryone(OnNavMeshCorrectionUpdate, stream);
                         }
-                        InvokeClientRpc(OnNavMeshCorrectionUpdate, proximityClients, stream);
+                        else
+                        {
+                            List<uint> proximityClients = new List<uint>();
+                            foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.ConnectedClients)
+                            {
+                                if (Vector3.Distance(client.Value.PlayerObject.transform.position, transform.position) <= ProximityRange)
+                                    proximityClients.Add(client.Key);
+                            }
+                            InvokeClientRpc(OnNavMeshCorrectionUpdate, proximityClients, stream);
+                        }
                     }
                 }
                 lastCorrectionTime = NetworkingManager.singleton.NetworkTime;
@@ -122,53 +126,53 @@ namespace MLAPI.Prototyping
         [ClientRPC]
         private void OnNavMeshStateUpdate(uint clientId, Stream stream)
         {
-            BitReader reader = new BitReader(stream);
-            
-            
-            float xDestination = reader.ReadSinglePacked();
-            float yDestination = reader.ReadSinglePacked();
-            float zDestination = reader.ReadSinglePacked();
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
+            {
+                float xDestination = reader.ReadSinglePacked();
+                float yDestination = reader.ReadSinglePacked();
+                float zDestination = reader.ReadSinglePacked();
 
-            float xVel = reader.ReadSinglePacked();
-            float yVel = reader.ReadSinglePacked();
-            float zVel = reader.ReadSinglePacked();
+                float xVel = reader.ReadSinglePacked();
+                float yVel = reader.ReadSinglePacked();
+                float zVel = reader.ReadSinglePacked();
 
-            float xPos = reader.ReadSinglePacked();
-            float yPos = reader.ReadSinglePacked();
-            float zPos = reader.ReadSinglePacked();
+                float xPos = reader.ReadSinglePacked();
+                float yPos = reader.ReadSinglePacked();
+                float zPos = reader.ReadSinglePacked();
 
-            Vector3 destination = new Vector3(xDestination, yDestination, zDestination);
-            Vector3 velocity = new Vector3(xVel, yVel, zVel);
-            Vector3 position = new Vector3(xPos, yPos, zPos);
+                Vector3 destination = new Vector3(xDestination, yDestination, zDestination);
+                Vector3 velocity = new Vector3(xVel, yVel, zVel);
+                Vector3 position = new Vector3(xPos, yPos, zPos);
 
-            if (WarpOnDestinationChange)
-                agent.Warp(position);
-            else
-                agent.Warp(Vector3.Lerp(transform.position, position, DriftCorrectionPercentage));
+                if (WarpOnDestinationChange)
+                    agent.Warp(position);
+                else
+                    agent.Warp(Vector3.Lerp(transform.position, position, DriftCorrectionPercentage));
 
-            agent.SetDestination(destination);
-            agent.velocity = velocity;
+                agent.SetDestination(destination);
+                agent.velocity = velocity;
+            }
         }
 
         [ClientRPC]
         private void OnNavMeshCorrectionUpdate(uint clientId, Stream stream)
         {
-            BitReader reader = new BitReader(stream);
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
+            {
+                float xVel = reader.ReadSinglePacked();
+                float yVel = reader.ReadSinglePacked();
+                float zVel = reader.ReadSinglePacked();
 
-            float xVel = reader.ReadSinglePacked();
-            float yVel = reader.ReadSinglePacked();
-            float zVel = reader.ReadSinglePacked();
+                float xPos = reader.ReadSinglePacked();
+                float yPos = reader.ReadSinglePacked();
+                float zPos = reader.ReadSinglePacked();
 
-            float xPos = reader.ReadSinglePacked();
-            float yPos = reader.ReadSinglePacked();
-            float zPos = reader.ReadSinglePacked();
+                Vector3 velocity = new Vector3(xVel, yVel, zVel);
+                Vector3 position = new Vector3(xPos, yPos, zPos);
 
-            Vector3 velocity = new Vector3(xVel, yVel, zVel);
-            Vector3 position = new Vector3(xPos, yPos, zPos);
-
-            agent.Warp(Vector3.Lerp(transform.position, position, DriftCorrectionPercentage));
-            agent.velocity = velocity;
-
+                agent.Warp(Vector3.Lerp(transform.position, position, DriftCorrectionPercentage));
+                agent.velocity = velocity;
+            }
         }
     }
 }

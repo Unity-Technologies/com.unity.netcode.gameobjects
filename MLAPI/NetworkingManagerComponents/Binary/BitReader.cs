@@ -16,8 +16,8 @@ namespace MLAPI.Serialization
     /// </summary>
     public class BitReader
     {
-        private readonly Stream source;
-        private readonly BitStream bitSource;
+        private Stream source;
+        private BitStream bitSource;
 
         /// <summary>
         /// Creates a new BitReader backed by a given stream
@@ -25,7 +25,17 @@ namespace MLAPI.Serialization
         /// <param name="stream">The stream to read from</param>
         public BitReader(Stream stream)
         {
-            this.source = stream;
+            source = stream;
+            bitSource = stream as BitStream;
+        }
+
+        /// <summary>
+        /// Changes the underlying stream the reader is reading from
+        /// </summary>
+        /// <param name="stream">The stream to read from</param>
+        public void SetStream(Stream stream)
+        {
+            source = stream;
             bitSource = stream as BitStream;
         }
 

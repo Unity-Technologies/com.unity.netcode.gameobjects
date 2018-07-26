@@ -111,31 +111,33 @@ namespace MLAPI.Prototyping
 
             using (PooledBitStream stream = PooledBitStream.Get())
             {
-                BitWriter writer = new BitWriter(stream);
-                writer.WriteInt32Packed(stateHash);
-                writer.WriteSinglePacked(normalizedTime);
-                WriteParameters(stream, false);
-
-                if (isServer)
+                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                 {
-                    if (EnableProximity)
+                    writer.WriteInt32Packed(stateHash);
+                    writer.WriteSinglePacked(normalizedTime);
+                    WriteParameters(stream, false);
+
+                    if (isServer)
                     {
-                        List<uint> clientsInProximity = new List<uint>();
-                        foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.ConnectedClients)
+                        if (EnableProximity)
                         {
-                            if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
-                                clientsInProximity.Add(client.Key);
+                            List<uint> clientsInProximity = new List<uint>();
+                            foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.ConnectedClients)
+                            {
+                                if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
+                                    clientsInProximity.Add(client.Key);
+                            }
+                            InvokeClientRpc(ApplyAnimParamMsg, clientsInProximity, stream);
                         }
-                        InvokeClientRpc(ApplyAnimParamMsg, clientsInProximity, stream);
+                        else
+                        {
+                            InvokeClientRpcOnEveryoneExcept(ApplyAnimMsg, OwnerClientId, stream);
+                        }
                     }
                     else
                     {
-                        InvokeClientRpcOnEveryoneExcept(ApplyAnimMsg, OwnerClientId, stream);
+                        InvokeServerRpc(SubmitAnimMsg, stream);
                     }
-                }
-                else
-                {
-                    InvokeServerRpc(SubmitAnimMsg, stream);
                 }
             }
         }
@@ -183,29 +185,31 @@ namespace MLAPI.Prototyping
 
                 using (PooledBitStream stream = PooledBitStream.Get())
                 {
-                    BitWriter writer = new BitWriter(stream);
-                    WriteParameters(stream, true);
-
-                    if (isServer)
+                    using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                     {
-                        if (EnableProximity)
+                        WriteParameters(stream, true);
+
+                        if (isServer)
                         {
-                            List<uint> clientsInProximity = new List<uint>();
-                            foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.ConnectedClients)
+                            if (EnableProximity)
                             {
-                                if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
-                                    clientsInProximity.Add(client.Key);
+                                List<uint> clientsInProximity = new List<uint>();
+                                foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.ConnectedClients)
+                                {
+                                    if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
+                                        clientsInProximity.Add(client.Key);
+                                }
+                                InvokeClientRpc(ApplyAnimParamMsg, clientsInProximity, stream);
                             }
-                            InvokeClientRpc(ApplyAnimParamMsg, clientsInProximity, stream);
+                            else
+                            {
+                                InvokeClientRpcOnEveryoneExcept(ApplyAnimParamMsg, OwnerClientId, stream);
+                            }
                         }
                         else
                         {
-                            InvokeClientRpcOnEveryoneExcept(ApplyAnimParamMsg, OwnerClientId, stream);
+                            InvokeServerRpc(SubmitAnimParamMsg, stream);
                         }
-                    }
-                    else
-                    {
-                        InvokeServerRpc(SubmitAnimParamMsg, stream);
                     }
                 }
             }
@@ -259,14 +263,16 @@ namespace MLAPI.Prototyping
         [ClientRPC]
         private void ApplyAnimMsg(uint clientId, Stream stream)
         {
-            BitReader reader = new BitReader(stream);
-            int stateHash = reader.ReadInt32Packed();
-            float normalizedTime = reader.ReadSinglePacked();
-            if (stateHash != 0)
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
-                animator.Play(stateHash, 0, normalizedTime);
+                int stateHash = reader.ReadInt32Packed();
+                float normalizedTime = reader.ReadSinglePacked();
+                if (stateHash != 0)
+                {
+                    animator.Play(stateHash, 0, normalizedTime);
+                }
+                ReadParameters(stream, false);
             }
-            ReadParameters(stream, false);
         }
 
         [ServerRPC]
@@ -316,79 +322,85 @@ namespace MLAPI.Prototyping
         [ClientRPC]
         private void ApplyAnimTriggerMsg(uint clientId, Stream stream)
         {
-            BitReader reader = new BitReader(stream);
-            animator.SetTrigger(reader.ReadInt32Packed());
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
+            {
+                animator.SetTrigger(reader.ReadInt32Packed());
+            }
         }
 
         private void WriteParameters(Stream stream, bool autoSend)
         {
-            BitWriter writer = new BitWriter(stream);
-            if (animatorParameters == null)
-                animatorParameters = animator.parameters;
-
-            for (int i = 0; i < animatorParameters.Length; i++)
+            using (PooledBitWriter writer = PooledBitWriter.Get(stream))
             {
-                if (autoSend && !GetParameterAutoSend(i))
-                    continue;
+                if (animatorParameters == null)
+                    animatorParameters = animator.parameters;
 
-                AnimatorControllerParameter par = animatorParameters[i];
-                if (par.type == AnimatorControllerParameterType.Int)
+                for (int i = 0; i < animatorParameters.Length; i++)
                 {
-                    writer.WriteUInt32Packed((uint)animator.GetInteger(par.nameHash));
+                    if (autoSend && !GetParameterAutoSend(i))
+                        continue;
 
-                    SetSendTrackingParam(par.name + ":" + animator.GetInteger(par.nameHash), i);
-                }
+                    AnimatorControllerParameter par = animatorParameters[i];
+                    if (par.type == AnimatorControllerParameterType.Int)
+                    {
+                        writer.WriteUInt32Packed((uint)animator.GetInteger(par.nameHash));
 
-                if (par.type == AnimatorControllerParameterType.Float)
-                {
-                    writer.WriteSinglePacked(animator.GetFloat(par.nameHash));
+                        SetSendTrackingParam(par.name + ":" + animator.GetInteger(par.nameHash), i);
+                    }
 
-                    SetSendTrackingParam(par.name + ":" + animator.GetFloat(par.nameHash), i);
-                }
+                    if (par.type == AnimatorControllerParameterType.Float)
+                    {
+                        writer.WriteSinglePacked(animator.GetFloat(par.nameHash));
 
-                if (par.type == AnimatorControllerParameterType.Bool)
-                {
-                    writer.WriteBool(animator.GetBool(par.nameHash));
+                        SetSendTrackingParam(par.name + ":" + animator.GetFloat(par.nameHash), i);
+                    }
 
-                    SetSendTrackingParam(par.name + ":" + animator.GetBool(par.nameHash), i);
+                    if (par.type == AnimatorControllerParameterType.Bool)
+                    {
+                        writer.WriteBool(animator.GetBool(par.nameHash));
+
+                        SetSendTrackingParam(par.name + ":" + animator.GetBool(par.nameHash), i);
+                    }
                 }
             }
         }
 
         private void ReadParameters(Stream stream, bool autoSend)
         {
-            BitReader reader = new BitReader(stream);
-            if (animatorParameters == null)
-                animatorParameters = animator.parameters;
-
-            for (int i = 0; i < animatorParameters.Length; i++)
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
-                if (autoSend && !GetParameterAutoSend(i))
-                    continue;
+                if (animatorParameters == null)
+                    animatorParameters = animator.parameters;
 
-                AnimatorControllerParameter par = animatorParameters[i];
-                if (par.type == AnimatorControllerParameterType.Int)
+                for (int i = 0; i < animatorParameters.Length; i++)
                 {
-                    int newValue = (int)reader.ReadUInt32Packed();
-                    animator.SetInteger(par.nameHash, newValue);
+                    if (autoSend && !GetParameterAutoSend(i))
+                        continue;
 
-                    SetRecvTrackingParam(par.name + ":" + newValue, i);
-                }
+                    AnimatorControllerParameter par = animatorParameters[i];
+                    if (par.type == AnimatorControllerParameterType.Int)
+                    {
+                        int newValue = (int)reader.ReadUInt32Packed();
+                        animator.SetInteger(par.nameHash, newValue);
 
-                if (par.type == AnimatorControllerParameterType.Float)
-                {
-                    float newFloatValue = reader.ReadSinglePacked();
-                    animator.SetFloat(par.nameHash, newFloatValue);
+                        SetRecvTrackingParam(par.name + ":" + newValue, i);
+                    }
 
-                    SetRecvTrackingParam(par.name + ":" + newFloatValue, i);
-                }
+                    if (par.type == AnimatorControllerParameterType.Float)
+                    {
+                        float newFloatValue = reader.ReadSinglePacked();
+                        animator.SetFloat(par.nameHash, newFloatValue);
 
-                if (par.type == AnimatorControllerParameterType.Bool)
-                {
-                    bool newBoolValue = reader.ReadBool();
-                    animator.SetBool(par.nameHash, newBoolValue);
+                        SetRecvTrackingParam(par.name + ":" + newFloatValue, i);
+                    }
 
-                    SetRecvTrackingParam(par.name + ":" + newBoolValue, i);
+                    if (par.type == AnimatorControllerParameterType.Bool)
+                    {
+                        bool newBoolValue = reader.ReadBool();
+                        animator.SetBool(par.nameHash, newBoolValue);
+
+                        SetRecvTrackingParam(par.name + ":" + newBoolValue, i);
+                    }
                 }
             }
         }
@@ -412,29 +424,31 @@ namespace MLAPI.Prototyping
             {
                 using (PooledBitStream stream = PooledBitStream.Get())
                 {
-                    BitWriter writer = new BitWriter(stream);
-                    writer.WriteInt32Packed(hash);
-
-                    if (isServer)
+                    using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                     {
-                        if (EnableProximity)
+                        writer.WriteInt32Packed(hash);
+
+                        if (isServer)
                         {
-                            List<uint> clientsInProximity = new List<uint>();
-                            foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.ConnectedClients)
+                            if (EnableProximity)
                             {
-                                if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
-                                    clientsInProximity.Add(client.Key);
+                                List<uint> clientsInProximity = new List<uint>();
+                                foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.ConnectedClients)
+                                {
+                                    if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
+                                        clientsInProximity.Add(client.Key);
+                                }
+                                InvokeClientRpc(ApplyAnimTriggerMsg, clientsInProximity, stream);
                             }
-                            InvokeClientRpc(ApplyAnimTriggerMsg, clientsInProximity, stream);
+                            else
+                            {
+                                InvokeClientRpcOnEveryoneExcept(ApplyAnimTriggerMsg, OwnerClientId, stream);
+                            }
                         }
                         else
                         {
-                            InvokeClientRpcOnEveryoneExcept(ApplyAnimTriggerMsg, OwnerClientId, stream);
+                            InvokeServerRpc(SubmitAnimTriggerMsg, stream);
                         }
-                    }
-                    else
-                    {
-                        InvokeServerRpc(SubmitAnimTriggerMsg, stream);
                     }
                 }
             }

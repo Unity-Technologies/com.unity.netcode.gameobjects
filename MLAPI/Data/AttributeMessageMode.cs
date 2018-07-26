@@ -41,13 +41,15 @@ namespace MLAPI
 
         public void Invoke(object instance, Stream stream)
         {
-            BitReader reader = new BitReader(stream);
-            for (int i = 0; i < parameterTypes.Length; i++)
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
-                parameterRefs[i] = reader.ReadObjectPacked(parameterTypes[i]);
+                for (int i = 0; i < parameterTypes.Length; i++)
+                {
+                    parameterRefs[i] = reader.ReadObjectPacked(parameterTypes[i]);
+                }
+
+                method.Invoke(instance, parameterRefs);
             }
-            
-            method.Invoke(instance, parameterRefs);
         }
     }
 

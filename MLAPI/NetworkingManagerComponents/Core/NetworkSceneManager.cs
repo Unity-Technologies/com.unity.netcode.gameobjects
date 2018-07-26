@@ -61,10 +61,12 @@ namespace MLAPI.Components
 
             using (PooledBitStream stream = PooledBitStream.Get())
             {
-                BitWriter writer = new BitWriter(stream);
-                writer.WriteUInt32Packed(sceneNameToIndex[sceneName]);
+                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                {
+                    writer.WriteUInt32Packed(sceneNameToIndex[sceneName]);
 
-                InternalMessageHandler.Send(MLAPIConstants.MLAPI_SWITCH_SCENE, "MLAPI_INTERNAL", stream);
+                    InternalMessageHandler.Send(MLAPIConstants.MLAPI_SWITCH_SCENE, "MLAPI_INTERNAL", stream);
+                }
             }
         }
 

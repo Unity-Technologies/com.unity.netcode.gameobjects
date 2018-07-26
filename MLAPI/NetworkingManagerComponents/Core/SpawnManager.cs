@@ -76,11 +76,13 @@ namespace MLAPI.Components
 
             using (PooledBitStream stream = PooledBitStream.Get())
             {
-                BitWriter writer = new BitWriter(stream);
-                writer.WriteUInt32Packed(netId);
-                writer.WriteUInt32Packed(netObject.OwnerClientId);
+                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                {
+                    writer.WriteUInt32Packed(netId);
+                    writer.WriteUInt32Packed(netObject.OwnerClientId);
 
-                InternalMessageHandler.Send(MLAPIConstants.MLAPI_CHANGE_OWNER, "MLAPI_INTERNAL", stream);
+                    InternalMessageHandler.Send(MLAPIConstants.MLAPI_CHANGE_OWNER, "MLAPI_INTERNAL", stream);
+                }
             }
         }
 
@@ -102,11 +104,13 @@ namespace MLAPI.Components
 
             using (PooledBitStream stream = PooledBitStream.Get())
             {
-                BitWriter writer = new BitWriter(stream);
-                writer.WriteUInt32Packed(netId);
-                writer.WriteUInt32Packed(clientId);
+                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                {
+                    writer.WriteUInt32Packed(netId);
+                    writer.WriteUInt32Packed(clientId);
 
-                InternalMessageHandler.Send(MLAPIConstants.MLAPI_CHANGE_OWNER, "MLAPI_INTERNAL", stream);
+                    InternalMessageHandler.Send(MLAPIConstants.MLAPI_CHANGE_OWNER, "MLAPI_INTERNAL", stream);
+                }
             }
         }
 
@@ -247,28 +251,30 @@ namespace MLAPI.Components
             {
                 using (PooledBitStream stream = PooledBitStream.Get())
                 {
-                    BitWriter writer = new BitWriter(stream);
-                    writer.WriteBool(true);
-                    writer.WriteUInt32Packed(netObject.NetworkId);
-                    writer.WriteUInt32Packed(netObject.OwnerClientId);
-                    writer.WriteInt32Packed(netManager.NetworkConfig.NetworkPrefabIds[netObject.NetworkedPrefabName]);
-                    writer.WriteBool(netObject.sceneObject == null ? true : netObject.sceneObject.Value);
+                    using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                    {
+                        writer.WriteBool(true);
+                        writer.WriteUInt32Packed(netObject.NetworkId);
+                        writer.WriteUInt32Packed(netObject.OwnerClientId);
+                        writer.WriteInt32Packed(netManager.NetworkConfig.NetworkPrefabIds[netObject.NetworkedPrefabName]);
+                        writer.WriteBool(netObject.sceneObject == null ? true : netObject.sceneObject.Value);
 
-                    writer.WriteSinglePacked(netObject.transform.position.x);
-                    writer.WriteSinglePacked(netObject.transform.position.y);
-                    writer.WriteSinglePacked(netObject.transform.position.z);
+                        writer.WriteSinglePacked(netObject.transform.position.x);
+                        writer.WriteSinglePacked(netObject.transform.position.y);
+                        writer.WriteSinglePacked(netObject.transform.position.z);
 
-                    writer.WriteSinglePacked(netObject.transform.rotation.eulerAngles.x);
-                    writer.WriteSinglePacked(netObject.transform.rotation.eulerAngles.y);
-                    writer.WriteSinglePacked(netObject.transform.rotation.eulerAngles.z);
+                        writer.WriteSinglePacked(netObject.transform.rotation.eulerAngles.x);
+                        writer.WriteSinglePacked(netObject.transform.rotation.eulerAngles.y);
+                        writer.WriteSinglePacked(netObject.transform.rotation.eulerAngles.z);
 
-                    writer.WriteBool(payload != null);
+                        writer.WriteBool(payload != null);
 
-                    netObject.WriteNetworkedVarData(stream, client.Key);
+                        netObject.WriteNetworkedVarData(stream, client.Key);
 
-                    if (payload != null) stream.CopyFrom(payload);
+                        if (payload != null) stream.CopyFrom(payload);
 
-                    InternalMessageHandler.Send(client.Key, MLAPIConstants.MLAPI_ADD_OBJECT, "MLAPI_INTERNAL", stream);
+                        InternalMessageHandler.Send(client.Key, MLAPIConstants.MLAPI_ADD_OBJECT, "MLAPI_INTERNAL", stream);
+                    }
                 }
             }
         }
@@ -315,29 +321,30 @@ namespace MLAPI.Components
             {
                 using (PooledBitStream stream = PooledBitStream.Get())
                 {
-                    BitWriter writer = new BitWriter(stream);
+                    using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                    {
+                        writer.WriteBool(false);
+                        writer.WriteUInt32Packed(netObject.NetworkId);
+                        writer.WriteUInt32Packed(netObject.OwnerClientId);
+                        writer.WriteInt32Packed(netManager.NetworkConfig.NetworkPrefabIds[netObject.NetworkedPrefabName]);
+                        writer.WriteBool(netObject.sceneObject == null ? true : netObject.sceneObject.Value);
 
-                    writer.WriteBool(false);
-                    writer.WriteUInt32Packed(netObject.NetworkId);
-                    writer.WriteUInt32Packed(netObject.OwnerClientId);
-                    writer.WriteInt32Packed(netManager.NetworkConfig.NetworkPrefabIds[netObject.NetworkedPrefabName]);
-                    writer.WriteBool(netObject.sceneObject == null ? true : netObject.sceneObject.Value);
+                        writer.WriteSinglePacked(netObject.transform.position.x);
+                        writer.WriteSinglePacked(netObject.transform.position.y);
+                        writer.WriteSinglePacked(netObject.transform.position.z);
 
-                    writer.WriteSinglePacked(netObject.transform.position.x);
-                    writer.WriteSinglePacked(netObject.transform.position.y);
-                    writer.WriteSinglePacked(netObject.transform.position.z);
+                        writer.WriteSinglePacked(netObject.transform.rotation.eulerAngles.x);
+                        writer.WriteSinglePacked(netObject.transform.rotation.eulerAngles.y);
+                        writer.WriteSinglePacked(netObject.transform.rotation.eulerAngles.z);
 
-                    writer.WriteSinglePacked(netObject.transform.rotation.eulerAngles.x);
-                    writer.WriteSinglePacked(netObject.transform.rotation.eulerAngles.y);
-                    writer.WriteSinglePacked(netObject.transform.rotation.eulerAngles.z);
+                        writer.WriteBool(payload != null);
 
-                    writer.WriteBool(payload != null);
+                        netObject.WriteNetworkedVarData(stream, client.Key);
 
-                    netObject.WriteNetworkedVarData(stream, client.Key);
+                        if (payload != null) stream.CopyFrom(payload);
 
-                    if (payload != null) stream.CopyFrom(payload);
-
-                    InternalMessageHandler.Send(client.Key, MLAPIConstants.MLAPI_ADD_OBJECT, "MLAPI_INTERNAL", stream);
+                        InternalMessageHandler.Send(client.Key, MLAPIConstants.MLAPI_ADD_OBJECT, "MLAPI_INTERNAL", stream);
+                    }
                 }
             }
         }
@@ -365,10 +372,12 @@ namespace MLAPI.Components
                 {
                     using (PooledBitStream stream = PooledBitStream.Get())
                     {
-                        BitWriter writer = new BitWriter(stream);
-                        writer.WriteUInt32Packed(networkId);
+                        using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                        {
+                            writer.WriteUInt32Packed(networkId);
 
-                        InternalMessageHandler.Send(MLAPIConstants.MLAPI_DESTROY_OBJECT, "MLAPI_INTERNAL", stream);
+                            InternalMessageHandler.Send(MLAPIConstants.MLAPI_DESTROY_OBJECT, "MLAPI_INTERNAL", stream);
+                        }
                     }
                 }
             }

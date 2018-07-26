@@ -274,32 +274,34 @@ namespace MLAPI
                 {
                     using (PooledBitStream stream = PooledBitStream.Get())
                     {
-                        BitWriter writer = new BitWriter(stream);
-                        writer.WriteUInt32Packed(networkId);
-                        writer.WriteUInt16Packed(networkedObject.GetOrderIndex(this));
-
-                        uint clientId = NetworkingManager.singleton.ConnectedClientsList[i].ClientId;
-                        for (int k = 0; k < networkedVarFields.Count; k++)
+                        using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                         {
-                            if (!channelMappedVarIndexes[j].Contains(k))
+                            writer.WriteUInt32Packed(networkId);
+                            writer.WriteUInt16Packed(networkedObject.GetOrderIndex(this));
+
+                            uint clientId = NetworkingManager.singleton.ConnectedClientsList[i].ClientId;
+                            for (int k = 0; k < networkedVarFields.Count; k++)
                             {
-                                //This var does not belong to the currently iterating channel group.
-                                writer.WriteBool(false);
-                                continue;
+                                if (!channelMappedVarIndexes[j].Contains(k))
+                                {
+                                    //This var does not belong to the currently iterating channel group.
+                                    writer.WriteBool(false);
+                                    continue;
+                                }
+
+                                bool isDirty = networkedVarFields[k].IsDirty(); //cache this here. You never know what operations users will do in the dirty methods
+                                writer.WriteBool(isDirty);
+                                if (isDirty && (!isServer || networkedVarFields[k].CanClientRead(clientId)))
+                                {
+                                    networkedVarFields[k].WriteDelta(stream);
+                                }
                             }
 
-                            bool isDirty = networkedVarFields[k].IsDirty(); //cache this here. You never know what operations users will do in the dirty methods
-                            writer.WriteBool(isDirty);
-                            if (isDirty && (!isServer || networkedVarFields[k].CanClientRead(clientId)))
-                            {
-                                networkedVarFields[k].WriteDelta(stream);
-                            }
+                            if (isServer)
+                                InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA, channelsForVarGroups[j], stream);
+                            else
+                                InternalMessageHandler.Send(NetworkingManager.singleton.ServerClientId, MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA, channelsForVarGroups[j], stream);
                         }
-
-                        if (isServer)
-                            InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA, channelsForVarGroups[j], stream);
-                        else
-							InternalMessageHandler.Send(NetworkingManager.singleton.ServerClientId, MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA, channelsForVarGroups[j], stream);
                     }
                 }
             }
@@ -312,51 +314,55 @@ namespace MLAPI
 
         internal void HandleNetworkedVarDeltas(Stream stream, uint clientId)
         {
-            BitReader reader = new BitReader(stream);
-            for (int i = 0; i < networkedVarFields.Count; i++)
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
-                if (!reader.ReadBool())
-                    continue;
-
-                if (isServer && !networkedVarFields[i].CanClientWrite(clientId))
+                for (int i = 0; i < networkedVarFields.Count; i++)
                 {
-                    //This client wrote somewhere they are not allowed. This is critical
-                    //We can't just skip this field. Because we don't actually know how to dummy read
-                    //That is, we don't know how many bytes to skip. Because the interface doesn't have a 
-                    //Read that gives us the value. Only a Read that applies the value straight away
-                    //A dummy read COULD be added to the interface for this situation, but it's just being too nice.
-                    //This is after all a developer fault. A critical error should be fine.
-                    // - TwoTen
-                    if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Client wrote to NetworkedVar without permission. No more variables can be read. This is critical");
-                    return;
-                }
+                    if (!reader.ReadBool())
+                        continue;
 
-                networkedVarFields[i].ReadDelta(stream);
+                    if (isServer && !networkedVarFields[i].CanClientWrite(clientId))
+                    {
+                        //This client wrote somewhere they are not allowed. This is critical
+                        //We can't just skip this field. Because we don't actually know how to dummy read
+                        //That is, we don't know how many bytes to skip. Because the interface doesn't have a 
+                        //Read that gives us the value. Only a Read that applies the value straight away
+                        //A dummy read COULD be added to the interface for this situation, but it's just being too nice.
+                        //This is after all a developer fault. A critical error should be fine.
+                        // - TwoTen
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Client wrote to NetworkedVar without permission. No more variables can be read. This is critical");
+                        return;
+                    }
+
+                    networkedVarFields[i].ReadDelta(stream);
+                }
             }
         }
 
         internal void HandleNetworkedVarUpdate(Stream stream, uint clientId)
         {
-            BitReader reader = new BitReader(stream);
-            for (int i = 0; i < networkedVarFields.Count; i++)
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
-                if (!reader.ReadBool())
-                    continue;
-
-                if (isServer && !networkedVarFields[i].CanClientWrite(clientId))
+                for (int i = 0; i < networkedVarFields.Count; i++)
                 {
-                    //This client wrote somewhere they are not allowed. This is critical
-                    //We can't just skip this field. Because we don't actually know how to dummy read
-                    //That is, we don't know how many bytes to skip. Because the interface doesn't have a 
-                    //Read that gives us the value. Only a Read that applies the value straight away
-                    //A dummy read COULD be added to the interface for this situation, but it's just being too nice.
-                    //This is after all a developer fault. A critical error should be fine.
-                    // - TwoTen
-                    if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Client wrote to NetworkedVar without permission. No more variables can be read. This is critical");
-                    return;
-                }
+                    if (!reader.ReadBool())
+                        continue;
 
-                networkedVarFields[i].ReadField(stream);
+                    if (isServer && !networkedVarFields[i].CanClientWrite(clientId))
+                    {
+                        //This client wrote somewhere they are not allowed. This is critical
+                        //We can't just skip this field. Because we don't actually know how to dummy read
+                        //That is, we don't know how many bytes to skip. Because the interface doesn't have a 
+                        //Read that gives us the value. Only a Read that applies the value straight away
+                        //A dummy read COULD be added to the interface for this situation, but it's just being too nice.
+                        //This is after all a developer fault. A critical error should be fine.
+                        // - TwoTen
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Client wrote to NetworkedVar without permission. No more variables can be read. This is critical");
+                        return;
+                    }
+
+                    networkedVarFields[i].ReadField(stream);
+                }
             }
         }
 
@@ -576,13 +582,15 @@ namespace MLAPI
         {
             using (PooledBitStream stream = PooledBitStream.Get())
             {
-                BitWriter writer = new BitWriter(stream);
-
-                for (int i = 0; i < parameters.Length; i++)
+                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                 {
-                    writer.WriteObjectPacked(parameters[i]);
+
+                    for (int i = 0; i < parameters.Length; i++)
+                    {
+                        writer.WriteObjectPacked(parameters[i]);
+                    }
+                    SendServerRPCPerformance(hash, stream);
                 }
-                SendServerRPCPerformance(hash, stream);
             }
         }
         
@@ -590,12 +598,14 @@ namespace MLAPI
         {
             using (PooledBitStream stream = PooledBitStream.Get())
             {
-                BitWriter writer = new BitWriter(stream);
-                for (int i = 0; i < parameters.Length; i++)
+                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                 {
-                    writer.WriteObjectPacked(parameters[i]);
+                    for (int i = 0; i < parameters.Length; i++)
+                    {
+                        writer.WriteObjectPacked(parameters[i]);
+                    }
+                    SendClientRPCPerformance(hash, clientIds, stream);
                 }
-                SendClientRPCPerformance(hash, clientIds, stream);
             }
         }
 
@@ -603,12 +613,14 @@ namespace MLAPI
         {
             using (PooledBitStream stream = PooledBitStream.Get())
             {
-                BitWriter writer = new BitWriter(stream);
-                for (int i = 0; i < parameters.Length; i++)
+                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                 {
-                    writer.WriteObjectPacked(parameters[i]);
+                    for (int i = 0; i < parameters.Length; i++)
+                    {
+                        writer.WriteObjectPacked(parameters[i]);
+                    }
+                    SendClientRPCPerformance(hash, clientId, stream);
                 }
-                SendClientRPCPerformance(hash, clientId, stream);
             }
         }
 
@@ -616,12 +628,14 @@ namespace MLAPI
         {
             using (PooledBitStream stream = PooledBitStream.Get())
             {
-                BitWriter writer = new BitWriter(stream);
-                for (int i = 0; i < parameters.Length; i++)
+                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                 {
-                    writer.WriteObjectPacked(parameters[i]);
+                    for (int i = 0; i < parameters.Length; i++)
+                    {
+                        writer.WriteObjectPacked(parameters[i]);
+                    }
+                    SendClientRPCPerformance(hash, stream, clientIdToIgnore);
                 }
-                SendClientRPCPerformance(hash, stream, clientIdToIgnore);
             }
         }
 
@@ -634,25 +648,27 @@ namespace MLAPI
                 return;
             }
 
-	        using (PooledBitStream stream = PooledBitStream.Get())
-	        {
-		        BitWriter messageWriter = new BitWriter(stream);
-		        messageWriter.WriteUInt32Packed(networkId);
-		        messageWriter.WriteUInt16Packed(networkedObject.GetOrderIndex(this));
-		        messageWriter.WriteUInt64Packed(hash);
-
-		        stream.CopyFrom(messageStream);
-
-				if (isHost)
-				{
-					messageStream.Position = 0;
-					InvokeServerRPCLocal(hash, NetworkingManager.singleton.LocalClientId, messageStream);
-				}
-                else
+            using (PooledBitStream stream = PooledBitStream.Get())
+            {
+                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                 {
-                    InternalMessageHandler.Send(NetworkingManager.singleton.ServerClientId, MLAPIConstants.MLAPI_SERVER_RPC, "MLAPI_DEFAULT_MESSAGE", stream);
+                    writer.WriteUInt32Packed(networkId);
+                    writer.WriteUInt16Packed(networkedObject.GetOrderIndex(this));
+                    writer.WriteUInt64Packed(hash);
+
+                    stream.CopyFrom(messageStream);
+
+                    if (isHost)
+                    {
+                        messageStream.Position = 0;
+                        InvokeServerRPCLocal(hash, NetworkingManager.singleton.LocalClientId, messageStream);
+                    }
+                    else
+                    {
+                        InternalMessageHandler.Send(NetworkingManager.singleton.ServerClientId, MLAPIConstants.MLAPI_SERVER_RPC, "MLAPI_DEFAULT_MESSAGE", stream);
+                    }
                 }
-	        }
+            }
         }
 
         internal void SendClientRPCPerformance(ulong hash,  List<uint> clientIds, Stream messageStream)
@@ -666,40 +682,42 @@ namespace MLAPI
 
             using (PooledBitStream stream = PooledBitStream.Get())
             {
-                BitWriter messageWriter = new BitWriter(stream);
-                messageWriter.WriteUInt32Packed(networkId);
-                messageWriter.WriteUInt16Packed(networkedObject.GetOrderIndex(this));
-                messageWriter.WriteUInt64Packed(hash);
-
-                stream.CopyFrom(messageStream);
-
-                if (clientIds == null)
+                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                 {
-                    for (int i = 0; i < NetworkingManager.singleton.ConnectedClientsList.Count; i++)
+                    writer.WriteUInt32Packed(networkId);
+                    writer.WriteUInt16Packed(networkedObject.GetOrderIndex(this));
+                    writer.WriteUInt64Packed(hash);
+
+                    stream.CopyFrom(messageStream);
+
+                    if (clientIds == null)
                     {
-                        if (isHost && NetworkingManager.singleton.ConnectedClientsList[i].ClientId == NetworkingManager.singleton.LocalClientId)
+                        for (int i = 0; i < NetworkingManager.singleton.ConnectedClientsList.Count; i++)
                         {
-							messageStream.Position = 0;
-                            InvokeClientRPCLocal(hash, NetworkingManager.singleton.LocalClientId, messageStream);
-                        }
-                        else
-                        {
-                            InternalMessageHandler.Send(NetworkingManager.singleton.ConnectedClientsList[i].ClientId, MLAPIConstants.MLAPI_CLIENT_RPC, "MLAPI_DEFAULT_MESSAGE", stream);
+                            if (isHost && NetworkingManager.singleton.ConnectedClientsList[i].ClientId == NetworkingManager.singleton.LocalClientId)
+                            {
+                                messageStream.Position = 0;
+                                InvokeClientRPCLocal(hash, NetworkingManager.singleton.LocalClientId, messageStream);
+                            }
+                            else
+                            {
+                                InternalMessageHandler.Send(NetworkingManager.singleton.ConnectedClientsList[i].ClientId, MLAPIConstants.MLAPI_CLIENT_RPC, "MLAPI_DEFAULT_MESSAGE", stream);
+                            }
                         }
                     }
-                }
-                else
-                {
-                    for (int i = 0; i < clientIds.Count; i++)
+                    else
                     {
-                        if (isHost && clientIds[i] == NetworkingManager.singleton.LocalClientId)
+                        for (int i = 0; i < clientIds.Count; i++)
                         {
-							messageStream.Position = 0;
-							InvokeClientRPCLocal(hash, NetworkingManager.singleton.LocalClientId, messageStream);
-                        }
-                        else
-                        {
-                            InternalMessageHandler.Send(clientIds[i], MLAPIConstants.MLAPI_CLIENT_RPC, "MLAPI_DEFAULT_MESSAGE", stream);
+                            if (isHost && clientIds[i] == NetworkingManager.singleton.LocalClientId)
+                            {
+                                messageStream.Position = 0;
+                                InvokeClientRPCLocal(hash, NetworkingManager.singleton.LocalClientId, messageStream);
+                            }
+                            else
+                            {
+                                InternalMessageHandler.Send(clientIds[i], MLAPIConstants.MLAPI_CLIENT_RPC, "MLAPI_DEFAULT_MESSAGE", stream);
+                            }
                         }
                     }
                 }
@@ -717,26 +735,28 @@ namespace MLAPI
 
             using (PooledBitStream stream = PooledBitStream.Get())
             {
-                BitWriter messageWriter = new BitWriter(stream);
-                messageWriter.WriteUInt32Packed(networkId);
-                messageWriter.WriteUInt16Packed(networkedObject.GetOrderIndex(this));
-                messageWriter.WriteUInt64Packed(hash);
-
-                stream.CopyFrom(messageStream);
-
-
-                for (int i = 0; i < NetworkingManager.singleton.ConnectedClientsList.Count; i++)
+                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                 {
-                    if (NetworkingManager.singleton.ConnectedClientsList[i].ClientId == clientIdToIgnore)
-                        continue;
-                    if (isHost && NetworkingManager.singleton.ConnectedClientsList[i].ClientId == NetworkingManager.singleton.LocalClientId)
+                    writer.WriteUInt32Packed(networkId);
+                    writer.WriteUInt16Packed(networkedObject.GetOrderIndex(this));
+                    writer.WriteUInt64Packed(hash);
+
+                    stream.CopyFrom(messageStream);
+
+
+                    for (int i = 0; i < NetworkingManager.singleton.ConnectedClientsList.Count; i++)
                     {
-                        messageStream.Position = 0;
-                        InvokeClientRPCLocal(hash, NetworkingManager.singleton.LocalClientId, messageStream);
-                    }
-                    else
-                    {
-                        InternalMessageHandler.Send(NetworkingManager.singleton.ConnectedClientsList[i].ClientId, MLAPIConstants.MLAPI_CLIENT_RPC, "MLAPI_DEFAULT_MESSAGE", stream);
+                        if (NetworkingManager.singleton.ConnectedClientsList[i].ClientId == clientIdToIgnore)
+                            continue;
+                        if (isHost && NetworkingManager.singleton.ConnectedClientsList[i].ClientId == NetworkingManager.singleton.LocalClientId)
+                        {
+                            messageStream.Position = 0;
+                            InvokeClientRPCLocal(hash, NetworkingManager.singleton.LocalClientId, messageStream);
+                        }
+                        else
+                        {
+                            InternalMessageHandler.Send(NetworkingManager.singleton.ConnectedClientsList[i].ClientId, MLAPIConstants.MLAPI_CLIENT_RPC, "MLAPI_DEFAULT_MESSAGE", stream);
+                        }
                     }
                 }
             }
@@ -753,21 +773,23 @@ namespace MLAPI
 
             using (PooledBitStream stream = PooledBitStream.Get())
             {
-                BitWriter writer = new BitWriter(stream);
-                writer.WriteUInt32Packed(networkId);
-                writer.WriteUInt16Packed(networkedObject.GetOrderIndex(this));
-                writer.WriteUInt64Packed(hash);
-
-                stream.CopyFrom(messageStream);
-
-				if (isHost && clientId == NetworkingManager.singleton.LocalClientId)
-				{
-					messageStream.Position = 0;
-					InvokeClientRPCLocal(hash, NetworkingManager.singleton.LocalClientId, messageStream);
-				}
-                else
+                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                 {
-                    InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_CLIENT_RPC, "MLAPI_DEFAULT_MESSAGE", stream);
+                    writer.WriteUInt32Packed(networkId);
+                    writer.WriteUInt16Packed(networkedObject.GetOrderIndex(this));
+                    writer.WriteUInt64Packed(hash);
+
+                    stream.CopyFrom(messageStream);
+
+                    if (isHost && clientId == NetworkingManager.singleton.LocalClientId)
+                    {
+                        messageStream.Position = 0;
+                        InvokeClientRPCLocal(hash, NetworkingManager.singleton.LocalClientId, messageStream);
+                    }
+                    else
+                    {
+                        InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_CLIENT_RPC, "MLAPI_DEFAULT_MESSAGE", stream);
+                    }
                 }
             }
         }

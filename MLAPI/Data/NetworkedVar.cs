@@ -172,18 +172,22 @@ namespace MLAPI
         /// <inheritdoc />
         public void ReadField(Stream stream)
         {
-            BitReader reader = new BitReader(stream);
-            T previousValue = InternalValue;
-            InternalValue = (T)reader.ReadObjectPacked((typeof(T)));
-            if (OnValueChanged != null)
-                OnValueChanged(previousValue, InternalValue);
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
+            {
+                T previousValue = InternalValue;
+                InternalValue = (T)reader.ReadObjectPacked((typeof(T)));
+                if (OnValueChanged != null)
+                    OnValueChanged(previousValue, InternalValue);
+            }
         }
         
         /// <inheritdoc />
         public void WriteField(Stream stream)
         {
-            BitWriter writer = new BitWriter(stream);
-            writer.WriteObjectPacked(InternalValue); //BOX
+            using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+            {
+                writer.WriteObjectPacked(InternalValue); //BOX
+            }
         }
 
         /// <inheritdoc />
