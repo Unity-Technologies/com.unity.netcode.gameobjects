@@ -261,9 +261,8 @@ namespace MLAPI.Prototyping
 
                 using (PooledBitStream writeStream = PooledBitStream.Get())
                 {
-                    using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                    using (PooledBitWriter writer = PooledBitWriter.Get(writeStream))
                     {
-
                         writer.WriteSinglePacked(xPos);
                         writer.WriteSinglePacked(yPos);
                         writer.WriteSinglePacked(zPos);
