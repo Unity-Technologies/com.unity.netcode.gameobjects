@@ -24,7 +24,7 @@ namespace MLAPI.Cryptography
             using (RijndaelManaged aes = new RijndaelManaged())
             {
                 aes.IV = IVBuffer;
-                aes.Key = NetworkingManager.singleton.ConnectedClients[clientId].AesKey;
+                aes.Key = NetworkingManager.singleton.isServer ? NetworkingManager.singleton.ConnectedClients[clientId].AesKey : NetworkingManager.singleton.clientAesKey;
                 using (CryptoStream cs = new CryptoStream(encryptedStream, aes.CreateDecryptor(), CryptoStreamMode.Read))
                 {
                     using (PooledBitStream outStream = PooledBitStream.Get())
@@ -46,7 +46,7 @@ namespace MLAPI.Cryptography
         {
             using (RijndaelManaged aes = new RijndaelManaged())
             {
-                aes.Key = NetworkingManager.singleton.ConnectedClients[clientId].AesKey;;
+                aes.Key = NetworkingManager.singleton.isServer ? NetworkingManager.singleton.ConnectedClients[clientId].AesKey : NetworkingManager.singleton.clientAesKey;
                 aes.GenerateIV();
                 
                 using (CryptoStream cs = new CryptoStream(clearStream, aes.CreateEncryptor(), CryptoStreamMode.Read))
