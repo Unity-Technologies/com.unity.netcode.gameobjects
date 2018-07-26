@@ -246,8 +246,5 @@ namespace MLAPI
             //TODO index out of bounds
             return childNetworkedBehaviours[index];
         }
-
-        //Key: behaviourOrderId, value key: messageType, value value callback 
-        internal Dictionary<ushort, Dictionary<ushort, Action<uint, BitReader>>> targetMessageActions = new Dictionary<ushort, Dictionary<ushort, Action<uint, BitReader>>>();
     }
 }

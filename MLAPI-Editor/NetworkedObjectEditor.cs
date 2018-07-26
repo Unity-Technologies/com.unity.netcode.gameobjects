@@ -9,7 +9,6 @@ namespace UnityEditor
     {
         private bool initialized;
         private NetworkedObject networkedObject;
-        private bool showObservers;
 
         private void Init()
         {
