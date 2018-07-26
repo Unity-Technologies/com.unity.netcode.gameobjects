@@ -170,7 +170,6 @@ namespace MLAPI.Configuration
                 for (int i = 0; i < config.Channels.Count; i++)
                 {
                     writer.WriteString(config.Channels[i].Name);
-                    writer.WriteBool(config.Channels[i].Encrypted);
                     writer.WriteBits((byte)config.Channels[i].Type, 5);
                 }
 
@@ -232,7 +231,6 @@ namespace MLAPI.Configuration
                     Channel channel = new Channel()
                     {
                         Name = reader.ReadString().ToString(),
-                        Encrypted = reader.ReadBool(),
                         Type = (ChannelType)reader.ReadBits(5)
                     };
                     config.Channels.Add(channel);
@@ -310,8 +308,6 @@ namespace MLAPI.Configuration
                 {
                     writer.WriteString(Channels[i].Name);
                     writer.WriteByte((byte)Channels[i].Type);
-                    if (EnableEncryption)
-                        writer.WriteBool(Channels[i].Encrypted);
                 }
                 if (EnableSceneSwitching)
                 {

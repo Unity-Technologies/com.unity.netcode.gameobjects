@@ -78,26 +78,16 @@ public class NetworkingManagerEditor : Editor
             int firstLabelWidth = 50;
             int secondLabelWidth = 40;
             int secondFieldWidth = 150;
-            int thirdLabelWidth = networkingManager.NetworkConfig.EnableEncryption ? 70 : 0;
-            int thirdFieldWidth = networkingManager.NetworkConfig.EnableEncryption ? 10 : 0;
             int reduceFirstWidth = 45;
-            int reduceSecondWidth = networkingManager.NetworkConfig.EnableEncryption ? 10 : 0;
 
             EditorGUI.LabelField(new Rect(rect.x, rect.y, firstLabelWidth, EditorGUIUtility.singleLineHeight), "Name");
-            EditorGUI.PropertyField(new Rect(rect.x + firstLabelWidth, rect.y, rect.width - firstLabelWidth - secondLabelWidth - secondFieldWidth - thirdFieldWidth - thirdLabelWidth - reduceFirstWidth,
+            EditorGUI.PropertyField(new Rect(rect.x + firstLabelWidth, rect.y, rect.width - firstLabelWidth - secondLabelWidth - secondFieldWidth - reduceFirstWidth,
                 EditorGUIUtility.singleLineHeight), element.FindPropertyRelative("Name"), GUIContent.none);
 
 
-            EditorGUI.LabelField(new Rect(rect.width - secondLabelWidth - secondFieldWidth - thirdFieldWidth - thirdLabelWidth, rect.y, secondLabelWidth, EditorGUIUtility.singleLineHeight), "Type");
-            EditorGUI.PropertyField(new Rect(rect.width - secondFieldWidth - thirdLabelWidth - thirdFieldWidth, rect.y, secondFieldWidth - reduceSecondWidth,
+            EditorGUI.LabelField(new Rect(rect.width - secondLabelWidth - secondFieldWidth, rect.y, secondLabelWidth, EditorGUIUtility.singleLineHeight), "Type");
+            EditorGUI.PropertyField(new Rect(rect.width - secondFieldWidth, rect.y, secondFieldWidth,
                 EditorGUIUtility.singleLineHeight), element.FindPropertyRelative("Type"), GUIContent.none);
-
-            if (networkingManager.NetworkConfig.EnableEncryption)
-            {
-                EditorGUI.LabelField(new Rect(rect.width - thirdFieldWidth - thirdLabelWidth, rect.y, thirdLabelWidth, EditorGUIUtility.singleLineHeight), "Encrypted");
-                EditorGUI.PropertyField(new Rect(rect.width - thirdFieldWidth, rect.y, secondFieldWidth,
-                    EditorGUIUtility.singleLineHeight), element.FindPropertyRelative("Encrypted"), GUIContent.none);
-            }
         };
 
         channelsList.drawHeaderCallback = (Rect rect) => {

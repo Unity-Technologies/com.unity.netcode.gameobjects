@@ -17,9 +17,5 @@ namespace MLAPI.Configuration
         /// The Transport QOS type
         /// </summary>
         public ChannelType Type;
-        /// <summary>
-        /// Wheter or not the channel should be encrypted
-        /// </summary>
-        public bool Encrypted;
     }
 }
