@@ -14,7 +14,6 @@ public class NetworkingManagerEditor : Editor
 
     private ReorderableList networkPrefabsList;
     private ReorderableList channelsList;
-    private ReorderableList messageTypesList;
     private ReorderableList registeredScenesList;
 
     private NetworkingManager networkingManager;
@@ -51,16 +50,6 @@ public class NetworkingManagerEditor : Editor
         networkPrefabsList = new ReorderableList(serializedObject, serializedObject.FindProperty("NetworkConfig").FindPropertyRelative("NetworkedPrefabs"), true, true, true, true);
         networkPrefabsList.drawElementCallback = (Rect rect, int index, bool isActive, bool isFocused) =>
         {
-            /*
-            SerializedProperty element = networkPrefabsList.serializedProperty.GetArrayElementAtIndex(index);
-            rect.y += 2;
-            EditorGUI.PropertyField(new Rect(rect.x, rect.y, rect.width - 30, EditorGUIUtility.singleLineHeight),
-                element.FindPropertyRelative("prefab"), GUIContent.none);
-            EditorGUI.PropertyField(new Rect(rect.x + rect.width - 30, rect.y, 30, EditorGUIUtility.singleLineHeight),
-                element.FindPropertyRelative("playerPrefab"), GUIContent.none);
-
-            */
-
             SerializedProperty element = networkPrefabsList.serializedProperty.GetArrayElementAtIndex(index);
             int firstLabelWidth = 50;
             int secondLabelWidth = 140;
@@ -79,36 +68,6 @@ public class NetworkingManagerEditor : Editor
         networkPrefabsList.drawHeaderCallback = (Rect rect) => {
             EditorGUI.LabelField(rect, "NetworkedPrefabs (Auto Sorted)");
         };
-
-        /*
-        messageTypesList = new ReorderableList(serializedObject, serializedObject.FindProperty("NetworkConfig").FindPropertyRelative("MessageTypes"), true, true, true, true);
-        messageTypesList.drawElementCallback = (Rect rect, int index, bool isActive, bool isFocused) =>
-        {
-            SerializedProperty element = messageTypesList.serializedProperty.GetArrayElementAtIndex(index);
-
-
-            int firstLabelWidth = 50;
-            int secondLabelWidth = networkingManager.NetworkConfig.AllowPassthroughMessages ? 90 : 0;
-            float secondFieldWidth = networkingManager.NetworkConfig.AllowPassthroughMessages ? 10 : 0;
-            int reduceFirstWidth = networkingManager.NetworkConfig.AllowPassthroughMessages ? 45 : 20;
-
-            EditorGUI.LabelField(new Rect(rect.x, rect.y, firstLabelWidth, EditorGUIUtility.singleLineHeight), "Name");
-            EditorGUI.PropertyField(new Rect(rect.x + firstLabelWidth, rect.y, rect.width - firstLabelWidth - secondLabelWidth - secondFieldWidth - reduceFirstWidth,
-                EditorGUIUtility.singleLineHeight), element.FindPropertyRelative("Name"), GUIContent.none);
-
-            if (networkingManager.NetworkConfig.AllowPassthroughMessages)
-            {
-                EditorGUI.LabelField(new Rect(rect.width - secondLabelWidth - secondFieldWidth, rect.y, secondLabelWidth, EditorGUIUtility.singleLineHeight), "Passthrough");
-                EditorGUI.PropertyField(new Rect(rect.width - secondFieldWidth, rect.y, secondFieldWidth,
-                    EditorGUIUtility.singleLineHeight), element.FindPropertyRelative("Passthrough"), GUIContent.none);
-            }
-        };
-
-        messageTypesList.drawHeaderCallback = (Rect rect) => {
-            EditorGUI.LabelField(rect, "MessageTypes (Auto Sorted)");
-        };
-        */
-
 
         channelsList = new ReorderableList(serializedObject, serializedObject.FindProperty("NetworkConfig").FindPropertyRelative("Channels"), true, true, true, true);
         channelsList.drawElementCallback = (Rect rect, int index, bool isActive, bool isFocused) =>
@@ -180,8 +139,6 @@ public class NetworkingManagerEditor : Editor
                 EditorGUILayout.Space();
                 networkPrefabsList.DoLayoutList();
             }
-            EditorGUILayout.Space();
-            messageTypesList.DoLayoutList();
             EditorGUILayout.Space();
             channelsList.DoLayoutList();
             EditorGUILayout.Space();

@@ -360,12 +360,25 @@ namespace MLAPI.Serialization
             }
         }
 
+        public void CopyUnreadFrom(Stream s, int count = -1)
+        {
+            long currentPosition = s.Position;
+
+            int read;
+            bool readToEnd = count < 0;
+            while ((readToEnd || count-- > 0) && (read = s.ReadByte()) != -1)
+                _WriteIntByte(read);
+            UpdateLength();
+
+            s.Position = currentPosition;
+        }
+
         // TODO: Implement CopyFrom() for BitStream with bitCount parameter
         /// <summary>
         /// Copys the bits from the provided BitStream
         /// </summary>
         /// <param name="stream">The stream to copy from</param>
-        /// <param name="dataCount">The amount of data copy</param>
+        /// <param name="dataCount">The amount of data evel</param>
         /// <param name="copyBits">Wheter or not to copy at the bit level rather than the byte level</param>
         public void CopyFrom(BitStream stream, int dataCount, bool copyBits)
         {

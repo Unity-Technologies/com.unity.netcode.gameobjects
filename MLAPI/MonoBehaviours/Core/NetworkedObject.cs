@@ -37,13 +37,13 @@ namespace MLAPI
             get
             {
                 if (_ownerClientId == null)
-					return NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerClientId;
+					return NetworkingManager.singleton != null ? NetworkingManager.singleton.ServerClientId : 0;
                 else
                     return _ownerClientId.Value;
             }
             internal set
             {
-				if (value == NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerClientId)
+				if (NetworkingManager.singleton != null && value == NetworkingManager.singleton.ServerClientId)
                     _ownerClientId = null;
                 else
                     _ownerClientId = value;
@@ -69,15 +69,15 @@ namespace MLAPI
         /// <summary>
         /// Gets if the object is the the personal clients player object
         /// </summary>
-		public bool isLocalPlayer => isPlayerObject && OwnerClientId == NetworkingManager.singleton.LocalClientId;
+		public bool isLocalPlayer => NetworkingManager.singleton != null && isPlayerObject && OwnerClientId == NetworkingManager.singleton.LocalClientId;
 		/// <summary>
 		/// Gets if the object is owned by the local player or if the object is the local player object
 		/// </summary>
-		public bool isOwner => OwnerClientId == NetworkingManager.singleton.LocalClientId;
+		public bool isOwner => NetworkingManager.singleton != null && OwnerClientId == NetworkingManager.singleton.LocalClientId;
         /// <summary>
         /// Gets wheter or not the object is owned by anyone
         /// </summary>
-		public bool isOwnedByServer => OwnerClientId == NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerClientId;
+		public bool isOwnedByServer => NetworkingManager.singleton != null && OwnerClientId == NetworkingManager.singleton.ServerClientId;
         /// <summary>
         /// Gets if the object has yet been spawned across the network
         /// </summary>

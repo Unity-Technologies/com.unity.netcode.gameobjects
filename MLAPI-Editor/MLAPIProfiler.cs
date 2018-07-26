@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
-using MLAPI.Collections;
-using MLAPI.Profiler;
+using MLAPI.Profiling;
 using MLAPI.Serialization;
 using UnityEngine;
 using BitStream = MLAPI.Serialization.BitStream;

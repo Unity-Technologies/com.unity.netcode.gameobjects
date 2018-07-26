@@ -68,7 +68,7 @@ namespace MLAPI.Components
             }
             NetworkedObject netObject = SpawnManager.SpawnedObjects[netId];
             NetworkingManager.singleton.ConnectedClients[netObject.OwnerClientId].OwnedObjects.RemoveAll(x => x.NetworkId == netId);
-			netObject.OwnerClientId = NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerClientId;
+			netObject.OwnerClientId = NetworkingManager.singleton.ServerClientId;
 
             using (PooledBitStream stream = PooledBitStream.Get())
             {

@@ -30,15 +30,16 @@ namespace MLAPI
         /// <summary>
         /// Gets if we are executing as server
         /// </summary>
-        protected bool isServer => NetworkingManager.singleton.isServer;
+        protected bool isServer => isRunning && NetworkingManager.singleton.isServer;
         /// <summary>
         /// Gets if we are executing as client
         /// </summary>
-        protected bool isClient => NetworkingManager.singleton.isClient;
+        protected bool isClient => isRunning && NetworkingManager.singleton.isClient;
         /// <summary>
         /// Gets if we are executing as Host, I.E Server and Client
         /// </summary>
-        protected bool isHost => NetworkingManager.singleton.isHost;
+        protected bool isHost => isRunning && NetworkingManager.singleton.isHost;
+        private bool isRunning => NetworkingManager.singleton == null || NetworkingManager.singleton.isListening;
         /// <summary>
         /// Gets wheter or not the object has a owner
         /// </summary>
@@ -75,10 +76,23 @@ namespace MLAPI
             if (_networkedObject == null)
                 _networkedObject = GetComponentInParent<NetworkedObject>();
 
-            CacheAttributes();
             NetworkedObject.NetworkedBehaviours.Add(this);
             OnEnabled();
         }
+
+        private void OnDisable()
+        {
+            OnDisabled();
+        }
+
+        private void OnDestroy()
+        {
+            NetworkedObject.NetworkedBehaviours.Remove(this); // O(n)
+            CachedClientRpcs.Remove(this);
+            CachedServerRpcs.Remove(this);
+            OnDestroyed();
+        }
+
         internal bool networkedStartInvoked = false;
         /// <summary>
         /// Gets called when message handlers are ready to be registered and the networking is setup
@@ -189,17 +203,6 @@ namespace MLAPI
             return networkedObject.GetBehaviourAtOrderIndex(id);
         }
 
-        private void OnDisable()
-        {
-            OnDisabled();
-        }
-
-        private void OnDestroy()
-        {
-            NetworkedObject.NetworkedBehaviours.Remove(this); // O(n)
-            OnDestroyed();
-        }
-
         #region NetworkedVar
 
         private bool networkedVarInit = false;
@@ -296,7 +299,7 @@ namespace MLAPI
                         if (isServer)
                             InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA, channelsForVarGroups[j], stream);
                         else
-							InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerClientId, MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA, channelsForVarGroups[j], stream);
+							InternalMessageHandler.Send(NetworkingManager.singleton.ServerClientId, MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA, channelsForVarGroups[j], stream);
                     }
                 }
             }
@@ -360,10 +363,10 @@ namespace MLAPI
         #endregion
 
         #region MESSAGING_SYSTEM
-        private static readonly Dictionary<Type, Dictionary<ulong, ClientRPC>> CachedClientRpcs = new Dictionary<Type, Dictionary<ulong, ClientRPC>>();
-        private static readonly Dictionary<Type, Dictionary<ulong, ServerRPC>> CachedServerRpcs = new Dictionary<Type, Dictionary<ulong, ServerRPC>>();
+        private readonly Dictionary<NetworkedBehaviour, Dictionary<ulong, ClientRPC>> CachedClientRpcs = new Dictionary<NetworkedBehaviour, Dictionary<ulong, ClientRPC>>();
+        private readonly Dictionary<NetworkedBehaviour, Dictionary<ulong, ServerRPC>> CachedServerRpcs = new Dictionary<NetworkedBehaviour, Dictionary<ulong, ServerRPC>>();
+        private static readonly Dictionary<Type, MethodInfo[]> Methods = new Dictionary<Type, MethodInfo[]>();
         private static readonly Dictionary<ulong, string> HashResults = new Dictionary<ulong, string>();
-        private static readonly HashSet<Type> CachedTypes = new HashSet<Type>();
 
         private ulong HashMethodName(string name)
         {
@@ -382,13 +385,18 @@ namespace MLAPI
         private void CacheAttributes()
         {
             Type type = GetType();
-            if (CachedTypes.Contains(type)) return; //Already cached
             
-            CachedTypes.Add(type);
-            CachedClientRpcs.Add(type, new Dictionary<ulong, ClientRPC>());
-            CachedServerRpcs.Add(type, new Dictionary<ulong, ServerRPC>());
-            
-            MethodInfo[] methods = type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+            CachedClientRpcs.Add(this, new Dictionary<ulong, ClientRPC>());
+            CachedServerRpcs.Add(this, new Dictionary<ulong, ServerRPC>());
+
+            MethodInfo[] methods;
+            if (Methods.ContainsKey(type)) methods = Methods[type];
+            else
+            {
+                methods = type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                Methods.Add(type, methods);
+            }
+
             for (int i = 0; i < methods.Length; i++)
             {
                 if (methods[i].IsDefined(typeof(ServerRPC), true))
@@ -403,7 +411,7 @@ namespace MLAPI
                     if (parameters.Length == 2 && parameters[0].ParameterType == typeof(uint) && parameters[1].ParameterType == typeof(Stream))
                     {
                         //use delegate
-                        attributes[0].rpcDelegate = (RpcDelegate)Delegate.CreateDelegate(typeof(RpcDelegate), this, methods[i], true);
+                        attributes[0].rpcDelegate = (RpcDelegate)Delegate.CreateDelegate(typeof(RpcDelegate), this, methods[i].Name);
                     }
                     else
                     {
@@ -415,12 +423,12 @@ namespace MLAPI
                     {
                         if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Hash collision detected for RPC method. The method \"" + methods[i].Name + "\" collides with the method \"" + HashResults[hash] + "\". This can be solved by increasing the amount of bytes to use for hashing in the NetworkConfig or changing the name of one of the conflicting methods.");
                     }
-                    else
+                    else if (!HashResults.ContainsKey(hash))
                     {
                         HashResults.Add(hash, methods[i].Name);
                     }
 
-                    CachedServerRpcs[type].Add(hash, attributes[0]);
+                    CachedServerRpcs[this].Add(hash, attributes[0]);
                 }
                 
                 if (methods[i].IsDefined(typeof(ClientRPC), true))
@@ -435,21 +443,31 @@ namespace MLAPI
                     if (parameters.Length == 2 && parameters[0].ParameterType == typeof(uint) && parameters[1].ParameterType == typeof(Stream))
                     {
                         //use delegate
-                        attributes[0].rpcDelegate = (RpcDelegate)Delegate.CreateDelegate(typeof(RpcDelegate), this, methods[i], true);
+                        attributes[0].rpcDelegate = (RpcDelegate)Delegate.CreateDelegate(typeof(RpcDelegate), this, methods[i].Name);
                     }
                     else
                     {
                         attributes[0].reflectionMethod = new ReflectionMehtod(methods[i]);
                     }
-                    
-                    CachedClientRpcs[type].Add(HashMethodName(methods[i].Name), attributes[0]);
+
+                    ulong hash = HashMethodName(methods[i].Name);
+                    if (HashResults.ContainsKey(hash) && HashResults[hash] != methods[i].Name)
+                    {
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Hash collision detected for RPC method. The method \"" + methods[i].Name + "\" collides with the method \"" + HashResults[hash] + "\". This can be solved by increasing the amount of bytes to use for hashing in the NetworkConfig or changing the name of one of the conflicting methods.");
+                    }
+                    else if (!HashResults.ContainsKey(hash))
+                    {
+                        HashResults.Add(hash, methods[i].Name);
+                    }
+
+                    CachedClientRpcs[this].Add(HashMethodName(methods[i].Name), attributes[0]);
                 }     
             }
         }
 
         internal void OnRemoteServerRPC(ulong hash, uint senderClientId, Stream stream)
         {
-            if (!CachedServerRpcs.ContainsKey(GetType()) || !CachedServerRpcs[GetType()].ContainsKey(hash))
+            if (!CachedServerRpcs.ContainsKey(this) || !CachedServerRpcs[this].ContainsKey(hash))
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("ServerRPC request method not found");
                 return;
@@ -459,7 +477,7 @@ namespace MLAPI
         
         internal void OnRemoteClientRPC(ulong hash, uint senderClientId, Stream stream)
         {
-            if (!CachedClientRpcs.ContainsKey(GetType()) || !CachedClientRpcs[GetType()].ContainsKey(hash))
+            if (!CachedClientRpcs.ContainsKey(this) || !CachedClientRpcs[this].ContainsKey(hash))
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("ClientRPC request method not found");
                 return;
@@ -469,43 +487,57 @@ namespace MLAPI
 
         private void InvokeServerRPCLocal(ulong hash, uint senderClientId, Stream stream)
         {
-            if (!CachedServerRpcs.ContainsKey(GetType()) || !CachedServerRpcs[GetType()].ContainsKey(hash))
+            if (!CachedServerRpcs.ContainsKey(this) || !CachedServerRpcs[this].ContainsKey(hash))
                 return;
             
-            ServerRPC rpc = CachedServerRpcs[GetType()][hash];
+            ServerRPC rpc = CachedServerRpcs[this][hash];
 
             if (rpc.RequireOwnership && senderClientId != OwnerClientId)
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Only owner can invoke ServerRPC that is marked to require ownership");
                 return;
             }
-            
-            if (rpc.reflectionMethod != null)
-            {
-                rpc.reflectionMethod.Invoke(this, stream);
-            }
 
-            if (rpc.rpcDelegate != null)
+            //Create a new stream so that the stream they get ONLY contains user data and not MLAPI headers
+            using (PooledBitStream userStream = PooledBitStream.Get())
             {
-                rpc.rpcDelegate(senderClientId, stream);
+                userStream.CopyUnreadFrom(stream);
+                userStream.Position = 0;
+
+                if (rpc.reflectionMethod != null)
+                {
+                    rpc.reflectionMethod.Invoke(this, userStream);
+                }
+
+                if (rpc.rpcDelegate != null)
+                {
+                    rpc.rpcDelegate(senderClientId, userStream);
+                }
             }
         }
 
         private void InvokeClientRPCLocal(ulong hash, uint senderClientId, Stream stream)
         {
-            if (!CachedClientRpcs.ContainsKey(GetType()) || !CachedClientRpcs[GetType()].ContainsKey(hash))
+            if (!CachedClientRpcs.ContainsKey(this) || !CachedClientRpcs[this].ContainsKey(hash))
                 return;
             
-            ClientRPC rpc = CachedClientRpcs[GetType()][hash];
-            
-            if (rpc.reflectionMethod != null)
-            {
-                rpc.reflectionMethod.Invoke(this, stream);
-            }
+            ClientRPC rpc = CachedClientRpcs[this][hash];
 
-            if (rpc.rpcDelegate != null)
+            //Create a new stream so that the stream they get ONLY contains user data and not MLAPI headers
+            using (PooledBitStream userStream = PooledBitStream.Get())
             {
-                rpc.rpcDelegate(senderClientId, stream);
+                userStream.CopyUnreadFrom(stream);
+                userStream.Position = 0;
+
+                if (rpc.reflectionMethod != null)
+                {
+                    rpc.reflectionMethod.Invoke(this, userStream);
+                }
+
+                if (rpc.rpcDelegate != null)
+                {
+                    rpc.rpcDelegate(senderClientId, userStream);
+                }
             }
         }
         
@@ -552,7 +584,7 @@ namespace MLAPI
 
         internal void SendServerRPCPerformance(ulong hash, Stream messageStream)
         {
-            if (!isClient)
+            if (!isClient && isRunning)
             {
                 //We are ONLY a server.
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Only server and host can invoke ServerRPC");
@@ -573,14 +605,16 @@ namespace MLAPI
 					messageStream.Position = 0;
 					InvokeServerRPCLocal(hash, NetworkingManager.singleton.LocalClientId, messageStream);
 				}
-            
-				InternalMessageHandler.Send(NetworkingManager.singleton.ServerClientId, MLAPIConstants.MLAPI_SERVER_RPC, "MLAPI_DEFAULT_MESSAGE", stream);
+                else
+                {
+                    InternalMessageHandler.Send(NetworkingManager.singleton.ServerClientId, MLAPIConstants.MLAPI_SERVER_RPC, "MLAPI_DEFAULT_MESSAGE", stream);
+                }
 	        }
         }
 
         internal void SendClientRPCPerformance(ulong hash,  List<uint> clientIds, Stream messageStream)
         {            
-            if (!isServer)
+            if (!isServer && isRunning)
             {
                 //We are NOT a server.
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Only clients and host can invoke ClientRPC");
@@ -631,7 +665,7 @@ namespace MLAPI
 
         internal void SendClientRPCPerformance(ulong hash, uint clientId, Stream messageStream)
         {
-            if (!isServer)
+            if (!isServer && isRunning)
             {
                 //We are NOT a server.
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Only clients and host can invoke ClientRPC");

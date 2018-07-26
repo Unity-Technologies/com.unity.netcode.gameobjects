@@ -1,7 +1,6 @@
 ﻿using System.IO;
-using MLAPI.Collections;
 using MLAPI.Data;
-using MLAPI.Profiler;
+using MLAPI.Profiling;
 using MLAPI.Serialization;
 
 namespace MLAPI.Internal
@@ -10,6 +9,7 @@ namespace MLAPI.Internal
     {
         internal static void Send(uint clientId, byte messageType, string channelName, Stream messageStream, bool skipQueue = false)
         {
+            if (NetworkingManager.singleton.isServer && clientId == NetworkingManager.singleton.ServerClientId) return;
             using (PooledBitStream stream = PooledBitStream.Get())
             {
                 BitWriter writer = new BitWriter(stream);
@@ -37,6 +37,7 @@ namespace MLAPI.Internal
                 NetworkProfiler.StartEvent(TickType.Send, (uint)stream.Length, channelName, MLAPIConstants.MESSAGE_NAMES[messageType]);
                 for (int i = 0; i < netManager.ConnectedClientsList.Count; i++)
                 {
+                    if (NetworkingManager.singleton.isServer && netManager.ConnectedClientsList[i].ClientId == NetworkingManager.singleton.ServerClientId) continue;
                     byte error;
 					netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(netManager.ConnectedClientsList[i].ClientId, stream.GetBuffer(), (int)stream.Length, MessageManager.channels[channelName], false, out error);
                 }
@@ -55,7 +56,8 @@ namespace MLAPI.Internal
                 NetworkProfiler.StartEvent(TickType.Send, (uint)stream.Length, channelName, MLAPIConstants.MESSAGE_NAMES[messageType]);
                 for (int i = 0; i < netManager.ConnectedClientsList.Count; i++)
                 {
-					if (netManager.ConnectedClientsList[i].ClientId == clientIdToIgnore)
+					if (netManager.ConnectedClientsList[i].ClientId == clientIdToIgnore || 
+                        (NetworkingManager.singleton.isServer && netManager.ConnectedClientsList[i].ClientId == NetworkingManager.singleton.ServerClientId))
                         continue;
                     
                     byte error;

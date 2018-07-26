@@ -13,7 +13,7 @@ using MLAPI.Components;
 using MLAPI.Configuration;
 using MLAPI.Cryptography;
 using MLAPI.Internal;
-using MLAPI.Profiler;
+using MLAPI.Profiling;
 using MLAPI.Serialization;
 using MLAPI.Transports;
 using MLAPI.Transports.UNET;
@@ -53,7 +53,7 @@ namespace MLAPI
         /// <summary>
         /// Gets the networkId of the server
         /// </summary>
-		public uint ServerClientId => NetworkConfig.NetworkTransport.ServerClientId;
+		public uint ServerClientId => NetworkConfig.NetworkTransport != null ? NetworkConfig.NetworkTransport.ServerClientId : 0;
         /// <summary>
         /// The clientId the server calls the local client by, only valid for clients
         /// </summary>
@@ -139,6 +139,7 @@ namespace MLAPI
         /// Event invoked when custom messages arrive
         /// </summary>
         public event CustomMessageDelegete OnIncommingCustomMessage;
+        internal static event Action OnSingletonReady;
 
         internal void InvokeOnIncommingCustomMessage(uint clientId, Stream stream)
         {
@@ -225,7 +226,7 @@ namespace MLAPI
             {
                 for (int i = 0; i < NetworkConfig.NetworkedPrefabs.Count; i++)
                 {
-                    if (string.IsNullOrEmpty(NetworkConfig.NetworkedPrefabs[i].name))
+                    if (NetworkConfig.NetworkedPrefabs[i] != null && string.IsNullOrEmpty(NetworkConfig.NetworkedPrefabs[i].name))
                     {
                         if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The NetworkedPrefab " + NetworkConfig.NetworkedPrefabs[i].prefab.name + " does not have a NetworkedPrefabName.");
                     }
@@ -587,6 +588,7 @@ namespace MLAPI
             else
             {
                 singleton = this;
+                if (OnSingletonReady != null) OnSingletonReady();
                 if (DontDestroy)
                     DontDestroyOnLoad(gameObject);
                 if (RunInBackground)

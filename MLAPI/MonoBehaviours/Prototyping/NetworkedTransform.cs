@@ -56,7 +56,8 @@ namespace MLAPI.Prototyping
         /// <summary>
         /// Enables extrapolation
         /// </summary>
-        public bool ExtrapolatePosition = true;
+        public bool ExtrapolatePosition = false;
+
         private float lerpT;
         private Vector3 lerpStartPos;
         private Quaternion lerpStartRot;
@@ -129,7 +130,7 @@ namespace MLAPI.Prototyping
 
         private void Update()
         {
-			if (isOwner)
+            if (isOwner)
             {
                 if (NetworkingManager.singleton.NetworkTime - lastSendTime >= (1f / FixedSendsPerSecond) && (Vector3.Distance(transform.position, lastSentPos) > MinMeters || Quaternion.Angle(transform.rotation, lastSentRot) > MinDegrees))
                 {
@@ -148,9 +149,9 @@ namespace MLAPI.Prototyping
                         writer.WriteSinglePacked(transform.rotation.eulerAngles.z);
 
                         if (isServer)
-                            InvokeClientRpcOnEveryone(OnRecieveTransformFromServer, writeStream);
+                            InvokeClientRpcOnEveryone(ApplyTransform, writeStream);
                         else
-                            InvokeServerRpc(OnRecieveTransformFromClient, writeStream);
+                            InvokeServerRpc(SubmitTransform, writeStream);
                     }
 
                 }
@@ -160,14 +161,14 @@ namespace MLAPI.Prototyping
                 //If we are server and interpolation is turned on for server OR we are not server and interpolation is turned on
                 if ((isServer && InterpolateServer && InterpolatePosition) || (!isServer && InterpolatePosition))
                 {
-                    if(Vector3.Distance(transform.position, lerpEndPos) > SnapDistance)
+                    if (Vector3.Distance(transform.position, lerpEndPos) > SnapDistance)
                     {
                         //Snap, set T to 1 (100% of the lerp)
                         lerpT = 1f;
                     }
 
                     if (isServer || !EnableRange || !AssumeSyncedSends)
-                        lerpT += Time.unscaledDeltaTime / FixedSendsPerSecond;
+                        lerpT += Time.unscaledDeltaTime / (1f / FixedSendsPerSecond);
                     else
                     {
                         Vector3 myPos = NetworkingManager.singleton.ConnectedClients[NetworkingManager.singleton.LocalClientId].PlayerObject.transform.position;
@@ -190,9 +191,9 @@ namespace MLAPI.Prototyping
         }
 
         [ClientRPC]
-        private void OnRecieveTransformFromServer(uint clientId, Stream stream)
+        private void ApplyTransform(uint clientId, Stream stream)
         {
-            if (!enabled) return;
+            if (!enabled || isOwner) return;
             BitReader reader = new BitReader(stream);
 
             float xPos = reader.ReadSinglePacked();
@@ -203,15 +204,23 @@ namespace MLAPI.Prototyping
             float yRot = reader.ReadSinglePacked();
             float zRot = reader.ReadSinglePacked();
 
-            lerpStartPos = transform.position;
-            lerpStartRot = transform.rotation;
-            lerpEndPos = new Vector3(xPos, yPos, zPos);
-            lerpEndRot = Quaternion.Euler(xRot, yRot, zRot);
-            lerpT = 0;
+            if (InterpolatePosition)
+            {
+                lerpStartPos = transform.position;
+                lerpStartRot = transform.rotation;
+                lerpEndPos = new Vector3(xPos, yPos, zPos);
+                lerpEndRot = Quaternion.Euler(xRot, yRot, zRot);
+                lerpT = 0;
+            }
+            else
+            {
+                transform.position = new Vector3(xPos, yPos, zPos);
+                transform.rotation = Quaternion.Euler(new Vector3(xRot, yRot, zRot));
+            }
         }
 
         [ServerRPC]
-        private void OnRecieveTransformFromClient(uint clientId, Stream stream)
+        private void SubmitTransform(uint clientId, Stream stream)
         {
             if (!enabled) return;
             BitReader reader = new BitReader(stream);
@@ -259,7 +268,6 @@ namespace MLAPI.Prototyping
 
                 if (EnableRange)
                 {
-                    // For instead of Foreach?! TODO!!!
                     for (int i = 0; i < NetworkingManager.singleton.ConnectedClientsList.Count; i++)
                     {
                         if (!clientSendInfo.ContainsKey(NetworkingManager.singleton.ConnectedClientsList[i].ClientId))
@@ -283,7 +291,7 @@ namespace MLAPI.Prototyping
                             info.lastMissedPosition = null;
                             info.lastMissedRotation = null;
 
-                            InvokeClientRpcOnClient(OnRecieveTransformFromServer, NetworkingManager.singleton.ConnectedClientsList[i].ClientId, writeStream);
+                            InvokeClientRpcOnClient(ApplyTransform, NetworkingManager.singleton.ConnectedClientsList[i].ClientId, writeStream);
                         }
                         else
                         {
@@ -294,9 +302,7 @@ namespace MLAPI.Prototyping
                 }
                 else
                 {
-                    List<uint> clientIds = new List<uint>(NetworkingManager.singleton.ConnectedClientsList.Select(x => x.ClientId).ToList());
-                    clientIds.Remove(OwnerClientId); //TODO: SORT WITH BETTER OVERLOADS
-                    InvokeClientRpc(OnRecieveTransformFromServer, clientIds, writeStream);
+                    InvokeClientRpcOnEveryone(ApplyTransform, writeStream);
                 }
             }
         }
@@ -339,7 +345,7 @@ namespace MLAPI.Prototyping
                         writer.WriteSinglePacked(rot.y);
                         writer.WriteSinglePacked(rot.z);
                         
-                        InvokeClientRpcOnClient(OnRecieveTransformFromServer, NetworkingManager.singleton.ConnectedClientsList[i].ClientId, stream);
+                        InvokeClientRpcOnClient(ApplyTransform, NetworkingManager.singleton.ConnectedClientsList[i].ClientId, stream);
                     }
                 }
             }

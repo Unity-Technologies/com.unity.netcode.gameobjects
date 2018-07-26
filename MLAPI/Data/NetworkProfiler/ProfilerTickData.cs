@@ -2,7 +2,7 @@
 using System.IO;
 using MLAPI.Serialization;
 
-namespace MLAPI.Profiler
+namespace MLAPI.Profiling
 {
 	/// <summary>
 	/// The type of Tick

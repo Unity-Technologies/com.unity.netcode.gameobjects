@@ -1,7 +1,6 @@
 ﻿using MLAPI.Data;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using MLAPI.Logging;
 using MLAPI.Serialization;
 using UnityEngine;
@@ -67,7 +66,7 @@ namespace MLAPI.Prototyping
         {
             if (value)
             {
-                parameterSendBits |=  (uint)(1 << index);
+                parameterSendBits |= (uint)(1 << index);
             }
             else
             {
@@ -90,6 +89,16 @@ namespace MLAPI.Prototyping
             {
                 return isOwner || isLocalPlayer;
             }
+        }
+
+        /// <summary>
+        /// Registers message handlers
+        /// </summary>
+        public override void NetworkStart()
+        {
+            //RegisterMessageHandler("MLAPI_HandleAnimationMessage", HandleAnimMsg);
+            //RegisterMessageHandler("MLAPI_HandleAnimationParameterMessage", HandleAnimParamsMsg);
+            //RegisterMessageHandler("MLAPI_HandleAnimationTriggerMessage", HandleAnimTriggerMsg);
         }
 
         /// <summary>
@@ -124,8 +133,8 @@ namespace MLAPI.Prototyping
                 writer.WriteInt32Packed(stateHash);
                 writer.WriteSinglePacked(normalizedTime);
                 WriteParameters(stream, false);
-                
-                if(isServer)
+
+                if (isServer)
                 {
                     if (EnableProximity)
                     {
@@ -135,18 +144,20 @@ namespace MLAPI.Prototyping
                             if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
                                 clientsInProximity.Add(client.Key);
                         }
-                        InvokeClientRpc(HandleAnimMsg, clientsInProximity, stream);
+                        InvokeClientRpc(ApplyAnimParamMsg, clientsInProximity, stream);
+                        //SendToClientsTarget(clientsInProximity ,"MLAPI_HandleAnimationMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
                     }
                     else
                     {
-                        List<uint> clientIds = NetworkingManager.singleton.ConnectedClientsList.Select(x => x.ClientId).ToList(); //BAD
-                        clientIds.Remove(OwnerClientId);
-                        InvokeClientRpc(HandleAnimMsg, clientIds, stream);
+                        InvokeClientRpcOnEveryone(ApplyAnimMsg, stream);
                     }
+                        //new System.Exception();
+                    //SendToNonLocalClientsTarget("MLAPI_HandleAnimationMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
                 }
                 else
                 {
-                    InvokeServerRpc(HandleAnimMsg, stream);
+                    InvokeServerRpc(SubmitAnimMsg, stream);
+                    //SendToServerTarget("MLAPI_HandleAnimationMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
                 }
             }
         }
@@ -194,8 +205,9 @@ namespace MLAPI.Prototyping
 
                 using (PooledBitStream stream = PooledBitStream.Get())
                 {
+                    BitWriter writer = new BitWriter(stream);
                     WriteParameters(stream, true);
-                    
+
                     if (isServer)
                     {
                         if (EnableProximity)
@@ -206,18 +218,20 @@ namespace MLAPI.Prototyping
                                 if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
                                     clientsInProximity.Add(client.Key);
                             }
-                            InvokeClientRpc(HandleAnimParamsMsg, clientsInProximity, stream);
+                            InvokeClientRpc(ApplyAnimParamMsg, clientsInProximity, stream);
+                            //SendToClientsTarget(clientsInProximity, "MLAPI_HandleAnimationParameterMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
                         }
                         else
                         {
-                            List<uint> clientIds = NetworkingManager.singleton.ConnectedClientsList.Select(x => x.ClientId).ToList(); //BAD
-                            clientIds.Remove(OwnerClientId);
-                            InvokeClientRpc(HandleAnimParamsMsg, clientIds, stream);
+                            InvokeClientRpcOnEveryone(ApplyAnimParamMsg, stream);
                         }
+                            //new System.Exception();
+                        //SendToNonLocalClientsTarget("MLAPI_HandleAnimationParameterMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
                     }
                     else
                     {
-                        InvokeServerRpc(HandleAnimParamsMsg, stream);
+                        InvokeServerRpc(SubmitAnimParamMsg, stream);
+                        //SendToServerTarget("MLAPI_HandleAnimationParameterMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
                     }
                 }
             }
@@ -245,94 +259,92 @@ namespace MLAPI.Prototyping
             if (i == 5) param5 = p;
         }
 
-        [ClientRPC]
         [ServerRPC]
-        private void HandleAnimMsg(uint clientId, Stream stream)
+        private void SubmitAnimMsg(uint clientId, Stream stream)
         {
             // usually transitions will be triggered by parameters, if not, play anims directly.
             // NOTE: this plays "animations", not transitions, so any transitions will be skipped.
             // NOTE: there is no API to play a transition(?)
-            if(isServer)
+
+            if (EnableProximity)
             {
-                if (EnableProximity)
+                List<uint> clientsInProximity = new List<uint>();
+                foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.ConnectedClients)
                 {
-                    List<uint> clientsInProximity = new List<uint>();
-                    foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.ConnectedClients)
-                    {
-                        if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
-                            clientsInProximity.Add(client.Key);
-                    }
-                    InvokeClientRpc(HandleAnimMsg, clientsInProximity, stream);
+                    if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
+                        clientsInProximity.Add(client.Key);
                 }
-                else
-                {
-                    List<uint> clientIds = NetworkingManager.singleton.ConnectedClientsList.Select(x => x.ClientId).ToList(); //BAD
-                    clientIds.Remove(OwnerClientId);
-                    InvokeClientRpc(HandleAnimMsg, clientIds, stream);
-                }
+                InvokeClientRpc(ApplyAnimMsg, clientsInProximity, stream);
             }
-            
+            else
+            {
+                InvokeClientRpcOnEveryone(ApplyAnimMsg, stream);
+            }
+        }
+
+        [ClientRPC]
+        private void ApplyAnimMsg(uint clientId, Stream stream)
+        {
+            if (isOwner) return;
             BitReader reader = new BitReader(stream);
             int stateHash = reader.ReadInt32Packed();
             float normalizedTime = reader.ReadSinglePacked();
-            if(stateHash != 0)
+            if (stateHash != 0)
             {
                 animator.Play(stateHash, 0, normalizedTime);
             }
             ReadParameters(stream, false);
         }
-        
-        [ClientRPC]
+
         [ServerRPC]
-        private void HandleAnimParamsMsg(uint clientId, Stream stream)
+        private void SubmitAnimParamMsg(uint clientId, Stream stream)
         {
-            if (isServer)
+
+            if (EnableProximity)
             {
-                if (EnableProximity)
+                List<uint> clientsInProximity = new List<uint>();
+                foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.ConnectedClients)
                 {
-                    List<uint> clientsInProximity = new List<uint>();
-                    foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.ConnectedClients)
-                    {
-                        if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
-                            clientsInProximity.Add(client.Key);
-                    }
-                    InvokeClientRpc(HandleAnimParamsMsg, clientsInProximity, stream);
+                    if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
+                        clientsInProximity.Add(client.Key);
                 }
-                else
-                {
-                    List<uint> clientIds = NetworkingManager.singleton.ConnectedClientsList.Select(x => x.ClientId).ToList(); //BAD
-                    clientIds.Remove(OwnerClientId);
-                    InvokeClientRpc(HandleAnimParamsMsg, clientIds, stream);
-                }
+                InvokeClientRpc(ApplyAnimParamMsg, clientsInProximity, stream);
             }
-            
-            ReadParameters(stream, true);
+            else
+            {
+                InvokeClientRpcOnEveryone(ApplyAnimParamMsg, stream);
+            }
         }
 
         [ClientRPC]
-        [ServerRPC]
-        private void HandleAnimTriggerMsg(uint clientId, Stream stream)
+        private void ApplyAnimParamMsg(uint clientId, Stream stream)
         {
-            if (isServer)
+            if (isOwner) return;
+            ReadParameters(stream, true);
+        }
+
+        [ServerRPC]
+        private void SubmitAnimTriggerMsg(uint clientId, Stream stream)
+        {
+            if (EnableProximity)
             {
-                if (EnableProximity)
+                List<uint> clientsInProximity = new List<uint>();
+                foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.ConnectedClients)
                 {
-                    List<uint> clientsInProximity = new List<uint>();
-                    foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.ConnectedClients)
-                    {
-                        if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
-                            clientsInProximity.Add(client.Key);
-                    }
-                    InvokeClientRpc(HandleAnimTriggerMsg, clientsInProximity, stream);
+                    if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
+                        clientsInProximity.Add(client.Key);
                 }
-                else
-                {
-                    List<uint> clientIds = NetworkingManager.singleton.ConnectedClientsList.Select(x => x.ClientId).ToList(); //BAD
-                    clientIds.Remove(OwnerClientId);
-                    InvokeClientRpc(HandleAnimTriggerMsg, clientIds, stream);
-                }
+                InvokeClientRpc(ApplyAnimTriggerMsg, clientsInProximity, stream);
             }
-            
+            else
+            {
+                InvokeClientRpcOnEveryone(ApplyAnimTriggerMsg, stream);
+            }
+        }
+
+        private void ApplyAnimTriggerMsg(uint clientId, Stream stream)
+        {
+            if (isOwner) return;
             BitReader reader = new BitReader(stream);
             animator.SetTrigger(reader.ReadInt32Packed());
         }
@@ -340,8 +352,7 @@ namespace MLAPI.Prototyping
         private void WriteParameters(Stream stream, bool autoSend)
         {
             BitWriter writer = new BitWriter(stream);
-            
-            if (animatorParameters == null)       
+            if (animatorParameters == null)
                 animatorParameters = animator.parameters;
 
             for (int i = 0; i < animatorParameters.Length; i++)
@@ -376,7 +387,6 @@ namespace MLAPI.Prototyping
         private void ReadParameters(Stream stream, bool autoSend)
         {
             BitReader reader = new BitReader(stream);
-            
             if (animatorParameters == null)
                 animatorParameters = animator.parameters;
 
@@ -427,13 +437,13 @@ namespace MLAPI.Prototyping
         /// <param name="hash"></param>
         public void SetTrigger(int hash)
         {
-            if (isLocalPlayer || isOwner)
+            if (isOwner)
             {
                 using (PooledBitStream stream = PooledBitStream.Get())
                 {
                     BitWriter writer = new BitWriter(stream);
                     writer.WriteInt32Packed(hash);
-                    
+
                     if (isServer)
                     {
                         if (EnableProximity)
@@ -444,18 +454,16 @@ namespace MLAPI.Prototyping
                                 if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
                                     clientsInProximity.Add(client.Key);
                             }
-                            InvokeClientRpc(HandleAnimTriggerMsg, clientsInProximity, stream);
+                            InvokeClientRpc(ApplyAnimTriggerMsg, clientsInProximity, stream);
                         }
                         else
                         {
-                            List<uint> clientIds = NetworkingManager.singleton.ConnectedClientsList.Select(x => x.ClientId).ToList(); //BAD
-                            clientIds.Remove(OwnerClientId);
-                            InvokeClientRpc(HandleAnimTriggerMsg, clientIds, stream);
+                            InvokeClientRpcOnEveryone(ApplyAnimTriggerMsg, stream);
                         }
                     }
                     else
                     {
-                        InvokeServerRpc(HandleAnimTriggerMsg, stream);
+                        InvokeServerRpc(SubmitAnimTriggerMsg, stream);
                     }
                 }
             }
