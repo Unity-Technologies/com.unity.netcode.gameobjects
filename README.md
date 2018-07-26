@@ -33,27 +33,22 @@ For bug reports or feature requests you want to propose, please use the Issue Tr
 * Host support (Client hosts the server)
 * Object and player spawning \[[Wiki page](https://github.com/MidLevel/MLAPI/wiki/Object-Spawning)\]
 * Connection approval \[[Wiki page](https://github.com/MidLevel/MLAPI/wiki/Connection-Approval)\]
-* Message names
+* Strongly Typed RPC Messaging \[[Wiki page](https://github.com/MidLevel/MLAPI/wiki/Message-System)\]
 * Replace the integer QOS with names. When you setup the networking you specify names that are associated with a channel. This makes it easier to manage. You can thus specify that a message should be sent on the "damage" channel which handles all damage related logic and is running on the AllCostDelivery channel.
 * ProtocolVersion to allow making different versions not talk to each other.
 * NetworkedBehaviours does not have to be on the root, it's simply just a class that implements the send methods etc.
 * Custom tickrate
 * Synced network time
 * Supports separate Unity projects crosstalking
-* Passthrough messages \[[Wiki page](https://github.com/MidLevel/MLAPI/wiki/Passthrough-messages)\]
 * Scene Management \[[Wiki page](https://github.com/MidLevel/MLAPI/wiki/Scene-Management)\]
 * Built in Lag compensation \[[Wiki page](https://github.com/MidLevel/MLAPI/wiki/Lag-Compensation)\]
 * NetworkTransform replacement \[[Wiki page](https://github.com/MidLevel/MLAPI/wiki/NetworkedTransform)\]
-* Targeted messages \[[Wiki page](https://github.com/MidLevel/MLAPI/wiki/Targeted-Messages)\]
 * Port of NetworkedAnimator \[[Wiki page](https://github.com/MidLevel/MLAPI/wiki/NetworkedAnimator)\]
 * Networked NavMeshAgent \[[Wiki page](https://github.com/MidLevel/MLAPI/wiki/NetworkedNavMeshAgent)\]
 * Networked Object Pooling \[[Wiki page](https://github.com/MidLevel/MLAPI/wiki/Networked-Object-Pooling)\]
-* Synced Vars \[[Wiki page](https://github.com/MidLevel/MLAPI/wiki/SyncedVars)\]
-* Targeted Synced Vars \[[Wiki page](https://github.com/MidLevel/MLAPI/wiki/SyncedVars#target)\]
+* Networked Vars \[[Wiki page](https://github.com/MidLevel/MLAPI/wiki/NetworkedVar)\]
 * Encryption \[[Wiki page](https://github.com/MidLevel/MLAPI/wiki/Message-Encryption)\]
 * Super efficient BitWriter & BitReader \[[Wiki page](https://github.com/MidLevel/MLAPI/wiki/BitWriter-&-BitReader)\]
-* Command & Rpc system like HLAPI to allow for quick transfer from HLAPI to MLAPI \[[Wiki page](https://github.com/MidLevel/MLAPI/wiki/Attribute-Message-System)\]
-* Observer system similar to the HLAPI \[[Wiki page](https://github.com/MidLevel/MLAPI/wiki/Observer)\]
 * Custom UDP transport support \[[Wiki page](https://github.com/MidLevel/MLAPI/wiki/Custom-Transports)\]
 * NetworkProfiler \[[Wiki page](https://github.com/MidLevel/MLAPI/wiki/NetworkProfiler-Editor-Window)\]
 
