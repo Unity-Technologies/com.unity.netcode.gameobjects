@@ -83,24 +83,6 @@ namespace MLAPI.Prototyping
             return (parameterSendBits & (uint)(1 << index)) != 0;
         }
 
-        private bool sendMessagesAllowed
-        {
-            get
-            {
-                return isOwner || isLocalPlayer;
-            }
-        }
-
-        /// <summary>
-        /// Registers message handlers
-        /// </summary>
-        public override void NetworkStart()
-        {
-            //RegisterMessageHandler("MLAPI_HandleAnimationMessage", HandleAnimMsg);
-            //RegisterMessageHandler("MLAPI_HandleAnimationParameterMessage", HandleAnimParamsMsg);
-            //RegisterMessageHandler("MLAPI_HandleAnimationTriggerMessage", HandleAnimTriggerMsg);
-        }
-
         /// <summary>
         /// TODO
         /// </summary>
@@ -113,7 +95,7 @@ namespace MLAPI.Prototyping
 
         private void FixedUpdate()
         {
-            if (!sendMessagesAllowed)
+            if (!isOwner)
                 return;
 
             CheckSendRate();
@@ -145,19 +127,15 @@ namespace MLAPI.Prototyping
                                 clientsInProximity.Add(client.Key);
                         }
                         InvokeClientRpc(ApplyAnimParamMsg, clientsInProximity, stream);
-                        //SendToClientsTarget(clientsInProximity ,"MLAPI_HandleAnimationMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
                     }
                     else
                     {
-                        InvokeClientRpcOnEveryone(ApplyAnimMsg, stream);
+                        InvokeClientRpcOnEveryoneExcept(ApplyAnimMsg, OwnerClientId, stream);
                     }
-                        //new System.Exception();
-                    //SendToNonLocalClientsTarget("MLAPI_HandleAnimationMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
                 }
                 else
                 {
                     InvokeServerRpc(SubmitAnimMsg, stream);
-                    //SendToServerTarget("MLAPI_HandleAnimationMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
                 }
             }
         }
@@ -199,7 +177,7 @@ namespace MLAPI.Prototyping
 
         private void CheckSendRate()
         {
-            if (sendMessagesAllowed && sendRate != 0 && sendTimer < NetworkingManager.singleton.NetworkTime)
+            if (isOwner && sendRate != 0 && sendTimer < NetworkingManager.singleton.NetworkTime)
             {
                 sendTimer = NetworkingManager.singleton.NetworkTime + sendRate;
 
@@ -219,19 +197,15 @@ namespace MLAPI.Prototyping
                                     clientsInProximity.Add(client.Key);
                             }
                             InvokeClientRpc(ApplyAnimParamMsg, clientsInProximity, stream);
-                            //SendToClientsTarget(clientsInProximity, "MLAPI_HandleAnimationParameterMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
                         }
                         else
                         {
-                            InvokeClientRpcOnEveryone(ApplyAnimParamMsg, stream);
+                            InvokeClientRpcOnEveryoneExcept(ApplyAnimParamMsg, OwnerClientId, stream);
                         }
-                            //new System.Exception();
-                        //SendToNonLocalClientsTarget("MLAPI_HandleAnimationParameterMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
                     }
                     else
                     {
                         InvokeServerRpc(SubmitAnimParamMsg, stream);
-                        //SendToServerTarget("MLAPI_HandleAnimationParameterMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
                     }
                 }
             }
@@ -278,14 +252,13 @@ namespace MLAPI.Prototyping
             }
             else
             {
-                InvokeClientRpcOnEveryone(ApplyAnimMsg, stream);
+                InvokeClientRpcOnEveryoneExcept(ApplyAnimMsg, OwnerClientId, stream);
             }
         }
 
         [ClientRPC]
         private void ApplyAnimMsg(uint clientId, Stream stream)
         {
-            if (isOwner) return;
             BitReader reader = new BitReader(stream);
             int stateHash = reader.ReadInt32Packed();
             float normalizedTime = reader.ReadSinglePacked();
@@ -299,7 +272,6 @@ namespace MLAPI.Prototyping
         [ServerRPC]
         private void SubmitAnimParamMsg(uint clientId, Stream stream)
         {
-
             if (EnableProximity)
             {
                 List<uint> clientsInProximity = new List<uint>();
@@ -312,14 +284,13 @@ namespace MLAPI.Prototyping
             }
             else
             {
-                InvokeClientRpcOnEveryone(ApplyAnimParamMsg, stream);
+                InvokeClientRpcOnEveryoneExcept(ApplyAnimParamMsg, OwnerClientId, stream);
             }
         }
 
         [ClientRPC]
         private void ApplyAnimParamMsg(uint clientId, Stream stream)
         {
-            if (isOwner) return;
             ReadParameters(stream, true);
         }
 
@@ -338,13 +309,13 @@ namespace MLAPI.Prototyping
             }
             else
             {
-                InvokeClientRpcOnEveryone(ApplyAnimTriggerMsg, stream);
+                InvokeClientRpcOnEveryoneExcept(ApplyAnimTriggerMsg, OwnerClientId, stream);
             }
         }
 
+        [ClientRPC]
         private void ApplyAnimTriggerMsg(uint clientId, Stream stream)
         {
-            if (isOwner) return;
             BitReader reader = new BitReader(stream);
             animator.SetTrigger(reader.ReadInt32Packed());
         }
@@ -458,7 +429,7 @@ namespace MLAPI.Prototyping
                         }
                         else
                         {
-                            InvokeClientRpcOnEveryone(ApplyAnimTriggerMsg, stream);
+                            InvokeClientRpcOnEveryoneExcept(ApplyAnimTriggerMsg, OwnerClientId, stream);
                         }
                     }
                     else

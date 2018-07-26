@@ -149,7 +149,7 @@ namespace MLAPI.Prototyping
                         writer.WriteSinglePacked(transform.rotation.eulerAngles.z);
 
                         if (isServer)
-                            InvokeClientRpcOnEveryone(ApplyTransform, writeStream);
+                            InvokeClientRpcOnEveryoneExcept(ApplyTransform, OwnerClientId, writeStream);
                         else
                             InvokeServerRpc(SubmitTransform, writeStream);
                     }
@@ -193,7 +193,7 @@ namespace MLAPI.Prototyping
         [ClientRPC]
         private void ApplyTransform(uint clientId, Stream stream)
         {
-            if (!enabled || isOwner) return;
+            if (!enabled) return;
             BitReader reader = new BitReader(stream);
 
             float xPos = reader.ReadSinglePacked();
@@ -302,7 +302,7 @@ namespace MLAPI.Prototyping
                 }
                 else
                 {
-                    InvokeClientRpcOnEveryone(ApplyTransform, writeStream);
+                    InvokeClientRpcOnEveryoneExcept(ApplyTransform, OwnerClientId, writeStream);
                 }
             }
         }
