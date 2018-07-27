@@ -1,6 +1,4 @@
-﻿using MLAPI.MonoBehaviours.Core;
-
-namespace MLAPI.NetworkingManagerComponents.Core
+﻿namespace MLAPI.Internal
 {
     internal static partial class InternalMessageHandler
     {

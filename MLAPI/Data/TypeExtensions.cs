@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace MLAPI.Data
+namespace MLAPI.Internal
 {
     internal static class TypeExtensions
     {

@@ -1,5 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <ImplicitlyExpandNETStandardFacades>false</ImplicitlyExpandNETStandardFacades>
@@ -84,29 +83,23 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Attributes\BinaryIgnore.cs" />
-    <Compile Include="Attributes\ClientRpc.cs" />
-    <Compile Include="Attributes\Command.cs" />
-    <Compile Include="Attributes\TargetRpc.cs" />
     <Compile Include="Data\Channel.cs" />
     <Compile Include="Data\AttributeMessageMode.cs" />
+    <Compile Include="Data\MLAPIConstants.cs" />
     <Compile Include="Data\NetworkedCollections\NetworkedDictionary.cs" />
     <Compile Include="Data\NetworkedCollections\NetworkedList.cs" />
     <Compile Include="Data\NetworkedVar.cs" />
     <Compile Include="Data\NetworkedVarMeta.cs" />
     <Compile Include="Data\Transports\ChannelType.cs" />
-    <Compile Include="Data\FieldType.cs" />
-    <Compile Include="Attributes\SyncedVar.cs" />
     <Compile Include="Data\FixedQueue.cs" />
     <Compile Include="Data\Transports\DefaultTransport.cs" />
     <Compile Include="Data\Transports\IUDPTransport.cs" />
-    <Compile Include="Data\Transports\UNET\RelayedTransport.cs" />
     <Compile Include="Data\Transports\NetEventType.cs" />
     <Compile Include="Data\NetworkConfig.cs" />
     <Compile Include="Data\NetworkedPrefab.cs" />
     <Compile Include="Data\NetworkPool.cs" />
-    <Compile Include="Data\SyncedVarField.cs" />
     <Compile Include="Data\TrackedPointData.cs" />
+    <Compile Include="Data\Transports\UNET\RelayedTransport.cs" />
     <Compile Include="Data\Transports\UNET\RelayTransport.cs" />
     <Compile Include="Data\Transports\UNET\TransportHost.cs" />
     <Compile Include="Data\Transports\UNET\UnetTransport.cs" />
@@ -115,11 +108,15 @@
     <Compile Include="MonoBehaviours\Prototyping\NetworkedAnimator.cs" />
     <Compile Include="MonoBehaviours\Prototyping\NetworkedNavMeshAgent.cs" />
     <Compile Include="NetworkingManagerComponents\Binary\Arithmetic.cs" />
-    <Compile Include="NetworkingManagerComponents\Binary\BitStream.cs" />
-    <Compile Include="NetworkingManagerComponents\Binary\BitWriter.cs" />
     <Compile Include="NetworkingManagerComponents\Binary\BitReader.cs" />
+    <Compile Include="NetworkingManagerComponents\Binary\BitWriter.cs" />
+    <Compile Include="NetworkingManagerComponents\Binary\BitStream.cs" />
+    <Compile Include="NetworkingManagerComponents\Binary\BitWriterDeprecated.cs" />
+    <Compile Include="NetworkingManagerComponents\Binary\BitReaderDeprecated.cs" />
     <Compile Include="NetworkingManagerComponents\Binary\BinaryHelpers.cs" />
-    <Compile Include="NetworkingManagerComponents\Binary\BinarySerializer.cs" />
+    <Compile Include="NetworkingManagerComponents\Binary\ByteBool.cs" />
+    <Compile Include="NetworkingManagerComponents\Binary\ResourcePool.cs" />
+    <Compile Include="NetworkingManagerComponents\Binary\UIntFloat.cs" />
     <Compile Include="NetworkingManagerComponents\Core\LogHelper.cs" />
     <Compile Include="NetworkingManagerComponents\Cryptography\CryptographyHelper.cs" />
     <Compile Include="NetworkingManagerComponents\Cryptography\DiffieHellman.cs" />
@@ -137,8 +134,6 @@
     <Compile Include="NetworkingManagerComponents\Core\SpawnManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Data\Transports\UNET\NetId.cs" />
-    <Compile Include="NetworkingManagerComponents\Binary\MessageChunker.cs" />
-    <Compile Include="Data\MessageType.cs" />
     <Compile Include="NetworkingManagerComponents\Core\InternalMessageHandler.Send.cs" />
     <Compile Include="NetworkingManagerComponents\Core\InternalMessageHandler.Receive.cs" />
     <Compile Include="NetworkingManagerComponents\Core\InternalMessageHandler.cs" />

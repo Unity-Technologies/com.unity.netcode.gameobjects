@@ -1,13 +1,13 @@
-﻿using MLAPI.NetworkingManagerComponents.Binary;
-using MLAPI.NetworkingManagerComponents.Cryptography;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
-using MLAPI.Data.Transports;
-using MLAPI.MonoBehaviours.Core;
 using System.Linq;
+using MLAPI.Data;
+using MLAPI.Serialization;
+using MLAPI.Transports;
+using BitStream = MLAPI.Serialization.BitStream;
 
-namespace MLAPI.Data
+namespace MLAPI.Configuration
 {
     /// <summary>
     /// The configuration object used to start server, client and hosts
@@ -45,14 +45,6 @@ namespace MLAPI.Data
         [HideInInspector]
         public List<Channel> Channels = new List<Channel>();
         /// <summary>
-        /// Registered MessageTypes
-        /// </summary>
-        [HideInInspector]
-        public List<MessageType> MessageTypes = new List<MessageType>();
-        internal HashSet<ushort> PassthroughMessageHashSet = new HashSet<ushort>();
-        internal HashSet<string> EncryptedChannelsHashSet = new HashSet<string>();
-        internal List<string> EncryptedChannels = new List<string>();
-        /// <summary>
         /// A list of SceneNames that can be used during networked games.
         /// </summary>
         [HideInInspector]
@@ -73,7 +65,7 @@ namespace MLAPI.Data
         /// <summary>
         /// The size of the receive message buffer. This is the max message size.
         /// </summary>
-        public int MessageBufferSize = 65535;
+        public int MessageBufferSize = 1024;
         /// <summary>
         /// Amount of times per second the receive queue is emptied and all messages inside are processed.
         /// </summary>
@@ -142,10 +134,6 @@ namespace MLAPI.Data
         [TextArea]
         public string RSAPublicKey = "<RSAKeyValue><Modulus>vBEvOQki/EftWOgwh4G8/nFRvcDJLylc8P7Dhz5m/hpkkNtAMzizNKYUrGbs7sYWlEuMYBOWrzkIDGOMoOsYc9uCi+8EcmNoHDlIhK5yNfZUexYBF551VbvZ625LSBR7kmBxkyo4IPuA09fYCHeUFm3prt4h6aTD0Hjc7ZsJHUU=</Modulus><Exponent>EQ==</Exponent></RSAKeyValue>"; //CHANGE THESE FOR PRODUCTION!
         /// <summary>
-        /// Wheter or not to allow any type of passthrough messages
-        /// </summary>
-        public bool AllowPassthroughMessages = true;
-        /// <summary>
         /// Wheter or not to enable scene switching
         /// </summary>
         public bool EnableSceneSwitching = true;
@@ -156,11 +144,10 @@ namespace MLAPI.Data
         /// <summary>
         /// Decides how many bytes to use for Attribute messaging. Leave this to 2 bytes unless you are facing hash collisions
         /// </summary>
-        public AttributeMessageMode AttributeMessageMode = AttributeMessageMode.Disabled;
+        public AttributeMessageMode AttributeMessageMode = AttributeMessageMode.WovenTwoByte;
 
         private void Sort()
         {
-            MessageTypes = MessageTypes.OrderBy(x => x.Name).ToList();
             Channels = Channels.OrderBy(x => x.Name).ToList();
             NetworkedPrefabs = NetworkedPrefabs.OrderBy(x => x.name).ToList();
             RegisteredScenes.Sort();
@@ -173,59 +160,53 @@ namespace MLAPI.Data
         public string ToBase64()
         {
             NetworkConfig config = this;
-            using (BitWriter writer = BitWriter.Get())
+            using (PooledBitStream stream = PooledBitStream.Get())
             {
-                writer.WriteUShort(config.ProtocolVersion);
-                writer.WriteBits((byte)config.Transport, 5);
-
-                writer.WriteUShort((ushort)config.Channels.Count);
-                for (int i = 0; i < config.Channels.Count; i++)
+                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                 {
-                    writer.WriteString(config.Channels[i].Name);
-                    writer.WriteBool(config.Channels[i].Encrypted);
-                    writer.WriteBits((byte)config.Channels[i].Type, 5);
+                    writer.WriteUInt16Packed(config.ProtocolVersion);
+                    writer.WriteBits((byte)config.Transport, 5);
+
+                    writer.WriteUInt16Packed((ushort)config.Channels.Count);
+                    for (int i = 0; i < config.Channels.Count; i++)
+                    {
+                        writer.WriteString(config.Channels[i].Name);
+                        writer.WriteBits((byte)config.Channels[i].Type, 5);
+                    }
+
+                    writer.WriteUInt16Packed((ushort)config.RegisteredScenes.Count);
+                    for (int i = 0; i < config.RegisteredScenes.Count; i++)
+                    {
+                        writer.WriteString(config.RegisteredScenes[i]);
+                    }
+
+                    writer.WriteUInt16Packed((ushort)config.NetworkedPrefabs.Count);
+                    for (int i = 0; i < config.NetworkedPrefabs.Count; i++)
+                    {
+                        writer.WriteBool(config.NetworkedPrefabs[i].playerPrefab);
+                        writer.WriteString(config.NetworkedPrefabs[i].name);
+                    }
+
+                    writer.WriteInt32Packed(config.MessageBufferSize);
+                    writer.WriteInt32Packed(config.ReceiveTickrate);
+                    writer.WriteInt32Packed(config.MaxReceiveEventsPerTickRate);
+                    writer.WriteInt32Packed(config.SendTickrate);
+                    writer.WriteInt32Packed(config.EventTickrate);
+                    writer.WriteInt32Packed(config.MaxConnections);
+                    writer.WriteInt32Packed(config.ConnectPort);
+                    writer.WriteString(config.ConnectAddress);
+                    writer.WriteInt32Packed(config.ClientConnectionBufferTimeout);
+                    writer.WriteBool(config.ConnectionApproval);
+                    writer.WriteInt32Packed(config.SecondsHistory);
+                    writer.WriteBool(config.HandleObjectSpawning);
+                    writer.WriteBool(config.EnableEncryption);
+                    writer.WriteBool(config.SignKeyExchange);
+                    writer.WriteBool(config.EnableSceneSwitching);
+                    writer.WriteBool(config.EnableTimeResync);
+                    writer.WriteBits((byte)config.AttributeMessageMode, 3);
+
+                    return Convert.ToBase64String(stream.ToArray());
                 }
-
-                writer.WriteUShort((ushort)config.MessageTypes.Count);
-                for (int i = 0; i < config.MessageTypes.Count; i++)
-                {
-                    writer.WriteString(config.MessageTypes[i].Name);
-                    writer.WriteBool(config.MessageTypes[i].Passthrough);
-                }
-
-                writer.WriteUShort((ushort)config.RegisteredScenes.Count);
-                for (int i = 0; i < config.RegisteredScenes.Count; i++)
-                {
-                    writer.WriteString(config.RegisteredScenes[i]);
-                }
-
-                writer.WriteUShort((ushort)config.NetworkedPrefabs.Count);
-                for (int i = 0; i < config.NetworkedPrefabs.Count; i++)
-                {
-                    writer.WriteBool(config.NetworkedPrefabs[i].playerPrefab);
-                    writer.WriteString(config.NetworkedPrefabs[i].name);
-                }
-
-                writer.WriteInt(config.MessageBufferSize);
-                writer.WriteInt(config.ReceiveTickrate);
-                writer.WriteInt(config.MaxReceiveEventsPerTickRate);
-                writer.WriteInt(config.SendTickrate);
-                writer.WriteInt(config.EventTickrate);
-                writer.WriteInt(config.MaxConnections);
-                writer.WriteInt(config.ConnectPort);
-                writer.WriteString(config.ConnectAddress);
-                writer.WriteInt(config.ClientConnectionBufferTimeout);
-                writer.WriteBool(config.ConnectionApproval);
-                writer.WriteInt(config.SecondsHistory);
-                writer.WriteBool(config.HandleObjectSpawning);
-                writer.WriteBool(config.EnableEncryption);
-                writer.WriteBool(config.SignKeyExchange);
-                writer.WriteBool(config.AllowPassthroughMessages);
-                writer.WriteBool(config.EnableSceneSwitching);
-                writer.WriteBool(config.EnableTimeResync);
-                writer.WriteBits((byte)config.AttributeMessageMode, 3);
-
-                return Convert.ToBase64String(writer.Finalize());
             }
         }
         
@@ -238,84 +219,75 @@ namespace MLAPI.Data
         {
             NetworkConfig config = this;
             byte[] binary = Convert.FromBase64String(base64);
-            using (BitReader reader = BitReader.Get(binary))
+            using (BitStream stream = new BitStream(binary))
             {
-                config.ProtocolVersion = reader.ReadUShort();
-                config.Transport = (DefaultTransport)reader.ReadBits(5);
-
-                ushort channelCount = reader.ReadUShort();
-                config.Channels.Clear();
-                for (int i = 0; i < channelCount; i++)
+                using (PooledBitReader reader = PooledBitReader.Get(stream))
                 {
-                    Channel channel = new Channel()
+
+                    config.ProtocolVersion = reader.ReadUInt16Packed();
+                    config.Transport = (DefaultTransport)reader.ReadBits(5);
+
+                    ushort channelCount = reader.ReadUInt16Packed();
+                    config.Channels.Clear();
+                    for (int i = 0; i < channelCount; i++)
                     {
-                        Name = reader.ReadString(),
-                        Encrypted = reader.ReadBool(),
-                        Type = (ChannelType)reader.ReadBits(5)
-                    };
-                    config.Channels.Add(channel);
-                }
-
-                ushort messageTypeCount = reader.ReadUShort();
-                config.MessageTypes.Clear();
-                for (int i = 0; i < messageTypeCount; i++)
-                {
-                    MessageType messageType = new MessageType()
-                    {
-                        Name = reader.ReadString(),
-                        Passthrough = reader.ReadBool()
-                    };
-                    config.MessageTypes.Add(messageType);
-                }
-
-                ushort sceneCount = reader.ReadUShort();
-                config.RegisteredScenes.Clear();
-                for (int i = 0; i < sceneCount; i++)
-                {
-                    config.RegisteredScenes.Add(reader.ReadString());
-                }
-
-                ushort networkedPrefabsCount = reader.ReadUShort();
-                config.NetworkedPrefabs.Clear();
-                GameObject root = createDummyObject ? new GameObject("MLAPI: Dummy prefabs") : null;
-                for (int i = 0; i < networkedPrefabsCount; i++)
-                {
-                    bool playerPrefab = reader.ReadBool();
-                    string prefabName = reader.ReadString();
-                    GameObject dummyPrefab = createDummyObject ? new GameObject("REPLACEME: " + prefabName + "(Dummy prefab)", typeof(NetworkedObject)) : null;
-                    if (dummyPrefab != null)
-                    {
-                        dummyPrefab.GetComponent<NetworkedObject>().NetworkedPrefabName = prefabName;
-                        dummyPrefab.transform.SetParent(root.transform); //This is just here to not ruin your hierarchy
+                        Channel channel = new Channel()
+                        {
+                            Name = reader.ReadString().ToString(),
+                            Type = (ChannelType)reader.ReadBits(5)
+                        };
+                        config.Channels.Add(channel);
                     }
-                    NetworkedPrefab networkedPrefab = new NetworkedPrefab()
-                    {
-                        playerPrefab = playerPrefab,
-                        prefab = dummyPrefab
-                    };
-                    config.NetworkedPrefabs.Add(networkedPrefab);
-                }
 
-                config.MessageBufferSize = reader.ReadInt();
-                config.ReceiveTickrate = reader.ReadInt();
-                config.MaxReceiveEventsPerTickRate = reader.ReadInt();
-                config.SendTickrate = reader.ReadInt();
-                config.EventTickrate = reader.ReadInt();
-                config.MaxConnections = reader.ReadInt();
-                config.ConnectPort = reader.ReadInt();
-                config.ConnectAddress = reader.ReadString();
-                config.ClientConnectionBufferTimeout = reader.ReadInt();
-                config.ConnectionApproval = reader.ReadBool();
-                config.SecondsHistory = reader.ReadInt();
-                config.HandleObjectSpawning = reader.ReadBool();
-                config.EnableEncryption = reader.ReadBool();
-                config.SignKeyExchange = reader.ReadBool();
-                config.AllowPassthroughMessages = reader.ReadBool();
-                config.EnableSceneSwitching = reader.ReadBool();
-                config.EnableTimeResync = reader.ReadBool();
-                config.AttributeMessageMode = (AttributeMessageMode)reader.ReadBits(3);
+                    ushort sceneCount = reader.ReadUInt16Packed();
+                    config.RegisteredScenes.Clear();
+                    for (int i = 0; i < sceneCount; i++)
+                    {
+                        config.RegisteredScenes.Add(reader.ReadString().ToString());
+                    }
+
+                    ushort networkedPrefabsCount = reader.ReadUInt16Packed();
+                    config.NetworkedPrefabs.Clear();
+                    GameObject root = createDummyObject ? new GameObject("MLAPI: Dummy prefabs") : null;
+                    for (int i = 0; i < networkedPrefabsCount; i++)
+                    {
+                        bool playerPrefab = reader.ReadBool();
+                        string prefabName = reader.ReadString().ToString();
+                        GameObject dummyPrefab = createDummyObject ? new GameObject("REPLACEME: " + prefabName + "(Dummy prefab)", typeof(NetworkedObject)) : null;
+                        if (dummyPrefab != null)
+                        {
+                            dummyPrefab.GetComponent<NetworkedObject>().NetworkedPrefabName = prefabName;
+                            dummyPrefab.transform.SetParent(root.transform); //This is just here to not ruin your hierarchy
+                        }
+                        NetworkedPrefab networkedPrefab = new NetworkedPrefab()
+                        {
+                            playerPrefab = playerPrefab,
+                            prefab = dummyPrefab
+                        };
+                        config.NetworkedPrefabs.Add(networkedPrefab);
+                    }
+
+                    config.MessageBufferSize = reader.ReadInt32Packed();
+                    config.ReceiveTickrate = reader.ReadInt32Packed();
+                    config.MaxReceiveEventsPerTickRate = reader.ReadInt32Packed();
+                    config.SendTickrate = reader.ReadInt32Packed();
+                    config.EventTickrate = reader.ReadInt32Packed();
+                    config.MaxConnections = reader.ReadInt32Packed();
+                    config.ConnectPort = reader.ReadInt32Packed();
+                    config.ConnectAddress = reader.ReadString().ToString();
+                    config.ClientConnectionBufferTimeout = reader.ReadInt32Packed();
+                    config.ConnectionApproval = reader.ReadBool();
+                    config.SecondsHistory = reader.ReadInt32Packed();
+                    config.HandleObjectSpawning = reader.ReadBool();
+                    config.EnableEncryption = reader.ReadBool();
+                    config.SignKeyExchange = reader.ReadBool();
+                    config.EnableSceneSwitching = reader.ReadBool();
+                    config.EnableTimeResync = reader.ReadBool();
+                    config.AttributeMessageMode = (AttributeMessageMode)reader.ReadBits(3);
+                }
             }
         }
+        
 
         private ulong? ConfigHash = null;
         /// <summary>
@@ -330,50 +302,46 @@ namespace MLAPI.Data
 
             Sort();
 
-            using (BitWriter writer = BitWriter.Get())
+            using (PooledBitStream stream = PooledBitStream.Get())
             {
-                writer.WriteUShort(ProtocolVersion);
-                for (int i = 0; i < Channels.Count; i++)
+                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                 {
-                    writer.WriteString(Channels[i].Name);
-                    writer.WriteByte((byte)Channels[i].Type);
-                    if (EnableEncryption)
-                        writer.WriteBool(Channels[i].Encrypted);
-                }
-                for (int i = 0; i < MessageTypes.Count; i++)
-                {
-                    writer.WriteString(MessageTypes[i].Name);
-                    if (AllowPassthroughMessages)
-                        writer.WriteBool(MessageTypes[i].Passthrough);
-                }
-                if (EnableSceneSwitching)
-                {
-                    for (int i = 0; i < RegisteredScenes.Count; i++)
-                    {
-                        writer.WriteString(RegisteredScenes[i]);
-                    }
-                }
-                if (HandleObjectSpawning)
-                {
-                    for (int i = 0; i < NetworkedPrefabs.Count; i++)
-                    {
-                        writer.WriteString(NetworkedPrefabs[i].name);
-                    }
-                }
-                writer.WriteBool(HandleObjectSpawning);
-                writer.WriteBool(EnableEncryption);
-                writer.WriteBool(AllowPassthroughMessages);
-                writer.WriteBool(EnableSceneSwitching);
-                writer.WriteBool(SignKeyExchange);
-                writer.WriteBits((byte)AttributeMessageMode, 3);
+                    writer.WriteUInt16Packed(ProtocolVersion);
+                    writer.WriteString(MLAPIConstants.MLAPI_PROTOCOL_VERSION);
 
-                // Returns a 160 bit / 20 byte / 5 int checksum of the config
-                if (cache)
-                {
-                    ConfigHash = writer.Finalize().GetStableHash64();
-                    return ConfigHash.Value;
+                    for (int i = 0; i < Channels.Count; i++)
+                    {
+                        writer.WriteString(Channels[i].Name);
+                        writer.WriteByte((byte)Channels[i].Type);
+                    }
+                    if (EnableSceneSwitching)
+                    {
+                        for (int i = 0; i < RegisteredScenes.Count; i++)
+                        {
+                            writer.WriteString(RegisteredScenes[i]);
+                        }
+                    }
+                    if (HandleObjectSpawning)
+                    {
+                        for (int i = 0; i < NetworkedPrefabs.Count; i++)
+                        {
+                            writer.WriteString(NetworkedPrefabs[i].name);
+                        }
+                    }
+                    writer.WriteBool(HandleObjectSpawning);
+                    writer.WriteBool(EnableEncryption);
+                    writer.WriteBool(EnableSceneSwitching);
+                    writer.WriteBool(SignKeyExchange);
+                    writer.WriteBits((byte)AttributeMessageMode, 3);
+
+                    // Returns a 160 bit / 20 byte / 5 int checksum of the config
+                    if (cache)
+                    {
+                        ConfigHash = stream.ToArray().GetStableHash64();
+                        return ConfigHash.Value;
+                    }
+                    return stream.ToArray().GetStableHash64();
                 }
-                return writer.Finalize().GetStableHash64();
             }
         }
 

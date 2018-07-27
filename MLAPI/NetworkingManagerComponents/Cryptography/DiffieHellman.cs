@@ -4,7 +4,7 @@ using IntXLib;
 using System.Text;
 using System.Security.Cryptography;
 
-namespace MLAPI.NetworkingManagerComponents.Cryptography
+namespace MLAPI.Cryptography
 {
     internal class EllipticDiffieHellman
     {

@@ -1,11 +1,12 @@
-﻿using MLAPI.MonoBehaviours.Core;
-using MLAPI.NetworkingManagerComponents.Binary;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
+using MLAPI.Data;
+using MLAPI.Internal;
+using MLAPI.Logging;
+using MLAPI.Serialization;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
-namespace MLAPI.NetworkingManagerComponents.Core
+namespace MLAPI.Components
 {
     /// <summary>
     /// Main class for managing network scenes
@@ -58,11 +59,14 @@ namespace MLAPI.NetworkingManagerComponents.Core
             AsyncOperation sceneLoad = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
             sceneLoad.completed += OnSceneLoaded;
 
-            using (BitWriter writer = BitWriter.Get())
+            using (PooledBitStream stream = PooledBitStream.Get())
             {
-                writer.WriteUInt(sceneNameToIndex[sceneName]);
+                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                {
+                    writer.WriteUInt32Packed(sceneNameToIndex[sceneName]);
 
-                InternalMessageHandler.Send("MLAPI_SWITCH_SCENE", "MLAPI_INTERNAL", writer, null);
+                    InternalMessageHandler.Send(MLAPIConstants.MLAPI_SWITCH_SCENE, "MLAPI_INTERNAL", stream);
+                }
             }
         }
 

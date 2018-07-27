@@ -1,18 +1,15 @@
 ﻿#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-using MLAPI.MonoBehaviours.Core;
 using System;
 using System.Collections.Generic;
 using UnityEngine.Networking;
 
-namespace MLAPI.Data.Transports.UNET
+namespace MLAPI.Transports.UNET
 {
     [Serializable]
     public class UnetTransport : IUDPTransport
     {
         public ChannelType InternalChannel => ChannelType.ReliableFragmentedSequenced;
-        public uint HostDummyId => new NetId(0, 0, true, false).GetClientId();
-        public uint InvalidDummyId => new NetId(0, 0, false, true).GetClientId();
-        public uint ServerNetId => new NetId((byte)serverHostId, (ushort)serverConnectionId, false, false).GetClientId();
+		public uint ServerClientId => new NetId(0, 0, true).GetClientId();
         public int serverConnectionId;
         public int serverHostId;
         public static readonly List<TransportHost> ServerTransports = new List<TransportHost>()
@@ -35,7 +32,7 @@ namespace MLAPI.Data.Transports.UNET
         public void DisconnectClient(uint clientId)
         {
             NetId netId = new NetId(clientId);
-            if (netId.IsHost() || netId.IsInvalid())
+			if (netId.IsServer())
                 return;
             NetworkTransport.Disconnect(netId.HostId, netId.ConnectionId, out byte error);
         }
@@ -45,6 +42,11 @@ namespace MLAPI.Data.Transports.UNET
         public int GetCurrentRTT(uint clientId, out byte error)
         {
             NetId netId = new NetId(clientId);
+			if (netId.IsServer())
+			{
+				netId.ConnectionId = (ushort)serverConnectionId;
+				netId.HostId = (byte)serverHostId;
+			}
             return NetworkTransport.GetCurrentRTT(netId.HostId, netId.ConnectionId, out error);
         }
 
@@ -53,13 +55,18 @@ namespace MLAPI.Data.Transports.UNET
         public int GetRemoteDelayTimeMS(uint clientId, int remoteTimestamp, out byte error)
         {
             NetId netId = new NetId(clientId);
+			if (netId.IsServer())
+            {
+                netId.ConnectionId = (ushort)serverConnectionId;
+                netId.HostId = (byte)serverHostId;
+            }
             return NetworkTransport.GetRemoteDelayTimeMS(netId.HostId, netId.ConnectionId, remoteTimestamp, out error);
         }
 
         public NetEventType PollReceive(out uint clientId, out int channelId, ref byte[] data, int bufferSize, out int receivedSize, out byte error)
         {
             NetworkEventType eventType = NetworkTransport.Receive(out int hostId, out int connectionId, out channelId, data, bufferSize, out receivedSize, out byte err);
-            clientId = new NetId((byte)hostId, (ushort)connectionId, false, false).GetClientId();
+            clientId = new NetId((byte)hostId, (ushort)connectionId, false).GetClientId();
             NetworkError errorType = (NetworkError)err;
             if (errorType == NetworkError.Timeout)
                 eventType = NetworkEventType.DisconnectEvent; //In UNET. Timeouts are not disconnects. We have to translate that here.
@@ -82,14 +89,15 @@ namespace MLAPI.Data.Transports.UNET
             return NetEventType.Nothing;
         }
 
-        public void QueueMessageForSending(uint clientId, ref byte[] dataBuffer, int dataSize, int channelId, bool skipqueue, out byte error)
+        public void QueueMessageForSending(uint clientId, byte[] dataBuffer, int dataSize, int channelId, bool skipqueue, out byte error)
         {
             NetId netId = new NetId(clientId);
-            if (netId.IsHost() || netId.IsInvalid())
+			if (netId.IsServer())
             {
-                error = 0;
-                return;
+                netId.ConnectionId = (ushort)serverConnectionId;
+                netId.HostId = (byte)serverHostId;
             }
+
             if (skipqueue)
                 NetworkTransport.Send(netId.HostId, netId.ConnectionId, channelId, dataBuffer, dataSize, out error);
             else
@@ -101,6 +109,11 @@ namespace MLAPI.Data.Transports.UNET
         public void SendQueue(uint clientId, out byte error)
         {
             NetId netId = new NetId(clientId);
+			if (netId.IsServer())
+            {
+                netId.ConnectionId = (ushort)serverConnectionId;
+                netId.HostId = (byte)serverHostId;
+            }
             NetworkTransport.SendQueuedMessages(netId.HostId, netId.ConnectionId, out error);
         }
 

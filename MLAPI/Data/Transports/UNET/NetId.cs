@@ -1,4 +1,4 @@
-﻿namespace MLAPI.Data.Transports.UNET
+﻿namespace MLAPI.Transports.UNET
 {
     /// <summary>
     /// Represents a ClientId structure
@@ -24,36 +24,22 @@
         /// <summary>
         /// Returns wheter or not the clientId represents a -1
         /// </summary>
-        /// <returns><c>true</c>, if host, <c>false</c> otherwise.</returns>
-        public bool IsHost()
+        /// <returns><c>true</c>, if server, <c>false</c> otherwise.</returns>
+        public bool IsServer()
         {
             return Meta == 1;
-        }
-        /// <summary>
-        /// Returns if this is a invalid clientId, (-2)
-        /// </summary>
-        /// <returns><c>true</c>, if invalid, <c>false</c> otherwise.</returns>
-        public bool IsInvalid()
-        {
-            return Meta == 2;
         }
         /// <summary>
         /// Initializes a new instance of the netId struct from transport values
         /// </summary>
         /// <param name="hostId">Host identifier.</param>
         /// <param name="connectionId">Connection identifier.</param>
-        /// <param name="isHost">If set to <c>true</c> is host.</param>
-        /// <param name="isInvalid">If set to <c>true</c> is invalid.</param>
-        public NetId(byte hostId, ushort connectionId, bool isHost, bool isInvalid)
+        /// <param name="isServer">If set to <c>true</c> is isServer.</param>
+        public NetId(byte hostId, ushort connectionId, bool isServer)
         {
             HostId = hostId;
             ConnectionId = connectionId;
-            if (isHost)
-                Meta = 1;
-            else if (isInvalid)
-                Meta = 2;
-            else
-                Meta = 0;
+			Meta = isServer ? (byte)1 : (byte)0;
         }
         /// <summary>
         /// Initializes a new instance of the netId struct from a clientId
@@ -102,7 +88,7 @@
         /// <returns>Wheter or not the two NetIds are equal</returns>
         public static bool operator ==(NetId client1, NetId client2)
         {
-            return (client1.HostId == client2.HostId && client1.ConnectionId == client2.ConnectionId) || (client1.IsHost() == client2.IsHost());
+			return (client1.HostId == client2.HostId && client1.ConnectionId == client2.ConnectionId) || (client1.IsServer() == client2.IsServer());
         }
         /// <summary>
         /// Checks if two NetId's are not equal

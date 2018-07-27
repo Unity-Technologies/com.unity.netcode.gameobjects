@@ -1,10 +1,11 @@
-﻿using MLAPI.Data;
-using MLAPI.MonoBehaviours.Core;
-using MLAPI.NetworkingManagerComponents.Binary;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using MLAPI.Data;
+using MLAPI.Internal;
+using MLAPI.Logging;
+using MLAPI.Serialization;
 using UnityEngine;
 
-namespace MLAPI.NetworkingManagerComponents.Core
+namespace MLAPI.Components
 {
     /// <summary>
     /// Main class for managing network pools
@@ -66,19 +67,22 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 return null;
             }
             NetworkedObject netObject = Pools[PoolNamesToIndexes[poolName]].SpawnObject(position, rotation);
-            using (BitWriter writer = BitWriter.Get())
+            using (PooledBitStream stream = PooledBitStream.Get())
             {
-                writer.WriteUInt(netObject.NetworkId);
+                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                {
+                    writer.WriteUInt32Packed(netObject.NetworkId);
 
-                writer.WriteFloat(position.x);
-                writer.WriteFloat(position.y);
-                writer.WriteFloat(position.z);
+                    writer.WriteSinglePacked(position.x);
+                    writer.WriteSinglePacked(position.y);
+                    writer.WriteSinglePacked(position.z);
 
-                writer.WriteFloat(rotation.eulerAngles.x);
-                writer.WriteFloat(rotation.eulerAngles.y);
-                writer.WriteFloat(rotation.eulerAngles.z);
+                    writer.WriteSinglePacked(rotation.eulerAngles.x);
+                    writer.WriteSinglePacked(rotation.eulerAngles.y);
+                    writer.WriteSinglePacked(rotation.eulerAngles.z);
 
-                InternalMessageHandler.Send("MLAPI_SPAWN_POOL_OBJECT", "MLAPI_INTERNAL", writer, null);
+                    InternalMessageHandler.Send(MLAPIConstants.MLAPI_SPAWN_POOL_OBJECT, "MLAPI_INTERNAL", stream);
+                }
             }
             return netObject;
         }
@@ -95,11 +99,14 @@ namespace MLAPI.NetworkingManagerComponents.Core
                 return;
             }
             netObject.gameObject.SetActive(false);
-            using (BitWriter writer = BitWriter.Get())
+            using (PooledBitStream stream = PooledBitStream.Get())
             {
-                writer.WriteUInt(netObject.NetworkId);
+                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                {
+                    writer.WriteUInt32Packed(netObject.NetworkId);
 
-                InternalMessageHandler.Send("MLAPI_DESTROY_POOL_OBJECT", "MLAPI_INTERNAL", writer, null);
+                    InternalMessageHandler.Send(MLAPIConstants.MLAPI_DESTROY_POOL_OBJECT, "MLAPI_INTERNAL", stream);
+                }
             }
         }
     }

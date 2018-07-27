@@ -1,10 +1,11 @@
 ﻿using System.Collections.Generic;
-using MLAPI.MonoBehaviours.Core;
-using MLAPI.NetworkingManagerComponents.Binary;
 using System.IO;
 using UnityEngine;
+using System.Linq;
+using MLAPI.Configuration;
+using MLAPI.Serialization;
 
-namespace MLAPI.MonoBehaviours.Prototyping
+namespace MLAPI.Prototyping
 {
     /// <summary>
     /// A prototype component for syncing transforms
@@ -12,7 +13,7 @@ namespace MLAPI.MonoBehaviours.Prototyping
     [AddComponentMenu("MLAPI/NetworkedTransform")]
     public class NetworkedTransform : NetworkedBehaviour
     {
-        public class ClientSendInfo
+        internal class ClientSendInfo
         {
             public uint clientId;
             public float lastSent;
@@ -20,6 +21,9 @@ namespace MLAPI.MonoBehaviours.Prototyping
             public Quaternion? lastMissedRotation;
         }
 
+        /// <summary>
+        /// The base amount of sends per seconds to use when range is disabled
+        /// </summary>
         [Range(0, 120)]
         public float FixedSendsPerSecond = 20f;
         /// <summary>
@@ -49,7 +53,11 @@ namespace MLAPI.MonoBehaviours.Prototyping
         /// The min degrees to rotate before a send it sent
         /// </summary>
         public float MinDegrees = 1.5f;
-        public bool ExtrapolatePosition = true;
+        /// <summary>
+        /// Enables extrapolation
+        /// </summary>
+        public bool ExtrapolatePosition = false;
+
         private float lerpT;
         private Vector3 lerpStartPos;
         private Quaternion lerpStartRot;
@@ -60,15 +68,30 @@ namespace MLAPI.MonoBehaviours.Prototyping
         private Vector3 lastSentPos;
         private Quaternion lastSentRot;
         
+        /// <summary>
+        /// Enables range based send rate
+        /// </summary>
         public bool EnableRange;
+        /// <summary>
+        /// Checks for missed sends without provocation. Provocation being a client inside it's normal SendRate
+        /// </summary>
         public bool EnableNonProvokedResendChecks;
+        /// <summary>
+        /// The curve to use to calculate the send rate
+        /// </summary>
         public AnimationCurve DistanceSendrate = AnimationCurve.Constant(0, 500, 20);
         private readonly Dictionary<uint, ClientSendInfo> clientSendInfo = new Dictionary<uint, ClientSendInfo>();
 
-        private static byte[] positionUpdateBuffer = new byte[24];
-
+        /// <summary>
+        /// The delegate used to check if a move is valid
+        /// </summary>
+        /// <param name="oldPos">The previous position</param>
+        /// <param name="newPos">The new requested position</param>
+        /// <returns>Returns wheter or not the move is valid</returns>
         public delegate bool MoveValidationDelegate(Vector3 oldPos, Vector3 newPos);
-
+        /// <summary>
+        /// If set, moves will only be accepted if the custom delegate returns true
+        /// </summary>
         public MoveValidationDelegate IsMoveValidDelegate = null;
 
         private void OnValidate()
@@ -95,15 +118,6 @@ namespace MLAPI.MonoBehaviours.Prototyping
         /// </summary>
         public override void NetworkStart()
         {
-            if (isServer)
-            {
-                RegisterMessageHandler("MLAPI_OnRecieveTransformFromClient", OnRecieveTransformFromClient);
-            }
-            if (isClient)
-            {
-                RegisterMessageHandler("MLAPI_OnRecieveTransformFromServer", OnRecieveTransformFromServer);
-            }
-
             lastSentRot = transform.rotation;
             lastSentPos = transform.position;
 
@@ -116,30 +130,30 @@ namespace MLAPI.MonoBehaviours.Prototyping
 
         private void Update()
         {
-            if(isOwner || isLocalPlayer || (OwnerClientId == NetworkingManager.singleton.NetworkConfig.NetworkTransport.InvalidDummyId && isServer))
+            if (isOwner)
             {
-                //We own the object OR we are server and the object is not owned by anyone OR we are the object.
-                if(NetworkingManager.singleton.NetworkTime - lastSendTime >= (1f / FixedSendsPerSecond) && (Vector3.Distance(transform.position, lastSentPos) > MinMeters || Quaternion.Angle(transform.rotation, lastSentRot) > MinDegrees))
+                if (NetworkingManager.singleton.NetworkTime - lastSendTime >= (1f / FixedSendsPerSecond) && (Vector3.Distance(transform.position, lastSentPos) > MinMeters || Quaternion.Angle(transform.rotation, lastSentRot) > MinDegrees))
                 {
                     lastSendTime = NetworkingManager.singleton.NetworkTime;
                     lastSentPos = transform.position;
                     lastSentRot = transform.rotation;
-                    using (MemoryStream writeStream = new MemoryStream(positionUpdateBuffer))
+                    using (PooledBitStream stream = PooledBitStream.Get())
                     {
-                        using (BinaryWriter writer = new BinaryWriter(writeStream))
+                        using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                         {
-                            writer.Write(transform.position.x);
-                            writer.Write(transform.position.y);
-                            writer.Write(transform.position.z);
+                            writer.WriteSinglePacked(transform.position.x);
+                            writer.WriteSinglePacked(transform.position.y);
+                            writer.WriteSinglePacked(transform.position.z);
 
-                            writer.Write(transform.rotation.eulerAngles.x);
-                            writer.Write(transform.rotation.eulerAngles.y);
-                            writer.Write(transform.rotation.eulerAngles.z);
+                            writer.WriteSinglePacked(transform.rotation.eulerAngles.x);
+                            writer.WriteSinglePacked(transform.rotation.eulerAngles.y);
+                            writer.WriteSinglePacked(transform.rotation.eulerAngles.z);
+
+                            if (isServer)
+                                InvokeClientRpcOnEveryoneExcept(ApplyTransform, OwnerClientId, stream);
+                            else
+                                InvokeServerRpc(SubmitTransform, stream);
                         }
-                        if (isServer)
-                            SendToClientsTarget("MLAPI_OnRecieveTransformFromServer", "MLAPI_POSITION_UPDATE", positionUpdateBuffer);
-                        else
-                            SendToServerTarget("MLAPI_OnRecieveTransformFromClient", "MLAPI_POSITION_UPDATE", positionUpdateBuffer);
                     }
 
                 }
@@ -147,16 +161,16 @@ namespace MLAPI.MonoBehaviours.Prototyping
             else
             {
                 //If we are server and interpolation is turned on for server OR we are not server and interpolation is turned on
-                if((isServer && InterpolateServer && InterpolatePosition) || (!isServer && InterpolatePosition))
+                if ((isServer && InterpolateServer && InterpolatePosition) || (!isServer && InterpolatePosition))
                 {
-                    if(Vector3.Distance(transform.position, lerpEndPos) > SnapDistance)
+                    if (Vector3.Distance(transform.position, lerpEndPos) > SnapDistance)
                     {
                         //Snap, set T to 1 (100% of the lerp)
                         lerpT = 1f;
                     }
 
                     if (isServer || !EnableRange || !AssumeSyncedSends)
-                        lerpT += Time.unscaledDeltaTime / FixedSendsPerSecond;
+                        lerpT += Time.unscaledDeltaTime / (1f / FixedSendsPerSecond);
                     else
                     {
                         Vector3 myPos = NetworkingManager.singleton.ConnectedClients[NetworkingManager.singleton.LocalClientId].PlayerObject.transform.position;
@@ -178,83 +192,87 @@ namespace MLAPI.MonoBehaviours.Prototyping
             if (isServer && EnableRange && EnableNonProvokedResendChecks) CheckForMissedSends();
         }
 
-        private void OnRecieveTransformFromServer(uint clientId, BitReader reader)
+        [ClientRPC]
+        private void ApplyTransform(uint clientId, Stream stream)
         {
             if (!enabled) return;
-            
-            byte[] data = reader.ReadByteArray();
-            using (MemoryStream stream = new MemoryStream(data))
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
-                using (BinaryReader bReader = new BinaryReader(stream))
+
+                float xPos = reader.ReadSinglePacked();
+                float yPos = reader.ReadSinglePacked();
+                float zPos = reader.ReadSinglePacked();
+
+                float xRot = reader.ReadSinglePacked();
+                float yRot = reader.ReadSinglePacked();
+                float zRot = reader.ReadSinglePacked();
+
+                if (InterpolatePosition)
                 {
-                    float xPos = bReader.ReadSingle();
-                    float yPos = bReader.ReadSingle();
-                    float zPos = bReader.ReadSingle();
-
-                    float xRot = bReader.ReadSingle();
-                    float yRot = bReader.ReadSingle();
-                    float zRot = bReader.ReadSingle();
-
                     lerpStartPos = transform.position;
                     lerpStartRot = transform.rotation;
                     lerpEndPos = new Vector3(xPos, yPos, zPos);
                     lerpEndRot = Quaternion.Euler(xRot, yRot, zRot);
                     lerpT = 0;
                 }
+                else
+                {
+                    transform.position = new Vector3(xPos, yPos, zPos);
+                    transform.rotation = Quaternion.Euler(new Vector3(xRot, yRot, zRot));
+                }
             }
         }
 
-        private void OnRecieveTransformFromClient(uint clientId, BitReader reader)
+        [ServerRPC]
+        private void SubmitTransform(uint clientId, Stream stream)
         {
             if (!enabled) return;
-            
-            byte[] data = reader.ReadByteArray();
-            using (MemoryStream readStream = new MemoryStream(data))
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
-                using (BinaryReader bReader = new BinaryReader(readStream))
+
+                float xPos = reader.ReadSinglePacked();
+                float yPos = reader.ReadSinglePacked();
+                float zPos = reader.ReadSinglePacked();
+
+                float xRot = reader.ReadSinglePacked();
+                float yRot = reader.ReadSinglePacked();
+                float zRot = reader.ReadSinglePacked();
+
+                if (IsMoveValidDelegate != null && !IsMoveValidDelegate(lerpEndPos, new Vector3(xPos, yPos, zPos)))
                 {
-                    float xPos = bReader.ReadSingle();
-                    float yPos = bReader.ReadSingle();
-                    float zPos = bReader.ReadSingle();
+                    //Invalid move!
+                    //TODO: Add rubber band (just a message telling them to go back)
+                    return;
+                }
 
-                    float xRot = bReader.ReadSingle();
-                    float yRot = bReader.ReadSingle();
-                    float zRot = bReader.ReadSingle();
-                    
-                    if (IsMoveValidDelegate != null && !IsMoveValidDelegate(lerpEndPos, new Vector3(xPos, yPos, zPos)))
-                    {
-                        //Invalid move!
-                        //TODO: Add rubber band (just a message telling them to go back)
-                        return;
-                    }
+                if (InterpolateServer)
+                {
+                    lerpStartPos = transform.position;
+                    lerpStartRot = transform.rotation;
+                    lerpEndPos = new Vector3(xPos, yPos, zPos);
+                    lerpEndRot = Quaternion.Euler(xRot, yRot, zRot);
+                    lerpT = 0;
+                }
+                else
+                {
+                    transform.position = new Vector3(xPos, yPos, zPos);
+                    transform.rotation = Quaternion.Euler(new Vector3(xRot, yRot, zRot));
+                }
 
-                    if (InterpolateServer)
+                using (PooledBitStream writeStream = PooledBitStream.Get())
+                {
+                    using (PooledBitWriter writer = PooledBitWriter.Get(writeStream))
                     {
-                        lerpStartPos = transform.position;
-                        lerpStartRot = transform.rotation;
-                        lerpEndPos = new Vector3(xPos, yPos, zPos);
-                        lerpEndRot = Quaternion.Euler(xRot, yRot, zRot);
-                        lerpT = 0;
-                    }
-                    else
-                    {
-                        transform.position = new Vector3(xPos, yPos, zPos);
-                        transform.rotation = Quaternion.Euler(new Vector3(xRot, yRot, zRot));
-                    }
-                    using (MemoryStream writeStream = new MemoryStream(positionUpdateBuffer))
-                    {
-                        using (BinaryWriter writer = new BinaryWriter(writeStream))
-                        {
-                            writer.Write(xPos);
-                            writer.Write(yPos);
-                            writer.Write(zPos);
-                            writer.Write(xRot);
-                            writer.Write(yRot);
-                            writer.Write(zRot);
-                        }
+                        writer.WriteSinglePacked(xPos);
+                        writer.WriteSinglePacked(yPos);
+                        writer.WriteSinglePacked(zPos);
+
+                        writer.WriteSinglePacked(xRot);
+                        writer.WriteSinglePacked(yRot);
+                        writer.WriteSinglePacked(zRot);
+
                         if (EnableRange)
                         {
-                            // For instead of Foreach?! TODO!!!
                             for (int i = 0; i < NetworkingManager.singleton.ConnectedClientsList.Count; i++)
                             {
                                 if (!clientSendInfo.ContainsKey(NetworkingManager.singleton.ConnectedClientsList[i].ClientId))
@@ -267,18 +285,18 @@ namespace MLAPI.MonoBehaviours.Prototyping
                                         lastSent = 0
                                     });
                                 }
-                                
+
                                 ClientSendInfo info = clientSendInfo[NetworkingManager.singleton.ConnectedClientsList[i].ClientId];
                                 Vector3 receiverPosition = NetworkingManager.singleton.ConnectedClientsList[i].PlayerObject.transform.position;
                                 Vector3 senderPosition = NetworkingManager.singleton.ConnectedClients[OwnerClientId].PlayerObject.transform.position;
-                                
+
                                 if (NetworkingManager.singleton.NetworkTime - info.lastSent >= GetTimeForLerp(receiverPosition, senderPosition))
                                 {
                                     info.lastSent = NetworkingManager.singleton.NetworkTime;
                                     info.lastMissedPosition = null;
                                     info.lastMissedRotation = null;
-                                    
-                                    SendToClientTarget(NetworkingManager.singleton.ConnectedClientsList[i].ClientId, "MLAPI_OnRecieveTransformFromServer", "MLAPI_POSITION_UPDATE", positionUpdateBuffer);
+
+                                    InvokeClientRpcOnClient(ApplyTransform, NetworkingManager.singleton.ConnectedClientsList[i].ClientId, writeStream);
                                 }
                                 else
                                 {
@@ -289,7 +307,7 @@ namespace MLAPI.MonoBehaviours.Prototyping
                         }
                         else
                         {
-                            SendToNonLocalClientsTarget("MLAPI_OnRecieveTransformFromServer", "MLAPI_POSITION_UPDATE", positionUpdateBuffer);
+                            InvokeClientRpcOnEveryoneExcept(ApplyTransform, OwnerClientId, writeStream);
                         }
                     }
                 }
@@ -316,15 +334,37 @@ namespace MLAPI.MonoBehaviours.Prototyping
                                 
                 if (NetworkingManager.singleton.NetworkTime - info.lastSent >= GetTimeForLerp(receiverPosition, senderPosition))
                 {
+                    Vector3 pos = NetworkingManager.singleton.ConnectedClients[OwnerClientId].PlayerObject.transform.position;
+                    Vector3 rot = NetworkingManager.singleton.ConnectedClients[OwnerClientId].PlayerObject.transform.rotation.eulerAngles;
+                    
                     info.lastSent = NetworkingManager.singleton.NetworkTime;
                     info.lastMissedPosition = null;
                     info.lastMissedRotation = null;
-                                    
-                    SendToClientTarget(NetworkingManager.singleton.ConnectedClientsList[i].ClientId, "MLAPI_OnRecieveTransformFromServer", "MLAPI_POSITION_UPDATE", positionUpdateBuffer);
+                    
+                    using (PooledBitStream stream = PooledBitStream.Get())
+                    {
+                        using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                        {
+                            writer.WriteSinglePacked(pos.x);
+                            writer.WriteSinglePacked(pos.y);
+                            writer.WriteSinglePacked(pos.z);
+
+                            writer.WriteSinglePacked(rot.x);
+                            writer.WriteSinglePacked(rot.y);
+                            writer.WriteSinglePacked(rot.z);
+
+                            InvokeClientRpcOnClient(ApplyTransform, NetworkingManager.singleton.ConnectedClientsList[i].ClientId, stream);
+                        }
+                    }
                 }
             }
         }
 
+        /// <summary>
+        /// Teleports the transform to the given position and rotation
+        /// </summary>
+        /// <param name="position">The position to teleport to</param>
+        /// <param name="rotation">The rotation to teleport to</param>
         public void Teleport(Vector3 position, Quaternion rotation)
         {   
             if (InterpolateServer && isServer || isClient)

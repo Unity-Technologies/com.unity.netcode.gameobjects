@@ -1,4 +1,4 @@
-﻿namespace MLAPI.Data.Transports
+﻿namespace MLAPI.Transports
 {
     /// <summary>
     /// A UDP transport
@@ -10,17 +10,9 @@
         /// </summary>
         ChannelType InternalChannel { get; }
         /// <summary>
-        /// The clientId to use when you want to send to the server from client
+        /// The clientId the transport identifies as the server, should be constant
         /// </summary>
-        uint ServerNetId { get; }
-        /// <summary>
-        /// A dummy clientId to represent the host client
-        /// </summary>
-        uint HostDummyId { get; }
-        /// <summary>
-        /// A invalid clientId to represent a clientId of server
-        /// </summary>
-        uint InvalidDummyId { get; }
+        uint ServerClientId { get; }
         /// <summary>
         /// Queues a message for sending.
         /// </summary>
@@ -30,7 +22,7 @@
         /// <param name="channelId">The channelId to send on</param>
         /// <param name="skipQueue">Wheter or not Send will have to be called for this message to be sent</param>
         /// <param name="error">Error byte. Does nothhing</param>
-        void QueueMessageForSending(uint clientId, ref byte[] dataBuffer, int dataSize, int channelId, bool skipQueue, out byte error);
+        void QueueMessageForSending(uint clientId, byte[] dataBuffer, int dataSize, int channelId, bool skipQueue, out byte error);
         /// <summary>
         /// Sends queued messages for a specific clientId
         /// </summary>

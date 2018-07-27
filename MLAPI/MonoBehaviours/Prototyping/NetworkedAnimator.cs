@@ -1,12 +1,11 @@
 ﻿using MLAPI.Data;
-using MLAPI.MonoBehaviours.Core;
-using MLAPI.NetworkingManagerComponents.Binary;
-using MLAPI.NetworkingManagerComponents.Core;
 using System.Collections.Generic;
 using System.IO;
+using MLAPI.Logging;
+using MLAPI.Serialization;
 using UnityEngine;
 
-namespace MLAPI.MonoBehaviours.Prototyping
+namespace MLAPI.Prototyping
 {
     /// <summary>
     /// A prototype component for syncing animations
@@ -67,7 +66,7 @@ namespace MLAPI.MonoBehaviours.Prototyping
         {
             if (value)
             {
-                parameterSendBits |=  (uint)(1 << index);
+                parameterSendBits |= (uint)(1 << index);
             }
             else
             {
@@ -84,24 +83,6 @@ namespace MLAPI.MonoBehaviours.Prototyping
             return (parameterSendBits & (uint)(1 << index)) != 0;
         }
 
-        private bool sendMessagesAllowed
-        {
-            get
-            {
-                return isOwner || isLocalPlayer;
-            }
-        }
-
-        /// <summary>
-        /// Registers message handlers
-        /// </summary>
-        public override void NetworkStart()
-        {
-            RegisterMessageHandler("MLAPI_HandleAnimationMessage", HandleAnimMsg);
-            RegisterMessageHandler("MLAPI_HandleAnimationParameterMessage", HandleAnimParamsMsg);
-            RegisterMessageHandler("MLAPI_HandleAnimationTriggerMessage", HandleAnimTriggerMsg);
-        }
-
         /// <summary>
         /// TODO
         /// </summary>
@@ -114,7 +95,7 @@ namespace MLAPI.MonoBehaviours.Prototyping
 
         private void FixedUpdate()
         {
-            if (!sendMessagesAllowed)
+            if (!isOwner)
                 return;
 
             CheckSendRate();
@@ -128,32 +109,35 @@ namespace MLAPI.MonoBehaviours.Prototyping
                 return;
             }
 
-            using(MemoryStream stream = new MemoryStream())
+            using (PooledBitStream stream = PooledBitStream.Get())
             {
-                using (BinaryWriter writer = new BinaryWriter(stream))
+                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                 {
-                    writer.Write(stateHash);
-                    writer.Write(normalizedTime);
-                    WriteParameters(writer, false);
-                }
-                if(isServer)
-                {
-                    if(EnableProximity)
+                    writer.WriteInt32Packed(stateHash);
+                    writer.WriteSinglePacked(normalizedTime);
+                    WriteParameters(stream, false);
+
+                    if (isServer)
                     {
-                        List<uint> clientsInProximity = new List<uint>();
-                        foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.ConnectedClients)
+                        if (EnableProximity)
                         {
-                            if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
-                                clientsInProximity.Add(client.Key);
+                            List<uint> clientsInProximity = new List<uint>();
+                            foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.ConnectedClients)
+                            {
+                                if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
+                                    clientsInProximity.Add(client.Key);
+                            }
+                            InvokeClientRpc(ApplyAnimParamMsg, clientsInProximity, stream);
                         }
-                        SendToClientsTarget(clientsInProximity ,"MLAPI_HandleAnimationMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
+                        else
+                        {
+                            InvokeClientRpcOnEveryoneExcept(ApplyAnimMsg, OwnerClientId, stream);
+                        }
                     }
                     else
-                        SendToNonLocalClientsTarget("MLAPI_HandleAnimationMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
-                }
-                else
-                {
-                    SendToServerTarget("MLAPI_HandleAnimationMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
+                    {
+                        InvokeServerRpc(SubmitAnimMsg, stream);
+                    }
                 }
             }
         }
@@ -195,34 +179,37 @@ namespace MLAPI.MonoBehaviours.Prototyping
 
         private void CheckSendRate()
         {
-            if (sendMessagesAllowed && sendRate != 0 && sendTimer < NetworkingManager.singleton.NetworkTime)
+            if (isOwner && sendRate != 0 && sendTimer < NetworkingManager.singleton.NetworkTime)
             {
                 sendTimer = NetworkingManager.singleton.NetworkTime + sendRate;
 
-                using(MemoryStream stream = new MemoryStream())
+                using (PooledBitStream stream = PooledBitStream.Get())
                 {
-                    using(BinaryWriter writer = new BinaryWriter(stream))
+                    using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                     {
-                        WriteParameters(writer, true);
-                    }
-                    if (isServer)
-                    {
-                        if (EnableProximity)
+                        WriteParameters(stream, true);
+
+                        if (isServer)
                         {
-                            List<uint> clientsInProximity = new List<uint>();
-                            foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.ConnectedClients)
+                            if (EnableProximity)
                             {
-                                if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
-                                    clientsInProximity.Add(client.Key);
+                                List<uint> clientsInProximity = new List<uint>();
+                                foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.ConnectedClients)
+                                {
+                                    if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
+                                        clientsInProximity.Add(client.Key);
+                                }
+                                InvokeClientRpc(ApplyAnimParamMsg, clientsInProximity, stream);
                             }
-                            SendToClientsTarget(clientsInProximity, "MLAPI_HandleAnimationParameterMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
+                            else
+                            {
+                                InvokeClientRpcOnEveryoneExcept(ApplyAnimParamMsg, OwnerClientId, stream);
+                            }
                         }
                         else
-                            SendToNonLocalClientsTarget("MLAPI_HandleAnimationParameterMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
-                    }
-                    else
-                    {
-                        SendToServerTarget("MLAPI_HandleAnimationParameterMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
+                        {
+                            InvokeServerRpc(SubmitAnimParamMsg, stream);
+                        }
                     }
                 }
             }
@@ -250,164 +237,170 @@ namespace MLAPI.MonoBehaviours.Prototyping
             if (i == 5) param5 = p;
         }
 
-        private void HandleAnimMsg(uint clientId, BitReader reader)
+        [ServerRPC]
+        private void SubmitAnimMsg(uint clientId, Stream stream)
         {
             // usually transitions will be triggered by parameters, if not, play anims directly.
             // NOTE: this plays "animations", not transitions, so any transitions will be skipped.
             // NOTE: there is no API to play a transition(?)
-            byte[] data = reader.ReadByteArray();
 
-            if(isServer)
+            if (EnableProximity)
             {
-                if (EnableProximity)
+                List<uint> clientsInProximity = new List<uint>();
+                foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.ConnectedClients)
                 {
-                    List<uint> clientsInProximity = new List<uint>();
-                    foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.ConnectedClients)
-                    {
-                        if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
-                            clientsInProximity.Add(client.Key);
-                    }
-                    SendToClientsTarget(clientsInProximity, "MLAPI_HandleAnimationMessage", "MLAPI_ANIMATION_UPDATE", data);
+                    if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
+                        clientsInProximity.Add(client.Key);
                 }
-                else
-                    SendToNonLocalClientsTarget("MLAPI_HandleAnimationMessage", "MLAPI_ANIMATION_UPDATE", data);
+                InvokeClientRpc(ApplyAnimMsg, clientsInProximity, stream);
             }
-            using (MemoryStream stream = new MemoryStream(data))
+            else
             {
-                using (BinaryReader bReader = new BinaryReader(stream))
+                InvokeClientRpcOnEveryoneExcept(ApplyAnimMsg, OwnerClientId, stream);
+            }
+        }
+
+        [ClientRPC]
+        private void ApplyAnimMsg(uint clientId, Stream stream)
+        {
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
+            {
+                int stateHash = reader.ReadInt32Packed();
+                float normalizedTime = reader.ReadSinglePacked();
+                if (stateHash != 0)
                 {
-                    int stateHash = bReader.ReadInt32();
-                    float normalizedTime = bReader.ReadSingle();
-                    if(stateHash != 0)
+                    animator.Play(stateHash, 0, normalizedTime);
+                }
+                ReadParameters(stream, false);
+            }
+        }
+
+        [ServerRPC]
+        private void SubmitAnimParamMsg(uint clientId, Stream stream)
+        {
+            if (EnableProximity)
+            {
+                List<uint> clientsInProximity = new List<uint>();
+                foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.ConnectedClients)
+                {
+                    if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
+                        clientsInProximity.Add(client.Key);
+                }
+                InvokeClientRpc(ApplyAnimParamMsg, clientsInProximity, stream);
+            }
+            else
+            {
+                InvokeClientRpcOnEveryoneExcept(ApplyAnimParamMsg, OwnerClientId, stream);
+            }
+        }
+
+        [ClientRPC]
+        private void ApplyAnimParamMsg(uint clientId, Stream stream)
+        {
+            ReadParameters(stream, true);
+        }
+
+        [ServerRPC]
+        private void SubmitAnimTriggerMsg(uint clientId, Stream stream)
+        {
+            if (EnableProximity)
+            {
+                List<uint> clientsInProximity = new List<uint>();
+                foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.ConnectedClients)
+                {
+                    if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
+                        clientsInProximity.Add(client.Key);
+                }
+                InvokeClientRpc(ApplyAnimTriggerMsg, clientsInProximity, stream);
+            }
+            else
+            {
+                InvokeClientRpcOnEveryoneExcept(ApplyAnimTriggerMsg, OwnerClientId, stream);
+            }
+        }
+
+        [ClientRPC]
+        private void ApplyAnimTriggerMsg(uint clientId, Stream stream)
+        {
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
+            {
+                animator.SetTrigger(reader.ReadInt32Packed());
+            }
+        }
+
+        private void WriteParameters(Stream stream, bool autoSend)
+        {
+            using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+            {
+                if (animatorParameters == null)
+                    animatorParameters = animator.parameters;
+
+                for (int i = 0; i < animatorParameters.Length; i++)
+                {
+                    if (autoSend && !GetParameterAutoSend(i))
+                        continue;
+
+                    AnimatorControllerParameter par = animatorParameters[i];
+                    if (par.type == AnimatorControllerParameterType.Int)
                     {
-                        animator.Play(stateHash, 0, normalizedTime);
+                        writer.WriteUInt32Packed((uint)animator.GetInteger(par.nameHash));
+
+                        SetSendTrackingParam(par.name + ":" + animator.GetInteger(par.nameHash), i);
                     }
-                    ReadParameters(bReader, false);
+
+                    if (par.type == AnimatorControllerParameterType.Float)
+                    {
+                        writer.WriteSinglePacked(animator.GetFloat(par.nameHash));
+
+                        SetSendTrackingParam(par.name + ":" + animator.GetFloat(par.nameHash), i);
+                    }
+
+                    if (par.type == AnimatorControllerParameterType.Bool)
+                    {
+                        writer.WriteBool(animator.GetBool(par.nameHash));
+
+                        SetSendTrackingParam(par.name + ":" + animator.GetBool(par.nameHash), i);
+                    }
                 }
             }
         }
 
-        private void HandleAnimParamsMsg(uint clientId, BitReader reader)
+        private void ReadParameters(Stream stream, bool autoSend)
         {
-            byte[] data = reader.ReadByteArray();
-            if (isServer)
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
-                if (EnableProximity)
+                if (animatorParameters == null)
+                    animatorParameters = animator.parameters;
+
+                for (int i = 0; i < animatorParameters.Length; i++)
                 {
-                    List<uint> clientsInProximity = new List<uint>();
-                    foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.ConnectedClients)
+                    if (autoSend && !GetParameterAutoSend(i))
+                        continue;
+
+                    AnimatorControllerParameter par = animatorParameters[i];
+                    if (par.type == AnimatorControllerParameterType.Int)
                     {
-                        if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
-                            clientsInProximity.Add(client.Key);
-                    }
-                    SendToClientsTarget(clientsInProximity, "MLAPI_HandleAnimationParameterMessage", "MLAPI_ANIMATION_UPDATE", data);
-                }
-                else
-                    SendToNonLocalClientsTarget("MLAPI_HandleAnimationParameterMessage", "MLAPI_ANIMATION_UPDATE", data);
-            }
-            using (MemoryStream stream = new MemoryStream(data))
-            {
-                using (BinaryReader bReader = new BinaryReader(stream))
-                {
-                    ReadParameters(bReader, true);
-                }
-            }
-        }
+                        int newValue = (int)reader.ReadUInt32Packed();
+                        animator.SetInteger(par.nameHash, newValue);
 
-        private void HandleAnimTriggerMsg(uint clientId, BitReader reader)
-        {
-            byte[] data = reader.ReadByteArray();
-            if (isServer)
-            {
-                if (EnableProximity)
-                {
-                    List<uint> clientsInProximity = new List<uint>();
-                    foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.ConnectedClients)
+                        SetRecvTrackingParam(par.name + ":" + newValue, i);
+                    }
+
+                    if (par.type == AnimatorControllerParameterType.Float)
                     {
-                        if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
-                            clientsInProximity.Add(client.Key);
+                        float newFloatValue = reader.ReadSinglePacked();
+                        animator.SetFloat(par.nameHash, newFloatValue);
+
+                        SetRecvTrackingParam(par.name + ":" + newFloatValue, i);
                     }
-                    SendToClientsTarget(clientsInProximity, "MLAPI_HandleAnimationTriggerMessage", "MLAPI_ANIMATION_UPDATE", data);
-                }
-                else
-                    SendToNonLocalClientsTarget("MLAPI_HandleAnimationTriggerMessage", "MLAPI_ANIMATION_UPDATE", data);
-            }
-            using (MemoryStream stream = new MemoryStream(data))
-            {
-                using (BinaryReader bReader = new BinaryReader(stream))
-                {
-                    animator.SetTrigger(bReader.ReadInt32());
-                }
-            }
-        }
 
-        private void WriteParameters(BinaryWriter writer, bool autoSend)
-        {
-            if (animatorParameters == null)       
-                animatorParameters = animator.parameters;
+                    if (par.type == AnimatorControllerParameterType.Bool)
+                    {
+                        bool newBoolValue = reader.ReadBool();
+                        animator.SetBool(par.nameHash, newBoolValue);
 
-            for (int i = 0; i < animatorParameters.Length; i++)
-            {
-                if (autoSend && !GetParameterAutoSend(i))
-                    continue;
-
-                AnimatorControllerParameter par = animatorParameters[i];
-                if (par.type == AnimatorControllerParameterType.Int)
-                {
-                    writer.Write((uint)animator.GetInteger(par.nameHash));
-
-                    SetSendTrackingParam(par.name + ":" + animator.GetInteger(par.nameHash), i);
-                }
-
-                if (par.type == AnimatorControllerParameterType.Float)
-                {
-                    writer.Write(animator.GetFloat(par.nameHash));
-
-                    SetSendTrackingParam(par.name + ":" + animator.GetFloat(par.nameHash), i);
-                }
-
-                if (par.type == AnimatorControllerParameterType.Bool)
-                {
-                    writer.Write(animator.GetBool(par.nameHash));
-
-                    SetSendTrackingParam(par.name + ":" + animator.GetBool(par.nameHash), i);
-                }
-            }
-        }
-
-        private void ReadParameters(BinaryReader reader, bool autoSend)
-        {
-            if (animatorParameters == null)
-                animatorParameters = animator.parameters;
-
-            for (int i = 0; i < animatorParameters.Length; i++)
-            {
-                if (autoSend && !GetParameterAutoSend(i))
-                    continue;
-
-                AnimatorControllerParameter par = animatorParameters[i];
-                if (par.type == AnimatorControllerParameterType.Int)
-                {
-                    int newValue = (int)reader.ReadUInt32();
-                    animator.SetInteger(par.nameHash, newValue);
-
-                    SetRecvTrackingParam(par.name + ":" + newValue, i);
-                }
-
-                if (par.type == AnimatorControllerParameterType.Float)
-                {
-                    float newFloatValue = reader.ReadSingle();
-                    animator.SetFloat(par.nameHash, newFloatValue);
-
-                    SetRecvTrackingParam(par.name + ":" + newFloatValue, i);
-                }
-
-                if (par.type == AnimatorControllerParameterType.Bool)
-                {
-                    bool newBoolValue = reader.ReadBoolean();
-                    animator.SetBool(par.nameHash, newBoolValue);
-
-                    SetRecvTrackingParam(par.name + ":" + newBoolValue, i);
+                        SetRecvTrackingParam(par.name + ":" + newBoolValue, i);
+                    }
                 }
             }
         }
@@ -427,32 +420,35 @@ namespace MLAPI.MonoBehaviours.Prototyping
         /// <param name="hash"></param>
         public void SetTrigger(int hash)
         {
-            if (isLocalPlayer || isOwner)
+            if (isOwner)
             {
-                using (MemoryStream stream = new MemoryStream())
+                using (PooledBitStream stream = PooledBitStream.Get())
                 {
-                    using (BinaryWriter writer = new BinaryWriter(stream))
+                    using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                     {
-                        writer.Write(hash);
-                    }
-                    if (isServer)
-                    {
-                        if (EnableProximity)
+                        writer.WriteInt32Packed(hash);
+
+                        if (isServer)
                         {
-                            List<uint> clientsInProximity = new List<uint>();
-                            foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.ConnectedClients)
+                            if (EnableProximity)
                             {
-                                if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
-                                    clientsInProximity.Add(client.Key);
+                                List<uint> clientsInProximity = new List<uint>();
+                                foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.ConnectedClients)
+                                {
+                                    if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
+                                        clientsInProximity.Add(client.Key);
+                                }
+                                InvokeClientRpc(ApplyAnimTriggerMsg, clientsInProximity, stream);
                             }
-                            SendToClientsTarget(clientsInProximity, "MLAPI_HandleAnimationTriggerMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
+                            else
+                            {
+                                InvokeClientRpcOnEveryoneExcept(ApplyAnimTriggerMsg, OwnerClientId, stream);
+                            }
                         }
                         else
-                            SendToNonLocalClientsTarget("MLAPI_HandleAnimationTriggerMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
-                    }
-                    else
-                    {
-                        SendToServerTarget("MLAPI_HandleAnimationTriggerMessage", "MLAPI_ANIMATION_UPDATE", stream.ToArray());
+                        {
+                            InvokeServerRpc(SubmitAnimTriggerMsg, stream);
+                        }
                     }
                 }
             }

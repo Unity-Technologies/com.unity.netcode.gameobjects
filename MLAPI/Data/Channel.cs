@@ -1,7 +1,7 @@
-﻿using MLAPI.Data.Transports;
-using System;
+﻿using System;
+using MLAPI.Transports;
 
-namespace MLAPI.Data
+namespace MLAPI.Configuration
 {
     /// <summary>
     /// A data object that represents a NetworkTransport channel
@@ -17,9 +17,5 @@ namespace MLAPI.Data
         /// The Transport QOS type
         /// </summary>
         public ChannelType Type;
-        /// <summary>
-        /// Wheter or not the channel should be encrypted
-        /// </summary>
-        public bool Encrypted;
     }
 }

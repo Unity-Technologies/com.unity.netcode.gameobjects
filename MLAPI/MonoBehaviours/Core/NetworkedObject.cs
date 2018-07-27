@@ -1,10 +1,12 @@
-﻿using MLAPI.NetworkingManagerComponents.Binary;
-using MLAPI.NetworkingManagerComponents.Core;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using MLAPI.Components;
+using MLAPI.Logging;
+using MLAPI.Serialization;
 using UnityEngine;
 
-namespace MLAPI.MonoBehaviours.Core
+namespace MLAPI
 {
     /// <summary>
     /// A component used to identify that a GameObject is networked
@@ -35,13 +37,13 @@ namespace MLAPI.MonoBehaviours.Core
             get
             {
                 if (_ownerClientId == null)
-                    return NetworkingManager.singleton.NetworkConfig.NetworkTransport.InvalidDummyId;
+					return NetworkingManager.singleton != null ? NetworkingManager.singleton.ServerClientId : 0;
                 else
                     return _ownerClientId.Value;
             }
             internal set
             {
-                if (value == NetworkingManager.singleton.NetworkConfig.NetworkTransport.InvalidDummyId)
+				if (NetworkingManager.singleton != null && value == NetworkingManager.singleton.ServerClientId)
                     _ownerClientId = null;
                 else
                     _ownerClientId = value;
@@ -67,19 +69,15 @@ namespace MLAPI.MonoBehaviours.Core
         /// <summary>
         /// Gets if the object is the the personal clients player object
         /// </summary>
-        public bool isLocalPlayer => isPlayerObject && (OwnerClientId == NetworkingManager.singleton.LocalClientId || (OwnerClientId == NetworkingManager.singleton.NetworkConfig.NetworkTransport.HostDummyId && NetworkingManager.singleton.isHost));
-        /// <summary>
-        /// Gets if the object is owned by the local player or if the object is the local player object
-        /// </summary>
-        public bool isOwner => isLocalPlayer || isObjectOwner;
-        /// <summary>
-        /// Gets if the object is owned by the local player and this is not a player object
-        /// </summary>
-        public bool isObjectOwner => !isPlayerObject && (OwnerClientId == NetworkingManager.singleton.LocalClientId || (OwnerClientId == NetworkingManager.singleton.NetworkConfig.NetworkTransport.HostDummyId && NetworkingManager.singleton.isHost));
+		public bool isLocalPlayer => NetworkingManager.singleton != null && isPlayerObject && OwnerClientId == NetworkingManager.singleton.LocalClientId;
+		/// <summary>
+		/// Gets if the object is owned by the local player or if the object is the local player object
+		/// </summary>
+		public bool isOwner => NetworkingManager.singleton != null && OwnerClientId == NetworkingManager.singleton.LocalClientId;
         /// <summary>
         /// Gets wheter or not the object is owned by anyone
         /// </summary>
-        public bool hasOwner => OwnerClientId != NetworkingManager.singleton.NetworkConfig.NetworkTransport.InvalidDummyId;
+		public bool isOwnedByServer => NetworkingManager.singleton != null && OwnerClientId == NetworkingManager.singleton.ServerClientId;
         /// <summary>
         /// Gets if the object has yet been spawned across the network
         /// </summary>
@@ -95,7 +93,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// <summary>
         /// Spawns this GameObject across the network. Can only be called from the Server
         /// </summary>
-        public void Spawn(BitWriter spawnPayload = null)
+        public void Spawn(Stream spawnPayload = null)
         {
             SpawnManager.SpawnObject(this, null, spawnPayload);
         }
@@ -113,7 +111,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// </summary>
         /// <param name="clientId">The clientId to own the object</param>
         /// <param name="spawnPayload">The writer containing the spawn payload</param>
-        public void SpawnWithOwnership(uint clientId, BitWriter spawnPayload = null)
+        public void SpawnWithOwnership(uint clientId, Stream spawnPayload = null)
         {
             SpawnManager.SpawnObject(this, clientId, spawnPayload);
         }
@@ -123,7 +121,7 @@ namespace MLAPI.MonoBehaviours.Core
         /// </summary>
         /// <param name="clientId">The clientId whos player object this is</param>
         /// <param name="spawnPayload">The writer containing the spawn payload</param>
-        public void SpawnAsPlayerObject(uint clientId, BitWriter spawnPayload = null)
+        public void SpawnAsPlayerObject(uint clientId, Stream spawnPayload = null)
         {
             SpawnManager.SpawnPlayerObject(this, clientId, spawnPayload);
         }
@@ -160,7 +158,7 @@ namespace MLAPI.MonoBehaviours.Core
             }
         }
 
-        internal void InvokeBehaviourNetworkSpawn(BitReader reader)
+        internal void InvokeBehaviourNetworkSpawn(Stream stream)
         {
             for (int i = 0; i < childNetworkedBehaviours.Count; i++)
             {
@@ -168,7 +166,7 @@ namespace MLAPI.MonoBehaviours.Core
                 if(!childNetworkedBehaviours[i].networkedStartInvoked)
                 {
                     childNetworkedBehaviours[i].InternalNetworkStart();
-                    childNetworkedBehaviours[i].NetworkStart(reader);
+                    childNetworkedBehaviours[i].NetworkStart(stream);
                     childNetworkedBehaviours[i].networkedStartInvoked = true;
                 }
             }
@@ -201,32 +199,38 @@ namespace MLAPI.MonoBehaviours.Core
             }
         }
         
-        internal void WriteNetworkedVarData(BitWriter writer, uint clientId)
+        internal void WriteNetworkedVarData(Stream stream, uint clientId)
         {
-            for (int i = 0; i < childNetworkedBehaviours.Count; i++)
+            using (PooledBitWriter writer = PooledBitWriter.Get(stream))
             {
-                childNetworkedBehaviours[i].NetworkedVarInit();
-                if (childNetworkedBehaviours[i].networkedVarFields.Count == 0)
-                    continue;
-                for (int j = 0; j < childNetworkedBehaviours[i].networkedVarFields.Count; j++)
+                for (int i = 0; i < childNetworkedBehaviours.Count; i++)
                 {
-                    bool canClientRead = childNetworkedBehaviours[i].networkedVarFields[j].CanClientRead(clientId);
-                    writer.WriteBool(canClientRead);
-                    if (canClientRead) childNetworkedBehaviours[i].networkedVarFields[j].WriteField(writer);
+                    childNetworkedBehaviours[i].NetworkedVarInit();
+                    if (childNetworkedBehaviours[i].networkedVarFields.Count == 0)
+                        continue;
+                    for (int j = 0; j < childNetworkedBehaviours[i].networkedVarFields.Count; j++)
+                    {
+                        bool canClientRead = childNetworkedBehaviours[i].networkedVarFields[j].CanClientRead(clientId);
+                        writer.WriteBool(canClientRead);
+                        if (canClientRead) childNetworkedBehaviours[i].networkedVarFields[j].WriteField(stream);
+                    }
                 }
             }
         }
 
-        internal void SetNetworkedVarData(BitReader reader)
+        internal void SetNetworkedVarData(Stream stream)
         {
-            for (int i = 0; i < childNetworkedBehaviours.Count; i++)
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
-                childNetworkedBehaviours[i].NetworkedVarInit();
-                if (childNetworkedBehaviours[i].networkedVarFields.Count == 0)
-                    continue;
-                for (int j = 0; j < childNetworkedBehaviours[i].networkedVarFields.Count; j++)
+                for (int i = 0; i < childNetworkedBehaviours.Count; i++)
                 {
-                    if (reader.ReadBool()) childNetworkedBehaviours[i].networkedVarFields[j].ReadField(reader);
+                    childNetworkedBehaviours[i].NetworkedVarInit();
+                    if (childNetworkedBehaviours[i].networkedVarFields.Count == 0)
+                        continue;
+                    for (int j = 0; j < childNetworkedBehaviours[i].networkedVarFields.Count; j++)
+                    {
+                        if (reader.ReadBool()) childNetworkedBehaviours[i].networkedVarFields[j].ReadField(stream);
+                    }
                 }
             }
         }
@@ -246,8 +250,5 @@ namespace MLAPI.MonoBehaviours.Core
             //TODO index out of bounds
             return childNetworkedBehaviours[index];
         }
-
-        //Key: behaviourOrderId, value key: messageType, value value callback 
-        internal Dictionary<ushort, Dictionary<ushort, Action<uint, BitReader>>> targetMessageActions = new Dictionary<ushort, Dictionary<ushort, Action<uint, BitReader>>>();
     }
 }

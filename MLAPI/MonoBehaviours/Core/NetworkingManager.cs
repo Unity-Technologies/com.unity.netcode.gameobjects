@@ -5,15 +5,22 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 using System.Security.Cryptography;
-using MLAPI.NetworkingManagerComponents.Cryptography;
-using MLAPI.NetworkingManagerComponents.Core;
+using MLAPI.Logging;
 using UnityEngine.SceneManagement;
-using MLAPI.NetworkingManagerComponents.Binary;
-using MLAPI.Data.Transports;
-using MLAPI.Data.Transports.UNET;
-using MLAPI.Data.NetworkProfiler;
+using System.IO;
+using MLAPI.Collections;
+using MLAPI.Components;
+using MLAPI.Configuration;
+using MLAPI.Cryptography;
+using MLAPI.Internal;
+using MLAPI.Profiling;
+using MLAPI.Serialization;
+using MLAPI.Transports;
+using MLAPI.Transports.UNET;
+using BitStream = MLAPI.Serialization.BitStream;
+using System.Runtime.CompilerServices;
 
-namespace MLAPI.MonoBehaviours.Core
+namespace MLAPI
 {
     /// <summary>
     /// The main component of the library
@@ -45,9 +52,25 @@ namespace MLAPI.MonoBehaviours.Core
         /// </summary>
         public static NetworkingManager singleton { get; private set; }
         /// <summary>
+        /// Gets the networkId of the server
+        /// </summary>
+		public uint ServerClientId => NetworkConfig.NetworkTransport != null ? NetworkConfig.NetworkTransport.ServerClientId : 0;
+        /// <summary>
         /// The clientId the server calls the local client by, only valid for clients
         /// </summary>
-        public uint LocalClientId { get; internal set; }
+        public uint LocalClientId 
+        {
+            get
+            {
+                if (isServer) return NetworkConfig.NetworkTransport.ServerClientId;
+				else return localClientId;
+            }
+            internal set
+            {
+                localClientId = value;
+            }
+        }
+        private uint localClientId;
         /// <summary>
         /// Gets a dictionary of connected clients and their clientId keys
         /// </summary>
@@ -107,6 +130,63 @@ namespace MLAPI.MonoBehaviours.Core
         /// The current NetworkingConfiguration
         /// </summary>
         public NetworkConfig NetworkConfig;
+        /// <summary>
+        /// Delegate used for incomming custom messages
+        /// </summary>
+        /// <param name="clientId">The clientId that sent the message</param>
+        /// <param name="stream">The stream containing the message data</param>
+        public delegate void CustomMessageDelegete(uint clientId, Stream stream);
+        /// <summary>
+        /// Event invoked when custom messages arrive
+        /// </summary>
+        public event CustomMessageDelegete OnIncommingCustomMessage;
+        internal static event Action OnSingletonReady;
+
+        internal void InvokeOnIncommingCustomMessage(uint clientId, Stream stream)
+        {
+            if (OnIncommingCustomMessage != null) OnIncommingCustomMessage(clientId, stream);
+        }
+
+        /// <summary>
+        /// Sends custom message to a list of clients
+        /// </summary>
+        /// <param name="clientIds">The clients to send to, sends to everyone if null</param>
+        /// <param name="stream">The message stream containing the data</param>
+        /// <param name="channel">The channel to send the data on</param>
+        public void SendCustomMessage(List<uint> clientIds, Stream stream, string channel = "MLAPI_DEFAULT_MESSAGE")
+        {
+            if (!isServer)
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogWarning("Can not send custom message to multiple users as a client");
+                return;
+            }
+            if (clientIds == null)
+            {
+                for (int i = 0; i < ConnectedClientsList.Count; i++)
+                {
+                    InternalMessageHandler.Send(ConnectedClientsList[i].ClientId, MLAPIConstants.MLAPI_CUSTOM_MESSAGE, channel, stream);
+                }
+            }
+            else
+            {
+                for (int i = 0; i < clientIds.Count; i++)
+                {
+                    InternalMessageHandler.Send(clientIds[i], MLAPIConstants.MLAPI_CUSTOM_MESSAGE, channel, stream);
+                }
+            }
+        }
+
+        /// <summary>
+        /// Sends a custom message to a specific client
+        /// </summary>
+        /// <param name="clientId">The client to send the message to</param>
+        /// <param name="stream">The message stream containing the data</param>
+        /// <param name="channel">The channel tos end the data on</param>
+        public void SendCustomMessage(uint clientId, Stream stream, string channel = "MLAPI_DEFAULT_MESSAGE")
+        {
+            InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_CUSTOM_MESSAGE, channel, stream);
+        }
+
 
 #if !DISABLE_CRYPTOGRAPHY
         internal EllipticDiffieHellman clientDiffieHellman;
@@ -125,8 +205,6 @@ namespace MLAPI.MonoBehaviours.Core
                 return; //May occur when the component is added            
 
             //Sort lists
-            if (NetworkConfig.MessageTypes != null)
-                NetworkConfig.MessageTypes = NetworkConfig.MessageTypes.OrderBy(x => x.Name).ToList();
             if (NetworkConfig.Channels != null)
                 NetworkConfig.Channels = NetworkConfig.Channels.OrderBy(x => x.Name).ToList();
             if (NetworkConfig.NetworkedPrefabs != null)
@@ -149,7 +227,7 @@ namespace MLAPI.MonoBehaviours.Core
             {
                 for (int i = 0; i < NetworkConfig.NetworkedPrefabs.Count; i++)
                 {
-                    if (string.IsNullOrEmpty(NetworkConfig.NetworkedPrefabs[i].name))
+                    if (NetworkConfig.NetworkedPrefabs[i] != null && string.IsNullOrEmpty(NetworkConfig.NetworkedPrefabs[i].name))
                     {
                         if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The NetworkedPrefab " + NetworkConfig.NetworkedPrefabs[i].prefab.name + " does not have a NetworkedPrefabName.");
                     }
@@ -205,12 +283,7 @@ namespace MLAPI.MonoBehaviours.Core
             diffieHellmanPublicKeys.Clear();
 #endif
             MessageManager.channels.Clear();
-            MessageManager.messageTypes.Clear();
-            MessageManager.messageCallbacks.Clear();
-            MessageManager.messageHandlerCounter.Clear();
-            MessageManager.releasedMessageHandlerCounters.Clear();
             MessageManager.reverseChannels.Clear();
-            MessageManager.reverseMessageTypes.Clear();
             SpawnManager.SpawnedObjects.Clear();
             SpawnManager.SpawnedObjectsList.Clear();
             SpawnManager.releasedNetworkObjectIds.Clear();
@@ -219,7 +292,6 @@ namespace MLAPI.MonoBehaviours.Core
             NetworkSceneManager.registeredSceneNames.Clear();
             NetworkSceneManager.sceneIndexToString.Clear();
             NetworkSceneManager.sceneNameToIndex.Clear();
-            InternalMessageHandler.FinalMessageBuffer = new byte[NetworkConfig.MessageBufferSize];
 
             if (NetworkConfig.Transport == DefaultTransport.UNET)
                 NetworkConfig.NetworkTransport = new UnetTransport();
@@ -259,6 +331,11 @@ namespace MLAPI.MonoBehaviours.Core
                 },
                 new Channel()
                 {
+                    Name = "MLAPI_DEFAULT_MESSAGE",
+                    Type = ChannelType.Reliable
+                },
+                new Channel()
+                {
                     Name = "MLAPI_POSITION_UPDATE",
                     Type = ChannelType.StateUpdate
                 },
@@ -283,25 +360,6 @@ namespace MLAPI.MonoBehaviours.Core
                     Type = ChannelType.Unreliable
                 }
             };
-
-            if (NetworkConfig.EnableEncryption)
-            {
-                HashSet<string> addedEncryptedChannels = new HashSet<string>();
-                for (int i = 0; i < NetworkConfig.Channels.Count; i++)
-                {
-                    if (addedEncryptedChannels.Contains(NetworkConfig.Channels[i].Name))
-                    {
-                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Duplicate encrypted channel name " + NetworkConfig.Channels[i].Name);
-                        continue;
-                    }
-                    if (NetworkConfig.Channels[i].Encrypted)
-                    {
-                        NetworkConfig.EncryptedChannels.Add(NetworkConfig.Channels[i].Name);
-                        NetworkConfig.EncryptedChannelsHashSet.Add(NetworkConfig.Channels[i].Name);
-                    }
-                    addedEncryptedChannels.Add(NetworkConfig.Channels[i].Name);
-                }
-            }
 
             HashSet<string> channelNames = new HashSet<string>();
             //Register internal channels
@@ -344,96 +402,6 @@ namespace MLAPI.MonoBehaviours.Core
                 MessageManager.channels.Add(NetworkConfig.Channels[i].Name, channelId);
                 channelNames.Add(NetworkConfig.Channels[i].Name);
                 MessageManager.reverseChannels.Add(channelId, NetworkConfig.Channels[i].Name);
-            }
-
-            //Add internal messagetypes directly
-            MessageManager.messageTypes.Add("MLAPI_CONNECTION_REQUEST", 0);
-            MessageManager.messageTypes.Add("MLAPI_CONNECTION_APPROVED", 1);
-            MessageManager.messageTypes.Add("MLAPI_ADD_OBJECT", 2);
-            MessageManager.messageTypes.Add("MLAPI_CLIENT_DISCONNECT", 3);
-            MessageManager.messageTypes.Add("MLAPI_DESTROY_OBJECT", 4);
-            MessageManager.messageTypes.Add("MLAPI_SWITCH_SCENE", 5);
-            MessageManager.messageTypes.Add("MLAPI_SPAWN_POOL_OBJECT", 6);
-            MessageManager.messageTypes.Add("MLAPI_DESTROY_POOL_OBJECT", 7);
-            MessageManager.messageTypes.Add("MLAPI_CHANGE_OWNER", 8);
-            //MessageManager.messageTypes.Add("MLAPI_SYNC_VAR_UPDATE", 9); //NOT IN USE
-            MessageManager.messageTypes.Add("MLAPI_ADD_OBJECTS", 10);
-            MessageManager.messageTypes.Add("MLAPI_TIME_SYNC", 11);
-            MessageManager.messageTypes.Add("MLAPI_COMMAND", 12);
-            MessageManager.messageTypes.Add("MLAPI_RPC", 13);
-            MessageManager.messageTypes.Add("MLAPI_TARGET", 14);
-            //MessageManager.messageTypes.Add("MLAPI_SET_VISIBILITY", 15); //NOT IN USE
-            MessageManager.messageTypes.Add("MLAPI_NETWORKED_VAR_DELTA", 16);
-            MessageManager.messageTypes.Add("MLAPI_NETWORKED_VAR_UPDATE", 17);
-
-            //These are message types concidered to be user level since they belong to prototype components
-            List<MessageType> messageTypes = new List<MessageType>(NetworkConfig.MessageTypes)
-            {
-                new MessageType()
-                {
-                    Name = "MLAPI_OnRecieveTransformFromClient",
-                    Passthrough = false
-                },
-                new MessageType()
-                {
-                    Name = "MLAPI_OnRecieveTransformFromServer",
-                    Passthrough = false
-                },
-                new MessageType()
-                {
-                    Name = "MLAPI_HandleAnimationMessage",
-                    Passthrough = false
-                },
-                new MessageType()
-                {
-                    Name = "MLAPI_HandleAnimationParameterMessage",
-                    Passthrough = false
-                },
-                new MessageType()
-                {
-                    Name = "MLAPI_HandleAnimationTriggerMessage",
-                    Passthrough = false
-                },
-                new MessageType()
-                {
-                    Name = "MLAPI_OnNavMeshStateUpdate",
-                    Passthrough = false
-                },
-                new MessageType()
-                {
-                    Name = "MLAPI_OnNavMeshCorrectionUpdate",
-                    Passthrough = false
-                }
-            };
-
-            //Sort user messages
-            messageTypes = messageTypes.OrderBy(x => x.Name).ToList();
-
-            //0-32 are reserved for MLAPI messages  
-            ushort messageId = 32;
-            for (ushort i = 0; i < messageTypes.Count; i++)
-            {
-                MessageManager.messageTypes.Add(messageTypes[i].Name, messageId);
-                MessageManager.reverseMessageTypes.Add(messageId, messageTypes[i].Name);
-                messageId++;
-            }
-
-            if (NetworkConfig.AllowPassthroughMessages)
-            {
-                HashSet<string> addedPassthroughMessages = new HashSet<string>();
-                for (int i = 0; i < NetworkConfig.MessageTypes.Count; i++)
-                {
-                    if (addedPassthroughMessages.Contains(NetworkConfig.MessageTypes[i].Name))
-                    {
-                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Duplicate passthrough message type " + NetworkConfig.MessageTypes[i].Name);
-                        continue;
-                    }
-                    if (NetworkConfig.MessageTypes[i].Passthrough)
-                    {
-                        NetworkConfig.PassthroughMessageHashSet.Add(MessageManager.messageTypes[NetworkConfig.MessageTypes[i].Name]);
-                        addedPassthroughMessages.Add(NetworkConfig.MessageTypes[i].Name);
-                    }
-                }
             }
 
             return settings;
@@ -522,8 +490,7 @@ namespace MLAPI.MonoBehaviours.Core
                 if(!disconnectedIds.Contains(pair.Key))
                 {
                     disconnectedIds.Add(pair.Key);
-                    if (pair.Key == NetworkConfig.NetworkTransport.HostDummyId ||
-                        pair.Key == NetworkConfig.NetworkTransport.InvalidDummyId)
+					if (pair.Key == NetworkConfig.NetworkTransport.ServerClientId)
                         continue;
 
                     NetworkConfig.NetworkTransport.DisconnectClient(pair.Key);
@@ -534,9 +501,9 @@ namespace MLAPI.MonoBehaviours.Core
                 if (!disconnectedIds.Contains(clientId))
                 {
                     disconnectedIds.Add(clientId);
-                    if (clientId == NetworkConfig.NetworkTransport.HostDummyId ||
-                        clientId == NetworkConfig.NetworkTransport.InvalidDummyId)
+					if (clientId == NetworkConfig.NetworkTransport.ServerClientId)
                         continue;
+					
                     NetworkConfig.NetworkTransport.DisconnectClient(clientId);
                 }
             }
@@ -594,7 +561,7 @@ namespace MLAPI.MonoBehaviours.Core
             isClient = true;
             isListening = true;
 
-            uint hostClientId = NetworkConfig.NetworkTransport.HostDummyId;
+			uint hostClientId = NetworkConfig.NetworkTransport.ServerClientId;
             ConnectedClients.Add(hostClientId, new NetworkedClient()
             {
                 ClientId = hostClientId
@@ -622,6 +589,7 @@ namespace MLAPI.MonoBehaviours.Core
             else
             {
                 singleton = this;
+                if (OnSingletonReady != null) OnSingletonReady();
                 if (DontDestroy)
                     DontDestroyOnLoad(gameObject);
                 if (RunInBackground)
@@ -706,27 +674,29 @@ namespace MLAPI.MonoBehaviours.Core
                                         diffiePublic = clientDiffieHellman.GetPublicKey();
                                     }
 #endif
-
-                                    using (BitWriter writer = BitWriter.Get())
+                                    using (PooledBitStream stream = PooledBitStream.Get())
                                     {
-                                        writer.WriteULong(NetworkConfig.GetConfig());
+                                        using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                                        {
+                                            writer.WriteUInt64Packed(NetworkConfig.GetConfig());
 #if !DISABLE_CRYPTOGRAPHY
-                                        if (NetworkConfig.EnableEncryption)      
-                                            writer.WriteByteArray(diffiePublic);
+                                            if (NetworkConfig.EnableEncryption)
+                                                writer.WriteByteArray(diffiePublic);
 #endif
 
-                                        if (NetworkConfig.ConnectionApproval)
-                                            writer.WriteByteArray(NetworkConfig.ConnectionData);
+                                            if (NetworkConfig.ConnectionApproval)
+                                                writer.WriteByteArray(NetworkConfig.ConnectionData);
 
-                                        InternalMessageHandler.Send(clientId, "MLAPI_CONNECTION_REQUEST", "MLAPI_INTERNAL", writer, null, null, true);
+                                            InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_CONNECTION_REQUEST, "MLAPI_INTERNAL", stream, true);
+                                        }
                                     }
                                 }
                                 NetworkProfiler.EndEvent();
                                 break;
                             case NetEventType.Data:
-                                if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Incomming Data From " + clientId + " : " + receivedSize + " bytes");
+                                if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo($"Incomming Data From {clientId} : {receivedSize} bytes");
 
-                                HandleIncomingData(clientId, messageBuffer, channelId, (uint)receivedSize);
+                                HandleIncomingData(clientId, messageBuffer, channelId, receivedSize);
                                 break;
                             case NetEventType.Disconnect:
                                 NetworkProfiler.StartEvent(TickType.Receive, 0, "NONE", "TRANSPORT_DISCONNECT");
@@ -796,234 +766,93 @@ namespace MLAPI.MonoBehaviours.Core
             }
         }
 
-        private void HandleIncomingData(uint clientId, byte[] data, int channelId, uint totalSize)
+        private void HandleIncomingData(uint clientId, byte[] data, int channelId, int totalSize)
         {
             if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Unwrapping Data Header");
-            using (BitReader reader = BitReader.Get(data))
+			using (BitStream stream = new BitStream(data))
             {
-                ushort messageType = reader.ReadUShort();
-                bool targeted = reader.ReadBool();
-                uint targetNetworkId = 0;
-                ushort networkOrderId = 0;
-                if (targeted)
+				stream.SetLength(totalSize);
+                using (PooledBitReader reader = PooledBitReader.Get(stream))
                 {
-                    targetNetworkId = reader.ReadUInt();
-                    networkOrderId = reader.ReadUShort();
-                }
-                bool isPassthrough = reader.ReadBool();
+                    byte messageType = reader.ReadByteDirect();
 
-                uint passthroughOrigin = 0;
-                uint passthroughTarget = 0;
+                    uint headerByteSize = (uint)Arithmetic.VarIntSize(messageType);
+                    NetworkProfiler.StartEvent(TickType.Receive, (uint)(totalSize - headerByteSize), channelId, messageType);
 
-                if (isPassthrough && isServer)
-                    passthroughTarget = reader.ReadUInt();
-                else if (isPassthrough && !isServer)
-                    passthroughOrigin = reader.ReadUInt();
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Developer)
+                        LogHelper.LogInfo("Data Header: messageType=" + messageType);
 
-                long headerBitSize = BitWriter.GetBitCount(messageType) + BitWriter.GetBitCount(targeted);
-                if (targeted) headerBitSize += BitWriter.GetBitCount(targetNetworkId) + BitWriter.GetBitCount(networkOrderId);
-                headerBitSize += BitWriter.GetBitCount(isPassthrough);
-                if (isPassthrough && isServer)
-                    headerBitSize += BitWriter.GetBitCount(passthroughTarget);
-                else if (isPassthrough && !isServer)
-                    headerBitSize += BitWriter.GetBitCount(passthroughOrigin);
-                
-                uint headerByteSize = (uint)Math.Ceiling(headerBitSize / 8d);
-                NetworkProfiler.StartEvent(TickType.Receive, totalSize - headerByteSize, channelId, messageType);
-
-                if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Data Header" + 
-                    ":messageHeader=" + messageType + 
-                    ":targeted=" + targeted + 
-                    ":targetNetworkId=" + targetNetworkId + 
-                    ":targetBehaviourIndex=" + networkOrderId + 
-                    ":passthrough=" + isPassthrough + 
-                    ":passthroughOrigin=" + passthroughOrigin +
-                    ":passthroughTarget=" + passthroughTarget);
-
-                //Client tried to send a network message that was not the connection request before he was accepted.
-                if (isServer && pendingClients.Contains(clientId) && messageType != 0)
-                {
-                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Message recieved from clientId " + clientId + " before it has been accepted");
-                    return;
-                }
-
-                reader.SkipPadded();
-#if !DISABLE_CRYPTOGRAPHY
-                byte[] readBuffer = null;
-                if (NetworkConfig.EncryptedChannelsHashSet.Contains(MessageManager.reverseChannels[channelId]))
-                {
-                    if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Decrypting message body");
-                    //Encrypted message
-                    if (isServer)
-                        readBuffer = CryptographyHelper.Decrypt(reader.ReadByteArray(), ConnectedClients[clientId].AesKey);
-                    else
-                        readBuffer = CryptographyHelper.Decrypt(reader.ReadByteArray(), clientAesKey);
-                }
-
-                using (BitReader messageReader = readBuffer == null ? reader : BitReader.Get(readBuffer))
-#else
-                using (BitReader messageReader = reader)
-#endif
-                {
-                    if (isServer && isPassthrough && !NetworkConfig.PassthroughMessageHashSet.Contains(messageType))
+                    //Client tried to send a network message that was not the connection request before he was accepted.
+                    if (isServer && pendingClients.Contains(clientId) && messageType != 0)
                     {
-                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Client " + clientId + " tried to send a passthrough message for a messageType not registered as passthrough");
-                        messageReader.Dispose();
-                        return;
-                    }
-                    else if (isClient && isPassthrough && !NetworkConfig.PassthroughMessageHashSet.Contains(messageType))
-                    {
-                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Server tried to send a passthrough message for a messageType not registered as passthrough");
-                        messageReader.Dispose();
-                        return;
-                    }
-                    else if (isServer && isPassthrough)
-                    {
-                        if (!ConnectedClients.ContainsKey(passthroughTarget))
-                        {
-                            if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Passthrough message was sent with invalid target: " + passthroughTarget + " from client " + clientId);
-                            messageReader.Dispose();
-                            return;
-                        }
-                        uint? netIdTarget = null;
-                        ushort? netOrderId = null;
-                        if (targeted)
-                        {
-                            netIdTarget = targetNetworkId;
-                            netOrderId = networkOrderId;
-                        }
-                        InternalMessageHandler.PassthroughSend(passthroughTarget, clientId, messageType, channelId, messageReader, netIdTarget, netOrderId);
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Message recieved from clientId " + clientId + " before it has been accepted");
                         return;
                     }
 
-                    if (messageType >= 32)
+                    #region INTERNAL MESSAGE
+
+                    switch (messageType)
                     {
-                        #region CUSTOM MESSAGE
-                        //Custom message, invoke all message handlers
-                        if (targeted)
-                        {
-                            if (!SpawnManager.SpawnedObjects.ContainsKey(targetNetworkId))
-                            {
-                                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("No target for message found");
-                                messageReader.Dispose();
-                                return;
-                            }
-                            else if (!SpawnManager.SpawnedObjects[targetNetworkId].targetMessageActions.ContainsKey(networkOrderId))
-                            {
-                                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("No target messageType for message found");
-                                messageReader.Dispose();
-                                return;
-                            }
-                            else if (!SpawnManager.SpawnedObjects[targetNetworkId].targetMessageActions[networkOrderId].ContainsKey(messageType))
-                            {
-                                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("No target found with the given messageType");
-                                messageReader.Dispose();
-                                return;
-                            }
-                            if (SpawnManager.SpawnedObjects[targetNetworkId].targetMessageActions[networkOrderId].ContainsKey(messageType))
-                            {
-                                SpawnManager.SpawnedObjects[targetNetworkId].targetMessageActions[networkOrderId][messageType].Invoke(clientId, messageReader);
-                            }
-                        }
-                        else
-                        {
-                            foreach (KeyValuePair<int, Action<uint, BitReader>> pair in MessageManager.messageCallbacks[messageType])
-                            {
-                                if (isPassthrough)
-                                    pair.Value(passthroughOrigin, messageReader);
-                                else
-                                    pair.Value(clientId, messageReader);
-                            }
-                        }
-                        #endregion
+                        case MLAPIConstants.MLAPI_CONNECTION_REQUEST:
+                            if (isServer) InternalMessageHandler.HandleConnectionRequest(clientId, stream, channelId);
+                            break;
+                        case MLAPIConstants.MLAPI_CONNECTION_APPROVED:
+                            if (isClient) InternalMessageHandler.HandleConnectionApproved(clientId, stream, channelId);
+                            break;
+                        case MLAPIConstants.MLAPI_ADD_OBJECT:
+                            if (isClient) InternalMessageHandler.HandleAddObject(clientId, stream, channelId);
+                            break;
+                        case MLAPIConstants.MLAPI_CLIENT_DISCONNECT:
+                            if (isClient) InternalMessageHandler.HandleClientDisconnect(clientId, stream, channelId);
+                            break;
+                        case MLAPIConstants.MLAPI_DESTROY_OBJECT:
+                            if (isClient) InternalMessageHandler.HandleDestroyObject(clientId, stream, channelId);
+                            break;
+                        case MLAPIConstants.MLAPI_SWITCH_SCENE:
+                            if (isClient) InternalMessageHandler.HandleSwitchScene(clientId, stream, channelId);
+                            break;
+                        case MLAPIConstants.MLAPI_SPAWN_POOL_OBJECT:
+                            if (isClient) InternalMessageHandler.HandleSpawnPoolObject(clientId, stream, channelId);
+                            break;
+                        case MLAPIConstants.MLAPI_DESTROY_POOL_OBJECT:
+                            if (isClient) InternalMessageHandler.HandleDestroyPoolObject(clientId, stream, channelId);
+                            break;
+                        case MLAPIConstants.MLAPI_CHANGE_OWNER:
+                            if (isClient) InternalMessageHandler.HandleChangeOwner(clientId, stream, channelId);
+                            break;
+                        case MLAPIConstants.MLAPI_ADD_OBJECTS:
+                            if (isClient) InternalMessageHandler.HandleAddObjects(clientId, stream, channelId);
+                            break;
+                        case MLAPIConstants.MLAPI_TIME_SYNC:
+                            if (isClient) InternalMessageHandler.HandleTimeSync(clientId, stream, channelId);
+                            break;
+                        case MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA:
+                            InternalMessageHandler.HandleNetworkedVarDelta(clientId, stream, channelId);
+                            break;
+                        case MLAPIConstants.MLAPI_NETWORKED_VAR_UPDATE:
+                            InternalMessageHandler.HandleNetworkedVarUpdate(clientId, stream, channelId);
+                            break;
+                        case MLAPIConstants.MLAPI_SERVER_RPC:
+                            if (isServer) InternalMessageHandler.HandleServerRPC(clientId, stream, channelId);
+                            break;
+                        case MLAPIConstants.MLAPI_CLIENT_RPC:
+                            if (isClient) InternalMessageHandler.HandleClientRPC(clientId, stream, channelId);
+                            break;
+                        case MLAPIConstants.MLAPI_CUSTOM_MESSAGE:
+                            InternalMessageHandler.HandleCustomMessage(clientId, stream, channelId);
+                            break;
                     }
-                    else
-                    {
-                        #region INTERNAL MESSAGE
-                        //MLAPI message
-                        switch (messageType)
-                        {
-                            case 0: //Client to server > sends connection buffer
-                                if (isServer)
-                                    InternalMessageHandler.HandleConnectionRequest(clientId, messageReader, channelId);
-                                break;
-                            case 1: //Server informs client it has been approved:
-                                if (isClient)
-                                    InternalMessageHandler.HandleConnectionApproved(clientId, messageReader, channelId);
-                                break;
-                            case 2:
-                                //Server informs client another client connected
-                                //MLAPI_ADD_OBJECT
-                                if (isClient)
-                                    InternalMessageHandler.HandleAddObject(clientId, messageReader, channelId);
-                                break;
-                            case 3:
-                                //Server informs client another client disconnected
-                                //MLAPI_CLIENT_DISCONNECT
-                                if (isClient)
-                                    InternalMessageHandler.HandleClientDisconnect(clientId, messageReader, channelId);
-                                break;
-                            case 4:
-                                //Server infroms clients to destroy an object
-                                if (isClient)
-                                    InternalMessageHandler.HandleDestroyObject(clientId, messageReader, channelId);
-                                break;
-                            case 5:
-                                //Scene switch
-                                if (isClient)
-                                    InternalMessageHandler.HandleSwitchScene(clientId, messageReader, channelId);
-                                break;
-                            case 6: //Spawn pool object
-                                if (isClient)
-                                    InternalMessageHandler.HandleSpawnPoolObject(clientId, messageReader, channelId);
-                                break;
-                            case 7: //Destroy pool object
-                                if (isClient)
-                                    InternalMessageHandler.HandleDestroyPoolObject(clientId, messageReader, channelId);
-                                break;
-                            case 8: //Change owner
-                                if (isClient)
-                                    InternalMessageHandler.HandleChangeOwner(clientId, messageReader, channelId);
-                                break;
-                            case 9: //UNUSED
-                                break;
-                            case 10:
-                                if (isClient) //MLAPI_ADD_OBJECTS (plural)
-                                    InternalMessageHandler.HandleAddObjects(clientId, messageReader, channelId);
-                                break;
-                            case 11:
-                                if (isClient)
-                                    InternalMessageHandler.HandleTimeSync(clientId, messageReader, channelId);
-                                break;
-                            case 12:
-                                if (isServer)
-                                    InternalMessageHandler.HandleCommand(clientId, messageReader, channelId);
-                                break;
-                            case 13:
-                                if (isClient)
-                                    InternalMessageHandler.HandleRpc(clientId, messageReader, channelId);
-                                break;
-                            case 14:
-                                if (isClient)
-                                    InternalMessageHandler.HandleTargetRpc(clientId, messageReader, channelId);
-                                break;
-                            case 15: //UNUSED
-                                break;
-                            case 16:
-                                // Handled on both client and server
-                                InternalMessageHandler.HandleNetworkedVarDelta(clientId, messageReader, channelId);
-                                break;
-                            case 17:
-                                InternalMessageHandler.HandleNetworkedVarUpdate(clientId, messageReader, channelId);
-                                break;
-                        }
-                        #endregion
-                    }
+
+                    #endregion
+
+                    NetworkProfiler.EndEvent();
                 }
-                NetworkProfiler.EndEvent();
             }
         }
 
+#if NET45
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+#endif
         internal void DisconnectClient(uint clientId)
         {
             if (!isServer)
@@ -1034,8 +863,12 @@ namespace MLAPI.MonoBehaviours.Core
 
             if (ConnectedClients.ContainsKey(clientId))
                 ConnectedClients.Remove(clientId);
-      
-            ConnectedClientsList.RemoveAll(x => x.ClientId == clientId); // :(
+
+            for (int i = ConnectedClientsList.Count - 1; i > -1; i--)
+            {
+                if (ConnectedClientsList[i].ClientId == clientId)
+                    ConnectedClientsList.RemoveAt(i);
+            }
 
 #if !DISABLE_CRYPTOGRAPHY
             if (diffieHellmanPublicKeys.ContainsKey(clientId))
@@ -1061,16 +894,27 @@ namespace MLAPI.MonoBehaviours.Core
                             Destroy(ConnectedClients[clientId].OwnedObjects[i].gameObject);
                     }
                 }
-                ConnectedClientsList.RemoveAll(x => x.ClientId == clientId);
+
+                for (int i = 0; i < ConnectedClientsList.Count; i++)
+                {
+                    if (ConnectedClientsList[i].ClientId == clientId)
+                    {
+                        ConnectedClientsList.RemoveAt(i);
+                        break;
+                    }
+                }
                 ConnectedClients.Remove(clientId);
             }
 
             if (isServer)
             {
-                using (BitWriter writer = BitWriter.Get())
+                using (PooledBitStream stream = PooledBitStream.Get())
                 {
-                    writer.WriteUInt(clientId);
-                    InternalMessageHandler.Send("MLAPI_CLIENT_DISCONNECT", "MLAPI_INTERNAL", writer, clientId, null);
+                    using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                    {
+                        writer.WriteUInt32Packed(clientId);
+                        InternalMessageHandler.Send(MLAPIConstants.MLAPI_CLIENT_DISCONNECT, "MLAPI_INTERNAL", clientId, stream);
+                    }
                 }
             }
         }
@@ -1078,12 +922,15 @@ namespace MLAPI.MonoBehaviours.Core
         private void SyncTime()
         {
             if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Syncing Time To Clients");
-            using (BitWriter writer = BitWriter.Get())
+            using (PooledBitStream stream = PooledBitStream.Get())
             {
-                writer.WriteFloat(NetworkTime);
-                int timestamp = NetworkConfig.NetworkTransport.GetNetworkTimestamp();
-                writer.WriteInt(timestamp);
-                InternalMessageHandler.Send("MLAPI_TIME_SYNC", "MLAPI_TIME_SYNC", writer, null);
+                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                {
+                    writer.WriteSinglePacked(NetworkTime);
+                    int timestamp = NetworkConfig.NetworkTransport.GetNetworkTimestamp();
+                    writer.WriteInt32Packed(timestamp);
+                    InternalMessageHandler.Send(MLAPIConstants.MLAPI_TIME_SYNC, "MLAPI_TIME_SYNC", stream);
+                }
             }
         }
 
@@ -1140,61 +987,65 @@ namespace MLAPI.MonoBehaviours.Core
 
                 int amountOfObjectsToSend = SpawnManager.SpawnedObjects.Values.Count;
 
-                using (BitWriter writer = BitWriter.Get())
+                using (PooledBitStream stream = PooledBitStream.Get())
                 {
-                    writer.WriteUInt(clientId);
-                    if (NetworkConfig.EnableSceneSwitching)
-                        writer.WriteUInt(NetworkSceneManager.CurrentSceneIndex);
+                    using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                    {
+                        writer.WriteUInt32Packed(clientId);
+                        if (NetworkConfig.EnableSceneSwitching)
+                            writer.WriteUInt32Packed(NetworkSceneManager.CurrentSceneIndex);
 
 #if !DISABLE_CRYPTOGRAPHY
-                    if (NetworkConfig.EnableEncryption)
-                    {
-                        writer.WriteByteArray(publicKey);
-                        if (NetworkConfig.SignKeyExchange)
-                            writer.WriteByteArray(publicKeySignature);
-                    }
+                        if (NetworkConfig.EnableEncryption)
+                        {
+                            writer.WriteByteArray(publicKey);
+                            if (NetworkConfig.SignKeyExchange)
+                                writer.WriteByteArray(publicKeySignature);
+                        }
 #endif
 
-                    writer.WriteFloat(NetworkTime);
-                    writer.WriteInt(NetworkConfig.NetworkTransport.GetNetworkTimestamp());
+                        writer.WriteSinglePacked(NetworkTime);
+                        writer.WriteInt32Packed(NetworkConfig.NetworkTransport.GetNetworkTimestamp());
 
-                    writer.WriteInt(ConnectedClients.Count - 1);
+                        writer.WriteInt32Packed(ConnectedClients.Count - 1);
 
-                    foreach (KeyValuePair<uint, NetworkedClient> item in ConnectedClients)
-                    {
-                        //Our own ID. Already added as the first one above
-                        if (item.Key == clientId)
-                            continue;
-                        writer.WriteUInt(item.Key); //ClientId
-                    }
-                    if (NetworkConfig.HandleObjectSpawning)
-                    {
-                        writer.WriteInt(amountOfObjectsToSend);
-
-                        foreach (KeyValuePair<uint, NetworkedObject> pair in SpawnManager.SpawnedObjects)
+                        foreach (KeyValuePair<uint, NetworkedClient> item in ConnectedClients)
                         {
-                            writer.WriteBool(pair.Value.isPlayerObject);
-                            writer.WriteUInt(pair.Value.NetworkId);
-                            writer.WriteUInt(pair.Value.OwnerClientId);
-                            writer.WriteInt(NetworkConfig.NetworkPrefabIds[pair.Value.NetworkedPrefabName]);
-                            writer.WriteBool(pair.Value.gameObject.activeInHierarchy);
-                            writer.WriteBool(pair.Value.sceneObject == null ? true : pair.Value.sceneObject.Value);
-
-                            writer.WriteFloat(pair.Value.transform.position.x);
-                            writer.WriteFloat(pair.Value.transform.position.y);
-                            writer.WriteFloat(pair.Value.transform.position.z);
-
-                            writer.WriteFloat(pair.Value.transform.rotation.eulerAngles.x);
-                            writer.WriteFloat(pair.Value.transform.rotation.eulerAngles.y);
-                            writer.WriteFloat(pair.Value.transform.rotation.eulerAngles.z);
-
-                            pair.Value.WriteNetworkedVarData(writer, clientId);
+                            //Our own ID. Already added as the first one above
+                            if (item.Key == clientId)
+                                continue;
+                            writer.WriteUInt32Packed(item.Key); //ClientId
                         }
-                    }
-                    InternalMessageHandler.Send(clientId, "MLAPI_CONNECTION_APPROVED", "MLAPI_INTERNAL", writer, null, null, true);
+                        if (NetworkConfig.HandleObjectSpawning)
+                        {
+                            writer.WriteInt32Packed(amountOfObjectsToSend);
 
-                    if (OnClientConnectedCallback != null)
-                        OnClientConnectedCallback.Invoke(clientId);
+                            foreach (KeyValuePair<uint, NetworkedObject> pair in SpawnManager.SpawnedObjects)
+                            {
+                                writer.WriteBit(pair.Value.isPlayerObject);
+                                writer.WriteUInt32Packed(pair.Value.NetworkId);
+                                writer.WriteUInt32Packed(pair.Value.OwnerClientId);
+                                writer.WriteInt32Packed(NetworkConfig.NetworkPrefabIds[pair.Value.NetworkedPrefabName]);
+                                writer.WriteBit(pair.Value.gameObject.activeInHierarchy);
+                                writer.WriteBit(pair.Value.sceneObject == null ? true : pair.Value.sceneObject.Value);
+
+                                writer.WriteSinglePacked(pair.Value.transform.position.x);
+                                writer.WriteSinglePacked(pair.Value.transform.position.y);
+                                writer.WriteSinglePacked(pair.Value.transform.position.z);
+
+                                writer.WriteSinglePacked(pair.Value.transform.rotation.eulerAngles.x);
+                                writer.WriteSinglePacked(pair.Value.transform.rotation.eulerAngles.y);
+                                writer.WriteSinglePacked(pair.Value.transform.rotation.eulerAngles.z);
+
+                                pair.Value.WriteNetworkedVarData(stream, clientId);
+                            }
+                        }
+
+                        InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_CONNECTION_APPROVED, "MLAPI_INTERNAL", stream, true);
+
+                        if (OnClientConnectedCallback != null)
+                            OnClientConnectedCallback.Invoke(clientId);
+                    }
                 }
 
                 //Inform old clients of the new player
@@ -1204,33 +1055,36 @@ namespace MLAPI.MonoBehaviours.Core
                     if (clientPair.Key == clientId)
                         continue; //The new client.
 
-                    using (BitWriter writer = BitWriter.Get())
+                    using (PooledBitStream stream = PooledBitStream.Get())
                     {
-                        if (NetworkConfig.HandleObjectSpawning)
+                        using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                         {
-                            writer.WriteBool(true);
-                            writer.WriteUInt(ConnectedClients[clientId].PlayerObject.GetComponent<NetworkedObject>().NetworkId);
-                            writer.WriteUInt(clientId);
-                            writer.WriteInt(prefabId);
-                            writer.WriteBool(false);
+                            if (NetworkConfig.HandleObjectSpawning)
+                            {
+                                writer.WriteBit(true);
+                                writer.WriteUInt32Packed(ConnectedClients[clientId].PlayerObject.GetComponent<NetworkedObject>().NetworkId);
+                                writer.WriteUInt32Packed(clientId);
+                                writer.WriteInt32Packed(prefabId);
+                                writer.WriteBit(false);
 
-                            writer.WriteFloat(ConnectedClients[clientId].PlayerObject.transform.position.x);
-                            writer.WriteFloat(ConnectedClients[clientId].PlayerObject.transform.position.y);
-                            writer.WriteFloat(ConnectedClients[clientId].PlayerObject.transform.position.z);
+                                writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.position.x);
+                                writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.position.y);
+                                writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.position.z);
 
-                            writer.WriteFloat(ConnectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.x);
-                            writer.WriteFloat(ConnectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.y);
-                            writer.WriteFloat(ConnectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.z);
+                                writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.x);
+                                writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.y);
+                                writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.z);
 
-                            writer.WriteBool(false); //No payload data
+                                writer.WriteBit(false); //No payload data
 
-                            ConnectedClients[clientId].PlayerObject.GetComponent<NetworkedObject>().WriteNetworkedVarData(writer, clientPair.Key);
+                                ConnectedClients[clientId].PlayerObject.GetComponent<NetworkedObject>().WriteNetworkedVarData(stream, clientPair.Key);
+                            }
+                            else
+                            {
+                                writer.WriteUInt32Packed(clientId);
+                            }
+                            InternalMessageHandler.Send(clientPair.Key, MLAPIConstants.MLAPI_ADD_OBJECT, "MLAPI_INTERNAL", stream);
                         }
-                        else
-                        {
-                            writer.WriteUInt(clientId);
-                        }
-                        InternalMessageHandler.Send(clientPair.Key, "MLAPI_ADD_OBJECT", "MLAPI_INTERNAL", writer, null);
                     }
                 }
             }
@@ -1247,392 +1101,5 @@ namespace MLAPI.MonoBehaviours.Core
                 NetworkConfig.NetworkTransport.DisconnectClient(clientId);
             }
         }
-#region SEND METHODS
-        /// <summary>
-        /// Registers a message handler
-        /// </summary>
-        /// <param name="name">The MessageType to register</param>
-        /// <param name="action">The callback to get invoked whenever a message is received</param>
-        /// <returns>HandlerId for the messageHandler that can be used to deregister the messageHandler</returns>
-        public int RegisterMessageHandler(string name, Action<uint, BitReader> action)
-        {
-            if (!MessageManager.messageTypes.ContainsKey(name))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The messageType " + name + " is not registered");
-                return -1;
-            }
-            return MessageManager.AddIncomingMessageHandler(name, action);
-        }
-
-        /// <summary>
-        /// Deregisters a given message handler
-        /// </summary>
-        /// <param name="name">The MessageType to deregister</param>
-        /// <param name="counter">The messageHandlerId to deregister</param>
-        public void DeregisterMessageHandler(string name, int counter)
-        {
-            MessageManager.RemoveIncomingMessageHandler(name, counter);
-        }
-
-        /// <summary>
-        /// Sends a buffer to the server from client
-        /// </summary>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>
-        /// <param name="data">The binary data to send</param>
-        public void SendToServer(string messageType, string channelName, byte[] data)
-        {
-            if (!MessageManager.messageTypes.ContainsKey(messageType))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
-                return;
-            }
-            if (MessageManager.messageTypes[messageType] < 32)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
-                return;
-            }
-            if (isServer)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Server can not send messages to server");
-                return;
-            }
-            using (BitWriter writer = BitWriter.Get())
-            {
-                writer.WriteByteArray(data);
-                InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerNetId, messageType, channelName, writer, null);
-            }
-        }
-
-        /// <summary>
-        /// Sends a buffer to the server from client
-        /// </summary>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>
-        /// <param name="writer">The binary data to send</param>
-        public void SendToServer(string messageType, string channelName, BitWriter writer)
-        {
-            if (!MessageManager.messageTypes.ContainsKey(messageType))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
-                return;
-            }
-            if (MessageManager.messageTypes[messageType] < 32)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
-                return;
-            }
-            if (isServer)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Server can not send messages to server");
-                return;
-            }
-            InternalMessageHandler.Send(NetworkingManager.singleton.NetworkConfig.NetworkTransport.ServerNetId, messageType, channelName, writer, null);
-        }
-
-        /// <summary>
-        /// Sends a binary serialized class to the server from client 
-        /// </summary>
-        /// <typeparam name="T">The class type to send</typeparam>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>
-        /// <param name="instance">The instance to send</param>
-        public void SendToServer<T>(string messageType, string channelName, T instance)
-        {
-            SendToServer(messageType, channelName, BinarySerializer.Serialize<T>(instance));
-        }
-
-        /// <summary>
-        /// Sends a buffer to a client with a given clientId from Server
-        /// </summary>
-        /// <param name="clientId">The clientId to send the message to</param>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>
-        /// <param name="data">The binary data to send</param>
-        public void SendToClient(uint clientId, string messageType, string channelName, byte[] data)
-        {
-            if (!MessageManager.messageTypes.ContainsKey(messageType))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
-                return;
-            }
-            if (MessageManager.messageTypes[messageType] < 32)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
-                return;
-            }
-            if (!isServer && (!NetworkingManager.singleton.NetworkConfig.AllowPassthroughMessages || !NetworkingManager.singleton.NetworkConfig.PassthroughMessageHashSet.Contains(MessageManager.messageTypes[messageType])))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
-                return;
-            }
-            using (BitWriter writer = BitWriter.Get())
-            {
-                writer.WriteByteArray(data);
-                InternalMessageHandler.Send(clientId, messageType, channelName, writer, null);
-            }
-        }
-
-
-        /// <summary>
-        /// Sends a buffer to a client with a given clientId from Server
-        /// </summary>
-        /// <param name="clientId">The clientId to send the message to</param>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>
-        /// <param name="writer">The binary data to send</param>
-        public void SendToClient(uint clientId, string messageType, string channelName, BitWriter writer)
-        {
-            if (!MessageManager.messageTypes.ContainsKey(messageType))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
-                return;
-            }
-            if (MessageManager.messageTypes[messageType] < 32)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
-                return;
-            }
-            if (!isServer && (!NetworkingManager.singleton.NetworkConfig.AllowPassthroughMessages || !NetworkingManager.singleton.NetworkConfig.PassthroughMessageHashSet.Contains(MessageManager.messageTypes[messageType])))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid Passthrough send. Ensure AllowPassthroughMessages are turned on and that the MessageType " + messageType + " is registered as a passthroughMessageType");
-                return;
-            }
-            InternalMessageHandler.Send(clientId, messageType, channelName, writer, null);
-        }
-
-        /// <summary>
-        /// Sends a binary serialized class to a client with a given clientId from Server
-        /// </summary>
-        /// <typeparam name="T">The class type to send</typeparam>
-        /// <param name="clientId">The clientId to send the message to</param>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>    
-        /// <param name="instance">The instance to send</param>
-        public void SendToClient<T>(int clientId, string messageType, string channelName, T instance)
-        {
-            SendToClient(clientId, messageType, channelName, BinarySerializer.Serialize<T>(instance));
-        }
-
-        /// <summary>
-        /// Sends a buffer to multiple clients from the server
-        /// </summary>
-        /// <param name="clientIds">The clientId's to send to</param>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>
-        /// <param name="data">The binary data to send</param>
-        public void SendToClients(uint[] clientIds, string messageType, string channelName, byte[] data)
-        {
-            if (!MessageManager.messageTypes.ContainsKey(messageType))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
-                return;
-            }
-            if (MessageManager.messageTypes[messageType] < 32)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
-                return;
-            }
-            if (!isServer)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
-                return;
-            }
-            using (BitWriter writer = BitWriter.Get())
-            {
-                writer.WriteByteArray(data);
-                InternalMessageHandler.Send(clientIds, messageType, channelName, writer, null);
-            }
-        }
-
-        /// <summary>
-        /// Sends a buffer to multiple clients from the server
-        /// </summary>
-        /// <param name="clientIds">The clientId's to send to</param>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>
-        /// <param name="writer">The binary data to send</param>
-        public void SendToClients(uint[] clientIds, string messageType, string channelName, BitWriter writer)
-        {
-            if (!MessageManager.messageTypes.ContainsKey(messageType))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
-                return;
-            }
-            if (MessageManager.messageTypes[messageType] < 32)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
-                return;
-            }
-            if (!isServer)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
-                return;
-            }
-            InternalMessageHandler.Send(clientIds, messageType, channelName, writer, null);
-        }
-
-        /// <summary>
-        /// Sends a binary serialized class to multiple clients from the server
-        /// </summary>
-        /// <typeparam name="T">The class type to send</typeparam>
-        /// <param name="clientIds">The clientId's to send to</param>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>    
-        /// <param name="instance">The instance to send</param>
-        public void SendToClients<T>(int[] clientIds, string messageType, string channelName, T instance)
-        {
-            SendToClients(clientIds, messageType, channelName, BinarySerializer.Serialize<T>(instance));
-        }
-
-        /// <summary>
-        /// Sends a buffer to multiple clients from the server
-        /// </summary>
-        /// <param name="clientIds">The clientId's to send to</param>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>
-        /// <param name="data">The binary data to send</param>
-        public void SendToClients(List<uint> clientIds, string messageType, string channelName, byte[] data)
-        {
-            if (!MessageManager.messageTypes.ContainsKey(messageType))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
-                return;
-            }
-            if (MessageManager.messageTypes[messageType] < 32)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
-                return;
-            }
-            if (!isServer)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
-                return;
-            }
-            using (BitWriter writer = BitWriter.Get())
-            {
-                writer.WriteByteArray(data);
-                InternalMessageHandler.Send(clientIds, messageType, channelName, writer, null);
-            }
-        }
-
-        /// <summary>
-        /// Sends a buffer to multiple clients from the server
-        /// </summary>
-        /// <param name="clientIds">The clientId's to send to</param>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>
-        /// <param name="writer">The binary data to send</param>
-        public void SendToClients(List<uint> clientIds, string messageType, string channelName, BitWriter writer)
-        {
-            if (!MessageManager.messageTypes.ContainsKey(messageType))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
-                return;
-            }
-            if (MessageManager.messageTypes[messageType] < 32)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
-                return;
-            }
-            if (!isServer)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
-                return;
-            }
-            InternalMessageHandler.Send(clientIds, messageType, channelName, writer, null);
-        }
-
-        /// <summary>
-        /// Sends a binary serialized class to multiple clients from the server
-        /// </summary>
-        /// <typeparam name="T">The class type to send</typeparam>
-        /// <param name="clientIds">The clientId's to send to</param>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>    
-        /// <param name="instance">The instance to send</param>
-        public void SendToClients<T>(List<int> clientIds, string messageType, string channelName, T instance)
-        {
-            SendToClients(clientIds, messageType, channelName, BinarySerializer.Serialize<T>(instance));
-        }
-
-        /// <summary>
-        /// Sends a buffer to all clients from the server
-        /// </summary>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>
-        /// <param name="data">The binary data to send</param>
-        public void SendToClients(string messageType, string channelName, byte[] data)
-        {
-            if (!MessageManager.messageTypes.ContainsKey(messageType))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
-                return;
-            }
-            if (MessageManager.messageTypes[messageType] < 32)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
-                return;
-            }
-            if (!isServer)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
-                return;
-            }
-            using (BitWriter writer = BitWriter.Get())
-            {
-                writer.WriteByteArray(data);
-                InternalMessageHandler.Send(messageType, channelName, writer, null);
-            }
-        }
-
-        /// <summary>
-        /// Sends a buffer to all clients from the server
-        /// </summary>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>
-        /// <param name="writer">The binary data to send</param>
-        public void SendToClients(string messageType, string channelName, BitWriter writer)
-        {
-            if (!MessageManager.messageTypes.ContainsKey(messageType))
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid message type \"" + channelName + "\"");
-                return;
-            }
-            if (MessageManager.messageTypes[messageType] < 32)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages on the internal MLAPI channels is not allowed!");
-                return;
-            }
-            if (!isServer)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Sending messages from client to other clients is not yet supported");
-                return;
-            }
-            InternalMessageHandler.Send(messageType, channelName, writer, null);
-        }
-
-        /// <summary>
-        /// Sends a buffer to all clients from the server
-        /// </summary>
-        /// <typeparam name="T">The class type to send</typeparam>
-        /// <param name="messageType">User defined messageType</param>
-        /// <param name="channelName">User defined channelName</param>    
-        /// <param name="instance">The instance to send</param>
-        public void SendToClients<T>(string messageType, string channelName, T instance)
-        {
-            SendToClients(messageType, channelName, BinarySerializer.Serialize<T>(instance));
-        }
-
-        /// <summary>
-        /// Returns the NetworkedObject with a given NetworkId
-        /// </summary>
-        /// <param name="networkId">The NetworkId</param>
-        /// <returns>Returns the NetworkedObject</returns>
-        public NetworkedObject GetNetworkedObject(uint networkId)
-        {
-            return SpawnManager.SpawnedObjects[networkId];
-        }
-#endregion
     }
 }

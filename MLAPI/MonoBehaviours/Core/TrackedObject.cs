@@ -1,9 +1,10 @@
-﻿using MLAPI.Data;
-using MLAPI.NetworkingManagerComponents.Core;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using MLAPI.Collections;
+using MLAPI.Components;
+using MLAPI.Internal;
 using UnityEngine;
 
-namespace MLAPI.MonoBehaviours.Core
+namespace MLAPI
 {
     //Based on: https://twotenpvp.github.io/lag-compensation-in-unity.html
     //Modified to be used with latency rather than fixed frames and subframes. Thus it will be less accrurate but more modular.

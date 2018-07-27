@@ -1,8 +1,8 @@
-﻿using MLAPI.MonoBehaviours.Core;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using MLAPI.Logging;
 
-namespace MLAPI.NetworkingManagerComponents.Core
+namespace MLAPI.Components
 {
     /// <summary>
     /// The main class for controlling lag compensation
