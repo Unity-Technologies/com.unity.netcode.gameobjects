@@ -57,6 +57,11 @@ namespace MLAPI.Prototyping
         /// Enables extrapolation
         /// </summary>
         public bool ExtrapolatePosition = false;
+        /// <summary>
+        /// The maximum amount of expected send rates to extrapolate over when awaiting new packets.
+        /// A higher value will result in continued extrapolation after an object has stopped moving
+        /// </summary>
+        public float MaxSendsToExtrapolate = 5;
 
         private float lerpT;
         private Vector3 lerpStartPos;
@@ -67,6 +72,8 @@ namespace MLAPI.Prototyping
         private float lastSendTime;
         private Vector3 lastSentPos;
         private Quaternion lastSentRot;
+
+        private float lastRecieveTime;
         
         /// <summary>
         /// Enables range based send rate
@@ -169,20 +176,15 @@ namespace MLAPI.Prototyping
                         lerpT = 1f;
                     }
 
-                    if (isServer || !EnableRange || !AssumeSyncedSends)
-                        lerpT += Time.unscaledDeltaTime / (1f / FixedSendsPerSecond);
-                    else
-                    {
-                        Vector3 myPos = NetworkingManager.singleton.ConnectedClients[NetworkingManager.singleton.LocalClientId].PlayerObject.transform.position;
-                        lerpT += Time.unscaledDeltaTime / GetTimeForLerp(transform.position, myPos);
-                    }
+                    float sendDelay = (isServer || !EnableRange || !AssumeSyncedSends) ? (1f / FixedSendsPerSecond) : GetTimeForLerp(transform.position, NetworkingManager.singleton.ConnectedClients[NetworkingManager.singleton.LocalClientId].PlayerObject.transform.position);
+                    lerpT += Time.time / sendDelay;
 
-                    if (ExtrapolatePosition)
+                    if (ExtrapolatePosition && Time.time - lastRecieveTime < sendDelay * MaxSendsToExtrapolate)
                         transform.position = Vector3.LerpUnclamped(lerpStartPos, lerpEndPos, lerpT);
                     else
                         transform.position = Vector3.Lerp(lerpStartPos, lerpEndPos, lerpT);
 
-                    if (ExtrapolatePosition)
+                    if (ExtrapolatePosition && Time.time - lastRecieveTime < sendDelay * MaxSendsToExtrapolate)
                         transform.rotation = Quaternion.SlerpUnclamped(lerpStartRot, lerpEndRot, lerpT);
                     else
                         transform.rotation = Quaternion.Slerp(lerpStartRot, lerpEndRot, lerpT);
@@ -209,6 +211,7 @@ namespace MLAPI.Prototyping
 
                 if (InterpolatePosition)
                 {
+                    lastRecieveTime = Time.time;
                     lerpStartPos = transform.position;
                     lerpStartRot = transform.rotation;
                     lerpEndPos = new Vector3(xPos, yPos, zPos);
@@ -243,20 +246,6 @@ namespace MLAPI.Prototyping
                     //Invalid move!
                     //TODO: Add rubber band (just a message telling them to go back)
                     return;
-                }
-
-                if (InterpolateServer)
-                {
-                    lerpStartPos = transform.position;
-                    lerpStartRot = transform.rotation;
-                    lerpEndPos = new Vector3(xPos, yPos, zPos);
-                    lerpEndRot = Quaternion.Euler(xRot, yRot, zRot);
-                    lerpT = 0;
-                }
-                else
-                {
-                    transform.position = new Vector3(xPos, yPos, zPos);
-                    transform.rotation = Quaternion.Euler(new Vector3(xRot, yRot, zRot));
                 }
 
                 using (PooledBitStream writeStream = PooledBitStream.Get())
