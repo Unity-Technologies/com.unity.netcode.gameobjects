@@ -69,8 +69,6 @@ namespace MLAPI
         /// </summary>
         public uint OwnerClientId => networkedObject.OwnerClientId;
 
-        private readonly Dictionary<string, int> registeredMessageHandlers = new Dictionary<string, int>();
-
         private void OnEnable()
         {
             if (_networkedObject == null)
