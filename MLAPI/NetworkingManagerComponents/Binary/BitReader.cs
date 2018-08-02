@@ -133,6 +133,9 @@ namespace MLAPI.Serialization
                 ((IBitWritable)instance).Read(this);
                 return instance;
             }
+            if (type.IsEnum)
+                return ReadInt32Packed();
+          
             throw new ArgumentException("BitReader cannot read type " + type.Name);
         }
 
