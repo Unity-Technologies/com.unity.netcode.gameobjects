@@ -127,6 +127,11 @@ namespace MLAPI.Serialization
                 return ReadRotation(3);
             if (type == typeof(char))
                 return ReadCharPacked();
+            if (type == typeof(IBitWritable)) {
+                object instance = Activator.CreateInstance(type);
+                ((IBitWritable)instance).Read(this);
+                return instance;
+            }
             throw new ArgumentException("BitReader cannot read type " + type.Name);
         }
 

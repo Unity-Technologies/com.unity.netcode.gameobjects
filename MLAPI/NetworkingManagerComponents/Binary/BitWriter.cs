@@ -145,6 +145,11 @@ namespace MLAPI.Serialization
                 WriteCharPacked((char)value);
                 return;
             }
+            else if(value is IBitWritable)
+            {
+                ((IBitWritable)value).Write(this);
+                return;
+            } 
 
             throw new ArgumentException("BitWriter cannot write type " + value.GetType().Name);
         }
