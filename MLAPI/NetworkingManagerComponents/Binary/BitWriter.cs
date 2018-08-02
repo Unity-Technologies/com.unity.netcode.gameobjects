@@ -145,6 +145,11 @@ namespace MLAPI.Serialization
                 WriteCharPacked((char)value);
                 return;
             }
+            else if(value is IBitWritable)
+            {
+                ((IBitWritable)value).Write(this.sink);
+                return;
+            } 
             else if (value.GetType().IsEnum) 
             {
                 WriteInt32Packed((int)value);

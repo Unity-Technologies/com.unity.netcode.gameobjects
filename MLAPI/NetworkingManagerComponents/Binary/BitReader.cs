@@ -127,8 +127,15 @@ namespace MLAPI.Serialization
                 return ReadRotation(3);
             if (type == typeof(char))
                 return ReadCharPacked();
+            if (type == typeof(IBitWritable))
+            {
+                object instance = Activator.CreateInstance(type);
+                ((IBitWritable)instance).Read(this.source);
+                return instance;
+            }
             if (type.IsEnum)
                 return ReadInt32Packed();
+          
             throw new ArgumentException("BitReader cannot read type " + type.Name);
         }
 
