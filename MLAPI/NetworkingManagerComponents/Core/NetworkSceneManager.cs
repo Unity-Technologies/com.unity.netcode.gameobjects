@@ -98,10 +98,10 @@ namespace MLAPI.Components
 
         private static void OnSceneLoaded(AsyncOperation operation)
         {
+            nextScene = SceneManager.GetSceneAt(SceneManager.sceneCount - 1);
             SceneManager.SetActiveScene(nextScene);
             List<NetworkedObject> objectsToKeep = SpawnManager.SpawnedObjectsList;
             //The last loaded scene
-            nextScene = SceneManager.GetSceneAt(SceneManager.sceneCount - 1);
             for (int i = 0; i < objectsToKeep.Count; i++)
             {
                 SceneManager.MoveGameObjectToScene(objectsToKeep[i].gameObject, nextScene);
