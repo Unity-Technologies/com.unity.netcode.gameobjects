@@ -56,7 +56,8 @@ namespace MLAPI.Components
             CurrentSceneIndex = sceneNameToIndex[sceneName];
             isSwitching = true;
             lastScene = SceneManager.GetActiveScene();
-            AsyncOperation sceneLoad = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
+            nextScene = SceneManager.GetSceneByName(sceneName);
+            AsyncOperation sceneLoad = SceneManager.LoadSceneAsync(nextScene.buildIndex, LoadSceneMode.Additive);
             sceneLoad.completed += OnSceneLoaded;
 
             using (PooledBitStream stream = PooledBitStream.Get())
@@ -92,16 +93,16 @@ namespace MLAPI.Components
             }
             SpawnManager.DestroySceneObjects();
             lastScene = SceneManager.GetActiveScene();
-            AsyncOperation sceneLoad = SceneManager.LoadSceneAsync(sceneIndexToString[sceneIndex], LoadSceneMode.Additive);
+            nextScene = SceneManager.GetSceneByName(sceneIndexToString[sceneIndex]);
+            AsyncOperation sceneLoad = SceneManager.LoadSceneAsync(nextScene.buildIndex, LoadSceneMode.Additive);
             sceneLoad.completed += OnSceneLoaded;
         }
 
         private static void OnSceneLoaded(AsyncOperation operation)
         {
             SceneManager.SetActiveScene(nextScene);
+            
             List<NetworkedObject> objectsToKeep = SpawnManager.SpawnedObjectsList;
-            //The last loaded scene
-            nextScene = SceneManager.GetSceneAt(SceneManager.sceneCount - 1);
             for (int i = 0; i < objectsToKeep.Count; i++)
             {
                 SceneManager.MoveGameObjectToScene(objectsToKeep[i].gameObject, nextScene);
