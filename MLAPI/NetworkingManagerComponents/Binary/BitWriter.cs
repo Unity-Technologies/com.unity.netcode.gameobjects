@@ -145,6 +145,11 @@ namespace MLAPI.Serialization
                 WriteCharPacked((char)value);
                 return;
             }
+            else if (value.GetType().IsEnum) 
+            {
+                WriteInt32Packed((int)value);
+                return;
+            }
 
             throw new ArgumentException("BitWriter cannot write type " + value.GetType().Name);
         }
