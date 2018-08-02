@@ -94,9 +94,10 @@ namespace MLAPI.Components
             }
             SpawnManager.DestroySceneObjects();
             lastScene = SceneManager.GetActiveScene();
-            
-            AsyncOperation sceneLoad = SceneManager.LoadSceneAsync(sceneIndex, LoadSceneMode.Additive);
-            nextScene = SceneManager.GetSceneByName(sceneIndexToString[sceneIndex]);
+
+            string sceneName = sceneIndexToString[sceneIndex];
+            AsyncOperation sceneLoad = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
+            nextScene = SceneManager.GetSceneByName(sceneName);
             sceneLoad.completed += OnSceneLoaded;
         }
 
