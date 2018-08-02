@@ -866,6 +866,56 @@ namespace MLAPI
 
 
         //BOXED CLIENT RPC
+        public void InvokeClientRpc(string methodName, List<uint> clientIds) 
+        {
+            SendClientRPCBoxed(HashMethodName(methodName), clientIds);
+        }
+
+        public void InvokeClientRpc(Action method, List<uint> clientIds) 
+        {
+            SendClientRPCBoxed(HashMethodName(method.Method.Name), clientIds);
+        }
+
+        public void InvokeClientRpcOnOwner(Action method) 
+        {
+            SendClientRPCBoxed(HashMethodName(method.Method.Name), OwnerClientId);
+        }
+
+        public void InvokeClientRpcOnOwner(string methodName) 
+        {
+            SendClientRPCBoxed(HashMethodName(methodName), OwnerClientId);
+        }
+
+        public void InvokeClientRpcOnEveryone(Action method) 
+        {
+            SendClientRPCBoxed(HashMethodName(method.Method.Name), null);
+        }
+
+        public void InvokeClientRpcOnEveryone(string methodName) 
+        {
+            SendClientRPCBoxed(HashMethodName(methodName), null);
+        }
+
+        public void InvokeClientRpcOnClient(Action method, uint clientId) 
+        {
+            SendClientRPCBoxed(HashMethodName(method.Method.Name), clientId);
+        }
+
+        public void InvokeClientRpcOnClient(string methodName, uint clientId) 
+        {
+            SendClientRPCBoxed(HashMethodName(methodName), clientId);
+        }
+
+        public void InvokeClientRpcOnEveryoneExcept(Action method, uint clientIdToIgnore) 
+        {
+            SendClientRPCBoxed(clientIdToIgnore, HashMethodName(method.Method.Name));
+        }
+
+        public void InvokeClientRpcOnEveryoneExcept(string methodName, uint clientIdToIgnore) 
+        {
+            SendClientRPCBoxed(clientIdToIgnore, HashMethodName(methodName));
+        }
+
         public void InvokeClientRpc<T1>(string methodName, List<uint> clientIds, T1 t1)
         {
             SendClientRPCBoxed(HashMethodName(methodName), clientIds, t1);
