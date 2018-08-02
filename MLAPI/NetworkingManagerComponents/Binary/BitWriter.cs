@@ -147,7 +147,7 @@ namespace MLAPI.Serialization
             }
             else if(value is IBitWritable)
             {
-                ((IBitWritable)value).Write(this);
+                ((IBitWritable)value).Write(this.sink);
                 return;
             } 
             else if (value.GetType().IsEnum) 

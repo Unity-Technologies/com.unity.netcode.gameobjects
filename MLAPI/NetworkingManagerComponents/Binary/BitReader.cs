@@ -130,7 +130,7 @@ namespace MLAPI.Serialization
             if (type == typeof(IBitWritable))
             {
                 object instance = Activator.CreateInstance(type);
-                ((IBitWritable)instance).Read(this);
+                ((IBitWritable)instance).Read(this.source);
                 return instance;
             }
             if (type.IsEnum)
