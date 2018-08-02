@@ -89,7 +89,10 @@ namespace MLAPI
                 if (!EqualityComparer<T>.Default.Equals(InternalValue, value))
                 {
                     isDirty = true;
+                    T previousValue = InternalValue;
                     InternalValue = value;
+                    if (OnValueChanged != null)
+                        OnValueChanged(previousValue, InternalValue);
                 }
             }
         }
