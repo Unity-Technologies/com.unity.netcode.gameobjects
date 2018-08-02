@@ -56,8 +56,9 @@ namespace MLAPI.Components
             CurrentSceneIndex = sceneNameToIndex[sceneName];
             isSwitching = true;
             lastScene = SceneManager.GetActiveScene();
+            
+            AsyncOperation sceneLoad = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
             nextScene = SceneManager.GetSceneByName(sceneName);
-            AsyncOperation sceneLoad = SceneManager.LoadSceneAsync(nextScene.buildIndex, LoadSceneMode.Additive);
             sceneLoad.completed += OnSceneLoaded;
 
             using (PooledBitStream stream = PooledBitStream.Get())
