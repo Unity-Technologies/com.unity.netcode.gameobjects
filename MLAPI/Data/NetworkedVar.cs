@@ -3,13 +3,14 @@ using UnityEngine;
 using System.IO;
 using MLAPI.NetworkedVar;
 using MLAPI.Serialization;
+using System;
 
 namespace MLAPI
 {
     /// <summary>
     /// A variable that can be synchronized over the network.
     /// </summary>
-    [System.Serializable]
+    [Serializable]
     public class NetworkedVar<T> : INetworkedVar
     {
         /// <summary>
