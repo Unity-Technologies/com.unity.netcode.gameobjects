@@ -30,16 +30,16 @@ namespace MLAPI
         /// <summary>
         /// Gets if we are executing as server
         /// </summary>
-        protected bool isServer => isRunning && NetworkingManager.singleton.isServer;
+        protected bool isServer => isRunning && NetworkingManager.singleton != null && NetworkingManager.singleton.isServer;
         /// <summary>
         /// Gets if we are executing as client
         /// </summary>
-        protected bool isClient => isRunning && NetworkingManager.singleton.isClient;
+        protected bool isClient => isRunning && NetworkingManager.singleton != null && NetworkingManager.singleton.isClient;
         /// <summary>
         /// Gets if we are executing as Host, I.E Server and Client
         /// </summary>
-        protected bool isHost => isRunning && NetworkingManager.singleton.isHost;
-        private bool isRunning => NetworkingManager.singleton == null || NetworkingManager.singleton.isListening;
+        protected bool isHost => isRunning && NetworkingManager.singleton != null && NetworkingManager.singleton.isHost;
+        private bool isRunning => NetworkingManager.singleton != null && (NetworkingManager.singleton == null || NetworkingManager.singleton.isListening);
         /// <summary>
         /// Gets wheter or not the object has a owner
         /// </summary>
