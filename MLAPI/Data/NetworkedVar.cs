@@ -108,7 +108,8 @@ namespace MLAPI
         public bool IsDirty()
         {
             if (!isDirty) return false;
-            if (Settings.SendTickrate <= 0) return true;
+            if (Settings.SendTickrate == 0) return true;
+            if (Settings.SendTickrate < 0) return false;
             if (NetworkingManager.singleton.NetworkTime - LastSyncedTime >= (1f / Settings.SendTickrate)) return true;
             return false;
         }
