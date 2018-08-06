@@ -292,6 +292,7 @@ namespace MLAPI
                                 if (isDirty && (!isServer || networkedVarFields[k].CanClientRead(clientId)))
                                 {
                                     networkedVarFields[k].WriteDelta(stream);
+                                    networkedVarFields[k].ResetDirty();
                                 }
                             }
 
@@ -302,11 +303,6 @@ namespace MLAPI
                         }
                     }
                 }
-            }
-
-            for (int i = 0; i < networkedVarFields.Count; i++)
-            {
-                networkedVarFields[i].ResetDirty();
             }
         }
 
