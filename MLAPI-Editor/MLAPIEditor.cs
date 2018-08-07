@@ -25,13 +25,22 @@ public class VersionUpgradePopup : EditorWindow
         float extraPaddingBottom = 30f;
         GUILayout.BeginArea(new Rect(padding, padding, position.width - (padding * 2f), (position.height - (padding * 2f)) - extraPaddingBottom));
         scrollPos = GUILayout.BeginScrollView(scrollPos);
-        GUIStyle style = new GUIStyle(EditorStyles.wordWrappedLabel);
-        style.normal.textColor = Color.yellow;
-        style.alignment = TextAnchor.MiddleCenter;
-        style.fontStyle = FontStyle.Bold;
+        GUIStyle warningStyle = new GUIStyle(EditorStyles.wordWrappedLabel);
+        warningStyle.normal.textColor = Color.yellow;
+        warningStyle.alignment = TextAnchor.MiddleCenter;
+        warningStyle.fontStyle = FontStyle.Bold;
+
+        GUIStyle errorStyle = new GUIStyle(EditorStyles.wordWrappedLabel);
+        errorStyle.normal.textColor = Color.red;
+        errorStyle.alignment = TextAnchor.MiddleCenter;
+        errorStyle.fontStyle = FontStyle.Bold;
+
+
         EditorGUILayout.LabelField("The version you are upgrading to has a greater major version. This means that there are non backwards compatibile changes. \n" +
-            "For more information about the MLAPI versioning, please visit SemVer.org \n" +
-            "Here are the versions with breaking changes you are skipping.", style);
+            "For more information about the MLAPI versioning, please visit SemVer.org", warningStyle);
+        EditorGUILayout.LabelField("It's ALWAYS recommended to do a backup when upgrading major versions. If your project doesn't compile " +
+            "There is good chance serialized data will be PERMANENTLY LOST. Don't be stupid.", errorStyle);
+        EditorGUILayout.LabelField("Here are the versions with breaking changes you are skipping.", EditorStyles.wordWrappedLabel);
         GUILayout.Space(5);
         for (int i = 0; i < releases.Length; i++)
         {
@@ -240,8 +249,10 @@ public class MLAPIEditor : EditorWindow
     private float progressTarget = 0f;
     private float progress = 0f;
 
+    [SerializeField]
     private bool PendingPackageLock = false;
-    private readonly Queue<string> PendingPackages = new Queue<string>();
+    [SerializeField]
+    private List<string> PendingPackages = new List<string>();
 
 
     [MenuItem("Window/MLAPI")]
@@ -264,7 +275,14 @@ public class MLAPIEditor : EditorWindow
 
         if (PendingPackages.Count > 0 && !EditorApplication.isCompiling && !EditorApplication.isUpdating && !PendingPackageLock)
         {
-            string packageName = PendingPackages.Dequeue();
+            PendingPackageLock = true;
+
+            string packageName = PendingPackages[PendingPackages.Count - 1];
+            PendingPackages.RemoveAt(PendingPackages.Count - 1);
+
+            AssetDatabase.importPackageCompleted += OnPackageImported;
+            AssetDatabase.importPackageFailed += OnPackageImportFailed;
+
             AssetDatabase.ImportPackage(Application.dataPath + "/MLAPI/Lib/" + packageName, false);
         }
 
@@ -346,6 +364,18 @@ public class MLAPIEditor : EditorWindow
             EditorCoroutine.Start(GetReleases());
 
         Repaint();
+    }
+
+    private void OnPackageImported(string packageName)
+    {
+        AssetDatabase.importPackageCompleted -= OnPackageImported;
+        PendingPackageLock = false;
+    }
+
+    private void OnPackageImportFailed(string packageName, string errorMessage)
+    {
+        AssetDatabase.importPackageFailed -= OnPackageImportFailed;
+        PendingPackageLock = false;
     }
 
     private List<MLAPIVersion> GetMajorVersionsBetween(MLAPIVersion currentVersion, MLAPIVersion targetVersion)
@@ -461,7 +491,7 @@ public class MLAPIEditor : EditorWindow
 
                     if (releases[index].assets[i].name.EndsWith(".unitypackage"))
                     {
-                        PendingPackages.Enqueue(releases[index].assets[i].name);
+                        PendingPackages.Add(releases[index].assets[i].name);
                     }
                     yield return null;
                 }
