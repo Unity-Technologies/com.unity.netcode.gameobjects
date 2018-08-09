@@ -1,6 +1,9 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using MLAPI.Components;
+using MLAPI.Cryptography;
 using MLAPI.Data;
 using MLAPI.Logging;
 using MLAPI.Serialization;
@@ -8,8 +11,181 @@ using UnityEngine;
 
 namespace MLAPI.Internal
 {
+    //NOTE FOR TOMORROW:
+    /*
+     * 
+     * Change connect flow. If encryption is not enabled. Just do the current flow.
+     * Otherwise, Do the new hail flow
+     * 
+     * REMEMBER: MAKE SURE TO CHECK THAT YOU CANT BYPASS THE HAIL FLOW BY SENDING CONNECTION REQUEST BEFORE HAIL.
+     * I.E ADD CHECKS
+     */
     internal static partial class InternalMessageHandler
     {
+        // Runs on client
+        internal static void HandleHailRequest(uint clientId, Stream stream, int channelId)
+        {
+            X509Certificate2 certificate = null;
+            byte[] serverDiffieHellmanPublicPart = null;
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
+            {
+                if (netManager.NetworkConfig.EnableEncryption)
+                {
+                    // Read the certificate
+                    if (netManager.NetworkConfig.SignKeyExchange)
+                    {
+                        // Allocation justification: This runs on client and only once, at initial connection
+                        certificate = new X509Certificate2(reader.ReadByteArray());
+                        if (CryptographyHelper.VerifyCertificate(certificate, netManager.ConnectedHostname))
+                        {
+                            // The certificate is not valid :(
+                            // Man in the middle.
+                            if (LogHelper.CurrentLogLevel <= LogLevel.Normal) if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid certificate. Disconnecting");
+                            netManager.StopClient();
+                            return;
+                        }
+                        else
+                        {
+                            netManager.NetworkConfig.ServerX509Certificate = certificate;
+                        }
+                    }
+
+                    // Read the ECDH
+                    // Allocation justification: This runs on client and only once, at initial connection
+                    serverDiffieHellmanPublicPart = reader.ReadByteArray();
+                    if (netManager.NetworkConfig.SignKeyExchange)
+                    {
+                        byte[] serverDiffieHellmanPublicPartSignature = reader.ReadByteArray();
+
+                        RSACryptoServiceProvider rsa = certificate.PublicKey.Key as RSACryptoServiceProvider;
+                        DSACryptoServiceProvider dsa = certificate.PublicKey.Key as DSACryptoServiceProvider;
+
+                        if (rsa != null)
+                        {
+                            if (!rsa.VerifyData(serverDiffieHellmanPublicPart, new SHA256Managed(), serverDiffieHellmanPublicPartSignature))
+                            {
+                                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid signature. Disconnecting");
+                                netManager.StopClient();
+                                return;
+                            }
+                        }
+                        else if (dsa != null)
+                        {
+                            using (SHA256Managed sha = new SHA256Managed())
+                            {
+                                if (!dsa.VerifySignature(sha.ComputeHash(serverDiffieHellmanPublicPart), serverDiffieHellmanPublicPartSignature))
+                                {
+                                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid signature. Disconnecting");
+                                    netManager.StopClient();
+                                    return;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            using (PooledBitStream outStream = PooledBitStream.Get())
+            {
+                using (PooledBitWriter writer = PooledBitWriter.Get(outStream))
+                {
+                    if (netManager.NetworkConfig.EnableEncryption)
+                    {
+                        // Create a ECDH key
+                        EllipticDiffieHellman diffieHellman = new EllipticDiffieHellman(EllipticDiffieHellman.DEFAULT_CURVE, EllipticDiffieHellman.DEFAULT_GENERATOR, EllipticDiffieHellman.DEFAULT_ORDER);
+                        netManager.clientAesKey = diffieHellman.GetSharedSecret(serverDiffieHellmanPublicPart);
+                        byte[] diffieHellmanPublicKey = diffieHellman.GetPublicKey();
+                        writer.WriteByteArray(diffieHellmanPublicKey);
+                        if (netManager.NetworkConfig.SignKeyExchange)
+                        {
+                            RSACryptoServiceProvider rsa = certificate.PublicKey.Key as RSACryptoServiceProvider;
+                            DSACryptoServiceProvider dsa = certificate.PublicKey.Key as DSACryptoServiceProvider;
+
+                            if (rsa != null)
+                            {
+                                writer.WriteByteArray(rsa.SignData(certificate.GetPublicKey(), new SHA256Managed()));
+                            }
+                            else if (dsa != null)
+                            {
+                                using (SHA256Managed sha = new SHA256Managed())
+                                {
+                                    writer.WriteByteArray(dsa.CreateSignature(sha.ComputeHash(diffieHellmanPublicKey)));
+                                }
+                            }
+                        }
+                    }
+                }
+                // Send HailResponse
+                InternalMessageHandler.Send(NetworkingManager.singleton.ServerClientId, MLAPIConstants.MLAPI_CERTIFICATE_HAIL_RESPONSE, "MLAPI_INTERNAL", outStream, true);
+            }
+        }
+
+        // Ran on server
+        internal static void HandleHailResponse(uint clientId, Stream stream, int channelId)
+        {
+            if (!NetworkingManager.singleton.hailPendingClients.Contains(clientId)) return;
+            if (!NetworkingManager.singleton.NetworkConfig.EnableEncryption) return;
+
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
+            {
+                if (netManager.pendingKeyExchanges.ContainsKey(clientId))
+                {
+                    byte[] diffieHellmanPublic = reader.ReadByteArray();
+                    NetworkingManager.singleton.pendingClientAesKeys[clientId] = netManager.pendingKeyExchanges[clientId].GetSharedSecret(diffieHellmanPublic);
+                    if (netManager.NetworkConfig.SignKeyExchange)
+                    {
+                        byte[] diffieHellmanPublicSignature = reader.ReadByteArray();
+                        X509Certificate2 certificate = netManager.NetworkConfig.ServerX509Certificate;
+                        RSACryptoServiceProvider rsa = certificate.PublicKey.Key as RSACryptoServiceProvider;
+                        DSACryptoServiceProvider dsa = certificate.PublicKey.Key as DSACryptoServiceProvider;
+
+                        if (rsa != null)
+                        {
+                            if (!rsa.VerifyData(diffieHellmanPublic, new SHA256Managed(), diffieHellmanPublicSignature))
+                            {
+                                //Man in the middle.
+                                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Signature doesnt match for the key exchange public part. Disconnecting");
+                                netManager.DisconnectClient(clientId);
+                                return;
+                            }
+                        }
+                        else if (dsa != null)
+                        {
+                            using (SHA256Managed sha = new SHA256Managed())
+                            {
+                                if (!dsa.VerifySignature(sha.ComputeHash(diffieHellmanPublic), diffieHellmanPublicSignature))
+                                {
+                                    //Man in the middle.
+                                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Signature doesnt match for the key exchange public part. Disconnecting");
+                                    netManager.DisconnectClient(clientId);
+                                    return;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            NetworkingManager.singleton.hailPendingClients.Remove(clientId);
+            NetworkingManager.singleton.connectionPendingClients.Add(clientId);
+            NetworkingManager.singleton.pendingKeyExchanges.Remove(clientId);
+            // Send greetings, they have passed all the handshakes
+            using (PooledBitStream outStream = PooledBitStream.Get())
+            {
+                using (PooledBitWriter writer = PooledBitWriter.Get(outStream))
+                {
+                    writer.WriteInt64Packed(DateTime.Now.Ticks); // This serves no purpose.
+                }
+                InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_CERTIFICATE_HAIL_RESPONSE, "MLAPI_INTERNAL", outStream, true);
+            }
+        }
+
+        internal static void HandleGreetings(uint clientId, Stream stream, int channelId)
+        {
+            // Server greeted us, we can now initiate our request to connect.
+            NetworkingManager.singleton.SendConnectionRequest();
+        }
+
         internal static void HandleConnectionRequest(uint clientId, Stream stream, int channelId)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
@@ -22,14 +198,6 @@ namespace MLAPI.Internal
                     return;
                 }
 
-#if !DISABLE_CRYPTOGRAPHY
-                if (netManager.NetworkConfig.EnableEncryption)
-                {
-                    byte[] diffiePublic = reader.ReadByteArray();
-                    netManager.diffieHellmanPublicKeys.Add(clientId, diffiePublic);
-
-                }
-#endif
                 if (netManager.NetworkConfig.ConnectionApproval)
                 {
                     byte[] connectionBuffer = reader.ReadByteArray();
@@ -50,30 +218,6 @@ namespace MLAPI.Internal
                 uint sceneIndex = 0;
                 if (netManager.NetworkConfig.EnableSceneSwitching)
                     sceneIndex = reader.ReadUInt32Packed();
-
-#if !DISABLE_CRYPTOGRAPHY
-                if (netManager.NetworkConfig.EnableEncryption)
-                {
-                    byte[] serverPublicKey = reader.ReadByteArray();
-                    netManager.clientAesKey = netManager.clientDiffieHellman.GetSharedSecret(serverPublicKey);
-                    if (netManager.NetworkConfig.SignKeyExchange)
-                    {
-                        byte[] publicKeySignature = reader.ReadByteArray();
-                        using (RSACryptoServiceProvider rsa = new RSACryptoServiceProvider())
-                        {
-                            rsa.PersistKeyInCsp = false;
-                            rsa.FromXmlString(netManager.NetworkConfig.RSAPublicKey);
-                            if (!rsa.VerifyData(serverPublicKey, new SHA512CryptoServiceProvider(), publicKeySignature))
-                            {
-                                //Man in the middle.
-                                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Signature doesnt match for the key exchange public part. Disconnecting");
-                                netManager.StopClient();
-                                return;
-                            }
-                        }
-                    }
-                }
-#endif
 
                 float netTime = reader.ReadSinglePacked();
                 int remoteStamp = reader.ReadInt32Packed();

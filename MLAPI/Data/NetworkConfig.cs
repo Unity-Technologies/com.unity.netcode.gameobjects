@@ -6,6 +6,7 @@ using MLAPI.Data;
 using MLAPI.Serialization;
 using MLAPI.Transports;
 using BitStream = MLAPI.Serialization.BitStream;
+using System.Security.Cryptography.X509Certificates;
 
 namespace MLAPI.Configuration
 {
@@ -116,24 +117,6 @@ namespace MLAPI.Configuration
         /// </summary>
         public bool HandleObjectSpawning = true;
         /// <summary>
-        /// Wheter or not to enable encryption
-        /// </summary>
-        public bool EnableEncryption = false;
-        /// <summary>
-        /// Wheter or not to enable signed diffie hellman key exchange.
-        /// </summary>
-        public bool SignKeyExchange = false;
-        /// <summary>
-        /// Private RSA XML key to use for signing key exchange
-        /// </summary>
-        [TextArea]
-        public string RSAPrivateKey = "<RSAKeyValue><Modulus>vBEvOQki/EftWOgwh4G8/nFRvcDJLylc8P7Dhz5m/hpkkNtAMzizNKYUrGbs7sYWlEuMYBOWrzkIDGOMoOsYc9uCi+8EcmNoHDlIhK5yNfZUexYBF551VbvZ625LSBR7kmBxkyo4IPuA09fYCHeUFm3prt4h6aTD0Hjc7ZsJHUU=</Modulus><Exponent>EQ==</Exponent><P>ydgcrq5qLJOdDQibD3m9+o3/dkKoFeCC110dnMgdpEteCruyBdL0zjGKKvjjgy3XTSSp43EN591NiXaBp0JtDw==</P><Q>7obHrUnUCsSHUsIJ7+JOrupcGrQ0XaYcQ+Uwb2v7d2YUzwZ46U4gI9snfD2J0tc3DGEh3v3G0Q8q7bxEe3H4aw==</Q><DP>L34k3c6vkgSdbHp+1nb/hj+HZx6+I0PijQbZyolwYuSOmR0a1DGjA1bzVWe9D86NAxevgM9OkOjG8yrxVIgZqQ==</DP><DQ>OB+2gyBuIKa2bdNNodrlVlVC2RtXnZB/HwjAGjeGdnJfP8VJoE6eJo3rLEq3BG7fxq1xYaUfuLhGVg4uOyngGQ==</DQ><InverseQ>o97PimYu58qH5eFmySRCIsyhBr/tK2GM17Zd9QQPJZRSorrhIJn1m6gwQ/G5aJLIM/3Yl04CoyqmQGsPXMzW2w==</InverseQ><D>CxAR1i22w4vCquB7U0Pd8Nl9R2Wxez6rHTwpnoszPB+rkAzlqKj7e5FMgpykhoQfciKPyWqQZKkAeTMIRbN56JinvpAt5POId/28HDd5xjGymHE81k3RzoHqzQXFIOF1TSYKUWzjPPF/TU4nn7auD4i6lOODATsMqtLr5DRBN/0=</D></RSAKeyValue>"; //CHANGE THESE FOR PRODUCTION!
-        /// <summary>
-        /// Public RSA XML key to use for signing key exchange
-        /// </summary>
-        [TextArea]
-        public string RSAPublicKey = "<RSAKeyValue><Modulus>vBEvOQki/EftWOgwh4G8/nFRvcDJLylc8P7Dhz5m/hpkkNtAMzizNKYUrGbs7sYWlEuMYBOWrzkIDGOMoOsYc9uCi+8EcmNoHDlIhK5yNfZUexYBF551VbvZ625LSBR7kmBxkyo4IPuA09fYCHeUFm3prt4h6aTD0Hjc7ZsJHUU=</Modulus><Exponent>EQ==</Exponent></RSAKeyValue>"; //CHANGE THESE FOR PRODUCTION!
-        /// <summary>
         /// Wheter or not to enable scene switching
         /// </summary>
         public bool EnableSceneSwitching = true;
@@ -145,6 +128,40 @@ namespace MLAPI.Configuration
         /// Decides how many bytes to use for Attribute messaging. Leave this to 2 bytes unless you are facing hash collisions
         /// </summary>
         public AttributeMessageMode AttributeMessageMode = AttributeMessageMode.WovenTwoByte;
+        /// <summary>
+        /// Wheter or not to enable encryption
+        /// </summary>
+        [Header("Cryptography")]
+        public bool EnableEncryption = false;
+        /// <summary>
+        /// Wheter or not to enable signed diffie hellman key exchange.
+        /// </summary>
+        public bool SignKeyExchange = false;
+        [TextArea]
+        public string ServerCertificatePfx;
+        public X509Certificate2 ServerX509Certificate
+        {
+            get
+            {
+                return serverX509Certificate;
+            }
+            internal set
+            {
+                serverX509CertificateBytes = null;
+                serverX509Certificate = value;
+            }
+        }
+        private X509Certificate2 serverX509Certificate;
+        public byte[] ServerX509CertificateBytes
+        {
+            get
+            {
+                if (serverX509CertificateBytes == null)
+                    serverX509CertificateBytes = ServerX509Certificate.Export(X509ContentType.Cert);
+                return serverX509CertificateBytes;
+            }
+        }
+        private byte[] serverX509CertificateBytes = null;
 
         private void Sort()
         {

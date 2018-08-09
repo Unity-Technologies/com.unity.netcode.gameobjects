@@ -2,6 +2,8 @@
 using System.Security.Cryptography;
 using System.IO;
 using MLAPI.Serialization;
+using System.Security.Cryptography.X509Certificates;
+using System;
 
 namespace MLAPI.Cryptography
 {
@@ -10,6 +12,8 @@ namespace MLAPI.Cryptography
     /// </summary>
     public static class CryptographyHelper
     {
+        public delegate bool VerifyCertificateDelegate(X509Certificate2 certificate, string hostname);
+        public static VerifyCertificateDelegate OnValidateCertificateCallback = null;
         private static readonly byte[] IVBuffer = new byte[16];
         /// <summary>
         /// Decrypts a message with AES with a given key and a salt that is encoded as the first 16 bytes of the buffer
@@ -59,6 +63,12 @@ namespace MLAPI.Cryptography
                     }
                 }
             }
+        }
+
+        public static bool VerifyCertificate(X509Certificate2 certificate, string hostname)
+        {
+            if (OnValidateCertificateCallback != null) return OnValidateCertificateCallback(certificate, hostname);
+            return certificate.Verify() && hostname == certificate.GetNameInfo(X509NameType.DnsName, false);
         }
     }
 }

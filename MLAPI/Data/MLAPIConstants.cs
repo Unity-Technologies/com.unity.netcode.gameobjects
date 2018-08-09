@@ -8,8 +8,14 @@
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
         public const string MLAPI_PROTOCOL_VERSION = "2.1.0";
 
+
+        public const byte MLAPI_CERTIFICATE_HAIL = 23;
+        public const byte MLAPI_CERTIFICATE_HAIL_RESPONSE = 25;
+
         public const byte MLAPI_CONNECTION_REQUEST = 0;
         public const byte MLAPI_CONNECTION_APPROVED = 1;
+
+
         public const byte MLAPI_ADD_OBJECT = 2;
         public const byte MLAPI_CLIENT_DISCONNECT = 3;
         public const byte MLAPI_DESTROY_OBJECT = 4;
