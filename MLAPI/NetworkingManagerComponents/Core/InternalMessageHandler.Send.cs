@@ -15,8 +15,8 @@ namespace MLAPI.Internal
             {
                 using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                 {
-                    writer.WriteBool(securityOptions.encrypted);
-                    writer.WriteBool(securityOptions.authenticated);
+                    writer.WriteBit(securityOptions.encrypted);
+                    writer.WriteBit(securityOptions.authenticated);
                     if (securityOptions.encrypted && netManager.NetworkConfig.EnableEncryption)
                     {
                         writer.WritePadBits();
@@ -24,6 +24,7 @@ namespace MLAPI.Internal
                         {
                             rijndael.Key = netManager.isServer ? netManager.ConnectedClients[clientId].AesKey : netManager.clientAesKey;
                             rijndael.GenerateIV();
+                            rijndael.Padding = PaddingMode.PKCS7;
                             writer.WriteByteArray(rijndael.IV, 16);
                             using (CryptoStream cryptoStream = new CryptoStream(stream, rijndael.CreateEncryptor(), CryptoStreamMode.Write))
                             {

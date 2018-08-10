@@ -299,7 +299,14 @@ namespace MLAPI
             NetworkSceneManager.sceneIndexToString.Clear();
             NetworkSceneManager.sceneNameToIndex.Clear();
 
-            if (server) NetworkConfig.ServerX509Certificate = new X509Certificate2(NetworkConfig.ServerCertificatePfx);
+            try
+            {
+                if (server && !string.IsNullOrEmpty(NetworkConfig.ServerCertificatePfx)) NetworkConfig.ServerX509Certificate = new X509Certificate2(Convert.FromBase64String(NetworkConfig.ServerCertificatePfx));
+            }
+            catch (CryptographicException ex)
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Importing of certificate failed: " + ex.ToString());
+            }
 
             if (NetworkConfig.Transport == DefaultTransport.UNET)
                 NetworkConfig.NetworkTransport = new UnetTransport();
@@ -718,13 +725,13 @@ namespace MLAPI
                                     {
                                         connectionPendingClients.Add(clientId);
                                     }
-
                                     StartCoroutine(ApprovalTimeout(clientId));
                                 }
                                 else
                                 {
                                     if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Connected");
-                                    SendConnectionRequest();
+                                    if (!NetworkConfig.EnableEncryption) SendConnectionRequest();
+                                    StartCoroutine(ApprovalTimeout(clientId));
                                 }
                                 NetworkProfiler.EndEvent();
                                 break;
@@ -839,7 +846,8 @@ namespace MLAPI
                             headerReader.SkipPadBits();
                             headerReader.ReadByteArray(IVBuffer, 16);
                             rijndael = new RijndaelManaged();
-                            rijndael.Key = isServer ? ConnectedClients[clientId].AesKey : clientAesKey;
+                            rijndael.Padding = PaddingMode.PKCS7;
+                            rijndael.Key = isServer ? (ConnectedClients.ContainsKey(clientId) ? ConnectedClients[clientId].AesKey : pendingClientAesKeys[clientId]) : clientAesKey;
                             rijndael.IV = IVBuffer;
                             stream = new CryptoStream(bitStream, rijndael.CreateDecryptor(), CryptoStreamMode.Read);
                             using (PooledBitReader reader = PooledBitReader.Get(stream))
@@ -939,6 +947,15 @@ namespace MLAPI
                                 break;
                             case MLAPIConstants.MLAPI_CUSTOM_MESSAGE:
                                 InternalMessageHandler.HandleCustomMessage(clientId, stream, channelId);
+                                break;
+                            case MLAPIConstants.MLAPI_CERTIFICATE_HAIL:
+                                if (isClient) InternalMessageHandler.HandleHailRequest(clientId, stream, channelId);
+                                break;
+                            case MLAPIConstants.MLAPI_CERTIFICATE_HAIL_RESPONSE:
+                                if (isServer) InternalMessageHandler.HandleHailResponse(clientId, stream, channelId);
+                                break;
+                            case MLAPIConstants.MLAPI_GREETINGS:
+                                if (isClient) InternalMessageHandler.HandleGreetings(clientId, stream, channelId);
                                 break;
                         }
 
@@ -1095,12 +1112,12 @@ namespace MLAPI
 
                             foreach (KeyValuePair<uint, NetworkedObject> pair in SpawnManager.SpawnedObjects)
                             {
-                                writer.WriteBit(pair.Value.isPlayerObject);
+                                writer.WriteBool(pair.Value.isPlayerObject);
                                 writer.WriteUInt32Packed(pair.Value.NetworkId);
                                 writer.WriteUInt32Packed(pair.Value.OwnerClientId);
                                 writer.WriteInt32Packed(NetworkConfig.NetworkPrefabIds[pair.Value.NetworkedPrefabName]);
-                                writer.WriteBit(pair.Value.gameObject.activeInHierarchy);
-                                writer.WriteBit(pair.Value.sceneObject == null ? true : pair.Value.sceneObject.Value);
+                                writer.WriteBool(pair.Value.gameObject.activeInHierarchy);
+                                writer.WriteBool(pair.Value.sceneObject == null ? true : pair.Value.sceneObject.Value);
 
                                 writer.WriteSinglePacked(pair.Value.transform.position.x);
                                 writer.WriteSinglePacked(pair.Value.transform.position.y);
@@ -1134,11 +1151,11 @@ namespace MLAPI
                         {
                             if (NetworkConfig.HandleObjectSpawning)
                             {
-                                writer.WriteBit(true);
+                                writer.WriteBool(true);
                                 writer.WriteUInt32Packed(ConnectedClients[clientId].PlayerObject.GetComponent<NetworkedObject>().NetworkId);
                                 writer.WriteUInt32Packed(clientId);
                                 writer.WriteInt32Packed(prefabId);
-                                writer.WriteBit(false);
+                                writer.WriteBool(false);
 
                                 writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.position.x);
                                 writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.position.y);
@@ -1148,7 +1165,7 @@ namespace MLAPI
                                 writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.y);
                                 writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.z);
 
-                                writer.WriteBit(false); //No payload data
+                                writer.WriteBool(false); //No payload data
 
                                 ConnectedClients[clientId].PlayerObject.GetComponent<NetworkedObject>().WriteNetworkedVarData(stream, clientPair.Key);
                             }

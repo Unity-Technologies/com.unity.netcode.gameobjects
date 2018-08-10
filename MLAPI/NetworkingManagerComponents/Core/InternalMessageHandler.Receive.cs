@@ -176,7 +176,7 @@ namespace MLAPI.Internal
                 {
                     writer.WriteInt64Packed(DateTime.Now.Ticks); // This serves no purpose.
                 }
-                InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_CERTIFICATE_HAIL_RESPONSE, "MLAPI_INTERNAL", outStream, new InternalSecuritySendOptions(false, false), true);
+                InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_GREETINGS, "MLAPI_INTERNAL", outStream, new InternalSecuritySendOptions(false, false), true);
             }
         }
 
