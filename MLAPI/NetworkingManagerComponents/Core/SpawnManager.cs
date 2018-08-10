@@ -273,7 +273,7 @@ namespace MLAPI.Components
 
                         if (payload != null) stream.CopyFrom(payload);
 
-                        InternalMessageHandler.Send(client.Key, MLAPIConstants.MLAPI_ADD_OBJECT, "MLAPI_INTERNAL", stream);
+                        InternalMessageHandler.Send(client.Key, MLAPIConstants.MLAPI_ADD_OBJECT, "MLAPI_INTERNAL", stream, new InternalSecuritySendOptions(false, false));
                     }
                 }
             }
@@ -343,7 +343,7 @@ namespace MLAPI.Components
 
                         if (payload != null) stream.CopyFrom(payload);
 
-                        InternalMessageHandler.Send(client.Key, MLAPIConstants.MLAPI_ADD_OBJECT, "MLAPI_INTERNAL", stream);
+                        InternalMessageHandler.Send(client.Key, MLAPIConstants.MLAPI_ADD_OBJECT, "MLAPI_INTERNAL", stream, new InternalSecuritySendOptions(false, false));
                     }
                 }
             }

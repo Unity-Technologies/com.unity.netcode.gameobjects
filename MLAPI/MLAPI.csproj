@@ -118,6 +118,7 @@
     <Compile Include="NetworkingManagerComponents\Binary\IBitWritable.cs" />
     <Compile Include="NetworkingManagerComponents\Binary\ResourcePool.cs" />
     <Compile Include="NetworkingManagerComponents\Binary\UIntFloat.cs" />
+    <Compile Include="NetworkingManagerComponents\Core\InternalSecuritySendOptions.cs" />
     <Compile Include="NetworkingManagerComponents\Core\LogHelper.cs" />
     <Compile Include="NetworkingManagerComponents\Cryptography\CryptographyHelper.cs" />
     <Compile Include="NetworkingManagerComponents\Cryptography\DiffieHellman.cs" />

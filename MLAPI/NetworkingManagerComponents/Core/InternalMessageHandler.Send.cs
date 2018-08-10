@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Security.Cryptography;
 using MLAPI.Data;
 using MLAPI.Profiling;
 using MLAPI.Serialization;
@@ -7,15 +8,52 @@ namespace MLAPI.Internal
 {
     internal static partial class InternalMessageHandler
     {
-        internal static void Send(uint clientId, byte messageType, string channelName, Stream messageStream, bool skipQueue = false)
+        internal static void Send(uint clientId, byte messageType, string channelName, Stream messageStream, InternalSecuritySendOptions options, bool skipQueue = false)
         {
             if (NetworkingManager.singleton.isServer && clientId == NetworkingManager.singleton.ServerClientId) return;
             using (PooledBitStream stream = PooledBitStream.Get())
             {
                 using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                 {
-                    writer.WriteByte(messageType);
-                    stream.CopyFrom(messageStream);
+                    writer.WriteBool(options.encrypted);
+                    writer.WriteBool(options.authenticated);
+                    if (options.encrypted && netManager.NetworkConfig.EnableEncryption)
+                    {
+                        writer.WritePadBits();
+                        using (RijndaelManaged rijndael = new RijndaelManaged())
+                        {
+                            rijndael.Key = netManager.isServer ? netManager.ConnectedClients[clientId].AesKey : netManager.clientAesKey;
+                            rijndael.GenerateIV();
+                            writer.WriteByteArray(rijndael.IV, 16);
+                            using (CryptoStream cryptoStream = new CryptoStream(stream, rijndael.CreateEncryptor(), CryptoStreamMode.Write))
+                            {
+                                using (PooledBitWriter encryptedWriter = PooledBitWriter.Get(cryptoStream))
+                                {
+                                    encryptedWriter.WriteByte(messageType);
+                                    // Copy data
+                                    messageStream.Position = 0;
+                                    int messageByte;
+                                    while ((messageByte = messageStream.ReadByte()) != -1) encryptedWriter.WriteByte((byte)messageByte);
+                                }
+                            }
+                        }
+                    }
+                    else if (options.authenticated && netManager.NetworkConfig.EnableEncryption)
+                    {
+                        writer.WritePadBits();
+                        
+                        using (HMACSHA256 hmac = new HMACSHA256(netManager.isServer ? netManager.ConnectedClients[clientId].AesKey : netManager.clientAesKey))
+                        {
+                            writer.WriteByteArray(hmac.ComputeHash(messageStream), 32);
+                        }
+                        writer.WriteByte(messageType);
+                        stream.CopyFrom(messageStream);
+                    }
+                    else
+                    {
+                        writer.WriteBits(messageType, 6);
+                        stream.CopyFrom(messageStream);
+                    }
 
                     NetworkProfiler.StartEvent(TickType.Send, (uint)stream.Length, channelName, MLAPIConstants.MESSAGE_NAMES[messageType]);
                     byte error;
