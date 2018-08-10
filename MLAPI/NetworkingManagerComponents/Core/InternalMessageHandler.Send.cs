@@ -8,16 +8,16 @@ namespace MLAPI.Internal
 {
     internal static partial class InternalMessageHandler
     {
-        internal static void Send(uint clientId, byte messageType, string channelName, Stream messageStream, InternalSecuritySendOptions options, bool skipQueue = false)
+        internal static void Send(uint clientId, byte messageType, string channelName, Stream messageStream, InternalSecuritySendOptions securityOptions, bool skipQueue = false)
         {
             if (NetworkingManager.singleton.isServer && clientId == NetworkingManager.singleton.ServerClientId) return;
             using (PooledBitStream stream = PooledBitStream.Get())
             {
                 using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                 {
-                    writer.WriteBool(options.encrypted);
-                    writer.WriteBool(options.authenticated);
-                    if (options.encrypted && netManager.NetworkConfig.EnableEncryption)
+                    writer.WriteBool(securityOptions.encrypted);
+                    writer.WriteBool(securityOptions.authenticated);
+                    if (securityOptions.encrypted && netManager.NetworkConfig.EnableEncryption)
                     {
                         writer.WritePadBits();
                         using (RijndaelManaged rijndael = new RijndaelManaged())
@@ -38,7 +38,7 @@ namespace MLAPI.Internal
                             }
                         }
                     }
-                    else if (options.authenticated && netManager.NetworkConfig.EnableEncryption)
+                    else if (securityOptions.authenticated && netManager.NetworkConfig.EnableEncryption)
                     {
                         writer.WritePadBits();
                         
@@ -66,8 +66,17 @@ namespace MLAPI.Internal
             }
         }
 
-        internal static void Send(byte messageType, string channelName, Stream messageStream)
+        internal static void Send(byte messageType, string channelName, Stream messageStream, InternalSecuritySendOptions securityOptions)
         {
+            if (netManager.NetworkConfig.EnableEncryption && (securityOptions.authenticated || securityOptions.encrypted))
+            {
+                for (int i = 0; i < netManager.ConnectedClientsList.Count; i++)
+                {
+                    Send(netManager.ConnectedClientsList[i].ClientId, messageType, channelName, messageStream, securityOptions);
+                }
+                return;
+            }
+            
             using (PooledBitStream stream = PooledBitStream.Get())
             {
                 using (PooledBitWriter writer = PooledBitWriter.Get(stream))
@@ -87,8 +96,18 @@ namespace MLAPI.Internal
             }
         }
         
-        internal static void Send(byte messageType, string channelName, uint clientIdToIgnore, Stream messageStream)
+        internal static void Send(byte messageType, string channelName, uint clientIdToIgnore, Stream messageStream, InternalSecuritySendOptions securityOptions)
         {
+            if (netManager.NetworkConfig.EnableEncryption && (securityOptions.authenticated || securityOptions.encrypted))
+            {
+                for (int i = 0; i < netManager.ConnectedClientsList.Count; i++)
+                {
+                    if (netManager.ConnectedClientsList[i].ClientId == clientIdToIgnore) continue;
+                    Send(netManager.ConnectedClientsList[i].ClientId, messageType, channelName, messageStream, securityOptions);
+                }
+                return;
+            }
+            
             using (PooledBitStream stream = PooledBitStream.Get())
             {
                 using (PooledBitWriter writer = PooledBitWriter.Get(stream))
