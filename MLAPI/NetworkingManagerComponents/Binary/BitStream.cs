@@ -80,7 +80,7 @@ namespace MLAPI.Serialization
         /// <summary>
         /// Whether or not data can be read from the stream.
         /// </summary>
-        public override bool CanRead => Position < target.LongLength;
+        public override bool CanRead => Position < Length;
 
         /// <summary>
         /// Whether or not seeking is supported by this stream. (Always true)
