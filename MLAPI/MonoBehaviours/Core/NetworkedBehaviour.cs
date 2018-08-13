@@ -258,13 +258,21 @@ namespace MLAPI
                 channelMappedVarIndexes[firstLevelIndex[channel]].Add(i);
             }
         }
-
+        
+        private readonly List<int> networkedVarIndexesToReset = new List<int>();
+        private readonly HashSet<int> networkedVarIndexesToResetSet = new HashSet<int>();
         internal void NetworkedVarUpdate()
         {
             if (!networkedVarInit)
                 NetworkedVarInit();
             //TODO: Do this efficiently.
 
+            if (!CouldHaveDirtyVars()) 
+                return;
+
+            networkedVarIndexesToReset.Clear();
+            networkedVarIndexesToResetSet.Clear();
+            
             for (int i = 0; i < NetworkingManager.singleton.ConnectedClientsList.Count; i++)
             {
                 //This iterates over every "channel group".
@@ -278,6 +286,7 @@ namespace MLAPI
                             writer.WriteUInt16Packed(networkedObject.GetOrderIndex(this));
 
                             uint clientId = NetworkingManager.singleton.ConnectedClientsList[i].ClientId;
+                            bool writtenAny = false;
                             for (int k = 0; k < networkedVarFields.Count; k++)
                             {
                                 if (!channelMappedVarIndexes[j].Contains(k))
@@ -291,19 +300,42 @@ namespace MLAPI
                                 writer.WriteBool(isDirty);
                                 if (isDirty && (!isServer || networkedVarFields[k].CanClientRead(clientId)))
                                 {
+                                    writtenAny = true;
                                     networkedVarFields[k].WriteDelta(stream);
-                                    networkedVarFields[k].ResetDirty();
+                                    if (!networkedVarIndexesToResetSet.Contains(k))
+                                    {
+                                        networkedVarIndexesToResetSet.Add(k);
+                                        networkedVarIndexesToReset.Add(k);
+                                    }
                                 }
                             }
 
-                            if (isServer)
-                                InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA, channelsForVarGroups[j], stream);
-                            else
-                                InternalMessageHandler.Send(NetworkingManager.singleton.ServerClientId, MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA, channelsForVarGroups[j], stream);
+                            if (writtenAny)
+                            {
+                                if (isServer)
+                                    InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA, channelsForVarGroups[j], stream);
+                                else
+                                    InternalMessageHandler.Send(NetworkingManager.singleton.ServerClientId, MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA, channelsForVarGroups[j], stream);   
+                            }
                         }
                     }
                 }
             }
+
+            for (int i = 0; i < networkedVarIndexesToReset.Count; i++)
+            {
+                networkedVarFields[networkedVarIndexesToReset[i]].ResetDirty();
+            }
+        }
+
+        private bool CouldHaveDirtyVars()
+        {
+            for (int i = 0; i < networkedVarFields.Count; i++)
+            {
+                if (networkedVarFields[i].IsDirty()) 
+                    return true;
+            }
+            return false;
         }
 
         internal void HandleNetworkedVarDeltas(Stream stream, uint clientId)
