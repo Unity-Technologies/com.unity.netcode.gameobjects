@@ -44,18 +44,6 @@ namespace MLAPI.Serialization
 
         /// <summary>
         /// A stream that supports writing data smaller than a single byte. This stream also has a built-in compression algorithm that can (optionally) be used to write compressed data.
-        /// </summary>
-        /// <param name="target">The buffer containing initial data</param>
-        /// <param name="offset">The offset where the data begins</param>
-        /// <param name="count">The amount of bytes to copy from the initial data buffer</param>
-        public BitStream(byte[] target, int offset, int count) : this(count)
-        {
-            Buffer.BlockCopy(target, offset, this.target, 0, count);
-            Resizable = false;
-        }
-
-        /// <summary>
-        /// A stream that supports writing data smaller than a single byte. This stream also has a built-in compression algorithm that can (optionally) be used to write compressed data.
         /// NOTE: when using a pre-allocated buffer, the stream will not grow!
         /// </summary>
         /// <param name="target">Pre-allocated buffer to write to</param>
@@ -78,9 +66,14 @@ namespace MLAPI.Serialization
         public float GrowthFactor { set { _growthFactor = value <= 1 ? 1.5f : value; } get { return _growthFactor; } }
 
         /// <summary>
-        /// Whether or not data can be read from the stream.
+        /// Whether or not stream supports reading. (Always true)
         /// </summary>
-        public override bool CanRead => Position < target.LongLength;
+        public override bool CanRead => true;
+
+        /// <summary>
+        /// Wheter or not or there is any data to be read from the stream.
+        /// </summary>
+        public bool HasDataToRead => Position < Length;
 
         /// <summary>
         /// Whether or not seeking is supported by this stream. (Always true)
@@ -167,14 +160,14 @@ namespace MLAPI.Serialization
         /// Read a byte from the buffer. This takes into account possible byte misalignment.
         /// </summary>
         /// <returns>A byte from the buffer or, if a byte can't be read, -1.</returns>
-        public override int ReadByte() => CanRead ? BitAligned ? ReadByteAligned() : ReadByteMisaligned() : -1;
+        public override int ReadByte() => HasDataToRead ? BitAligned ? ReadByteAligned() : ReadByteMisaligned() : -1;
 
         /// <summary>
         /// Peeks a byte without advancing the position
         /// </summary>
         /// <returns>The peeked byte</returns>
         public int PeekByte() =>
-            CanRead ?
+            HasDataToRead ?
                 BitAligned ?
                     target[Position] :
                     (byte)((target[(int)Position] >> (int)(BitPosition & 7)) | (target[(int)(BitPosition + 8) >> 3] << (8 - (int)(BitPosition & 7)))) :
