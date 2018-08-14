@@ -413,7 +413,29 @@ namespace MLAPI
 
             return 0;
         }
-        
+
+        private MethodInfo[] getNetworkedBehaviorChildClassesMethods(Type type, List<MethodInfo> list = null) 
+        {
+            if (list == null) 
+            {
+                list = new List<MethodInfo>();
+                list.AddRange(type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance));
+            }
+            else
+            {
+                list.AddRange(type.GetMethods(BindingFlags.NonPublic | BindingFlags.Instance));
+            }
+
+            if (type.BaseType != null && type.BaseType != typeof(NetworkedBehaviour))
+            {
+                return getNetworkedBehaviorChildClassesMethods(type.BaseType, list);
+            }
+            else
+            {
+                return list.ToArray();
+            }
+        }
+
         private void CacheAttributes()
         {
             Type type = GetType();
@@ -425,7 +447,7 @@ namespace MLAPI
             if (Methods.ContainsKey(type)) methods = Methods[type];
             else
             {
-                methods = type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                methods = getNetworkedBehaviorChildClassesMethods(type);
                 Methods.Add(type, methods);
             }
 
