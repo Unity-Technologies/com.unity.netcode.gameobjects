@@ -123,15 +123,15 @@ namespace MLAPI.Internal
         // Ran on server
         internal static void HandleHailResponse(uint clientId, Stream stream, int channelId)
         {
-            if (!NetworkingManager.singleton.hailPendingClients.Contains(clientId)) return;
-            if (!NetworkingManager.singleton.NetworkConfig.EnableEncryption) return;
+            if (!netManager.PendingClients.ContainsKey(clientId) || netManager.PendingClients[clientId].ConnectionState != PendingClient.State.PendingHail) return;
+            if (!netManager.NetworkConfig.EnableEncryption) return;
 
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
-                if (netManager.pendingKeyExchanges.ContainsKey(clientId))
+                if (NetworkingManager.singleton.PendingClients[clientId].KeyExchange != null)
                 {
                     byte[] diffieHellmanPublic = reader.ReadByteArray();
-                    NetworkingManager.singleton.pendingClientAesKeys[clientId] = netManager.pendingKeyExchanges[clientId].GetSharedSecret(diffieHellmanPublic);
+                    netManager.PendingClients[clientId].AesKey = netManager.PendingClients[clientId].KeyExchange.GetSharedSecret(diffieHellmanPublic);
                     if (netManager.NetworkConfig.SignKeyExchange)
                     {
                         byte[] diffieHellmanPublicSignature = reader.ReadByteArray();
@@ -166,9 +166,9 @@ namespace MLAPI.Internal
                 }
             }
 
-            NetworkingManager.singleton.hailPendingClients.Remove(clientId);
-            NetworkingManager.singleton.connectionPendingClients.Add(clientId);
-            NetworkingManager.singleton.pendingKeyExchanges.Remove(clientId);
+            netManager.PendingClients[clientId].ConnectionState = PendingClient.State.PendingConnection;
+            netManager.PendingClients[clientId].KeyExchange = null; // Give to GC
+            
             // Send greetings, they have passed all the handshakes
             using (PooledBitStream outStream = PooledBitStream.Get())
             {

@@ -90,6 +90,7 @@
     <Compile Include="Data\NetworkedCollections\NetworkedList.cs" />
     <Compile Include="Data\NetworkedVar.cs" />
     <Compile Include="Data\NetworkedVarMeta.cs" />
+    <Compile Include="Data\PendingClient.cs" />
     <Compile Include="Data\Transports\ChannelType.cs" />
     <Compile Include="Data\FixedQueue.cs" />
     <Compile Include="Data\Transports\DefaultTransport.cs" />
