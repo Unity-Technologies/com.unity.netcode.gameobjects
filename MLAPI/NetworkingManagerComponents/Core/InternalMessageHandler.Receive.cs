@@ -487,8 +487,11 @@ namespace MLAPI.Internal
                 ushort behaviourId = reader.ReadUInt16Packed();
                 ulong hash = reader.ReadUInt64Packed();
 
-                NetworkedBehaviour behaviour = SpawnManager.SpawnedObjects[networkId].GetBehaviourAtOrderIndex(behaviourId);
-                behaviour.OnRemoteServerRPC(hash, clientId, stream);
+                if (SpawnManager.SpawnedObjects.ContainsKey(networkId)) 
+                { 
+                    NetworkedBehaviour behaviour = SpawnManager.SpawnedObjects[networkId].GetBehaviourAtOrderIndex(behaviourId);
+                    behaviour.OnRemoteServerRPC(hash, clientId, stream);
+                }
             }
         }
         
@@ -500,8 +503,11 @@ namespace MLAPI.Internal
                 ushort behaviourId = reader.ReadUInt16Packed();
                 ulong hash = reader.ReadUInt64Packed();
 
-                NetworkedBehaviour behaviour = SpawnManager.SpawnedObjects[networkId].GetBehaviourAtOrderIndex(behaviourId);
-                behaviour.OnRemoteClientRPC(hash, clientId, stream);
+                if (SpawnManager.SpawnedObjects.ContainsKey(networkId)) 
+                {
+                    NetworkedBehaviour behaviour = SpawnManager.SpawnedObjects[networkId].GetBehaviourAtOrderIndex(behaviourId);
+                    behaviour.OnRemoteClientRPC(hash, clientId, stream);
+                }
             }
         }
         
