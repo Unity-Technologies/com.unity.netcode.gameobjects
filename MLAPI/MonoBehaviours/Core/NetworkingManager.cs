@@ -171,14 +171,14 @@ namespace MLAPI
             {
                 for (int i = 0; i < ConnectedClientsList.Count; i++)
                 {
-                    InternalMessageHandler.Send(ConnectedClientsList[i].ClientId, MLAPIConstants.MLAPI_CUSTOM_MESSAGE, channel, stream, new InternalSecuritySendOptions(false, false));
+                    InternalMessageHandler.Send(ConnectedClientsList[i].ClientId, MLAPIConstants.MLAPI_CUSTOM_MESSAGE, channel, stream, SecuritySendFlags.None);
                 }
             }
             else
             {
                 for (int i = 0; i < clientIds.Count; i++)
                 {
-                    InternalMessageHandler.Send(clientIds[i], MLAPIConstants.MLAPI_CUSTOM_MESSAGE, channel, stream, new InternalSecuritySendOptions(false, false));
+                    InternalMessageHandler.Send(clientIds[i], MLAPIConstants.MLAPI_CUSTOM_MESSAGE, channel, stream, SecuritySendFlags.None);
                 }
             }
         }
@@ -191,7 +191,7 @@ namespace MLAPI
         /// <param name="channel">The channel tos end the data on</param>
         public void SendCustomMessage(uint clientId, Stream stream, string channel = "MLAPI_DEFAULT_MESSAGE")
         {
-            InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_CUSTOM_MESSAGE, channel, stream, new InternalSecuritySendOptions(false, false));
+            InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_CUSTOM_MESSAGE, channel, stream, SecuritySendFlags.None);
         }
 
         internal byte[] clientAesKey;
@@ -721,7 +721,7 @@ namespace MLAPI
                                                 }
                                             }
                                             // Send the hail
-                                            InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_CERTIFICATE_HAIL, "MLAPI_INTERNAL", hailStream, new InternalSecuritySendOptions(false, false), true);
+                                            InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_CERTIFICATE_HAIL, "MLAPI_INTERNAL", hailStream, SecuritySendFlags.None, true);
                                         }
                                     }
                                     else
@@ -811,7 +811,7 @@ namespace MLAPI
                         writer.WriteByteArray(NetworkConfig.ConnectionData);
                 }
 
-                InternalMessageHandler.Send(ServerClientId, MLAPIConstants.MLAPI_CONNECTION_REQUEST, "MLAPI_INTERNAL", stream, new InternalSecuritySendOptions(true, false), true);
+                InternalMessageHandler.Send(ServerClientId, MLAPIConstants.MLAPI_CONNECTION_REQUEST, "MLAPI_INTERNAL", stream, SecuritySendFlags.Encrypted | SecuritySendFlags.Authenticated, true);
             }
         }
 
@@ -848,48 +848,50 @@ namespace MLAPI
                         byte messageType;
                         bool encrypted = headerReader.ReadBit();
                         bool authenticated = headerReader.ReadBit();
-                        if (encrypted && NetworkConfig.EnableEncryption)
+                        if ((encrypted || authenticated) && NetworkConfig.EnableEncryption)
                         {
                             headerReader.SkipPadBits();
-                            headerReader.ReadByteArray(IVBuffer, 16);
-                            stream = new BitStream(encryptionBuffer);
-                            using (RijndaelManaged rijndael = new RijndaelManaged())
-                            {
-                                rijndael.Padding = PaddingMode.PKCS7;
-                                rijndael.Key = isServer ? (ConnectedClients.ContainsKey(clientId) ? ConnectedClients[clientId].AesKey : PendingClients[clientId].AesKey) : clientAesKey;
-                                rijndael.IV = IVBuffer;
-                                using (CryptoStream cryptoStream = new CryptoStream(bitStream, rijndael.CreateDecryptor(), CryptoStreamMode.Read))
-                                {
-                                    int readByte = 0;
-                                    while ((readByte = cryptoStream.ReadByte()) != -1)
-                                        stream.WriteByte((byte)readByte);
-                                }
-                            }
 
-                            using (PooledBitReader reader = PooledBitReader.Get(stream))
+                            if (authenticated)
                             {
-                                messageType = reader.ReadByteDirect();
-                            }
-                        }
-                        else if (authenticated && NetworkConfig.EnableEncryption)
-                        {
-                            headerReader.SkipPadBits();
-                            using (HMACSHA256 hmac = new HMACSHA256(isServer ? ConnectedClients[clientId].AesKey : clientAesKey))
-                            {
-                                headerReader.ReadByteArray(HMACBuffer, 32);
-                                // 1 is the size of the header. 32 is the size of the hmac
-                                byte[] hmacBytes = hmac.ComputeHash(bitStream.GetBuffer(), 1 + 32, totalSize - (1 + 32));
-                                for (int i = 0; i < hmacBytes.Length; i++)
+                                using (HMACSHA256 hmac = new HMACSHA256(isServer ? ConnectedClients[clientId].AesKey : clientAesKey))
                                 {
-                                    if (hmacBytes[i] != HMACBuffer[i])
+                                    headerReader.ReadByteArray(HMACBuffer, 32);
+                                    // 32 is the size of the hmac. The IV is also included in the HMAC if the message is also encrypted.
+                                    byte[] hmacBytes = hmac.ComputeHash(bitStream.GetBuffer(), (32 + 1), totalSize - (32 + 1));
+                                    for (int i = 0; i < hmacBytes.Length; i++)
                                     {
-                                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("HMAC authentication code did not match");
-                                        return;
+                                        if (hmacBytes[i] != HMACBuffer[i])
+                                        {
+                                            if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("HMAC authentication code did not match");
+                                            return;
+                                        }
                                     }
                                 }
                             }
-
-                            messageType = headerReader.ReadByteDirect();
+                            
+                            if (encrypted)
+                            {
+                                headerReader.ReadByteArray(IVBuffer, 16);
+                                stream = new BitStream(encryptionBuffer);
+                                using (RijndaelManaged rijndael = new RijndaelManaged())
+                                {
+                                    rijndael.Padding = PaddingMode.PKCS7;
+                                    rijndael.Key = isServer ? (ConnectedClients.ContainsKey(clientId) ? ConnectedClients[clientId].AesKey : PendingClients[clientId].AesKey) : clientAesKey;
+                                    rijndael.IV = IVBuffer;
+                                    using (CryptoStream cryptoStream = new CryptoStream(bitStream, rijndael.CreateDecryptor(), CryptoStreamMode.Read))
+                                    {
+                                        int readByte = 0;
+                                        while ((readByte = cryptoStream.ReadByte()) != -1)
+                                            stream.WriteByte((byte) readByte);
+                                    }
+                                }
+                            }
+                            
+                            using (PooledBitReader bodyReader = PooledBitReader.Get(stream))
+                            {
+                                messageType = bodyReader.ReadByteDirect();
+                            }
                         }
                         else
                         {
@@ -1047,7 +1049,7 @@ namespace MLAPI
                     using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                     {
                         writer.WriteUInt32Packed(clientId);
-                        InternalMessageHandler.Send(MLAPIConstants.MLAPI_CLIENT_DISCONNECT, "MLAPI_INTERNAL", clientId, stream, new InternalSecuritySendOptions(false, false));
+                        InternalMessageHandler.Send(MLAPIConstants.MLAPI_CLIENT_DISCONNECT, "MLAPI_INTERNAL", clientId, stream, SecuritySendFlags.None);
                     }
                 }
             }
@@ -1063,7 +1065,7 @@ namespace MLAPI
                     writer.WriteSinglePacked(NetworkTime);
                     int timestamp = NetworkConfig.NetworkTransport.GetNetworkTimestamp();
                     writer.WriteInt32Packed(timestamp);
-                    InternalMessageHandler.Send(MLAPIConstants.MLAPI_TIME_SYNC, "MLAPI_TIME_SYNC", stream, new InternalSecuritySendOptions(false, false));
+                    InternalMessageHandler.Send(MLAPIConstants.MLAPI_TIME_SYNC, "MLAPI_TIME_SYNC", stream, SecuritySendFlags.None);
                 }
             }
         }
@@ -1141,7 +1143,7 @@ namespace MLAPI
                             }
                         }
 
-                        InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_CONNECTION_APPROVED, "MLAPI_INTERNAL", stream, new InternalSecuritySendOptions(true, false), true);
+                        InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_CONNECTION_APPROVED, "MLAPI_INTERNAL", stream, SecuritySendFlags.Encrypted | SecuritySendFlags.Authenticated, true);
 
                         if (OnClientConnectedCallback != null)
                             OnClientConnectedCallback.Invoke(clientId);
@@ -1183,7 +1185,7 @@ namespace MLAPI
                             {
                                 writer.WriteUInt32Packed(clientId);
                             }
-                            InternalMessageHandler.Send(clientPair.Key, MLAPIConstants.MLAPI_ADD_OBJECT, "MLAPI_INTERNAL", stream, new InternalSecuritySendOptions(false, false));
+                            InternalMessageHandler.Send(clientPair.Key, MLAPIConstants.MLAPI_ADD_OBJECT, "MLAPI_INTERNAL", stream, SecuritySendFlags.None);
                         }
                     }
                 }

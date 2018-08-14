@@ -91,6 +91,7 @@
     <Compile Include="Data\NetworkedVar.cs" />
     <Compile Include="Data\NetworkedVarMeta.cs" />
     <Compile Include="Data\PendingClient.cs" />
+    <Compile Include="Data\SecuritySendFlags.cs" />
     <Compile Include="Data\Transports\ChannelType.cs" />
     <Compile Include="Data\FixedQueue.cs" />
     <Compile Include="Data\Transports\DefaultTransport.cs" />
@@ -119,7 +120,6 @@
     <Compile Include="NetworkingManagerComponents\Binary\IBitWritable.cs" />
     <Compile Include="NetworkingManagerComponents\Binary\ResourcePool.cs" />
     <Compile Include="NetworkingManagerComponents\Binary\UIntFloat.cs" />
-    <Compile Include="NetworkingManagerComponents\Core\InternalSecuritySendOptions.cs" />
     <Compile Include="NetworkingManagerComponents\Core\LogHelper.cs" />
     <Compile Include="NetworkingManagerComponents\Cryptography\CryptographyHelper.cs" />
     <Compile Include="NetworkingManagerComponents\Cryptography\DiffieHellman.cs" />

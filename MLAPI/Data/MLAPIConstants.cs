@@ -28,9 +28,10 @@
         public const byte MLAPI_SERVER_RPC = 16;
         public const byte MLAPI_CLIENT_RPC = 17;
         public const byte MLAPI_CUSTOM_MESSAGE = 18;
+        public const byte INVALID = 32;
         
         public static readonly string[] MESSAGE_NAMES = {
-            "MLAPI_CERTIFICATE_HAIL",
+            "MLAPI_CERTIFICATE_HAIL", // 0
             "MLAPI_CERTIFICATE_HAIL_RESPONSE",
             "MLAPI_GREETINGS",
             "MLAPI_CONNECTION_REQUEST",
@@ -46,9 +47,23 @@
             "MLAPI_TIME_SYNC",
             "MLAPI_NETWORKED_VAR_DELTA",
             "MLAPI_NETWORKED_VAR_UPDATE",
-            "MLAPI_SERVER_RPC",
+            "MLAPI_SERVER_RPC", // 16
             "MLAPI_CLIENT_RPC",
-            "MLAPI_CUSTOM_MESSAGE"
+            "MLAPI_CUSTOM_MESSAGE",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "INVALID" // 32
         };
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
     }

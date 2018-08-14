@@ -81,7 +81,7 @@ namespace MLAPI.Components
                     writer.WriteUInt32Packed(netId);
                     writer.WriteUInt32Packed(netObject.OwnerClientId);
 
-                    InternalMessageHandler.Send(MLAPIConstants.MLAPI_CHANGE_OWNER, "MLAPI_INTERNAL", stream, new InternalSecuritySendOptions(false, false));
+                    InternalMessageHandler.Send(MLAPIConstants.MLAPI_CHANGE_OWNER, "MLAPI_INTERNAL", stream, SecuritySendFlags.None);
                 }
             }
         }
@@ -109,7 +109,7 @@ namespace MLAPI.Components
                     writer.WriteUInt32Packed(netId);
                     writer.WriteUInt32Packed(clientId);
 
-                    InternalMessageHandler.Send(MLAPIConstants.MLAPI_CHANGE_OWNER, "MLAPI_INTERNAL", stream, new InternalSecuritySendOptions(false, false));
+                    InternalMessageHandler.Send(MLAPIConstants.MLAPI_CHANGE_OWNER, "MLAPI_INTERNAL", stream, SecuritySendFlags.None);
                 }
             }
         }
@@ -273,7 +273,7 @@ namespace MLAPI.Components
 
                         if (payload != null) stream.CopyFrom(payload);
 
-                        InternalMessageHandler.Send(client.Key, MLAPIConstants.MLAPI_ADD_OBJECT, "MLAPI_INTERNAL", stream, new InternalSecuritySendOptions(false, false));
+                        InternalMessageHandler.Send(client.Key, MLAPIConstants.MLAPI_ADD_OBJECT, "MLAPI_INTERNAL", stream, SecuritySendFlags.None);
                     }
                 }
             }
@@ -343,7 +343,7 @@ namespace MLAPI.Components
 
                         if (payload != null) stream.CopyFrom(payload);
 
-                        InternalMessageHandler.Send(client.Key, MLAPIConstants.MLAPI_ADD_OBJECT, "MLAPI_INTERNAL", stream, new InternalSecuritySendOptions(false, false));
+                        InternalMessageHandler.Send(client.Key, MLAPIConstants.MLAPI_ADD_OBJECT, "MLAPI_INTERNAL", stream, SecuritySendFlags.None);
                     }
                 }
             }
@@ -376,7 +376,7 @@ namespace MLAPI.Components
                         {
                             writer.WriteUInt32Packed(networkId);
 
-                            InternalMessageHandler.Send(MLAPIConstants.MLAPI_DESTROY_OBJECT, "MLAPI_INTERNAL", stream, new InternalSecuritySendOptions(false, false));
+                            InternalMessageHandler.Send(MLAPIConstants.MLAPI_DESTROY_OBJECT, "MLAPI_INTERNAL", stream, SecuritySendFlags.None);
                         }
                     }
                 }

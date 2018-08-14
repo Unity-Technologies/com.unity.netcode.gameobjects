@@ -313,9 +313,9 @@ namespace MLAPI
                             if (writtenAny)
                             {
                                 if (isServer)
-                                    InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA, channelsForVarGroups[j], stream, new InternalSecuritySendOptions(false, false));
+                                    InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA, channelsForVarGroups[j], stream, SecuritySendFlags.None);
                                 else
-                                    InternalMessageHandler.Send(NetworkingManager.singleton.ServerClientId, MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA, channelsForVarGroups[j], stream, new InternalSecuritySendOptions(false, false));   
+                                    InternalMessageHandler.Send(NetworkingManager.singleton.ServerClientId, MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA, channelsForVarGroups[j], stream, SecuritySendFlags.None);   
                             }
                         }
                     }
@@ -691,7 +691,7 @@ namespace MLAPI
                     }
                     else
                     {
-                        InternalMessageHandler.Send(NetworkingManager.singleton.ServerClientId, MLAPIConstants.MLAPI_SERVER_RPC, "MLAPI_DEFAULT_MESSAGE", stream, new InternalSecuritySendOptions(false, false));
+                        InternalMessageHandler.Send(NetworkingManager.singleton.ServerClientId, MLAPIConstants.MLAPI_SERVER_RPC, "MLAPI_DEFAULT_MESSAGE", stream, SecuritySendFlags.None);
                     }
                 }
             }
@@ -727,7 +727,7 @@ namespace MLAPI
                             }
                             else
                             {
-                                InternalMessageHandler.Send(NetworkingManager.singleton.ConnectedClientsList[i].ClientId, MLAPIConstants.MLAPI_CLIENT_RPC, "MLAPI_DEFAULT_MESSAGE", stream, new InternalSecuritySendOptions(false, false));
+                                InternalMessageHandler.Send(NetworkingManager.singleton.ConnectedClientsList[i].ClientId, MLAPIConstants.MLAPI_CLIENT_RPC, "MLAPI_DEFAULT_MESSAGE", stream, SecuritySendFlags.None);
                             }
                         }
                     }
@@ -742,7 +742,7 @@ namespace MLAPI
                             }
                             else
                             {
-                                InternalMessageHandler.Send(clientIds[i], MLAPIConstants.MLAPI_CLIENT_RPC, "MLAPI_DEFAULT_MESSAGE", stream, new InternalSecuritySendOptions(false, false));
+                                InternalMessageHandler.Send(clientIds[i], MLAPIConstants.MLAPI_CLIENT_RPC, "MLAPI_DEFAULT_MESSAGE", stream, SecuritySendFlags.None);
                             }
                         }
                     }
@@ -781,7 +781,7 @@ namespace MLAPI
                         }
                         else
                         {
-                            InternalMessageHandler.Send(NetworkingManager.singleton.ConnectedClientsList[i].ClientId, MLAPIConstants.MLAPI_CLIENT_RPC, "MLAPI_DEFAULT_MESSAGE", stream, new InternalSecuritySendOptions(false, false));
+                            InternalMessageHandler.Send(NetworkingManager.singleton.ConnectedClientsList[i].ClientId, MLAPIConstants.MLAPI_CLIENT_RPC, "MLAPI_DEFAULT_MESSAGE", stream, SecuritySendFlags.None);
                         }
                     }
                 }
@@ -814,7 +814,7 @@ namespace MLAPI
                     }
                     else
                     {
-                        InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_CLIENT_RPC, "MLAPI_DEFAULT_MESSAGE", stream, new InternalSecuritySendOptions(false, false));
+                        InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_CLIENT_RPC, "MLAPI_DEFAULT_MESSAGE", stream, SecuritySendFlags.None);
                     }
                 }
             }
