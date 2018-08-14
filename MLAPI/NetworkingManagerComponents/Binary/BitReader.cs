@@ -129,7 +129,7 @@ namespace MLAPI.Serialization
                 return ReadCharPacked();
             if (type.IsEnum)
                 return ReadInt32Packed();
-            if(typeof(IBitWritable).IsAssignableFrom(type))
+            if (typeof(IBitWritable).IsAssignableFrom(type))
             {
                 object instance = Activator.CreateInstance(type);
                 ((IBitWritable)instance).Read(this.source);
