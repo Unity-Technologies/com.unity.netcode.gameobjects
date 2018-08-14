@@ -24,6 +24,7 @@ namespace MLAPI.Internal
                     {
                         writer.WritePadBits();
 
+                        long hmacPosition = stream.Position; // Save the position where the HMAC should be written.
                         if (authenticated) stream.Position += 32; // Skip 32 bytes. These will be replaced later on by the HMAC.
 
                         if (encrypted)
@@ -52,7 +53,7 @@ namespace MLAPI.Internal
                         {
                             if (!encrypted) writer.WriteByte(messageType); // If we are not using encryption, write the byte. Note that the current position in the stream is just after the HMAC.
                             
-                            stream.Position = 1; // First byte is the security flags. The HMAC will now be written after that
+                            stream.Position = hmacPosition; // Set the position to where the HMAC should be written.
                             using (HMACSHA256 hmac = new HMACSHA256(netManager.isServer ? netManager.ConnectedClients[clientId].AesKey : netManager.clientAesKey))
                             {
                                 writer.WriteByteArray(hmac.ComputeHash(stream.GetBuffer(), (32 + 1), (int)stream.Length - (32 + 1)), 32);
@@ -95,7 +96,10 @@ namespace MLAPI.Internal
             {
                 using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                 {
-                    writer.WriteByte(messageType);
+                    writer.WriteBool(false); // Encryption
+                    writer.WriteBool(false); // Authentication
+                    
+                    writer.WriteBits(messageType, 6);
                     stream.CopyFrom(messageStream);
 
                     NetworkProfiler.StartEvent(TickType.Send, (uint)stream.Length, channelName, MLAPIConstants.MESSAGE_NAMES[messageType]);
@@ -129,7 +133,10 @@ namespace MLAPI.Internal
             {
                 using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                 {
-                    writer.WriteByte(messageType);
+                    writer.WriteBool(false); // Encryption
+                    writer.WriteBool(false); // Authentication
+                    
+                    writer.WriteBits(messageType, 6);
                     stream.CopyFrom(messageStream);
 
                     NetworkProfiler.StartEvent(TickType.Send, (uint)stream.Length, channelName, MLAPIConstants.MESSAGE_NAMES[messageType]);
