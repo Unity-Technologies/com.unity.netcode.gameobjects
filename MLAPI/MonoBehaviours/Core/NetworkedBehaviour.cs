@@ -414,7 +414,7 @@ namespace MLAPI
             return 0;
         }
 
-        private MethodInfo[] getNetworkedBehaviorChildClassesMethods(Type type, List<MethodInfo> list = null) 
+        private MethodInfo[] GetNetworkedBehaviorChildClassesMethods(Type type, List<MethodInfo> list = null) 
         {
             if (list == null) 
             {
@@ -428,7 +428,7 @@ namespace MLAPI
 
             if (type.BaseType != null && type.BaseType != typeof(NetworkedBehaviour))
             {
-                return getNetworkedBehaviorChildClassesMethods(type.BaseType, list);
+                return GetNetworkedBehaviorChildClassesMethods(type.BaseType, list);
             }
             else
             {
@@ -447,7 +447,7 @@ namespace MLAPI
             if (Methods.ContainsKey(type)) methods = Methods[type];
             else
             {
-                methods = getNetworkedBehaviorChildClassesMethods(type);
+                methods = GetNetworkedBehaviorChildClassesMethods(type);
                 Methods.Add(type, methods);
             }
 
