@@ -68,6 +68,10 @@ namespace MLAPI.Configuration
         /// </summary>
         public int MessageBufferSize = 1024;
         /// <summary>
+        /// The size of the encryption buffer, this is the buffer where messages will be decrypted to.
+        /// </summary>
+        public int EncryptionBufferSize = 265;
+        /// <summary>
         /// Amount of times per second the receive queue is emptied and all messages inside are processed.
         /// </summary>
         public int ReceiveTickrate = 64;
@@ -205,6 +209,7 @@ namespace MLAPI.Configuration
                     }
 
                     writer.WriteInt32Packed(config.MessageBufferSize);
+                    writer.WriteInt32Packed(config.EncryptionBufferSize);
                     writer.WriteInt32Packed(config.ReceiveTickrate);
                     writer.WriteInt32Packed(config.MaxReceiveEventsPerTickRate);
                     writer.WriteInt32Packed(config.SendTickrate);
@@ -285,6 +290,7 @@ namespace MLAPI.Configuration
                     }
 
                     config.MessageBufferSize = reader.ReadInt32Packed();
+                    config.EncryptionBufferSize = reader.ReadInt32Packed();
                     config.ReceiveTickrate = reader.ReadInt32Packed();
                     config.MaxReceiveEventsPerTickRate = reader.ReadInt32Packed();
                     config.SendTickrate = reader.ReadInt32Packed();

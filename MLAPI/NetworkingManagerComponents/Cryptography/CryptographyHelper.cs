@@ -14,11 +14,11 @@ namespace MLAPI.Cryptography
     {
         public delegate bool VerifyCertificateDelegate(X509Certificate2 certificate, string hostname);
         public static VerifyCertificateDelegate OnValidateCertificateCallback = null;
-
+        
         public static bool VerifyCertificate(X509Certificate2 certificate, string hostname)
         {
             if (OnValidateCertificateCallback != null) return OnValidateCertificateCallback(certificate, hostname);
-            return certificate.Verify() && hostname == certificate.GetNameInfo(X509NameType.DnsName, false);
+            return certificate.Verify() && (hostname == certificate.GetNameInfo(X509NameType.DnsName, false) || hostname == "127.0.0.1");
         }
     }
 }

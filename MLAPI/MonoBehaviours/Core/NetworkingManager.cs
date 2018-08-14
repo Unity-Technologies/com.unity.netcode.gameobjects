@@ -100,6 +100,7 @@ namespace MLAPI
         /// </summary>
         public bool isListening { get; internal set; }
         private byte[] messageBuffer;
+        private byte[] encryptionBuffer;
         /// <summary>
         /// Gets if we are connected as a client
         /// </summary>
@@ -282,9 +283,12 @@ namespace MLAPI
             lastReceiveTickTime = 0f;
             eventOvershootCounter = 0f;
             connectionPendingClients.Clear();
+            hailPendingClients.Clear();
+            pendingClientAesKeys.Clear();
             ConnectedClients.Clear();
             ConnectedClientsList.Clear();
             messageBuffer = new byte[NetworkConfig.MessageBufferSize];
+            encryptionBuffer = new byte[NetworkConfig.EncryptionBufferSize];
 #if !DISABLE_CRYPTOGRAPHY
             pendingKeyExchanges.Clear();
 #endif
@@ -523,6 +527,19 @@ namespace MLAPI
                     NetworkConfig.NetworkTransport.DisconnectClient(clientId);
                 }
             }
+
+            foreach (uint clientId in hailPendingClients)
+            {
+                if (!disconnectedIds.Contains(clientId))
+                {
+                    disconnectedIds.Add(clientId);
+                    if (clientId == NetworkConfig.NetworkTransport.ServerClientId)
+                        continue;
+
+                    NetworkConfig.NetworkTransport.DisconnectClient(clientId);
+                }
+            }
+            
             isServer = false;
             Shutdown();
         }
@@ -812,13 +829,21 @@ namespace MLAPI
         {
             float timeStarted = NetworkTime;
             //We yield every frame incase a pending client disconnects and someone else gets its connection id
-            while (NetworkTime - timeStarted < NetworkConfig.ClientConnectionBufferTimeout && connectionPendingClients.Contains(clientId))
+            while (NetworkTime - timeStarted < NetworkConfig.ClientConnectionBufferTimeout && (connectionPendingClients.Contains(clientId) || hailPendingClients.Contains(clientId)))
             {
                 yield return null;
             }
-            if(connectionPendingClients.Contains(clientId) && !ConnectedClients.ContainsKey(clientId))
+            
+            if (connectionPendingClients.Contains(clientId) && !ConnectedClients.ContainsKey(clientId))
             {
-                //Timeout
+                // Timeout
+                if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Client " + clientId + " Handshake Timed Out");
+                DisconnectClient(clientId);
+            }
+
+            if (hailPendingClients.Contains(clientId) && !ConnectedClients.ContainsKey(clientId))
+            {
+                // Timeout
                 if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Client " + clientId + " Handshake Timed Out");
                 DisconnectClient(clientId);
             }
@@ -830,8 +855,7 @@ namespace MLAPI
         {
             using (BitStream bitStream = new BitStream(data))
             {
-                RijndaelManaged rijndael = null;
-                Stream stream = bitStream;
+                BitStream stream = bitStream;
                 try
                 {
                     if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Unwrapping Data Header");
@@ -845,11 +869,20 @@ namespace MLAPI
                         {
                             headerReader.SkipPadBits();
                             headerReader.ReadByteArray(IVBuffer, 16);
-                            rijndael = new RijndaelManaged();
-                            rijndael.Padding = PaddingMode.PKCS7;
-                            rijndael.Key = isServer ? (ConnectedClients.ContainsKey(clientId) ? ConnectedClients[clientId].AesKey : pendingClientAesKeys[clientId]) : clientAesKey;
-                            rijndael.IV = IVBuffer;
-                            stream = new CryptoStream(bitStream, rijndael.CreateDecryptor(), CryptoStreamMode.Read);
+                            stream = new BitStream(encryptionBuffer);
+                            using (RijndaelManaged rijndael = new RijndaelManaged())
+                            {
+                                rijndael.Padding = PaddingMode.PKCS7;
+                                rijndael.Key = isServer ? (ConnectedClients.ContainsKey(clientId) ? ConnectedClients[clientId].AesKey : pendingClientAesKeys[clientId]) : clientAesKey;
+                                rijndael.IV = IVBuffer;
+                                using (CryptoStream cryptoStream = new CryptoStream(bitStream, rijndael.CreateDecryptor(), CryptoStreamMode.Read))
+                                {
+                                    int readByte = 0;
+                                    while ((readByte = cryptoStream.ReadByte()) != -1)
+                                        stream.WriteByte((byte)readByte);
+                                }
+                            }
+
                             using (PooledBitReader reader = PooledBitReader.Get(stream))
                             {
                                 messageType = reader.ReadByteDirect();
@@ -860,8 +893,8 @@ namespace MLAPI
                             headerReader.SkipPadBits();
                             using (HMACSHA256 hmac = new HMACSHA256(isServer ? ConnectedClients[clientId].AesKey : clientAesKey))
                             {
-                                // 1 is the size of the header. 32 is the size of the hmac
                                 headerReader.ReadByteArray(HMACBuffer, 32);
+                                // 1 is the size of the header. 32 is the size of the hmac
                                 byte[] hmacBytes = hmac.ComputeHash(bitStream.GetBuffer(), 1 + 32, totalSize - (1 + 32));
                                 for (int i = 0; i < hmacBytes.Length; i++)
                                 {
@@ -872,6 +905,7 @@ namespace MLAPI
                                     }
                                 }
                             }
+
                             messageType = headerReader.ReadByteDirect();
                         }
                         else
@@ -886,7 +920,7 @@ namespace MLAPI
 
                         //Client tried to send a network message that was not the connection request before he was accepted.
                         if (isServer && (NetworkConfig.EnableEncryption && hailPendingClients.Contains(clientId) && messageType != MLAPIConstants.MLAPI_CERTIFICATE_HAIL_RESPONSE) ||
-                                        (connectionPendingClients.Contains(clientId) && messageType != MLAPIConstants.MLAPI_CONNECTION_REQUEST))
+                            (connectionPendingClients.Contains(clientId) && messageType != MLAPIConstants.MLAPI_CONNECTION_REQUEST))
                         {
                             if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Message recieved from clientId " + clientId + " before it has been accepted");
                             return;
@@ -967,7 +1001,6 @@ namespace MLAPI
                 finally
                 {
                     if (stream != bitStream) stream.Dispose();
-                    if (rijndael != null) rijndael.Clear();
                 }
             }
         }
@@ -983,8 +1016,14 @@ namespace MLAPI
             if (connectionPendingClients.Contains(clientId))
                 connectionPendingClients.Remove(clientId);
 
+            if (hailPendingClients.Contains(clientId))
+                hailPendingClients.Remove(clientId);
+
             if (ConnectedClients.ContainsKey(clientId))
                 ConnectedClients.Remove(clientId);
+
+            if (pendingClientAesKeys.ContainsKey(clientId))
+                pendingClientAesKeys.Remove(clientId);
 
             for (int i = ConnectedClientsList.Count - 1; i > -1; i--)
             {
@@ -1004,6 +1043,13 @@ namespace MLAPI
         {
             if (connectionPendingClients.Contains(clientId))
                 connectionPendingClients.Remove(clientId);
+
+            if (hailPendingClients.Contains(clientId))
+                hailPendingClients.Remove(clientId);
+
+            if (pendingClientAesKeys.ContainsKey(clientId))
+                pendingClientAesKeys.Remove(clientId);
+            
             if (ConnectedClients.ContainsKey(clientId))
             {
                 if(NetworkConfig.HandleObjectSpawning)
@@ -1060,12 +1106,16 @@ namespace MLAPI
         {
             if(approved)
             {
-                //Inform new client it got approved
+                // Inform new client it got approved
                 if (connectionPendingClients.Contains(clientId))
                     connectionPendingClients.Remove(clientId);
 
+                if (hailPendingClients.Contains(clientId))
+                    hailPendingClients.Remove(clientId);
+                
                 byte[] aesKey = pendingClientAesKeys.ContainsKey(clientId) ? pendingClientAesKeys[clientId] : null;
-                pendingClientAesKeys.Remove(clientId);
+                if (pendingClientAesKeys.ContainsKey(clientId))
+                    pendingClientAesKeys.Remove(clientId);
                 NetworkedClient client = new NetworkedClient()
                 {
                     ClientId = clientId,
@@ -1182,6 +1232,9 @@ namespace MLAPI
             {
                 if (connectionPendingClients.Contains(clientId))
                     connectionPendingClients.Remove(clientId);
+
+                if (hailPendingClients.Contains(clientId))
+                    hailPendingClients.Remove(clientId);
 
 #if !DISABLE_CRYPTOGRAPHY
                 if (pendingKeyExchanges.ContainsKey(clientId))
