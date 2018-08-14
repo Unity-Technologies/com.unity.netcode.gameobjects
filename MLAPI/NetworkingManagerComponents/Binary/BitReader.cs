@@ -6,7 +6,9 @@
 using System;
 using System.IO;
 using System.Text;
+using MLAPI.Components;
 using MLAPI.Internal;
+using MLAPI.Logging;
 using UnityEngine;
 
 namespace MLAPI.Serialization
@@ -129,6 +131,49 @@ namespace MLAPI.Serialization
                 return ReadCharPacked();
             if (type.IsEnum)
                 return ReadInt32Packed();
+            if (type == typeof(GameObject))
+            {
+                uint networkId = ReadUInt32Packed();
+                if (SpawnManager.SpawnedObjects.ContainsKey(networkId)) 
+                {
+                    return SpawnManager.SpawnedObjects[networkId].gameObject;
+                }
+                else 
+                {
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal)
+                        LogHelper.LogWarning("BitReader canot find the GameObject sent in the SpawnedObjects list, it may have been destroyed. NetworkId: " + networkId.ToString());
+                    return null;
+                }
+            }
+            if (type == typeof(NetworkedObject))
+            {
+                uint networkId = ReadUInt32Packed();
+                if (SpawnManager.SpawnedObjects.ContainsKey(networkId)) 
+                {
+                    return SpawnManager.SpawnedObjects[networkId];
+                }
+                else 
+                {
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal)
+                        LogHelper.LogWarning("BitReader canot find the NetworkedObject sent in the SpawnedObjects list, it may have been destroyed. NetworkId: " + networkId.ToString());
+                    return null;
+                }
+            }
+            if (type == typeof(NetworkedBehaviour))
+            {
+                uint networkId = ReadUInt32Packed();
+                ushort behaviourId = ReadUInt16Packed();
+                if (SpawnManager.SpawnedObjects.ContainsKey(networkId)) 
+                {
+                    return SpawnManager.SpawnedObjects[networkId].GetBehaviourAtOrderIndex(behaviourId);
+                }
+                else 
+                {
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal)
+                        LogHelper.LogWarning("BitReader canot find the NetworkedBehaviour sent in the SpawnedObjects list, it may have been destroyed. NetworkId: " + networkId.ToString());
+                    return null;
+                }
+            }
             if (typeof(IBitWritable).IsAssignableFrom(type))
             {
                 object instance = Activator.CreateInstance(type);
