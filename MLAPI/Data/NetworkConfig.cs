@@ -64,11 +64,15 @@ namespace MLAPI.Configuration
         [HideInInspector]
         internal string PlayerPrefabName;
         /// <summary>
-        /// The size of the receive message buffer. This is the max message size.
+        /// The size of the receive message buffer. This is the max message size including any MLAPI overheads.
         /// </summary>
         public int MessageBufferSize = 1024;
         /// <summary>
         /// The size of the encryption buffer, this is the buffer where messages will be decrypted to.
+        /// If you plan on encrypting everything and you are pushing limits wth the MessageBufferSize already.
+        /// Note that Encryption might add a few extra bytes of padding and 16 bytes for the IV, if authentication is also enabled
+        /// 32 extra bytes will be used for the SHA256 hash of the HMAC.
+        /// Note that authentication without encryption will not use this buffer at all.
         /// </summary>
         public int EncryptionBufferSize = 265;
         /// <summary>

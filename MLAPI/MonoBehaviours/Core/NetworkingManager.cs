@@ -147,6 +147,7 @@ namespace MLAPI
         /// </summary>
         public event CustomMessageDelegete OnIncommingCustomMessage;
         public string ConnectedHostname { get; private set; }
+        internal byte[] clientAesKey;
         internal static event Action OnSingletonReady;
 
         internal void InvokeOnIncommingCustomMessage(uint clientId, Stream stream)
@@ -194,13 +195,6 @@ namespace MLAPI
             InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_CUSTOM_MESSAGE, channel, stream, SecuritySendFlags.None);
         }
 
-        internal byte[] clientAesKey;
-
-        /// <summary>
-        /// An inspector bool that acts as a Trigger for regenerating RSA keys. Should not be used outside Unity editor.
-        /// </summary>
-        public bool RegenerateRSAKeys = false;
-
         private void OnValidate()
         {
             if (NetworkConfig == null)
@@ -244,30 +238,7 @@ namespace MLAPI
                     if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Only one networked prefab can be marked as a player prefab");
                 }
                 else NetworkConfig.PlayerPrefabName = NetworkConfig.NetworkedPrefabs.Find(x => x.playerPrefab == true).name;
-
             }
-
-            /*
-            if (!NetworkConfig.EnableEncryption)
-            {
-                RegenerateRSAKeys = false;
-            }
-            else
-            {
-                if (RegenerateRSAKeys)
-                {
-#if !DISABLE_CRYPTOGRAPHY
-                    using (RSACryptoServiceProvider rsa = new RSACryptoServiceProvider())
-                    {
-                        rsa.PersistKeyInCsp = false;
-                        NetworkConfig.RSAPrivateKey = rsa.ToXmlString(true);
-                        NetworkConfig.RSAPublicKey = rsa.ToXmlString(false);
-                    }
-#endif
-                    RegenerateRSAKeys = false;
-                }
-            }
-            */
         }
 
         private object Init(bool server)
