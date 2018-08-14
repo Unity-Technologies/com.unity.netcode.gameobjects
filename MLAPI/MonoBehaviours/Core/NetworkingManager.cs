@@ -298,7 +298,14 @@ namespace MLAPI
 
             try
             {
-                if (server && !string.IsNullOrEmpty(NetworkConfig.ServerCertificatePfx)) NetworkConfig.ServerX509Certificate = new X509Certificate2(Convert.FromBase64String(NetworkConfig.ServerCertificatePfx));
+                if (server && !string.IsNullOrEmpty(NetworkConfig.ServerBase64PfxCertificate))
+                {
+                    NetworkConfig.ServerX509Certificate = new X509Certificate2(Convert.FromBase64String(NetworkConfig.ServerBase64PfxCertificate));
+                    if (!NetworkConfig.ServerX509Certificate.HasPrivateKey)
+                    {
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The imported PFX file did not have a private key");
+                    }
+                }
             }
             catch (CryptographicException ex)
             {

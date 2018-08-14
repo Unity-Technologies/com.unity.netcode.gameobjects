@@ -142,7 +142,7 @@ namespace MLAPI.Configuration
         /// </summary>
         public bool SignKeyExchange = false;
         [TextArea]
-        public string ServerCertificatePfx;
+        public string ServerBase64PfxCertificate;
         public X509Certificate2 ServerX509Certificate
         {
             get
