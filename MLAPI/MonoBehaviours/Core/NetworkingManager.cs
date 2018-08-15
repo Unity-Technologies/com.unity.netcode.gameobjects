@@ -683,18 +683,17 @@ namespace MLAPI
                                                     X509Certificate2 certificate = NetworkConfig.ServerX509Certificate;
                                                     if (!certificate.HasPrivateKey) throw new CryptographicException("[MLAPI] No private key was found in server certificate. Unable to sign key exchange");
                                                     RSACryptoServiceProvider rsa = certificate.PrivateKey as RSACryptoServiceProvider;
-                                                    DSACryptoServiceProvider dsa = certificate.PrivateKey as DSACryptoServiceProvider;
 
                                                     if (rsa != null)
                                                     {
-                                                        hailWriter.WriteByteArray(rsa.SignData(diffieHellmanPublicPart, new SHA256Managed()));
-                                                    }
-                                                    else if (dsa != null)
-                                                    {
-                                                        using (SHA256Managed sha = new SHA256Managed())
+                                                        using (SHA256CryptoServiceProvider sha = new SHA256CryptoServiceProvider())
                                                         {
-                                                            hailWriter.WriteByteArray(dsa.CreateSignature(sha.ComputeHash(diffieHellmanPublicPart)));
+                                                            hailWriter.WriteByteArray(rsa.SignData(diffieHellmanPublicPart, sha));
                                                         }
+                                                    }
+                                                    else
+                                                    {
+                                                        throw new CryptographicException("[MLAPI] Only RSA certificates are supported. No valid RSA key was found");
                                                     }
                                                 }
                                             }
