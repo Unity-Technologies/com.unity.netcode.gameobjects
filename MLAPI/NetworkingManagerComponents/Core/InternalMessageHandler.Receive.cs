@@ -371,5 +371,13 @@ namespace MLAPI.Internal
         {
             NetworkingManager.singleton.InvokeOnIncommingCustomMessage(clientId, stream);
         }
+
+        internal static void HandleClientSwitchSceneCompleted(uint clientId, Stream stream, int channelId)
+        {
+            using (PooledBitReader reader = PooledBitReader.Get(stream)) 
+            {
+                NetworkSceneManager.OnClientSwitchSceneCompleted(clientId, reader.ReadUInt32Packed());
+            }
+        }
     }
 }

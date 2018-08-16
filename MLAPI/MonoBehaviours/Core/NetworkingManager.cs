@@ -841,6 +841,9 @@ namespace MLAPI
                         case MLAPIConstants.MLAPI_CUSTOM_MESSAGE:
                             InternalMessageHandler.HandleCustomMessage(clientId, stream, channelId);
                             break;
+                        case MLAPIConstants.MLAPI_CLIENT_SWITCH_SCENE_COMPLETED:
+                            if (isServer) InternalMessageHandler.HandleClientSwitchSceneCompleted(clientId, stream, channelId);
+                            break;
                     }
 
                     #endregion
