@@ -30,7 +30,7 @@ namespace MLAPI.NetworkedVar.Collections
         /// <summary>
         /// The callback to be invoked when the list gets changed
         /// </summary>
-        public OnListChangedDelegate OnListChanged;
+        public event OnListChangedDelegate OnListChanged;
 
         /// <summary>
         /// Creates a NetworkedList with the default value and settings
