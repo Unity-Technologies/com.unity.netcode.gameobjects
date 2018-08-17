@@ -23,6 +23,11 @@ namespace MLAPI.NetworkedVar.Collections
         /// </summary>
         public readonly NetworkedVarSettings Settings = new NetworkedVarSettings();
         /// <summary>
+        /// Delegate type for list changed event
+        /// </summary>
+        /// <param name="changeEvent">Struct containing information about the change event</param>
+        public delegate void OnListChangedDelegate(NetworkedListEvent<T> changeEvent);
+        /// <summary>
         /// The callback to be invoked when the list gets changed
         /// </summary>
         public event OnListChangedDelegate OnListChanged;
