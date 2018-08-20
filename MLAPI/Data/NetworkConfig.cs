@@ -138,6 +138,10 @@ namespace MLAPI.Configuration
         /// </summary>
         public bool EnableSceneSwitching = true;
         /// <summary>
+        /// The amount of seconds to wait on all clients to load requested scene before the SwitchSceneProgress onComplete callback, that waits for all clients to complete loading, is called anyway.
+        /// </summary>
+        public int LoadSceneTimeOut = 120;
+        /// <summary>
         /// If your logic uses the NetwokrTime, this should probably be turned off. If however it's needed to maximize accuracy, this is recommended to be turned on
         /// </summary>
         public bool EnableTimeResync = false;
@@ -202,6 +206,7 @@ namespace MLAPI.Configuration
                     writer.WriteBool(config.EnableEncryption);
                     writer.WriteBool(config.SignKeyExchange);
                     writer.WriteBool(config.EnableSceneSwitching);
+                    writer.WriteInt32Packed(config.LoadSceneTimeOut);
                     writer.WriteBool(config.EnableTimeResync);
                     writer.WriteBits((byte)config.AttributeMessageMode, 3);
 
@@ -282,6 +287,7 @@ namespace MLAPI.Configuration
                     config.EnableEncryption = reader.ReadBool();
                     config.SignKeyExchange = reader.ReadBool();
                     config.EnableSceneSwitching = reader.ReadBool();
+                    config.LoadSceneTimeOut = reader.ReadInt32Packed();
                     config.EnableTimeResync = reader.ReadBool();
                     config.AttributeMessageMode = (AttributeMessageMode)reader.ReadBits(3);
                 }

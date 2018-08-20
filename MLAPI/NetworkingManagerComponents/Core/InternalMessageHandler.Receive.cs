@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System;
 using System.Security.Cryptography;
 using MLAPI.Components;
 using MLAPI.Data;
@@ -48,8 +49,12 @@ namespace MLAPI.Internal
             {
                 netManager.LocalClientId = reader.ReadUInt32Packed();
                 uint sceneIndex = 0;
-                if (netManager.NetworkConfig.EnableSceneSwitching)
+                Guid sceneSwitchProgressGuid = new Guid();
+                if (netManager.NetworkConfig.EnableSceneSwitching) 
+                {
                     sceneIndex = reader.ReadUInt32Packed();
+                    sceneSwitchProgressGuid = new Guid(reader.ReadByteArray());
+                }
 
 #if !DISABLE_CRYPTOGRAPHY
                 if (netManager.NetworkConfig.EnableEncryption)
@@ -118,7 +123,7 @@ namespace MLAPI.Internal
 
                 if (netManager.NetworkConfig.EnableSceneSwitching)
                 {
-                    NetworkSceneManager.OnSceneSwitch(sceneIndex);
+                    NetworkSceneManager.OnSceneSwitch(sceneIndex, sceneSwitchProgressGuid);
                 }
 
                 netManager.isConnectedClients = true;
@@ -190,7 +195,17 @@ namespace MLAPI.Internal
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
-                NetworkSceneManager.OnSceneSwitch(reader.ReadUInt32Packed());
+                uint sceneIndex = reader.ReadUInt32Packed();
+                Guid switchSceneGuid = new Guid(reader.ReadByteArray());
+                NetworkSceneManager.OnSceneSwitch(sceneIndex, switchSceneGuid);
+            }
+        }
+
+        internal static void HandleClientSwitchSceneCompleted(uint clientId, Stream stream, int channelId)
+        {
+            using (PooledBitReader reader = PooledBitReader.Get(stream)) 
+            {
+                NetworkSceneManager.OnClientSwitchSceneCompleted(clientId, new Guid(reader.ReadByteArray()));
             }
         }
 
@@ -370,14 +385,6 @@ namespace MLAPI.Internal
         internal static void HandleCustomMessage(uint clientId, Stream stream, int channelId)
         {
             NetworkingManager.singleton.InvokeOnIncommingCustomMessage(clientId, stream);
-        }
-
-        internal static void HandleClientSwitchSceneCompleted(uint clientId, Stream stream, int channelId)
-        {
-            using (PooledBitReader reader = PooledBitReader.Get(stream)) 
-            {
-                NetworkSceneManager.OnClientSwitchSceneCompleted(clientId, reader.ReadUInt32Packed());
-            }
         }
     }
 }

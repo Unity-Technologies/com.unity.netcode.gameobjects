@@ -292,6 +292,7 @@ namespace MLAPI
             NetworkSceneManager.registeredSceneNames.Clear();
             NetworkSceneManager.sceneIndexToString.Clear();
             NetworkSceneManager.sceneNameToIndex.Clear();
+            NetworkSceneManager.switchSceneProgresses.Clear();
 
             if (NetworkConfig.Transport == DefaultTransport.UNET)
                 NetworkConfig.NetworkTransport = new UnetTransport();
@@ -766,6 +767,12 @@ namespace MLAPI
             }
         }
 
+        internal IEnumerator TimeOutSwitchSceneProgress(SwitchSceneProgress switchSceneProgress)
+        {
+            yield return new WaitForSeconds(this.NetworkConfig.LoadSceneTimeOut);
+            switchSceneProgress.setTimedOut();
+        }
+
         private void HandleIncomingData(uint clientId, byte[] data, int channelId, int totalSize)
         {
             if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Unwrapping Data Header");
@@ -877,6 +884,9 @@ namespace MLAPI
             if (diffieHellmanPublicKeys.ContainsKey(clientId))
                 diffieHellmanPublicKeys.Remove(clientId);
 #endif
+
+            if (NetworkConfig.EnableSceneSwitching)
+                NetworkSceneManager.removeClientFromSceneSwitchProgresses(clientId);
 
             NetworkConfig.NetworkTransport.DisconnectClient(clientId);
         }
@@ -995,8 +1005,11 @@ namespace MLAPI
                     using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                     {
                         writer.WriteUInt32Packed(clientId);
-                        if (NetworkConfig.EnableSceneSwitching)
+                        if (NetworkConfig.EnableSceneSwitching) 
+                        {
                             writer.WriteUInt32Packed(NetworkSceneManager.CurrentSceneIndex);
+                            writer.WriteByteArray(NetworkSceneManager.CurrentSceneSwitchProgressGuid.ToByteArray());
+                        }
 
 #if !DISABLE_CRYPTOGRAPHY
                         if (NetworkConfig.EnableEncryption)
