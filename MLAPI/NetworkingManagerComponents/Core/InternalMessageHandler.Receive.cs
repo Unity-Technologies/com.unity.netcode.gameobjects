@@ -44,6 +44,8 @@ namespace MLAPI.Internal
                     // Read the ECDH
                     // Allocation justification: This runs on client and only once, at initial connection
                     serverDiffieHellmanPublicPart = reader.ReadByteArray();
+                    
+                    // Verify the key exchange
                     if (netManager.NetworkConfig.SignKeyExchange)
                     {
                         byte[] serverDiffieHellmanPublicPartSignature = reader.ReadByteArray();
@@ -85,7 +87,7 @@ namespace MLAPI.Internal
                             {
                                 using (SHA256CryptoServiceProvider sha = new SHA256CryptoServiceProvider())
                                 {
-                                    writer.WriteByteArray(rsa.Encrypt(sha.ComputeHash(certificate.GetPublicKey()), false));   
+                                    writer.WriteByteArray(rsa.Encrypt(sha.ComputeHash(diffieHellmanPublicKey), false));   
                                 }
                             }
                             else
