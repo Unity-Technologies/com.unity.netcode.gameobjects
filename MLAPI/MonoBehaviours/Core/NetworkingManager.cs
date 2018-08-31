@@ -287,6 +287,7 @@ namespace MLAPI
             SpawnManager.SpawnedObjects.Clear();
             SpawnManager.SpawnedObjectsList.Clear();
             SpawnManager.releasedNetworkObjectIds.Clear();
+            SpawnManager.PendingSpawnObjects.Clear();
             NetworkPoolManager.Pools.Clear();
             NetworkPoolManager.PoolNamesToIndexes.Clear();
             NetworkSceneManager.registeredSceneNames.Clear();
@@ -572,7 +573,7 @@ namespace MLAPI
             if (NetworkConfig.HandleObjectSpawning)
             {
                 prefabId = prefabId == -1 ? NetworkConfig.NetworkPrefabIds[NetworkConfig.PlayerPrefabName] : prefabId;
-                SpawnManager.CreateSpawnedObject(prefabId, 0, hostClientId, true, pos.GetValueOrDefault(), rot.GetValueOrDefault(), null, false, false);
+                SpawnManager.CreateSpawnedObject(prefabId, 0, hostClientId, true, NetworkSceneManager.CurrentActiveSceneIndex, false, pos.GetValueOrDefault(), rot.GetValueOrDefault(), true, null, false, false);
             }
 
             SpawnSceneObjects();
@@ -994,7 +995,7 @@ namespace MLAPI
                 if(NetworkConfig.HandleObjectSpawning)
                 {
                     prefabId = prefabId == -1 ? NetworkConfig.NetworkPrefabIds[NetworkConfig.PlayerPrefabName] : prefabId;
-                    netObject = SpawnManager.CreateSpawnedObject(prefabId, 0, clientId, true, position, rotation, null, false, false);
+                    netObject = SpawnManager.CreateSpawnedObject(prefabId, 0, clientId, true, NetworkSceneManager.CurrentActiveSceneIndex, false, position, rotation, true, null, false, false);
                     ConnectedClients[clientId].PlayerObject = netObject;
                 }
 
@@ -1045,6 +1046,9 @@ namespace MLAPI
                                 writer.WriteBit(pair.Value.gameObject.activeInHierarchy);
                                 writer.WriteBit(pair.Value.sceneObject == null ? true : pair.Value.sceneObject.Value);
 
+                                writer.WriteBool(pair.Value.OnlySpawnInSceneOriginalySpawnedAt);
+                                writer.WriteUInt32Packed(pair.Value.sceneSpawnedInIndex);
+
                                 writer.WriteSinglePacked(pair.Value.transform.position.x);
                                 writer.WriteSinglePacked(pair.Value.transform.position.y);
                                 writer.WriteSinglePacked(pair.Value.transform.position.z);
@@ -1082,6 +1086,9 @@ namespace MLAPI
                                 writer.WriteUInt32Packed(clientId);
                                 writer.WriteInt32Packed(prefabId);
                                 writer.WriteBit(false);
+
+                                writer.WriteBool(ConnectedClients[clientId].PlayerObject.OnlySpawnInSceneOriginalySpawnedAt);
+                                writer.WriteUInt32Packed(ConnectedClients[clientId].PlayerObject.sceneSpawnedInIndex);
 
                                 writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.position.x);
                                 writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.position.y);

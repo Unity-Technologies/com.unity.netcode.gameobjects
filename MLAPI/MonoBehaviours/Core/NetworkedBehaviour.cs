@@ -216,6 +216,32 @@ namespace MLAPI
             return fieldTypes[type];
         }
         
+        internal List<INetworkedVar> getDummyNetworkedVars()
+        {
+            List<INetworkedVar> networkedVars = new List<INetworkedVar>();
+            FieldInfo[] sortedFields = GetFieldInfoForType(GetType());
+            for (int i = 0; i < sortedFields.Length; i++)
+            {
+                Type fieldType = sortedFields[i].FieldType;
+                if (fieldType.HasInterface(typeof(INetworkedVar)))
+                {
+                    INetworkedVar instance = null;
+                    if (fieldType.IsGenericTypeDefinition)
+                    {
+                        Type genericType = fieldType.MakeGenericType(fieldType.GetGenericArguments());
+                        instance = (INetworkedVar)Activator.CreateInstance(genericType, true);
+                    }
+                    else
+                    {
+                        instance = (INetworkedVar)Activator.CreateInstance(fieldType, true);
+                    }
+                    instance.SetNetworkedBehaviour(this);
+                    networkedVars.Add(instance);
+                }
+            }
+            return networkedVars;
+        }
+
         internal void NetworkedVarInit()
         {
             if (networkedVarInit)
@@ -2971,7 +2997,9 @@ namespace MLAPI
         /// <returns></returns>
         protected NetworkedObject GetNetworkedObject(uint networkId)
         {
-            return SpawnManager.SpawnedObjects[networkId];
+            if(SpawnManager.SpawnedObjects.ContainsKey(networkId))
+                return SpawnManager.SpawnedObjects[networkId];
+            return null;
         }
     }
 }

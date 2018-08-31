@@ -84,6 +84,13 @@ namespace MLAPI
         public bool isSpawned { get; internal set; }
         internal bool? sceneObject = null;
 
+        /// <summary>
+        /// When enabled this gameobject will not be spawned on the client until the scene it was originally spawned inside at the server is fully loaded on the client.
+        /// </summary>
+        [Tooltip("When enabled this gameobject will not be spawned on the client until the scene it was originally spawned inside at the server is fully loaded on the client.")]
+        public bool OnlySpawnInSceneOriginalySpawnedAt = false;
+        internal uint sceneSpawnedInIndex = 0;
+
         private void OnDestroy()
         {
             if (NetworkingManager.singleton != null)

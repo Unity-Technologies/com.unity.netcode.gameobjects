@@ -106,6 +106,9 @@ namespace MLAPI.Internal
                         bool isActive = reader.ReadBool();
                         bool sceneObject = reader.ReadBool();
 
+                        bool OnlySpawnInSceneOriginalySpawnedAt = reader.ReadBool();
+                        uint sceneSpawnedInIndex = reader.ReadUInt32Packed();
+
                         float xPos = reader.ReadSinglePacked();
                         float yPos = reader.ReadSinglePacked();
                         float zPos = reader.ReadSinglePacked();
@@ -114,10 +117,9 @@ namespace MLAPI.Internal
                         float yRot = reader.ReadSinglePacked();
                         float zRot = reader.ReadSinglePacked();
 
-                        NetworkedObject netObject = SpawnManager.CreateSpawnedObject(prefabId, networkId, ownerId, isPlayerObject,
-                            new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), stream, false, true);
+                        NetworkedObject netObject = SpawnManager.CreateSpawnedObject(prefabId, networkId, ownerId, isPlayerObject, sceneSpawnedInIndex, OnlySpawnInSceneOriginalySpawnedAt,
+                            new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), isActive, stream, false, true);
                         netObject.sceneObject = sceneObject;
-                        netObject.gameObject.SetActive(isActive);
                     }
                 }
 
@@ -144,6 +146,9 @@ namespace MLAPI.Internal
                     int prefabId = reader.ReadInt32Packed();
                     bool sceneObject = reader.ReadBool();
 
+                    bool OnlySpawnInSceneOriginalySpawnedAt = reader.ReadBool();
+                    uint sceneSpawnedInIndex = reader.ReadUInt32Packed();
+
                     float xPos = reader.ReadSinglePacked();
                     float yPos = reader.ReadSinglePacked();
                     float zPos = reader.ReadSinglePacked();
@@ -159,8 +164,8 @@ namespace MLAPI.Internal
                         netManager.ConnectedClients.Add(ownerId, new NetworkedClient() { ClientId = ownerId });
                         netManager.ConnectedClientsList.Add(netManager.ConnectedClients[ownerId]);
                     }
-                    NetworkedObject netObject = SpawnManager.CreateSpawnedObject(prefabId, networkId, ownerId, isPlayerObject,
-                        new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), stream, hasPayload, true);
+                    NetworkedObject netObject = SpawnManager.CreateSpawnedObject(prefabId, networkId, ownerId, isPlayerObject, sceneSpawnedInIndex, OnlySpawnInSceneOriginalySpawnedAt,
+                        new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), true, stream, hasPayload, true);
 
                     netObject.sceneObject = sceneObject;
 
@@ -273,6 +278,9 @@ namespace MLAPI.Internal
                         int prefabId = reader.ReadInt32Packed();
                         bool sceneObject = reader.ReadBool();
 
+                        bool OnlySpawnInSceneOriginalySpawnedAt = reader.ReadBool();
+                        uint sceneSpawnedInIndex = reader.ReadUInt32Packed();
+
                         float xPos = reader.ReadSinglePacked();
                         float yPos = reader.ReadSinglePacked();
                         float zPos = reader.ReadSinglePacked();
@@ -286,8 +294,8 @@ namespace MLAPI.Internal
                             netManager.ConnectedClients.Add(ownerId, new NetworkedClient() { ClientId = ownerId });
                             netManager.ConnectedClientsList.Add(netManager.ConnectedClients[ownerId]);
                         }
-                        NetworkedObject netObject = SpawnManager.CreateSpawnedObject(prefabId, networkId, ownerId, isPlayerObject,
-                            new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), stream, false, true);
+                        NetworkedObject netObject = SpawnManager.CreateSpawnedObject(prefabId, networkId, ownerId, isPlayerObject, sceneSpawnedInIndex, OnlySpawnInSceneOriginalySpawnedAt,
+                            new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), true, stream, false, true);
                         netObject.sceneObject = sceneObject;
                     }
                 }
@@ -313,18 +321,24 @@ namespace MLAPI.Internal
                 uint netId = reader.ReadUInt32Packed();
                 ushort orderIndex = reader.ReadUInt16Packed();
 
-                if (!SpawnManager.SpawnedObjects.ContainsKey(netId))
+                if (SpawnManager.SpawnedObjects.ContainsKey(netId))
+                {
+                    if (SpawnManager.SpawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex) == null)
+                    {
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkedVar message recieved for a non existant behaviour");
+                        return;
+                    }
+                    SpawnManager.SpawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).HandleNetworkedVarDeltas(stream, clientId);
+                }
+                else if (SpawnManager.PendingSpawnObjects.ContainsKey(netId))
+                {
+                    SpawnManager.PendingSpawnObjects[netId].HandleNetworkedVarDeltas(orderIndex, stream, clientId);
+                }
+                else
                 {
                     if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkedVar message recieved for a non existant object with id: " + netId);
                     return;
                 }
-                else if (SpawnManager.SpawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex) == null)
-                {
-                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkedVar message recieved for a non existant behaviour");
-                    return;
-                }
-
-                SpawnManager.SpawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).HandleNetworkedVarDeltas(stream, clientId);
             }
         }
 
@@ -335,18 +349,24 @@ namespace MLAPI.Internal
                 uint netId = reader.ReadUInt32Packed();
                 ushort orderIndex = reader.ReadUInt16Packed();
 
-                if (!SpawnManager.SpawnedObjects.ContainsKey(netId))
+                if (SpawnManager.SpawnedObjects.ContainsKey(netId))
+                {
+                    if (SpawnManager.SpawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex) == null)
+                    {
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkedVar message recieved for a non existant behaviour");
+                        return;
+                    }
+                    SpawnManager.SpawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).HandleNetworkedVarUpdate(stream, clientId);
+                }
+                else if (SpawnManager.PendingSpawnObjects.ContainsKey(netId))
+                {
+                    SpawnManager.PendingSpawnObjects[netId].HandleNetworkedVarUpdate(orderIndex, stream, clientId);
+                }
+                else
                 {
                     if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkedVar message recieved for a non existant object with id: " + netId);
                     return;
                 }
-                else if (SpawnManager.SpawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex) == null)
-                {
-                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkedVar message recieved for a non existant behaviour");
-                    return;
-                }
-
-                SpawnManager.SpawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).HandleNetworkedVarUpdate(stream, clientId);
             }
         }
         

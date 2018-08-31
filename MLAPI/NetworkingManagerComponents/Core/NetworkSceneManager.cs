@@ -32,7 +32,10 @@ namespace MLAPI.Components
                 return;
             }
             CurrentSceneIndex = sceneNameToIndex[SceneManager.GetActiveScene().name];
+            CurrentActiveSceneIndex = CurrentSceneIndex;
         }
+
+        internal static uint CurrentActiveSceneIndex { get; private set; } = 0;
 
         /// <summary>
         /// Switches to a scene with a given name. Can only be called from Server
@@ -115,9 +118,11 @@ namespace MLAPI.Components
 
         private static void OnSceneLoaded(AsyncOperation operation, Guid switchSceneGuid)
         {
+            CurrentActiveSceneIndex = sceneNameToIndex[nextScene.name];
             SceneManager.SetActiveScene(nextScene);
             
             List<NetworkedObject> objectsToKeep = SpawnManager.SpawnedObjectsList;
+            objectsToKeep.AddRange(SpawnManager.GetPendingSpawnObjectsList());
             for (int i = 0; i < objectsToKeep.Count; i++)
             {
                 SceneManager.MoveGameObjectToScene(objectsToKeep[i].gameObject, nextScene);
@@ -139,6 +144,11 @@ namespace MLAPI.Components
                         InternalMessageHandler.Send(MLAPIConstants.MLAPI_CLIENT_SWITCH_SCENE_COMPLETED, "MLAPI_INTERNAL", stream);
                     }
                 }
+            }
+
+            if (NetworkingManager.singleton.isServer == false)
+            {
+                SpawnManager.spawnPendingObjectsForScene(CurrentActiveSceneIndex);
             }
         }
 
