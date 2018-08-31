@@ -107,7 +107,7 @@ namespace MLAPI.Components
             {
                 return; //This scene is already loaded. This usually happends at first load
             }
-            SpawnManager.DestroySceneObjects();
+            //SpawnManager.DestroySceneObjects();
             lastScene = SceneManager.GetActiveScene();
 
             string sceneName = sceneIndexToString[sceneIndex];
@@ -125,6 +125,10 @@ namespace MLAPI.Components
             objectsToKeep.AddRange(SpawnManager.GetPendingSpawnObjectsList());
             for (int i = 0; i < objectsToKeep.Count; i++)
             {
+                if(objectsToKeep[i].gameObject.transform.parent != null)
+                {
+                    objectsToKeep[i].gameObject.transform.parent = null;
+                }
                 SceneManager.MoveGameObjectToScene(objectsToKeep[i].gameObject, nextScene);
             }
             AsyncOperation sceneLoad = SceneManager.UnloadSceneAsync(lastScene);
@@ -146,12 +150,38 @@ namespace MLAPI.Components
                 }
             }
 
-            if (NetworkingManager.singleton.isServer == false)
+
+
+            if (NetworkingManager.singleton.isServer)
+            {
+                SpawnManager.MarkSceneObjects();
+                NetworkedObject[] networkedObjects = MonoBehaviour.FindObjectsOfType<NetworkedObject>();
+                for (int i = 0; i < networkedObjects.Length; i++)
+                {
+                    if (!networkedObjects[i].isSpawned && networkedObjects[i].sceneObject == true)
+                        networkedObjects[i].Spawn(null, true);
+                }
+            }
+            else
             {
                 SpawnManager.spawnPendingObjectsForScene(CurrentActiveSceneIndex);
+
+                NetworkedObject[] netObjects = MonoBehaviour.FindObjectsOfType<NetworkedObject>();
+                for (int i = 0; i < netObjects.Length; i++)
+                {
+                    if (netObjects[i].sceneObject == null)
+                        MonoBehaviour.Destroy(netObjects[i].gameObject);
+                }
             }
+
         }
 
+        private static void OnSceneUnload(AsyncOperation operation)
+        {
+            isSwitching = false;
+        }
+
+        /* 
         private static void OnSceneUnload(AsyncOperation operation)
         {
             isSwitching = false;
@@ -173,6 +203,7 @@ namespace MLAPI.Components
                 SpawnManager.DestroySceneObjects();
             }
         }
+        */
 
         /// <summary>
         /// Called on server

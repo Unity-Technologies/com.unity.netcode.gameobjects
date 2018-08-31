@@ -358,7 +358,8 @@ namespace MLAPI.Components
             }
         }
 
-        internal static void SpawnObject(NetworkedObject netObject, uint? clientOwnerId = null, Stream payload = null)
+
+        internal static void SpawnObject(NetworkedObject netObject, uint? clientOwnerId = null, Stream payload = null, bool destroyOnSceneChange = false)
         {
             if (netObject.isSpawned)
             {
@@ -385,7 +386,7 @@ namespace MLAPI.Components
             SpawnedObjects.Add(netId, netObject);
             SpawnedObjectsList.Add(netObject);
             netObject.isSpawned = true;
-            netObject.sceneObject = false;
+            netObject.sceneObject = destroyOnSceneChange;
             netObject.sceneSpawnedInIndex = NetworkSceneManager.CurrentActiveSceneIndex;
 
             if (clientOwnerId != null)

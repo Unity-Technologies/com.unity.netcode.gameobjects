@@ -100,9 +100,9 @@ namespace MLAPI
         /// <summary>
         /// Spawns this GameObject across the network. Can only be called from the Server
         /// </summary>
-        public void Spawn(Stream spawnPayload = null)
+        public void Spawn(Stream spawnPayload = null, bool destroyOnSceneChange = false)
         {
-            SpawnManager.SpawnObject(this, null, spawnPayload);
+            SpawnManager.SpawnObject(this, null, spawnPayload, destroyOnSceneChange);
         }
 
         /// <summary>
@@ -118,9 +118,10 @@ namespace MLAPI
         /// </summary>
         /// <param name="clientId">The clientId to own the object</param>
         /// <param name="spawnPayload">The writer containing the spawn payload</param>
-        public void SpawnWithOwnership(uint clientId, Stream spawnPayload = null)
+        /// <param name="destroyOnSceneChange">Should the object be destroyd when the scene is changed</param>
+        public void SpawnWithOwnership(uint clientId, Stream spawnPayload = null, bool destroyOnSceneChange = false)
         {
-            SpawnManager.SpawnObject(this, clientId, spawnPayload);
+            SpawnManager.SpawnObject(this, clientId, spawnPayload, destroyOnSceneChange);
         }
 
         /// <summary>
