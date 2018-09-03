@@ -69,7 +69,7 @@ namespace MLAPI.Components
 
             AsyncOperation sceneLoad = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
             nextScene = SceneManager.GetSceneByName(sceneName);
-            sceneLoad.completed += (AsyncOperation operation) => { OnSceneLoaded(operation, switchSceneProgress.guid); };
+            sceneLoad.completed += (AsyncOperation AsyncOp) => { OnSceneLoaded(AsyncOp, switchSceneProgress.guid); };
 
             switchSceneProgress.setSceneLoadOperation(sceneLoad);
 
@@ -107,6 +107,9 @@ namespace MLAPI.Components
             {
                 return; //This scene is already loaded. This usually happends at first load
             }
+
+            //  This has been commented out as it shouldn't be needed. The server send messages about removed
+            //  objects, the client should not need to determine by itself what objects to remove.
             //SpawnManager.DestroySceneObjects();
             lastScene = SceneManager.GetActiveScene();
 
@@ -125,40 +128,27 @@ namespace MLAPI.Components
             objectsToKeep.AddRange(SpawnManager.GetPendingSpawnObjectsList());
             for (int i = 0; i < objectsToKeep.Count; i++)
             {
+                //In case an object has been set as a child of another object it has to be unchilded in order to be moved from one scene to another.
                 if(objectsToKeep[i].gameObject.transform.parent != null)
                 {
                     objectsToKeep[i].gameObject.transform.parent = null;
                 }
                 SceneManager.MoveGameObjectToScene(objectsToKeep[i].gameObject, nextScene);
             }
-            AsyncOperation sceneLoad = SceneManager.UnloadSceneAsync(lastScene);
-            sceneLoad.completed += OnSceneUnload;
 
-            if (NetworkingManager.singleton.isHost) 
-            {
-                OnClientSwitchSceneCompleted(NetworkingManager.singleton.LocalClientId, switchSceneGuid);
-            }
-            else if (NetworkingManager.singleton.isClient) 
-            { 
-                using (PooledBitStream stream = PooledBitStream.Get()) 
-                {
-                    using (PooledBitWriter writer = PooledBitWriter.Get(stream))
-                    {
-                        writer.WriteByteArray(switchSceneGuid.ToByteArray());
-                        InternalMessageHandler.Send(MLAPIConstants.MLAPI_CLIENT_SWITCH_SCENE_COMPLETED, "MLAPI_INTERNAL", stream);
-                    }
-                }
-            }
+            AsyncOperation sceneUnload = SceneManager.UnloadSceneAsync(lastScene);
+            sceneUnload.completed += (AsyncOperation AsyncOp) => { OnSceneUnload(AsyncOp, switchSceneGuid); }; ;
+        }
 
-
-
+        private static void OnSceneUnload(AsyncOperation operation, Guid switchSceneGuid)
+        {
             if (NetworkingManager.singleton.isServer)
             {
                 SpawnManager.MarkSceneObjects();
                 NetworkedObject[] networkedObjects = MonoBehaviour.FindObjectsOfType<NetworkedObject>();
                 for (int i = 0; i < networkedObjects.Length; i++)
                 {
-                    if (!networkedObjects[i].isSpawned && networkedObjects[i].sceneObject == true)
+                    if (!networkedObjects[i].isSpawned && networkedObjects[i].destroyWithScene == true)
                         networkedObjects[i].Spawn(null, true);
                 }
             }
@@ -169,41 +159,31 @@ namespace MLAPI.Components
                 NetworkedObject[] netObjects = MonoBehaviour.FindObjectsOfType<NetworkedObject>();
                 for (int i = 0; i < netObjects.Length; i++)
                 {
-                    if (netObjects[i].sceneObject == null)
+                    if (netObjects[i].destroyWithScene == null)
                         MonoBehaviour.Destroy(netObjects[i].gameObject);
                 }
             }
 
-        }
-
-        private static void OnSceneUnload(AsyncOperation operation)
-        {
-            isSwitching = false;
-        }
-
-        /* 
-        private static void OnSceneUnload(AsyncOperation operation)
-        {
-            isSwitching = false;
-            if (NetworkingManager.singleton.isServer)
+            //Tell server that scene load is completed
+            if (NetworkingManager.singleton.isHost)
             {
-                SpawnManager.MarkSceneObjects();
-
-                NetworkedObject[] networkedObjects = MonoBehaviour.FindObjectsOfType<NetworkedObject>();
-                for (int i = 0; i < networkedObjects.Length; i++)
+                OnClientSwitchSceneCompleted(NetworkingManager.singleton.LocalClientId, switchSceneGuid);
+            }
+            else if (NetworkingManager.singleton.isClient)
+            {
+                using (PooledBitStream stream = PooledBitStream.Get())
                 {
-                    if (!networkedObjects[i].isSpawned && (networkedObjects[i].sceneObject == null || networkedObjects[i].sceneObject == true))
-                        networkedObjects[i].Spawn();
+                    using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                    {
+                        writer.WriteByteArray(switchSceneGuid.ToByteArray());
+                        InternalMessageHandler.Send(MLAPIConstants.MLAPI_CLIENT_SWITCH_SCENE_COMPLETED, "MLAPI_INTERNAL", stream);
+                    }
                 }
+            }
 
-                //SpawnManager.FlushSceneObjects();
-            }
-            else
-            {
-                SpawnManager.DestroySceneObjects();
-            }
+            isSwitching = false;
         }
-        */
+
 
         /// <summary>
         /// Called on server

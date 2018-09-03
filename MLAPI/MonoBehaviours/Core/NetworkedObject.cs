@@ -82,13 +82,13 @@ namespace MLAPI
         /// Gets if the object has yet been spawned across the network
         /// </summary>
         public bool isSpawned { get; internal set; }
-        internal bool? sceneObject = null;
+        internal bool? destroyWithScene = null;
 
         /// <summary>
         /// When enabled this gameobject will not be spawned on the client until the scene it was originally spawned inside at the server is fully loaded on the client.
         /// </summary>
         [Tooltip("When enabled this gameobject will not be spawned on the client until the scene it was originally spawned inside at the server is fully loaded on the client.")]
-        public bool OnlySpawnInSceneOriginalySpawnedAt = false;
+        public bool OnlySpawnInSceneOriginallySpawnedAt = false;
         internal uint sceneSpawnedInIndex = 0;
 
         private void OnDestroy()
@@ -100,9 +100,11 @@ namespace MLAPI
         /// <summary>
         /// Spawns this GameObject across the network. Can only be called from the Server
         /// </summary>
-        public void Spawn(Stream spawnPayload = null, bool destroyOnSceneChange = false)
+        /// <param name="spawnPayload">The writer containing the spawn payload</param>
+        /// <param name="destroyWithScene">Should the object be destroyd when the scene is changed</param>
+        public void Spawn(Stream spawnPayload = null, bool destroyWithScene = false)
         {
-            SpawnManager.SpawnObject(this, null, spawnPayload, destroyOnSceneChange);
+            SpawnManager.SpawnObject(this, null, spawnPayload, destroyWithScene);
         }
 
         /// <summary>
@@ -118,10 +120,10 @@ namespace MLAPI
         /// </summary>
         /// <param name="clientId">The clientId to own the object</param>
         /// <param name="spawnPayload">The writer containing the spawn payload</param>
-        /// <param name="destroyOnSceneChange">Should the object be destroyd when the scene is changed</param>
-        public void SpawnWithOwnership(uint clientId, Stream spawnPayload = null, bool destroyOnSceneChange = false)
+        /// <param name="destroyWithScene">Should the object be destroyd when the scene is changed</param>
+        public void SpawnWithOwnership(uint clientId, Stream spawnPayload = null, bool destroyWithScene = false)
         {
-            SpawnManager.SpawnObject(this, clientId, spawnPayload, destroyOnSceneChange);
+            SpawnManager.SpawnObject(this, clientId, spawnPayload, destroyWithScene);
         }
 
         /// <summary>
@@ -214,14 +216,7 @@ namespace MLAPI
                 for (int i = 0; i < childNetworkedBehaviours.Count; i++)
                 {
                     childNetworkedBehaviours[i].NetworkedVarInit();
-                    if (childNetworkedBehaviours[i].networkedVarFields.Count == 0)
-                        continue;
-                    for (int j = 0; j < childNetworkedBehaviours[i].networkedVarFields.Count; j++)
-                    {
-                        bool canClientRead = childNetworkedBehaviours[i].networkedVarFields[j].CanClientRead(clientId);
-                        writer.WriteBool(canClientRead);
-                        if (canClientRead) childNetworkedBehaviours[i].networkedVarFields[j].WriteField(stream);
-                    }
+                    NetworkedBehaviour.WriteNetworkedVarData(childNetworkedBehaviours[i].networkedVarFields, writer, stream, clientId);
                 }
             }
         }
@@ -233,12 +228,7 @@ namespace MLAPI
                 for (int i = 0; i < childNetworkedBehaviours.Count; i++)
                 {
                     childNetworkedBehaviours[i].NetworkedVarInit();
-                    if (childNetworkedBehaviours[i].networkedVarFields.Count == 0)
-                        continue;
-                    for (int j = 0; j < childNetworkedBehaviours[i].networkedVarFields.Count; j++)
-                    {
-                        if (reader.ReadBool()) childNetworkedBehaviours[i].networkedVarFields[j].ReadField(stream);
-                    }
+                    NetworkedBehaviour.SetNetworkedVarData(childNetworkedBehaviours[i].networkedVarFields, reader, stream);
                 }
             }
         }
