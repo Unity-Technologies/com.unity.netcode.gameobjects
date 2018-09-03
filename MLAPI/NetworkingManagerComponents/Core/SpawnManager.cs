@@ -552,7 +552,13 @@ namespace MLAPI.Components
                     SpawnedObjectsList.Add(pendingSpawnObject.Value.netObject);
 
                     if (pendingSpawnObject.Value.playerObject) NetworkingManager.singleton.ConnectedClients[pendingSpawnObject.Value.owner].PlayerObject = pendingSpawnObject.Value.netObject;
+
                     pendingSpawnObject.Value.netObject.InvokeBehaviourNetworkSpawn(pendingSpawnObject.Value.payload);
+                    if(pendingSpawnObject.Value.payload != null)
+                    {
+                        pendingSpawnObject.Value.payload.Dispose();
+                    }
+
                     pendingSpawnObject.Value.netObject.gameObject.SetActive(pendingSpawnObject.Value.isActive);
 
                     keysToRemove.Add(pendingSpawnObject.Key);
