@@ -6,6 +6,7 @@ using MLAPI.Logging;
 using MLAPI.NetworkedVar;
 using MLAPI.Serialization;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace MLAPI.Components
 {
@@ -167,6 +168,10 @@ namespace MLAPI.Components
                 prefab.SetActive(false);
                 GameObject go = MonoBehaviour.Instantiate(prefab, position, rotation);
                 prefab.SetActive(prefabActive);
+
+                //Appearantly some wierd behavior when switching scenes can occur that destroys this object even though the scene is
+                //not destroyed, therefor we set it to DontDestroyOnLoad here, to prevent that problem.
+                MonoBehaviour.DontDestroyOnLoad(go); 
 
                 NetworkedObject netObject = go.GetComponent<NetworkedObject>();
                 if (netObject == null)
@@ -457,9 +462,11 @@ namespace MLAPI.Components
                 return;
 
             //Removal of pending object
-            if (PendingSpawnObjects.ContainsKey(networkId))
+            //Even though pending objects is marked with DontDestroyOnLoad, the OnDestroy method is invoked on pending objects. They are however not
+            //destroyed (probably a unity bug for having an gameobject spawned as inactive). Therefore we only actual remove it from the list if 
+            //destroyGameObject is set to true, meaning MLAPI decided to destroy it, not unity.
+            if (destroyGameObject == true && PendingSpawnObjects.ContainsKey(networkId))
             {
-
                 if (!PendingSpawnObjects[networkId].netObject.isOwnedByServer && !PendingSpawnObjects[networkId].netObject.isPlayerObject &&
                 netManager.ConnectedClients.ContainsKey(PendingSpawnObjects[networkId].netObject.OwnerClientId))
                 {
@@ -472,7 +479,7 @@ namespace MLAPI.Components
                 }
 
                 GameObject pendingGameObject = PendingSpawnObjects[networkId].netObject.gameObject;
-                if (destroyGameObject && pendingGameObject != null)
+                if (pendingGameObject != null)
                     MonoBehaviour.Destroy(pendingGameObject);
                 PendingSpawnObjects.Remove(networkId);
             }
@@ -539,7 +546,11 @@ namespace MLAPI.Components
             {
                 if (pendingSpawnObject.Value.sceneSpawnedInIndex == sceneIndex)
                 {
+                    //Move the pending object away from the DontDestroyOnLoad scene and back into the active scene.
+                    SceneManager.MoveGameObjectToScene(pendingSpawnObject.Value.netObject.gameObject, SceneManager.GetActiveScene());
+
                     pendingSpawnObject.Value.netObject.gameObject.SetActive(true);
+                    pendingSpawnObject.Value.netObject.isSpawned = true;
 
                     using (PooledBitStream stream = PooledBitStream.Get())
                     {

@@ -125,7 +125,6 @@ namespace MLAPI.Components
             SceneManager.SetActiveScene(nextScene);
             
             List<NetworkedObject> objectsToKeep = SpawnManager.SpawnedObjectsList;
-            objectsToKeep.AddRange(SpawnManager.GetPendingSpawnObjectsList());
             for (int i = 0; i < objectsToKeep.Count; i++)
             {
                 //In case an object has been set as a child of another object it has to be unchilded in order to be moved from one scene to another.
