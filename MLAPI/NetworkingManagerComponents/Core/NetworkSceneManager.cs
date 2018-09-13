@@ -175,7 +175,7 @@ namespace MLAPI.Components
                     using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                     {
                         writer.WriteByteArray(switchSceneGuid.ToByteArray());
-                        InternalMessageHandler.Send(MLAPIConstants.MLAPI_CLIENT_SWITCH_SCENE_COMPLETED, "MLAPI_INTERNAL", stream);
+                        InternalMessageHandler.Send(NetworkingManager.singleton.ServerClientId, MLAPIConstants.MLAPI_CLIENT_SWITCH_SCENE_COMPLETED, "MLAPI_INTERNAL", stream);
                     }
                 }
             }
