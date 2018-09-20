@@ -83,19 +83,19 @@ namespace UnityEditor
             if (type == typeof(int))
                 val = EditorGUILayout.IntField(name, (int)val);
             else if (type == typeof(uint))
-                val = EditorGUILayout.LongField(name, (long)val);
+                val = EditorGUILayout.LongField(name, (long)((uint)val));
             else if (type == typeof(short))
-                val = EditorGUILayout.IntField(name, (int)val);
+                val = EditorGUILayout.IntField(name, (int)((short)val));
             else if (type == typeof(ushort))
-                val = EditorGUILayout.IntField(name, (int)val);
+                val = EditorGUILayout.IntField(name, (int)((ushort)val));
             else if (type == typeof(sbyte))
-                val = EditorGUILayout.IntField(name, (int)val);
+                val = EditorGUILayout.IntField(name, (int)((sbyte)val));
             else if (type == typeof(byte))
-                val = EditorGUILayout.IntField(name, (int)val);
+                val = EditorGUILayout.IntField(name, (int)((byte)val));
             else if (type == typeof(long))
                 val = EditorGUILayout.LongField(name, (long)val);
             else if (type == typeof(ulong))
-                val = EditorGUILayout.LongField(name, (long)val);
+                val = EditorGUILayout.LongField(name, (long)((ulong)val));
             else if (type == typeof(bool))
                 val = EditorGUILayout.Toggle(name, (bool)val);
             else if (type == typeof(string))
