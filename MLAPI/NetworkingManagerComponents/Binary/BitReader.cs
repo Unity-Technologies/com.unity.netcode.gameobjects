@@ -90,7 +90,7 @@ namespace MLAPI.Serialization
         public object ReadObjectPacked(Type type)
         {
             if (type == typeof(byte))
-                return ReadByte();
+                return ReadByteDirect();
             if (type == typeof(sbyte))
                 return ReadSByte();
             if (type == typeof(ushort))
