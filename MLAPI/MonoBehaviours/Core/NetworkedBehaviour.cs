@@ -231,8 +231,7 @@ namespace MLAPI
                     INetworkedVar instance = (INetworkedVar)sortedFields[i].GetValue(this);
                     if (instance == null)
                     {
-                        Type genericType = fieldType.MakeGenericType(fieldType.GetGenericArguments());
-                        instance = (INetworkedVar)Activator.CreateInstance(genericType, true);
+                        instance = (INetworkedVar)Activator.CreateInstance(fieldType, true);
                         sortedFields[i].SetValue(this, instance);
                     }
                     
