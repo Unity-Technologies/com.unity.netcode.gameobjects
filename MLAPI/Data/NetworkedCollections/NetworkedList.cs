@@ -504,7 +504,7 @@ namespace MLAPI.NetworkedVar.Collections
         /// </summary>
         public T value;
         /// <summary>
-        /// the index changed, added or removed if a
+        /// the index changed, added or removed if available
         /// </summary>
         public int index;
     }
