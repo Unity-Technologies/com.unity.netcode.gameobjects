@@ -54,7 +54,7 @@ namespace MLAPI.Internal
 
                         if (rsa != null)
                         {
-                            using (SHA256CryptoServiceProvider sha = new SHA256CryptoServiceProvider())
+                            using (SHA256Managed sha = new SHA256Managed())
                             {
                                 if (!rsa.VerifyData(serverDiffieHellmanPublicPart, sha, serverDiffieHellmanPublicPartSignature))
                                 {
@@ -98,7 +98,7 @@ namespace MLAPI.Internal
                     }
                 }
                 // Send HailResponse
-                InternalMessageHandler.Send(NetworkingManager.singleton.ServerClientId, MLAPIConstants.MLAPI_CERTIFICATE_HAIL_RESPONSE, "MLAPI_INTERNAL", outStream, SecuritySendFlags.None, true);
+                InternalMessageHandler.Send(NetworkingManager.singleton.ServerClientId, MLAPIConstants.MLAPI_CERTIFICATE_HAIL_RESPONSE, "MLAPI_INTERNAL", outStream, true);
             }
         }
 
@@ -118,11 +118,11 @@ namespace MLAPI.Internal
                     {
                         byte[] diffieHellmanPublicSignature = reader.ReadByteArray();
                         X509Certificate2 certificate = netManager.NetworkConfig.ServerX509Certificate;
-                        RSACryptoServiceProvider rsa = certificate.PublicKey.Key as RSACryptoServiceProvider;
+                        RSACryptoServiceProvider rsa = certificate.PrivateKey as RSACryptoServiceProvider;
 
                         if (rsa != null)
                         {
-                            using (SHA256CryptoServiceProvider sha = new SHA256CryptoServiceProvider())
+                            using (SHA256Managed sha = new SHA256Managed())
                             {
                                 byte[] clientHash = rsa.Decrypt(diffieHellmanPublicSignature, false);
                                 byte[] serverHash = sha.ComputeHash(diffieHellmanPublic);
@@ -163,7 +163,7 @@ namespace MLAPI.Internal
                 {
                     writer.WriteInt64Packed(DateTime.Now.Ticks); // This serves no purpose.
                 }
-                InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_GREETINGS, "MLAPI_INTERNAL", outStream, SecuritySendFlags.None, true);
+                InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_GREETINGS, "MLAPI_INTERNAL", outStream, true);
             }
         }
 

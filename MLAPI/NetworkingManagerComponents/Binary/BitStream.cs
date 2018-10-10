@@ -132,7 +132,34 @@ namespace MLAPI.Serialization
         /// Grow buffer if possible. According to Max(bufferLength, 1) * growthFactor^Ceil(newContent/Max(bufferLength, 1))
         /// </summary>
         /// <param name="newContent">How many new values need to be accomodated (at least).</param>
-        private void Grow(long newContent) => SetCapacity(Math.Max(target.LongLength, 1) * (long)Math.Pow(GrowthFactor, CeilingExact(newContent, Math.Max(target.LongLength, 1))));
+        //private void Grow(long newContent) => SetCapacity(Math.Max(target.LongLength, 1) * (long)Math.Pow(GrowthFactor, CeilingExact(newContent, Math.Max(target.LongLength, 1))));
+        /*
+        private void Grow(long newContent)
+        {
+            float grow = newContent / 64;
+            if (((long)grow) != grow) grow += 1;
+            SetCapacity((Capacity + 64) * (long)grow);
+        }
+        */
+
+        private void Grow(long newContent)
+        {
+            long value = newContent + Capacity;
+            long newCapacity = value;
+
+            if (newCapacity < 256)
+                newCapacity = 256;
+            // We are ok with this overflowing since the next statement will deal
+            // with the cases where _capacity*2 overflows.
+            if (newCapacity < Capacity * 2)
+                newCapacity = Capacity * 2;
+            // We want to expand the array up to Array.MaxArrayLengthOneDimensional
+            // And we want to give the user the value that they asked for
+            if ((uint)(Capacity * 2) > int.MaxValue)
+                newCapacity = value > int.MaxValue ? value : int.MaxValue;
+
+            SetCapacity(newCapacity);
+        }
 
         /// <summary>
         /// Read a misaligned byte. WARNING: If the current BitPosition <strong>isn't</strong> byte misaligned,

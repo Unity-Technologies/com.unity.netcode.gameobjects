@@ -172,14 +172,14 @@ namespace MLAPI
             {
                 for (int i = 0; i < ConnectedClientsList.Count; i++)
                 {
-                    InternalMessageHandler.Send(ConnectedClientsList[i].ClientId, MLAPIConstants.MLAPI_CUSTOM_MESSAGE, channel, stream, SecuritySendFlags.None);
+                    InternalMessageHandler.Send(ConnectedClientsList[i].ClientId, MLAPIConstants.MLAPI_CUSTOM_MESSAGE, channel, stream);
                 }
             }
             else
             {
                 for (int i = 0; i < clientIds.Count; i++)
                 {
-                    InternalMessageHandler.Send(clientIds[i], MLAPIConstants.MLAPI_CUSTOM_MESSAGE, channel, stream, SecuritySendFlags.None);
+                    InternalMessageHandler.Send(clientIds[i], MLAPIConstants.MLAPI_CUSTOM_MESSAGE, channel, stream);
                 }
             }
         }
@@ -192,7 +192,7 @@ namespace MLAPI
         /// <param name="channel">The channel tos end the data on</param>
         public void SendCustomMessage(uint clientId, Stream stream, string channel = "MLAPI_DEFAULT_MESSAGE")
         {
-            InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_CUSTOM_MESSAGE, channel, stream, SecuritySendFlags.None);
+            InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_CUSTOM_MESSAGE, channel, stream);
         }
 
         private void OnValidate()
@@ -686,7 +686,7 @@ namespace MLAPI
 
                                                     if (rsa != null)
                                                     {
-                                                        using (SHA256CryptoServiceProvider sha = new SHA256CryptoServiceProvider())
+                                                        using (SHA256Managed sha = new SHA256Managed())
                                                         {
                                                             hailWriter.WriteByteArray(rsa.SignData(diffieHellmanPublicPart, sha));
                                                         }
@@ -698,7 +698,7 @@ namespace MLAPI
                                                 }
                                             }
                                             // Send the hail
-                                            InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_CERTIFICATE_HAIL, "MLAPI_INTERNAL", hailStream, SecuritySendFlags.None, true);
+                                            InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_CERTIFICATE_HAIL, "MLAPI_INTERNAL", hailStream, true);
                                         }
                                     }
                                     else
@@ -788,7 +788,7 @@ namespace MLAPI
                         writer.WriteByteArray(NetworkConfig.ConnectionData);
                 }
 
-                InternalMessageHandler.Send(ServerClientId, MLAPIConstants.MLAPI_CONNECTION_REQUEST, "MLAPI_INTERNAL", stream, SecuritySendFlags.Encrypted | SecuritySendFlags.Authenticated, true);
+                InternalMessageHandler.Send(ServerClientId, MLAPIConstants.MLAPI_CONNECTION_REQUEST, "MLAPI_INTERNAL", stream, true);
             }
         }
 
@@ -809,160 +809,99 @@ namespace MLAPI
             }
         }
 
-        private readonly byte[] IVBuffer = new byte[16];
-        private readonly byte[] HMACBuffer = new byte[32];
         private void HandleIncomingData(uint clientId, byte[] data, int channelId, int totalSize)
         {
-            using (BitStream bitStream = new BitStream(data))
+            if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Unwrapping Data Header");
+            using (BitStream stream = new BitStream(data))
             {
-                BitStream stream = bitStream;
-                try
+                stream.SetLength(totalSize);
+                using (PooledBitReader reader = PooledBitReader.Get(stream))
                 {
-                    if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Unwrapping Data Header");
-                    bitStream.SetLength(totalSize);
-                    using (PooledBitReader headerReader = PooledBitReader.Get(bitStream))
+                    byte messageType = reader.ReadByteDirect();
+
+                    uint headerByteSize = (uint)Arithmetic.VarIntSize(messageType);
+                    NetworkProfiler.StartEvent(TickType.Receive, (uint)(totalSize - headerByteSize), channelId, messageType);
+
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Data Header: messageType=" + messageType);
+
+                    //Client tried to send a network message that was not the connection request before he was accepted.
+                    if (isServer && (NetworkConfig.EnableEncryption && PendingClients.ContainsKey(clientId) && PendingClients[clientId].ConnectionState == PendingClient.State.PendingHail && messageType != MLAPIConstants.MLAPI_CERTIFICATE_HAIL_RESPONSE) ||
+                        (PendingClients.ContainsKey(clientId) && PendingClients[clientId].ConnectionState == PendingClient.State.PendingConnection && messageType != MLAPIConstants.MLAPI_CONNECTION_REQUEST))
                     {
-                        byte messageType;
-                        bool encrypted = headerReader.ReadBit();
-                        bool authenticated = headerReader.ReadBit();
-                        if ((encrypted || authenticated) && NetworkConfig.EnableEncryption)
-                        {
-                            headerReader.SkipPadBits();
-
-                            if (authenticated)
-                            {
-                                using (HMACSHA256 hmac = new HMACSHA256(isServer ? ConnectedClients[clientId].AesKey : clientAesKey))
-                                {
-                                    headerReader.ReadByteArray(HMACBuffer, 32);
-                                    // 32 is the size of the hmac. The IV is also included in the HMAC if the message is also encrypted.
-                                    byte[] hmacBytes = hmac.ComputeHash(bitStream.GetBuffer(), (32 + 1), totalSize - (32 + 1));
-                                    for (int i = 0; i < hmacBytes.Length; i++)
-                                    {
-                                        if (hmacBytes[i] != HMACBuffer[i])
-                                        {
-                                            if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("HMAC authentication code did not match");
-                                            return;
-                                        }
-                                    }
-                                }
-                            }
-                            
-                            if (encrypted)
-                            {
-                                headerReader.ReadByteArray(IVBuffer, 16);
-                                stream = new BitStream(encryptionBuffer);
-                                using (RijndaelManaged rijndael = new RijndaelManaged())
-                                {
-                                    rijndael.Padding = PaddingMode.PKCS7;
-                                    rijndael.Key = isServer ? (ConnectedClients.ContainsKey(clientId) ? ConnectedClients[clientId].AesKey : PendingClients[clientId].AesKey) : clientAesKey;
-                                    rijndael.IV = IVBuffer;
-                                    using (CryptoStream cryptoStream = new CryptoStream(bitStream, rijndael.CreateDecryptor(), CryptoStreamMode.Read))
-                                    {
-                                        int readByte = 0;
-                                        while ((readByte = cryptoStream.ReadByte()) != -1)
-                                            stream.WriteByte((byte) readByte);
-                                    }
-                                }
-                            }
-                            
-                            using (PooledBitReader bodyReader = PooledBitReader.Get(stream))
-                            {
-                                messageType = bodyReader.ReadByteDirect();
-                            }
-                        }
-                        else
-                        {
-                            messageType = headerReader.ReadByteBits(6);
-                        }
-
-                        uint headerByteSize = (uint) Arithmetic.VarIntSize(messageType);
-                        NetworkProfiler.StartEvent(TickType.Receive, (uint) (totalSize - headerByteSize), channelId, messageType);
-
-                        if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Data Header: messageType=" + messageType);
-
-                        //Client tried to send a network message that was not the connection request before he was accepted.
-                        if (isServer && (NetworkConfig.EnableEncryption && PendingClients.ContainsKey(clientId) && PendingClients[clientId].ConnectionState == PendingClient.State.PendingHail && messageType != MLAPIConstants.MLAPI_CERTIFICATE_HAIL_RESPONSE) ||
-                            (PendingClients.ContainsKey(clientId) && PendingClients[clientId].ConnectionState == PendingClient.State.PendingConnection && messageType != MLAPIConstants.MLAPI_CONNECTION_REQUEST))
-                        {
-                            if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Message recieved from clientId " + clientId + " before it has been accepted");
-                            return;
-                        }
-
-                        #region INTERNAL MESSAGE
-
-                        switch (messageType)
-                        {
-                            case MLAPIConstants.MLAPI_CONNECTION_REQUEST:
-                                if (isServer)
-                                    InternalMessageHandler.HandleConnectionRequest(clientId, stream, channelId);
-                                break;
-                            case MLAPIConstants.MLAPI_CONNECTION_APPROVED:
-                                if (isClient)
-                                    InternalMessageHandler.HandleConnectionApproved(clientId, stream, channelId);
-                                break;
-                            case MLAPIConstants.MLAPI_ADD_OBJECT:
-                                if (isClient) InternalMessageHandler.HandleAddObject(clientId, stream, channelId);
-                                break;
-                            case MLAPIConstants.MLAPI_CLIENT_DISCONNECT:
-                                if (isClient)
-                                    InternalMessageHandler.HandleClientDisconnect(clientId, stream, channelId);
-                                break;
-                            case MLAPIConstants.MLAPI_DESTROY_OBJECT:
-                                if (isClient) InternalMessageHandler.HandleDestroyObject(clientId, stream, channelId);
-                                break;
-                            case MLAPIConstants.MLAPI_SWITCH_SCENE:
-                                if (isClient) InternalMessageHandler.HandleSwitchScene(clientId, stream, channelId);
-                                break;
-                            case MLAPIConstants.MLAPI_SPAWN_POOL_OBJECT:
-                                if (isClient) InternalMessageHandler.HandleSpawnPoolObject(clientId, stream, channelId);
-                                break;
-                            case MLAPIConstants.MLAPI_DESTROY_POOL_OBJECT:
-                                if (isClient)
-                                    InternalMessageHandler.HandleDestroyPoolObject(clientId, stream, channelId);
-                                break;
-                            case MLAPIConstants.MLAPI_CHANGE_OWNER:
-                                if (isClient) InternalMessageHandler.HandleChangeOwner(clientId, stream, channelId);
-                                break;
-                            case MLAPIConstants.MLAPI_ADD_OBJECTS:
-                                if (isClient) InternalMessageHandler.HandleAddObjects(clientId, stream, channelId);
-                                break;
-                            case MLAPIConstants.MLAPI_TIME_SYNC:
-                                if (isClient) InternalMessageHandler.HandleTimeSync(clientId, stream, channelId);
-                                break;
-                            case MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA:
-                                InternalMessageHandler.HandleNetworkedVarDelta(clientId, stream, channelId);
-                                break;
-                            case MLAPIConstants.MLAPI_NETWORKED_VAR_UPDATE:
-                                InternalMessageHandler.HandleNetworkedVarUpdate(clientId, stream, channelId);
-                                break;
-                            case MLAPIConstants.MLAPI_SERVER_RPC:
-                                if (isServer) InternalMessageHandler.HandleServerRPC(clientId, stream, channelId);
-                                break;
-                            case MLAPIConstants.MLAPI_CLIENT_RPC:
-                                if (isClient) InternalMessageHandler.HandleClientRPC(clientId, stream, channelId);
-                                break;
-                            case MLAPIConstants.MLAPI_CUSTOM_MESSAGE:
-                                InternalMessageHandler.HandleCustomMessage(clientId, stream, channelId);
-                                break;
-                            case MLAPIConstants.MLAPI_CERTIFICATE_HAIL:
-                                if (isClient) InternalMessageHandler.HandleHailRequest(clientId, stream, channelId);
-                                break;
-                            case MLAPIConstants.MLAPI_CERTIFICATE_HAIL_RESPONSE:
-                                if (isServer) InternalMessageHandler.HandleHailResponse(clientId, stream, channelId);
-                                break;
-                            case MLAPIConstants.MLAPI_GREETINGS:
-                                if (isClient) InternalMessageHandler.HandleGreetings(clientId, stream, channelId);
-                                break;
-                        }
-
-                        #endregion
-
-                        NetworkProfiler.EndEvent();
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Message recieved from clientId " + clientId + " before it has been accepted");
+                        return;
                     }
-                }
-                finally
-                {
-                    if (stream != bitStream) stream.Dispose();
+
+                    #region INTERNAL MESSAGE
+
+                    switch (messageType)
+                    {
+                        case MLAPIConstants.MLAPI_CONNECTION_REQUEST:
+                            if (isServer)
+                                InternalMessageHandler.HandleConnectionRequest(clientId, stream, channelId);
+                            break;
+                        case MLAPIConstants.MLAPI_CONNECTION_APPROVED:
+                            if (isClient)
+                                InternalMessageHandler.HandleConnectionApproved(clientId, stream, channelId);
+                            break;
+                        case MLAPIConstants.MLAPI_ADD_OBJECT:
+                            if (isClient) InternalMessageHandler.HandleAddObject(clientId, stream, channelId);
+                            break;
+                        case MLAPIConstants.MLAPI_CLIENT_DISCONNECT:
+                            if (isClient)
+                                InternalMessageHandler.HandleClientDisconnect(clientId, stream, channelId);
+                            break;
+                        case MLAPIConstants.MLAPI_DESTROY_OBJECT:
+                            if (isClient) InternalMessageHandler.HandleDestroyObject(clientId, stream, channelId);
+                            break;
+                        case MLAPIConstants.MLAPI_SWITCH_SCENE:
+                            if (isClient) InternalMessageHandler.HandleSwitchScene(clientId, stream, channelId);
+                            break;
+                        case MLAPIConstants.MLAPI_SPAWN_POOL_OBJECT:
+                            if (isClient) InternalMessageHandler.HandleSpawnPoolObject(clientId, stream, channelId);
+                            break;
+                        case MLAPIConstants.MLAPI_DESTROY_POOL_OBJECT:
+                            if (isClient)
+                                InternalMessageHandler.HandleDestroyPoolObject(clientId, stream, channelId);
+                            break;
+                        case MLAPIConstants.MLAPI_CHANGE_OWNER:
+                            if (isClient) InternalMessageHandler.HandleChangeOwner(clientId, stream, channelId);
+                            break;
+                        case MLAPIConstants.MLAPI_ADD_OBJECTS:
+                            if (isClient) InternalMessageHandler.HandleAddObjects(clientId, stream, channelId);
+                            break;
+                        case MLAPIConstants.MLAPI_TIME_SYNC:
+                            if (isClient) InternalMessageHandler.HandleTimeSync(clientId, stream, channelId);
+                            break;
+                        case MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA:
+                            InternalMessageHandler.HandleNetworkedVarDelta(clientId, stream, channelId);
+                            break;
+                        case MLAPIConstants.MLAPI_NETWORKED_VAR_UPDATE:
+                            InternalMessageHandler.HandleNetworkedVarUpdate(clientId, stream, channelId);
+                            break;
+                        case MLAPIConstants.MLAPI_SERVER_RPC:
+                            if (isServer) InternalMessageHandler.HandleServerRPC(clientId, stream, channelId);
+                            break;
+                        case MLAPIConstants.MLAPI_CLIENT_RPC:
+                            if (isClient) InternalMessageHandler.HandleClientRPC(clientId, stream, channelId);
+                            break;
+                        case MLAPIConstants.MLAPI_CUSTOM_MESSAGE:
+                            InternalMessageHandler.HandleCustomMessage(clientId, stream, channelId);
+                            break;
+                        case MLAPIConstants.MLAPI_CERTIFICATE_HAIL:
+                            if (isClient) InternalMessageHandler.HandleHailRequest(clientId, stream, channelId);
+                            break;
+                        case MLAPIConstants.MLAPI_CERTIFICATE_HAIL_RESPONSE:
+                            if (isServer) InternalMessageHandler.HandleHailResponse(clientId, stream, channelId);
+                            break;
+                        case MLAPIConstants.MLAPI_GREETINGS:
+                            if (isClient) InternalMessageHandler.HandleGreetings(clientId, stream, channelId);
+                            break;
+                    }
+
+                    #endregion
+
+                    NetworkProfiler.EndEvent();
                 }
             }
         }
@@ -1026,7 +965,7 @@ namespace MLAPI
                     using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                     {
                         writer.WriteUInt32Packed(clientId);
-                        InternalMessageHandler.Send(MLAPIConstants.MLAPI_CLIENT_DISCONNECT, "MLAPI_INTERNAL", clientId, stream, SecuritySendFlags.None);
+                        InternalMessageHandler.Send(MLAPIConstants.MLAPI_CLIENT_DISCONNECT, "MLAPI_INTERNAL", clientId, stream);
                     }
                 }
             }
@@ -1042,7 +981,7 @@ namespace MLAPI
                     writer.WriteSinglePacked(NetworkTime);
                     int timestamp = NetworkConfig.NetworkTransport.GetNetworkTimestamp();
                     writer.WriteInt32Packed(timestamp);
-                    InternalMessageHandler.Send(MLAPIConstants.MLAPI_TIME_SYNC, "MLAPI_TIME_SYNC", stream, SecuritySendFlags.None);
+                    InternalMessageHandler.Send(MLAPIConstants.MLAPI_TIME_SYNC, "MLAPI_TIME_SYNC", stream);
                 }
             }
         }
@@ -1120,7 +1059,7 @@ namespace MLAPI
                             }
                         }
 
-                        InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_CONNECTION_APPROVED, "MLAPI_INTERNAL", stream, SecuritySendFlags.Encrypted | SecuritySendFlags.Authenticated, true);
+                        InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_CONNECTION_APPROVED, "MLAPI_INTERNAL", stream, true);
 
                         if (OnClientConnectedCallback != null)
                             OnClientConnectedCallback.Invoke(clientId);
@@ -1162,7 +1101,7 @@ namespace MLAPI
                             {
                                 writer.WriteUInt32Packed(clientId);
                             }
-                            InternalMessageHandler.Send(clientPair.Key, MLAPIConstants.MLAPI_ADD_OBJECT, "MLAPI_INTERNAL", stream, SecuritySendFlags.None);
+                            InternalMessageHandler.Send(clientPair.Key, MLAPIConstants.MLAPI_ADD_OBJECT, "MLAPI_INTERNAL", stream);
                         }
                     }
                 }

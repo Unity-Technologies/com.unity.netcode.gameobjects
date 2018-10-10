@@ -42,7 +42,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Development|AnyCPU'">
     <DebugSymbols>true</DebugSymbols>
-    <OutputPath>..\..\MLAPI-Examples\Assets\MLAPI\Lib\</OutputPath>
+    <OutputPath>..\..\..\MLAPI-Examples\Assets\MLAPI\Lib\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <DebugType>full</DebugType>
     <PlatformTarget>anycpu</PlatformTarget>
