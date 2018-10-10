@@ -287,11 +287,13 @@ namespace MLAPI
             SpawnManager.SpawnedObjects.Clear();
             SpawnManager.SpawnedObjectsList.Clear();
             SpawnManager.releasedNetworkObjectIds.Clear();
+            SpawnManager.PendingSpawnObjects.Clear();
             NetworkPoolManager.Pools.Clear();
             NetworkPoolManager.PoolNamesToIndexes.Clear();
             NetworkSceneManager.registeredSceneNames.Clear();
             NetworkSceneManager.sceneIndexToString.Clear();
             NetworkSceneManager.sceneNameToIndex.Clear();
+            NetworkSceneManager.switchSceneProgresses.Clear();
 
             if (NetworkConfig.Transport == DefaultTransport.UNET)
                 NetworkConfig.NetworkTransport = new UnetTransport();
@@ -417,7 +419,7 @@ namespace MLAPI
                     NetworkedObject[] networkedObjects = FindObjectsOfType<NetworkedObject>();
                     for (int i = 0; i < networkedObjects.Length; i++)
                     {
-                        if (networkedObjects[i].sceneObject == null || networkedObjects[i].sceneObject == true)
+                        if (networkedObjects[i].destroyWithScene == null || networkedObjects[i].destroyWithScene == true)
                             networkedObjects[i].Spawn();
                     }
                 }
@@ -571,7 +573,7 @@ namespace MLAPI
             if (NetworkConfig.HandleObjectSpawning)
             {
                 prefabId = prefabId == -1 ? NetworkConfig.NetworkPrefabIds[NetworkConfig.PlayerPrefabName] : prefabId;
-                SpawnManager.CreateSpawnedObject(prefabId, 0, hostClientId, true, pos.GetValueOrDefault(), rot.GetValueOrDefault(), null, false, false);
+                SpawnManager.CreateSpawnedObject(prefabId, 0, hostClientId, true, NetworkSceneManager.CurrentActiveSceneIndex, false, false, pos.GetValueOrDefault(), rot.GetValueOrDefault(), true, null, false, 0, false);
             }
 
             SpawnSceneObjects();
@@ -766,6 +768,12 @@ namespace MLAPI
             }
         }
 
+        internal IEnumerator TimeOutSwitchSceneProgress(SwitchSceneProgress switchSceneProgress)
+        {
+            yield return new WaitForSeconds(this.NetworkConfig.LoadSceneTimeOut);
+            switchSceneProgress.setTimedOut();
+        }
+
         private void HandleIncomingData(uint clientId, byte[] data, int channelId, int totalSize)
         {
             if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Unwrapping Data Header");
@@ -841,6 +849,9 @@ namespace MLAPI
                         case MLAPIConstants.MLAPI_CUSTOM_MESSAGE:
                             InternalMessageHandler.HandleCustomMessage(clientId, stream, channelId);
                             break;
+                        case MLAPIConstants.MLAPI_CLIENT_SWITCH_SCENE_COMPLETED:
+                            if (isServer) InternalMessageHandler.HandleClientSwitchSceneCompleted(clientId, stream, channelId);
+                            break;
                     }
 
                     #endregion
@@ -874,6 +885,9 @@ namespace MLAPI
             if (diffieHellmanPublicKeys.ContainsKey(clientId))
                 diffieHellmanPublicKeys.Remove(clientId);
 #endif
+
+            if (NetworkConfig.EnableSceneSwitching)
+                NetworkSceneManager.removeClientFromSceneSwitchProgresses(clientId);
 
             NetworkConfig.NetworkTransport.DisconnectClient(clientId);
         }
@@ -981,7 +995,7 @@ namespace MLAPI
                 if(NetworkConfig.HandleObjectSpawning)
                 {
                     prefabId = prefabId == -1 ? NetworkConfig.NetworkPrefabIds[NetworkConfig.PlayerPrefabName] : prefabId;
-                    netObject = SpawnManager.CreateSpawnedObject(prefabId, 0, clientId, true, position, rotation, null, false, false);
+                    netObject = SpawnManager.CreateSpawnedObject(prefabId, 0, clientId, true, NetworkSceneManager.CurrentActiveSceneIndex, false, false, position, rotation, true, null, false, 0, false);
                     ConnectedClients[clientId].PlayerObject = netObject;
                 }
 
@@ -992,8 +1006,11 @@ namespace MLAPI
                     using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                     {
                         writer.WriteUInt32Packed(clientId);
-                        if (NetworkConfig.EnableSceneSwitching)
+                        if (NetworkConfig.EnableSceneSwitching) 
+                        {
                             writer.WriteUInt32Packed(NetworkSceneManager.CurrentSceneIndex);
+                            writer.WriteByteArray(NetworkSceneManager.CurrentSceneSwitchProgressGuid.ToByteArray());
+                        }
 
 #if !DISABLE_CRYPTOGRAPHY
                         if (NetworkConfig.EnableEncryption)
@@ -1027,7 +1044,10 @@ namespace MLAPI
                                 writer.WriteUInt32Packed(pair.Value.OwnerClientId);
                                 writer.WriteInt32Packed(NetworkConfig.NetworkPrefabIds[pair.Value.NetworkedPrefabName]);
                                 writer.WriteBit(pair.Value.gameObject.activeInHierarchy);
-                                writer.WriteBit(pair.Value.sceneObject == null ? true : pair.Value.sceneObject.Value);
+                                writer.WriteBit(pair.Value.destroyWithScene == null ? true : pair.Value.destroyWithScene.Value);
+
+                                writer.WriteBool(pair.Value.OnlySpawnInSceneOriginallySpawnedAt);
+                                writer.WriteUInt32Packed(pair.Value.sceneSpawnedInIndex);
 
                                 writer.WriteSinglePacked(pair.Value.transform.position.x);
                                 writer.WriteSinglePacked(pair.Value.transform.position.y);
@@ -1066,6 +1086,9 @@ namespace MLAPI
                                 writer.WriteUInt32Packed(clientId);
                                 writer.WriteInt32Packed(prefabId);
                                 writer.WriteBit(false);
+
+                                writer.WriteBool(ConnectedClients[clientId].PlayerObject.OnlySpawnInSceneOriginallySpawnedAt);
+                                writer.WriteUInt32Packed(ConnectedClients[clientId].PlayerObject.sceneSpawnedInIndex);
 
                                 writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.position.x);
                                 writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.position.y);

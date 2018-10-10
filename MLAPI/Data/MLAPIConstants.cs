@@ -14,16 +14,17 @@
         public const byte MLAPI_CLIENT_DISCONNECT = 3;
         public const byte MLAPI_DESTROY_OBJECT = 4;
         public const byte MLAPI_SWITCH_SCENE = 5;
-        public const byte MLAPI_SPAWN_POOL_OBJECT = 6;
-        public const byte MLAPI_DESTROY_POOL_OBJECT = 7;
-        public const byte MLAPI_CHANGE_OWNER = 8;
-        public const byte MLAPI_ADD_OBJECTS = 9;
-        public const byte MLAPI_TIME_SYNC = 10;
-        public const byte MLAPI_NETWORKED_VAR_DELTA = 11;
-        public const byte MLAPI_NETWORKED_VAR_UPDATE = 12;
-        public const byte MLAPI_SERVER_RPC = 13;
-        public const byte MLAPI_CLIENT_RPC = 14;
-        public const byte MLAPI_CUSTOM_MESSAGE = 15;
+        public const byte MLAPI_CLIENT_SWITCH_SCENE_COMPLETED = 6;
+        public const byte MLAPI_SPAWN_POOL_OBJECT = 7;
+        public const byte MLAPI_DESTROY_POOL_OBJECT = 8;
+        public const byte MLAPI_CHANGE_OWNER = 9;
+        public const byte MLAPI_ADD_OBJECTS = 10;
+        public const byte MLAPI_TIME_SYNC = 11;
+        public const byte MLAPI_NETWORKED_VAR_DELTA = 12;
+        public const byte MLAPI_NETWORKED_VAR_UPDATE = 13;
+        public const byte MLAPI_SERVER_RPC = 14;
+        public const byte MLAPI_CLIENT_RPC = 15;
+        public const byte MLAPI_CUSTOM_MESSAGE = 16;
         
         public static readonly string[] MESSAGE_NAMES = {
             "MLAPI_CONNECTION_REQUEST",
@@ -32,6 +33,7 @@
             "MLAPI_CLIENT_DISCONNECT",
             "MLAPI_DESTROY_OBJECT",
             "MLAPI_SWITCH_SCENE",
+            "MLAPI_CLIENT_SWITCH_SCENE_COMPLETED",
             "MLAPI_SPAWN_POOL_OBJECT",
             "MLAPI_DESTROY_POOL_OBJECT",
             "MLAPI_CHANGE_OWNER",
