@@ -247,7 +247,11 @@ namespace MLAPI
 
         internal NetworkedBehaviour GetBehaviourAtOrderIndex(ushort index)
         {
-            //TODO index out of bounds
+            if (index >= childNetworkedBehaviours.Count)
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Behaviour index was out of bounds. Did you mess up the order of your NetworkedBehaviours?");
+                return null;
+            }
             return childNetworkedBehaviours[index];
         }
     }
