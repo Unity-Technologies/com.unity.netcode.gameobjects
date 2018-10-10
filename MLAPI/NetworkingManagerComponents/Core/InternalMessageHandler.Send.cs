@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Security.Cryptography;
 using MLAPI.Data;
 using MLAPI.Profiling;
 using MLAPI.Serialization;
@@ -48,7 +49,7 @@ namespace MLAPI.Internal
                 }
             }
         }
-        
+
         internal static void Send(byte messageType, string channelName, uint clientIdToIgnore, Stream messageStream)
         {
             using (PooledBitStream stream = PooledBitStream.Get())

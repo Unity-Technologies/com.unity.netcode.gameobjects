@@ -19,6 +19,8 @@ using MLAPI.Transports;
 using MLAPI.Transports.UNET;
 using BitStream = MLAPI.Serialization.BitStream;
 using System.Runtime.CompilerServices;
+using System.Security.Cryptography.X509Certificates;
+using System.Text;
 
 namespace MLAPI
 {
@@ -79,7 +81,10 @@ namespace MLAPI
         /// Gets a list of connected clients
         /// </summary>
         public readonly List<NetworkedClient> ConnectedClientsList = new List<NetworkedClient>();
-        internal readonly HashSet<uint> pendingClients = new HashSet<uint>();
+        /// <summary>
+        /// Gets a dictionary of the clients that have been accepted by the transport but are still pending by the MLAPI.
+        /// </summary>
+        public readonly Dictionary<uint, PendingClient> PendingClients = new Dictionary<uint, PendingClient>();
         /// <summary>
         /// Gets wheter or not a server is running
         /// </summary>
@@ -97,6 +102,7 @@ namespace MLAPI
         /// </summary>
         public bool isListening { get; internal set; }
         private byte[] messageBuffer;
+        private byte[] encryptionBuffer;
         /// <summary>
         /// Gets if we are connected as a client
         /// </summary>
@@ -140,6 +146,8 @@ namespace MLAPI
         /// Event invoked when custom messages arrive
         /// </summary>
         public event CustomMessageDelegete OnIncommingCustomMessage;
+        public string ConnectedHostname { get; private set; }
+        internal byte[] clientAesKey;
         internal static event Action OnSingletonReady;
 
         internal void InvokeOnIncommingCustomMessage(uint clientId, Stream stream)
@@ -187,18 +195,6 @@ namespace MLAPI
             InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_CUSTOM_MESSAGE, channel, stream);
         }
 
-
-#if !DISABLE_CRYPTOGRAPHY
-        internal EllipticDiffieHellman clientDiffieHellman;
-        internal readonly Dictionary<uint, byte[]> diffieHellmanPublicKeys = new Dictionary<uint, byte[]>();
-        internal byte[] clientAesKey;
-#endif
-
-        /// <summary>
-        /// An inspector bool that acts as a Trigger for regenerating RSA keys. Should not be used outside Unity editor.
-        /// </summary>
-        public bool RegenerateRSAKeys = false;
-
         private void OnValidate()
         {
             if (NetworkConfig == null)
@@ -242,27 +238,6 @@ namespace MLAPI
                     if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Only one networked prefab can be marked as a player prefab");
                 }
                 else NetworkConfig.PlayerPrefabName = NetworkConfig.NetworkedPrefabs.Find(x => x.playerPrefab == true).name;
-
-            }
-
-            if (!NetworkConfig.EnableEncryption)
-            {
-                RegenerateRSAKeys = false;
-            }
-            else
-            {
-                if (RegenerateRSAKeys)
-                {
-#if !DISABLE_CRYPTOGRAPHY
-                    using (RSACryptoServiceProvider rsa = new RSACryptoServiceProvider())
-                    {
-                        rsa.PersistKeyInCsp = false;
-                        NetworkConfig.RSAPrivateKey = rsa.ToXmlString(true);
-                        NetworkConfig.RSAPublicKey = rsa.ToXmlString(false);
-                    }
-#endif
-                    RegenerateRSAKeys = false;
-                }
             }
         }
 
@@ -275,13 +250,12 @@ namespace MLAPI
             lastEventTickTime = 0f;
             lastReceiveTickTime = 0f;
             eventOvershootCounter = 0f;
-            pendingClients.Clear();
+            PendingClients.Clear();
             ConnectedClients.Clear();
             ConnectedClientsList.Clear();
             messageBuffer = new byte[NetworkConfig.MessageBufferSize];
-#if !DISABLE_CRYPTOGRAPHY
-            diffieHellmanPublicKeys.Clear();
-#endif
+            encryptionBuffer = new byte[NetworkConfig.EncryptionBufferSize];
+            
             MessageManager.channels.Clear();
             MessageManager.reverseChannels.Clear();
             SpawnManager.SpawnedObjects.Clear();
@@ -292,6 +266,22 @@ namespace MLAPI
             NetworkSceneManager.registeredSceneNames.Clear();
             NetworkSceneManager.sceneIndexToString.Clear();
             NetworkSceneManager.sceneNameToIndex.Clear();
+
+            try
+            {
+                if (server && !string.IsNullOrEmpty(NetworkConfig.ServerBase64PfxCertificate))
+                {
+                    NetworkConfig.ServerX509Certificate = new X509Certificate2(Convert.FromBase64String(NetworkConfig.ServerBase64PfxCertificate));
+                    if (!NetworkConfig.ServerX509Certificate.HasPrivateKey)
+                    {
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The imported PFX file did not have a private key");
+                    }
+                }
+            }
+            catch (CryptographicException ex)
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Importing of certificate failed: " + ex.ToString());
+            }
 
             if (NetworkConfig.Transport == DefaultTransport.UNET)
                 NetworkConfig.NetworkTransport = new UnetTransport();
@@ -471,6 +461,7 @@ namespace MLAPI
 
             object settings = Init(false);
             byte error;
+            ConnectedHostname = NetworkConfig.ConnectAddress;
             NetworkConfig.NetworkTransport.Connect(NetworkConfig.ConnectAddress, NetworkConfig.ConnectPort, settings, out error);
             isServer = false;
             isClient = true;
@@ -496,17 +487,19 @@ namespace MLAPI
                     NetworkConfig.NetworkTransport.DisconnectClient(pair.Key);
                 }
             }
-            foreach (uint clientId in pendingClients)
+            
+            foreach (KeyValuePair<uint, PendingClient> pair in PendingClients)
             {
-                if (!disconnectedIds.Contains(clientId))
+                if(!disconnectedIds.Contains(pair.Key))
                 {
-                    disconnectedIds.Add(clientId);
-					if (clientId == NetworkConfig.NetworkTransport.ServerClientId)
+                    disconnectedIds.Add(pair.Key);
+                    if (pair.Key == NetworkConfig.NetworkTransport.ServerClientId)
                         continue;
-					
-                    NetworkConfig.NetworkTransport.DisconnectClient(clientId);
+
+                    NetworkConfig.NetworkTransport.DisconnectClient(pair.Key);
                 }
             }
+            
             isServer = false;
             Shutdown();
         }
@@ -660,36 +653,69 @@ namespace MLAPI
                                 if (isServer)
                                 {
                                     if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Client Connected");
-                                    pendingClients.Add(clientId);
+                                    if (NetworkConfig.EnableEncryption)
+                                    {
+                                        // This client is required to complete the crypto-hail exchange.
+                                        using (PooledBitStream hailStream = PooledBitStream.Get())
+                                        {
+                                            using (PooledBitWriter hailWriter = PooledBitWriter.Get(hailStream))
+                                            {
+                                                if (NetworkConfig.SignKeyExchange)
+                                                {
+                                                    // Write certificate
+                                                    hailWriter.WriteByteArray(NetworkConfig.ServerX509CertificateBytes);
+                                                }
+
+                                                // Write key exchange public part
+                                                EllipticDiffieHellman diffieHellman = new EllipticDiffieHellman(EllipticDiffieHellman.DEFAULT_CURVE, EllipticDiffieHellman.DEFAULT_GENERATOR, EllipticDiffieHellman.DEFAULT_ORDER);
+                                                byte[] diffieHellmanPublicPart = diffieHellman.GetPublicKey();
+                                                hailWriter.WriteByteArray(diffieHellmanPublicPart);
+                                                PendingClients.Add(clientId, new PendingClient()
+                                                {
+                                                    ClientId = clientId,
+                                                    ConnectionState = PendingClient.State.PendingHail,
+                                                    KeyExchange = diffieHellman
+                                                });
+
+                                                if (NetworkConfig.SignKeyExchange)
+                                                {
+                                                    // Write public part signature (signed by certificate private)
+                                                    X509Certificate2 certificate = NetworkConfig.ServerX509Certificate;
+                                                    if (!certificate.HasPrivateKey) throw new CryptographicException("[MLAPI] No private key was found in server certificate. Unable to sign key exchange");
+                                                    RSACryptoServiceProvider rsa = certificate.PrivateKey as RSACryptoServiceProvider;
+
+                                                    if (rsa != null)
+                                                    {
+                                                        using (SHA256Managed sha = new SHA256Managed())
+                                                        {
+                                                            hailWriter.WriteByteArray(rsa.SignData(diffieHellmanPublicPart, sha));
+                                                        }
+                                                    }
+                                                    else
+                                                    {
+                                                        throw new CryptographicException("[MLAPI] Only RSA certificates are supported. No valid RSA key was found");
+                                                    }
+                                                }
+                                            }
+                                            // Send the hail
+                                            InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_CERTIFICATE_HAIL, "MLAPI_INTERNAL", hailStream, true);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        PendingClients.Add(clientId, new PendingClient()
+                                        {
+                                            ClientId = clientId,
+                                            ConnectionState = PendingClient.State.PendingConnection
+                                        });
+                                    }
                                     StartCoroutine(ApprovalTimeout(clientId));
                                 }
                                 else
                                 {
                                     if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Connected");
-#if !DISABLE_CRYPTOGRAPHY
-                                    byte[] diffiePublic = new byte[0];
-                                    if(NetworkConfig.EnableEncryption)
-                                    {
-                                        clientDiffieHellman = new EllipticDiffieHellman(EllipticDiffieHellman.DEFAULT_CURVE, EllipticDiffieHellman.DEFAULT_GENERATOR, EllipticDiffieHellman.DEFAULT_ORDER);
-                                        diffiePublic = clientDiffieHellman.GetPublicKey();
-                                    }
-#endif
-                                    using (PooledBitStream stream = PooledBitStream.Get())
-                                    {
-                                        using (PooledBitWriter writer = PooledBitWriter.Get(stream))
-                                        {
-                                            writer.WriteUInt64Packed(NetworkConfig.GetConfig());
-#if !DISABLE_CRYPTOGRAPHY
-                                            if (NetworkConfig.EnableEncryption)
-                                                writer.WriteByteArray(diffiePublic);
-#endif
-
-                                            if (NetworkConfig.ConnectionApproval)
-                                                writer.WriteByteArray(NetworkConfig.ConnectionData);
-
-                                            InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_CONNECTION_REQUEST, "MLAPI_INTERNAL", stream, true);
-                                        }
-                                    }
+                                    if (!NetworkConfig.EnableEncryption) SendConnectionRequest();
+                                    StartCoroutine(ApprovalTimeout(clientId));
                                 }
                                 NetworkProfiler.EndEvent();
                                 break;
@@ -750,17 +776,34 @@ namespace MLAPI
             }
         }
 
+        internal void SendConnectionRequest()
+        {
+            using (PooledBitStream stream = PooledBitStream.Get())
+            {
+                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                {
+                    writer.WriteUInt64Packed(NetworkConfig.GetConfig());
+
+                    if (NetworkConfig.ConnectionApproval)
+                        writer.WriteByteArray(NetworkConfig.ConnectionData);
+                }
+
+                InternalMessageHandler.Send(ServerClientId, MLAPIConstants.MLAPI_CONNECTION_REQUEST, "MLAPI_INTERNAL", stream, true);
+            }
+        }
+
         private IEnumerator ApprovalTimeout(uint clientId)
         {
             float timeStarted = NetworkTime;
             //We yield every frame incase a pending client disconnects and someone else gets its connection id
-            while (NetworkTime - timeStarted < NetworkConfig.ClientConnectionBufferTimeout && pendingClients.Contains(clientId))
+            while (NetworkTime - timeStarted < NetworkConfig.ClientConnectionBufferTimeout && PendingClients.ContainsKey(clientId))
             {
                 yield return null;
             }
-            if(pendingClients.Contains(clientId) && !ConnectedClients.ContainsKey(clientId))
+            
+            if (PendingClients.ContainsKey(clientId) && !ConnectedClients.ContainsKey(clientId))
             {
-                //Timeout
+                // Timeout
                 if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Client " + clientId + " Handshake Timed Out");
                 DisconnectClient(clientId);
             }
@@ -769,9 +812,9 @@ namespace MLAPI
         private void HandleIncomingData(uint clientId, byte[] data, int channelId, int totalSize)
         {
             if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Unwrapping Data Header");
-			using (BitStream stream = new BitStream(data))
+            using (BitStream stream = new BitStream(data))
             {
-				stream.SetLength(totalSize);
+                stream.SetLength(totalSize);
                 using (PooledBitReader reader = PooledBitReader.Get(stream))
                 {
                     byte messageType = reader.ReadByteDirect();
@@ -779,11 +822,11 @@ namespace MLAPI
                     uint headerByteSize = (uint)Arithmetic.VarIntSize(messageType);
                     NetworkProfiler.StartEvent(TickType.Receive, (uint)(totalSize - headerByteSize), channelId, messageType);
 
-                    if (LogHelper.CurrentLogLevel <= LogLevel.Developer)
-                        LogHelper.LogInfo("Data Header: messageType=" + messageType);
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Data Header: messageType=" + messageType);
 
                     //Client tried to send a network message that was not the connection request before he was accepted.
-                    if (isServer && pendingClients.Contains(clientId) && messageType != 0)
+                    if (isServer && (NetworkConfig.EnableEncryption && PendingClients.ContainsKey(clientId) && PendingClients[clientId].ConnectionState == PendingClient.State.PendingHail && messageType != MLAPIConstants.MLAPI_CERTIFICATE_HAIL_RESPONSE) ||
+                        (PendingClients.ContainsKey(clientId) && PendingClients[clientId].ConnectionState == PendingClient.State.PendingConnection && messageType != MLAPIConstants.MLAPI_CONNECTION_REQUEST))
                     {
                         if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Message recieved from clientId " + clientId + " before it has been accepted");
                         return;
@@ -794,16 +837,19 @@ namespace MLAPI
                     switch (messageType)
                     {
                         case MLAPIConstants.MLAPI_CONNECTION_REQUEST:
-                            if (isServer) InternalMessageHandler.HandleConnectionRequest(clientId, stream, channelId);
+                            if (isServer)
+                                InternalMessageHandler.HandleConnectionRequest(clientId, stream, channelId);
                             break;
                         case MLAPIConstants.MLAPI_CONNECTION_APPROVED:
-                            if (isClient) InternalMessageHandler.HandleConnectionApproved(clientId, stream, channelId);
+                            if (isClient)
+                                InternalMessageHandler.HandleConnectionApproved(clientId, stream, channelId);
                             break;
                         case MLAPIConstants.MLAPI_ADD_OBJECT:
                             if (isClient) InternalMessageHandler.HandleAddObject(clientId, stream, channelId);
                             break;
                         case MLAPIConstants.MLAPI_CLIENT_DISCONNECT:
-                            if (isClient) InternalMessageHandler.HandleClientDisconnect(clientId, stream, channelId);
+                            if (isClient)
+                                InternalMessageHandler.HandleClientDisconnect(clientId, stream, channelId);
                             break;
                         case MLAPIConstants.MLAPI_DESTROY_OBJECT:
                             if (isClient) InternalMessageHandler.HandleDestroyObject(clientId, stream, channelId);
@@ -815,7 +861,8 @@ namespace MLAPI
                             if (isClient) InternalMessageHandler.HandleSpawnPoolObject(clientId, stream, channelId);
                             break;
                         case MLAPIConstants.MLAPI_DESTROY_POOL_OBJECT:
-                            if (isClient) InternalMessageHandler.HandleDestroyPoolObject(clientId, stream, channelId);
+                            if (isClient)
+                                InternalMessageHandler.HandleDestroyPoolObject(clientId, stream, channelId);
                             break;
                         case MLAPIConstants.MLAPI_CHANGE_OWNER:
                             if (isClient) InternalMessageHandler.HandleChangeOwner(clientId, stream, channelId);
@@ -841,6 +888,15 @@ namespace MLAPI
                         case MLAPIConstants.MLAPI_CUSTOM_MESSAGE:
                             InternalMessageHandler.HandleCustomMessage(clientId, stream, channelId);
                             break;
+                        case MLAPIConstants.MLAPI_CERTIFICATE_HAIL:
+                            if (isClient) InternalMessageHandler.HandleHailRequest(clientId, stream, channelId);
+                            break;
+                        case MLAPIConstants.MLAPI_CERTIFICATE_HAIL_RESPONSE:
+                            if (isServer) InternalMessageHandler.HandleHailResponse(clientId, stream, channelId);
+                            break;
+                        case MLAPIConstants.MLAPI_GREETINGS:
+                            if (isClient) InternalMessageHandler.HandleGreetings(clientId, stream, channelId);
+                            break;
                     }
 
                     #endregion
@@ -858,11 +914,11 @@ namespace MLAPI
             if (!isServer)
                 return;
 
-            if (pendingClients.Contains(clientId))
-                pendingClients.Remove(clientId);
-
             if (ConnectedClients.ContainsKey(clientId))
                 ConnectedClients.Remove(clientId);
+
+            if (PendingClients.ContainsKey(clientId))
+                PendingClients.Remove(clientId);
 
             for (int i = ConnectedClientsList.Count - 1; i > -1; i--)
             {
@@ -870,18 +926,14 @@ namespace MLAPI
                     ConnectedClientsList.RemoveAt(i);
             }
 
-#if !DISABLE_CRYPTOGRAPHY
-            if (diffieHellmanPublicKeys.ContainsKey(clientId))
-                diffieHellmanPublicKeys.Remove(clientId);
-#endif
-
             NetworkConfig.NetworkTransport.DisconnectClient(clientId);
         }
 
         internal void OnClientDisconnectFromServer(uint clientId)
         {
-            if (pendingClients.Contains(clientId))
-                pendingClients.Remove(clientId);
+            if (PendingClients.ContainsKey(clientId))
+                PendingClients.Remove(clientId);
+            
             if (ConnectedClients.ContainsKey(clientId))
             {
                 if(NetworkConfig.HandleObjectSpawning)
@@ -938,35 +990,10 @@ namespace MLAPI
         {
             if(approved)
             {
-                //Inform new client it got approved
-                if (pendingClients.Contains(clientId))
-                    pendingClients.Remove(clientId);
-
-#if !DISABLE_CRYPTOGRAPHY
-                byte[] aesKey = new byte[0];
-                byte[] publicKey = new byte[0];
-                byte[] publicKeySignature = new byte[0];
-                if (NetworkConfig.EnableEncryption)
-                {
-                    EllipticDiffieHellman diffieHellman = new EllipticDiffieHellman(EllipticDiffieHellman.DEFAULT_CURVE, EllipticDiffieHellman.DEFAULT_GENERATOR, EllipticDiffieHellman.DEFAULT_ORDER);
-                    aesKey = diffieHellman.GetSharedSecret(diffieHellmanPublicKeys[clientId]);
-                    publicKey = diffieHellman.GetPublicKey();
-
-                    if (diffieHellmanPublicKeys.ContainsKey(clientId))
-                        diffieHellmanPublicKeys.Remove(clientId);
-
-                    if (NetworkConfig.SignKeyExchange)
-                    {
-                        using (RSACryptoServiceProvider rsa = new RSACryptoServiceProvider())
-                        {
-                            rsa.PersistKeyInCsp = false;
-                            rsa.FromXmlString(NetworkConfig.RSAPrivateKey);
-                            publicKeySignature = rsa.SignData(publicKey, new SHA512CryptoServiceProvider());
-                        }
-                    }
-                }
-#endif
-
+                // Inform new client it got approved   
+                byte[] aesKey = PendingClients.ContainsKey(clientId) ? PendingClients[clientId].AesKey : null;
+                if (PendingClients.ContainsKey(clientId))
+                    PendingClients.Remove(clientId);
                 NetworkedClient client = new NetworkedClient()
                 {
                     ClientId = clientId,
@@ -995,15 +1022,6 @@ namespace MLAPI
                         if (NetworkConfig.EnableSceneSwitching)
                             writer.WriteUInt32Packed(NetworkSceneManager.CurrentSceneIndex);
 
-#if !DISABLE_CRYPTOGRAPHY
-                        if (NetworkConfig.EnableEncryption)
-                        {
-                            writer.WriteByteArray(publicKey);
-                            if (NetworkConfig.SignKeyExchange)
-                                writer.WriteByteArray(publicKeySignature);
-                        }
-#endif
-
                         writer.WriteSinglePacked(NetworkTime);
                         writer.WriteInt32Packed(NetworkConfig.NetworkTransport.GetNetworkTimestamp());
 
@@ -1022,12 +1040,12 @@ namespace MLAPI
 
                             foreach (KeyValuePair<uint, NetworkedObject> pair in SpawnManager.SpawnedObjects)
                             {
-                                writer.WriteBit(pair.Value.isPlayerObject);
+                                writer.WriteBool(pair.Value.isPlayerObject);
                                 writer.WriteUInt32Packed(pair.Value.NetworkId);
                                 writer.WriteUInt32Packed(pair.Value.OwnerClientId);
                                 writer.WriteInt32Packed(NetworkConfig.NetworkPrefabIds[pair.Value.NetworkedPrefabName]);
-                                writer.WriteBit(pair.Value.gameObject.activeInHierarchy);
-                                writer.WriteBit(pair.Value.sceneObject == null ? true : pair.Value.sceneObject.Value);
+                                writer.WriteBool(pair.Value.gameObject.activeInHierarchy);
+                                writer.WriteBool(pair.Value.sceneObject == null ? true : pair.Value.sceneObject.Value);
 
                                 writer.WriteSinglePacked(pair.Value.transform.position.x);
                                 writer.WriteSinglePacked(pair.Value.transform.position.y);
@@ -1061,11 +1079,11 @@ namespace MLAPI
                         {
                             if (NetworkConfig.HandleObjectSpawning)
                             {
-                                writer.WriteBit(true);
+                                writer.WriteBool(true);
                                 writer.WriteUInt32Packed(ConnectedClients[clientId].PlayerObject.GetComponent<NetworkedObject>().NetworkId);
                                 writer.WriteUInt32Packed(clientId);
                                 writer.WriteInt32Packed(prefabId);
-                                writer.WriteBit(false);
+                                writer.WriteBool(false);
 
                                 writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.position.x);
                                 writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.position.y);
@@ -1075,7 +1093,7 @@ namespace MLAPI
                                 writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.y);
                                 writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.z);
 
-                                writer.WriteBit(false); //No payload data
+                                writer.WriteBool(false); //No payload data
 
                                 ConnectedClients[clientId].PlayerObject.GetComponent<NetworkedObject>().WriteNetworkedVarData(stream, clientPair.Key);
                             }
@@ -1090,13 +1108,8 @@ namespace MLAPI
             }
             else
             {
-                if (pendingClients.Contains(clientId))
-                    pendingClients.Remove(clientId);
-
-#if !DISABLE_CRYPTOGRAPHY
-                if (diffieHellmanPublicKeys.ContainsKey(clientId))
-                    diffieHellmanPublicKeys.Remove(clientId);
-#endif
+                if (PendingClients.ContainsKey(clientId))
+                    PendingClients.Remove(clientId);
 
                 NetworkConfig.NetworkTransport.DisconnectClient(clientId);
             }
