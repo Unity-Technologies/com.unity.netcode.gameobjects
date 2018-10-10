@@ -68,14 +68,6 @@ namespace MLAPI.Configuration
         /// </summary>
         public int MessageBufferSize = 1024;
         /// <summary>
-        /// The size of the encryption buffer, this is the buffer where messages will be decrypted to.
-        /// If you plan on encrypting everything and you are pushing limits wth the MessageBufferSize already.
-        /// Note that Encryption might add a few extra bytes of padding and 16 bytes for the IV, if authentication is also enabled
-        /// 32 extra bytes will be used for the SHA256 hash of the HMAC.
-        /// Note that authentication without encryption will not use this buffer at all.
-        /// </summary>
-        public int EncryptionBufferSize = 265;
-        /// <summary>
         /// Amount of times per second the receive queue is emptied and all messages inside are processed.
         /// </summary>
         public int ReceiveTickrate = 64;
@@ -213,7 +205,6 @@ namespace MLAPI.Configuration
                     }
 
                     writer.WriteInt32Packed(config.MessageBufferSize);
-                    writer.WriteInt32Packed(config.EncryptionBufferSize);
                     writer.WriteInt32Packed(config.ReceiveTickrate);
                     writer.WriteInt32Packed(config.MaxReceiveEventsPerTickRate);
                     writer.WriteInt32Packed(config.SendTickrate);
@@ -294,7 +285,6 @@ namespace MLAPI.Configuration
                     }
 
                     config.MessageBufferSize = reader.ReadInt32Packed();
-                    config.EncryptionBufferSize = reader.ReadInt32Packed();
                     config.ReceiveTickrate = reader.ReadInt32Packed();
                     config.MaxReceiveEventsPerTickRate = reader.ReadInt32Packed();
                     config.SendTickrate = reader.ReadInt32Packed();

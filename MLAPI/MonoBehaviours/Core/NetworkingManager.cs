@@ -102,7 +102,6 @@ namespace MLAPI
         /// </summary>
         public bool isListening { get; internal set; }
         private byte[] messageBuffer;
-        private byte[] encryptionBuffer;
         /// <summary>
         /// Gets if we are connected as a client
         /// </summary>
@@ -254,7 +253,6 @@ namespace MLAPI
             ConnectedClients.Clear();
             ConnectedClientsList.Clear();
             messageBuffer = new byte[NetworkConfig.MessageBufferSize];
-            encryptionBuffer = new byte[NetworkConfig.EncryptionBufferSize];
             
             MessageManager.channels.Clear();
             MessageManager.reverseChannels.Clear();
