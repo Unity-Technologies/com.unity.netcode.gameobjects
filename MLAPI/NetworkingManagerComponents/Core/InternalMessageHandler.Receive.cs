@@ -346,7 +346,10 @@ namespace MLAPI.Internal
                 if (SpawnManager.SpawnedObjects.ContainsKey(networkId)) 
                 { 
                     NetworkedBehaviour behaviour = SpawnManager.SpawnedObjects[networkId].GetBehaviourAtOrderIndex(behaviourId);
-                    behaviour.OnRemoteServerRPC(hash, clientId, stream);
+                    if (behaviour != null)
+                    {
+                        behaviour.OnRemoteServerRPC(hash, clientId, stream);
+                    }
                 }
             }
         }
@@ -362,7 +365,10 @@ namespace MLAPI.Internal
                 if (SpawnManager.SpawnedObjects.ContainsKey(networkId)) 
                 {
                     NetworkedBehaviour behaviour = SpawnManager.SpawnedObjects[networkId].GetBehaviourAtOrderIndex(behaviourId);
-                    behaviour.OnRemoteClientRPC(hash, clientId, stream);
+                    if (behaviour != null)
+                    {
+                        behaviour.OnRemoteClientRPC(hash, clientId, stream);
+                    }
                 }
             }
         }
