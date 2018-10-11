@@ -150,13 +150,16 @@ namespace MLAPI.Serialization
     /// </summary>
     public sealed class PooledBitStream : BitStream, IDisposable
     {
+        private bool isDisposed = false;
         /// <summary>
         /// Gets a PooledBitStream from the static BitStreamPool
         /// </summary>
         /// <returns>PooledBitStream</returns>
         public static PooledBitStream Get()
         {
-            return BitStreamPool.GetStream();
+            PooledBitStream stream = BitStreamPool.GetStream();
+            stream.isDisposed = false;
+            return stream;
         }
 
         /// <summary>
@@ -164,7 +167,11 @@ namespace MLAPI.Serialization
         /// </summary>
         public new void Dispose()
         {
-            BitStreamPool.PutBackInPool(this);
+            if (!isDisposed)
+            {
+                isDisposed = true;
+                BitStreamPool.PutBackInPool(this);
+            }
         }
     }
 
@@ -173,6 +180,8 @@ namespace MLAPI.Serialization
     /// </summary>
     public sealed class PooledBitWriter : BitWriter, IDisposable
     {
+        private bool isDisposed = false;
+        
         public PooledBitWriter(Stream stream) : base(stream)
         {
 
@@ -184,7 +193,9 @@ namespace MLAPI.Serialization
         /// <returns>PooledBitWriter</returns>
         public static PooledBitWriter Get(Stream stream)
         {
-            return BitWriterPool.GetWriter(stream);
+            PooledBitWriter writer = BitWriterPool.GetWriter(stream);
+            writer.isDisposed = false;
+            return writer;
         }
 
         /// <summary>
@@ -192,7 +203,11 @@ namespace MLAPI.Serialization
         /// </summary>
         public void Dispose()
         {
-            BitWriterPool.PutBackInPool(this);
+            if (!isDisposed)
+            {
+                isDisposed = true;
+                BitWriterPool.PutBackInPool(this);
+            }
         }
     }
 
@@ -201,6 +216,8 @@ namespace MLAPI.Serialization
     /// </summary>
     public sealed class PooledBitReader : BitReader, IDisposable
     {
+        private bool isDisposed = false;
+        
         public PooledBitReader(Stream stream) : base(stream)
         {
         }
@@ -211,7 +228,9 @@ namespace MLAPI.Serialization
         /// <returns>PooledBitReader</returns>
         public static PooledBitReader Get(Stream stream)
         {
-            return BitReaderPool.GetReader(stream);
+            PooledBitReader reader = BitReaderPool.GetReader(stream);
+            reader.isDisposed = false;
+            return reader;
         }
 
         /// <summary>
@@ -219,7 +238,11 @@ namespace MLAPI.Serialization
         /// </summary>
         public void Dispose()
         {
-            BitReaderPool.PutBackInPool(this);
+            if (!isDisposed)
+            {
+                isDisposed = true;
+                BitReaderPool.PutBackInPool(this);
+            }
         }
     }
 }
