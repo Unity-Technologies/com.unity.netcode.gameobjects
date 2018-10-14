@@ -67,7 +67,7 @@ namespace MLAPI.Components
                 {
                     writer.WriteUInt32Packed(sceneNameToIndex[sceneName]);
 
-                    InternalMessageHandler.Send(MLAPIConstants.MLAPI_SWITCH_SCENE, "MLAPI_INTERNAL", stream);
+                    InternalMessageHandler.Send(MLAPIConstants.MLAPI_SWITCH_SCENE, "MLAPI_INTERNAL", stream, SecuritySendFlags.None);
                 }
             }
         }

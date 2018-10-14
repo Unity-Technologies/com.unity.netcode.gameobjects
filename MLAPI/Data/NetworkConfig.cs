@@ -316,6 +316,7 @@ namespace MLAPI.Configuration
         {
             if (ConfigHash != null && cache)
                 return ConfigHash.Value;
+            Debug.Assert(true);
 
             Sort();
 
@@ -331,6 +332,7 @@ namespace MLAPI.Configuration
                         writer.WriteString(Channels[i].Name);
                         writer.WriteByte((byte)Channels[i].Type);
                     }
+
                     if (EnableSceneSwitching)
                     {
                         for (int i = 0; i < RegisteredScenes.Count; i++)
@@ -338,6 +340,7 @@ namespace MLAPI.Configuration
                             writer.WriteString(RegisteredScenes[i]);
                         }
                     }
+
                     if (HandleObjectSpawning)
                     {
                         for (int i = 0; i < NetworkedPrefabs.Count; i++)
@@ -345,18 +348,19 @@ namespace MLAPI.Configuration
                             writer.WriteString(NetworkedPrefabs[i].name);
                         }
                     }
+
                     writer.WriteBool(HandleObjectSpawning);
                     writer.WriteBool(EnableEncryption);
                     writer.WriteBool(EnableSceneSwitching);
                     writer.WriteBool(SignKeyExchange);
                     writer.WriteBits((byte)AttributeMessageMode, 3);
 
-                    // Returns a 160 bit / 20 byte / 5 int checksum of the config
                     if (cache)
                     {
                         ConfigHash = stream.ToArray().GetStableHash64();
                         return ConfigHash.Value;
                     }
+
                     return stream.ToArray().GetStableHash64();
                 }
             }
