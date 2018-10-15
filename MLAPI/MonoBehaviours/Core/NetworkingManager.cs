@@ -811,22 +811,26 @@ namespace MLAPI
             using (BitStream inputStream = new BitStream(data))
             {
                 inputStream.SetLength(totalSize);
-                //Debug.LogError(totalSize);
-                //string s = string.Join(" ", data.Take(totalSize).Select(b => b.ToString()).ToArray());
-                //Debug.LogError(s);
                 byte messageType;
                 using (BitStream messageStream = MessageManager.UnwrapMessage(inputStream, clientId, out messageType))
                 {
                     if (messageStream == null)
                     {
-                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogInfo("Message unwrap could not be completed. Was the header corrupt? Crypto error?");
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Message unwrap could not be completed. Was the header corrupt? Crypto error?");
+                        return;
                     }
+                    else if (messageType == MLAPIConstants.INVALID)
+                    {
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Message unwrap read an invalid messageType");
+                        return;
+                    }
+
                     uint headerByteSize = (uint)Arithmetic.VarIntSize(messageType);
                     NetworkProfiler.StartEvent(TickType.Receive, (uint)(totalSize - headerByteSize), channelId, messageType);
 
                     if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Data Header: messageType=" + messageType);
 
-                    //Client tried to send a network message that was not the connection request before he was accepted.
+                    // Client tried to send a network message that was not the connection request before he was accepted.
                     if (isServer && (NetworkConfig.EnableEncryption && PendingClients.ContainsKey(clientId) && PendingClients[clientId].ConnectionState == PendingClient.State.PendingHail && messageType != MLAPIConstants.MLAPI_CERTIFICATE_HAIL_RESPONSE) ||
                         (PendingClients.ContainsKey(clientId) && PendingClients[clientId].ConnectionState == PendingClient.State.PendingConnection && messageType != MLAPIConstants.MLAPI_CONNECTION_REQUEST))
                     {
@@ -898,6 +902,9 @@ namespace MLAPI
                             break;
                         case MLAPIConstants.MLAPI_GREETINGS:
                             if (isClient) InternalMessageHandler.HandleGreetings(clientId, messageStream, channelId);
+                            break;
+                        default:
+                            if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Read unrecognized messageType " + messageType);
                             break;
                     }
 

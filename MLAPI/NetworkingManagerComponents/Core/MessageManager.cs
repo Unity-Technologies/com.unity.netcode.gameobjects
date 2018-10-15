@@ -1,5 +1,8 @@
-﻿using MLAPI.Data;
+﻿using MLAPI.Cryptography;
+using MLAPI.Data;
+using MLAPI.Logging;
 using MLAPI.Serialization;
+using System;
 using System.Collections.Generic;
 using System.Security.Cryptography;
 
@@ -14,149 +17,217 @@ namespace MLAPI.Internal
         private static readonly byte[] HMAC_BUFFER = new byte[32];
         private static readonly byte[] HMAC_PLACEHOLDER = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
+        // This method is responsible for unwrapping a message, that is extracting the messagebody.
+        // Could include decrypting and/or authentication.
         internal static BitStream UnwrapMessage(BitStream inputStream, uint clientId, out byte messageType)
         {
             using (PooledBitReader inputHeaderReader = PooledBitReader.Get(inputStream))
             {
-                bool isEncrypted = inputHeaderReader.ReadBit();
-                bool isAuthenticated = inputHeaderReader.ReadBit();
-
-                if (isEncrypted || isAuthenticated)
+                try
                 {
-                    // Skip last bits in first byte
-                    inputHeaderReader.SkipPadBits();
+                    bool isEncrypted = inputHeaderReader.ReadBit();
+                    bool isAuthenticated = inputHeaderReader.ReadBit();
 
-                    if (isAuthenticated)
+                    if (isEncrypted || isAuthenticated)
                     {
-                        long hmacStartPos = inputStream.Position;
-
-                        int readHmacLength = inputStream.Read(HMAC_BUFFER, 0, HMAC_BUFFER.Length);
-
-                        if (readHmacLength != HMAC_BUFFER.Length)
+                        if (!NetworkingManager.singleton.NetworkConfig.EnableEncryption)
                         {
+                            if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Got a encrypted and/or authenticated message but key exchange (\"encryption\") was not enabled");
                             messageType = MLAPIConstants.INVALID;
                             return null;
                         }
 
-                        // Now we have read the HMAC, we need to set the hmac in the input to 0s to perform the HMAC.
-                        inputStream.Position = hmacStartPos;
-                        inputStream.Write(HMAC_PLACEHOLDER, 0, HMAC_PLACEHOLDER.Length);
+                        // Skip last bits in first byte
+                        inputHeaderReader.SkipPadBits();
 
-                        using (HMACSHA256 hmac = new HMACSHA256(NetworkingManager.singleton.isServer ? ((NetworkingManager.singleton.ConnectedClients.ContainsKey(clientId) ? NetworkingManager.singleton.ConnectedClients[clientId].AesKey : NetworkingManager.singleton.PendingClients[clientId].AesKey)) : NetworkingManager.singleton.clientAesKey))
+                        if (isAuthenticated)
                         {
-                            byte[] computedHmac = hmac.ComputeHash(inputStream.GetBuffer(), 0, (int)inputStream.Length);
+                            long hmacStartPos = inputStream.Position;
 
-                            for (int i = 0; i < computedHmac.Length; i++)
+                            int readHmacLength = inputStream.Read(HMAC_BUFFER, 0, HMAC_BUFFER.Length);
+
+                            if (readHmacLength != HMAC_BUFFER.Length)
                             {
-                                if (computedHmac[i] != HMAC_BUFFER[i])
+                                if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("HMAC length was invalid");
+                                messageType = MLAPIConstants.INVALID;
+                                return null;
+                            }
+
+                            // Now we have read the HMAC, we need to set the hmac in the input to 0s to perform the HMAC.
+                            inputStream.Position = hmacStartPos;
+                            inputStream.Write(HMAC_PLACEHOLDER, 0, HMAC_PLACEHOLDER.Length);
+
+                            byte[] key = NetworkingManager.singleton.isServer ? CryptographyHelper.GetClientKey(clientId) : CryptographyHelper.GetServerKey();
+
+                            if (key == null)
+                            {
+                                if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Failed to grab key");
+                                messageType = MLAPIConstants.INVALID;
+                                return null;
+                            }
+
+                            using (HMACSHA256 hmac = new HMACSHA256(key))
+                            {
+                                byte[] computedHmac = hmac.ComputeHash(inputStream.GetBuffer(), 0, (int)inputStream.Length);
+
+                                for (int i = 0; i < computedHmac.Length; i++)
                                 {
-                                    messageType = MLAPIConstants.INVALID;
-                                    return null;
+                                    if (computedHmac[i] != HMAC_BUFFER[i])
+                                    {
+                                        if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Received HMAC at position [" + i + "] did not match the computed HMAC");
+                                        messageType = MLAPIConstants.INVALID;
+                                        return null;
+                                    }
                                 }
                             }
                         }
-                    }
 
-                    if (isEncrypted)
-                    {
-                        inputStream.Read(IV_BUFFER, 0, IV_BUFFER.Length);
-                        PooledBitStream outputStream = PooledBitStream.Get();
-
-                        using (RijndaelManaged rijndael = new RijndaelManaged())
+                        if (isEncrypted)
                         {
-                            rijndael.IV = IV_BUFFER;
-                            rijndael.Key = NetworkingManager.singleton.isServer ? ((NetworkingManager.singleton.ConnectedClients.ContainsKey(clientId) ? NetworkingManager.singleton.ConnectedClients[clientId].AesKey : NetworkingManager.singleton.PendingClients[clientId].AesKey)) : NetworkingManager.singleton.clientAesKey;
-                            rijndael.Padding = PaddingMode.PKCS7;
+                            inputStream.Read(IV_BUFFER, 0, IV_BUFFER.Length);
+                            PooledBitStream outputStream = PooledBitStream.Get();
 
-                            using (CryptoStream cryptoStream = new CryptoStream(outputStream, rijndael.CreateDecryptor(), CryptoStreamMode.Write))
+                            using (RijndaelManaged rijndael = new RijndaelManaged())
                             {
-                                cryptoStream.Write(inputStream.GetBuffer(), (int)inputStream.Position, (int)(inputStream.Length - inputStream.Position));
+                                rijndael.IV = IV_BUFFER;
+                                rijndael.Padding = PaddingMode.PKCS7;
+
+                                byte[] key = NetworkingManager.singleton.isServer ? CryptographyHelper.GetClientKey(clientId) : CryptographyHelper.GetServerKey();
+
+                                if (key == null)
+                                {
+                                    if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Failed to grab key");
+                                    messageType = MLAPIConstants.INVALID;
+                                    return null;
+                                }
+
+                                rijndael.Key = key;
+
+                                using (CryptoStream cryptoStream = new CryptoStream(outputStream, rijndael.CreateDecryptor(), CryptoStreamMode.Write))
+                                {
+                                    cryptoStream.Write(inputStream.GetBuffer(), (int)inputStream.Position, (int)(inputStream.Length - inputStream.Position));
+                                }
+
+                                outputStream.Position = 0;
+                                int msgType = outputStream.ReadByte();
+                                messageType = msgType == -1 ? MLAPIConstants.INVALID : (byte)msgType;
                             }
 
-                            outputStream.Position = 0;
-                            int msgType = outputStream.ReadByte();
-                            messageType = msgType == -1 ? MLAPIConstants.INVALID : (byte)msgType;
+                            return outputStream;
                         }
-
-                        return outputStream;
+                        else
+                        {
+                            int msgType = inputStream.ReadByte();
+                            messageType = msgType == -1 ? MLAPIConstants.INVALID : (byte)msgType;
+                            return inputStream;
+                        }
                     }
                     else
                     {
-                        int msgType = inputStream.ReadByte();
-                        messageType = msgType == -1 ? MLAPIConstants.INVALID : (byte)msgType;
+                        messageType = inputHeaderReader.ReadByteBits(6);
+                        // The input stream is now ready to be read from. It's "safe" and has the correct position
                         return inputStream;
                     }
                 }
-                else
+                catch (Exception e)
                 {
-                    messageType = inputHeaderReader.ReadByteBits(6);
-                    // The input stream is now ready to be read from. It's "safe" and has the correct position
-                    return inputStream;
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogError("Error while unwrapping headers");
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError(e.ToString());
+
+                    messageType = MLAPIConstants.INVALID;
+                    return null;
                 }
             }
         }
 
         internal static BitStream WrapMessage(byte messageType, uint clientId, BitStream messageBody, SecuritySendFlags flags)
         {
-            bool encrypted = ((flags & SecuritySendFlags.Encrypted) == SecuritySendFlags.Encrypted) && NetworkingManager.singleton.NetworkConfig.EnableEncryption;
-            bool authenticated = (flags & SecuritySendFlags.Authenticated) == SecuritySendFlags.Authenticated && NetworkingManager.singleton.NetworkConfig.EnableEncryption;
-
-            PooledBitStream outStream = PooledBitStream.Get();
-
-            using (PooledBitWriter outWriter = PooledBitWriter.Get(outStream))
+            try
             {
-                outWriter.WriteBit(encrypted);
-                outWriter.WriteBit(authenticated);
+                bool encrypted = ((flags & SecuritySendFlags.Encrypted) == SecuritySendFlags.Encrypted) && NetworkingManager.singleton.NetworkConfig.EnableEncryption;
+                bool authenticated = (flags & SecuritySendFlags.Authenticated) == SecuritySendFlags.Authenticated && NetworkingManager.singleton.NetworkConfig.EnableEncryption;
 
-                if (authenticated || encrypted)
+                PooledBitStream outStream = PooledBitStream.Get();
+
+                using (PooledBitWriter outWriter = PooledBitWriter.Get(outStream))
                 {
-                    outWriter.WritePadBits();
-                    long hmacWritePos = outStream.Position;
+                    outWriter.WriteBit(encrypted);
+                    outWriter.WriteBit(authenticated);
 
-                    if (authenticated) outStream.Write(HMAC_PLACEHOLDER, 0, HMAC_PLACEHOLDER.Length);
-
-                    if (encrypted)
+                    if (authenticated || encrypted)
                     {
-                        using (RijndaelManaged rijndael = new RijndaelManaged())
+                        outWriter.WritePadBits();
+                        long hmacWritePos = outStream.Position;
+
+                        if (authenticated) outStream.Write(HMAC_PLACEHOLDER, 0, HMAC_PLACEHOLDER.Length);
+
+                        if (encrypted)
                         {
-                            rijndael.GenerateIV();
-                            rijndael.Key = NetworkingManager.singleton.isServer ? ((NetworkingManager.singleton.ConnectedClients.ContainsKey(clientId) ? NetworkingManager.singleton.ConnectedClients[clientId].AesKey : NetworkingManager.singleton.PendingClients[clientId].AesKey)) : NetworkingManager.singleton.clientAesKey;
-                            rijndael.Padding = PaddingMode.PKCS7;
-
-                            outStream.Write(rijndael.IV);
-
-                            using (CryptoStream encryptionStream = new CryptoStream(outStream, rijndael.CreateEncryptor(), CryptoStreamMode.Write))
+                            using (RijndaelManaged rijndael = new RijndaelManaged())
                             {
-                                encryptionStream.WriteByte(messageType);
-                                encryptionStream.Write(messageBody.GetBuffer(), 0, (int)messageBody.Length);
+                                rijndael.GenerateIV();
+                                rijndael.Padding = PaddingMode.PKCS7;
+
+                                byte[] key = NetworkingManager.singleton.isServer ? CryptographyHelper.GetClientKey(clientId) : CryptographyHelper.GetServerKey();
+
+                                if (key == null)
+                                {
+                                    if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Failed to grab key");
+                                    return null;
+                                }
+
+                                rijndael.Key = key;
+
+                                outStream.Write(rijndael.IV);
+
+                                using (CryptoStream encryptionStream = new CryptoStream(outStream, rijndael.CreateEncryptor(), CryptoStreamMode.Write))
+                                {
+                                    encryptionStream.WriteByte(messageType);
+                                    encryptionStream.Write(messageBody.GetBuffer(), 0, (int)messageBody.Length);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            outStream.WriteByte(messageType);
+                            outStream.Write(messageBody.GetBuffer(), 0, (int)messageBody.Length);
+                        }
+
+                        if (authenticated)
+                        {
+                            byte[] key = NetworkingManager.singleton.isServer ? CryptographyHelper.GetClientKey(clientId) : CryptographyHelper.GetServerKey();
+
+                            if (key == null)
+                            {
+                                if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Failed to grab key");
+                                return null;
+                            }
+
+                            using (HMACSHA256 hmac = new HMACSHA256(key))
+                            {
+                                byte[] computedHmac = hmac.ComputeHash(outStream.GetBuffer(), 0, (int)outStream.Length);
+
+                                outStream.Position = hmacWritePos;
+                                outStream.Write(computedHmac, 0, computedHmac.Length);
                             }
                         }
                     }
                     else
                     {
-                        outStream.WriteByte(messageType);                       
+                        outWriter.WriteBits(messageType, 6);
                         outStream.Write(messageBody.GetBuffer(), 0, (int)messageBody.Length);
                     }
-
-                    if (authenticated)
-                    {
-                        using (HMACSHA256 hmac = new HMACSHA256(NetworkingManager.singleton.isServer ? ((NetworkingManager.singleton.ConnectedClients.ContainsKey(clientId) ? NetworkingManager.singleton.ConnectedClients[clientId].AesKey : NetworkingManager.singleton.PendingClients[clientId].AesKey)) : NetworkingManager.singleton.clientAesKey))
-                        {
-                            byte[] computedHmac = hmac.ComputeHash(outStream.GetBuffer(), 0, (int)outStream.Length);
-
-                            outStream.Position = hmacWritePos;
-                            outStream.Write(computedHmac, 0, computedHmac.Length);
-                        }
-                    }
                 }
-                else
-                {
-                    outWriter.WriteBits(messageType, 6);
-                    outStream.Write(messageBody.GetBuffer(), 0, (int)messageBody.Length);
-                }
+
+                return outStream;
             }
+            catch (Exception e)
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogError("Error while wrapping headers");
+                if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError(e.ToString());
 
-            return outStream;
+                return null;
+            }
         }
     }
 }

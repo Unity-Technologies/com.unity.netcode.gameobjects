@@ -353,6 +353,7 @@ namespace MLAPI.Configuration
                     writer.WriteBool(EnableSceneSwitching);
                     writer.WriteBool(SignKeyExchange);
                     writer.WriteBits((byte)AttributeMessageMode, 3);
+                    writer.WritePadBits();
 
                     if (cache)
                     {
