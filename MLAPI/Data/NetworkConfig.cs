@@ -316,7 +316,6 @@ namespace MLAPI.Configuration
         {
             if (ConfigHash != null && cache)
                 return ConfigHash.Value;
-            Debug.Assert(true);
 
             Sort();
 
