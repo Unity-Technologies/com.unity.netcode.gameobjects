@@ -240,7 +240,14 @@ public class MLAPIEditor : EditorWindow
 
     private bool isFetching = false;
     private bool isParsing = false;
-    private bool canRefetch => !(isFetching || isParsing);
+    private bool canRefetch
+    {
+        get
+        {
+            return !(isFetching || isParsing);
+        }
+    }
+
     private string statusMessage;
 
     private int tab;
