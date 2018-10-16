@@ -55,8 +55,6 @@ namespace MLAPI.Configuration
         /// </summary>
         [HideInInspector]
         public List<NetworkedPrefab> NetworkedPrefabs = new List<NetworkedPrefab>();
-        internal Dictionary<string, int> NetworkPrefabIds;
-        internal Dictionary<int, string> NetworkPrefabNames;
         /// <summary>
         /// The default player prefab
         /// </summary>
@@ -125,9 +123,18 @@ namespace MLAPI.Configuration
         /// </summary>
         public bool EnableTimeResync = false;
         /// <summary>
-        /// Decides how many bytes to use for Attribute messaging. Leave this to 2 bytes unless you are facing hash collisions
+        /// Wheter or not the MLAPI should check for differences in the prefabs at connection. 
+        /// If you dynamically add prefabs at runtime, turn this OFF
         /// </summary>
-        public AttributeMessageMode AttributeMessageMode = AttributeMessageMode.WovenTwoByte;
+        public bool ForceSamePrefabs = true;
+        /// <summary>
+        /// Decides how many bytes to use for Rpc messaging. Leave this to 2 bytes unless you are facing hash collisions
+        /// </summary>
+        public HashSize RpcHashSize = HashSize.VarIntTwoBytes;
+        /// <summary>
+        /// Decides how many bytes to use for Prefab names. Leave this to 2 bytes unless you are facing hash collisions
+        /// </summary>
+        public HashSize PrefabHashSize = HashSize.VarIntTwoBytes;
         /// <summary>
         /// Wheter or not to enable encryption
         /// </summary>
@@ -166,7 +173,6 @@ namespace MLAPI.Configuration
         private void Sort()
         {
             Channels = Channels.OrderBy(x => x.Name).ToList();
-            NetworkedPrefabs = NetworkedPrefabs.OrderBy(x => x.name).ToList();
             RegisteredScenes.Sort();
         }
 
@@ -220,8 +226,8 @@ namespace MLAPI.Configuration
                     writer.WriteBool(config.SignKeyExchange);
                     writer.WriteBool(config.EnableSceneSwitching);
                     writer.WriteBool(config.EnableTimeResync);
-                    writer.WriteBits((byte)config.AttributeMessageMode, 3);
-                    stream.ZeroLastByteGarbageBits();
+                    writer.WriteBits((byte)config.RpcHashSize, 3);
+                    stream.PadStream();
 
                     return Convert.ToBase64String(stream.ToArray());
                 }
@@ -301,7 +307,7 @@ namespace MLAPI.Configuration
                     config.SignKeyExchange = reader.ReadBool();
                     config.EnableSceneSwitching = reader.ReadBool();
                     config.EnableTimeResync = reader.ReadBool();
-                    config.AttributeMessageMode = (AttributeMessageMode)reader.ReadBits(3);
+                    config.RpcHashSize = (HashSize)reader.ReadBits(3);
                 }
             }
         }
@@ -341,20 +347,23 @@ namespace MLAPI.Configuration
                         }
                     }
 
-                    if (HandleObjectSpawning)
+                    if (HandleObjectSpawning && ForceSamePrefabs)
                     {
-                        for (int i = 0; i < NetworkedPrefabs.Count; i++)
+                        List<NetworkedPrefab> sortedPrefabList = NetworkedPrefabs.OrderBy(x => x.hash).ToList();
+                        for (int i = 0; i < sortedPrefabList.Count; i++)
                         {
-                            writer.WriteString(NetworkedPrefabs[i].name);
+                            writer.WriteUInt64Packed(sortedPrefabList[i].hash);
                         }
                     }
 
+                    writer.WriteBool(ForceSamePrefabs);
                     writer.WriteBool(HandleObjectSpawning);
                     writer.WriteBool(EnableEncryption);
                     writer.WriteBool(EnableSceneSwitching);
                     writer.WriteBool(SignKeyExchange);
-                    writer.WriteBits((byte)AttributeMessageMode, 3);
-                    stream.ZeroLastByteGarbageBits();
+                    writer.WriteBits((byte)RpcHashSize, 3);
+                    writer.WriteBits((byte)PrefabHashSize, 3);
+                    stream.PadStream();
 
                     if (cache)
                     {

@@ -55,6 +55,10 @@ namespace MLAPI
         /// </summary>
         public string NetworkedPrefabName = string.Empty;
         /// <summary>
+        /// The hash used to identify the NetworkedPrefab, a hash of the NetworkedPrefabName
+        /// </summary>
+        public ulong NetworkedPrefabHash => SpawnManager.GetPrefabHash(NetworkedPrefabName);
+        /// <summary>
         /// Gets if this object is a player object
         /// </summary>
         public bool isPlayerObject { get; internal set; }

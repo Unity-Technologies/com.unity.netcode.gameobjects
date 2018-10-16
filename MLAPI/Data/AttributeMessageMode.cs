@@ -6,11 +6,11 @@ using MLAPI.Serialization;
 namespace MLAPI.Configuration
 {
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-    public enum AttributeMessageMode
+    public enum HashSize
     {
-        WovenTwoByte,
-        WovenFourByte,
-        WovenEightByte
+        VarIntTwoBytes,
+        VarIntFourBytes,
+        VarIntEightBytes
     }
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 }

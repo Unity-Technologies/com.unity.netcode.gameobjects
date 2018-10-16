@@ -440,13 +440,14 @@ namespace MLAPI.Serialization
         }
 
         /// <summary>
-        /// Sets the unused bits of the last byte to 0s
+        /// Writes zeros to fill the last byte
         /// </summary>
-        public void ZeroLastByteGarbageBits()
+        public void PadStream()
         {
-            if (BitAligned) return;
-
-            target[Length] &= (byte)~(0xFF << (int)(BitLength % 8));
+            while (!BitAligned)
+            {
+                WriteBit(false);
+            }
         }
 
         /// <summary>

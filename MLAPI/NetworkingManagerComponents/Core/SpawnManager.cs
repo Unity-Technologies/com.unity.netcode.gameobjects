@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using MLAPI.Configuration;
 using MLAPI.Data;
 using MLAPI.Internal;
 using MLAPI.Logging;
@@ -35,6 +36,42 @@ namespace MLAPI.Components
                 networkObjectIdCounter++;
                 return networkObjectIdCounter;
             }
+        }
+
+        internal static ulong GetPrefabHash(string prefabName)
+        {
+            HashSize mode = NetworkingManager.singleton.NetworkConfig.PrefabHashSize;
+
+            if (mode == HashSize.VarIntTwoBytes)
+                return prefabName.GetStableHash16();
+            if (mode == HashSize.VarIntFourBytes)
+                return prefabName.GetStableHash32();
+            if (mode == HashSize.VarIntEightBytes)
+                return prefabName.GetStableHash64();
+
+            return 0;
+        }
+
+        public static int GetNetworkedPrefabIndexOfHash(ulong hash)
+        {
+            for (int i = 0; i < NetworkingManager.singleton.NetworkConfig.NetworkedPrefabs.Count; i++)
+            {
+                if (NetworkingManager.singleton.NetworkConfig.NetworkedPrefabs[i].hash == hash)
+                    return i;
+            }
+
+            return -1;
+        }
+
+        public static int GetNetworkedPrefabIndexOfName(string name)
+        {
+            for (int i = 0; i < NetworkingManager.singleton.NetworkConfig.NetworkedPrefabs.Count; i++)
+            {
+                if (NetworkingManager.singleton.NetworkConfig.NetworkedPrefabs[i].name == name)
+                    return i;
+            }
+
+            return -1;
         }
 
         private static NetworkingManager netManager => NetworkingManager.singleton;
@@ -151,7 +188,7 @@ namespace MLAPI.Components
 
         internal static NetworkedObject CreateSpawnedObject(int networkedPrefabId, uint networkId, uint owner, bool playerObject, Vector3 position, Quaternion rotation, Stream stream, bool readPayload, bool readNetworkedVar)
         {
-            if (!netManager.NetworkConfig.NetworkPrefabNames.ContainsKey(networkedPrefabId))
+            if (networkedPrefabId >= netManager.NetworkConfig.NetworkedPrefabs.Count || networkedPrefabId < 0)
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot spawn the object, invalid prefabIndex");
                 return null;
@@ -167,7 +204,7 @@ namespace MLAPI.Components
 
             if (readNetworkedVar) netObject.SetNetworkedVarData(stream);
 
-            netObject.NetworkedPrefabName = netManager.NetworkConfig.NetworkPrefabNames[networkedPrefabId];
+            netObject.NetworkedPrefabName = netManager.NetworkConfig.NetworkedPrefabs[networkedPrefabId].name;
             netObject.isSpawned = true;
             netObject.isPooledObject = false;
 
@@ -181,7 +218,7 @@ namespace MLAPI.Components
             netObject.transform.rotation = rotation;
             SpawnedObjects.Add(netObject.NetworkId, netObject);
             SpawnedObjectsList.Add(netObject);
-            if (playerObject) NetworkingManager.singleton.ConnectedClients[owner].PlayerObject = netObject;
+            if (playerObject) netManager.ConnectedClients[owner].PlayerObject = netObject;
             netObject.InvokeBehaviourNetworkSpawn(readPayload ? stream : null);
             return netObject;
         }
@@ -220,7 +257,7 @@ namespace MLAPI.Components
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Only server can spawn objects");
                 return;
             }
-            else if (!netManager.NetworkConfig.NetworkPrefabIds.ContainsKey(netObject.NetworkedPrefabName))
+            else if (SpawnManager.GetNetworkedPrefabIndexOfName(netObject.NetworkedPrefabName) == -1)
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The prefab name " + netObject.NetworkedPrefabName + " does not exist as a networkedPrefab");
                 return;
@@ -256,7 +293,7 @@ namespace MLAPI.Components
                         writer.WriteBool(true);
                         writer.WriteUInt32Packed(netObject.NetworkId);
                         writer.WriteUInt32Packed(netObject.OwnerClientId);
-                        writer.WriteInt32Packed(netManager.NetworkConfig.NetworkPrefabIds[netObject.NetworkedPrefabName]);
+                        writer.WriteUInt64Packed(netObject.NetworkedPrefabHash);
                         writer.WriteBool(netObject.sceneObject == null ? true : netObject.sceneObject.Value);
 
                         writer.WriteSinglePacked(netObject.transform.position.x);
@@ -291,7 +328,7 @@ namespace MLAPI.Components
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Only server can spawn objects");
                 return;
             }
-            else if (!netManager.NetworkConfig.NetworkPrefabIds.ContainsKey(netObject.NetworkedPrefabName))
+            else if (SpawnManager.GetNetworkedPrefabIndexOfName(netObject.NetworkedPrefabName) == -1)
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The prefab name " + netObject.NetworkedPrefabName + " does not exist as a networkedPrefab");
                 return;
@@ -326,7 +363,7 @@ namespace MLAPI.Components
                         writer.WriteBool(false);
                         writer.WriteUInt32Packed(netObject.NetworkId);
                         writer.WriteUInt32Packed(netObject.OwnerClientId);
-                        writer.WriteInt32Packed(netManager.NetworkConfig.NetworkPrefabIds[netObject.NetworkedPrefabName]);
+                        writer.WriteUInt64Packed(netObject.NetworkedPrefabHash);
                         writer.WriteBool(netObject.sceneObject == null ? true : netObject.sceneObject.Value);
 
                         writer.WriteSinglePacked(netObject.transform.position.x);

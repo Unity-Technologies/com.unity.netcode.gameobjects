@@ -66,7 +66,7 @@ public class NetworkingManagerEditor : Editor
         };
 
         networkPrefabsList.drawHeaderCallback = (Rect rect) => {
-            EditorGUI.LabelField(rect, "NetworkedPrefabs (Auto Sorted)");
+            EditorGUI.LabelField(rect, "NetworkedPrefabs");
         };
 
         channelsList = new ReorderableList(serializedObject, serializedObject.FindProperty("NetworkConfig").FindPropertyRelative("Channels"), true, true, true, true);

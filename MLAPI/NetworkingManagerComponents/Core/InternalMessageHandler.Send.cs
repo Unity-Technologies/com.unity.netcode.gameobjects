@@ -8,7 +8,7 @@ namespace MLAPI.Internal
     {
         internal static void Send(uint clientId, byte messageType, string channelName, BitStream messageStream, SecuritySendFlags flags, bool skipQueue = false)
         {
-            messageStream.ZeroLastByteGarbageBits();
+            messageStream.PadStream();
 
             if (NetworkingManager.singleton.isServer && clientId == NetworkingManager.singleton.ServerClientId) return;
 
@@ -38,7 +38,7 @@ namespace MLAPI.Internal
             }
             else
             {
-                messageStream.ZeroLastByteGarbageBits();
+                messageStream.PadStream();
 
                 using (BitStream stream = MessageManager.WrapMessage(messageType, 0, messageStream, flags))
                 {
@@ -71,7 +71,7 @@ namespace MLAPI.Internal
             }
             else
             {
-                messageStream.ZeroLastByteGarbageBits();
+                messageStream.PadStream();
 
                 using (BitStream stream = MessageManager.WrapMessage(messageType, 0, messageStream, flags))
                 {

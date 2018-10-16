@@ -401,13 +401,13 @@ namespace MLAPI
 
         private ulong HashMethodName(string name)
         {
-            AttributeMessageMode mode = NetworkingManager.singleton.NetworkConfig.AttributeMessageMode;
+            HashSize mode = NetworkingManager.singleton.NetworkConfig.RpcHashSize;
             
-            if (mode == AttributeMessageMode.WovenTwoByte)
+            if (mode == HashSize.VarIntTwoBytes)
                 return name.GetStableHash16();
-            if (mode == AttributeMessageMode.WovenFourByte)
+            if (mode == HashSize.VarIntFourBytes)
                 return name.GetStableHash32();
-            if (mode == AttributeMessageMode.WovenEightByte)
+            if (mode == HashSize.VarIntEightBytes)
                 return name.GetStableHash64();
 
             return 0;

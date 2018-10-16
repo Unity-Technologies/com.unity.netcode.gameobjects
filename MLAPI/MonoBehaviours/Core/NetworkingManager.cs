@@ -199,8 +199,6 @@ namespace MLAPI
             //Sort lists
             if (NetworkConfig.Channels != null)
                 NetworkConfig.Channels = NetworkConfig.Channels.OrderBy(x => x.Name).ToList();
-            if (NetworkConfig.NetworkedPrefabs != null)
-                NetworkConfig.NetworkedPrefabs = NetworkConfig.NetworkedPrefabs.OrderBy(x => x.name).ToList(); 
             if (NetworkConfig.RegisteredScenes != null)
                 NetworkConfig.RegisteredScenes.Sort();
 
@@ -289,9 +287,6 @@ namespace MLAPI
 
             if (NetworkConfig.HandleObjectSpawning)
             {
-                NetworkConfig.NetworkPrefabIds = new Dictionary<string, int>();
-                NetworkConfig.NetworkPrefabNames = new Dictionary<int, string>();
-                NetworkConfig.NetworkedPrefabs = NetworkConfig.NetworkedPrefabs.OrderBy(x => x.name).ToList();
                 HashSet<string> networkedPrefabName = new HashSet<string>();
                 for (int i = 0; i < NetworkConfig.NetworkedPrefabs.Count; i++)
                 {
@@ -300,8 +295,6 @@ namespace MLAPI
                         if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Duplicate NetworkedPrefabName " + NetworkConfig.NetworkedPrefabs[i].name);
                         continue;
                     }
-                    NetworkConfig.NetworkPrefabIds.Add(NetworkConfig.NetworkedPrefabs[i].name, i);
-                    NetworkConfig.NetworkPrefabNames.Add(i, NetworkConfig.NetworkedPrefabs[i].name);
                     networkedPrefabName.Add(NetworkConfig.NetworkedPrefabs[i].name);
                 }
             }
@@ -558,7 +551,7 @@ namespace MLAPI
 
             if (NetworkConfig.HandleObjectSpawning)
             {
-                prefabId = prefabId == -1 ? NetworkConfig.NetworkPrefabIds[NetworkConfig.PlayerPrefabName] : prefabId;
+                prefabId = prefabId == -1 ? SpawnManager.GetNetworkedPrefabIndexOfName(NetworkConfig.PlayerPrefabName) : prefabId;
                 SpawnManager.CreateSpawnedObject(prefabId, 0, hostClientId, true, pos.GetValueOrDefault(), rot.GetValueOrDefault(), null, false, false);
             }
 
@@ -1016,7 +1009,7 @@ namespace MLAPI
                 NetworkedObject netObject = null;
                 if(NetworkConfig.HandleObjectSpawning)
                 {
-                    prefabId = prefabId == -1 ? NetworkConfig.NetworkPrefabIds[NetworkConfig.PlayerPrefabName] : prefabId;
+                    prefabId = prefabId == -1 ? SpawnManager.GetNetworkedPrefabIndexOfName(NetworkConfig.PlayerPrefabName) : prefabId;
                     netObject = SpawnManager.CreateSpawnedObject(prefabId, 0, clientId, true, position, rotation, null, false, false);
                     ConnectedClients[clientId].PlayerObject = netObject;
                 }
@@ -1052,7 +1045,7 @@ namespace MLAPI
                                 writer.WriteBool(pair.Value.isPlayerObject);
                                 writer.WriteUInt32Packed(pair.Value.NetworkId);
                                 writer.WriteUInt32Packed(pair.Value.OwnerClientId);
-                                writer.WriteInt32Packed(NetworkConfig.NetworkPrefabIds[pair.Value.NetworkedPrefabName]);
+                                writer.WriteUInt64Packed(pair.Value.NetworkedPrefabHash);
                                 writer.WriteBool(pair.Value.gameObject.activeInHierarchy);
                                 writer.WriteBool(pair.Value.sceneObject == null ? true : pair.Value.sceneObject.Value);
 
@@ -1091,7 +1084,7 @@ namespace MLAPI
                                 writer.WriteBool(true);
                                 writer.WriteUInt32Packed(ConnectedClients[clientId].PlayerObject.GetComponent<NetworkedObject>().NetworkId);
                                 writer.WriteUInt32Packed(clientId);
-                                writer.WriteInt32Packed(prefabId);
+                                writer.WriteUInt64Packed(NetworkingManager.singleton.NetworkConfig.NetworkedPrefabs[prefabId].hash);
                                 writer.WriteBool(false);
 
                                 writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.position.x);
