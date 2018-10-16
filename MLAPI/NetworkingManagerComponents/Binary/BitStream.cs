@@ -440,6 +440,16 @@ namespace MLAPI.Serialization
         }
 
         /// <summary>
+        /// Sets the unused bits of the last byte to 0s
+        /// </summary>
+        public void ZeroLastByteGarbageBits()
+        {
+            if (BitAligned) return;
+
+            target[Length] &= (byte)~(0xFF << (int)(BitLength % 8));
+        }
+
+        /// <summary>
         /// Returns hex encoded version of the buffer
         /// </summary>
         /// <returns>Hex encoded version of the buffer</returns>

@@ -1,6 +1,4 @@
-﻿using System.IO;
-using System.Security.Cryptography;
-using MLAPI.Data;
+﻿using MLAPI.Data;
 using MLAPI.Profiling;
 using MLAPI.Serialization;
 
@@ -10,7 +8,10 @@ namespace MLAPI.Internal
     {
         internal static void Send(uint clientId, byte messageType, string channelName, BitStream messageStream, SecuritySendFlags flags, bool skipQueue = false)
         {
+            messageStream.ZeroLastByteGarbageBits();
+
             if (NetworkingManager.singleton.isServer && clientId == NetworkingManager.singleton.ServerClientId) return;
+
             using (BitStream stream = MessageManager.WrapMessage(messageType, clientId, messageStream, flags))
             {
                 NetworkProfiler.StartEvent(TickType.Send, (uint)stream.Length, channelName, MLAPIConstants.MESSAGE_NAMES[messageType]);
@@ -37,6 +38,8 @@ namespace MLAPI.Internal
             }
             else
             {
+                messageStream.ZeroLastByteGarbageBits();
+
                 using (BitStream stream = MessageManager.WrapMessage(messageType, 0, messageStream, flags))
                 {
                     NetworkProfiler.StartEvent(TickType.Send, (uint)stream.Length, channelName, MLAPIConstants.MESSAGE_NAMES[messageType]);
@@ -68,6 +71,8 @@ namespace MLAPI.Internal
             }
             else
             {
+                messageStream.ZeroLastByteGarbageBits();
+
                 using (BitStream stream = MessageManager.WrapMessage(messageType, 0, messageStream, flags))
                 {
                     NetworkProfiler.StartEvent(TickType.Send, (uint)stream.Length, channelName, MLAPIConstants.MESSAGE_NAMES[messageType]);

@@ -221,6 +221,7 @@ namespace MLAPI.Configuration
                     writer.WriteBool(config.EnableSceneSwitching);
                     writer.WriteBool(config.EnableTimeResync);
                     writer.WriteBits((byte)config.AttributeMessageMode, 3);
+                    stream.ZeroLastByteGarbageBits();
 
                     return Convert.ToBase64String(stream.ToArray());
                 }
@@ -353,7 +354,7 @@ namespace MLAPI.Configuration
                     writer.WriteBool(EnableSceneSwitching);
                     writer.WriteBool(SignKeyExchange);
                     writer.WriteBits((byte)AttributeMessageMode, 3);
-                    writer.WritePadBits();
+                    stream.ZeroLastByteGarbageBits();
 
                     if (cache)
                     {
