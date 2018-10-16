@@ -53,6 +53,7 @@ namespace MLAPI
         /// <summary>
         /// The name of the NetworkedPrefab
         /// </summary>
+        [Tooltip("The prefab name is the name that identifies this prefab. It has to not be the same as any other prefabs that are registered with the MLAPI and it has to be the same across projects if multiple projects are used.")]
         public string NetworkedPrefabName = string.Empty;
         /// <summary>
         /// The hash used to identify the NetworkedPrefab, a hash of the NetworkedPrefabName

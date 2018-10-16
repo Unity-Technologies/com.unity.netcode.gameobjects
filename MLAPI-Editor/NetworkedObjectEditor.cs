@@ -35,7 +35,7 @@ namespace UnityEditor
                 }
                 EditorGUILayout.EndHorizontal();
             }
-            else if(networkedObject.isSpawned)
+            else if (networkedObject.isSpawned)
             {
                 EditorGUILayout.LabelField("PrefabName: ", networkedObject.NetworkedPrefabName, EditorStyles.label);
                 EditorGUILayout.LabelField("PrefabHash: ", networkedObject.NetworkedPrefabHash.ToString(), EditorStyles.label);
