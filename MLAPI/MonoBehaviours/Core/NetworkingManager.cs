@@ -260,7 +260,7 @@ namespace MLAPI
             NetworkSceneManager.registeredSceneNames.Clear();
             NetworkSceneManager.sceneIndexToString.Clear();
             NetworkSceneManager.sceneNameToIndex.Clear();
-            NetworkSceneManager.switchSceneProgresses.Clear();
+            NetworkSceneManager.sceneSwitchProgresses.Clear();
 
             try
             {
@@ -799,7 +799,7 @@ namespace MLAPI
             }
         }
 
-        internal IEnumerator TimeOutSwitchSceneProgress(SwitchSceneProgress switchSceneProgress)
+        internal IEnumerator TimeOutSwitchSceneProgress(SceneSwitchProgress switchSceneProgress)
         {
             yield return new WaitForSeconds(this.NetworkConfig.LoadSceneTimeOut);
             switchSceneProgress.SetTimedOut();
