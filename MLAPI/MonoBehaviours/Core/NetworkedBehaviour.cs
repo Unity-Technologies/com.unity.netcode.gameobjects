@@ -216,6 +216,32 @@ namespace MLAPI
             return fieldTypes[type];
         }
         
+        internal List<INetworkedVar> getDummyNetworkedVars()
+        {
+            List<INetworkedVar> networkedVars = new List<INetworkedVar>();
+            FieldInfo[] sortedFields = GetFieldInfoForType(GetType());
+            for (int i = 0; i < sortedFields.Length; i++)
+            {
+                Type fieldType = sortedFields[i].FieldType;
+                if (fieldType.HasInterface(typeof(INetworkedVar)))
+                {
+                    INetworkedVar instance = null;
+                    if (fieldType.IsGenericTypeDefinition)
+                    {
+                        Type genericType = fieldType.MakeGenericType(fieldType.GetGenericArguments());
+                        instance = (INetworkedVar)Activator.CreateInstance(genericType, true);
+                    }
+                    else
+                    {
+                        instance = (INetworkedVar)Activator.CreateInstance(fieldType, true);
+                    }
+                    instance.SetNetworkedBehaviour(this);
+                    networkedVars.Add(instance);
+                }
+            }
+            return networkedVars;
+        }
+
         internal void NetworkedVarInit()
         {
             if (networkedVarInit)
@@ -337,16 +363,17 @@ namespace MLAPI
             return false;
         }
 
-        internal void HandleNetworkedVarDeltas(Stream stream, uint clientId)
+
+        internal static void HandleNetworkedVarDeltas(List<INetworkedVar> networkedVarList, Stream stream, uint clientId)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
-                for (int i = 0; i < networkedVarFields.Count; i++)
+                for (int i = 0; i < networkedVarList.Count; i++)
                 {
                     if (!reader.ReadBool())
                         continue;
 
-                    if (isServer && !networkedVarFields[i].CanClientWrite(clientId))
+                    if (NetworkingManager.singleton.isServer && !networkedVarList[i].CanClientWrite(clientId))
                     {
                         //This client wrote somewhere they are not allowed. This is critical
                         //We can't just skip this field. Because we don't actually know how to dummy read
@@ -359,21 +386,21 @@ namespace MLAPI
                         return;
                     }
 
-                    networkedVarFields[i].ReadDelta(stream);
+                    networkedVarList[i].ReadDelta(stream);
                 }
             }
         }
 
-        internal void HandleNetworkedVarUpdate(Stream stream, uint clientId)
+        internal static void HandleNetworkedVarUpdate(List<INetworkedVar> networkedVarList, Stream stream, uint clientId)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
-                for (int i = 0; i < networkedVarFields.Count; i++)
+                for (int i = 0; i < networkedVarList.Count; i++)
                 {
                     if (!reader.ReadBool())
                         continue;
 
-                    if (isServer && !networkedVarFields[i].CanClientWrite(clientId))
+                    if (NetworkingManager.singleton.isServer && !networkedVarList[i].CanClientWrite(clientId))
                     {
                         //This client wrote somewhere they are not allowed. This is critical
                         //We can't just skip this field. Because we don't actually know how to dummy read
@@ -386,10 +413,33 @@ namespace MLAPI
                         return;
                     }
 
-                    networkedVarFields[i].ReadField(stream);
+                    networkedVarList[i].ReadField(stream);
                 }
             }
         }
+
+        internal static void WriteNetworkedVarData(List<INetworkedVar> networkedVarList, PooledBitWriter writer, Stream stream, uint clientId)
+        {
+            if (networkedVarList.Count == 0)
+                return;
+            for (int j = 0; j < networkedVarList.Count; j++)
+            {
+                bool canClientRead = networkedVarList[j].CanClientRead(clientId);
+                writer.WriteBool(canClientRead);
+                if (canClientRead) networkedVarList[j].WriteField(stream);
+            }
+        }
+
+        internal static void SetNetworkedVarData(List<INetworkedVar> networkedVarList, PooledBitReader reader, Stream stream)
+        {
+            if (networkedVarList.Count == 0)
+                return;
+            for (int j = 0; j < networkedVarList.Count; j++)
+            {
+                if (reader.ReadBool()) networkedVarList[j].ReadField(stream);
+            }
+        }
+
 
         #endregion
 
@@ -2592,7 +2642,9 @@ namespace MLAPI
         /// <returns></returns>
         protected NetworkedObject GetNetworkedObject(uint networkId)
         {
-            return SpawnManager.SpawnedObjects[networkId];
+            if(SpawnManager.SpawnedObjects.ContainsKey(networkId))
+                return SpawnManager.SpawnedObjects[networkId];
+            return null;
         }
     }
 }

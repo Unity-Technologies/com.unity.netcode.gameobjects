@@ -8,7 +8,6 @@
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
         public const string MLAPI_PROTOCOL_VERSION = "3.0.0";
 
-
         public const byte MLAPI_CERTIFICATE_HAIL = 0;
         public const byte MLAPI_CERTIFICATE_HAIL_RESPONSE = 1;
         public const byte MLAPI_GREETINGS = 2;
@@ -18,16 +17,17 @@
         public const byte MLAPI_CLIENT_DISCONNECT = 6;
         public const byte MLAPI_DESTROY_OBJECT = 7;
         public const byte MLAPI_SWITCH_SCENE = 8;
-        public const byte MLAPI_SPAWN_POOL_OBJECT = 9;
-        public const byte MLAPI_DESTROY_POOL_OBJECT = 10;
-        public const byte MLAPI_CHANGE_OWNER = 11;
-        public const byte MLAPI_ADD_OBJECTS = 12;
-        public const byte MLAPI_TIME_SYNC = 13;
-        public const byte MLAPI_NETWORKED_VAR_DELTA = 14;
-        public const byte MLAPI_NETWORKED_VAR_UPDATE = 15;
-        public const byte MLAPI_SERVER_RPC = 16;
-        public const byte MLAPI_CLIENT_RPC = 17;
-        public const byte MLAPI_CUSTOM_MESSAGE = 18;
+        public const byte MLAPI_CLIENT_SWITCH_SCENE_COMPLETED = 9;
+        public const byte MLAPI_SPAWN_POOL_OBJECT = 10;
+        public const byte MLAPI_DESTROY_POOL_OBJECT = 11;
+        public const byte MLAPI_CHANGE_OWNER = 12;
+        public const byte MLAPI_ADD_OBJECTS = 13;
+        public const byte MLAPI_TIME_SYNC = 14;
+        public const byte MLAPI_NETWORKED_VAR_DELTA = 15;
+        public const byte MLAPI_NETWORKED_VAR_UPDATE = 16;
+        public const byte MLAPI_SERVER_RPC = 17;
+        public const byte MLAPI_CLIENT_RPC = 18;
+        public const byte MLAPI_CUSTOM_MESSAGE = 19;
         public const byte INVALID = 32;
         
         public static readonly string[] MESSAGE_NAMES = {
@@ -40,6 +40,7 @@
             "MLAPI_CLIENT_DISCONNECT",
             "MLAPI_DESTROY_OBJECT",
             "MLAPI_SWITCH_SCENE",
+            "MLAPI_CLIENT_SWITCH_SCENE_COMPLETED",
             "MLAPI_SPAWN_POOL_OBJECT",
             "MLAPI_DESTROY_POOL_OBJECT",
             "MLAPI_CHANGE_OWNER",

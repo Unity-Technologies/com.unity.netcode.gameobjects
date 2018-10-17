@@ -119,7 +119,7 @@ namespace MLAPI.Configuration
         /// </summary>
         public bool EnableSceneSwitching = true;
         /// <summary>
-        /// If your logic uses the NetwokrTime, this should probably be turned off. If however it's needed to maximize accuracy, this is recommended to be turned on
+        /// If your logic uses the NetworkedTime, this should probably be turned off. If however it's needed to maximize accuracy, this is recommended to be turned on
         /// </summary>
         public bool EnableTimeResync = false;
         /// <summary>
@@ -137,6 +137,11 @@ namespace MLAPI.Configuration
         public HashSize PrefabHashSize = HashSize.VarIntTwoBytes;
         /// <summary>
         /// Wheter or not to enable encryption
+        /// The amount of seconds to wait on all clients to load requested scene before the SwitchSceneProgress onComplete callback, that waits for all clients to complete loading, is called anyway.
+        /// </summary>
+        public int LoadSceneTimeOut = 120;
+        /// <summary>
+        /// Wheter or not to enable the ECDHE key exchange to allow for encryption and authentication of messages
         /// </summary>
         [Header("Cryptography")]
         public bool EnableEncryption = false;
@@ -225,6 +230,7 @@ namespace MLAPI.Configuration
                     writer.WriteBool(config.EnableEncryption);
                     writer.WriteBool(config.SignKeyExchange);
                     writer.WriteBool(config.EnableSceneSwitching);
+                    writer.WriteInt32Packed(config.LoadSceneTimeOut);
                     writer.WriteBool(config.EnableTimeResync);
                     writer.WriteBits((byte)config.RpcHashSize, 3);
                     stream.PadStream();
@@ -306,6 +312,7 @@ namespace MLAPI.Configuration
                     config.EnableEncryption = reader.ReadBool();
                     config.SignKeyExchange = reader.ReadBool();
                     config.EnableSceneSwitching = reader.ReadBool();
+                    config.LoadSceneTimeOut = reader.ReadInt32Packed();
                     config.EnableTimeResync = reader.ReadBool();
                     config.RpcHashSize = (HashSize)reader.ReadBits(3);
                 }

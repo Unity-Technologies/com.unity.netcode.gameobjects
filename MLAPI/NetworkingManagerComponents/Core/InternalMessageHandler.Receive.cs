@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
@@ -203,8 +203,12 @@ namespace MLAPI.Internal
             {
                 netManager.LocalClientId = reader.ReadUInt32Packed();
                 uint sceneIndex = 0;
-                if (netManager.NetworkConfig.EnableSceneSwitching)
+                Guid sceneSwitchProgressGuid = new Guid();
+                if (netManager.NetworkConfig.EnableSceneSwitching) 
+                {
                     sceneIndex = reader.ReadUInt32Packed();
+                    sceneSwitchProgressGuid = new Guid(reader.ReadByteArray());
+                }
 
                 float netTime = reader.ReadSinglePacked();
                 int remoteStamp = reader.ReadInt32Packed();
@@ -230,7 +234,10 @@ namespace MLAPI.Internal
                         uint ownerId = reader.ReadUInt32Packed();
                         ulong prefabHash = reader.ReadUInt64Packed();
                         bool isActive = reader.ReadBool();
-                        bool sceneObject = reader.ReadBool();
+                        bool destroyWithScene = reader.ReadBool();
+
+                        bool sceneDelayedSpawn = reader.ReadBool();
+                        uint sceneSpawnedInIndex = reader.ReadUInt32Packed();
 
                         float xPos = reader.ReadSinglePacked();
                         float yPos = reader.ReadSinglePacked();
@@ -241,15 +248,13 @@ namespace MLAPI.Internal
                         float zRot = reader.ReadSinglePacked();
 
                         NetworkedObject netObject = SpawnManager.CreateSpawnedObject(SpawnManager.GetNetworkedPrefabIndexOfHash(prefabHash), networkId, ownerId, isPlayerObject,
-                            new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), stream, false, true);
-                        netObject.sceneObject = sceneObject;
-                        netObject.gameObject.SetActive(isActive);
+                            sceneSpawnedInIndex, sceneDelayedSpawn, destroyWithScene, new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), isActive, stream, false, 0, true);
                     }
                 }
 
                 if (netManager.NetworkConfig.EnableSceneSwitching)
                 {
-                    NetworkSceneManager.OnSceneSwitch(sceneIndex);
+                    NetworkSceneManager.OnSceneSwitch(sceneIndex, sceneSwitchProgressGuid);
                 }
 
                 netManager.isConnectedClients = true;
@@ -268,7 +273,10 @@ namespace MLAPI.Internal
                     uint networkId = reader.ReadUInt32Packed();
                     uint ownerId = reader.ReadUInt32Packed();
                     ulong prefabHash = reader.ReadUInt64Packed();
-                    bool sceneObject = reader.ReadBool();
+
+                    bool destroyWithScene = reader.ReadBool();
+                    bool sceneDelayedSpawn = reader.ReadBool();
+                    uint sceneSpawnedInIndex = reader.ReadUInt32Packed();
 
                     float xPos = reader.ReadSinglePacked();
                     float yPos = reader.ReadSinglePacked();
@@ -279,6 +287,7 @@ namespace MLAPI.Internal
                     float zRot = reader.ReadSinglePacked();
 
                     bool hasPayload = reader.ReadBool();
+                    int payLoadLength = hasPayload ? reader.ReadInt32Packed() : 0;
 
                     if (isPlayerObject)
                     {
@@ -287,9 +296,7 @@ namespace MLAPI.Internal
                     }
 
                     NetworkedObject netObject = SpawnManager.CreateSpawnedObject(SpawnManager.GetNetworkedPrefabIndexOfHash(prefabHash), networkId, ownerId, isPlayerObject,
-                        new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), stream, hasPayload, true);
-
-                    netObject.sceneObject = sceneObject;
+                        sceneSpawnedInIndex, sceneDelayedSpawn, destroyWithScene, new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), true, stream, hasPayload, payLoadLength, true);
 
                 }
                 else
@@ -322,7 +329,17 @@ namespace MLAPI.Internal
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
-                NetworkSceneManager.OnSceneSwitch(reader.ReadUInt32Packed());
+                uint sceneIndex = reader.ReadUInt32Packed();
+                Guid switchSceneGuid = new Guid(reader.ReadByteArray());
+                NetworkSceneManager.OnSceneSwitch(sceneIndex, switchSceneGuid);
+            }
+        }
+
+        internal static void HandleClientSwitchSceneCompleted(uint clientId, Stream stream, int channelId)
+        {
+            using (PooledBitReader reader = PooledBitReader.Get(stream)) 
+            {
+                NetworkSceneManager.OnClientSwitchSceneCompleted(clientId, new Guid(reader.ReadByteArray()));
             }
         }
 
@@ -388,7 +405,10 @@ namespace MLAPI.Internal
                         uint networkId = reader.ReadUInt32Packed();
                         uint ownerId = reader.ReadUInt32Packed();
                         ulong prefabHash = reader.ReadUInt64Packed();
-                        bool sceneObject = reader.ReadBool();
+
+                        bool destroyWithScene = reader.ReadBool();
+                        bool sceneDelayedSpawn = reader.ReadBool();
+                        uint sceneSpawnedInIndex = reader.ReadUInt32Packed();
 
                         float xPos = reader.ReadSinglePacked();
                         float yPos = reader.ReadSinglePacked();
@@ -404,8 +424,7 @@ namespace MLAPI.Internal
                             netManager.ConnectedClientsList.Add(netManager.ConnectedClients[ownerId]);
                         }
                         NetworkedObject netObject = SpawnManager.CreateSpawnedObject(SpawnManager.GetNetworkedPrefabIndexOfHash(prefabHash), networkId, ownerId, isPlayerObject,
-                            new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), stream, false, true);
-                        netObject.sceneObject = sceneObject;
+                            sceneSpawnedInIndex, sceneDelayedSpawn, destroyWithScene, new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), true, stream, false, 0, true);
                     }
                 }
             }
@@ -430,18 +449,24 @@ namespace MLAPI.Internal
                 uint netId = reader.ReadUInt32Packed();
                 ushort orderIndex = reader.ReadUInt16Packed();
 
-                if (!SpawnManager.SpawnedObjects.ContainsKey(netId))
+                if (SpawnManager.SpawnedObjects.ContainsKey(netId))
+                {
+                    if (SpawnManager.SpawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex) == null)
+                    {
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkedVar message recieved for a non existant behaviour");
+                        return;
+                    }
+                    NetworkedBehaviour.HandleNetworkedVarDeltas(SpawnManager.SpawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).networkedVarFields, stream, clientId);
+                }
+                else if (SpawnManager.PendingSpawnObjects.ContainsKey(netId))
+                {
+                    NetworkedBehaviour.HandleNetworkedVarDeltas(SpawnManager.PendingSpawnObjects[netId].GetDummyNetworkedVarListAtOrderIndex(orderIndex), stream, clientId);
+                }
+                else
                 {
                     if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkedVar message recieved for a non existant object with id: " + netId);
                     return;
                 }
-                else if (SpawnManager.SpawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex) == null)
-                {
-                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkedVar message recieved for a non existant behaviour");
-                    return;
-                }
-
-                SpawnManager.SpawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).HandleNetworkedVarDeltas(stream, clientId);
             }
         }
 
@@ -452,18 +477,24 @@ namespace MLAPI.Internal
                 uint netId = reader.ReadUInt32Packed();
                 ushort orderIndex = reader.ReadUInt16Packed();
 
-                if (!SpawnManager.SpawnedObjects.ContainsKey(netId))
+                if (SpawnManager.SpawnedObjects.ContainsKey(netId))
+                {
+                    if (SpawnManager.SpawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex) == null)
+                    {
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkedVar message recieved for a non existant behaviour");
+                        return;
+                    }
+                    NetworkedBehaviour.HandleNetworkedVarUpdate(SpawnManager.SpawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).networkedVarFields, stream, clientId);
+                }
+                else if (SpawnManager.PendingSpawnObjects.ContainsKey(netId))
+                {
+                    NetworkedBehaviour.HandleNetworkedVarUpdate(SpawnManager.PendingSpawnObjects[netId].GetDummyNetworkedVarListAtOrderIndex(orderIndex), stream, clientId);
+                }
+                else
                 {
                     if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkedVar message recieved for a non existant object with id: " + netId);
                     return;
                 }
-                else if (SpawnManager.SpawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex) == null)
-                {
-                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkedVar message recieved for a non existant behaviour");
-                    return;
-                }
-
-                SpawnManager.SpawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).HandleNetworkedVarUpdate(stream, clientId);
             }
         }
         
