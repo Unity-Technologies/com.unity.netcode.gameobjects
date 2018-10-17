@@ -236,7 +236,7 @@ namespace MLAPI.Components
                 List<NetworkedBehaviour> networkedBehaviours = new List<NetworkedBehaviour>(netObject.GetComponentsInChildren<NetworkedBehaviour>());
                 for (ushort i = 0; i < networkedBehaviours.Count; i++)
                 {
-                    dummyNetworkedVars.Add(i, networkedBehaviours[i].getDummyNetworkedVars());
+                    dummyNetworkedVars.Add(i, networkedBehaviours[i].GetDummyNetworkedVars());
                 }
 
                 PendingSpawnObject pso = new PendingSpawnObject()
