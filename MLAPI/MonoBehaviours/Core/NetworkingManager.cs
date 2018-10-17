@@ -802,7 +802,7 @@ namespace MLAPI
         internal IEnumerator TimeOutSwitchSceneProgress(SwitchSceneProgress switchSceneProgress)
         {
             yield return new WaitForSeconds(this.NetworkConfig.LoadSceneTimeOut);
-            switchSceneProgress.setTimedOut();
+            switchSceneProgress.SetTimedOut();
         }
 
         private void HandleIncomingData(uint clientId, byte[] data, int channelId, int totalSize)

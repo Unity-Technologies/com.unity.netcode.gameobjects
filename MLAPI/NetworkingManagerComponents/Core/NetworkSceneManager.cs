@@ -71,7 +71,7 @@ namespace MLAPI.Components
             nextScene = SceneManager.GetSceneByName(sceneName);
             sceneLoad.completed += (AsyncOperation AsyncOp) => { OnSceneLoaded(AsyncOp, switchSceneProgress.guid); };
 
-            switchSceneProgress.setSceneLoadOperation(sceneLoad);
+            switchSceneProgress.SetSceneLoadOperation(sceneLoad);
 
             using (PooledBitStream stream = PooledBitStream.Get())
             {
@@ -206,14 +206,14 @@ namespace MLAPI.Components
                 return;
             }
 
-            switchSceneProgresses[switchSceneGuid].addClientAsDone(clientId);
+            switchSceneProgresses[switchSceneGuid].AddClientAsDone(clientId);
         }
 
 
         internal static void removeClientFromSceneSwitchProgresses(uint clientId) 
         {
             foreach (SwitchSceneProgress switchSceneProgress in switchSceneProgresses.Values)
-                switchSceneProgress.removeClientAsDone(clientId);
+                switchSceneProgress.RemoveClientAsDone(clientId);
         }
     }
 
@@ -222,28 +222,14 @@ namespace MLAPI.Components
     /// </summary>
     public class SwitchSceneProgress 
     {
-
-        internal SwitchSceneProgress()
-        {
-            timeOutCoroutine = NetworkingManager.singleton.StartCoroutine(NetworkingManager.singleton.TimeOutSwitchSceneProgress(this));
-        }
-
-        private Coroutine timeOutCoroutine;
-        private Guid _guid = Guid.NewGuid();
-        internal Guid guid => _guid;
-
-        private AsyncOperation sceneLoadOperation;
-
         /// <summary>
-        /// Array of clientIds of those clients that is done loading the scene.
+        /// List of clientIds of those clients that is done loading the scene.
         /// </summary>
-        public uint[] doneClients => _doneClients.ToArray();
-        private List<uint> _doneClients = new List<uint>();
+        public List<uint> DoneClients { get; } = new List<uint>();
         /// <summary>
         /// The NetworkTime time at the moment the scene switch was initiated by the server.
         /// </summary>
-        public float timeAtInitiation => _timeAtInitiation;
-        private float _timeAtInitiation = NetworkingManager.singleton.NetworkTime;
+        public float TimeAtInitiation { get; } = NetworkingManager.singleton.NetworkTime;
         /// <summary>
         /// Delegate type for when the switch scene progress is completed. Either by all clients done loading the scene or by time out.
         /// </summary>
@@ -251,17 +237,15 @@ namespace MLAPI.Components
         /// <summary>
         /// The callback invoked when the switch scene progress is completed. Either by all clients done loading the scene or by time out.
         /// </summary>
-        public event OnCompletedDelegate onCompleted;
+        public event OnCompletedDelegate OnComplete;
         /// <summary>
         /// Is this scene switch progresses completed, all clients are done loading the scene or a timeout has occured.
         /// </summary>
-        public bool isCompleted => completed;
-        private bool completed = false;
+        public bool isCompleted { get; private set; }
         /// <summary>
         /// If all clients are done loading the scene, at the moment of completed.
         /// </summary>
-        public bool isAllClientsDoneLoading => allClientsDoneLoading;
-        private bool allClientsDoneLoading = false;
+        public bool isAllClientsDoneLoading { get; private set; }
         /// <summary>
         /// Delegate type for when a client is done loading the scene.
         /// </summary>
@@ -271,44 +255,58 @@ namespace MLAPI.Components
         /// </summary>
         public event OnClientLoadedSceneDelegate OnClientLoadedScene;
 
-        internal void addClientAsDone(uint clientId) 
+        internal Guid guid { get; } = Guid.NewGuid();
+
+        private Coroutine timeOutCoroutine;
+        private AsyncOperation sceneLoadOperation;
+
+        internal SwitchSceneProgress()
         {
-            _doneClients.Add(clientId);
+            timeOutCoroutine = NetworkingManager.singleton.StartCoroutine(NetworkingManager.singleton.TimeOutSwitchSceneProgress(this));
+        }
+
+        internal void AddClientAsDone(uint clientId) 
+        {
+            DoneClients.Add(clientId);
             if (OnClientLoadedScene != null)
                 OnClientLoadedScene.Invoke(clientId);
-            checkCompletion();
+            CheckCompletion();
         }
-        internal void removeClientAsDone(uint clientId) 
+
+        internal void RemoveClientAsDone(uint clientId) 
         {
-            _doneClients.Remove(clientId);
-            checkCompletion();
+            DoneClients.Remove(clientId);
+            CheckCompletion();
         }
-        internal void setSceneLoadOperation(AsyncOperation sceneLoadOperation)
+
+        internal void SetSceneLoadOperation(AsyncOperation sceneLoadOperation)
         {
             this.sceneLoadOperation = sceneLoadOperation;
-            this.sceneLoadOperation.completed += (AsyncOperation operation) => { checkCompletion(); };
+            this.sceneLoadOperation.completed += (AsyncOperation operation) => { CheckCompletion(); };
         }
-        internal void checkCompletion() 
+
+        internal void CheckCompletion() 
         {
-            if (!completed && _doneClients.Count == NetworkingManager.singleton.ConnectedClientsList.Count && sceneLoadOperation.isDone) 
+            if (!isCompleted && DoneClients.Count == NetworkingManager.singleton.ConnectedClientsList.Count && sceneLoadOperation.isDone) 
             {
-                completed = true;
-                allClientsDoneLoading = true;
-                NetworkSceneManager.switchSceneProgresses.Remove(_guid);
-                if (onCompleted != null)
-                    onCompleted.Invoke(false);
+                isCompleted = true;
+                isAllClientsDoneLoading = true;
+                NetworkSceneManager.switchSceneProgresses.Remove(guid);
+                if (OnComplete != null)
+                    OnComplete.Invoke(false);
 
                 NetworkingManager.singleton.StopCoroutine(timeOutCoroutine);
             }
         }
-        internal void setTimedOut() 
+
+        internal void SetTimedOut() 
         {
-            if (!completed)
+            if (!isCompleted)
             { 
-                completed = true;
-                NetworkSceneManager.switchSceneProgresses.Remove(_guid);
-                if (onCompleted != null)
-                    onCompleted.Invoke(true);
+                isCompleted = true;
+                NetworkSceneManager.switchSceneProgresses.Remove(guid);
+                if (OnComplete != null)
+                    OnComplete.Invoke(true);
             }
         }
 
