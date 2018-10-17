@@ -216,7 +216,7 @@ namespace MLAPI
             return fieldTypes[type];
         }
         
-        internal List<INetworkedVar> getDummyNetworkedVars()
+        internal List<INetworkedVar> GetDummyNetworkedVars()
         {
             List<INetworkedVar> networkedVars = new List<INetworkedVar>();
             FieldInfo[] sortedFields = GetFieldInfoForType(GetType());
