@@ -153,7 +153,7 @@ namespace MLAPI.Components
             }
             else
             {
-                SpawnManager.spawnPendingObjectsForScene(CurrentActiveSceneIndex);
+                SpawnManager.SpawnPendingObjectsForScene(CurrentActiveSceneIndex);
 
                 NetworkedObject[] netObjects = MonoBehaviour.FindObjectsOfType<NetworkedObject>();
                 for (int i = 0; i < netObjects.Length; i++)

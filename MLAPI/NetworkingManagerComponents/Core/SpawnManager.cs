@@ -575,7 +575,7 @@ namespace MLAPI.Components
             return list;
         }
 
-        internal static void spawnPendingObjectsForScene(uint sceneIndex)
+        internal static void SpawnPendingObjectsForScene(uint sceneIndex)
         {
             List<uint> keysToRemove = new List<uint>();
 
