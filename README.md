@@ -52,15 +52,49 @@ For bug reports or feature requests you want to propose, please use the Issue Tr
 * Custom UDP transport support \[[Wiki page](https://github.com/MidLevel/MLAPI/wiki/Custom-Transports)\]
 * NetworkProfiler \[[Wiki page](https://github.com/MidLevel/MLAPI/wiki/NetworkProfiler-Editor-Window)\]
 
+## Special thanks
+Special thanks to [Gabriel Tofvesson](https://github.com/GabrielTofvesson) for writing the BitWriter, BitReader & ECDH implementation
+
+## Issues and missing features
+If there are any issues, bugs or features that are missing. Please open an issue on the GitHub [issues page](https://github.com/MidLevel/MLAPI/issues)
+
 ## Example
 [Example project](https://github.com/MidLevel/MLAPI-Examples)
 
 The example project has a much lower priority compared to the library itself. If something doesn't exist in the example nor the wiki. Please open an issue on GitHub.
 
-## Special thanks
-Special thanks to [Gabriel Tofvesson](https://github.com/GabrielTofvesson) for writing the BitWriter, BitReader & ECDH implementation
 
+### Sample Chat
+Here is a sample MonoBehaviour showing a chat script where everyone can write and read from.
 
+```csharp
+public class Chat : NetworkedBehaviour
+{
+    private NetworkedList<string> ChatMessages = new NetworkedList<string>(new MLAPI.NetworkedVar.NetworkedVarSettings()
+    {
+        ReadPermission = MLAPI.NetworkedVar.NetworkedVarPermission.Everyone,
+        WritePermission = MLAPI.NetworkedVar.NetworkedVarPermission.Everyone,
+        SendTickrate = 5
+    }, new List<string>());
 
-## Issues and missing features
-If there are any issues, bugs or features that are missing. Please open an issue on the GitHub [issues page](https://github.com/MidLevel/MLAPI/issues)
+    private string textField = "";
+
+	private void OnGUI()
+    {
+		if (isClient)
+        {
+            textField = GUILayout.TextField(textField, GUILayout.Width(200));
+            if (GUILayout.Button("Send") && !string.IsNullOrWhiteSpace(textField))
+            {
+                ChatMessages.Add(textField);
+                textField = "";
+            }
+
+            for (int i = ChatMessages.Count - 1; i >= 0; i--)
+            {
+                GUILayout.Label(ChatMessages[i]);
+            }
+        }
+	}
+}
+```
