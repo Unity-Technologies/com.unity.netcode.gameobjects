@@ -1034,8 +1034,8 @@ namespace MLAPI
                         writer.WriteUInt32Packed(clientId);
                         if (NetworkConfig.EnableSceneSwitching) 
                         {
-                            writer.WriteUInt32Packed(NetworkSceneManager.CurrentSceneIndex);
-                            writer.WriteByteArray(NetworkSceneManager.CurrentSceneSwitchProgressGuid.ToByteArray());
+                            writer.WriteUInt32Packed(NetworkSceneManager.currentSceneIndex);
+                            writer.WriteByteArray(NetworkSceneManager.currentSceneSwitchProgressGuid.ToByteArray());
                         }
 
                         writer.WriteSinglePacked(NetworkTime);

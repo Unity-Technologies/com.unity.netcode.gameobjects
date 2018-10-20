@@ -21,8 +21,8 @@ namespace MLAPI.Components
         private static Scene lastScene;
         private static Scene nextScene;
         private static bool isSwitching = false;
-        internal static uint CurrentSceneIndex = 0;
-        internal static Guid CurrentSceneSwitchProgressGuid = new Guid();
+        internal static uint currentSceneIndex = 0;
+        internal static Guid currentSceneSwitchProgressGuid = new Guid();
 
         internal static void SetCurrentSceneIndex ()
         {
@@ -31,8 +31,8 @@ namespace MLAPI.Components
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Scene switching is enabled but the current scene (" + SceneManager.GetActiveScene().name + ") is not regisered as a network scene.");
                 return;
             }
-            CurrentSceneIndex = sceneNameToIndex[SceneManager.GetActiveScene().name];
-            CurrentActiveSceneIndex = CurrentSceneIndex;
+            currentSceneIndex = sceneNameToIndex[SceneManager.GetActiveScene().name];
+            CurrentActiveSceneIndex = currentSceneIndex;
         }
 
         internal static uint CurrentActiveSceneIndex { get; private set; } = 0;
@@ -59,13 +59,13 @@ namespace MLAPI.Components
                 return null;
             }
             SpawnManager.DestroySceneObjects(); //Destroy current scene objects before switching.
-            CurrentSceneIndex = sceneNameToIndex[sceneName];
+            currentSceneIndex = sceneNameToIndex[sceneName];
             isSwitching = true;
             lastScene = SceneManager.GetActiveScene();
 
             SceneSwitchProgress switchSceneProgress = new SceneSwitchProgress();
             sceneSwitchProgresses.Add(switchSceneProgress.guid, switchSceneProgress);
-            CurrentSceneSwitchProgressGuid = switchSceneProgress.guid;
+            currentSceneSwitchProgressGuid = switchSceneProgress.guid;
 
             AsyncOperation sceneLoad = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
             nextScene = SceneManager.GetSceneByName(sceneName);
