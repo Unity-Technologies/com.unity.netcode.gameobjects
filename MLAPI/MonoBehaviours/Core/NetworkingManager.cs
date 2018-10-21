@@ -194,13 +194,7 @@ namespace MLAPI
         private void OnValidate()
         {
             if (NetworkConfig == null)
-                return; //May occur when the component is added            
-
-            //Sort lists
-            if (NetworkConfig.Channels != null)
-                NetworkConfig.Channels = NetworkConfig.Channels.OrderBy(x => x.Name).ToList();
-            if (NetworkConfig.RegisteredScenes != null)
-                NetworkConfig.RegisteredScenes.Sort();
+                return; //May occur when the component is added
 
             if (NetworkConfig.EnableSceneSwitching && !NetworkConfig.RegisteredScenes.Contains(SceneManager.GetActiveScene().name))
             {

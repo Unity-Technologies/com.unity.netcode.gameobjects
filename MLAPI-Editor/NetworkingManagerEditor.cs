@@ -91,7 +91,7 @@ public class NetworkingManagerEditor : Editor
         };
 
         channelsList.drawHeaderCallback = (Rect rect) => {
-            EditorGUI.LabelField(rect, "Channels (Auto Sorted)");
+            EditorGUI.LabelField(rect, "Channels");
         };
 
 
@@ -109,7 +109,7 @@ public class NetworkingManagerEditor : Editor
         };
 
         registeredScenesList.drawHeaderCallback = (Rect rect) => {
-            EditorGUI.LabelField(rect, "Registered Scene Names (Auto Sorted)");
+            EditorGUI.LabelField(rect, "Registered Scene Names");
         };
     }
 
