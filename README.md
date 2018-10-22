@@ -79,9 +79,9 @@ public class Chat : NetworkedBehaviour
 
     private string textField = "";
 
-	private void OnGUI()
+    private void OnGUI()
     {
-		if (isClient)
+        if (isClient)
         {
             textField = GUILayout.TextField(textField, GUILayout.Width(200));
             if (GUILayout.Button("Send") && !string.IsNullOrWhiteSpace(textField))
@@ -95,6 +95,6 @@ public class Chat : NetworkedBehaviour
                 GUILayout.Label(ChatMessages[i]);
             }
         }
-	}
+    }
 }
 ```
