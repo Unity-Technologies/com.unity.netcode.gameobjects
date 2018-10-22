@@ -10,6 +10,7 @@ build:
   
 artifacts:
   - path: MLAPI\bin\Debug\MLAPI*
+  - path: MLAPI-Editor\bin\Debug\MLAPI-Editor*
 
 image: Visual Studio 2017
 
