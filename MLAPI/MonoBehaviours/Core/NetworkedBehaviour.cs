@@ -224,11 +224,11 @@ namespace MLAPI
             if (list == null) 
             {
                 list = new List<FieldInfo>();
-                list.AddRange(type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).OrderBy(x => x.Name));
+                list.AddRange(type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance));
             }
             else
             {
-                list.AddRange(type.GetFields(BindingFlags.NonPublic | BindingFlags.Instance).OrderBy(x => x.Name));
+                list.AddRange(type.GetFields(BindingFlags.NonPublic | BindingFlags.Instance));
             }
 
             if (type.BaseType != null && type.BaseType != typeof(NetworkedBehaviour))
@@ -237,7 +237,7 @@ namespace MLAPI
             }
             else
             {
-                return list.ToArray();
+                return list.OrderBy(x => x.Name).ToArray();
             }
         }
         
