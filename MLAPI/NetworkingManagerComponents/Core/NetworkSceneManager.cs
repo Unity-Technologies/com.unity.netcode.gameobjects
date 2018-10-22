@@ -210,7 +210,7 @@ namespace MLAPI.Components
         }
 
 
-        internal static void removeClientFromSceneSwitchProgresses(uint clientId) 
+        internal static void RemoveClientFromSceneSwitchProgresses(uint clientId) 
         {
             foreach (SceneSwitchProgress switchSceneProgress in sceneSwitchProgresses.Values)
                 switchSceneProgress.RemoveClientAsDone(clientId);
