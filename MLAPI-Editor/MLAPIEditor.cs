@@ -1,5 +1,4 @@
-﻿#define INCLUDE_INSTALLER
-#if INCLUDE_INSTALLER
+﻿#if INCLUDE_INSTALLER
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -258,6 +257,12 @@ public class MLAPIEditor : EditorWindow
     private float progressTarget = 0f;
     private float progress = 0f;
 
+    [SerializeField]
+    private bool PendingPackageLock = false;
+    [SerializeField]
+    private List<string> PendingPackages = new List<string>();
+
+
     [MenuItem("Window/MLAPI")]
     public static void ShowWindow()
     {
@@ -274,6 +279,19 @@ public class MLAPIEditor : EditorWindow
         else
         {
             EditorUtility.ClearProgressBar();
+        }
+
+        if (PendingPackages.Count > 0 && !EditorApplication.isCompiling && !EditorApplication.isUpdating && !PendingPackageLock)
+        {
+            PendingPackageLock = true;
+
+            string packageName = PendingPackages[PendingPackages.Count - 1];
+            PendingPackages.RemoveAt(PendingPackages.Count - 1);
+
+            AssetDatabase.importPackageCompleted += OnPackageImported;
+            AssetDatabase.importPackageFailed += OnPackageImportFailed;
+
+            AssetDatabase.ImportPackage(Application.dataPath + "/MLAPI/Lib/" + packageName, false);
         }
 
         GUILayout.BeginArea(new Rect(5, 0, position.width - 5, position.height - (40 + ((string.IsNullOrEmpty(statusMessage) ? 0 : 20) + (canRefetch ? 20 : 0)))));
@@ -356,6 +374,18 @@ public class MLAPIEditor : EditorWindow
         Repaint();
     }
 
+    private void OnPackageImported(string packageName)
+    {
+        AssetDatabase.importPackageCompleted -= OnPackageImported;
+        PendingPackageLock = false;
+    }
+
+    private void OnPackageImportFailed(string packageName, string errorMessage)
+    {
+        AssetDatabase.importPackageFailed -= OnPackageImportFailed;
+        PendingPackageLock = false;
+    }
+
     private List<MLAPIVersion> GetMajorVersionsBetween(MLAPIVersion currentVersion, MLAPIVersion targetVersion)
     {
         List<MLAPIVersion> versionsBetween = new List<MLAPIVersion>();
@@ -396,6 +426,8 @@ public class MLAPIEditor : EditorWindow
 
     private IEnumerator InstallRelease(int index)
     {
+        PendingPackages.Clear();
+        PendingPackageLock = true;
         bool waiting = true;
         bool accepted = false;
         MLAPIVersion currentMLAPIVersion = MLAPIVersion.Parse(currentVersion);
@@ -435,11 +467,7 @@ public class MLAPIEditor : EditorWindow
             if (Directory.Exists(Application.dataPath + "/MLAPI/Lib/"))
                 Directory.Delete(Application.dataPath + "/MLAPI/Lib/", true);
 
-            if (Directory.Exists(Application.dataPath + "/Editor/"))
-                Directory.Delete(Application.dataPath + "/Editor/MLAPI/", false);
-
             Directory.CreateDirectory(Application.dataPath + "/MLAPI/Lib/");
-            Directory.CreateDirectory(Application.dataPath + "/Editor/MLAPI/");
 
             bool downloadFail = false;
             for (int i = 0; i < releases[index].assets.Length; i++)
@@ -467,15 +495,12 @@ public class MLAPIEditor : EditorWindow
                     statusMessage = "Writing " + releases[index].assets[i].name + " to disk";
                     yield return null;
 
-                    if (!releases[index].assets[i].name.ToLower().Contains("editor"))
-                    {
-                        File.WriteAllBytes(Application.dataPath + "/MLAPI/Lib/" + releases[index].assets[i].name, www.bytes);
-                    }
-                    else
-                    {
-                        File.WriteAllBytes(Application.dataPath + "/Editor/MLAPI/" + releases[index].assets[i].name, www.bytes);
-                    }
+                    File.WriteAllBytes(Application.dataPath + "/MLAPI/Lib/" + releases[index].assets[i].name, www.bytes);
 
+                    if (releases[index].assets[i].name.EndsWith(".unitypackage"))
+                    {
+                        PendingPackages.Add(releases[index].assets[i].name);
+                    }
                     yield return null;
                 }
                 progress = i;
@@ -489,6 +514,7 @@ public class MLAPIEditor : EditorWindow
         }
         showProgressBar = false;
         statusMessage = "";
+        PendingPackageLock = false;
     }
 
     private IEnumerator GetReleases()
