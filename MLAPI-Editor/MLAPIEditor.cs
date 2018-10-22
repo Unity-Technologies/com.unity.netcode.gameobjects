@@ -1,4 +1,5 @@
-﻿#if INCLUDE_INSTALLER
+﻿#define INCLUDE_INSTALLER
+#if INCLUDE_INSTALLER
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -434,7 +435,11 @@ public class MLAPIEditor : EditorWindow
             if (Directory.Exists(Application.dataPath + "/MLAPI/Lib/"))
                 Directory.Delete(Application.dataPath + "/MLAPI/Lib/", true);
 
+            if (Directory.Exists(Application.dataPath + "/Editor/"))
+                Directory.Delete(Application.dataPath + "/Editor/MLAPI/", false);
+
             Directory.CreateDirectory(Application.dataPath + "/MLAPI/Lib/");
+            Directory.CreateDirectory(Application.dataPath + "/Editor/MLAPI/");
 
             bool downloadFail = false;
             for (int i = 0; i < releases[index].assets.Length; i++)
@@ -462,7 +467,15 @@ public class MLAPIEditor : EditorWindow
                     statusMessage = "Writing " + releases[index].assets[i].name + " to disk";
                     yield return null;
 
-                    File.WriteAllBytes(Application.dataPath + "/MLAPI/Lib/" + releases[index].assets[i].name, www.bytes);
+                    if (!releases[index].assets[i].name.ToLower().Contains("editor"))
+                    {
+                        File.WriteAllBytes(Application.dataPath + "/MLAPI/Lib/" + releases[index].assets[i].name, www.bytes);
+                    }
+                    else
+                    {
+                        File.WriteAllBytes(Application.dataPath + "/Editor/MLAPI/" + releases[index].assets[i].name, www.bytes);
+                    }
+
                     yield return null;
                 }
                 progress = i;
