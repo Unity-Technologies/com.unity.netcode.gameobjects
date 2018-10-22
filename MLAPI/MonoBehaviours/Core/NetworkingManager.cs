@@ -10,7 +10,9 @@ using UnityEngine.SceneManagement;
 using System.IO;
 using MLAPI.Components;
 using MLAPI.Configuration;
+#if !DISABLE_CRYPTOGRAPHY
 using MLAPI.Cryptography;
+#endif
 using MLAPI.Internal;
 using MLAPI.Profiling;
 using MLAPI.Serialization;
@@ -637,6 +639,7 @@ namespace MLAPI
                                 if (isServer)
                                 {
                                     if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Client Connected");
+#if !DISABLE_CRYPTOGRAPHY
                                     if (NetworkConfig.EnableEncryption)
                                     {
                                         // This client is required to complete the crypto-hail exchange.
@@ -687,12 +690,15 @@ namespace MLAPI
                                     }
                                     else
                                     {
+#endif
                                         PendingClients.Add(clientId, new PendingClient()
                                         {
                                             ClientId = clientId,
                                             ConnectionState = PendingClient.State.PendingConnection
                                         });
+#if !DISABLE_CRYPTOGRAPHY
                                     }
+#endif
                                     StartCoroutine(ApprovalTimeout(clientId));
                                 }
                                 else
@@ -889,6 +895,7 @@ namespace MLAPI
                         case MLAPIConstants.MLAPI_CUSTOM_MESSAGE:
                             InternalMessageHandler.HandleCustomMessage(clientId, messageStream, channelId);
                             break;
+#if !DISABLE_CRYPTOGRAPHY
                         case MLAPIConstants.MLAPI_CERTIFICATE_HAIL:
                             if (isClient) InternalMessageHandler.HandleHailRequest(clientId, messageStream, channelId);
                             break;
@@ -898,11 +905,12 @@ namespace MLAPI
                         case MLAPIConstants.MLAPI_GREETINGS:
                             if (isClient) InternalMessageHandler.HandleGreetings(clientId, messageStream, channelId);
                             break;
-                        default:
-                            if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Read unrecognized messageType " + messageType);
-                            break;
+    #endif
                         case MLAPIConstants.MLAPI_CLIENT_SWITCH_SCENE_COMPLETED:
                             if (isServer) InternalMessageHandler.HandleClientSwitchSceneCompleted(clientId, messageStream, channelId);
+                            break;
+                        default:
+                            if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Read unrecognized messageType " + messageType);
                             break;
                     }
 

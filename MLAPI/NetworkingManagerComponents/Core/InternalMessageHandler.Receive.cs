@@ -3,7 +3,9 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using MLAPI.Components;
+#if !DISABLE_CRYPTOGRAPHY
 using MLAPI.Cryptography;
+#endif
 using MLAPI.Data;
 using MLAPI.Logging;
 using MLAPI.Serialization;
@@ -13,6 +15,7 @@ namespace MLAPI.Internal
 {
     internal static partial class InternalMessageHandler
     {
+#if !DISABLE_CRYPTOGRAPHY
         // Runs on client
         internal static void HandleHailRequest(uint clientId, Stream stream, int channelId)
         {
@@ -172,6 +175,7 @@ namespace MLAPI.Internal
             // Server greeted us, we can now initiate our request to connect.
             NetworkingManager.singleton.SendConnectionRequest();
         }
+#endif
 
         internal static void HandleConnectionRequest(uint clientId, Stream stream, int channelId)
         {

@@ -1,10 +1,14 @@
-﻿using MLAPI.Cryptography;
+﻿#if !DISABLE_CRYPTOGRAPHY
+using MLAPI.Cryptography;
+#endif
 using MLAPI.Data;
 using MLAPI.Logging;
 using MLAPI.Serialization;
 using System;
 using System.Collections.Generic;
+#if !DISABLE_CRYPTOGRAPHY
 using System.Security.Cryptography;
+#endif
 
 namespace MLAPI.Internal
 {
@@ -28,6 +32,7 @@ namespace MLAPI.Internal
                     bool isEncrypted = inputHeaderReader.ReadBit();
                     bool isAuthenticated = inputHeaderReader.ReadBit();
 
+#if !DISABLE_CRYPTOGRAPHY
                     if (isEncrypted || isAuthenticated)
                     {
                         if (!NetworkingManager.singleton.NetworkConfig.EnableEncryption)
@@ -124,10 +129,13 @@ namespace MLAPI.Internal
                     }
                     else
                     {
+#endif
                         messageType = inputHeaderReader.ReadByteBits(6);
                         // The input stream is now ready to be read from. It's "safe" and has the correct position
                         return inputStream;
+#if !DISABLE_CRYPTOGRAPHY
                     }
+#endif
                 }
                 catch (Exception e)
                 {
@@ -153,7 +161,8 @@ namespace MLAPI.Internal
                 {
                     outWriter.WriteBit(encrypted);
                     outWriter.WriteBit(authenticated);
-
+                    
+#if !DISABLE_CRYPTOGRAPHY
                     if (authenticated || encrypted)
                     {
                         outWriter.WritePadBits();
@@ -214,9 +223,12 @@ namespace MLAPI.Internal
                     }
                     else
                     {
+#endif
                         outWriter.WriteBits(messageType, 6);
                         outStream.Write(messageBody.GetBuffer(), 0, (int)messageBody.Length);
+#if !DISABLE_CRYPTOGRAPHY
                     }
+#endif
                 }
 
                 return outStream;
