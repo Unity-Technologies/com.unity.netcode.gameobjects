@@ -455,16 +455,17 @@ namespace MLAPI.Internal
 
                 if (SpawnManager.SpawnedObjects.ContainsKey(netId))
                 {
-                    if (SpawnManager.SpawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex) == null)
+                    NetworkedBehaviour instance = SpawnManager.SpawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex);
+                    if (instance == null)
                     {
                         if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkedVar message recieved for a non existant behaviour");
                         return;
                     }
-                    NetworkedBehaviour.HandleNetworkedVarDeltas(SpawnManager.SpawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).networkedVarFields, stream, clientId);
+                    NetworkedBehaviour.HandleNetworkedVarDeltas(instance.networkedVarFields, stream, clientId, instance);
                 }
                 else if (SpawnManager.PendingSpawnObjects.ContainsKey(netId))
                 {
-                    NetworkedBehaviour.HandleNetworkedVarDeltas(SpawnManager.PendingSpawnObjects[netId].GetDummyNetworkedVarListAtOrderIndex(orderIndex), stream, clientId);
+                    NetworkedBehaviour.HandleNetworkedVarDeltas(SpawnManager.PendingSpawnObjects[netId].GetDummyNetworkedVarListAtOrderIndex(orderIndex), stream, clientId, null);
                 }
                 else
                 {
@@ -483,16 +484,17 @@ namespace MLAPI.Internal
 
                 if (SpawnManager.SpawnedObjects.ContainsKey(netId))
                 {
-                    if (SpawnManager.SpawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex) == null)
+                    NetworkedBehaviour instance = SpawnManager.SpawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex);
+                    if (instance == null)
                     {
                         if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkedVar message recieved for a non existant behaviour");
                         return;
                     }
-                    NetworkedBehaviour.HandleNetworkedVarUpdate(SpawnManager.SpawnedObjects[netId].GetBehaviourAtOrderIndex(orderIndex).networkedVarFields, stream, clientId);
+                    NetworkedBehaviour.HandleNetworkedVarUpdate(instance.networkedVarFields, stream, clientId, instance);
                 }
                 else if (SpawnManager.PendingSpawnObjects.ContainsKey(netId))
                 {
-                    NetworkedBehaviour.HandleNetworkedVarUpdate(SpawnManager.PendingSpawnObjects[netId].GetDummyNetworkedVarListAtOrderIndex(orderIndex), stream, clientId);
+                    NetworkedBehaviour.HandleNetworkedVarUpdate(SpawnManager.PendingSpawnObjects[netId].GetDummyNetworkedVarListAtOrderIndex(orderIndex), stream, clientId, null);
                 }
                 else
                 {

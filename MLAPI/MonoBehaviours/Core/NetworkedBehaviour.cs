@@ -364,7 +364,7 @@ namespace MLAPI
         }
 
 
-        internal static void HandleNetworkedVarDeltas(List<INetworkedVar> networkedVarList, Stream stream, uint clientId)
+        internal static void HandleNetworkedVarDeltas(List<INetworkedVar> networkedVarList, Stream stream, uint clientId, NetworkedBehaviour logInstance)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
@@ -382,7 +382,7 @@ namespace MLAPI
                         //A dummy read COULD be added to the interface for this situation, but it's just being too nice.
                         //This is after all a developer fault. A critical error should be fine.
                         // - TwoTen
-                        if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Client wrote to NetworkedVar without permission. No more variables can be read. This is critical");
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Client wrote to NetworkedVar without permission. No more variables can be read. This is critical. " + logInstance != null ? ("NetworkId: " + logInstance.networkId + " BehaviourIndex: " + logInstance.networkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty);
                         return;
                     }
 
@@ -391,7 +391,7 @@ namespace MLAPI
             }
         }
 
-        internal static void HandleNetworkedVarUpdate(List<INetworkedVar> networkedVarList, Stream stream, uint clientId)
+        internal static void HandleNetworkedVarUpdate(List<INetworkedVar> networkedVarList, Stream stream, uint clientId, NetworkedBehaviour logInstance)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
@@ -409,7 +409,7 @@ namespace MLAPI
                         //A dummy read COULD be added to the interface for this situation, but it's just being too nice.
                         //This is after all a developer fault. A critical error should be fine.
                         // - TwoTen
-                        if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Client wrote to NetworkedVar without permission. No more variables can be read. This is critical");
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Client wrote to NetworkedVar without permission. No more variables can be read. This is critical. " + logInstance != null ? ("NetworkId: " + logInstance.networkId + " BehaviourIndex: " + logInstance.networkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty);
                         return;
                     }
 
