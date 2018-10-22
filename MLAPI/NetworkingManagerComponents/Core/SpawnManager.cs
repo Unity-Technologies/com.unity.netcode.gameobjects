@@ -189,7 +189,7 @@ namespace MLAPI.Components
             }
         }
 
-        internal static NetworkedObject CreateSpawnedObject(int networkedPrefabId, uint networkId, uint owner, bool playerObject, uint sceneSpawnedInIndex, bool sceneDelayedSpawn, bool destroyWithScene, Vector3 position, Quaternion rotation, bool isActive, Stream stream, bool readPayload, int payloadLength, bool readNetworkedVar)
+        internal static NetworkedObject CreateSpawnedObject(int networkedPrefabId, uint networkId, uint owner, bool playerObject, uint sceneSpawnedInIndex, bool sceneDelayedSpawn, bool destroyWithScene, Vector3? position, Quaternion? rotation, bool isActive, Stream stream, bool readPayload, int payloadLength, bool readNetworkedVar)
         {
             if (networkedPrefabId >= netManager.NetworkConfig.NetworkedPrefabs.Count || networkedPrefabId < 0)
             {
@@ -203,7 +203,7 @@ namespace MLAPI.Components
                 GameObject prefab = netManager.NetworkConfig.NetworkedPrefabs[networkedPrefabId].prefab;
                 bool prefabActive = prefab.activeSelf;
                 prefab.SetActive(false);
-                GameObject go = MonoBehaviour.Instantiate(prefab, position, rotation);
+                GameObject go = (position == null && rotation == null) ? MonoBehaviour.Instantiate(prefab) : MonoBehaviour.Instantiate(prefab, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity));
                 prefab.SetActive(prefabActive);
 
                 //Appearantly some wierd behavior when switching scenes can occur that destroys this object even though the scene is
@@ -227,8 +227,6 @@ namespace MLAPI.Components
                 netObject.destroyWithScene = destroyWithScene;
                 netObject.OwnerClientId = owner;
                 netObject.isPlayerObject = playerObject;
-                netObject.transform.position = position;
-                netObject.transform.rotation = rotation;
                 netObject.SceneDelayedSpawn = sceneDelayedSpawn;
                 netObject.sceneSpawnedInIndex = sceneSpawnedInIndex;
 
@@ -265,7 +263,9 @@ namespace MLAPI.Components
 
             //Normal spawning
             { 
-                GameObject go = MonoBehaviour.Instantiate(netManager.NetworkConfig.NetworkedPrefabs[networkedPrefabId].prefab, position, rotation);
+                GameObject prefab = netManager.NetworkConfig.NetworkedPrefabs[networkedPrefabId].prefab;
+                GameObject go = (position == null && rotation == null) ? MonoBehaviour.Instantiate(prefab) : MonoBehaviour.Instantiate(prefab, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity));
+
                 NetworkedObject netObject = go.GetComponent<NetworkedObject>();
                 if (netObject == null)
                 {
@@ -285,8 +285,6 @@ namespace MLAPI.Components
                 netObject.destroyWithScene = destroyWithScene;
                 netObject.OwnerClientId = owner;
                 netObject.isPlayerObject = playerObject;
-                netObject.transform.position = position;
-                netObject.transform.rotation = rotation;
                 netObject.SceneDelayedSpawn = sceneDelayedSpawn;
                 netObject.sceneSpawnedInIndex = sceneSpawnedInIndex;
 

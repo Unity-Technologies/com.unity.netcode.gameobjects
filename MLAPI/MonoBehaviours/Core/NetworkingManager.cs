@@ -125,7 +125,7 @@ namespace MLAPI
         /// <param name="approved">Wheter or not the client was approved</param>
         /// <param name="position">The position to spawn the client at</param>
         /// <param name="rotation">The rotation to spawn the client with</param>
-        public delegate void ConnectionApprovedDelegate(uint clientId, int prefabId, bool approved, Vector3 position, Quaternion rotation);
+        public delegate void ConnectionApprovedDelegate(uint clientId, int prefabId, bool approved, Vector3? position, Quaternion? rotation);
         /// <summary>
         /// The callback to invoke during connection approval
         /// </summary>
@@ -1001,7 +1001,7 @@ namespace MLAPI
             }
         }
 
-        internal void HandleApproval(uint clientId, int prefabId, bool approved, Vector3 position, Quaternion rotation)
+        internal void HandleApproval(uint clientId, int prefabId, bool approved, Vector3? position, Quaternion? rotation)
         {
             if(approved)
             {

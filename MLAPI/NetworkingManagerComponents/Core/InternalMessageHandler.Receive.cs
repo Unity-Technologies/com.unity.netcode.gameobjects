@@ -196,7 +196,7 @@ namespace MLAPI.Internal
                 }
                 else
                 {
-                    netManager.HandleApproval(clientId, -1, true, Vector3.zero, Quaternion.identity);
+                    netManager.HandleApproval(clientId, -1, true, null, null);
                 }
             }
         }
