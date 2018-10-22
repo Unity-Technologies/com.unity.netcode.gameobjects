@@ -118,7 +118,7 @@ namespace MLAPI
 
         private void WarnUnityReflectionMethodUse()
         {
-            MethodInfo[] methods = GetType().GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.FlattenHierarchy);
+            MethodInfo[] methods = GetType().GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
             for (int i = 0; i < methods.Length; i++)
             {
                 if (methods[i].Name == "OnDestroy")
@@ -209,11 +209,36 @@ namespace MLAPI
         internal readonly List<INetworkedVar> networkedVarFields = new List<INetworkedVar>();
         private static readonly Dictionary<Type, FieldInfo[]> fieldTypes = new Dictionary<Type, FieldInfo[]>();
 
+        
         private static FieldInfo[] GetFieldInfoForType(Type type)
         {
             if (!fieldTypes.ContainsKey(type))
-                fieldTypes.Add(type, type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy | BindingFlags.Instance).OrderBy(x => x.Name).ToArray());
+                fieldTypes.Add(type, GetFieldInfoForTypeRecursive(type));
+            
             return fieldTypes[type];
+        }
+        
+        
+        private static FieldInfo[] GetFieldInfoForTypeRecursive(Type type, List<FieldInfo> list = null) 
+        {
+            if (list == null) 
+            {
+                list = new List<FieldInfo>();
+                list.AddRange(type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance).OrderBy(x => x.Name));
+            }
+            else
+            {
+                list.AddRange(type.GetFields(BindingFlags.NonPublic | BindingFlags.Instance).OrderBy(x => x.Name));
+            }
+
+            if (type.BaseType != null && type.BaseType != typeof(NetworkedBehaviour))
+            {
+                return GetFieldInfoForTypeRecursive(type.BaseType, list);
+            }
+            else
+            {
+                return list.ToArray();
+            }
         }
         
         internal List<INetworkedVar> GetDummyNetworkedVars()
