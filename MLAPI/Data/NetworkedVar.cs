@@ -204,6 +204,8 @@ namespace MLAPI
     
     // These support serialization
     [Serializable]
+    public class NetworkedVarString : NetworkedVar<string> { }
+    [Serializable]
     public class NetworkedVarBool : NetworkedVar<bool> { }
     [Serializable]
     public class NetworkedVarByte : NetworkedVar<byte> { }
