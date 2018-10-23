@@ -1,5 +1,4 @@
-﻿#if INCLUDE_INSTALLER
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
@@ -676,4 +675,3 @@ public static class MLAPIEditorExtensions
         throw new NotSupportedException("Can't find internal main window. Maybe something has changed inside Unity");
     }
 }
-#endif
