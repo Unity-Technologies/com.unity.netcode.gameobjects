@@ -39,5 +39,7 @@ if (!$IsWindows) {
     $myBuilderPath = $builderPath
 }
 
+Write-Host $myBuilderPath
+
 Start-Process -FilePath $myBuilderPath -ArgumentList $editorBuildArgs
 Start-Process -FilePath $myBuilderPath -ArgumentList $installerBuildArgs
