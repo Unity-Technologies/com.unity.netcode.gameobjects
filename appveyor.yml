@@ -7,9 +7,13 @@ build:
   project: MLAPI.sln
   verbosity: minimal
 
-  
+before_package:
+  - BuildUnityPackages.ps1
+
 artifacts:
   - path: MLAPI\bin\Debug\MLAPI*
+  - path: *.unitypackage
+
 
 image: Visual Studio 2017
 
