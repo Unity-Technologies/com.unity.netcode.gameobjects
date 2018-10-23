@@ -2,6 +2,7 @@ $editorFiles = @("MLAPIProfiler.cs", "NetworkedAnimatorEditor.cs", "NetworkedBeh
 $installerFiles = @("MLAPIEditor.cs")
 
 $myPath = (Get-Item -Path ".\").FullName;
+$myPath = $myPath.Replace("\", "/")
 $basePath = -join ($myPath, "/MLAPI-Editor/")
 $builderPath = -join ($myPath, "/Libraries/Internal/UnityPackager/UnityPackager.exe")
 
@@ -21,7 +22,7 @@ $editorBuildArgs += -join ($basePath, " ", $editorOutPath, " ")
 For ($i=0; $i -lt $editorFiles.Count; $i++)  
 {
     $editorBuildArgs += -join ($basePath, $editorFiles.Get($i), " ")
-    $editorBuildArgs += -join ("Assets/", $editorFiles.Get($i), " ")
+    $editorBuildArgs += -join ("Assets/Editor/MLAPI/", $editorFiles.Get($i), " ")
 }
 
 $installerBuildArgs = ""
@@ -33,7 +34,7 @@ $installerBuildArgs += -join ($basePath, " ", $installerOutPath, " ")
 For ($i=0; $i -lt $installerFiles.Count; $i++)  
 {
     $installerBuildArgs += -join ($basePath, $installerFiles.Get($i), " ")
-    $installerBuildArgs += -join ("Assets/", $installerFiles.Get($i), " ")
+    $installerBuildArgs += -join ("Assets/Editor/MLAPI/", $installerFiles.Get($i), " ")
 }
 
 $myBuilderPath = "";
