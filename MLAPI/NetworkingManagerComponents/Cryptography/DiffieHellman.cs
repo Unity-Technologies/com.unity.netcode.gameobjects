@@ -21,7 +21,7 @@ namespace MLAPI.Cryptography
                     {
                         defaultPrime = (new IntX(1) << 255) - 19;
                     }
-                    catch (Exception e)
+                    catch (Exception)
                     {
                         Debug.LogError("[MLAPI] CryptoLib failed to parse BigInt. If you are using .NET 2.0 Subset, switch to .NET 2.0 or .NET 4.5");
                     }
@@ -43,7 +43,7 @@ namespace MLAPI.Cryptography
                     {
                         defaultOrder = (new IntX(1) << 252) + IntX.Parse("27742317777372353535851937790883648493");
                     }
-                    catch (Exception e)
+                    catch (Exception)
                     {
                         Debug.LogError("[MLAPI] CryptoLib failed to parse BigInt. If you are using .NET 2.0 Subset, switch to .NET 2.0 or .NET 4.5");
                     }
@@ -66,7 +66,7 @@ namespace MLAPI.Cryptography
                     {
                         defaultCurve = new EllipticCurve(486662, 1, DEFAULT_PRIME, EllipticCurve.CurveType.Montgomery);
                     }
-                    catch (Exception e)
+                    catch (Exception)
                     {
                         Debug.LogError("[MLAPI] CryptoLib failed to parse BigInt. If you are using .NET 2.0 Subset, switch to .NET 2.0 or .NET 4.5");
                     }
@@ -87,7 +87,7 @@ namespace MLAPI.Cryptography
                     {
                         defaultGenerator = new CurvePoint(9, IntX.Parse("14781619447589544791020593568409986887264606134616475288964881837755586237401"));
                     }
-                    catch (Exception e)
+                    catch (Exception)
                     {
                         Debug.LogError("[MLAPI] CryptoLib failed to parse BigInt. If you are using .NET 2.0 Subset, switch to .NET 2.0 or .NET 4.5");
                     }
