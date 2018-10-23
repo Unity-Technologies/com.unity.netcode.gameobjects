@@ -8,10 +8,14 @@ $builderPath = -join ($myPath, "/Libraries/Internal/UnityPackager/UnityPackager.
 $editorOutPath = -join ($myPath, "/MLAPI-Editor.unitypackage")
 $installerOutPath = -join ($myPath, "/MLAPI-Installer.unitypackage")
 
+$windows = "true"
+
 $editorBuildArgs = ""
-if (!$IsWindows) {
+if ($windows -ne @("true")) {
     $editorBuildArgs += -join ($builderPath, " ")
 }
+
+
 $editorBuildArgs += -join ($basePath, " ", $editorOutPath, " ")
 
 For ($i=0; $i -lt $editorFiles.Count; $i++)  
@@ -21,7 +25,7 @@ For ($i=0; $i -lt $editorFiles.Count; $i++)
 }
 
 $installerBuildArgs = ""
-if (!$IsWindows) {
+if ($windows -ne "true") {
     $installerBuildArgs += -join ($builderPath, " ")
 }
 $installerBuildArgs += -join ($basePath, " ", $installerOutPath, " ")
@@ -33,7 +37,7 @@ For ($i=0; $i -lt $installerFiles.Count; $i++)
 }
 
 $myBuilderPath = "";
-if (!$IsWindows) {
+if ($windows -ne "true") {
     $myBuilderPath = "mono"
 } else {
     $myBuilderPath = $builderPath
