@@ -8,7 +8,8 @@ build:
   verbosity: minimal
 
 before_package:
-  - powershell "& ""C:\projects\mlapi\BuildUnityPackages.ps1"""
+  - cd C:\projects\mlapi
+  - powershell "& "".\BuildUnityPackages.ps1"""
 
 artifacts:
   - path: 'MLAPI\bin\Debug\MLAPI*'
