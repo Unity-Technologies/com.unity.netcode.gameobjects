@@ -8,7 +8,7 @@ build:
   verbosity: minimal
 
 before_package:
-  - BuildUnityPackages.ps1
+  - powershell -noexit "& ""BuildUnityPackages.ps1"""
 
 artifacts:
   - path: 'MLAPI\bin\Debug\MLAPI*'
