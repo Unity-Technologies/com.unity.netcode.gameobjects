@@ -50,7 +50,7 @@ namespace MLAPI.Serialization
                 WriteByte((byte)value);
                 return;
             }
-            else if (value is byte)
+            else if (value is sbyte)
             {
                 WriteSByte((sbyte)value);
                 return;
