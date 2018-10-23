@@ -3,16 +3,100 @@ using System;
 using IntXLib;
 using System.Text;
 using System.Security.Cryptography;
+using UnityEngine;
 
 namespace MLAPI.Cryptography
 {
     internal class EllipticDiffieHellman
     {
         protected static readonly RNGCryptoServiceProvider rand = new RNGCryptoServiceProvider();
-        public static readonly IntX DEFAULT_PRIME = (new IntX(1) << 255) - 19;
-        public static readonly IntX DEFAULT_ORDER = (new IntX(1) << 252) + IntX.Parse("27742317777372353535851937790883648493");
-        public static readonly EllipticCurve DEFAULT_CURVE = new EllipticCurve(486662, 1, DEFAULT_PRIME, EllipticCurve.CurveType.Montgomery);
-        public static readonly CurvePoint DEFAULT_GENERATOR = new CurvePoint(9, IntX.Parse("14781619447589544791020593568409986887264606134616475288964881837755586237401"));
+
+        public static IntX DEFAULT_PRIME
+        {
+            get
+            {
+                if (defaultPrime == null)
+                {
+                    try
+                    {
+                        defaultPrime = (new IntX(1) << 255) - 19;
+                    }
+                    catch (Exception)
+                    {
+                        Debug.LogError("[MLAPI] CryptoLib failed to parse BigInt. If you are using .NET 2.0 Subset, switch to .NET 2.0 or .NET 4.5");
+                    }
+                }
+
+                return defaultPrime;
+            }
+        }
+        private static IntX defaultPrime;
+
+
+        public static IntX DEFAULT_ORDER
+        {
+            get
+            {
+                if (defaultOrder == null)
+                {
+                    try
+                    {
+                        defaultOrder = (new IntX(1) << 252) + IntX.Parse("27742317777372353535851937790883648493");
+                    }
+                    catch (Exception)
+                    {
+                        Debug.LogError("[MLAPI] CryptoLib failed to parse BigInt. If you are using .NET 2.0 Subset, switch to .NET 2.0 or .NET 4.5");
+                    }
+                }
+
+                return defaultOrder;
+            }
+        }
+
+        private static IntX defaultOrder;
+        
+        
+        public static EllipticCurve DEFAULT_CURVE
+        {
+            get
+            {
+                if (defaultCurve == null)
+                {
+                    try
+                    {
+                        defaultCurve = new EllipticCurve(486662, 1, DEFAULT_PRIME, EllipticCurve.CurveType.Montgomery);
+                    }
+                    catch (Exception)
+                    {
+                        Debug.LogError("[MLAPI] CryptoLib failed to parse BigInt. If you are using .NET 2.0 Subset, switch to .NET 2.0 or .NET 4.5");
+                    }
+                }
+
+                return defaultCurve;
+            }
+        }
+        private static EllipticCurve defaultCurve;
+        
+        public static CurvePoint DEFAULT_GENERATOR
+        {
+            get
+            {
+                if (defaultGenerator == null)
+                {
+                    try
+                    {
+                        defaultGenerator = new CurvePoint(9, IntX.Parse("14781619447589544791020593568409986887264606134616475288964881837755586237401"));
+                    }
+                    catch (Exception)
+                    {
+                        Debug.LogError("[MLAPI] CryptoLib failed to parse BigInt. If you are using .NET 2.0 Subset, switch to .NET 2.0 or .NET 4.5");
+                    }
+                }
+
+                return defaultGenerator;
+            }
+        }
+        private static CurvePoint defaultGenerator;
 
         protected readonly EllipticCurve curve;
         public readonly IntX priv;

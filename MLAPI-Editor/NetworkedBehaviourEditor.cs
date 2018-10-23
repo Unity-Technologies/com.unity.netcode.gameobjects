@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Reflection;
 using MLAPI;
+using MLAPI.NetworkedVar;
 using UnityEngine;
 
 namespace UnityEditor
@@ -51,6 +52,15 @@ namespace UnityEditor
                 MonoScript targetScript = scriptProperty.objectReferenceValue as MonoScript;
                 Init(targetScript);
             }
+
+            object value = networkedVarFields[networkedVarNames[index]].GetValue(target);
+            if (value == null)
+            {
+                Type fieldType = networkedVarFields[networkedVarNames[index]].FieldType;
+                INetworkedVar var = (INetworkedVar) Activator.CreateInstance(fieldType, true);
+                networkedVarFields[networkedVarNames[index]].SetValue(target, var);
+            }
+            
             Type type = networkedVarFields[networkedVarNames[index]].GetValue(target).GetType();
             Type genericType = type.GetGenericArguments()[0];
 
@@ -80,30 +90,41 @@ namespace UnityEditor
             Type type = typeof(T);
             object val = var.Value;
             string name = networkedVarNames[index];
-            if (type == typeof(int))
-                val = EditorGUILayout.IntField(name, (int)val);
-            else if (type == typeof(uint))
-                val = EditorGUILayout.LongField(name, (long)val);
-            else if (type == typeof(short))
-                val = EditorGUILayout.IntField(name, (int)val);
-            else if (type == typeof(ushort))
-                val = EditorGUILayout.IntField(name, (int)val);
-            else if (type == typeof(sbyte))
-                val = EditorGUILayout.IntField(name, (int)val);
-            else if (type == typeof(byte))
-                val = EditorGUILayout.IntField(name, (int)val);
-            else if (type == typeof(long))
-                val = EditorGUILayout.LongField(name, (long)val);
-            else if (type == typeof(ulong))
-                val = EditorGUILayout.LongField(name, (long)val);
-            else if (type == typeof(bool))
-                val = EditorGUILayout.Toggle(name, (bool)val);
-            else if (type == typeof(string))
-                val = EditorGUILayout.TextField(name, (string)val);
-            else
-                EditorGUILayout.LabelField("Type not renderable");
 
-            var.Value = (T)val;
+            if (NetworkingManager.singleton != null && NetworkingManager.singleton.isListening)
+            {
+                if (type == typeof(int))
+                    val = EditorGUILayout.IntField(name, (int)val);
+                else if (type == typeof(uint))
+                    val = (uint)EditorGUILayout.LongField(name, (long)((uint)val));
+                else if (type == typeof(short))
+                    val = (short)EditorGUILayout.IntField(name, (int)((short)val));
+                else if (type == typeof(ushort))
+                    val = (ushort)EditorGUILayout.IntField(name, (int)((ushort)val));
+                else if (type == typeof(sbyte))
+                    val = (sbyte)EditorGUILayout.IntField(name, (int)((sbyte)val));
+                else if (type == typeof(byte))
+                    val = (byte)EditorGUILayout.IntField(name, (int)((byte)val));
+                else if (type == typeof(long))
+                    val = EditorGUILayout.LongField(name, (long)val);
+                else if (type == typeof(ulong))
+                    val = (ulong)EditorGUILayout.LongField(name, (long)((ulong)val));
+                else if (type == typeof(bool))
+                    val = EditorGUILayout.Toggle(name, (bool)val);
+                else if (type == typeof(string))
+                    val = EditorGUILayout.TextField(name, (string)val);
+                else if (type.IsEnum)
+                    val = EditorGUILayout.EnumPopup(name, (Enum) val);
+                else
+                    EditorGUILayout.LabelField("Type not renderable");
+
+                var.Value = (T)val;
+            }
+            else
+            {
+                EditorGUILayout.LabelField(name, EditorStyles.wordWrappedLabel);
+                EditorGUILayout.SelectableLabel(val.ToString(), EditorStyles.wordWrappedLabel);
+            }
         }
 
         public override void OnInspectorGUI()

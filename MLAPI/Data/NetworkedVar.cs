@@ -3,13 +3,14 @@ using UnityEngine;
 using System.IO;
 using MLAPI.NetworkedVar;
 using MLAPI.Serialization;
+using System;
 
 namespace MLAPI
 {
     /// <summary>
     /// A variable that can be synchronized over the network.
     /// </summary>
-    [System.Serializable]
+    [Serializable]
     public class NetworkedVar<T> : INetworkedVar
     {
         /// <summary>
@@ -89,7 +90,10 @@ namespace MLAPI
                 if (!EqualityComparer<T>.Default.Equals(InternalValue, value))
                 {
                     isDirty = true;
+                    T previousValue = InternalValue;
                     InternalValue = value;
+                    if (OnValueChanged != null)
+                        OnValueChanged(previousValue, InternalValue);
                 }
             }
         }
@@ -105,7 +109,8 @@ namespace MLAPI
         public bool IsDirty()
         {
             if (!isDirty) return false;
-            if (Settings.SendTickrate <= 0) return true;
+            if (Settings.SendTickrate == 0) return true;
+            if (Settings.SendTickrate < 0) return false;
             if (NetworkingManager.singleton.NetworkTime - LastSyncedTime >= (1f / Settings.SendTickrate)) return true;
             return false;
         }
@@ -196,4 +201,44 @@ namespace MLAPI
             return Settings.SendChannel;
         }
     }
+    
+    // These support serialization
+    [Serializable]
+    public class NetworkedVarString : NetworkedVar<string> { }
+    [Serializable]
+    public class NetworkedVarBool : NetworkedVar<bool> { }
+    [Serializable]
+    public class NetworkedVarByte : NetworkedVar<byte> { }
+    [Serializable]
+    public class NetworkedVarSByte : NetworkedVar<sbyte> { }
+    [Serializable]
+    public class NetworkedVarUShort : NetworkedVar<ushort> { }
+    [Serializable]
+    public class NetworkedVarShort : NetworkedVar<short> { }
+    [Serializable]
+    public class NetworkedVarUInt : NetworkedVar<uint> { }
+    [Serializable]
+    public class NetworkedVarInt : NetworkedVar<int> { }
+    [Serializable]
+    public class NetworkedVarULong : NetworkedVar<ulong> { }
+    [Serializable]
+    public class NetworkedVarLong : NetworkedVar<long> { }
+    [Serializable]
+    public class NetworkedVarFloat : NetworkedVar<float> { }
+    [Serializable]
+    public class NetworkedVarDouble : NetworkedVar<double> { }
+    [Serializable]
+    public class NetworkedVarVector2 : NetworkedVar<Vector2> { }
+    [Serializable]
+    public class NetworkedVarVector3 : NetworkedVar<Vector3> { }
+    [Serializable]
+    public class NetworkedVarVector4 : NetworkedVar<Vector4> { }
+    [Serializable]
+    public class NetworkedVarColor : NetworkedVar<Color> { }
+    [Serializable]
+    public class NetworkedVarColor32 : NetworkedVar<Color32> { }
+    [Serializable]
+    public class NetworkedVarRay : NetworkedVar<Ray> { }
+    [Serializable]
+    public class NetworkedVarQuaternion : NetworkedVar<Quaternion> { }
 }

@@ -6,6 +6,7 @@ using MLAPI.Data;
 using MLAPI.Serialization;
 using MLAPI.Transports;
 using BitStream = MLAPI.Serialization.BitStream;
+using System.Security.Cryptography.X509Certificates;
 
 namespace MLAPI.Configuration
 {
@@ -54,8 +55,6 @@ namespace MLAPI.Configuration
         /// </summary>
         [HideInInspector]
         public List<NetworkedPrefab> NetworkedPrefabs = new List<NetworkedPrefab>();
-        internal Dictionary<string, int> NetworkPrefabIds;
-        internal Dictionary<int, string> NetworkPrefabNames;
         /// <summary>
         /// The default player prefab
         /// </summary>
@@ -63,7 +62,7 @@ namespace MLAPI.Configuration
         [HideInInspector]
         internal string PlayerPrefabName;
         /// <summary>
-        /// The size of the receive message buffer. This is the max message size.
+        /// The size of the receive message buffer. This is the max message size including any MLAPI overheads.
         /// </summary>
         public int MessageBufferSize = 1024;
         /// <summary>
@@ -116,40 +115,69 @@ namespace MLAPI.Configuration
         /// </summary>
         public bool HandleObjectSpawning = true;
         /// <summary>
-        /// Wheter or not to enable encryption
+        /// Wheter or not to enable scene switching
         /// </summary>
+        public bool EnableSceneSwitching = true;
+        /// <summary>
+        /// If your logic uses the NetworkedTime, this should probably be turned off. If however it's needed to maximize accuracy, this is recommended to be turned on
+        /// </summary>
+        public bool EnableTimeResync = false;
+        /// <summary>
+        /// Wheter or not the MLAPI should check for differences in the prefabs at connection. 
+        /// If you dynamically add prefabs at runtime, turn this OFF
+        /// </summary>
+        public bool ForceSamePrefabs = true;
+        /// <summary>
+        /// Decides how many bytes to use for Rpc messaging. Leave this to 2 bytes unless you are facing hash collisions
+        /// </summary>
+        public HashSize RpcHashSize = HashSize.VarIntTwoBytes;
+        /// <summary>
+        /// Decides how many bytes to use for Prefab names. Leave this to 2 bytes unless you are facing hash collisions
+        /// </summary>
+        public HashSize PrefabHashSize = HashSize.VarIntTwoBytes;
+        /// <summary>
+        /// Wheter or not to enable encryption
+        /// The amount of seconds to wait on all clients to load requested scene before the SwitchSceneProgress onComplete callback, that waits for all clients to complete loading, is called anyway.
+        /// </summary>
+        public int LoadSceneTimeOut = 120;
+        /// <summary>
+        /// Wheter or not to enable the ECDHE key exchange to allow for encryption and authentication of messages
+        /// </summary>
+        [Header("Cryptography")]
         public bool EnableEncryption = false;
         /// <summary>
         /// Wheter or not to enable signed diffie hellman key exchange.
         /// </summary>
         public bool SignKeyExchange = false;
-        /// <summary>
-        /// Private RSA XML key to use for signing key exchange
-        /// </summary>
         [TextArea]
-        public string RSAPrivateKey = "<RSAKeyValue><Modulus>vBEvOQki/EftWOgwh4G8/nFRvcDJLylc8P7Dhz5m/hpkkNtAMzizNKYUrGbs7sYWlEuMYBOWrzkIDGOMoOsYc9uCi+8EcmNoHDlIhK5yNfZUexYBF551VbvZ625LSBR7kmBxkyo4IPuA09fYCHeUFm3prt4h6aTD0Hjc7ZsJHUU=</Modulus><Exponent>EQ==</Exponent><P>ydgcrq5qLJOdDQibD3m9+o3/dkKoFeCC110dnMgdpEteCruyBdL0zjGKKvjjgy3XTSSp43EN591NiXaBp0JtDw==</P><Q>7obHrUnUCsSHUsIJ7+JOrupcGrQ0XaYcQ+Uwb2v7d2YUzwZ46U4gI9snfD2J0tc3DGEh3v3G0Q8q7bxEe3H4aw==</Q><DP>L34k3c6vkgSdbHp+1nb/hj+HZx6+I0PijQbZyolwYuSOmR0a1DGjA1bzVWe9D86NAxevgM9OkOjG8yrxVIgZqQ==</DP><DQ>OB+2gyBuIKa2bdNNodrlVlVC2RtXnZB/HwjAGjeGdnJfP8VJoE6eJo3rLEq3BG7fxq1xYaUfuLhGVg4uOyngGQ==</DQ><InverseQ>o97PimYu58qH5eFmySRCIsyhBr/tK2GM17Zd9QQPJZRSorrhIJn1m6gwQ/G5aJLIM/3Yl04CoyqmQGsPXMzW2w==</InverseQ><D>CxAR1i22w4vCquB7U0Pd8Nl9R2Wxez6rHTwpnoszPB+rkAzlqKj7e5FMgpykhoQfciKPyWqQZKkAeTMIRbN56JinvpAt5POId/28HDd5xjGymHE81k3RzoHqzQXFIOF1TSYKUWzjPPF/TU4nn7auD4i6lOODATsMqtLr5DRBN/0=</D></RSAKeyValue>"; //CHANGE THESE FOR PRODUCTION!
-        /// <summary>
-        /// Public RSA XML key to use for signing key exchange
-        /// </summary>
-        [TextArea]
-        public string RSAPublicKey = "<RSAKeyValue><Modulus>vBEvOQki/EftWOgwh4G8/nFRvcDJLylc8P7Dhz5m/hpkkNtAMzizNKYUrGbs7sYWlEuMYBOWrzkIDGOMoOsYc9uCi+8EcmNoHDlIhK5yNfZUexYBF551VbvZ625LSBR7kmBxkyo4IPuA09fYCHeUFm3prt4h6aTD0Hjc7ZsJHUU=</Modulus><Exponent>EQ==</Exponent></RSAKeyValue>"; //CHANGE THESE FOR PRODUCTION!
-        /// <summary>
-        /// Wheter or not to enable scene switching
-        /// </summary>
-        public bool EnableSceneSwitching = true;
-        /// <summary>
-        /// If your logic uses the NetwokrTime, this should probably be turned off. If however it's needed to maximize accuracy, this is recommended to be turned on
-        /// </summary>
-        public bool EnableTimeResync = false;
-        /// <summary>
-        /// Decides how many bytes to use for Attribute messaging. Leave this to 2 bytes unless you are facing hash collisions
-        /// </summary>
-        public AttributeMessageMode AttributeMessageMode = AttributeMessageMode.WovenTwoByte;
+        public string ServerBase64PfxCertificate;
+        public X509Certificate2 ServerX509Certificate
+        {
+            get
+            {
+                return serverX509Certificate;
+            }
+            internal set
+            {
+                serverX509CertificateBytes = null;
+                serverX509Certificate = value;
+            }
+        }
+        private X509Certificate2 serverX509Certificate;
+        public byte[] ServerX509CertificateBytes
+        {
+            get
+            {
+                if (serverX509CertificateBytes == null)
+                    serverX509CertificateBytes = ServerX509Certificate.Export(X509ContentType.Cert);
+                return serverX509CertificateBytes;
+            }
+        }
+        private byte[] serverX509CertificateBytes = null;
 
         private void Sort()
         {
             Channels = Channels.OrderBy(x => x.Name).ToList();
-            NetworkedPrefabs = NetworkedPrefabs.OrderBy(x => x.name).ToList();
             RegisteredScenes.Sort();
         }
 
@@ -202,8 +230,10 @@ namespace MLAPI.Configuration
                     writer.WriteBool(config.EnableEncryption);
                     writer.WriteBool(config.SignKeyExchange);
                     writer.WriteBool(config.EnableSceneSwitching);
+                    writer.WriteInt32Packed(config.LoadSceneTimeOut);
                     writer.WriteBool(config.EnableTimeResync);
-                    writer.WriteBits((byte)config.AttributeMessageMode, 3);
+                    writer.WriteBits((byte)config.RpcHashSize, 3);
+                    stream.PadStream();
 
                     return Convert.ToBase64String(stream.ToArray());
                 }
@@ -282,8 +312,9 @@ namespace MLAPI.Configuration
                     config.EnableEncryption = reader.ReadBool();
                     config.SignKeyExchange = reader.ReadBool();
                     config.EnableSceneSwitching = reader.ReadBool();
+                    config.LoadSceneTimeOut = reader.ReadInt32Packed();
                     config.EnableTimeResync = reader.ReadBool();
-                    config.AttributeMessageMode = (AttributeMessageMode)reader.ReadBits(3);
+                    config.RpcHashSize = (HashSize)reader.ReadBits(3);
                 }
             }
         }
@@ -314,6 +345,7 @@ namespace MLAPI.Configuration
                         writer.WriteString(Channels[i].Name);
                         writer.WriteByte((byte)Channels[i].Type);
                     }
+
                     if (EnableSceneSwitching)
                     {
                         for (int i = 0; i < RegisteredScenes.Count; i++)
@@ -321,25 +353,31 @@ namespace MLAPI.Configuration
                             writer.WriteString(RegisteredScenes[i]);
                         }
                     }
-                    if (HandleObjectSpawning)
+
+                    if (HandleObjectSpawning && ForceSamePrefabs)
                     {
-                        for (int i = 0; i < NetworkedPrefabs.Count; i++)
+                        List<NetworkedPrefab> sortedPrefabList = NetworkedPrefabs.OrderBy(x => x.hash).ToList();
+                        for (int i = 0; i < sortedPrefabList.Count; i++)
                         {
-                            writer.WriteString(NetworkedPrefabs[i].name);
+                            writer.WriteUInt64Packed(sortedPrefabList[i].hash);
                         }
                     }
+
+                    writer.WriteBool(ForceSamePrefabs);
                     writer.WriteBool(HandleObjectSpawning);
                     writer.WriteBool(EnableEncryption);
                     writer.WriteBool(EnableSceneSwitching);
                     writer.WriteBool(SignKeyExchange);
-                    writer.WriteBits((byte)AttributeMessageMode, 3);
+                    writer.WriteBits((byte)RpcHashSize, 3);
+                    writer.WriteBits((byte)PrefabHashSize, 3);
+                    stream.PadStream();
 
-                    // Returns a 160 bit / 20 byte / 5 int checksum of the config
                     if (cache)
                     {
                         ConfigHash = stream.ToArray().GetStableHash64();
                         return ConfigHash.Value;
                     }
+
                     return stream.ToArray().GetStableHash64();
                 }
             }

@@ -42,7 +42,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Development|AnyCPU'">
     <DebugSymbols>true</DebugSymbols>
-    <OutputPath>..\..\MLAPI-Examples\Assets\MLAPI\Lib\</OutputPath>
+    <OutputPath>..\..\..\MLAPI-Examples\Assets\MLAPI\Lib\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <DebugType>full</DebugType>
     <PlatformTarget>anycpu</PlatformTarget>
@@ -90,6 +90,9 @@
     <Compile Include="Data\NetworkedCollections\NetworkedList.cs" />
     <Compile Include="Data\NetworkedVar.cs" />
     <Compile Include="Data\NetworkedVarMeta.cs" />
+    <Compile Include="Data\PendingClient.cs" />
+    <Compile Include="Data\SceneSwitchProgress.cs" />
+    <Compile Include="Data\SecuritySendFlags.cs" />
     <Compile Include="Data\Transports\ChannelType.cs" />
     <Compile Include="Data\FixedQueue.cs" />
     <Compile Include="Data\Transports\DefaultTransport.cs" />
@@ -115,6 +118,7 @@
     <Compile Include="NetworkingManagerComponents\Binary\BitReaderDeprecated.cs" />
     <Compile Include="NetworkingManagerComponents\Binary\BinaryHelpers.cs" />
     <Compile Include="NetworkingManagerComponents\Binary\ByteBool.cs" />
+    <Compile Include="NetworkingManagerComponents\Binary\IBitWritable.cs" />
     <Compile Include="NetworkingManagerComponents\Binary\ResourcePool.cs" />
     <Compile Include="NetworkingManagerComponents\Binary\UIntFloat.cs" />
     <Compile Include="NetworkingManagerComponents\Core\LogHelper.cs" />

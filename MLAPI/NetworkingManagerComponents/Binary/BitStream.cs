@@ -44,18 +44,6 @@ namespace MLAPI.Serialization
 
         /// <summary>
         /// A stream that supports writing data smaller than a single byte. This stream also has a built-in compression algorithm that can (optionally) be used to write compressed data.
-        /// </summary>
-        /// <param name="target">The buffer containing initial data</param>
-        /// <param name="offset">The offset where the data begins</param>
-        /// <param name="count">The amount of bytes to copy from the initial data buffer</param>
-        public BitStream(byte[] target, int offset, int count) : this(count)
-        {
-            Buffer.BlockCopy(target, offset, this.target, 0, count);
-            Resizable = false;
-        }
-
-        /// <summary>
-        /// A stream that supports writing data smaller than a single byte. This stream also has a built-in compression algorithm that can (optionally) be used to write compressed data.
         /// NOTE: when using a pre-allocated buffer, the stream will not grow!
         /// </summary>
         /// <param name="target">Pre-allocated buffer to write to</param>
@@ -78,9 +66,14 @@ namespace MLAPI.Serialization
         public float GrowthFactor { set { _growthFactor = value <= 1 ? 1.5f : value; } get { return _growthFactor; } }
 
         /// <summary>
-        /// Whether or not data can be read from the stream.
+        /// Whether or not stream supports reading. (Always true)
         /// </summary>
-        public override bool CanRead => Position < target.LongLength;
+        public override bool CanRead => true;
+
+        /// <summary>
+        /// Wheter or not or there is any data to be read from the stream.
+        /// </summary>
+        public bool HasDataToRead => Position < Length;
 
         /// <summary>
         /// Whether or not seeking is supported by this stream. (Always true)
@@ -139,7 +132,34 @@ namespace MLAPI.Serialization
         /// Grow buffer if possible. According to Max(bufferLength, 1) * growthFactor^Ceil(newContent/Max(bufferLength, 1))
         /// </summary>
         /// <param name="newContent">How many new values need to be accomodated (at least).</param>
-        private void Grow(long newContent) => SetCapacity(Math.Max(target.LongLength, 1) * (long)Math.Pow(GrowthFactor, CeilingExact(newContent, Math.Max(target.LongLength, 1))));
+        //private void Grow(long newContent) => SetCapacity(Math.Max(target.LongLength, 1) * (long)Math.Pow(GrowthFactor, CeilingExact(newContent, Math.Max(target.LongLength, 1))));
+        /*
+        private void Grow(long newContent)
+        {
+            float grow = newContent / 64;
+            if (((long)grow) != grow) grow += 1;
+            SetCapacity((Capacity + 64) * (long)grow);
+        }
+        */
+
+        private void Grow(long newContent)
+        {
+            long value = newContent + Capacity;
+            long newCapacity = value;
+
+            if (newCapacity < 256)
+                newCapacity = 256;
+            // We are ok with this overflowing since the next statement will deal
+            // with the cases where _capacity*2 overflows.
+            if (newCapacity < Capacity * 2)
+                newCapacity = Capacity * 2;
+            // We want to expand the array up to Array.MaxArrayLengthOneDimensional
+            // And we want to give the user the value that they asked for
+            if ((uint)(Capacity * 2) > int.MaxValue)
+                newCapacity = value > int.MaxValue ? value : int.MaxValue;
+
+            SetCapacity(newCapacity);
+        }
 
         /// <summary>
         /// Read a misaligned byte. WARNING: If the current BitPosition <strong>isn't</strong> byte misaligned,
@@ -167,14 +187,14 @@ namespace MLAPI.Serialization
         /// Read a byte from the buffer. This takes into account possible byte misalignment.
         /// </summary>
         /// <returns>A byte from the buffer or, if a byte can't be read, -1.</returns>
-        public override int ReadByte() => CanRead ? BitAligned ? ReadByteAligned() : ReadByteMisaligned() : -1;
+        public override int ReadByte() => HasDataToRead ? BitAligned ? ReadByteAligned() : ReadByteMisaligned() : -1;
 
         /// <summary>
         /// Peeks a byte without advancing the position
         /// </summary>
         /// <returns>The peeked byte</returns>
         public int PeekByte() =>
-            CanRead ?
+            HasDataToRead ?
                 BitAligned ?
                     target[Position] :
                     (byte)((target[(int)Position] >> (int)(BitPosition & 7)) | (target[(int)(BitPosition + 8) >> 3] << (8 - (int)(BitPosition & 7)))) :
@@ -417,6 +437,17 @@ namespace MLAPI.Serialization
             byte[] copy = new byte[Length];
             Buffer.BlockCopy(target, 0, copy, 0, (int)Length);
             return copy;
+        }
+
+        /// <summary>
+        /// Writes zeros to fill the last byte
+        /// </summary>
+        public void PadStream()
+        {
+            while (!BitAligned)
+            {
+                WriteBit(false);
+            }
         }
 
         /// <summary>

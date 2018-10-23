@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using MLAPI.Logging;
 
 namespace MLAPI.Serialization
 {
@@ -9,6 +10,8 @@ namespace MLAPI.Serialization
     /// </summary>
     public static class BitStreamPool
     {
+        private static byte createdStreams = 0;
+        private static readonly Queue<WeakReference> overflowStreams = new Queue<WeakReference>();
         private static readonly Queue<PooledBitStream> streams = new Queue<PooledBitStream>();
 
         /// <summary>
@@ -17,7 +20,21 @@ namespace MLAPI.Serialization
         /// <returns>An expandable PooledBitStream</returns>
         public static PooledBitStream GetStream()
         {
-            if (streams.Count == 0) return new PooledBitStream();
+            if (overflowStreams.Count > 0)
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Retrieving PooledBitStream from overflow pool. Recent burst?");
+                WeakReference weakStream;
+                while (!(weakStream = overflowStreams.Dequeue()).IsAlive) ;
+                if (weakStream.IsAlive) return (PooledBitStream)weakStream.Target;
+            }
+
+            if (streams.Count == 0)
+            {
+                if (createdStreams == 254) if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("255 streams have been created. Did you forget to dispose?");
+                else if (createdStreams < 255) createdStreams++;
+                
+                return new PooledBitStream();
+            }
 
             PooledBitStream stream = streams.Dequeue();
             stream.SetLength(0);
@@ -32,7 +49,19 @@ namespace MLAPI.Serialization
         /// <param name="stream">The stream to put in the pool</param>
         public static void PutBackInPool(PooledBitStream stream)
         {
-            streams.Enqueue(stream);
+            if (streams.Count > 16)
+            {
+                //The user just created lots of streams without returning them in between.
+                //Streams are essentially byte array wrappers. This is valuable memory.
+                //Thus we put this stream as a weak reference incase of another burst
+                //But still leave it to GC
+                if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Putting PooledBitStream into overflow pool. Did you forget to dispose?");
+                overflowStreams.Enqueue(new WeakReference(stream));
+            }
+            else
+            {
+                streams.Enqueue(stream);
+            }
         }
     }
 
@@ -41,6 +70,7 @@ namespace MLAPI.Serialization
     /// </summary>
     public static class BitWriterPool
     {
+        private static byte createdWriters = 0;
         private static readonly Queue<PooledBitWriter> writers = new Queue<PooledBitWriter>();
 
         /// <summary>
@@ -50,21 +80,28 @@ namespace MLAPI.Serialization
         /// <returns>A PooledBitWriter</returns>
         public static PooledBitWriter GetWriter(Stream stream)
         {
-            if (writers.Count == 0) return new PooledBitWriter(stream);
+            if (writers.Count == 0)
+            {
+                if (createdWriters == 254) if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("255 writers have been created. Did you forget to dispose?");
+                    else if (createdWriters < 255) createdWriters++;
+                
+                return new PooledBitWriter(stream);
+            }
 
             PooledBitWriter writer = writers.Dequeue();
             writer.SetStream(stream);
-
+            
             return writer;
         }
 
         /// <summary>
         /// Puts a PooledBitWriter back into the pool
         /// </summary>
-        /// <param name="stream">The writer to put in the pool</param>
+        /// <param name="writer">The writer to put in the pool</param>
         public static void PutBackInPool(PooledBitWriter writer)
         {
-            writers.Enqueue(writer);
+            if (writers.Count < 64) writers.Enqueue(writer);
+            else if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("BitWriterPool already has 64 queued. Throwing to GC. Did you forget to dispose?");
         }
     }
 
@@ -73,6 +110,7 @@ namespace MLAPI.Serialization
     /// </summary>
     public static class BitReaderPool
     {
+        private static byte createdReaders = 0;
         private static readonly Queue<PooledBitReader> readers = new Queue<PooledBitReader>();
 
         /// <summary>
@@ -82,7 +120,13 @@ namespace MLAPI.Serialization
         /// <returns>A PooledBitReader</returns>
         public static PooledBitReader GetReader(Stream stream)
         {
-            if (readers.Count == 0) return new PooledBitReader(stream);
+            if (readers.Count == 0)
+            {
+                if (createdReaders == 254) if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("255 readers have been created. Did you forget to dispose?");
+                else if (createdReaders < 255) createdReaders++;
+                
+                return new PooledBitReader(stream);
+            }
 
             PooledBitReader reader = readers.Dequeue();
             reader.SetStream(stream);
@@ -93,10 +137,11 @@ namespace MLAPI.Serialization
         /// <summary>
         /// Puts a PooledBitReader back into the pool
         /// </summary>
-        /// <param name="stream">The reader to put in the pool</param>
+        /// <param name="reader">The reader to put in the pool</param>
         public static void PutBackInPool(PooledBitReader reader)
         {
-            readers.Enqueue(reader);
+            if (readers.Count < 64) readers.Enqueue(reader);
+            else if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("BitReaderPool already has 64 queued. Throwing to GC. Did you forget to dispose?");
         }
     }
 
@@ -105,13 +150,16 @@ namespace MLAPI.Serialization
     /// </summary>
     public sealed class PooledBitStream : BitStream, IDisposable
     {
+        private bool isDisposed = false;
         /// <summary>
         /// Gets a PooledBitStream from the static BitStreamPool
         /// </summary>
         /// <returns>PooledBitStream</returns>
         public static PooledBitStream Get()
         {
-            return BitStreamPool.GetStream();
+            PooledBitStream stream = BitStreamPool.GetStream();
+            stream.isDisposed = false;
+            return stream;
         }
 
         /// <summary>
@@ -119,7 +167,11 @@ namespace MLAPI.Serialization
         /// </summary>
         public new void Dispose()
         {
-            BitStreamPool.PutBackInPool(this);
+            if (!isDisposed)
+            {
+                isDisposed = true;
+                BitStreamPool.PutBackInPool(this);
+            }
         }
     }
 
@@ -128,6 +180,8 @@ namespace MLAPI.Serialization
     /// </summary>
     public sealed class PooledBitWriter : BitWriter, IDisposable
     {
+        private bool isDisposed = false;
+        
         public PooledBitWriter(Stream stream) : base(stream)
         {
 
@@ -139,7 +193,9 @@ namespace MLAPI.Serialization
         /// <returns>PooledBitWriter</returns>
         public static PooledBitWriter Get(Stream stream)
         {
-            return BitWriterPool.GetWriter(stream);
+            PooledBitWriter writer = BitWriterPool.GetWriter(stream);
+            writer.isDisposed = false;
+            return writer;
         }
 
         /// <summary>
@@ -147,7 +203,11 @@ namespace MLAPI.Serialization
         /// </summary>
         public void Dispose()
         {
-            BitWriterPool.PutBackInPool(this);
+            if (!isDisposed)
+            {
+                isDisposed = true;
+                BitWriterPool.PutBackInPool(this);
+            }
         }
     }
 
@@ -156,6 +216,8 @@ namespace MLAPI.Serialization
     /// </summary>
     public sealed class PooledBitReader : BitReader, IDisposable
     {
+        private bool isDisposed = false;
+        
         public PooledBitReader(Stream stream) : base(stream)
         {
         }
@@ -166,7 +228,9 @@ namespace MLAPI.Serialization
         /// <returns>PooledBitReader</returns>
         public static PooledBitReader Get(Stream stream)
         {
-            return BitReaderPool.GetReader(stream);
+            PooledBitReader reader = BitReaderPool.GetReader(stream);
+            reader.isDisposed = false;
+            return reader;
         }
 
         /// <summary>
@@ -174,7 +238,11 @@ namespace MLAPI.Serialization
         /// </summary>
         public void Dispose()
         {
-            BitReaderPool.PutBackInPool(this);
+            if (!isDisposed)
+            {
+                isDisposed = true;
+                BitReaderPool.PutBackInPool(this);
+            }
         }
     }
 }
