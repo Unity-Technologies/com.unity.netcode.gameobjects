@@ -1,0 +1,6 @@
+_site
+docs/.sass-cache
+.jekyll-metadata
+*.gem
+&.bundle
+&vendor/bundle

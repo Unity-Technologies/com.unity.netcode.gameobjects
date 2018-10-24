@@ -1,14 +1,333 @@
-﻿<!DOCTYPE html>
-<html lang="en-US">
-<head>
-	<meta charset="UTF-8">
-	<meta http-equiv="refresh" content="1;url=html/N_MLAPI.htm">
-	<script type="text/javascript">
-		window.location.replace("html/N_MLAPI.htm")
-	</script>
-	<title>MLAPI API Reference - Redirect</title>
-</head>
-<body>
-	<p>If you are not redirected automatically, follow this link to the <a href="html/N_MLAPI.htm">default topic</a>.</p>
-</body>
-</html>
+---
+layout: default
+---
+
+<div class="container">
+
+    <div class="row">
+        <div class="col-md-12">
+            <h2 class="header-light regular-pad">What is the MLAPI?</h2>
+
+            <p class="lead">The MLAPI is a high level networking library built for the Unity
+                game engine to abstract networking concept. This allows developers to focus
+                on the game rather than low level protocols and networking frameworks. All this
+                is provided <strong>for free</strong> under the permissive <strong>MIT Licence</strong>
+                by the MLAPI collaborators. The MLAPI is <strong>open source</strong> with
+                <strong>no attached costs or limitations</strong>.
+            </p>
+        </div>
+    </div>
+
+    <br>
+    <br>
+
+
+    <div class="row">
+        <div class="col-md-4">
+            <h2 class="header-light regular-pad">Why MLAPI?</h2>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4">
+
+            <p class="lead">The MLAPI is a library with strong development behind it.
+                As a result of that, it has many powerful features that competing libraries
+                don't have. Here is a comparison of features between competing libraries.
+
+                <br><br><br>
+                If anything is incorrect or missing from the table. Please submit a pullrequest with a correction.
+            </p>
+        </div>
+
+        <div class="col-md-8">
+            <img src="img/mlapi_large.png" alt="" class="img-responsive">
+        </div>
+        <div class="col-md-4">
+            <table class="table table-striped table-hover ">
+                <thead>
+                    <tr>
+                        <th>Feature</th>
+                        <th>MLAPI</th>
+                        <th>Mirror</th>
+                        <th>HLAPI</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Host Support</td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                    </tr>
+                    <tr>
+                        <td>Spawn Management</td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                    </tr>
+                    <tr>
+                        <td>Messaging System</td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                    </tr>
+                    <tr>
+                        <td>Custom Transport</td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                    </tr>
+                    <tr>
+                        <td>Scene Management</td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                    </tr>
+                    <tr>
+                        <td>Behaviour Based Messaging</td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                    </tr>
+                    <tr>
+                        <td>Network Time</td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                        <td><i class="fa fa-times" aria-hidden="true" style="color:red"></i></td>
+                    </tr>
+                    <tr>
+                        <td>Send Channels</td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                        <td><i class="fa fa-times" aria-hidden="true" style="color:red"></i></td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                    </tr>
+                    <tr>
+                        <td>Custom RPC Parameter Types</td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                        <td><i class="fa fa-times" aria-hidden="true" style="color:red"></i></td>
+                        <td><i class="fa fa-times" aria-hidden="true" style="color:red"></i></td>
+                    </tr>
+                    <tr>
+                        <td>Custom Messaging System</td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                        <td><i class="fa fa-times" aria-hidden="true" style="color:red"></i></td>
+                        <td><i class="fa fa-times" aria-hidden="true" style="color:red"></i></td>
+                    </tr>
+                    <tr>
+                        <td>Custom Messages</td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                        <td><i class="fa fa-times" aria-hidden="true" style="color:red"></i></td>
+                    </tr>
+                    <tr>
+                        <td>Per Client RPC</td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                    </tr>
+                    <tr>
+                        <td>Bulk Client RPC</td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                        <td><i class="fa fa-times" aria-hidden="true" style="color:red"></i></td>
+                        <td><i class="fa fa-times" aria-hidden="true" style="color:red"></i></td>
+                    </tr>
+                    <tr>
+                        <td>Connection Approval</td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                        <td><i class="fa fa-times" aria-hidden="true" style="color:red"></i></td>
+                        <td><i class="fa fa-times" aria-hidden="true" style="color:red"></i></td>
+                    </tr>
+                    <tr>
+                        <td>KeyExchange</td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                        <td><i class="fa fa-times" aria-hidden="true" style="color:red"></i></td>
+                        <td><i class="fa fa-times" aria-hidden="true" style="color:red"></i></td>
+                    </tr>
+                    <tr>
+                        <td>Message Encryption</td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                        <td><i class="fa fa-times" aria-hidden="true" style="color:red"></i></td>
+                        <td><i class="fa fa-times" aria-hidden="true" style="color:red"></i></td>
+                    </tr>
+                    <tr>
+                        <td>Message Authentication</td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                        <td><i class="fa fa-times" aria-hidden="true" style="color:red"></i></td>
+                        <td><i class="fa fa-times" aria-hidden="true" style="color:red"></i></td>
+                    </tr>
+                    <tr>
+                        <td>TLS Certificates</td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                        <td><i class="fa fa-times" aria-hidden="true" style="color:red"></i></td>
+                        <td><i class="fa fa-times" aria-hidden="true" style="color:red"></i></td>
+                    </tr>
+                    <tr>
+                        <td>Custom Tickrate</td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                        <td><i class="fa fa-times" aria-hidden="true" style="color:red"></i></td>
+                        <td><i class="fa fa-times" aria-hidden="true" style="color:red"></i></td>
+                    </tr>
+                    <tr>
+                        <td>Synced / Networked Vars</td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+
+
+        <div class="col-md-4">
+            <table class="table table-striped table-hover ">
+                <thead>
+                    <tr>
+                        <th>Feature</th>
+                        <th>MLAPI</th>
+                        <th>Mirror</th>
+                        <th>HLAPI</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Custom Sync Structures</td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                        <td><i class="fa fa-times" aria-hidden="true" style="color:red"></i></td>
+                    </tr>
+                    <tr>
+                        <td>SyncedList</td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                    </tr>
+                    <tr>
+                        <td>SyncedDictionary</td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                        <td><i class="fa fa-times" aria-hidden="true" style="color:red"></i></td>
+                        <td><i class="fa fa-times" aria-hidden="true" style="color:red"></i></td>
+                    </tr>
+                    <tr>
+                        <td>SyncedEvent</td>
+                        <td><i class="fa fa-times" aria-hidden="true" style="color:red"></i></td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                        <td><i class="fa fa-times" aria-hidden="true" style="color:red"></i></td>
+                    </tr>
+                    <tr>
+                        <td>Unlimited Networked Vars</td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                        <td><i class="fa fa-times" aria-hidden="true" style="color:red"></i></td>
+                        <td><i class="fa fa-times" aria-hidden="true" style="color:red"></i></td>
+                    </tr>
+                    <tr>
+                        <td>Duplex Networked Vars</td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                        <td><i class="fa fa-times" aria-hidden="true" style="color:red"></i></td>
+                        <td><i class="fa fa-times" aria-hidden="true" style="color:red"></i></td>
+                    </tr>
+                    <tr>
+                        <td>NetworkedVar SyncToOwner</td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                        <td><i class="fa fa-times" aria-hidden="true" style="color:red"></i></td>
+                        <td><i class="fa fa-times" aria-hidden="true" style="color:red"></i></td>
+                    </tr>
+                    <tr>
+                        <td>NetworkedVar Custom Write Targets</td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                        <td><i class="fa fa-times" aria-hidden="true" style="color:red"></i></td>
+                        <td><i class="fa fa-times" aria-hidden="true" style="color:red"></i></td>
+                    </tr>
+                    <tr>
+                        <td>NetworkedVar Custom Read Targets</td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                        <td><i class="fa fa-times" aria-hidden="true" style="color:red"></i></td>
+                        <td><i class="fa fa-times" aria-hidden="true" style="color:red"></i></td>
+                    </tr>
+                    <tr>
+                        <td>Multi-project Support</td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                        <td><i class="fa fa-times" aria-hidden="true" style="color:red"></i></td>
+                        <td><i class="fa fa-times" aria-hidden="true" style="color:red"></i></td>
+                    </tr>
+                    <tr>
+                        <td>Built-in Lag Compensation</td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                        <td><i class="fa fa-times" aria-hidden="true" style="color:red"></i></td>
+                        <td><i class="fa fa-times" aria-hidden="true" style="color:red"></i></td>
+                    </tr>
+                    <tr>
+                        <td>BitStream</td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                        <td><i class="fa fa-times" aria-hidden="true" style="color:red"></i></td>
+                        <td><i class="fa fa-times" aria-hidden="true" style="color:red"></i></td>
+                    </tr>
+                    <tr>
+                        <td>BitWriter/BitReader (or similar packer)</td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                        <td><i class="fa fa-times" aria-hidden="true" style="color:red"></i></td>
+                        <td><i class="fa fa-times" aria-hidden="true" style="color:red"></i></td>
+                    </tr>
+                    <tr>
+                        <td>Network Profiler</td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                        <td><i class="fa fa-times" aria-hidden="true" style="color:red"></i></td>
+                        <td><i class="fa fa-times" aria-hidden="true" style="color:red"></i></td>
+                    </tr>
+                    <tr>
+                        <td>Relay</td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                        <td><i class="fa fa-times" aria-hidden="true" style="color:red"></i></td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                    </tr>
+                    <tr>
+                        <td>Pooled Memory Management (Internal)</td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                        <td><i class="fa fa-times" aria-hidden="true" style="color:red"></i></td>
+                        <td><i class="fa fa-times" aria-hidden="true" style="color:red"></i></td>
+                    </tr>
+                    <tr>
+                        <td>P2P</td>
+                        <td><i class="fa fa-times" aria-hidden="true" style="color:red"></i></td>
+                        <td><i class="fa fa-times" aria-hidden="true" style="color:red"></i></td>
+                        <td><i class="fa fa-times" aria-hidden="true" style="color:red"></i></td>
+                    </tr>
+                    <tr>
+                        <td>Area Of Interest</td>
+                        <td><i class="fa fa-minus" aria-hidden="true" style="color:blue"></i></td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                        <td><i class="fa fa-check" aria-hidden="true" style="color:green"></i></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <hr>
+
+    <!--
+    <div class="row">
+        <div class="col-sm-4">
+            <h1 class="text-center"><i class="fa fa-pencil" aria-hidden="true"></i></h1>
+            <h3 class="text-center">Header1</h3>
+            <p>Body goes here
+            </p>
+        </div>
+        <div class="col-sm-4">
+            <h1 class="text-center"><i class="fa fa-cogs" aria-hidden="true"></i></h1>
+            <h3 class="text-center">Header2</h3>
+            <p>Booody</p>
+        </div>
+        <div class="col-sm-4">
+            <h1 class="text-center"><i class="fa fa-code-fork" aria-hidden="true"></i></h1>
+            <h3 class="text-center">Create your fork</h3>
+            <p>With the permissive MIT licence, you can easily fork the project and add specialized functionality
+                if required.
+            </p>
+        </div>
+    </div>
+-->
+
+
+</div>
