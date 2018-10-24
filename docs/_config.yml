@@ -5,7 +5,7 @@ description: >
   Game Networking Stack
 lang: en-US
 
-baseurl: "/MLAPI/" # the subpath of your site, e.g. /blog/
+baseurl: "/MLAPI" # the subpath of your site, e.g. /blog/
 url: https://midlevel.github.io # the base hostname & protocol for your site
 git_address: https://github.com/MidLevel/MLAPI
 git_edit_address: https://github.com/MidLevel/MLAPI/blob/master/docs
@@ -43,9 +43,15 @@ defaults:
     type: docs
   values:
     layout: docs
-    sectionid: docs
+    sectionid: wiki
     seo:
       type: "WebPage"
+
+- scope:
+    path: _pages
+    type: pages
+  values:
+    layout: pages
 
 collections:
   docs:
@@ -53,4 +59,7 @@ collections:
     output: true
   posts:
     permalink: /blog/:year/:month/:day/:title/
+    output: true
+  pages:
+    permalink: /:path/
     output: true
