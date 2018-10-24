@@ -6,7 +6,7 @@ description: >
 lang: en-US
 
 baseurl: "/MLAPI/" # the subpath of your site, e.g. /blog/
-url: https://midlevel.github.io/ # the base hostname & protocol for your site
+url: https://midlevel.github.io # the base hostname & protocol for your site
 git_address: https://github.com/MidLevel/MLAPI
 git_edit_address: https://github.com/MidLevel/MLAPI/blob/master/docs
 
