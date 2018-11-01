@@ -44,6 +44,10 @@ namespace MLAPI
         /// Gets wheter or not the object has a owner
         /// </summary>
 		public bool isOwnedByServer => networkedObject.isOwnedByServer;
+        /// <summary>
+        /// Contains the sender of the currently executing RPC. Useful for the convenience RPC methods
+        /// </summary>
+        protected uint ExecutingRpcSender { get; private set; }
 
         /// <summary>
         /// Gets the NetworkedObject that owns this NetworkedBehaviour instance
@@ -636,7 +640,9 @@ namespace MLAPI
 
                     if (rpc.reflectionMethod != null)
                     {
+                        ExecutingRpcSender = senderClientId;
                         rpc.reflectionMethod.Invoke(this, userStream);
+                        ExecutingRpcSender = 0;
                     }
 
                     if (rpc.rpcDelegate != null)
@@ -649,7 +655,9 @@ namespace MLAPI
             {
                 if (rpc.reflectionMethod != null)
                 {
+                    ExecutingRpcSender = senderClientId;
                     rpc.reflectionMethod.Invoke(this, stream);
+                    ExecutingRpcSender = 0;
                 }
 
                 if (rpc.rpcDelegate != null)
