@@ -64,14 +64,22 @@ namespace MLAPI
             }
         }
         private NetworkedObject _networkedObject = null;
-        /// <summary>
-        /// Gets the NetworkId of the NetworkedObject that owns the NetworkedBehaviour instance
-        /// </summary>
-        public uint networkId => networkedObject.NetworkId;
-        /// <summary>
-        /// Gets the clientId that owns the NetworkedObject
-        /// </summary>
-        public uint OwnerClientId => networkedObject.OwnerClientId;
+
+	/// <summary>
+	/// Gets the NetworkId of the NetworkedObject that owns the NetworkedBehaviour instance
+	/// </summary>
+	public uint NetworkId => networkedObject.NetworkId;
+
+	/// <summary>
+	/// Obsolete -- Use NetworkId instead.
+	/// </summary>
+	[Obsolete("Use NetworkId instead.")]
+	public uint networkId => networkedObject.NetworkId;
+
+		/// <summary>
+		/// Gets the clientId that owns the NetworkedObject
+		/// </summary>
+		public uint OwnerClientId => networkedObject.OwnerClientId;
 
         private void OnEnable()
         {
@@ -336,7 +344,7 @@ namespace MLAPI
                     {
                         using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                         {
-                            writer.WriteUInt32Packed(networkId);
+                            writer.WriteUInt32Packed(NetworkId);
                             writer.WriteUInt16Packed(networkedObject.GetOrderIndex(this));
 
                             uint clientId = NetworkingManager.singleton.ConnectedClientsList[i].ClientId;
@@ -411,7 +419,7 @@ namespace MLAPI
                         //A dummy read COULD be added to the interface for this situation, but it's just being too nice.
                         //This is after all a developer fault. A critical error should be fine.
                         // - TwoTen
-                        if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Client wrote to NetworkedVar without permission. No more variables can be read. This is critical. " + (logInstance != null ? ("NetworkId: " + logInstance.networkId + " BehaviourIndex: " + logInstance.networkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Client wrote to NetworkedVar without permission. No more variables can be read. This is critical. " + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.networkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
                         return;
                     }
 
@@ -438,7 +446,7 @@ namespace MLAPI
                         //A dummy read COULD be added to the interface for this situation, but it's just being too nice.
                         //This is after all a developer fault. A critical error should be fine.
                         // - TwoTen
-                        if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Client wrote to NetworkedVar without permission. No more variables can be read. This is critical. " + (logInstance != null ? ("NetworkId: " + logInstance.networkId + " BehaviourIndex: " + logInstance.networkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Client wrote to NetworkedVar without permission. No more variables can be read. This is critical. " + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.networkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
                         return;
                     }
 
@@ -782,7 +790,7 @@ namespace MLAPI
             {
                 using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                 {
-                    writer.WriteUInt32Packed(networkId);
+                    writer.WriteUInt32Packed(NetworkId);
                     writer.WriteUInt16Packed(networkedObject.GetOrderIndex(this));
                     writer.WriteUInt64Packed(hash);
 
@@ -814,7 +822,7 @@ namespace MLAPI
             {
                 using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                 {
-                    writer.WriteUInt32Packed(networkId);
+                    writer.WriteUInt32Packed(NetworkId);
                     writer.WriteUInt16Packed(networkedObject.GetOrderIndex(this));
                     writer.WriteUInt64Packed(hash);
 
@@ -867,7 +875,7 @@ namespace MLAPI
             {
                 using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                 {
-                    writer.WriteUInt32Packed(networkId);
+                    writer.WriteUInt32Packed(NetworkId);
                     writer.WriteUInt16Packed(networkedObject.GetOrderIndex(this));
                     writer.WriteUInt64Packed(hash);
 
@@ -905,7 +913,7 @@ namespace MLAPI
             {
                 using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                 {
-                    writer.WriteUInt32Packed(networkId);
+                    writer.WriteUInt32Packed(NetworkId);
                     writer.WriteUInt16Packed(networkedObject.GetOrderIndex(this));
                     writer.WriteUInt64Packed(hash);
 
