@@ -65,21 +65,21 @@ namespace MLAPI
         }
         private NetworkedObject _networkedObject = null;
 
-	/// <summary>
-	/// Gets the NetworkId of the NetworkedObject that owns the NetworkedBehaviour instance
-	/// </summary>
-	public uint NetworkId => networkedObject.NetworkId;
+        /// <summary>
+        /// Gets the NetworkId of the NetworkedObject that owns the NetworkedBehaviour instance
+        /// </summary>
+        public uint NetworkId => networkedObject.NetworkId;
 
-	/// <summary>
-	/// Obsolete -- Use NetworkId instead.
-	/// </summary>
-	[Obsolete("Use NetworkId instead.")]
-	public uint networkId => networkedObject.NetworkId;
+        /// <summary>
+        /// Obsolete -- Use NetworkId instead.
+        /// </summary>
+        [Obsolete("Use NetworkId instead.")]
+        public uint networkId => networkedObject.NetworkId;
 
-		/// <summary>
-		/// Gets the clientId that owns the NetworkedObject
-		/// </summary>
-		public uint OwnerClientId => networkedObject.OwnerClientId;
+        /// <summary>
+        /// Gets the clientId that owns the NetworkedObject
+        /// </summary>
+        public uint OwnerClientId => networkedObject.OwnerClientId;
 
         private void OnEnable()
         {
@@ -176,16 +176,16 @@ namespace MLAPI
         /// Gets called when SyncedVars gets updated                                                
         /// </summary>                                                                              
         public virtual void OnSyncVarUpdate()
-        {                                                                                                  
-            
-        }                                                                                                  
+        {
+
+        }
         /// <summary>                                                                                      
         /// Gets called when the local client gains ownership of this object                               
         /// </summary>                                                                                     
-        public virtual void OnGainedOwnership()                                                            
-        {                                                                                                 
-            
-        }                                                                                                  
+        public virtual void OnGainedOwnership()
+        {
+
+        }
         /// <summary>
         /// Gets called when we loose ownership of this object
         /// </summary>
@@ -221,19 +221,19 @@ namespace MLAPI
         internal readonly List<INetworkedVar> networkedVarFields = new List<INetworkedVar>();
         private static readonly Dictionary<Type, FieldInfo[]> fieldTypes = new Dictionary<Type, FieldInfo[]>();
 
-        
+
         private static FieldInfo[] GetFieldInfoForType(Type type)
         {
             if (!fieldTypes.ContainsKey(type))
                 fieldTypes.Add(type, GetFieldInfoForTypeRecursive(type));
-            
+
             return fieldTypes[type];
         }
-        
-        
-        private static FieldInfo[] GetFieldInfoForTypeRecursive(Type type, List<FieldInfo> list = null) 
+
+
+        private static FieldInfo[] GetFieldInfoForTypeRecursive(Type type, List<FieldInfo> list = null)
         {
-            if (list == null) 
+            if (list == null)
             {
                 list = new List<FieldInfo>();
                 list.AddRange(type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance));
@@ -252,7 +252,7 @@ namespace MLAPI
                 return list.OrderBy(x => x.Name).ToArray();
             }
         }
-        
+
         internal List<INetworkedVar> GetDummyNetworkedVars()
         {
             List<INetworkedVar> networkedVars = new List<INetworkedVar>();
@@ -297,7 +297,7 @@ namespace MLAPI
                         instance = (INetworkedVar)Activator.CreateInstance(fieldType, true);
                         sortedFields[i].SetValue(this, instance);
                     }
-                    
+
                     instance.SetNetworkedBehaviour(this);
                     networkedVarFields.Add(instance);
                 }
@@ -320,7 +320,7 @@ namespace MLAPI
                 channelMappedVarIndexes[firstLevelIndex[channel]].Add(i);
             }
         }
-        
+
         private readonly List<int> networkedVarIndexesToReset = new List<int>();
         private readonly HashSet<int> networkedVarIndexesToResetSet = new HashSet<int>();
         internal void NetworkedVarUpdate()
@@ -329,12 +329,12 @@ namespace MLAPI
                 NetworkedVarInit();
             //TODO: Do this efficiently.
 
-            if (!CouldHaveDirtyVars()) 
+            if (!CouldHaveDirtyVars())
                 return;
 
             networkedVarIndexesToReset.Clear();
             networkedVarIndexesToResetSet.Clear();
-            
+
             for (int i = 0; i < NetworkingManager.singleton.ConnectedClientsList.Count; i++)
             {
                 //This iterates over every "channel group".
@@ -371,13 +371,13 @@ namespace MLAPI
                                     }
                                 }
                             }
-                            
+
                             if (writtenAny)
                             {
                                 if (isServer)
                                     InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA, channelsForVarGroups[j], stream, SecuritySendFlags.None);
                                 else
-                                    InternalMessageHandler.Send(NetworkingManager.singleton.ServerClientId, MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA, channelsForVarGroups[j], stream, SecuritySendFlags.None);   
+                                    InternalMessageHandler.Send(NetworkingManager.singleton.ServerClientId, MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA, channelsForVarGroups[j], stream, SecuritySendFlags.None);
                             }
                         }
                     }
@@ -394,7 +394,7 @@ namespace MLAPI
         {
             for (int i = 0; i < networkedVarFields.Count; i++)
             {
-                if (networkedVarFields[i].IsDirty()) 
+                if (networkedVarFields[i].IsDirty())
                     return true;
             }
             return false;
@@ -489,7 +489,7 @@ namespace MLAPI
         private ulong HashMethodName(string name)
         {
             HashSize mode = NetworkingManager.singleton.NetworkConfig.RpcHashSize;
-            
+
             if (mode == HashSize.VarIntTwoBytes)
                 return name.GetStableHash16();
             if (mode == HashSize.VarIntFourBytes)
@@ -500,9 +500,9 @@ namespace MLAPI
             return 0;
         }
 
-        private MethodInfo[] GetNetworkedBehaviorChildClassesMethods(Type type, List<MethodInfo> list = null) 
+        private MethodInfo[] GetNetworkedBehaviorChildClassesMethods(Type type, List<MethodInfo> list = null)
         {
-            if (list == null) 
+            if (list == null)
             {
                 list = new List<MethodInfo>();
                 list.AddRange(type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance));
@@ -525,7 +525,7 @@ namespace MLAPI
         private void CacheAttributes()
         {
             Type type = GetType();
-            
+
             CachedClientRpcs.Add(this, new Dictionary<ulong, ClientRPC>());
             CachedServerRpcs.Add(this, new Dictionary<ulong, ServerRPC>());
 
@@ -557,7 +557,7 @@ namespace MLAPI
                     {
                         attributes[0].reflectionMethod = new ReflectionMehtod(methods[i]);
                     }
-                    
+
                     ulong hash = HashMethodName(methods[i].Name);
                     if (HashResults.ContainsKey(hash) && HashResults[hash] != methods[i].Name)
                     {
@@ -570,7 +570,7 @@ namespace MLAPI
 
                     CachedServerRpcs[this].Add(hash, attributes[0]);
                 }
-                
+
                 if (methods[i].IsDefined(typeof(ClientRPC), true))
                 {
                     ClientRPC[] attributes = (ClientRPC[])methods[i].GetCustomAttributes(typeof(ClientRPC), true);
@@ -601,7 +601,7 @@ namespace MLAPI
                     }
 
                     CachedClientRpcs[this].Add(HashMethodName(methods[i].Name), attributes[0]);
-                }     
+                }
             }
         }
 
@@ -614,7 +614,7 @@ namespace MLAPI
             }
             InvokeServerRPCLocal(hash, senderClientId, stream);
         }
-        
+
         internal void OnRemoteClientRPC(ulong hash, uint senderClientId, Stream stream)
         {
             if (!CachedClientRpcs.ContainsKey(this) || !CachedClientRpcs[this].ContainsKey(hash))
@@ -629,7 +629,7 @@ namespace MLAPI
         {
             if (!CachedServerRpcs.ContainsKey(this) || !CachedServerRpcs[this].ContainsKey(hash))
                 return;
-            
+
             ServerRPC rpc = CachedServerRpcs[this][hash];
 
             if (rpc.RequireOwnership && senderClientId != OwnerClientId)
@@ -679,7 +679,7 @@ namespace MLAPI
         {
             if (!CachedClientRpcs.ContainsKey(this) || !CachedClientRpcs[this].ContainsKey(hash))
                 return;
-            
+
             ClientRPC rpc = CachedClientRpcs[this][hash];
 
             if (stream.Position != 0)
@@ -714,7 +714,7 @@ namespace MLAPI
                 }
             }
         }
-        
+
         //Technically boxed writes are not needed. But save LOC for the non performance sends.
         internal void SendServerRPCBoxed(ulong hash, string channel, SecuritySendFlags security, params object[] parameters)
         {
@@ -731,7 +731,7 @@ namespace MLAPI
                 }
             }
         }
-        
+
         internal void SendClientRPCBoxed(ulong hash, List<uint> clientIds, string channel, SecuritySendFlags security, params object[] parameters)
         {
             using (PooledBitStream stream = PooledBitStream.Get())
@@ -809,8 +809,8 @@ namespace MLAPI
             }
         }
 
-        internal void SendClientRPCPerformance(ulong hash,  List<uint> clientIds, Stream messageStream, string channel, SecuritySendFlags security)
-        {            
+        internal void SendClientRPCPerformance(ulong hash, List<uint> clientIds, Stream messageStream, string channel, SecuritySendFlags security)
+        {
             if (!isServer && isRunning)
             {
                 //We are NOT a server.
@@ -934,9 +934,9 @@ namespace MLAPI
         #endregion
 
         #region SEND METHODS
-        #pragma warning disable HAA0101 // Array allocation for params parameter
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-        #pragma warning disable HAA0601 // Value type to reference type conversion causing boxing allocation
+#pragma warning disable HAA0101 // Array allocation for params parameter
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning disable HAA0601 // Value type to reference type conversion causing boxing allocation
         /// <exclude />
         public delegate void Action<T1>(T1 t1);
         /// <exclude />
@@ -2609,8 +2609,8 @@ namespace MLAPI
         }
 
         #endregion
-        #pragma warning restore HAA0101 // Array allocation for params parameter
-        #pragma warning restore HAA0601 // Value type to reference type conversion causing boxing allocation
+#pragma warning restore HAA0101 // Array allocation for params parameter
+#pragma warning restore HAA0601 // Value type to reference type conversion causing boxing allocation
         #region PERFORMANCE CLIENT RPC
         public void InvokeClientRpc(RpcDelegate method, List<uint> clientIds, Stream stream, string channel = null, SecuritySendFlags security = SecuritySendFlags.None)
         {
@@ -2673,7 +2673,7 @@ namespace MLAPI
             SendServerRPCPerformance(HashMethodName(methodName), stream, channel, security);
         }
         #endregion
-        #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
         #endregion
 
         /// <summary>
@@ -2683,7 +2683,7 @@ namespace MLAPI
         /// <returns></returns>
         protected NetworkedObject GetNetworkedObject(uint networkId)
         {
-            if(SpawnManager.SpawnedObjects.ContainsKey(networkId))
+            if (SpawnManager.SpawnedObjects.ContainsKey(networkId))
                 return SpawnManager.SpawnedObjects[networkId];
             return null;
         }
