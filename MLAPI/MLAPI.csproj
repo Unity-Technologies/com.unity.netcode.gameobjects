@@ -108,6 +108,7 @@
     <Compile Include="Data\Transports\UNET\UnetTransport.cs" />
     <Compile Include="Data\TypeExtensions.cs" />
     <Compile Include="GlobalSuppressions.cs" />
+    <Compile Include="MonoBehaviours\Core\NetworkedBehaviour.RpcOverloads.cs" />
     <Compile Include="MonoBehaviours\Prototyping\NetworkedAnimator.cs" />
     <Compile Include="MonoBehaviours\Prototyping\NetworkedNavMeshAgent.cs" />
     <Compile Include="NetworkingManagerComponents\Binary\Arithmetic.cs" />
