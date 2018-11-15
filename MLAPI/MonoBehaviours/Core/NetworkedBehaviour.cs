@@ -319,6 +319,7 @@ namespace MLAPI
         {
             if (!networkedVarInit)
                 NetworkedVarInit();
+
             //TODO: Do this efficiently.
 
             if (!CouldHaveDirtyVars()) 
@@ -352,6 +353,7 @@ namespace MLAPI
 
                                 bool isDirty = networkedVarFields[k].IsDirty(); //cache this here. You never know what operations users will do in the dirty methods
                                 writer.WriteBool(isDirty);
+
                                 if (isDirty && (!isServer || networkedVarFields[k].CanClientRead(clientId)))
                                 {
                                     writtenAny = true;
@@ -389,12 +391,15 @@ namespace MLAPI
                 if (networkedVarFields[i].IsDirty()) 
                     return true;
             }
+
             return false;
         }
 
 
         internal static void HandleNetworkedVarDeltas(List<INetworkedVar> networkedVarList, Stream stream, uint clientId, NetworkedBehaviour logInstance)
         {
+            // TODO: Lot's of performance improvements to do here.
+
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
                 for (int i = 0; i < networkedVarList.Count; i++)
@@ -411,11 +416,12 @@ namespace MLAPI
                         //A dummy read COULD be added to the interface for this situation, but it's just being too nice.
                         //This is after all a developer fault. A critical error should be fine.
                         // - TwoTen
+
                         if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Client wrote to NetworkedVar without permission. No more variables can be read. This is critical. " + (logInstance != null ? ("NetworkId: " + logInstance.networkId + " BehaviourIndex: " + logInstance.networkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
                         return;
                     }
 
-                    networkedVarList[i].ReadDelta(stream);
+                    networkedVarList[i].ReadDelta(stream, NetworkingManager.singleton.isServer);
                 }
             }
         }
@@ -442,7 +448,7 @@ namespace MLAPI
                         return;
                     }
 
-                    networkedVarList[i].ReadField(stream);
+                    networkedVarList[i].ReadField(stream, NetworkingManager.singleton.isServer);
                 }
             }
         }
@@ -451,6 +457,7 @@ namespace MLAPI
         {
             if (networkedVarList.Count == 0)
                 return;
+
             for (int j = 0; j < networkedVarList.Count; j++)
             {
                 bool canClientRead = networkedVarList[j].CanClientRead(clientId);
@@ -463,9 +470,10 @@ namespace MLAPI
         {
             if (networkedVarList.Count == 0)
                 return;
+
             for (int j = 0; j < networkedVarList.Count; j++)
             {
-                if (reader.ReadBool()) networkedVarList[j].ReadField(stream);
+                if (reader.ReadBool()) networkedVarList[j].ReadField(stream, true);
             }
         }
 

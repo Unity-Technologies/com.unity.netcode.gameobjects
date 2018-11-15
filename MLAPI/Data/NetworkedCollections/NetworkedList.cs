@@ -197,21 +197,39 @@ namespace MLAPI.NetworkedVar.Collections
         }
 
         /// <inheritdoc />
-        public void ReadField(Stream stream)
+        public void ReadField(Stream stream, bool keepDirtyState)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
+                if (keepDirtyState)
+                {
+                    dirtyEvents.Add(new NetworkedListEvent<T>()
+                    {
+                        eventType = NetworkedListEvent<T>.EventType.Clear
+                    });
+                }
+
                 list.Clear();
                 ushort count = reader.ReadUInt16Packed();
                 for (int i = 0; i < count; i++)
                 {
                     list.Add((T)reader.ReadObjectPacked(typeof(T))); //BOX
+
+                    if (keepDirtyState)
+                    {
+                        dirtyEvents.Add(new NetworkedListEvent<T>()
+                        {
+                            eventType = NetworkedListEvent<T>.EventType.Add,
+                            index = i,
+                            value = list[i]
+                        });
+                    }
                 }
             }
         }
 
         /// <inheritdoc />
-        public void ReadDelta(Stream stream)
+        public void ReadDelta(Stream stream, bool keepDirtyDelta)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
@@ -226,12 +244,24 @@ namespace MLAPI.NetworkedVar.Collections
                                 list.Add((T)reader.ReadObjectPacked(typeof(T))); //BOX
 
                                 if (OnListChanged != null)
-                                    OnListChanged(new NetworkedListEvent<T> 
+                                {
+                                    OnListChanged(new NetworkedListEvent<T>
                                     {
                                         eventType = eventType,
-                                        index = list.Count-1,
+                                        index = list.Count - 1,
                                         value = list[list.Count - 1]
                                     });
+                                }
+
+                                if (keepDirtyDelta)
+                                {
+                                    dirtyEvents.Add(new NetworkedListEvent<T>()
+                                    {
+                                        eventType = eventType,
+                                        index = list.Count - 1,
+                                        value = list[list.Count - 1]
+                                    });
+                                }
                             }
                             break;
                         case NetworkedListEvent<T>.EventType.Insert:
@@ -240,12 +270,24 @@ namespace MLAPI.NetworkedVar.Collections
                                 list.Insert(index, (T)reader.ReadObjectPacked(typeof(T))); //BOX
 
                                 if (OnListChanged != null)
-                                    OnListChanged(new NetworkedListEvent<T> 
+                                {
+                                    OnListChanged(new NetworkedListEvent<T>
                                     {
                                         eventType = eventType,
                                         index = index,
                                         value = list[index]
                                     });
+                                }
+
+                                if (keepDirtyDelta)
+                                {
+                                    dirtyEvents.Add(new NetworkedListEvent<T>()
+                                    {
+                                        eventType = eventType,
+                                        index = index,
+                                        value = list[index]
+                                    });
+                                }
                             }
                             break;
                         case NetworkedListEvent<T>.EventType.Remove:
@@ -255,12 +297,24 @@ namespace MLAPI.NetworkedVar.Collections
                                 list.RemoveAt(index); 
 
                                 if (OnListChanged != null)
-                                    OnListChanged(new NetworkedListEvent<T> 
+                                {
+                                    OnListChanged(new NetworkedListEvent<T>
                                     {
                                         eventType = eventType,
                                         index = index,
                                         value = value
                                     });
+                                }
+
+                                if (keepDirtyDelta)
+                                {
+                                    dirtyEvents.Add(new NetworkedListEvent<T>()
+                                    {
+                                        eventType = eventType,
+                                        index = index,
+                                        value = value
+                                    });
+                                }
                             }
                             break;
                         case NetworkedListEvent<T>.EventType.RemoveAt:
@@ -270,12 +324,24 @@ namespace MLAPI.NetworkedVar.Collections
                                 list.RemoveAt(index);
 
                                 if (OnListChanged != null)
-                                    OnListChanged(new NetworkedListEvent<T> 
+                                {
+                                    OnListChanged(new NetworkedListEvent<T>
                                     {
                                         eventType = eventType,
                                         index = index,
                                         value = value
                                     });
+                                }
+
+                                if (keepDirtyDelta)
+                                {
+                                    dirtyEvents.Add(new NetworkedListEvent<T>()
+                                    {
+                                        eventType = eventType,
+                                        index = index,
+                                        value = value
+                                    });
+                                }
                             }
                             break;
                         case NetworkedListEvent<T>.EventType.Value:
@@ -285,12 +351,14 @@ namespace MLAPI.NetworkedVar.Collections
                                 if (index < list.Count) list[index] = value;
 
                                 if (OnListChanged != null)
-                                    OnListChanged(new NetworkedListEvent<T> 
+                                {
+                                    OnListChanged(new NetworkedListEvent<T>
                                     {
                                         eventType = eventType,
                                         index = index,
                                         value = value
                                     });
+                                }
                             }
                             break;
                         case NetworkedListEvent<T>.EventType.Clear:
@@ -299,10 +367,12 @@ namespace MLAPI.NetworkedVar.Collections
                                 list.Clear();
 
                                 if (OnListChanged != null)
-                                    OnListChanged(new NetworkedListEvent<T> 
+                                {
+                                    OnListChanged(new NetworkedListEvent<T>
                                     {
                                         eventType = eventType,
                                     });
+                                }
                             }
                             break;
                     }

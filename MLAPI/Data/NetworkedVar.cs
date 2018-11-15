@@ -166,7 +166,7 @@ namespace MLAPI
         /// Reads value from the reader and applies it
         /// </summary>
         /// <param name="stream">The stream to read the value from</param>
-        public void ReadDelta(Stream stream) => ReadField(stream); //The NetworkedVar is built for simple data types and has no delta.
+        public void ReadDelta(Stream stream, bool keepDirtyDelta) => ReadField(stream, keepDirtyDelta); //The NetworkedVar is built for simple data types and has no delta.
 
         /// <inheritdoc />
         public void SetNetworkedBehaviour(NetworkedBehaviour behaviour)
@@ -175,12 +175,15 @@ namespace MLAPI
         }
 
         /// <inheritdoc />
-        public void ReadField(Stream stream)
+        public void ReadField(Stream stream, bool keepDirtyState)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
                 T previousValue = InternalValue;
                 InternalValue = (T)reader.ReadObjectPacked((typeof(T)));
+
+                if (keepDirtyState) isDirty = true;
+
                 if (OnValueChanged != null)
                     OnValueChanged(previousValue, InternalValue);
             }
