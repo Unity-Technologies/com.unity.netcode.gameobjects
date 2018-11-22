@@ -448,7 +448,7 @@ namespace MLAPI
                         return;
                     }
 
-                    networkedVarList[i].ReadField(stream, NetworkingManager.singleton.isServer);
+                    networkedVarList[i].ReadField(stream);
                 }
             }
         }
@@ -473,7 +473,7 @@ namespace MLAPI
 
             for (int j = 0; j < networkedVarList.Count; j++)
             {
-                if (reader.ReadBool()) networkedVarList[j].ReadField(stream, true);
+                if (reader.ReadBool()) networkedVarList[j].ReadField(stream);
             }
         }
 

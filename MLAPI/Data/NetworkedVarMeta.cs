@@ -48,7 +48,7 @@ namespace MLAPI.NetworkedVar
         /// Reads the complete state from the reader and applies it
         /// </summary>
         /// <param name="stream">The stream to read the state from</param>
-        void ReadField(Stream stream, bool keepDirtyState);
+        void ReadField(Stream stream);
         /// <summary>
         /// Reads delta from the reader and applies them to the internal value
         /// </summary>
