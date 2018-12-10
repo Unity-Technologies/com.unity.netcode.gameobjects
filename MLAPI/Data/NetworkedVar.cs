@@ -210,41 +210,173 @@ namespace MLAPI
     
     // These support serialization
     [Serializable]
-    public class NetworkedVarString : NetworkedVar<string> { }
+    public class NetworkedVarString : NetworkedVar<string>
+    {
+        public NetworkedVarString() { }
+        public NetworkedVarString(NetworkedVarSettings settings) : base(settings) { }
+        public NetworkedVarString(string value) : base(value) { }
+        public NetworkedVarString(NetworkedVarSettings settings, string value) : base(settings, value) { }
+    }
+
     [Serializable]
-    public class NetworkedVarBool : NetworkedVar<bool> { }
+    public class NetworkedVarBool : NetworkedVar<bool>
+    {
+        public NetworkedVarBool() { }
+        public NetworkedVarBool(NetworkedVarSettings settings) : base(settings) { }
+        public NetworkedVarBool(bool value) : base(value) { }
+        public NetworkedVarBool(NetworkedVarSettings settings, bool value) : base(settings, value) { }
+    }
+
     [Serializable]
-    public class NetworkedVarByte : NetworkedVar<byte> { }
+    public class NetworkedVarByte : NetworkedVar<byte>
+    {
+        public NetworkedVarByte() { }
+        public NetworkedVarByte(NetworkedVarSettings settings) : base(settings) { }
+        public NetworkedVarByte(byte value) : base(value) { }
+        public NetworkedVarByte(NetworkedVarSettings settings, byte value) : base(settings, value) { }
+    }
+
     [Serializable]
-    public class NetworkedVarSByte : NetworkedVar<sbyte> { }
+    public class NetworkedVarSByte : NetworkedVar<sbyte>
+    {
+        public NetworkedVarSByte() { }
+        public NetworkedVarSByte(NetworkedVarSettings settings) : base(settings) { }
+        public NetworkedVarSByte(sbyte value) : base(value) { }
+        public NetworkedVarSByte(NetworkedVarSettings settings, sbyte value) : base(settings, value) { }
+    }
+
     [Serializable]
-    public class NetworkedVarUShort : NetworkedVar<ushort> { }
+    public class NetworkedVarUShort : NetworkedVar<ushort>
+    {
+        public NetworkedVarUShort() { }
+        public NetworkedVarUShort(NetworkedVarSettings settings) : base(settings) { }
+        public NetworkedVarUShort(ushort value) : base(value) { }
+        public NetworkedVarUShort(NetworkedVarSettings settings, ushort value) : base(settings, value) { }
+    }
+
     [Serializable]
-    public class NetworkedVarShort : NetworkedVar<short> { }
+    public class NetworkedVarShort : NetworkedVar<short>
+    {
+        public NetworkedVarShort() { }
+        public NetworkedVarShort(NetworkedVarSettings settings) : base(settings) { }
+        public NetworkedVarShort(short value) : base(value) { }
+        public NetworkedVarShort(NetworkedVarSettings settings, short value) : base(settings, value) { }
+    }
+
     [Serializable]
-    public class NetworkedVarUInt : NetworkedVar<uint> { }
+    public class NetworkedVarUInt : NetworkedVar<uint>
+    {
+        public NetworkedVarUInt() { }
+        public NetworkedVarUInt(NetworkedVarSettings settings) : base(settings) { }
+        public NetworkedVarUInt(uint value) : base(value) { }
+        public NetworkedVarUInt(NetworkedVarSettings settings, uint value) : base(settings, value) { }
+    }
+
     [Serializable]
-    public class NetworkedVarInt : NetworkedVar<int> { }
+    public class NetworkedVarInt : NetworkedVar<int>
+    {
+        public NetworkedVarInt() { }
+        public NetworkedVarInt(NetworkedVarSettings settings) : base(settings) { }
+        public NetworkedVarInt(int value) : base(value) { }
+        public NetworkedVarInt(NetworkedVarSettings settings, int value) : base(settings, value) { }
+    }
+
     [Serializable]
-    public class NetworkedVarULong : NetworkedVar<ulong> { }
+    public class NetworkedVarULong : NetworkedVar<ulong>
+    {
+        public NetworkedVarULong() { }
+        public NetworkedVarULong(NetworkedVarSettings settings) : base(settings) { }
+        public NetworkedVarULong(ulong value) : base(value) { }
+        public NetworkedVarULong(NetworkedVarSettings settings, ulong value) : base(settings, value) { }
+    }
+
     [Serializable]
-    public class NetworkedVarLong : NetworkedVar<long> { }
+    public class NetworkedVarLong : NetworkedVar<long>
+    {
+        public NetworkedVarLong() { }
+        public NetworkedVarLong(NetworkedVarSettings settings) : base(settings) { }
+        public NetworkedVarLong(long value) : base(value) { }
+        public NetworkedVarLong(NetworkedVarSettings settings, long value) : base(settings, value) { }
+    }
+
     [Serializable]
-    public class NetworkedVarFloat : NetworkedVar<float> { }
+    public class NetworkedVarFloat : NetworkedVar<float>
+    {
+        public NetworkedVarFloat() { }
+        public NetworkedVarFloat(NetworkedVarSettings settings) : base(settings) { }
+        public NetworkedVarFloat(float value) : base(value) { }
+        public NetworkedVarFloat(NetworkedVarSettings settings, float value) : base(settings, value) { }
+    }
+
     [Serializable]
-    public class NetworkedVarDouble : NetworkedVar<double> { }
+    public class NetworkedVarDouble : NetworkedVar<double>
+    {
+        public NetworkedVarDouble() { }
+        public NetworkedVarDouble(NetworkedVarSettings settings) : base(settings) { }
+        public NetworkedVarDouble(double value) : base(value) { }
+        public NetworkedVarDouble(NetworkedVarSettings settings, double value) : base(settings, value) { }
+    }
+
     [Serializable]
-    public class NetworkedVarVector2 : NetworkedVar<Vector2> { }
+    public class NetworkedVarVector2 : NetworkedVar<Vector2>
+    {
+        public NetworkedVarVector2() { }
+        public NetworkedVarVector2(NetworkedVarSettings settings) : base(settings) { }
+        public NetworkedVarVector2(Vector2 value) : base(value) { }
+        public NetworkedVarVector2(NetworkedVarSettings settings, Vector2 value) : base(settings, value) { }
+    }
+
     [Serializable]
-    public class NetworkedVarVector3 : NetworkedVar<Vector3> { }
+    public class NetworkedVarVector3 : NetworkedVar<Vector3>
+    {
+        public NetworkedVarVector3() { }
+        public NetworkedVarVector3(NetworkedVarSettings settings) : base(settings) { }
+        public NetworkedVarVector3(Vector3 value) : base(value) { }
+        public NetworkedVarVector3(NetworkedVarSettings settings, Vector3 value) : base(settings, value) { }
+    }
+
     [Serializable]
-    public class NetworkedVarVector4 : NetworkedVar<Vector4> { }
+    public class NetworkedVarVector4 : NetworkedVar<Vector4>
+    {
+        public NetworkedVarVector4() { }
+        public NetworkedVarVector4(NetworkedVarSettings settings) : base(settings) { }
+        public NetworkedVarVector4(Vector4 value) : base(value) { }
+        public NetworkedVarVector4(NetworkedVarSettings settings, Vector4 value) : base(settings, value) { }
+    }
+
     [Serializable]
-    public class NetworkedVarColor : NetworkedVar<Color> { }
+    public class NetworkedVarColor : NetworkedVar<Color>
+    {
+        public NetworkedVarColor() { }
+        public NetworkedVarColor(NetworkedVarSettings settings) : base(settings) { }
+        public NetworkedVarColor(Color value) : base(value) { }
+        public NetworkedVarColor(NetworkedVarSettings settings, Color value) : base(settings, value) { }
+    }
+
     [Serializable]
-    public class NetworkedVarColor32 : NetworkedVar<Color32> { }
+    public class NetworkedVarColor32 : NetworkedVar<Color32>
+    {
+        public NetworkedVarColor32() { }
+        public NetworkedVarColor32(NetworkedVarSettings settings) : base(settings) { }
+        public NetworkedVarColor32(Color32 value) : base(value) { }
+        public NetworkedVarColor32(NetworkedVarSettings settings, Color32 value) : base(settings, value) { }
+    }
+
     [Serializable]
-    public class NetworkedVarRay : NetworkedVar<Ray> { }
+    public class NetworkedVarRay : NetworkedVar<Ray>
+    {
+        public NetworkedVarRay() { }
+        public NetworkedVarRay(NetworkedVarSettings settings) : base(settings) { }
+        public NetworkedVarRay(Ray value) : base(value) { }
+        public NetworkedVarRay(NetworkedVarSettings settings, Ray value) : base(settings, value) { }
+    }
+
     [Serializable]
-    public class NetworkedVarQuaternion : NetworkedVar<Quaternion> { }
+    public class NetworkedVarQuaternion : NetworkedVar<Quaternion>
+    {
+        public NetworkedVarQuaternion() { }
+        public NetworkedVarQuaternion(NetworkedVarSettings settings) : base(settings) { }
+        public NetworkedVarQuaternion(Quaternion value) : base(value) { }
+        public NetworkedVarQuaternion(NetworkedVarSettings settings, Quaternion value) : base(settings, value) { }
+    }
 }
