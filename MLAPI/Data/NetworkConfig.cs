@@ -149,8 +149,14 @@ namespace MLAPI.Configuration
         /// Wheter or not to enable signed diffie hellman key exchange.
         /// </summary>
         public bool SignKeyExchange = false;
+        /// <summary>
+        /// Pfx file in base64 encoding containing private and public key
+        /// </summary>
         [TextArea]
         public string ServerBase64PfxCertificate;
+        /// <summary>
+        /// Gets the currently in use certificate
+        /// </summary>
         public X509Certificate2 ServerX509Certificate
         {
             get
@@ -164,6 +170,9 @@ namespace MLAPI.Configuration
             }
         }
         private X509Certificate2 serverX509Certificate;
+        /// <summary>
+        /// Gets the cached binary representation of the server certificate that's used for handshaking
+        /// </summary>
         public byte[] ServerX509CertificateBytes
         {
             get
