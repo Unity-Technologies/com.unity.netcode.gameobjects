@@ -544,7 +544,7 @@ namespace MLAPI.Internal
         
         internal static void HandleCustomMessage(uint clientId, Stream stream, int channelId)
         {
-            NetworkingManager.singleton.InvokeOnIncommingCustomMessage(clientId, stream);
+            NetworkingManager.singleton.InvokeOnIncomingCustomMessage(clientId, stream);
         }
     }
 }

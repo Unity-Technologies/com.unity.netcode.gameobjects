@@ -135,7 +135,7 @@ namespace MLAPI
         /// </summary>
         public NetworkConfig NetworkConfig;
         /// <summary>
-        /// Delegate used for incomming custom messages
+        /// Delegate used for incoming custom messages
         /// </summary>
         /// <param name="clientId">The clientId that sent the message</param>
         /// <param name="stream">The stream containing the message data</param>
@@ -143,7 +143,7 @@ namespace MLAPI
         /// <summary>
         /// Event invoked when custom messages arrive
         /// </summary>
-        public event CustomMessageDelegete OnIncommingCustomMessage;
+        public event CustomMessageDelegete OnIncomingCustomMessage;
         /// <summary>
         /// The current hostname we are connected to, used to validate certificate
         /// </summary>
@@ -151,9 +151,9 @@ namespace MLAPI
         internal byte[] clientAesKey;
         internal static event Action OnSingletonReady;
 
-        internal void InvokeOnIncommingCustomMessage(uint clientId, Stream stream)
+        internal void InvokeOnIncomingCustomMessage(uint clientId, Stream stream)
         {
-            if (OnIncommingCustomMessage != null) OnIncommingCustomMessage(clientId, stream);
+            if (OnIncomingCustomMessage != null) OnIncomingCustomMessage(clientId, stream);
         }
 
         /// <summary>
@@ -713,7 +713,7 @@ namespace MLAPI
                                 NetworkProfiler.EndEvent();
                                 break;
                             case NetEventType.Data:
-                                if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo($"Incomming Data From {clientId} : {receivedSize} bytes");
+                                if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo($"Incoming Data From {clientId} : {receivedSize} bytes");
 
                                 HandleIncomingData(clientId, messageBuffer, channelId, receivedSize);
                                 break;

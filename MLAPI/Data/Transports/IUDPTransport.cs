@@ -30,7 +30,7 @@
         /// <param name="error">Error byte. Does nothhing</param>
         void SendQueue(uint clientId, out byte error);
         /// <summary>
-        /// Polls for incomming events
+        /// Polls for incoming events
         /// </summary>
         /// <param name="clientId">The clientId this event is for</param>
         /// <param name="channelId">The channelId this message comes from</param>
@@ -56,7 +56,7 @@
         /// <param name="error">Error byte. Does nothhing</param>
         void Connect(string address, int port, object settings, out byte error);
         /// <summary>
-        /// Starts to listen for incomming clients.
+        /// Starts to listen for incoming clients.
         /// </summary>
         /// <param name="settings">The settings object for the transport</param>
         void RegisterServerListenSocket(object settings);
