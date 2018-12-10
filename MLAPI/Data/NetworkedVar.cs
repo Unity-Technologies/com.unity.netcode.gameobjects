@@ -216,9 +216,9 @@ namespace MLAPI
     public class NetworkedVarString : NetworkedVar<string>
     {
         /// <inheritdoc />
-        public NetworkedVarString() { }
+        public NetworkedVarString() : base(string.Empty) { }
         /// <inheritdoc />
-        public NetworkedVarString(NetworkedVarSettings settings) : base(settings) { }
+        public NetworkedVarString(NetworkedVarSettings settings) : base(settings, string.Empty) { }
         /// <inheritdoc />
         public NetworkedVarString(string value) : base(value) { }
         /// <inheritdoc />

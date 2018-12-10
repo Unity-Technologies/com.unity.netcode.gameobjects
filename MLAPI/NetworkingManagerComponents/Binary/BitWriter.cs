@@ -97,6 +97,10 @@ namespace MLAPI.Serialization
             }
             else if (value is string)
             {
+                if (value == null)
+                {
+                    throw new ArgumentException("BitWriter cannot write strings with a null value");
+                }
                 WriteStringPacked((string)value);
                 return;
             }
@@ -186,8 +190,12 @@ namespace MLAPI.Serialization
                 WriteUInt16Packed(((NetworkedBehaviour)value).GetBehaviourId());
                 return;
             } 
-            else if(value is IBitWritable)
+            else if (value is IBitWritable)
             {
+                if (value == null)
+                {
+                    throw new ArgumentException("BitWriter cannot write IBitWritable types with a null value");
+                }
                 ((IBitWritable)value).Write(this.sink);
                 return;
             } 
