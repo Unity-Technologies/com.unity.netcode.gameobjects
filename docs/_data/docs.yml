@@ -15,6 +15,7 @@
   - networkedvar
   - scene-management
   - object-ownership
+  - ways-to-syncronize
 
 - title: Core Components
   docs:

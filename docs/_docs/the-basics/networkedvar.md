@@ -9,6 +9,16 @@ By default, the MLAPI comes with 3 different containers. NetworkedList, Networke
 
 Since the NetworkedVar container is a wrapper container around the value, the value has be accessed via the .Value property.
 
+
+<div class="panel panel-warning">
+    <div class="panel-heading">
+        <h3 class="panel-title">Disclaimer</h3>
+    </div>
+    <div class="panel-body">
+        The NetworkedVar, NetworkedList and NetworkedDictionary implementations are <b>primarly</b> designed as samples showing to do create INetworkedVar structures. The NetworkedVar container is however concidered production ready for simple types.
+    </div>
+</div>
+
 To create your own NetworkedVar container, simply create a class with the INetworkedVar interface and declare it as a field of a NetworkedBehaviour. To learn how to write your own containers for more complex structures, see the NetworkedVar implementation. To learn how to do custom delta encoding on complex structures. See the SyncedDictionary and SyncedLIst implementations.
 
 
