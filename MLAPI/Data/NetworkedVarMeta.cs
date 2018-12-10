@@ -53,6 +53,7 @@ namespace MLAPI.NetworkedVar
         /// Reads delta from the reader and applies them to the internal value
         /// </summary>
         /// <param name="stream">The stream to read the delta from</param>
+        /// <param name="keepDirtyDelta">Whether or not the delta should be kept as dirty or consumed</param>
         void ReadDelta(Stream stream, bool keepDirtyDelta);
         /// <summary>
         /// Sets NetworkedBehaviour the container belongs to.
