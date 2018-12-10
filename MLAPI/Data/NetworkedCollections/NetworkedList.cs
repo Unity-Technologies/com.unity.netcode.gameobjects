@@ -274,9 +274,9 @@ namespace MLAPI.NetworkedVar.Collections
                             break;
                         case NetworkedListEvent<T>.EventType.Remove:
                             {
-                                T value = (T)reader.ReadObjectPacked(typeof(T)); //BOX
-                                int index = list.IndexOf(value);
-                                list.RemoveAt(index); 
+                                int index = reader.ReadInt32Packed();
+                                T value = list[index];
+                                list.RemoveAt(index);
 
                                 if (OnListChanged != null)
                                 {
@@ -426,22 +426,29 @@ namespace MLAPI.NetworkedVar.Collections
         }
 
         /// <inheritdoc />
-        public bool Remove(T item)
+        public bool Remove(T item) 
         {
             if (NetworkingManager.singleton.isServer)
-                list.Remove(item);
-            
-            NetworkedListEvent<T> listEvent = new NetworkedListEvent<T>() 
             {
-                eventType = NetworkedListEvent<T>.EventType.Remove,
-                value = item
-            };
-            dirtyEvents.Add(listEvent);
+                int removeIndex = list.IndexOf(item);
+                if(removeIndex != -1) 
+                {
+                    list.RemoveAt(removeIndex);
 
-            if (NetworkingManager.singleton.isServer && OnListChanged != null)
-                OnListChanged(listEvent);
+                    NetworkedListEvent<T> listEvent = new NetworkedListEvent<T>() 
+                    {
+                        eventType = NetworkedListEvent<T>.EventType.Remove,
+                        index = removeIndex
+                    };
+                    dirtyEvents.Add(listEvent);
 
-            return true;
+                    if (NetworkingManager.singleton.isServer && OnListChanged != null)
+                        OnListChanged(listEvent);
+
+                    return true;
+                }
+            }
+            return false;
         }
 
         /// <inheritdoc />
