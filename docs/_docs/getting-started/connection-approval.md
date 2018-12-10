@@ -13,12 +13,15 @@ private void Setup()
     NetworkingManager.singleton.StartHost();
 }
 
-private void ApprovalCheck(byte[] connectionData, uint clientId, ConnectionApprovedDelegate callback)
+private void ApprovalCheck(byte[] connectionData, uint clientId, MLAPI.NetworkingManager.ConnectionApprovedDelegate callback)
 {
     //Your logic here
     bool approve = true;
+
+    int prefabId = SpawnManager.GetNetworkedPrefabIndexOfName("myPrefabName"); // The prefab index. Use -1 to use the default player prefab.
+    
     //If approve is true, the connection gets added. If it's false. The client gets disconnected
-    callback(clientId, approve, positionToSpawnAt, rotationToSpawnWith);
+    callback(clientId, prefabId, approve, positionToSpawnAt, rotationToSpawnWith);
 }
 ```
 ### Connection data
