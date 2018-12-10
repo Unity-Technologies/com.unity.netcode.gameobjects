@@ -182,7 +182,7 @@ namespace MLAPI.Serialization
     {
         private bool isDisposed = false;
         
-        public PooledBitWriter(Stream stream) : base(stream)
+        internal PooledBitWriter(Stream stream) : base(stream)
         {
 
         }
@@ -218,7 +218,7 @@ namespace MLAPI.Serialization
     {
         private bool isDisposed = false;
         
-        public PooledBitReader(Stream stream) : base(stream)
+        internal PooledBitReader(Stream stream) : base(stream)
         {
         }
 
