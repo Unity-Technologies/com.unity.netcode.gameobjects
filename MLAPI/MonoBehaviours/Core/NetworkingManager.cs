@@ -144,6 +144,9 @@ namespace MLAPI
         /// Event invoked when custom messages arrive
         /// </summary>
         public event CustomMessageDelegete OnIncommingCustomMessage;
+        /// <summary>
+        /// The current hostname we are connected to, used to validate certificate
+        /// </summary>
         public string ConnectedHostname { get; private set; }
         internal byte[] clientAesKey;
         internal static event Action OnSingletonReady;

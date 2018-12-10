@@ -380,6 +380,11 @@ namespace MLAPI.Serialization
             }
         }
 
+        /// <summary>
+        /// Copies urnead bytes from the source stream
+        /// </summary>
+        /// <param name="s">The source stream to copy from</param>
+        /// <param name="count">The max amount of bytes to copy</param>
         public void CopyUnreadFrom(Stream s, int count = -1)
         {
             long currentPosition = s.Position;
