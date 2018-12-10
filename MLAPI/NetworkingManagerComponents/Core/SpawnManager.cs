@@ -55,6 +55,11 @@ namespace MLAPI.Components
             return 0;
         }
 
+        /// <summary>
+        /// Gets the prefab index of a given prefab hash
+        /// </summary>
+        /// <param name="hash">The hash of the prefab</param>
+        /// <returns>The index of the prefab</returns>
         public static int GetNetworkedPrefabIndexOfHash(ulong hash)
         {
             for (int i = 0; i < NetworkingManager.singleton.NetworkConfig.NetworkedPrefabs.Count; i++)
@@ -66,6 +71,11 @@ namespace MLAPI.Components
             return -1;
         }
 
+        /// <summary>
+        /// Gets the prefab index of a given prefab name
+        /// </summary>
+        /// <param name="name">The name of the prefab</param>
+        /// <returns>The index of the prefab</returns>
         public static int GetNetworkedPrefabIndexOfName(string name)
         {
             for (int i = 0; i < NetworkingManager.singleton.NetworkConfig.NetworkedPrefabs.Count; i++)
