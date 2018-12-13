@@ -714,8 +714,14 @@ namespace MLAPI
                                 break;
                             case NetEventType.Data:
                                 if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo($"Incoming Data From {clientId} : {receivedSize} bytes");
-
-                                HandleIncomingData(clientId, messageBuffer, channelId, receivedSize);
+                                if (receivedSize > 0)
+                                {
+                                    HandleIncomingData(clientId, messageBuffer, channelId, receivedSize);
+                                }
+                                else 
+                                {
+                                    if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogWarning($"Incomming Data From {clientId} Was Empty");
+                                }
                                 break;
                             case NetEventType.Disconnect:
                                 NetworkProfiler.StartEvent(TickType.Receive, 0, "NONE", "TRANSPORT_DISCONNECT");
