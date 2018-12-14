@@ -16,7 +16,7 @@ namespace MLAPI.Components
         /// <summary>
         /// The NetworkTime time at the moment the scene switch was initiated by the server.
         /// </summary>
-        public float TimeAtInitiation { get; } = NetworkingManager.singleton.NetworkTime;
+        public float TimeAtInitiation { get; } = NetworkingManager.Singleton.NetworkTime;
         /// <summary>
         /// Delegate type for when the switch scene progress is completed. Either by all clients done loading the scene or by time out.
         /// </summary>
@@ -49,7 +49,7 @@ namespace MLAPI.Components
 
         internal SceneSwitchProgress()
         {
-            timeOutCoroutine = NetworkingManager.singleton.StartCoroutine(NetworkingManager.singleton.TimeOutSwitchSceneProgress(this));
+            timeOutCoroutine = NetworkingManager.Singleton.StartCoroutine(NetworkingManager.Singleton.TimeOutSwitchSceneProgress(this));
         }
 
         internal void AddClientAsDone(uint clientId)
@@ -74,7 +74,7 @@ namespace MLAPI.Components
 
         internal void CheckCompletion()
         {
-            if (!isCompleted && DoneClients.Count == NetworkingManager.singleton.ConnectedClientsList.Count && sceneLoadOperation.isDone)
+            if (!isCompleted && DoneClients.Count == NetworkingManager.Singleton.ConnectedClientsList.Count && sceneLoadOperation.isDone)
             {
                 isCompleted = true;
                 isAllClientsDoneLoading = true;
@@ -82,7 +82,7 @@ namespace MLAPI.Components
                 if (OnComplete != null)
                     OnComplete.Invoke(false);
 
-                NetworkingManager.singleton.StopCoroutine(timeOutCoroutine);
+                NetworkingManager.Singleton.StopCoroutine(timeOutCoroutine);
             }
         }
 

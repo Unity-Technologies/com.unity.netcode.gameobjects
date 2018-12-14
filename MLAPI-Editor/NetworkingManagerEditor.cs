@@ -117,7 +117,7 @@ public class NetworkingManagerEditor : Editor
     {
         Init();
         CheckNullProperties();
-        if (!networkingManager.isServer && !networkingManager.isClient)
+        if (!networkingManager.IsServer && !networkingManager.IsClient)
         {
             serializedObject.Update();
             EditorGUILayout.PropertyField(DontDestroyOnLoadProperty);
@@ -144,21 +144,21 @@ public class NetworkingManagerEditor : Editor
         else
         {
             string instanceType = "";
-            if (networkingManager.isHost)
+            if (networkingManager.IsHost)
                 instanceType = "Host";
-            else if (networkingManager.isServer)
+            else if (networkingManager.IsServer)
                 instanceType = "Server";
-            else if (networkingManager.isClient)
+            else if (networkingManager.IsClient)
                 instanceType = "Client";
 
             EditorGUILayout.HelpBox("You cannot edit the NetworkConfig when a " + instanceType + " is running", UnityEditor.MessageType.Info);
             if (GUILayout.Toggle(false, "Stop " + instanceType, EditorStyles.miniButtonMid))
             {
-                if (networkingManager.isHost)
+                if (networkingManager.IsHost)
                     networkingManager.StopHost();
-                else if (networkingManager.isServer)
+                else if (networkingManager.IsServer)
                     networkingManager.StopServer();
-                else if (networkingManager.isClient)
+                else if (networkingManager.IsClient)
                     networkingManager.StopClient();
             }
         }

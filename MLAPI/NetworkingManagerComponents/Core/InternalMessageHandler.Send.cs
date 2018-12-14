@@ -10,7 +10,7 @@ namespace MLAPI.Internal
         {
             messageStream.PadStream();
 
-            if (NetworkingManager.singleton.isServer && clientId == NetworkingManager.singleton.ServerClientId) return;
+            if (NetworkingManager.Singleton.IsServer && clientId == NetworkingManager.Singleton.ServerClientId) return;
 
             using (BitStream stream = MessageManager.WrapMessage(messageType, clientId, messageStream, flags))
             {
@@ -45,7 +45,7 @@ namespace MLAPI.Internal
                     NetworkProfiler.StartEvent(TickType.Send, (uint)stream.Length, channelName, MLAPIConstants.MESSAGE_NAMES[messageType]);
                     for (int i = 0; i < netManager.ConnectedClientsList.Count; i++)
                     {
-                        if (NetworkingManager.singleton.isServer && netManager.ConnectedClientsList[i].ClientId == NetworkingManager.singleton.ServerClientId) continue;
+                        if (NetworkingManager.Singleton.IsServer && netManager.ConnectedClientsList[i].ClientId == NetworkingManager.Singleton.ServerClientId) continue;
                         byte error;
                         netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(netManager.ConnectedClientsList[i].ClientId, stream.GetBuffer(), (int)stream.Length, MessageManager.channels[channelName], false, out error);
                     }
@@ -79,7 +79,7 @@ namespace MLAPI.Internal
                     for (int i = 0; i < netManager.ConnectedClientsList.Count; i++)
                     {
                         if (netManager.ConnectedClientsList[i].ClientId == clientIdToIgnore ||
-                            (NetworkingManager.singleton.isServer && netManager.ConnectedClientsList[i].ClientId == NetworkingManager.singleton.ServerClientId))
+                            (NetworkingManager.Singleton.IsServer && netManager.ConnectedClientsList[i].ClientId == NetworkingManager.Singleton.ServerClientId))
                             continue;
 
                         byte error;

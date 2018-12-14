@@ -25,9 +25,9 @@ namespace MLAPI.Transports.UNET
         private static ushort port;
         private static List<ChannelQOS> channels = new List<ChannelQOS>();
 
-        public static bool Enabled => NetworkingManager.singleton.NetworkConfig.RelayEnabled;
-        public static string RelayAddress => NetworkingManager.singleton.NetworkConfig.RelayAddress;
-        public static ushort RelayPort => NetworkingManager.singleton.NetworkConfig.RelayPort;
+        public static bool Enabled => NetworkingManager.Singleton.NetworkConfig.RelayEnabled;
+        public static string RelayAddress => NetworkingManager.Singleton.NetworkConfig.RelayAddress;
+        public static ushort RelayPort => NetworkingManager.Singleton.NetworkConfig.RelayPort;
 
         public static int Connect(int hostId, string serverAddress, int serverPort, int exceptionConnectionId, out byte error)
         {

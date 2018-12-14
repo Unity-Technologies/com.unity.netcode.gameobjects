@@ -21,10 +21,10 @@ namespace UnityEditor
         public override void OnInspectorGUI()
         {
             Init();
-            if (NetworkingManager.singleton == null || (!NetworkingManager.singleton.isServer && !NetworkingManager.singleton.isClient))
+            if (NetworkingManager.Singleton == null || (!NetworkingManager.Singleton.IsServer && !NetworkingManager.Singleton.IsClient))
                 base.OnInspectorGUI(); //Only run this if we are NOT running server. This is where the ServerOnly box is drawn
 
-            if (!networkedObject.isSpawned && NetworkingManager.singleton != null && NetworkingManager.singleton.isServer)
+            if (!networkedObject.isSpawned && NetworkingManager.Singleton != null && NetworkingManager.Singleton.IsServer)
             {
                 EditorGUILayout.BeginHorizontal();
                 EditorGUILayout.LabelField(new GUIContent("Spawn", "Spawns the object across the network"));

@@ -186,7 +186,7 @@ namespace MLAPI.Serialization
                 {
                     throw new ArgumentException("BitWriter cannot write NetworkedBehaviour types with a null value");
                 }
-                WriteUInt32Packed(((NetworkedBehaviour)value).networkId);
+                WriteUInt32Packed(((NetworkedBehaviour)value).NetworkId);
                 WriteUInt16Packed(((NetworkedBehaviour)value).GetBehaviourId());
                 return;
             } 

@@ -43,7 +43,7 @@ namespace MLAPI.Components
 
         internal static ulong GetPrefabHash(string prefabName)
         {
-            HashSize mode = NetworkingManager.singleton.NetworkConfig.PrefabHashSize;
+            HashSize mode = NetworkingManager.Singleton.NetworkConfig.PrefabHashSize;
 
             if (mode == HashSize.VarIntTwoBytes)
                 return prefabName.GetStableHash16();
@@ -62,9 +62,9 @@ namespace MLAPI.Components
         /// <returns>The index of the prefab</returns>
         public static int GetNetworkedPrefabIndexOfHash(ulong hash)
         {
-            for (int i = 0; i < NetworkingManager.singleton.NetworkConfig.NetworkedPrefabs.Count; i++)
+            for (int i = 0; i < NetworkingManager.Singleton.NetworkConfig.NetworkedPrefabs.Count; i++)
             {
-                if (NetworkingManager.singleton.NetworkConfig.NetworkedPrefabs[i].hash == hash)
+                if (NetworkingManager.Singleton.NetworkConfig.NetworkedPrefabs[i].hash == hash)
                     return i;
             }
 
@@ -78,16 +78,16 @@ namespace MLAPI.Components
         /// <returns>The index of the prefab</returns>
         public static int GetNetworkedPrefabIndexOfName(string name)
         {
-            for (int i = 0; i < NetworkingManager.singleton.NetworkConfig.NetworkedPrefabs.Count; i++)
+            for (int i = 0; i < NetworkingManager.Singleton.NetworkConfig.NetworkedPrefabs.Count; i++)
             {
-                if (NetworkingManager.singleton.NetworkConfig.NetworkedPrefabs[i].name == name)
+                if (NetworkingManager.Singleton.NetworkConfig.NetworkedPrefabs[i].name == name)
                     return i;
             }
 
             return -1;
         }
 
-        private static NetworkingManager netManager => NetworkingManager.singleton;
+        private static NetworkingManager netManager => NetworkingManager.Singleton;
 
         /// <summary>
         /// Returns the local player object or null if one does not exist
@@ -95,8 +95,8 @@ namespace MLAPI.Components
         /// <returns>The local player object or null if one does not exist</returns>
         public static NetworkedObject GetLocalPlayerObject()
         {
-            if (!NetworkingManager.singleton.ConnectedClients.ContainsKey(NetworkingManager.singleton.LocalClientId)) return null;
-            return NetworkingManager.singleton.ConnectedClients[NetworkingManager.singleton.LocalClientId].PlayerObject;
+            if (!NetworkingManager.Singleton.ConnectedClients.ContainsKey(NetworkingManager.Singleton.LocalClientId)) return null;
+            return NetworkingManager.Singleton.ConnectedClients[NetworkingManager.Singleton.LocalClientId].PlayerObject;
         }
 
         /// <summary>
@@ -105,24 +105,24 @@ namespace MLAPI.Components
         /// <returns>The player object with a given clientId or null if one does not exist</returns>
         public static NetworkedObject GetPlayerObject(uint clientId)
         {
-            if (!NetworkingManager.singleton.ConnectedClients.ContainsKey(clientId)) return null;
-            return NetworkingManager.singleton.ConnectedClients[clientId].PlayerObject;
+            if (!NetworkingManager.Singleton.ConnectedClients.ContainsKey(clientId)) return null;
+            return NetworkingManager.Singleton.ConnectedClients[clientId].PlayerObject;
         }
 
         internal static void RemoveOwnership(uint netId)
         {
-            if (!netManager.isServer)
+            if (!netManager.IsServer)
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("You can only remove ownership from Server");
                 return;
             }
             NetworkedObject netObject = SpawnManager.SpawnedObjects[netId];
-            for (int i = NetworkingManager.singleton.ConnectedClients[netObject.OwnerClientId].OwnedObjects.Count - 1; i > -1; i--)
+            for (int i = NetworkingManager.Singleton.ConnectedClients[netObject.OwnerClientId].OwnedObjects.Count - 1; i > -1; i--)
             {
-                if (NetworkingManager.singleton.ConnectedClients[netObject.OwnerClientId].OwnedObjects[i].NetworkId == netId)
-                    NetworkingManager.singleton.ConnectedClients[netObject.OwnerClientId].OwnedObjects.RemoveAt(i);
+                if (NetworkingManager.Singleton.ConnectedClients[netObject.OwnerClientId].OwnedObjects[i].NetworkId == netId)
+                    NetworkingManager.Singleton.ConnectedClients[netObject.OwnerClientId].OwnedObjects.RemoveAt(i);
             }
-			netObject.OwnerClientId = NetworkingManager.singleton.ServerClientId;
+			netObject.OwnerClientId = NetworkingManager.Singleton.ServerClientId;
 
             using (PooledBitStream stream = PooledBitStream.Get())
             {
@@ -138,18 +138,18 @@ namespace MLAPI.Components
 
         internal static void ChangeOwnership(uint netId, uint clientId)
         {
-            if (!netManager.isServer)
+            if (!netManager.IsServer)
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("You can only change ownership from Server");
                 return;
             }
             NetworkedObject netObject = SpawnManager.SpawnedObjects[netId];
-            for (int i = NetworkingManager.singleton.ConnectedClients[netObject.OwnerClientId].OwnedObjects.Count - 1; i > -1; i--)
+            for (int i = NetworkingManager.Singleton.ConnectedClients[netObject.OwnerClientId].OwnedObjects.Count - 1; i > -1; i--)
             {
-                if (NetworkingManager.singleton.ConnectedClients[netObject.OwnerClientId].OwnedObjects[i].NetworkId == netId)
-                    NetworkingManager.singleton.ConnectedClients[netObject.OwnerClientId].OwnedObjects.RemoveAt(i);
+                if (NetworkingManager.Singleton.ConnectedClients[netObject.OwnerClientId].OwnedObjects[i].NetworkId == netId)
+                    NetworkingManager.Singleton.ConnectedClients[netObject.OwnerClientId].OwnedObjects.RemoveAt(i);
             }
-            NetworkingManager.singleton.ConnectedClients[clientId].OwnedObjects.Add(netObject);
+            NetworkingManager.Singleton.ConnectedClients[clientId].OwnedObjects.Add(netObject);
             netObject.OwnerClientId = clientId;
 
             using (PooledBitStream stream = PooledBitStream.Get())
@@ -228,15 +228,15 @@ namespace MLAPI.Components
                 }
 
                 netObject.NetworkedPrefabName = netManager.NetworkConfig.NetworkedPrefabs[networkedPrefabId].name;
-                netObject.isSpawned = false;
-                netObject.isPooledObject = false;
+                netObject.IsSpawned = false;
+                netObject.IsPooledObject = false;
 
-                if (netManager.isServer) netObject.NetworkId = GetNetworkObjectId();
+                if (netManager.IsServer) netObject.NetworkId = GetNetworkObjectId();
                 else netObject.NetworkId = networkId;
 
                 netObject.destroyWithScene = destroyWithScene;
                 netObject.OwnerClientId = owner;
-                netObject.isPlayerObject = playerObject;
+                netObject.IsPlayerObject = playerObject;
                 netObject.SceneDelayedSpawn = sceneDelayedSpawn;
                 netObject.sceneSpawnedInIndex = sceneSpawnedInIndex;
 
@@ -286,21 +286,21 @@ namespace MLAPI.Components
                 if (readNetworkedVar) netObject.SetNetworkedVarData(stream);
 
                 netObject.NetworkedPrefabName = netManager.NetworkConfig.NetworkedPrefabs[networkedPrefabId].name;
-                netObject.isSpawned = true;
-                netObject.isPooledObject = false;
+                netObject.IsSpawned = true;
+                netObject.IsPooledObject = false;
 
-                if (netManager.isServer) netObject.NetworkId = GetNetworkObjectId();
+                if (netManager.IsServer) netObject.NetworkId = GetNetworkObjectId();
                 else netObject.NetworkId = networkId;
 
                 netObject.destroyWithScene = destroyWithScene;
                 netObject.OwnerClientId = owner;
-                netObject.isPlayerObject = playerObject;
+                netObject.IsPlayerObject = playerObject;
                 netObject.SceneDelayedSpawn = sceneDelayedSpawn;
                 netObject.sceneSpawnedInIndex = sceneSpawnedInIndex;
 
                 SpawnedObjects.Add(netObject.NetworkId, netObject);
                 SpawnedObjectsList.Add(netObject);
-                if (playerObject) NetworkingManager.singleton.ConnectedClients[owner].PlayerObject = netObject;
+                if (playerObject) NetworkingManager.Singleton.ConnectedClients[owner].PlayerObject = netObject;
 
                 if (readPayload)
                 {
@@ -323,12 +323,12 @@ namespace MLAPI.Components
 
         internal static void UnSpawnObject(NetworkedObject netObject)
         {
-            if (!netObject.isSpawned)
+            if (!netObject.IsSpawned)
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot unspawn objects that are not spawned");
                 return;
             }
-            else if (!netManager.isServer)
+            else if (!netManager.IsServer)
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Only server can unspawn objects");
                 return;
@@ -345,12 +345,12 @@ namespace MLAPI.Components
         //Server only
         internal static void SpawnPlayerObject(NetworkedObject netObject, uint clientId, Stream payload = null)
         {
-            if (netObject.isSpawned)
+            if (netObject.IsSpawned)
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Object already spawned");
                 return;
             }
-            else if (!netManager.isServer)
+            else if (!netManager.IsServer)
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Only server can spawn objects");
                 return;
@@ -374,10 +374,10 @@ namespace MLAPI.Components
             netObject.NetworkId = netId;
             SpawnedObjects.Add(netId, netObject);
             SpawnedObjectsList.Add(netObject);
-            netObject.isSpawned = true;
+            netObject.IsSpawned = true;
             netObject.destroyWithScene = false;
             netObject.sceneSpawnedInIndex = NetworkSceneManager.CurrentActiveSceneIndex;
-            netObject.isPlayerObject = true;
+            netObject.IsPlayerObject = true;
             netManager.ConnectedClients[clientId].PlayerObject = netObject;
 
             if (payload == null) netObject.InvokeBehaviourNetworkSpawn(null);
@@ -425,12 +425,12 @@ namespace MLAPI.Components
 
         internal static void SpawnObject(NetworkedObject netObject, uint? clientOwnerId = null, Stream payload = null, bool destroyWithScene = false)
         {
-            if (netObject.isSpawned)
+            if (netObject.IsSpawned)
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Object already spawned");
                 return;
             }
-            else if (!netManager.isServer)
+            else if (!netManager.IsServer)
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Only server can spawn objects");
                 return;
@@ -449,14 +449,14 @@ namespace MLAPI.Components
             netObject.NetworkId = netId;
             SpawnedObjects.Add(netId, netObject);
             SpawnedObjectsList.Add(netObject);
-            netObject.isSpawned = true;
+            netObject.IsSpawned = true;
             netObject.destroyWithScene = destroyWithScene;
             netObject.sceneSpawnedInIndex = NetworkSceneManager.CurrentActiveSceneIndex;
 
             if (clientOwnerId != null)
             {
                 netObject.OwnerClientId = clientOwnerId.Value;
-                NetworkingManager.singleton.ConnectedClients[clientOwnerId.Value].OwnedObjects.Add(netObject);
+                NetworkingManager.Singleton.ConnectedClients[clientOwnerId.Value].OwnedObjects.Add(netObject);
             }
 
             if (payload == null) netObject.InvokeBehaviourNetworkSpawn(null);
@@ -512,14 +512,14 @@ namespace MLAPI.Components
             //destroyGameObject is set to true, meaning MLAPI decided to destroy it, not unity.
             if (destroyGameObject == true && PendingSpawnObjects.ContainsKey(networkId))
             {
-                if (!PendingSpawnObjects[networkId].netObject.isOwnedByServer && !PendingSpawnObjects[networkId].netObject.isPlayerObject &&
+                if (!PendingSpawnObjects[networkId].netObject.IsOwnedByServer && !PendingSpawnObjects[networkId].netObject.IsPlayerObject &&
                 netManager.ConnectedClients.ContainsKey(PendingSpawnObjects[networkId].netObject.OwnerClientId))
                 {
                     //Someone owns it.
-                    for (int i = NetworkingManager.singleton.ConnectedClients[PendingSpawnObjects[networkId].netObject.OwnerClientId].OwnedObjects.Count - 1; i > -1; i--)
+                    for (int i = NetworkingManager.Singleton.ConnectedClients[PendingSpawnObjects[networkId].netObject.OwnerClientId].OwnedObjects.Count - 1; i > -1; i--)
                     {
-                        if (NetworkingManager.singleton.ConnectedClients[PendingSpawnObjects[networkId].netObject.OwnerClientId].OwnedObjects[i].NetworkId == networkId)
-                            NetworkingManager.singleton.ConnectedClients[PendingSpawnObjects[networkId].netObject.OwnerClientId].OwnedObjects.RemoveAt(i);
+                        if (NetworkingManager.Singleton.ConnectedClients[PendingSpawnObjects[networkId].netObject.OwnerClientId].OwnedObjects[i].NetworkId == networkId)
+                            NetworkingManager.Singleton.ConnectedClients[PendingSpawnObjects[networkId].netObject.OwnerClientId].OwnedObjects.RemoveAt(i);
                     }
                 }
 
@@ -532,19 +532,19 @@ namespace MLAPI.Components
             //Removal of spawned object
             if (!SpawnedObjects.ContainsKey(networkId))
                 return;
-			if (!SpawnedObjects[networkId].isOwnedByServer && !SpawnedObjects[networkId].isPlayerObject && 
+			if (!SpawnedObjects[networkId].IsOwnedByServer && !SpawnedObjects[networkId].IsPlayerObject && 
 			    netManager.ConnectedClients.ContainsKey(SpawnedObjects[networkId].OwnerClientId))
             {
                 //Someone owns it.
-                for (int i = NetworkingManager.singleton.ConnectedClients[SpawnedObjects[networkId].OwnerClientId].OwnedObjects.Count - 1; i > -1; i--)
+                for (int i = NetworkingManager.Singleton.ConnectedClients[SpawnedObjects[networkId].OwnerClientId].OwnedObjects.Count - 1; i > -1; i--)
                 {
-                    if (NetworkingManager.singleton.ConnectedClients[SpawnedObjects[networkId].OwnerClientId].OwnedObjects[i].NetworkId == networkId)
-                        NetworkingManager.singleton.ConnectedClients[SpawnedObjects[networkId].OwnerClientId].OwnedObjects.RemoveAt(i);
+                    if (NetworkingManager.Singleton.ConnectedClients[SpawnedObjects[networkId].OwnerClientId].OwnedObjects[i].NetworkId == networkId)
+                        NetworkingManager.Singleton.ConnectedClients[SpawnedObjects[networkId].OwnerClientId].OwnedObjects.RemoveAt(i);
                 }
             }
-            SpawnedObjects[networkId].isSpawned = false;
+            SpawnedObjects[networkId].IsSpawned = false;
 
-            if (netManager != null && netManager.isServer)
+            if (netManager != null && netManager.IsServer)
             {
                 releasedNetworkObjectIds.Push(networkId);
                 if (SpawnedObjects[networkId] != null)
@@ -595,11 +595,11 @@ namespace MLAPI.Components
                     SceneManager.MoveGameObjectToScene(pendingSpawnObject.Value.netObject.gameObject, SceneManager.GetActiveScene());
 
                     pendingSpawnObject.Value.netObject.gameObject.SetActive(true);
-                    pendingSpawnObject.Value.netObject.isSpawned = true;
+                    pendingSpawnObject.Value.netObject.IsSpawned = true;
 
                     using (PooledBitStream stream = PooledBitStream.Get())
                     {
-                        pendingSpawnObject.Value.WriteNetworkedVarData(stream, NetworkingManager.singleton.LocalClientId);
+                        pendingSpawnObject.Value.WriteNetworkedVarData(stream, NetworkingManager.Singleton.LocalClientId);
                         stream.Position = 0;
                         pendingSpawnObject.Value.netObject.SetNetworkedVarData(stream);
                     }
@@ -607,7 +607,7 @@ namespace MLAPI.Components
                     SpawnedObjects.Add(pendingSpawnObject.Key, pendingSpawnObject.Value.netObject);
                     SpawnedObjectsList.Add(pendingSpawnObject.Value.netObject);
 
-                    if (pendingSpawnObject.Value.playerObject) NetworkingManager.singleton.ConnectedClients[pendingSpawnObject.Value.owner].PlayerObject = pendingSpawnObject.Value.netObject;
+                    if (pendingSpawnObject.Value.playerObject) NetworkingManager.Singleton.ConnectedClients[pendingSpawnObject.Value.owner].PlayerObject = pendingSpawnObject.Value.netObject;
 
                     pendingSpawnObject.Value.netObject.InvokeBehaviourNetworkSpawn(pendingSpawnObject.Value.payload);
                     if(pendingSpawnObject.Value.payload != null)

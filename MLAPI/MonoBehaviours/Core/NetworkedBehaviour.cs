@@ -19,40 +19,53 @@ namespace MLAPI
     /// </summary>
     public abstract partial class NetworkedBehaviour : MonoBehaviour
     {
+        [Obsolete("Use IsLocalPlayer instead", false)]
+        public bool isLocalPlayer => IsLocalPlayer;
         /// <summary>
         /// Gets if the object is the the personal clients player object
         /// </summary>
-        public bool isLocalPlayer => networkedObject.isLocalPlayer;
+        public bool IsLocalPlayer => NetworkedObject.IsLocalPlayer;
+        [Obsolete("Use IsOwner instead", false)]
+        public bool isOwner => IsOwner;
         /// <summary>
         /// Gets if the object is owned by the local player or if the object is the local player object
         /// </summary>
-        public bool isOwner => networkedObject.isOwner;
+        public bool IsOwner => NetworkedObject.IsOwner;
+        [Obsolete("Use IsServer instead", false)]
+        protected bool isServer => IsServer;
         /// <summary>
         /// Gets if we are executing as server
         /// </summary>
-        protected bool isServer => isRunning && NetworkingManager.singleton != null && NetworkingManager.singleton.isServer;
+        protected bool IsServer => IsRunning && NetworkingManager.Singleton != null && NetworkingManager.Singleton.IsServer;
+        [Obsolete("Use IsClient instead")]
+        protected bool isClient => IsClient;
         /// <summary>
         /// Gets if we are executing as client
         /// </summary>
-        protected bool isClient => isRunning && NetworkingManager.singleton != null && NetworkingManager.singleton.isClient;
+        protected bool IsClient => IsRunning && NetworkingManager.Singleton != null && NetworkingManager.Singleton.IsClient;
+        [Obsolete("Use IsHost instead", false)]
+        protected bool isHost => IsHost;
         /// <summary>
         /// Gets if we are executing as Host, I.E Server and Client
         /// </summary>
-        protected bool isHost => isRunning && NetworkingManager.singleton != null && NetworkingManager.singleton.isHost;
-        private bool isRunning => NetworkingManager.singleton != null && (NetworkingManager.singleton == null || NetworkingManager.singleton.isListening);
+        protected bool IsHost => IsRunning && NetworkingManager.Singleton != null && NetworkingManager.Singleton.IsHost;
+        private bool IsRunning => NetworkingManager.Singleton != null && (NetworkingManager.Singleton == null || NetworkingManager.Singleton.IsListening);
+        [Obsolete("Use IsOwnedByServer instead", false)]
+		public bool isOwnedByServer => IsOwnedByServer;
         /// <summary>
         /// Gets wheter or not the object has a owner
         /// </summary>
-		public bool isOwnedByServer => networkedObject.isOwnedByServer;
+        public bool IsOwnedByServer => NetworkedObject.IsOwnedByServer;
         /// <summary>
         /// Contains the sender of the currently executing RPC. Useful for the convenience RPC methods
         /// </summary>
         protected uint ExecutingRpcSender { get; private set; }
-
+        [Obsolete("Use NetworkedObject instead", false)]
+        public NetworkedObject networkedObject => NetworkedObject;
         /// <summary>
         /// Gets the NetworkedObject that owns this NetworkedBehaviour instance
         /// </summary>
-        public NetworkedObject networkedObject
+        public NetworkedObject NetworkedObject
         {
             get
             {
@@ -63,15 +76,18 @@ namespace MLAPI
                 return _networkedObject;
             }
         }
+
         private NetworkedObject _networkedObject = null;
+        [Obsolete("Use NetworkId instead", false)]
+        public uint networkId => NetworkId;
         /// <summary>
         /// Gets the NetworkId of the NetworkedObject that owns the NetworkedBehaviour instance
         /// </summary>
-        public uint networkId => networkedObject.NetworkId;
+        public uint NetworkId => NetworkedObject.NetworkId;
         /// <summary>
         /// Gets the clientId that owns the NetworkedObject
         /// </summary>
-        public uint OwnerClientId => networkedObject.OwnerClientId;
+        public uint OwnerClientId => NetworkedObject.OwnerClientId;
 
         private void OnEnable()
         {
@@ -192,7 +208,7 @@ namespace MLAPI
         /// <returns>The behaviourId for the current NetworkedBehaviour</returns>
         public ushort GetBehaviourId()
         {
-            return networkedObject.GetOrderIndex(this);
+            return NetworkedObject.GetOrderIndex(this);
         }
 
         /// <summary>
@@ -202,7 +218,7 @@ namespace MLAPI
         /// <returns>Returns NetworkedBehaviour with given behaviourId</returns>
         protected NetworkedBehaviour GetBehaviour(ushort id)
         {
-            return networkedObject.GetBehaviourAtOrderIndex(id);
+            return NetworkedObject.GetBehaviourAtOrderIndex(id);
         }
 
         #region NetworkedVar
@@ -328,7 +344,7 @@ namespace MLAPI
             networkedVarIndexesToReset.Clear();
             networkedVarIndexesToResetSet.Clear();
             
-            for (int i = 0; i < NetworkingManager.singleton.ConnectedClientsList.Count; i++)
+            for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)
             {
                 //This iterates over every "channel group".
                 for (int j = 0; j < channelMappedVarIndexes.Count; j++)
@@ -337,10 +353,10 @@ namespace MLAPI
                     {
                         using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                         {
-                            writer.WriteUInt32Packed(networkId);
-                            writer.WriteUInt16Packed(networkedObject.GetOrderIndex(this));
+                            writer.WriteUInt32Packed(NetworkId);
+                            writer.WriteUInt16Packed(NetworkedObject.GetOrderIndex(this));
 
-                            uint clientId = NetworkingManager.singleton.ConnectedClientsList[i].ClientId;
+                            uint clientId = NetworkingManager.Singleton.ConnectedClientsList[i].ClientId;
                             bool writtenAny = false;
                             for (int k = 0; k < networkedVarFields.Count; k++)
                             {
@@ -354,7 +370,7 @@ namespace MLAPI
                                 bool isDirty = networkedVarFields[k].IsDirty(); //cache this here. You never know what operations users will do in the dirty methods
                                 writer.WriteBool(isDirty);
 
-                                if (isDirty && (!isServer || networkedVarFields[k].CanClientRead(clientId)))
+                                if (isDirty && (!IsServer || networkedVarFields[k].CanClientRead(clientId)))
                                 {
                                     writtenAny = true;
                                     networkedVarFields[k].WriteDelta(stream);
@@ -368,10 +384,10 @@ namespace MLAPI
                             
                             if (writtenAny)
                             {
-                                if (isServer)
+                                if (IsServer)
                                     InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA, channelsForVarGroups[j], stream, SecuritySendFlags.None);
                                 else
-                                    InternalMessageHandler.Send(NetworkingManager.singleton.ServerClientId, MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA, channelsForVarGroups[j], stream, SecuritySendFlags.None);   
+                                    InternalMessageHandler.Send(NetworkingManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA, channelsForVarGroups[j], stream, SecuritySendFlags.None);   
                             }
                         }
                     }
@@ -407,7 +423,7 @@ namespace MLAPI
                     if (!reader.ReadBool())
                         continue;
 
-                    if (NetworkingManager.singleton.isServer && !networkedVarList[i].CanClientWrite(clientId))
+                    if (NetworkingManager.Singleton.IsServer && !networkedVarList[i].CanClientWrite(clientId))
                     {
                         //This client wrote somewhere they are not allowed. This is critical
                         //We can't just skip this field. Because we don't actually know how to dummy read
@@ -417,11 +433,11 @@ namespace MLAPI
                         //This is after all a developer fault. A critical error should be fine.
                         // - TwoTen
 
-                        if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Client wrote to NetworkedVar without permission. No more variables can be read. This is critical. " + (logInstance != null ? ("NetworkId: " + logInstance.networkId + " BehaviourIndex: " + logInstance.networkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Client wrote to NetworkedVar without permission. No more variables can be read. This is critical. " + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
                         return;
                     }
 
-                    networkedVarList[i].ReadDelta(stream, NetworkingManager.singleton.isServer);
+                    networkedVarList[i].ReadDelta(stream, NetworkingManager.Singleton.IsServer);
                 }
             }
         }
@@ -435,7 +451,7 @@ namespace MLAPI
                     if (!reader.ReadBool())
                         continue;
 
-                    if (NetworkingManager.singleton.isServer && !networkedVarList[i].CanClientWrite(clientId))
+                    if (NetworkingManager.Singleton.IsServer && !networkedVarList[i].CanClientWrite(clientId))
                     {
                         //This client wrote somewhere they are not allowed. This is critical
                         //We can't just skip this field. Because we don't actually know how to dummy read
@@ -444,7 +460,7 @@ namespace MLAPI
                         //A dummy read COULD be added to the interface for this situation, but it's just being too nice.
                         //This is after all a developer fault. A critical error should be fine.
                         // - TwoTen
-                        if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Client wrote to NetworkedVar without permission. No more variables can be read. This is critical. " + (logInstance != null ? ("NetworkId: " + logInstance.networkId + " BehaviourIndex: " + logInstance.networkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Client wrote to NetworkedVar without permission. No more variables can be read. This is critical. " + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
                         return;
                     }
 
@@ -488,7 +504,7 @@ namespace MLAPI
 
         private ulong HashMethodName(string name)
         {
-            HashSize mode = NetworkingManager.singleton.NetworkConfig.RpcHashSize;
+            HashSize mode = NetworkingManager.Singleton.NetworkConfig.RpcHashSize;
             
             if (mode == HashSize.VarIntTwoBytes)
                 return name.GetStableHash16();
@@ -779,7 +795,7 @@ namespace MLAPI
 
         internal void SendServerRPCPerformance(ulong hash, Stream messageStream, string channel, SecuritySendFlags security)
         {
-            if (!isClient && isRunning)
+            if (!IsClient && IsRunning)
             {
                 //We are ONLY a server.
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Only server and host can invoke ServerRPC");
@@ -790,20 +806,20 @@ namespace MLAPI
             {
                 using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                 {
-                    writer.WriteUInt32Packed(networkId);
-                    writer.WriteUInt16Packed(networkedObject.GetOrderIndex(this));
+                    writer.WriteUInt32Packed(NetworkId);
+                    writer.WriteUInt16Packed(NetworkedObject.GetOrderIndex(this));
                     writer.WriteUInt64Packed(hash);
 
                     stream.CopyFrom(messageStream);
 
-                    if (isHost)
+                    if (IsHost)
                     {
                         messageStream.Position = 0;
-                        InvokeServerRPCLocal(hash, NetworkingManager.singleton.LocalClientId, messageStream);
+                        InvokeServerRPCLocal(hash, NetworkingManager.Singleton.LocalClientId, messageStream);
                     }
                     else
                     {
-                        InternalMessageHandler.Send(NetworkingManager.singleton.ServerClientId, MLAPIConstants.MLAPI_SERVER_RPC, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, SecuritySendFlags.None);
+                        InternalMessageHandler.Send(NetworkingManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_SERVER_RPC, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, SecuritySendFlags.None);
                     }
                 }
             }
@@ -811,7 +827,7 @@ namespace MLAPI
 
         internal void SendClientRPCPerformance(ulong hash,  List<uint> clientIds, Stream messageStream, string channel, SecuritySendFlags security)
         {            
-            if (!isServer && isRunning)
+            if (!IsServer && IsRunning)
             {
                 //We are NOT a server.
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Only clients and host can invoke ClientRPC");
@@ -822,24 +838,24 @@ namespace MLAPI
             {
                 using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                 {
-                    writer.WriteUInt32Packed(networkId);
-                    writer.WriteUInt16Packed(networkedObject.GetOrderIndex(this));
+                    writer.WriteUInt32Packed(NetworkId);
+                    writer.WriteUInt16Packed(NetworkedObject.GetOrderIndex(this));
                     writer.WriteUInt64Packed(hash);
 
                     stream.CopyFrom(messageStream);
 
                     if (clientIds == null)
                     {
-                        for (int i = 0; i < NetworkingManager.singleton.ConnectedClientsList.Count; i++)
+                        for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)
                         {
-                            if (isHost && NetworkingManager.singleton.ConnectedClientsList[i].ClientId == NetworkingManager.singleton.LocalClientId)
+                            if (IsHost && NetworkingManager.Singleton.ConnectedClientsList[i].ClientId == NetworkingManager.Singleton.LocalClientId)
                             {
                                 messageStream.Position = 0;
-                                InvokeClientRPCLocal(hash, NetworkingManager.singleton.LocalClientId, messageStream);
+                                InvokeClientRPCLocal(hash, NetworkingManager.Singleton.LocalClientId, messageStream);
                             }
                             else
                             {
-                                InternalMessageHandler.Send(NetworkingManager.singleton.ConnectedClientsList[i].ClientId, MLAPIConstants.MLAPI_CLIENT_RPC, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security);
+                                InternalMessageHandler.Send(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId, MLAPIConstants.MLAPI_CLIENT_RPC, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security);
                             }
                         }
                     }
@@ -847,10 +863,10 @@ namespace MLAPI
                     {
                         for (int i = 0; i < clientIds.Count; i++)
                         {
-                            if (isHost && clientIds[i] == NetworkingManager.singleton.LocalClientId)
+                            if (IsHost && clientIds[i] == NetworkingManager.Singleton.LocalClientId)
                             {
                                 messageStream.Position = 0;
-                                InvokeClientRPCLocal(hash, NetworkingManager.singleton.LocalClientId, messageStream);
+                                InvokeClientRPCLocal(hash, NetworkingManager.Singleton.LocalClientId, messageStream);
                             }
                             else
                             {
@@ -864,7 +880,7 @@ namespace MLAPI
 
         internal void SendClientRPCPerformance(ulong hash, Stream messageStream, uint clientIdToIgnore, string channel, SecuritySendFlags security)
         {
-            if (!isServer && isRunning)
+            if (!IsServer && IsRunning)
             {
                 //We are NOT a server.
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Only clients and host can invoke ClientRPC");
@@ -875,25 +891,25 @@ namespace MLAPI
             {
                 using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                 {
-                    writer.WriteUInt32Packed(networkId);
-                    writer.WriteUInt16Packed(networkedObject.GetOrderIndex(this));
+                    writer.WriteUInt32Packed(NetworkId);
+                    writer.WriteUInt16Packed(NetworkedObject.GetOrderIndex(this));
                     writer.WriteUInt64Packed(hash);
 
                     stream.CopyFrom(messageStream);
 
 
-                    for (int i = 0; i < NetworkingManager.singleton.ConnectedClientsList.Count; i++)
+                    for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)
                     {
-                        if (NetworkingManager.singleton.ConnectedClientsList[i].ClientId == clientIdToIgnore)
+                        if (NetworkingManager.Singleton.ConnectedClientsList[i].ClientId == clientIdToIgnore)
                             continue;
-                        if (isHost && NetworkingManager.singleton.ConnectedClientsList[i].ClientId == NetworkingManager.singleton.LocalClientId)
+                        if (IsHost && NetworkingManager.Singleton.ConnectedClientsList[i].ClientId == NetworkingManager.Singleton.LocalClientId)
                         {
                             messageStream.Position = 0;
-                            InvokeClientRPCLocal(hash, NetworkingManager.singleton.LocalClientId, messageStream);
+                            InvokeClientRPCLocal(hash, NetworkingManager.Singleton.LocalClientId, messageStream);
                         }
                         else
                         {
-                            InternalMessageHandler.Send(NetworkingManager.singleton.ConnectedClientsList[i].ClientId, MLAPIConstants.MLAPI_CLIENT_RPC, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security);
+                            InternalMessageHandler.Send(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId, MLAPIConstants.MLAPI_CLIENT_RPC, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security);
                         }
                     }
                 }
@@ -902,7 +918,7 @@ namespace MLAPI
 
         internal void SendClientRPCPerformance(ulong hash, uint clientId, Stream messageStream, string channel, SecuritySendFlags security)
         {
-            if (!isServer && isRunning)
+            if (!IsServer && IsRunning)
             {
                 //We are NOT a server.
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Only clients and host can invoke ClientRPC");
@@ -913,16 +929,16 @@ namespace MLAPI
             {
                 using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                 {
-                    writer.WriteUInt32Packed(networkId);
-                    writer.WriteUInt16Packed(networkedObject.GetOrderIndex(this));
+                    writer.WriteUInt32Packed(NetworkId);
+                    writer.WriteUInt16Packed(NetworkedObject.GetOrderIndex(this));
                     writer.WriteUInt64Packed(hash);
 
                     stream.CopyFrom(messageStream);
 
-                    if (isHost && clientId == NetworkingManager.singleton.LocalClientId)
+                    if (IsHost && clientId == NetworkingManager.Singleton.LocalClientId)
                     {
                         messageStream.Position = 0;
-                        InvokeClientRPCLocal(hash, NetworkingManager.singleton.LocalClientId, messageStream);
+                        InvokeClientRPCLocal(hash, NetworkingManager.Singleton.LocalClientId, messageStream);
                     }
                     else
                     {

@@ -2,6 +2,6 @@
 {
     internal static partial class InternalMessageHandler
     {
-        private static NetworkingManager netManager => NetworkingManager.singleton;
+        private static NetworkingManager netManager => NetworkingManager.Singleton;
     }
 }

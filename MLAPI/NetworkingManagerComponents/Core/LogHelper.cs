@@ -17,10 +17,10 @@ namespace MLAPI.Logging
         {
             get
             {
-                if (NetworkingManager.singleton == null)
+                if (NetworkingManager.Singleton == null)
                     return LogLevel.Normal;
                 else
-                    return NetworkingManager.singleton.LogLevel;
+                    return NetworkingManager.Singleton.LogLevel;
             }
         }
 

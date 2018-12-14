@@ -101,7 +101,7 @@ namespace MLAPI.Internal
                     }
                 }
                 // Send HailResponse
-                InternalMessageHandler.Send(NetworkingManager.singleton.ServerClientId, MLAPIConstants.MLAPI_CERTIFICATE_HAIL_RESPONSE, "MLAPI_INTERNAL", outStream, SecuritySendFlags.None, true);
+                InternalMessageHandler.Send(NetworkingManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_CERTIFICATE_HAIL_RESPONSE, "MLAPI_INTERNAL", outStream, SecuritySendFlags.None, true);
             }
         }
 
@@ -113,7 +113,7 @@ namespace MLAPI.Internal
 
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
-                if (NetworkingManager.singleton.PendingClients[clientId].KeyExchange != null)
+                if (NetworkingManager.Singleton.PendingClients[clientId].KeyExchange != null)
                 {
                     byte[] diffieHellmanPublic = reader.ReadByteArray();
                     netManager.PendingClients[clientId].AesKey = netManager.PendingClients[clientId].KeyExchange.GetSharedSecret(diffieHellmanPublic);
@@ -173,7 +173,7 @@ namespace MLAPI.Internal
         internal static void HandleGreetings(uint clientId, Stream stream, int channelId)
         {
             // Server greeted us, we can now initiate our request to connect.
-            NetworkingManager.singleton.SendConnectionRequest();
+            NetworkingManager.Singleton.SendConnectionRequest();
         }
 #endif
 
@@ -216,7 +216,7 @@ namespace MLAPI.Internal
 
                 float netTime = reader.ReadSinglePacked();
                 int remoteStamp = reader.ReadInt32Packed();
-                int msDelay = NetworkingManager.singleton.NetworkConfig.NetworkTransport.GetRemoteDelayTimeMS(clientId, remoteStamp, out byte error);
+                int msDelay = NetworkingManager.Singleton.NetworkConfig.NetworkTransport.GetRemoteDelayTimeMS(clientId, remoteStamp, out byte error);
                 netManager.NetworkTime = netTime + (msDelay / 1000f);
 
                 netManager.ConnectedClients.Add(netManager.LocalClientId, new NetworkedClient() { ClientId = netManager.LocalClientId });
@@ -261,7 +261,7 @@ namespace MLAPI.Internal
                     NetworkSceneManager.OnSceneSwitch(sceneIndex, sceneSwitchProgressGuid);
                 }
 
-                netManager.isConnectedClients = true;
+                netManager.IsConnectedClient = true;
                 if (netManager.OnClientConnectedCallback != null)
                     netManager.OnClientConnectedCallback.Invoke(netManager.LocalClientId);
             }
@@ -441,7 +441,7 @@ namespace MLAPI.Internal
                 float netTime = reader.ReadSinglePacked();
                 int timestamp = reader.ReadInt32Packed();
 
-                int msDelay = NetworkingManager.singleton.NetworkConfig.NetworkTransport.GetRemoteDelayTimeMS(clientId, timestamp, out byte error);
+                int msDelay = NetworkingManager.Singleton.NetworkConfig.NetworkTransport.GetRemoteDelayTimeMS(clientId, timestamp, out byte error);
                 netManager.NetworkTime = netTime + (msDelay / 1000f);
             }
         }
@@ -544,7 +544,7 @@ namespace MLAPI.Internal
         
         internal static void HandleCustomMessage(uint clientId, Stream stream, int channelId)
         {
-            NetworkingManager.singleton.InvokeOnIncomingCustomMessage(clientId, stream);
+            NetworkingManager.Singleton.InvokeOnIncomingCustomMessage(clientId, stream);
         }
     }
 }

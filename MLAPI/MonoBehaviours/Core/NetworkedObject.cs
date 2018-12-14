@@ -37,13 +37,13 @@ namespace MLAPI
             get
             {
                 if (_ownerClientId == null)
-					return NetworkingManager.singleton != null ? NetworkingManager.singleton.ServerClientId : 0;
+					return NetworkingManager.Singleton != null ? NetworkingManager.Singleton.ServerClientId : 0;
                 else
                     return _ownerClientId.Value;
             }
             internal set
             {
-				if (NetworkingManager.singleton != null && value == NetworkingManager.singleton.ServerClientId)
+				if (NetworkingManager.Singleton != null && value == NetworkingManager.Singleton.ServerClientId)
                     _ownerClientId = null;
                 else
                     _ownerClientId = value;
@@ -59,34 +59,46 @@ namespace MLAPI
         /// The hash used to identify the NetworkedPrefab, a hash of the NetworkedPrefabName
         /// </summary>
         public ulong NetworkedPrefabHash => SpawnManager.GetPrefabHash(NetworkedPrefabName);
+        [Obsolete("Use IsPlayerObject instead", false)]
+        public bool isPlayerObject => IsPlayerObject;
         /// <summary>
         /// Gets if this object is a player object
         /// </summary>
-        public bool isPlayerObject { get; internal set; }
+        public bool IsPlayerObject { get; internal set; }
+        [Obsolete("Use IsPooledObject instead", false)]
+        public bool isPooledObject => IsPooledObject;
         /// <summary>
         /// Gets if this object is part of a pool
         /// </summary>
-        public bool isPooledObject { get; internal set; }
+        public bool IsPooledObject { get; internal set; }
         /// <summary>
         /// Gets the poolId this object is part of
         /// </summary>
         public ushort PoolId { get; internal set; }
+        [Obsolete("Use IsLocalPlayer instead", false)]
+		public bool isLocalPlayer => IsLocalPlayer;
         /// <summary>
         /// Gets if the object is the the personal clients player object
         /// </summary>
-		public bool isLocalPlayer => NetworkingManager.singleton != null && isPlayerObject && OwnerClientId == NetworkingManager.singleton.LocalClientId;
-		/// <summary>
-		/// Gets if the object is owned by the local player or if the object is the local player object
-		/// </summary>
-		public bool isOwner => NetworkingManager.singleton != null && OwnerClientId == NetworkingManager.singleton.LocalClientId;
+        public bool IsLocalPlayer => NetworkingManager.Singleton != null && IsPlayerObject && OwnerClientId == NetworkingManager.Singleton.LocalClientId;
+        [Obsolete("Use IsOwner instead", false)]
+        public bool isOwner => IsOwner;
+        /// <summary>
+        /// Gets if the object is owned by the local player or if the object is the local player object
+        /// </summary>
+        public bool IsOwner => NetworkingManager.Singleton != null && OwnerClientId == NetworkingManager.Singleton.LocalClientId;
+        [Obsolete("Use IsOwnedByServer instead", false)]
+		public bool isOwnedByServer => IsOwnedByServer;
         /// <summary>
         /// Gets wheter or not the object is owned by anyone
         /// </summary>
-		public bool isOwnedByServer => NetworkingManager.singleton != null && OwnerClientId == NetworkingManager.singleton.ServerClientId;
+        public bool IsOwnedByServer => NetworkingManager.Singleton != null && OwnerClientId == NetworkingManager.Singleton.ServerClientId;
+        [Obsolete("Use IsSpawned instead", false)]
+        public bool isSpawned => IsSpawned;
         /// <summary>
         /// Gets if the object has yet been spawned across the network
         /// </summary>
-        public bool isSpawned { get; internal set; }
+        public bool IsSpawned { get; internal set; }
         internal bool? destroyWithScene = null;
 
         /// <summary>
@@ -99,7 +111,7 @@ namespace MLAPI
 
         private void OnDestroy()
         {
-            if (NetworkingManager.singleton != null)
+            if (NetworkingManager.Singleton != null)
                 SpawnManager.OnDestroyObject(NetworkId, false);
         }
 
@@ -199,7 +211,7 @@ namespace MLAPI
                     NetworkedBehaviour[] behaviours = GetComponentsInChildren<NetworkedBehaviour>();
                     for (int i = 0; i < behaviours.Length; i++)
                     {
-                        if (behaviours[i].networkedObject == this)
+                        if (behaviours[i].NetworkedObject == this)
                             _childNetworkedBehaviours.Add(behaviours[i]);
                     }
                 }

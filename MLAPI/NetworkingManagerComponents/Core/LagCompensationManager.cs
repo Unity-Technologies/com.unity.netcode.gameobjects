@@ -21,7 +21,7 @@ namespace MLAPI.Components
         /// <param name="action">The action to invoke when time is turned back</param>
         public static void Simulate(float secondsAgo, Action action)
         {
-            if(!NetworkingManager.singleton.isServer)
+            if(!NetworkingManager.Singleton.IsServer)
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Lag compensation simulations are only to be ran on the server");
                 return;
@@ -47,12 +47,12 @@ namespace MLAPI.Components
         /// <param name="action">The action to invoke when time is turned back</param>
         public static void Simulate(uint clientId, Action action)
         {
-            if (!NetworkingManager.singleton.isServer)
+            if (!NetworkingManager.Singleton.IsServer)
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Lag compensation simulations are only to be ran on the server");
                 return;
             }
-            float milisecondsDelay = NetworkingManager.singleton.NetworkConfig.NetworkTransport.GetCurrentRTT(clientId, out error) / 2f;
+            float milisecondsDelay = NetworkingManager.Singleton.NetworkConfig.NetworkTransport.GetCurrentRTT(clientId, out error) / 2f;
             Simulate(milisecondsDelay * 1000f, action);
         }
 

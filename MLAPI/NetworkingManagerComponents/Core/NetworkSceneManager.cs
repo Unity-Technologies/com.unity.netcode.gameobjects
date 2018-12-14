@@ -43,7 +43,7 @@ namespace MLAPI.Components
         /// <param name="sceneName">The name of the scene to switch to</param>
         public static SceneSwitchProgress SwitchScene(string sceneName)
         {
-            if(!NetworkingManager.singleton.NetworkConfig.EnableSceneSwitching)
+            if(!NetworkingManager.Singleton.NetworkConfig.EnableSceneSwitching)
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Scene switching is not enabled");
                 return null;
@@ -93,7 +93,7 @@ namespace MLAPI.Components
         /// <param name="switchSceneGuid"></param>
         internal static void OnSceneSwitch(uint sceneIndex, Guid switchSceneGuid)
         {
-            if (!NetworkingManager.singleton.NetworkConfig.EnableSceneSwitching)
+            if (!NetworkingManager.Singleton.NetworkConfig.EnableSceneSwitching)
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Scene switching is not enabled but was requested by the server");
                 return;
@@ -141,13 +141,13 @@ namespace MLAPI.Components
 
         private static void OnSceneUnload(AsyncOperation operation, Guid switchSceneGuid)
         {
-            if (NetworkingManager.singleton.isServer)
+            if (NetworkingManager.Singleton.IsServer)
             {
                 SpawnManager.MarkSceneObjects();
                 NetworkedObject[] networkedObjects = MonoBehaviour.FindObjectsOfType<NetworkedObject>();
                 for (int i = 0; i < networkedObjects.Length; i++)
                 {
-                    if (!networkedObjects[i].isSpawned && networkedObjects[i].destroyWithScene == true)
+                    if (!networkedObjects[i].IsSpawned && networkedObjects[i].destroyWithScene == true)
                         networkedObjects[i].Spawn(null, true);
                 }
             }
@@ -164,18 +164,18 @@ namespace MLAPI.Components
             }
 
             //Tell server that scene load is completed
-            if (NetworkingManager.singleton.isHost)
+            if (NetworkingManager.Singleton.IsHost)
             {
-                OnClientSwitchSceneCompleted(NetworkingManager.singleton.LocalClientId, switchSceneGuid);
+                OnClientSwitchSceneCompleted(NetworkingManager.Singleton.LocalClientId, switchSceneGuid);
             }
-            else if (NetworkingManager.singleton.isClient)
+            else if (NetworkingManager.Singleton.IsClient)
             {
                 using (PooledBitStream stream = PooledBitStream.Get())
                 {
                     using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                     {
                         writer.WriteByteArray(switchSceneGuid.ToByteArray());
-                        InternalMessageHandler.Send(NetworkingManager.singleton.ServerClientId, MLAPIConstants.MLAPI_CLIENT_SWITCH_SCENE_COMPLETED, "MLAPI_INTERNAL", stream, SecuritySendFlags.None);
+                        InternalMessageHandler.Send(NetworkingManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_CLIENT_SWITCH_SCENE_COMPLETED, "MLAPI_INTERNAL", stream, SecuritySendFlags.None);
                     }
                 }
             }
@@ -191,7 +191,7 @@ namespace MLAPI.Components
         /// <param name="switchSceneGuid"></param>
         internal static void OnClientSwitchSceneCompleted(uint clientId, Guid switchSceneGuid) 
         {
-            if (!NetworkingManager.singleton.NetworkConfig.EnableSceneSwitching)
+            if (!NetworkingManager.Singleton.NetworkConfig.EnableSceneSwitching)
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Scene switching is not enabled but was confirmed done by a client");
                 return;

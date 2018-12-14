@@ -95,7 +95,7 @@ namespace MLAPI.Prototyping
 
         private void FixedUpdate()
         {
-            if (!isOwner)
+            if (!IsOwner)
                 return;
 
             CheckSendRate();
@@ -117,12 +117,12 @@ namespace MLAPI.Prototyping
                     writer.WriteSinglePacked(normalizedTime);
                     WriteParameters(stream, false);
 
-                    if (isServer)
+                    if (IsServer)
                     {
                         if (EnableProximity)
                         {
                             List<uint> clientsInProximity = new List<uint>();
-                            foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.ConnectedClients)
+                            foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.Singleton.ConnectedClients)
                             {
                                 if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
                                     clientsInProximity.Add(client.Key);
@@ -179,9 +179,9 @@ namespace MLAPI.Prototyping
 
         private void CheckSendRate()
         {
-            if (isOwner && sendRate != 0 && sendTimer < NetworkingManager.singleton.NetworkTime)
+            if (IsOwner && sendRate != 0 && sendTimer < NetworkingManager.Singleton.NetworkTime)
             {
-                sendTimer = NetworkingManager.singleton.NetworkTime + sendRate;
+                sendTimer = NetworkingManager.Singleton.NetworkTime + sendRate;
 
                 using (PooledBitStream stream = PooledBitStream.Get())
                 {
@@ -189,12 +189,12 @@ namespace MLAPI.Prototyping
                     {
                         WriteParameters(stream, true);
 
-                        if (isServer)
+                        if (IsServer)
                         {
                             if (EnableProximity)
                             {
                                 List<uint> clientsInProximity = new List<uint>();
-                                foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.ConnectedClients)
+                                foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.Singleton.ConnectedClients)
                                 {
                                     if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
                                         clientsInProximity.Add(client.Key);
@@ -247,7 +247,7 @@ namespace MLAPI.Prototyping
             if (EnableProximity)
             {
                 List<uint> clientsInProximity = new List<uint>();
-                foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.ConnectedClients)
+                foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.Singleton.ConnectedClients)
                 {
                     if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
                         clientsInProximity.Add(client.Key);
@@ -281,7 +281,7 @@ namespace MLAPI.Prototyping
             if (EnableProximity)
             {
                 List<uint> clientsInProximity = new List<uint>();
-                foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.ConnectedClients)
+                foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.Singleton.ConnectedClients)
                 {
                     if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
                         clientsInProximity.Add(client.Key);
@@ -306,7 +306,7 @@ namespace MLAPI.Prototyping
             if (EnableProximity)
             {
                 List<uint> clientsInProximity = new List<uint>();
-                foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.ConnectedClients)
+                foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.Singleton.ConnectedClients)
                 {
                     if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
                         clientsInProximity.Add(client.Key);
@@ -420,7 +420,7 @@ namespace MLAPI.Prototyping
         /// <param name="hash"></param>
         public void SetTrigger(int hash)
         {
-            if (isOwner)
+            if (IsOwner)
             {
                 using (PooledBitStream stream = PooledBitStream.Get())
                 {
@@ -428,12 +428,12 @@ namespace MLAPI.Prototyping
                     {
                         writer.WriteInt32Packed(hash);
 
-                        if (isServer)
+                        if (IsServer)
                         {
                             if (EnableProximity)
                             {
                                 List<uint> clientsInProximity = new List<uint>();
-                                foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.ConnectedClients)
+                                foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.Singleton.ConnectedClients)
                                 {
                                     if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
                                         clientsInProximity.Add(client.Key);

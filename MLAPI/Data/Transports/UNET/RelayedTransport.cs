@@ -117,7 +117,7 @@ namespace MLAPI.Transports.UNET
 
         public void RegisterServerListenSocket(object settings)
         {
-            HostTopology topology = new HostTopology((ConnectionConfig)settings, NetworkingManager.singleton.NetworkConfig.MaxConnections);
+            HostTopology topology = new HostTopology((ConnectionConfig)settings, NetworkingManager.Singleton.NetworkConfig.MaxConnections);
             for (int i = 0; i < ServerTransports.Count; i++)
             {
                 if (ServerTransports[i].Websockets)

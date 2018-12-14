@@ -102,7 +102,7 @@ namespace MLAPI
         public void ResetDirty()
         {
             isDirty = false;
-            LastSyncedTime = NetworkingManager.singleton.NetworkTime;
+            LastSyncedTime = NetworkingManager.Singleton.NetworkTime;
         }
 
         /// <inheritdoc />
@@ -111,7 +111,7 @@ namespace MLAPI
             if (!isDirty) return false;
             if (Settings.SendTickrate == 0) return true;
             if (Settings.SendTickrate < 0) return false;
-            if (NetworkingManager.singleton.NetworkTime - LastSyncedTime >= (1f / Settings.SendTickrate)) return true;
+            if (NetworkingManager.Singleton.NetworkTime - LastSyncedTime >= (1f / Settings.SendTickrate)) return true;
             return false;
         }
 

@@ -46,7 +46,7 @@ namespace MLAPI.Prototyping
         private float lastCorrectionTime = 0f;
         private void Update()
         {
-            if (!isOwner)
+            if (!IsOwner)
                 return;
 
             if (agent.destination != lastDestination)
@@ -77,7 +77,7 @@ namespace MLAPI.Prototyping
                         else
                         {
                             List<uint> proximityClients = new List<uint>();
-                            foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.ConnectedClients)
+                            foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.Singleton.ConnectedClients)
                             {
                                 if (Vector3.Distance(client.Value.PlayerObject.transform.position, transform.position) <= ProximityRange)
                                     proximityClients.Add(client.Key);
@@ -88,7 +88,7 @@ namespace MLAPI.Prototyping
                 }
             }
 
-            if (NetworkingManager.singleton.NetworkTime - lastCorrectionTime >= CorrectionDelay)
+            if (NetworkingManager.Singleton.NetworkTime - lastCorrectionTime >= CorrectionDelay)
             {
                 using (PooledBitStream stream = PooledBitStream.Get())
                 {
@@ -110,7 +110,7 @@ namespace MLAPI.Prototyping
                         else
                         {
                             List<uint> proximityClients = new List<uint>();
-                            foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.singleton.ConnectedClients)
+                            foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.Singleton.ConnectedClients)
                             {
                                 if (Vector3.Distance(client.Value.PlayerObject.transform.position, transform.position) <= ProximityRange)
                                     proximityClients.Add(client.Key);
@@ -119,7 +119,7 @@ namespace MLAPI.Prototyping
                         }
                     }
                 }
-                lastCorrectionTime = NetworkingManager.singleton.NetworkTime;
+                lastCorrectionTime = NetworkingManager.Singleton.NetworkTime;
             }
         }
 

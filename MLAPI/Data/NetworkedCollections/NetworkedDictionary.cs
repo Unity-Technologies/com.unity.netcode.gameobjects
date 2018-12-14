@@ -76,7 +76,7 @@ namespace MLAPI.NetworkedVar.Collections
         public void ResetDirty()
         {
             dirtyEvents.Clear();
-            LastSyncedTime = NetworkingManager.singleton.NetworkTime;
+            LastSyncedTime = NetworkingManager.Singleton.NetworkTime;
         }
 
         /// <inheritdoc />
@@ -359,7 +359,7 @@ namespace MLAPI.NetworkedVar.Collections
             if (dirtyEvents.Count == 0) return false;
             if (Settings.SendTickrate == 0) return true;
             if (Settings.SendTickrate < 0) return false;
-            if (NetworkingManager.singleton.NetworkTime - LastSyncedTime >= (1f / Settings.SendTickrate)) return true;
+            if (NetworkingManager.Singleton.NetworkTime - LastSyncedTime >= (1f / Settings.SendTickrate)) return true;
             return false;
         }
 
@@ -373,7 +373,7 @@ namespace MLAPI.NetworkedVar.Collections
             }
             set
             {
-                if (NetworkingManager.singleton.isServer)
+                if (NetworkingManager.Singleton.IsServer)
                     dictionary[key] = value;
                 
                 NetworkedDictionaryEvent<TKey, TValue> dictionaryEvent = new NetworkedDictionaryEvent<TKey, TValue>()
@@ -384,7 +384,7 @@ namespace MLAPI.NetworkedVar.Collections
                 };
                 dirtyEvents.Add(dictionaryEvent);
 
-                if (NetworkingManager.singleton.isServer && OnDictionaryChanged != null)
+                if (NetworkingManager.Singleton.IsServer && OnDictionaryChanged != null)
                     OnDictionaryChanged(dictionaryEvent);
             }
         }
@@ -404,7 +404,7 @@ namespace MLAPI.NetworkedVar.Collections
         /// <inheritdoc />
         public void Add(TKey key, TValue value)
         {
-            if (NetworkingManager.singleton.isServer)
+            if (NetworkingManager.Singleton.IsServer)
                 dictionary.Add(key, value);
             
             NetworkedDictionaryEvent<TKey, TValue> dictionaryEvent = new NetworkedDictionaryEvent<TKey, TValue>()
@@ -415,14 +415,14 @@ namespace MLAPI.NetworkedVar.Collections
             };
             dirtyEvents.Add(dictionaryEvent);
 
-            if (NetworkingManager.singleton.isServer && OnDictionaryChanged != null)
+            if (NetworkingManager.Singleton.IsServer && OnDictionaryChanged != null)
                 OnDictionaryChanged(dictionaryEvent);
         }
 
         /// <inheritdoc />
         public void Add(KeyValuePair<TKey, TValue> item)
         {
-            if (NetworkingManager.singleton.isServer)
+            if (NetworkingManager.Singleton.IsServer)
                 dictionary.Add(item);
             
             NetworkedDictionaryEvent<TKey, TValue> dictionaryEvent = new NetworkedDictionaryEvent<TKey, TValue>()
@@ -433,14 +433,14 @@ namespace MLAPI.NetworkedVar.Collections
             };
             dirtyEvents.Add(dictionaryEvent);
 
-            if (NetworkingManager.singleton.isServer && OnDictionaryChanged != null)
+            if (NetworkingManager.Singleton.IsServer && OnDictionaryChanged != null)
                 OnDictionaryChanged(dictionaryEvent);
         }
 
         /// <inheritdoc />
         public void Clear()
         {
-            if (NetworkingManager.singleton.isServer)
+            if (NetworkingManager.Singleton.IsServer)
                 dictionary.Clear();
             
             NetworkedDictionaryEvent<TKey, TValue> dictionaryEvent = new NetworkedDictionaryEvent<TKey, TValue>()
@@ -449,7 +449,7 @@ namespace MLAPI.NetworkedVar.Collections
             };
             dirtyEvents.Add(dictionaryEvent);
 
-            if (NetworkingManager.singleton.isServer && OnDictionaryChanged != null)
+            if (NetworkingManager.Singleton.IsServer && OnDictionaryChanged != null)
                 OnDictionaryChanged(dictionaryEvent);
         }
 
@@ -480,7 +480,7 @@ namespace MLAPI.NetworkedVar.Collections
         /// <inheritdoc />
         public bool Remove(TKey key)
         {
-            if (NetworkingManager.singleton.isServer)
+            if (NetworkingManager.Singleton.IsServer)
                 dictionary.Remove(key);
 
             TValue value;
@@ -494,7 +494,7 @@ namespace MLAPI.NetworkedVar.Collections
             };
             dirtyEvents.Add(dictionaryEvent);
             
-            if (NetworkingManager.singleton.isServer && OnDictionaryChanged != null)
+            if (NetworkingManager.Singleton.IsServer && OnDictionaryChanged != null)
                 OnDictionaryChanged(dictionaryEvent);
 
             return true;
@@ -504,7 +504,7 @@ namespace MLAPI.NetworkedVar.Collections
         /// <inheritdoc />
         public bool Remove(KeyValuePair<TKey, TValue> item)
         {
-            if (NetworkingManager.singleton.isServer)
+            if (NetworkingManager.Singleton.IsServer)
                 dictionary.Remove(item);
             
             NetworkedDictionaryEvent<TKey, TValue> dictionaryEvent = new NetworkedDictionaryEvent<TKey, TValue>()
@@ -515,7 +515,7 @@ namespace MLAPI.NetworkedVar.Collections
             };
             dirtyEvents.Add(dictionaryEvent);
 
-            if (NetworkingManager.singleton.isServer && OnDictionaryChanged != null)
+            if (NetworkingManager.Singleton.IsServer && OnDictionaryChanged != null)
                 OnDictionaryChanged(dictionaryEvent);
             
             return true;

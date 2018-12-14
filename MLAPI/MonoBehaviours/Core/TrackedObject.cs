@@ -60,7 +60,7 @@ namespace MLAPI
         {
             get
             {
-                return (int)(NetworkingManager.singleton.NetworkConfig.SecondsHistory / (1f / NetworkingManager.singleton.NetworkConfig.EventTickrate));
+                return (int)(NetworkingManager.Singleton.NetworkConfig.SecondsHistory / (1f / NetworkingManager.Singleton.NetworkConfig.EventTickrate));
             }
         }
 
@@ -69,7 +69,7 @@ namespace MLAPI
             savedPosition = transform.position;
             savedRotation = transform.rotation;
 
-            float currentTime = NetworkingManager.singleton.NetworkTime;
+            float currentTime = NetworkingManager.Singleton.NetworkTime;
             float targetTime = currentTime - secondsAgo;
 
             float previousTime = 0f;
@@ -114,12 +114,12 @@ namespace MLAPI
             if (Framekeys.Count == maxPoints)
                 FrameData.Remove(Framekeys.Dequeue());
 
-            FrameData.Add(NetworkingManager.singleton.NetworkTime, new TrackedPointData()
+            FrameData.Add(NetworkingManager.Singleton.NetworkTime, new TrackedPointData()
             {
                 position = transform.position,
                 rotation = transform.rotation
             });
-            Framekeys.Enqueue(NetworkingManager.singleton.NetworkTime);
+            Framekeys.Enqueue(NetworkingManager.Singleton.NetworkTime);
         }
     }
 }
