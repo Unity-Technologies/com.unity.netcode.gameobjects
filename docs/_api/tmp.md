@@ -1,6 +1,6 @@
 ---
 title: NetworkingManager
-permalink: /api/networking-manage1r/
+permalink: /api/networking-manager1/
 ---
 
 <div style="line-height: 1;">
@@ -10,6 +10,14 @@ permalink: /api/networking-manage1r/
 </div>
 <p>The main component of the library</p>
 
+
+<div>
+	<h3 markdown="1">Public Constructors</h3>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``NetworkingManager``();</b></h4>
+		<p>A syncronized time, represents the time in seconds since the server application started. Is replicated across all clients</p>
+	</div>
+</div>
 <div>
 	<h3 markdown="1">Public Properties</h3>
 	<div style="line-height: 1;">
@@ -161,61 +169,11 @@ permalink: /api/networking-manage1r/
 	</div>
 </div>
 <br>
-<div>
-	<h3 markdown="1">Public Fields</h3>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``bool`` DontDestroy;</b></h4>
-		<p>Gets or sets if the NetworkingManager should be marked as DontDestroyOnLoad</p>
-	</div>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``bool`` RunInBackground;</b></h4>
-		<p>Gets or sets if the application should be set to run in background</p>
-	</div>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public [``LogLevel``](/api/log-level/) LogLevel;</b></h4>
-		<p>The log level to use</p>
-	</div>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Dictionary<uint, NetworkedClient>`` ConnectedClients;</b></h4>
-		<p>Gets a dictionary of connected clients and their clientId keys</p>
-	</div>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``List<NetworkedClient>`` ConnectedClientsList;</b></h4>
-		<p>Gets a list of connected clients</p>
-	</div>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Dictionary<uint, PendingClient>`` PendingClients;</b></h4>
-		<p>Gets a dictionary of the clients that have been accepted by the transport but are still pending by the MLAPI.</p>
-	</div>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Action<uint>`` OnClientConnectedCallback;</b></h4>
-		<p>The callback to invoke once a client connects</p>
-	</div>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Action<uint>`` OnClientDisconnectCallback;</b></h4>
-		<p>The callback to invoke when a client disconnects</p>
-	</div>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Action`` OnServerStarted;</b></h4>
-		<p>The callback to invoke once the server is ready</p>
-	</div>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Action<byte[], uint, ConnectionApprovedDelegate>`` ConnectionApprovalCallback;</b></h4>
-		<p>The callback to invoke during connection approval</p>
-	</div>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public [``NetworkConfig``](/api/network-config/) NetworkConfig;</b></h4>
-		<p>The current NetworkingConfiguration</p>
-	</div>
-</div>
-<br>
-<div>
-	<h3>Public Constructors</h3>
-	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``NetworkingManager``](/api/networking-manager/)();</b></h4>
-	</div>
-</div>
-<br>
+### Constructors
+
+#### public NetworkingManager();
+
+
 <div>
 	<h3 markdown="1">Public Methods</h3>
 	<div style="line-height: 1;">
@@ -815,5 +773,6 @@ permalink: /api/networking-manage1r/
 		<h4 markdown="1"><b>public ``Type`` GetType();</b></h4>
 		<h5 markdown="1">Inherited from: ``object``</h5>
 	</div>
+	<br>
 </div>
 <br>

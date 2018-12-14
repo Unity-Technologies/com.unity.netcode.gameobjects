@@ -1,55 +1,28 @@
 ---
-title: NetworkingManager
-permalink: /api/networking-manage1r/
+title: TrackedObject
+permalink: /api/tracked-object/
 ---
 
 <div style="line-height: 1;">
-	<h2 markdown="1">NetworkingManager ``class``</h2>
+	<h2 markdown="1">TrackedObject ``class``</h2>
 	<p style="font-size: 20px;"><b>Namespace:</b> MLAPI</p>
 	<p style="font-size: 20px;"><b>Assembly:</b> MLAPI.dll</p>
 </div>
-<p>The main component of the library</p>
+<p>A component used for lag compensation. Each object with this component will get tracked</p>
 
 <div>
 	<h3 markdown="1">Public Properties</h3>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``float`` NetworkTime { get; set; }</b></h4>
-		<p>A syncronized time, represents the time in seconds since the server application started. Is replicated across all clients</p>
+		<h4 markdown="1"><b>public ``int`` TotalPoints { get; }</b></h4>
+		<p>Gets the total amount of points stored in the component</p>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public [``NetworkingManager``](/api/networking-manager/) singleton { get; set; }</b></h4>
-		<p>The singleton instance of the NetworkingManager</p>
+		<h4 markdown="1"><b>public ``float`` AvgTimeBetweenPointsMs { get; }</b></h4>
+		<p>Gets the average amount of time between the points in miliseconds</p>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``uint`` ServerClientId { get; }</b></h4>
-		<p>Gets the networkId of the server</p>
-	</div>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``uint`` LocalClientId { get; set; }</b></h4>
-		<p>The clientId the server calls the local client by, only valid for clients</p>
-	</div>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``bool`` isServer { get; set; }</b></h4>
-		<p>Gets wheter or not a server is running</p>
-	</div>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``bool`` isClient { get; set; }</b></h4>
-		<p>Gets wheter or not a client is running</p>
-	</div>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``bool`` isHost { get; }</b></h4>
-		<p>Gets if we are running as host</p>
-	</div>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``bool`` isListening { get; set; }</b></h4>
-		<p>Gets wheter or not we are listening for connections</p>
-	</div>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``bool`` isConnectedClients { get; set; }</b></h4>
-		<p>Gets if we are connected as a client</p>
-	</div>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``string`` ConnectedHostname { get; set; }</b></h4>
+		<h4 markdown="1"><b>public ``float`` TotalTimeHistory { get; }</b></h4>
+		<p>Gets the total time history we have for this object</p>
 	</div>
 </div>
 <br>
@@ -162,138 +135,10 @@ permalink: /api/networking-manage1r/
 </div>
 <br>
 <div>
-	<h3 markdown="1">Public Fields</h3>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``bool`` DontDestroy;</b></h4>
-		<p>Gets or sets if the NetworkingManager should be marked as DontDestroyOnLoad</p>
-	</div>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``bool`` RunInBackground;</b></h4>
-		<p>Gets or sets if the application should be set to run in background</p>
-	</div>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public [``LogLevel``](/api/log-level/) LogLevel;</b></h4>
-		<p>The log level to use</p>
-	</div>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Dictionary<uint, NetworkedClient>`` ConnectedClients;</b></h4>
-		<p>Gets a dictionary of connected clients and their clientId keys</p>
-	</div>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``List<NetworkedClient>`` ConnectedClientsList;</b></h4>
-		<p>Gets a list of connected clients</p>
-	</div>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Dictionary<uint, PendingClient>`` PendingClients;</b></h4>
-		<p>Gets a dictionary of the clients that have been accepted by the transport but are still pending by the MLAPI.</p>
-	</div>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Action<uint>`` OnClientConnectedCallback;</b></h4>
-		<p>The callback to invoke once a client connects</p>
-	</div>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Action<uint>`` OnClientDisconnectCallback;</b></h4>
-		<p>The callback to invoke when a client disconnects</p>
-	</div>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Action`` OnServerStarted;</b></h4>
-		<p>The callback to invoke once the server is ready</p>
-	</div>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Action<byte[], uint, ConnectionApprovedDelegate>`` ConnectionApprovalCallback;</b></h4>
-		<p>The callback to invoke during connection approval</p>
-	</div>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public [``NetworkConfig``](/api/network-config/) NetworkConfig;</b></h4>
-		<p>The current NetworkingConfiguration</p>
-	</div>
-</div>
-<br>
-<div>
 	<h3>Public Constructors</h3>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``NetworkingManager``](/api/networking-manager/)();</b></h4>
+		<h4 markdown="1"><b>public [``TrackedObject``](/MLAPI/api/tracked-object/)();</b></h4>
 	</div>
-</div>
-<br>
-<div>
-	<h3 markdown="1">Public Methods</h3>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` SendCustomMessage(``List<uint>`` clientIds, [``BitStream``](/api/bit-stream/) stream, ``string`` channel);</b></h4>
-		<p>Sends custom message to a list of clients</p>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
-			<p>The clients to send to, sends to everyone if null</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">[``BitStream``](/api/bit-stream/) stream</p>
-			<p>The message stream containing the data</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
-			<p>The channel to send the data on</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` SendCustomMessage(``uint`` clientId, [``BitStream``](/api/bit-stream/) stream, ``string`` channel);</b></h4>
-		<p>Sends a custom message to a specific client</p>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
-			<p>The client to send the message to</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">[``BitStream``](/api/bit-stream/) stream</p>
-			<p>The message stream containing the data</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
-			<p>The channel tos end the data on</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` StartServer();</b></h4>
-		<p>Starts a server</p>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` StartClient();</b></h4>
-		<p>Starts a client</p>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` StopServer();</b></h4>
-		<p>Stops the running server</p>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` StopHost();</b></h4>
-		<p>Stops the running host</p>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` StopClient();</b></h4>
-		<p>Stops the running client</p>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` StartHost(``Nullable<Vector3>`` pos, ``Nullable<Quaternion>`` rot, ``int`` prefabId);</b></h4>
-		<p>Starts a Host</p>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``Nullable<Vector3>`` pos</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``Nullable<Quaternion>`` rot</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``int`` prefabId</p>
-		</div>
-	</div>
-	<br>
 </div>
 <br>
 <div>

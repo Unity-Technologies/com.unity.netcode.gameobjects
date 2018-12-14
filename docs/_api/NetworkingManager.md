@@ -1,6 +1,6 @@
 ---
 title: NetworkingManager
-permalink: /api/networking-manage1r/
+permalink: /api/networking-manager/
 ---
 
 <div style="line-height: 1;">
@@ -17,7 +17,7 @@ permalink: /api/networking-manage1r/
 		<p>A syncronized time, represents the time in seconds since the server application started. Is replicated across all clients</p>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public [``NetworkingManager``](/api/networking-manager/) singleton { get; set; }</b></h4>
+		<h4 markdown="1"><b>public [``NetworkingManager``](/MLAPI/api/networking-manager/) singleton { get; set; }</b></h4>
 		<p>The singleton instance of the NetworkingManager</p>
 	</div>
 	<div style="line-height: 1;">
@@ -172,7 +172,7 @@ permalink: /api/networking-manage1r/
 		<p>Gets or sets if the application should be set to run in background</p>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public [``LogLevel``](/api/log-level/) LogLevel;</b></h4>
+		<h4 markdown="1"><b>public [``LogLevel``](/MLAPI/api/log-level/) LogLevel;</b></h4>
 		<p>The log level to use</p>
 	</div>
 	<div style="line-height: 1;">
@@ -204,7 +204,7 @@ permalink: /api/networking-manage1r/
 		<p>The callback to invoke during connection approval</p>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public [``NetworkConfig``](/api/network-config/) NetworkConfig;</b></h4>
+		<h4 markdown="1"><b>public [``NetworkConfig``](/MLAPI/api/network-config/) NetworkConfig;</b></h4>
 		<p>The current NetworkingConfiguration</p>
 	</div>
 </div>
@@ -212,14 +212,14 @@ permalink: /api/networking-manage1r/
 <div>
 	<h3>Public Constructors</h3>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``NetworkingManager``](/api/networking-manager/)();</b></h4>
+		<h4 markdown="1"><b>public [``NetworkingManager``](/MLAPI/api/networking-manager/)();</b></h4>
 	</div>
 </div>
 <br>
 <div>
 	<h3 markdown="1">Public Methods</h3>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` SendCustomMessage(``List<uint>`` clientIds, [``BitStream``](/api/bit-stream/) stream, ``string`` channel);</b></h4>
+		<h4 markdown="1"><b>public ``void`` SendCustomMessage(``List<uint>`` clientIds, [``BitStream``](/MLAPI/api/bit-stream/) stream, ``string`` channel);</b></h4>
 		<p>Sends custom message to a list of clients</p>
 		<h5><b>Parameters</b></h5>
 		<div>
@@ -227,7 +227,7 @@ permalink: /api/networking-manage1r/
 			<p>The clients to send to, sends to everyone if null</p>
 		</div>
 		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">[``BitStream``](/api/bit-stream/) stream</p>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``BitStream``](/MLAPI/api/bit-stream/) stream</p>
 			<p>The message stream containing the data</p>
 		</div>
 		<div>
@@ -237,7 +237,7 @@ permalink: /api/networking-manage1r/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` SendCustomMessage(``uint`` clientId, [``BitStream``](/api/bit-stream/) stream, ``string`` channel);</b></h4>
+		<h4 markdown="1"><b>public ``void`` SendCustomMessage(``uint`` clientId, [``BitStream``](/MLAPI/api/bit-stream/) stream, ``string`` channel);</b></h4>
 		<p>Sends a custom message to a specific client</p>
 		<h5><b>Parameters</b></h5>
 		<div>
@@ -245,7 +245,7 @@ permalink: /api/networking-manage1r/
 			<p>The client to send the message to</p>
 		</div>
 		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">[``BitStream``](/api/bit-stream/) stream</p>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``BitStream``](/MLAPI/api/bit-stream/) stream</p>
 			<p>The message stream containing the data</p>
 		</div>
 		<div>
