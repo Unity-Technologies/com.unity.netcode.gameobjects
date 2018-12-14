@@ -29,6 +29,13 @@ namespace MLAPI.Internal
             {
                 try
                 {
+                    if (inputStream.Length < 1)
+                    {
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogError("The incomming message was too small");
+                        messageType = MLAPIConstants.INVALID;
+                        return null;
+                    }
+
                     bool isEncrypted = inputHeaderReader.ReadBit();
                     bool isAuthenticated = inputHeaderReader.ReadBit();
 
@@ -89,7 +96,15 @@ namespace MLAPI.Internal
 
                         if (isEncrypted)
                         {
-                            inputStream.Read(IV_BUFFER, 0, IV_BUFFER.Length);
+                            int ivRead = inputStream.Read(IV_BUFFER, 0, IV_BUFFER.Length);
+
+                            if (ivRead != IV_BUFFER.Length)
+                            {
+                                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogError("Invalid IV size");
+                                messageType = MLAPIConstants.INVALID;
+                                return null;
+                            }
+
                             PooledBitStream outputStream = PooledBitStream.Get();
 
                             using (RijndaelManaged rijndael = new RijndaelManaged())
@@ -114,6 +129,14 @@ namespace MLAPI.Internal
                                 }
 
                                 outputStream.Position = 0;
+
+                                if (outputStream.Length == 0)
+                                {
+                                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogError("The incomming message was too small");
+                                    messageType = MLAPIConstants.INVALID;
+                                    return null;
+                                }
+
                                 int msgType = outputStream.ReadByte();
                                 messageType = msgType == -1 ? MLAPIConstants.INVALID : (byte)msgType;
                             }
@@ -122,6 +145,13 @@ namespace MLAPI.Internal
                         }
                         else
                         {
+                            if (inputStream.Length - inputStream.Position <= 0)
+                            {
+                                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogError("The incomming message was too small");
+                                messageType = MLAPIConstants.INVALID;
+                                return null;
+                            }
+
                             int msgType = inputStream.ReadByte();
                             messageType = msgType == -1 ? MLAPIConstants.INVALID : (byte)msgType;
                             return inputStream;
