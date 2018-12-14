@@ -4,7 +4,7 @@ permalink: /api/networked-var_-t_/
 ---
 
 <div style="line-height: 1;">
-	<h2 markdown="1">NetworkedVar<T> ``class``</h2>
+	<h2 markdown="1">NetworkedVar&lt;T&gt; ``class``</h2>
 	<p style="font-size: 20px;"><b>Namespace:</b> MLAPI</p>
 	<p style="font-size: 20px;"><b>Assembly:</b> MLAPI.dll</p>
 </div>

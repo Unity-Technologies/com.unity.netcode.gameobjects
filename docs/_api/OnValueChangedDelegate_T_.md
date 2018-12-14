@@ -4,7 +4,7 @@ permalink: /api/on-value-changed-delegate_-t_/
 ---
 
 <div style="line-height: 1;">
-	<h2 markdown="1">OnValueChangedDelegate<T> ``class``</h2>
+	<h2 markdown="1">OnValueChangedDelegate&lt;T&gt; ``class``</h2>
 	<p style="font-size: 20px;"><b>Namespace:</b> MLAPI</p>
 	<p style="font-size: 20px;"><b>Assembly:</b> MLAPI.dll</p>
 </div>

@@ -4,7 +4,7 @@ permalink: /api/on-list-changed-delegate_-t_/
 ---
 
 <div style="line-height: 1;">
-	<h2 markdown="1">OnListChangedDelegate<T> ``class``</h2>
+	<h2 markdown="1">OnListChangedDelegate&lt;T&gt; ``class``</h2>
 	<p style="font-size: 20px;"><b>Namespace:</b> MLAPI.NetworkedVar.Collections</p>
 	<p style="font-size: 20px;"><b>Assembly:</b> MLAPI.dll</p>
 </div>

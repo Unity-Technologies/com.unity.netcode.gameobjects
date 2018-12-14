@@ -1,14 +1,27 @@
 ---
 title: NetworkingManager
-permalink: /api/networking-manage1r/
+permalink: /api/enum/
 ---
 
 <div style="line-height: 1;">
-	<h2 markdown="1">NetworkingManager ``class``</h2>
+	<h2 markdown="1">MyEnm ``enum``</h2>
 	<p style="font-size: 20px;"><b>Namespace:</b> MLAPI</p>
 	<p style="font-size: 20px;"><b>Assembly:</b> MLAPI.dll</p>
 </div>
-<p>The main component of the library</p>
+<p>The summary of then enum</p>
+
+<div>
+	<h3 markdown="1">Enum Values</h3>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>``MyValue``</b></h4>
+		<p>THe summary of the value</p>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>``MyValue``</b></h4>
+		<p>THe summary of the value</p>
+	</div>
+</div>
+
 
 <div>
 	<h3 markdown="1">Public Properties</h3>

@@ -4,7 +4,7 @@ permalink: /api/on-dictionary-changed-delegate_-t-key, -t-value_/
 ---
 
 <div style="line-height: 1;">
-	<h2 markdown="1">OnDictionaryChangedDelegate<TKey, TValue> ``class``</h2>
+	<h2 markdown="1">OnDictionaryChangedDelegate&lt;TKey, TValue&gt; ``class``</h2>
 	<p style="font-size: 20px;"><b>Namespace:</b> MLAPI.NetworkedVar.Collections</p>
 	<p style="font-size: 20px;"><b>Assembly:</b> MLAPI.dll</p>
 </div>

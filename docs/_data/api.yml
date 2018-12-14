@@ -28,10 +28,12 @@
   - networked-object
   - networking-manager
   - tracked-object
+  - tick-type
   - profiler-tick
   - tick-event
   - network-profiler
   - cryptography-helper
+  - log-level
   - log-helper
   - arithmetic
   - bit-reader
@@ -50,12 +52,16 @@
   - networked-nav-mesh-agent
   - networked-transform
   - fixed-queue_-t_
+  - channel-type
+  - default-transport
+  - net-event-type
   - relayed-transport
   - relay-transport
   - helpers
   - invalid-config-exception
   - transport-host
   - unet-transport
+  - net-id
   - scene-switch-progress
   - lag-compensation-manager
   - network-pool-manager
@@ -63,14 +69,19 @@
   - spawn-manager
   - networked-var-settings
   - networked-var-permissions-delegate
+  - networked-var-permission
   - networked-dictionary_-t-key, -t-value_
+  - networked-dictionary-event_-t-key, -t-value_
   - networked-list_-t_
+  - networked-list-event_-t_
   - m-l-a-p-i-constants
   - pending-client
+  - security-send-flags
   - networked-prefab
   - networked-client
   - hash-code
   - channel
+  - hash-size
   - network-config
   - on-value-changed-delegate_-t_
   - connection-approved-delegate
@@ -80,4 +91,7 @@
   - on-completed-delegate
   - on-client-loaded-scene-delegate
   - on-dictionary-changed-delegate_-t-key, -t-value_
+  - networked-list-event-type_-t-key, -t-value_
   - on-list-changed-delegate_-t_
+  - event-type_-t_
+  - state
