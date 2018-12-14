@@ -1,0 +1,20 @@
+- title: MLAPI.dll
+  namespaces:
+  - title: MLAPI.Namespace
+    api:
+      - classnamehere
+      - test
+  - title: MLAPI.otherNameSpace
+    api:
+      - thang
+      - thing
+
+- title: thangg.dll
+  namespaces:
+  - title: MLAPI.Namespace
+    api:
+      - classnamehere
+  - title: MLAPI.otherNameSpace
+    api:
+      - thang
+      - thing
