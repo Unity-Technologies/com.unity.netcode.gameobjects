@@ -26,344 +26,6 @@ permalink: /api/bit-writer/
 <div>
 	<h3 markdown="1">Public Methods</h3>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` WriteUIntArrayDiff(``uint[]`` write, ``uint[]`` compare, ``long`` count);</b></h4>
-		<p>Writes the diff between two uint arrays</p>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``uint[]`` write</p>
-			<p>The new array</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``uint[]`` compare</p>
-			<p>The previous array to use for diff</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
-			<p>The amount of elements to write</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` WriteLongArray(``long[]`` b, ``long`` count);</b></h4>
-		<p>Writes a long array</p>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long[]`` b</p>
-			<p>The array to write</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
-			<p>The amount of elements to write</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` WriteLongArrayDiff(``long[]`` write, ``long[]`` compare, ``long`` count);</b></h4>
-		<p>Writes the diff between two long arrays</p>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long[]`` write</p>
-			<p>The new array</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long[]`` compare</p>
-			<p>The previous array to use for diff</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
-			<p>The amount of elements to write</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` WriteULongArray(``ulong[]`` b, ``long`` count);</b></h4>
-		<p>Writes a ulong array</p>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``ulong[]`` b</p>
-			<p>The array to write</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
-			<p>The amount of elements to write</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` WriteULongArrayDiff(``ulong[]`` write, ``ulong[]`` compare, ``long`` count);</b></h4>
-		<p>Writes the diff between two ulong arrays</p>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``ulong[]`` write</p>
-			<p>The new array</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``ulong[]`` compare</p>
-			<p>The previous array to use for diff</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
-			<p>The amount of elements to write</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` WriteFloatArray(``float[]`` b, ``long`` count);</b></h4>
-		<p>Writes a float array</p>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``float[]`` b</p>
-			<p>The array to write</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
-			<p>The amount of elements to write</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` WriteFloatArrayDiff(``float[]`` write, ``float[]`` compare, ``long`` count);</b></h4>
-		<p>Writes the diff between two float arrays</p>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``float[]`` write</p>
-			<p>The new array</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``float[]`` compare</p>
-			<p>The previous array to use for diff</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
-			<p>The amount of elements to write</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` WriteDoubleArray(``double[]`` b, ``long`` count);</b></h4>
-		<p>Writes a double array</p>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``double[]`` b</p>
-			<p>The array to write</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
-			<p>The amount of elements to write</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` WriteDoubleArrayDiff(``double[]`` write, ``double[]`` compare, ``long`` count);</b></h4>
-		<p>Writes the diff between two double arrays</p>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``double[]`` write</p>
-			<p>The new array</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``double[]`` compare</p>
-			<p>The previous array to use for diff</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
-			<p>The amount of elements to write</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` WriteArrayPacked(``Array`` a, ``long`` count);</b></h4>
-		<p>Writes an array in a packed format</p>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``Array`` a</p>
-			<p>The array to write</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
-			<p>The amount of elements to write</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` WriteArrayPackedDiff(``Array`` write, ``Array`` compare, ``long`` count);</b></h4>
-		<p>Writes the diff between two arrays in a packed format</p>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``Array`` write</p>
-			<p>The new array</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``Array`` compare</p>
-			<p>The previous array to use for diff</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
-			<p>The amount of elements to write</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` WriteShortArrayPacked(``short[]`` b, ``long`` count);</b></h4>
-		<p>Writes a short array in a packed format</p>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``short[]`` b</p>
-			<p>The array to write</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
-			<p>The amount of elements to write</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` WriteShortArrayPackedDiff(``short[]`` write, ``short[]`` compare, ``long`` count);</b></h4>
-		<p>Writes the diff between two short arrays in a packed format</p>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``short[]`` write</p>
-			<p>The new array</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``short[]`` compare</p>
-			<p>The previous array to use for diff</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
-			<p>The amount of elements to write</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` WriteUShortArrayPacked(``ushort[]`` b, ``long`` count);</b></h4>
-		<p>Writes a ushort array in a packed format</p>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``ushort[]`` b</p>
-			<p>The array to write</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
-			<p>The amount of elements to write</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` WriteUShortArrayPackedDiff(``ushort[]`` write, ``ushort[]`` compare, ``long`` count);</b></h4>
-		<p>Writes the diff between two ushort arrays in a packed format</p>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``ushort[]`` write</p>
-			<p>The new array</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``ushort[]`` compare</p>
-			<p>The previous array to use for diff</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
-			<p>The amount of elements to write</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` WriteCharArrayPacked(``Char[]`` b, ``long`` count);</b></h4>
-		<p>Writes a char array in a packed format</p>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``Char[]`` b</p>
-			<p>The array to write</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
-			<p>The amount of elements to write</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` WriteCharArrayPackedDiff(``Char[]`` write, ``Char[]`` compare, ``long`` count);</b></h4>
-		<p>Writes the diff between two char arrays in a packed format</p>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``Char[]`` write</p>
-			<p>The new array</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``Char[]`` compare</p>
-			<p>The previous array to use for diff</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
-			<p>The amount of elements to write</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` WriteIntArrayPacked(``int[]`` b, ``long`` count);</b></h4>
-		<p>Writes a int array in a packed format</p>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``int[]`` b</p>
-			<p>The array to write</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
-			<p>The amount of elements to write</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` WriteIntArrayPackedDiff(``int[]`` write, ``int[]`` compare, ``long`` count);</b></h4>
-		<p>Writes the diff between two int arrays</p>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``int[]`` write</p>
-			<p>The new array</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``int[]`` compare</p>
-			<p>The previous array to use for diff</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
-			<p>The amount of elements to write</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` WriteUIntArrayPacked(``uint[]`` b, ``long`` count);</b></h4>
-		<p>Writes a uint array in a packed format</p>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``uint[]`` b</p>
-			<p>The array to write</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
-			<p>The amount of elements to write</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` WriteUIntArrayPackedDiff(``uint[]`` write, ``uint[]`` compare, ``long`` count);</b></h4>
-		<p>Writes the diff between two uing arrays in a packed format</p>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``uint[]`` write</p>
-			<p>The new array</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``uint[]`` compare</p>
-			<p>The previous array to use for diff</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
-			<p>The amount of elements to write</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``void`` WriteLongArrayPacked(``long[]`` b, ``long`` count);</b></h4>
 		<p>Writes a long array in a packed format</p>
 		<h5><b>Parameters</b></h5>
@@ -1179,6 +841,344 @@ permalink: /api/bit-writer/
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``uint[]`` b</p>
 			<p>The array to write</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
+			<p>The amount of elements to write</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` WriteUIntArrayDiff(``uint[]`` write, ``uint[]`` compare, ``long`` count);</b></h4>
+		<p>Writes the diff between two uint arrays</p>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint[]`` write</p>
+			<p>The new array</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint[]`` compare</p>
+			<p>The previous array to use for diff</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
+			<p>The amount of elements to write</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` WriteLongArray(``long[]`` b, ``long`` count);</b></h4>
+		<p>Writes a long array</p>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long[]`` b</p>
+			<p>The array to write</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
+			<p>The amount of elements to write</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` WriteLongArrayDiff(``long[]`` write, ``long[]`` compare, ``long`` count);</b></h4>
+		<p>Writes the diff between two long arrays</p>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long[]`` write</p>
+			<p>The new array</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long[]`` compare</p>
+			<p>The previous array to use for diff</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
+			<p>The amount of elements to write</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` WriteULongArray(``ulong[]`` b, ``long`` count);</b></h4>
+		<p>Writes a ulong array</p>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``ulong[]`` b</p>
+			<p>The array to write</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
+			<p>The amount of elements to write</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` WriteULongArrayDiff(``ulong[]`` write, ``ulong[]`` compare, ``long`` count);</b></h4>
+		<p>Writes the diff between two ulong arrays</p>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``ulong[]`` write</p>
+			<p>The new array</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``ulong[]`` compare</p>
+			<p>The previous array to use for diff</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
+			<p>The amount of elements to write</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` WriteFloatArray(``float[]`` b, ``long`` count);</b></h4>
+		<p>Writes a float array</p>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``float[]`` b</p>
+			<p>The array to write</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
+			<p>The amount of elements to write</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` WriteFloatArrayDiff(``float[]`` write, ``float[]`` compare, ``long`` count);</b></h4>
+		<p>Writes the diff between two float arrays</p>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``float[]`` write</p>
+			<p>The new array</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``float[]`` compare</p>
+			<p>The previous array to use for diff</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
+			<p>The amount of elements to write</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` WriteDoubleArray(``double[]`` b, ``long`` count);</b></h4>
+		<p>Writes a double array</p>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``double[]`` b</p>
+			<p>The array to write</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
+			<p>The amount of elements to write</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` WriteDoubleArrayDiff(``double[]`` write, ``double[]`` compare, ``long`` count);</b></h4>
+		<p>Writes the diff between two double arrays</p>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``double[]`` write</p>
+			<p>The new array</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``double[]`` compare</p>
+			<p>The previous array to use for diff</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
+			<p>The amount of elements to write</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` WriteArrayPacked(``Array`` a, ``long`` count);</b></h4>
+		<p>Writes an array in a packed format</p>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Array`` a</p>
+			<p>The array to write</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
+			<p>The amount of elements to write</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` WriteArrayPackedDiff(``Array`` write, ``Array`` compare, ``long`` count);</b></h4>
+		<p>Writes the diff between two arrays in a packed format</p>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Array`` write</p>
+			<p>The new array</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Array`` compare</p>
+			<p>The previous array to use for diff</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
+			<p>The amount of elements to write</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` WriteShortArrayPacked(``short[]`` b, ``long`` count);</b></h4>
+		<p>Writes a short array in a packed format</p>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``short[]`` b</p>
+			<p>The array to write</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
+			<p>The amount of elements to write</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` WriteShortArrayPackedDiff(``short[]`` write, ``short[]`` compare, ``long`` count);</b></h4>
+		<p>Writes the diff between two short arrays in a packed format</p>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``short[]`` write</p>
+			<p>The new array</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``short[]`` compare</p>
+			<p>The previous array to use for diff</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
+			<p>The amount of elements to write</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` WriteUShortArrayPacked(``ushort[]`` b, ``long`` count);</b></h4>
+		<p>Writes a ushort array in a packed format</p>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``ushort[]`` b</p>
+			<p>The array to write</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
+			<p>The amount of elements to write</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` WriteUShortArrayPackedDiff(``ushort[]`` write, ``ushort[]`` compare, ``long`` count);</b></h4>
+		<p>Writes the diff between two ushort arrays in a packed format</p>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``ushort[]`` write</p>
+			<p>The new array</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``ushort[]`` compare</p>
+			<p>The previous array to use for diff</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
+			<p>The amount of elements to write</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` WriteCharArrayPacked(``Char[]`` b, ``long`` count);</b></h4>
+		<p>Writes a char array in a packed format</p>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Char[]`` b</p>
+			<p>The array to write</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
+			<p>The amount of elements to write</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` WriteCharArrayPackedDiff(``Char[]`` write, ``Char[]`` compare, ``long`` count);</b></h4>
+		<p>Writes the diff between two char arrays in a packed format</p>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Char[]`` write</p>
+			<p>The new array</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Char[]`` compare</p>
+			<p>The previous array to use for diff</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
+			<p>The amount of elements to write</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` WriteIntArrayPacked(``int[]`` b, ``long`` count);</b></h4>
+		<p>Writes a int array in a packed format</p>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``int[]`` b</p>
+			<p>The array to write</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
+			<p>The amount of elements to write</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` WriteIntArrayPackedDiff(``int[]`` write, ``int[]`` compare, ``long`` count);</b></h4>
+		<p>Writes the diff between two int arrays</p>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``int[]`` write</p>
+			<p>The new array</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``int[]`` compare</p>
+			<p>The previous array to use for diff</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
+			<p>The amount of elements to write</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` WriteUIntArrayPacked(``uint[]`` b, ``long`` count);</b></h4>
+		<p>Writes a uint array in a packed format</p>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint[]`` b</p>
+			<p>The array to write</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
+			<p>The amount of elements to write</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` WriteUIntArrayPackedDiff(``uint[]`` write, ``uint[]`` compare, ``long`` count);</b></h4>
+		<p>Writes the diff between two uing arrays in a packed format</p>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint[]`` write</p>
+			<p>The new array</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint[]`` compare</p>
+			<p>The previous array to use for diff</p>
 		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>

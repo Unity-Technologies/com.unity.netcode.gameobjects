@@ -26,17 +26,29 @@ permalink: /api/spawn-manager/
 	<h3 markdown="1">Public Static Methods</h3>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public static ``int`` GetNetworkedPrefabIndexOfHash(``ulong`` hash);</b></h4>
+		<p>Gets the prefab index of a given prefab hash</p>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``ulong`` hash</p>
+			<p>The hash of the prefab</p>
+		</div>
+		<h5 markdown="1"><b>Returns ``int``</b></h5>
+		<div>
+			<p>The index of the prefab</p>
 		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public static ``int`` GetNetworkedPrefabIndexOfName(``string`` name);</b></h4>
+		<p>Gets the prefab index of a given prefab name</p>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``string`` name</p>
+			<p>The name of the prefab</p>
+		</div>
+		<h5 markdown="1"><b>Returns ``int``</b></h5>
+		<div>
+			<p>The index of the prefab</p>
 		</div>
 	</div>
 	<br>

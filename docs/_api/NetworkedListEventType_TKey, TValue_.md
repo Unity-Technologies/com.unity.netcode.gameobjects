@@ -1,6 +1,6 @@
 ---
 title: NetworkedListEventType<TKey, TValue>
-permalink: /api/networked-list-event-type_-t-key, -t-value_/
+permalink: /api/networked-list-event-type_-tkey, -tvalue_/
 ---
 
 <div style="line-height: 1;">

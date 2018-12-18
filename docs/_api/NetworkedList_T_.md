@@ -124,10 +124,13 @@ permalink: /api/networked-list_-t_/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` ReadDelta(``Stream`` stream);</b></h4>
+		<h4 markdown="1"><b>public ``void`` ReadDelta(``Stream`` stream, ``bool`` keepDirtyDelta);</b></h4>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``Stream`` stream</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``bool`` keepDirtyDelta</p>
 		</div>
 	</div>
 	<br>

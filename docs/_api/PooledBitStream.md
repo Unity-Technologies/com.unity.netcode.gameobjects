@@ -265,12 +265,15 @@ permalink: /api/pooled-bit-stream/
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``void`` CopyUnreadFrom(``Stream`` s, ``int`` count);</b></h4>
 		<h5 markdown="1">Inherited from: [``BitStream``](/MLAPI/api/bit-stream/)</h5>
+		<p>Copies urnead bytes from the source stream</p>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``Stream`` s</p>
+			<p>The source stream to copy from</p>
 		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``int`` count</p>
+			<p>The max amount of bytes to copy</p>
 		</div>
 	</div>
 	<br>

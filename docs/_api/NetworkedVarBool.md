@@ -8,6 +8,8 @@ permalink: /api/networked-var-bool/
 	<p style="font-size: 20px;"><b>Namespace:</b> MLAPI</p>
 	<p style="font-size: 20px;"><b>Assembly:</b> MLAPI.dll</p>
 </div>
+<p>A NetworkedVar that holds bools and support serialization</p>
+
 <div>
 	<h3 markdown="1">Inherited Properties</h3>
 	<div style="line-height: 1;">
@@ -41,6 +43,30 @@ permalink: /api/networked-var-bool/
 	<div style="line-height: 1; ">
 		<h4 markdown="1"><b>public [``NetworkedVarBool``](/MLAPI/api/networked-var-bool/)();</b></h4>
 	</div>
+	<div style="line-height: 1; ">
+		<h4 markdown="1"><b>public [``NetworkedVarBool``](/MLAPI/api/networked-var-bool/)([``NetworkedVarSettings``](/MLAPI/api/networked-var-settings/) settings);</b></h4>
+	</div>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``NetworkedVarSettings``](/MLAPI/api/networked-var-settings/) settings</p>
+		</div>
+	<div style="line-height: 1; ">
+		<h4 markdown="1"><b>public [``NetworkedVarBool``](/MLAPI/api/networked-var-bool/)(``bool`` value);</b></h4>
+	</div>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``bool`` value</p>
+		</div>
+	<div style="line-height: 1; ">
+		<h4 markdown="1"><b>public [``NetworkedVarBool``](/MLAPI/api/networked-var-bool/)([``NetworkedVarSettings``](/MLAPI/api/networked-var-settings/) settings, ``bool`` value);</b></h4>
+	</div>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``NetworkedVarSettings``](/MLAPI/api/networked-var-settings/) settings</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``bool`` value</p>
+		</div>
 </div>
 <br>
 <div>
@@ -83,11 +109,14 @@ permalink: /api/networked-var-bool/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` ReadDelta(``Stream`` stream);</b></h4>
+		<h4 markdown="1"><b>public ``void`` ReadDelta(``Stream`` stream, ``bool`` keepDirtyDelta);</b></h4>
 		<h5 markdown="1">Inherited from: ``NetworkedVar<bool>``</h5>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``Stream`` stream</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``bool`` keepDirtyDelta</p>
 		</div>
 	</div>
 	<br>

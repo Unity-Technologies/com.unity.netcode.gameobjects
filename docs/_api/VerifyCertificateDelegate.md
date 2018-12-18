@@ -8,6 +8,8 @@ permalink: /api/verify-certificate-delegate/
 	<p style="font-size: 20px;"><b>Namespace:</b> MLAPI.Cryptography</p>
 	<p style="font-size: 20px;"><b>Assembly:</b> MLAPI.dll</p>
 </div>
+<p>The delegate type used to validate certificates</p>
+
 <div>
 	<h3 markdown="1">Inherited Properties</h3>
 	<div style="line-height: 1;">

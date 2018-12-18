@@ -8,15 +8,15 @@ permalink: /api/state/
 	<p style="font-size: 20px;"><b>Namespace:</b> MLAPI.Data</p>
 	<p style="font-size: 20px;"><b>Assembly:</b> MLAPI.dll</p>
 </div>
-<p></p>
+<p>The states of a connection</p>
 <div>
 	<h3 markdown="1">Enum Values</h3>
 	<div>
 		<h4 markdown="1"><b>``PendingHail``</b></h4>
-		<p></p>
+		<p>Client is in the process of doing the hail handshake</p>
 	</div>
 	<div>
 		<h4 markdown="1"><b>``PendingConnection``</b></h4>
-		<p></p>
+		<p>Client is in the process of doing the connection handshake</p>
 	</div>
 </div>

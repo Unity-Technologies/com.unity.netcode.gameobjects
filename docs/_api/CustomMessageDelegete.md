@@ -8,7 +8,7 @@ permalink: /api/custom-message-delegete/
 	<p style="font-size: 20px;"><b>Namespace:</b> MLAPI</p>
 	<p style="font-size: 20px;"><b>Assembly:</b> MLAPI.dll</p>
 </div>
-<p>Delegate used for incomming custom messages</p>
+<p>Delegate used for incoming custom messages</p>
 
 <div>
 	<h3 markdown="1">Inherited Properties</h3>

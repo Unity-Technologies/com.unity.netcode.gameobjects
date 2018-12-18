@@ -8,6 +8,8 @@ permalink: /api/networked-var-ray/
 	<p style="font-size: 20px;"><b>Namespace:</b> MLAPI</p>
 	<p style="font-size: 20px;"><b>Assembly:</b> MLAPI.dll</p>
 </div>
+<p>A NetworkedVar that holds rays and support serialization</p>
+
 <div>
 	<h3 markdown="1">Inherited Properties</h3>
 	<div style="line-height: 1;">
@@ -41,6 +43,30 @@ permalink: /api/networked-var-ray/
 	<div style="line-height: 1; ">
 		<h4 markdown="1"><b>public [``NetworkedVarRay``](/MLAPI/api/networked-var-ray/)();</b></h4>
 	</div>
+	<div style="line-height: 1; ">
+		<h4 markdown="1"><b>public [``NetworkedVarRay``](/MLAPI/api/networked-var-ray/)([``NetworkedVarSettings``](/MLAPI/api/networked-var-settings/) settings);</b></h4>
+	</div>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``NetworkedVarSettings``](/MLAPI/api/networked-var-settings/) settings</p>
+		</div>
+	<div style="line-height: 1; ">
+		<h4 markdown="1"><b>public [``NetworkedVarRay``](/MLAPI/api/networked-var-ray/)(``Ray`` value);</b></h4>
+	</div>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Ray`` value</p>
+		</div>
+	<div style="line-height: 1; ">
+		<h4 markdown="1"><b>public [``NetworkedVarRay``](/MLAPI/api/networked-var-ray/)([``NetworkedVarSettings``](/MLAPI/api/networked-var-settings/) settings, ``Ray`` value);</b></h4>
+	</div>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``NetworkedVarSettings``](/MLAPI/api/networked-var-settings/) settings</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Ray`` value</p>
+		</div>
 </div>
 <br>
 <div>
@@ -83,11 +109,14 @@ permalink: /api/networked-var-ray/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` ReadDelta(``Stream`` stream);</b></h4>
+		<h4 markdown="1"><b>public ``void`` ReadDelta(``Stream`` stream, ``bool`` keepDirtyDelta);</b></h4>
 		<h5 markdown="1">Inherited from: ``NetworkedVar<Ray>``</h5>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``Stream`` stream</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``bool`` keepDirtyDelta</p>
 		</div>
 	</div>
 	<br>

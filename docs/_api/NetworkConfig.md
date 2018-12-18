@@ -14,9 +14,11 @@ permalink: /api/network-config/
 	<h3 markdown="1">Public Properties</h3>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``X509Certificate2`` ServerX509Certificate { get; set; }</b></h4>
+		<p>Gets the currently in use certificate</p>
 	</div>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``byte[]`` ServerX509CertificateBytes { get; }</b></h4>
+		<p>Gets the cached binary representation of the server certificate that's used for handshaking</p>
 	</div>
 </div>
 <br>
@@ -146,6 +148,7 @@ permalink: /api/network-config/
 	</div>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``string`` ServerBase64PfxCertificate;</b></h4>
+		<p>Pfx file in base64 encoding containing private and public key</p>
 	</div>
 </div>
 <br>

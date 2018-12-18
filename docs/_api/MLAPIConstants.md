@@ -1,6 +1,6 @@
 ---
 title: MLAPIConstants
-permalink: /api/m-l-a-p-i-constants/
+permalink: /api/mlapiconstants/
 ---
 
 <div style="line-height: 1;">

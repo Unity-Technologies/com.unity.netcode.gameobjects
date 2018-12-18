@@ -1,6 +1,6 @@
 ---
 title: NetworkedDictionaryEvent<TKey, TValue>
-permalink: /api/networked-dictionary-event_-t-key, -t-value_/
+permalink: /api/networked-dictionary-event_-tkey, -tvalue_/
 ---
 
 <div style="line-height: 1;">

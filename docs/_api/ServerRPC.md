@@ -1,6 +1,6 @@
 ---
 title: ServerRPC
-permalink: /api/server-r-pc/
+permalink: /api/server-rpc/
 ---
 
 <div style="line-height: 1;">
@@ -26,7 +26,7 @@ permalink: /api/server-r-pc/
 <div>
 	<h3>Public Constructors</h3>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``ServerRPC``](/MLAPI/api/server-r-pc/)();</b></h4>
+		<h4 markdown="1"><b>public [``ServerRPC``](/MLAPI/api/server-rpc/)();</b></h4>
 	</div>
 </div>
 <br>

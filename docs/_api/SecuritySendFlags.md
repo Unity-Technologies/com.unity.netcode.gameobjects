@@ -8,19 +8,19 @@ permalink: /api/security-send-flags/
 	<p style="font-size: 20px;"><b>Namespace:</b> MLAPI.Data</p>
 	<p style="font-size: 20px;"><b>Assembly:</b> MLAPI.dll</p>
 </div>
-<p></p>
+<p>The security operations of a payload</p>
 <div>
 	<h3 markdown="1">Enum Values</h3>
 	<div>
 		<h4 markdown="1"><b>``None``</b></h4>
-		<p></p>
+		<p>No security operations are applied</p>
 	</div>
 	<div>
 		<h4 markdown="1"><b>``Encrypted``</b></h4>
-		<p></p>
+		<p>The payload is encrypted</p>
 	</div>
 	<div>
 		<h4 markdown="1"><b>``Authenticated``</b></h4>
-		<p></p>
+		<p>The payload is authenticated</p>
 	</div>
 </div>

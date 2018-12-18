@@ -26,237 +26,6 @@ permalink: /api/bit-reader/
 <div>
 	<h3 markdown="1">Public Methods</h3>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``int[]`` ReadIntArray(``int[]`` readTo, ``long`` knownLength);</b></h4>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``int[]`` readTo</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``int[]`` ReadIntArrayPacked(``int[]`` readTo, ``long`` knownLength);</b></h4>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``int[]`` readTo</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``int[]`` ReadIntArrayDiff(``int[]`` readTo, ``long`` knownLength);</b></h4>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``int[]`` readTo</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``int[]`` ReadIntArrayPackedDiff(``int[]`` readTo, ``long`` knownLength);</b></h4>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``int[]`` readTo</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``uint[]`` ReadUIntArray(``uint[]`` readTo, ``long`` knownLength);</b></h4>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``uint[]`` readTo</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``uint[]`` ReadUIntArrayPacked(``uint[]`` readTo, ``long`` knownLength);</b></h4>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``uint[]`` readTo</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``uint[]`` ReadUIntArrayDiff(``uint[]`` readTo, ``long`` knownLength);</b></h4>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``uint[]`` readTo</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``long[]`` ReadLongArray(``long[]`` readTo, ``long`` knownLength);</b></h4>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long[]`` readTo</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``long[]`` ReadLongArrayPacked(``long[]`` readTo, ``long`` knownLength);</b></h4>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long[]`` readTo</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``long[]`` ReadLongArrayDiff(``long[]`` readTo, ``long`` knownLength);</b></h4>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long[]`` readTo</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``long[]`` ReadLongArrayPackedDiff(``long[]`` readTo, ``long`` knownLength);</b></h4>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long[]`` readTo</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``ulong[]`` ReadULongArray(``ulong[]`` readTo, ``long`` knownLength);</b></h4>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``ulong[]`` readTo</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``ulong[]`` ReadULongArrayPacked(``ulong[]`` readTo, ``long`` knownLength);</b></h4>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``ulong[]`` readTo</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``ulong[]`` ReadULongArrayDiff(``ulong[]`` readTo, ``long`` knownLength);</b></h4>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``ulong[]`` readTo</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``ulong[]`` ReadULongArrayPackedDiff(``ulong[]`` readTo, ``long`` knownLength);</b></h4>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``ulong[]`` readTo</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``float[]`` ReadFloatArray(``float[]`` readTo, ``long`` knownLength);</b></h4>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``float[]`` readTo</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``float[]`` ReadFloatArrayPacked(``float[]`` readTo, ``long`` knownLength);</b></h4>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``float[]`` readTo</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``float[]`` ReadFloatArrayDiff(``float[]`` readTo, ``long`` knownLength);</b></h4>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``float[]`` readTo</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``float[]`` ReadFloatArrayPackedDiff(``float[]`` readTo, ``long`` knownLength);</b></h4>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``float[]`` readTo</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``double[]`` ReadDoubleArray(``double[]`` readTo, ``long`` knownLength);</b></h4>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``double[]`` readTo</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``double[]`` ReadDoubleArrayPacked(``double[]`` readTo, ``long`` knownLength);</b></h4>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``double[]`` readTo</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``double[]`` ReadDoubleArrayDiff(``double[]`` readTo, ``long`` knownLength);</b></h4>
 		<h5><b>Parameters</b></h5>
 		<div>
@@ -916,6 +685,237 @@ permalink: /api/bit-reader/
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``ushort[]`` readTo</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``int[]`` ReadIntArray(``int[]`` readTo, ``long`` knownLength);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``int[]`` readTo</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``int[]`` ReadIntArrayPacked(``int[]`` readTo, ``long`` knownLength);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``int[]`` readTo</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``int[]`` ReadIntArrayDiff(``int[]`` readTo, ``long`` knownLength);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``int[]`` readTo</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``int[]`` ReadIntArrayPackedDiff(``int[]`` readTo, ``long`` knownLength);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``int[]`` readTo</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``uint[]`` ReadUIntArray(``uint[]`` readTo, ``long`` knownLength);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint[]`` readTo</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``uint[]`` ReadUIntArrayPacked(``uint[]`` readTo, ``long`` knownLength);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint[]`` readTo</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``uint[]`` ReadUIntArrayDiff(``uint[]`` readTo, ``long`` knownLength);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint[]`` readTo</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``long[]`` ReadLongArray(``long[]`` readTo, ``long`` knownLength);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long[]`` readTo</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``long[]`` ReadLongArrayPacked(``long[]`` readTo, ``long`` knownLength);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long[]`` readTo</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``long[]`` ReadLongArrayDiff(``long[]`` readTo, ``long`` knownLength);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long[]`` readTo</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``long[]`` ReadLongArrayPackedDiff(``long[]`` readTo, ``long`` knownLength);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long[]`` readTo</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``ulong[]`` ReadULongArray(``ulong[]`` readTo, ``long`` knownLength);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``ulong[]`` readTo</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``ulong[]`` ReadULongArrayPacked(``ulong[]`` readTo, ``long`` knownLength);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``ulong[]`` readTo</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``ulong[]`` ReadULongArrayDiff(``ulong[]`` readTo, ``long`` knownLength);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``ulong[]`` readTo</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``ulong[]`` ReadULongArrayPackedDiff(``ulong[]`` readTo, ``long`` knownLength);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``ulong[]`` readTo</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``float[]`` ReadFloatArray(``float[]`` readTo, ``long`` knownLength);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``float[]`` readTo</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``float[]`` ReadFloatArrayPacked(``float[]`` readTo, ``long`` knownLength);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``float[]`` readTo</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``float[]`` ReadFloatArrayDiff(``float[]`` readTo, ``long`` knownLength);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``float[]`` readTo</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``float[]`` ReadFloatArrayPackedDiff(``float[]`` readTo, ``long`` knownLength);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``float[]`` readTo</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``double[]`` ReadDoubleArray(``double[]`` readTo, ``long`` knownLength);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``double[]`` readTo</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``double[]`` ReadDoubleArrayPacked(``double[]`` readTo, ``long`` knownLength);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``double[]`` readTo</p>
 		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>

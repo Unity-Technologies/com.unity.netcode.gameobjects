@@ -11,17 +11,6 @@ permalink: /api/pooled-bit-reader/
 <p>Disposable BitReader that returns the Reader to the BitReaderPool when disposed</p>
 
 <div>
-	<h3>Public Constructors</h3>
-	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``PooledBitReader``](/MLAPI/api/pooled-bit-reader/)(``Stream`` stream);</b></h4>
-	</div>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``Stream`` stream</p>
-		</div>
-</div>
-<br>
-<div>
 	<h3 markdown="1">Public Methods</h3>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``void`` Dispose();</b></h4>
@@ -49,258 +38,6 @@ permalink: /api/pooled-bit-reader/
 <br>
 <div>
 	<h3 markdown="1">Inherited Methods</h3>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``int[]`` ReadIntArray(``int[]`` readTo, ``long`` knownLength);</b></h4>
-		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``int[]`` readTo</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``int[]`` ReadIntArrayPacked(``int[]`` readTo, ``long`` knownLength);</b></h4>
-		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``int[]`` readTo</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``int[]`` ReadIntArrayDiff(``int[]`` readTo, ``long`` knownLength);</b></h4>
-		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``int[]`` readTo</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``int[]`` ReadIntArrayPackedDiff(``int[]`` readTo, ``long`` knownLength);</b></h4>
-		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``int[]`` readTo</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``uint[]`` ReadUIntArray(``uint[]`` readTo, ``long`` knownLength);</b></h4>
-		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``uint[]`` readTo</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``uint[]`` ReadUIntArrayPacked(``uint[]`` readTo, ``long`` knownLength);</b></h4>
-		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``uint[]`` readTo</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``uint[]`` ReadUIntArrayDiff(``uint[]`` readTo, ``long`` knownLength);</b></h4>
-		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``uint[]`` readTo</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``long[]`` ReadLongArray(``long[]`` readTo, ``long`` knownLength);</b></h4>
-		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long[]`` readTo</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``long[]`` ReadLongArrayPacked(``long[]`` readTo, ``long`` knownLength);</b></h4>
-		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long[]`` readTo</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``long[]`` ReadLongArrayDiff(``long[]`` readTo, ``long`` knownLength);</b></h4>
-		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long[]`` readTo</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``long[]`` ReadLongArrayPackedDiff(``long[]`` readTo, ``long`` knownLength);</b></h4>
-		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long[]`` readTo</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``ulong[]`` ReadULongArray(``ulong[]`` readTo, ``long`` knownLength);</b></h4>
-		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``ulong[]`` readTo</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``ulong[]`` ReadULongArrayPacked(``ulong[]`` readTo, ``long`` knownLength);</b></h4>
-		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``ulong[]`` readTo</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``ulong[]`` ReadULongArrayDiff(``ulong[]`` readTo, ``long`` knownLength);</b></h4>
-		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``ulong[]`` readTo</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``ulong[]`` ReadULongArrayPackedDiff(``ulong[]`` readTo, ``long`` knownLength);</b></h4>
-		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``ulong[]`` readTo</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``float[]`` ReadFloatArray(``float[]`` readTo, ``long`` knownLength);</b></h4>
-		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``float[]`` readTo</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``float[]`` ReadFloatArrayPacked(``float[]`` readTo, ``long`` knownLength);</b></h4>
-		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``float[]`` readTo</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``float[]`` ReadFloatArrayDiff(``float[]`` readTo, ``long`` knownLength);</b></h4>
-		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``float[]`` readTo</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``float[]`` ReadFloatArrayPackedDiff(``float[]`` readTo, ``long`` knownLength);</b></h4>
-		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``float[]`` readTo</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``double[]`` ReadDoubleArray(``double[]`` readTo, ``long`` knownLength);</b></h4>
-		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``double[]`` readTo</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``double[]`` ReadDoubleArrayPacked(``double[]`` readTo, ``long`` knownLength);</b></h4>
-		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``double[]`` readTo</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
-		</div>
-	</div>
-	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``double[]`` ReadDoubleArrayDiff(``double[]`` readTo, ``long`` knownLength);</b></h4>
 		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
@@ -1026,6 +763,258 @@ permalink: /api/pooled-bit-reader/
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``ushort[]`` readTo</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``int[]`` ReadIntArray(``int[]`` readTo, ``long`` knownLength);</b></h4>
+		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``int[]`` readTo</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``int[]`` ReadIntArrayPacked(``int[]`` readTo, ``long`` knownLength);</b></h4>
+		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``int[]`` readTo</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``int[]`` ReadIntArrayDiff(``int[]`` readTo, ``long`` knownLength);</b></h4>
+		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``int[]`` readTo</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``int[]`` ReadIntArrayPackedDiff(``int[]`` readTo, ``long`` knownLength);</b></h4>
+		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``int[]`` readTo</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``uint[]`` ReadUIntArray(``uint[]`` readTo, ``long`` knownLength);</b></h4>
+		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint[]`` readTo</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``uint[]`` ReadUIntArrayPacked(``uint[]`` readTo, ``long`` knownLength);</b></h4>
+		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint[]`` readTo</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``uint[]`` ReadUIntArrayDiff(``uint[]`` readTo, ``long`` knownLength);</b></h4>
+		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint[]`` readTo</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``long[]`` ReadLongArray(``long[]`` readTo, ``long`` knownLength);</b></h4>
+		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long[]`` readTo</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``long[]`` ReadLongArrayPacked(``long[]`` readTo, ``long`` knownLength);</b></h4>
+		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long[]`` readTo</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``long[]`` ReadLongArrayDiff(``long[]`` readTo, ``long`` knownLength);</b></h4>
+		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long[]`` readTo</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``long[]`` ReadLongArrayPackedDiff(``long[]`` readTo, ``long`` knownLength);</b></h4>
+		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long[]`` readTo</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``ulong[]`` ReadULongArray(``ulong[]`` readTo, ``long`` knownLength);</b></h4>
+		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``ulong[]`` readTo</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``ulong[]`` ReadULongArrayPacked(``ulong[]`` readTo, ``long`` knownLength);</b></h4>
+		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``ulong[]`` readTo</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``ulong[]`` ReadULongArrayDiff(``ulong[]`` readTo, ``long`` knownLength);</b></h4>
+		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``ulong[]`` readTo</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``ulong[]`` ReadULongArrayPackedDiff(``ulong[]`` readTo, ``long`` knownLength);</b></h4>
+		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``ulong[]`` readTo</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``float[]`` ReadFloatArray(``float[]`` readTo, ``long`` knownLength);</b></h4>
+		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``float[]`` readTo</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``float[]`` ReadFloatArrayPacked(``float[]`` readTo, ``long`` knownLength);</b></h4>
+		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``float[]`` readTo</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``float[]`` ReadFloatArrayDiff(``float[]`` readTo, ``long`` knownLength);</b></h4>
+		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``float[]`` readTo</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``float[]`` ReadFloatArrayPackedDiff(``float[]`` readTo, ``long`` knownLength);</b></h4>
+		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``float[]`` readTo</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``double[]`` ReadDoubleArray(``double[]`` readTo, ``long`` knownLength);</b></h4>
+		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``double[]`` readTo</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``double[]`` ReadDoubleArrayPacked(``double[]`` readTo, ``long`` knownLength);</b></h4>
+		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``double[]`` readTo</p>
 		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>

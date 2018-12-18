@@ -1,6 +1,6 @@
 ---
 title: ClientRPC
-permalink: /api/client-r-pc/
+permalink: /api/client-rpc/
 ---
 
 <div style="line-height: 1;">
@@ -19,7 +19,7 @@ permalink: /api/client-r-pc/
 <div>
 	<h3>Public Constructors</h3>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``ClientRPC``](/MLAPI/api/client-r-pc/)();</b></h4>
+		<h4 markdown="1"><b>public [``ClientRPC``](/MLAPI/api/client-rpc/)();</b></h4>
 	</div>
 </div>
 <br>

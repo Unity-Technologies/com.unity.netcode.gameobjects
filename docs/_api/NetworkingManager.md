@@ -50,6 +50,7 @@ permalink: /api/networking-manager/
 	</div>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``string`` ConnectedHostname { get; set; }</b></h4>
+		<p>The current hostname we are connected to, used to validate certificate</p>
 	</div>
 </div>
 <br>

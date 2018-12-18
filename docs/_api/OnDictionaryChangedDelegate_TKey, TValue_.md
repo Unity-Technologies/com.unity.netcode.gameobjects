@@ -1,6 +1,6 @@
 ---
 title: OnDictionaryChangedDelegate<TKey, TValue>
-permalink: /api/on-dictionary-changed-delegate_-t-key, -t-value_/
+permalink: /api/on-dictionary-changed-delegate_-tkey, -tvalue_/
 ---
 
 <div style="line-height: 1;">
@@ -25,7 +25,7 @@ permalink: /api/on-dictionary-changed-delegate_-t-key, -t-value_/
 <div>
 	<h3>Public Constructors</h3>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``OnDictionaryChangedDelegate<TKey, TValue>``](/MLAPI/api/on-dictionary-changed-delegate_-t-key, -t-value_/)(``object`` object, ``IntPtr`` method);</b></h4>
+		<h4 markdown="1"><b>public [``OnDictionaryChangedDelegate<TKey, TValue>``](/MLAPI/api/on-dictionary-changed-delegate_-tkey, -tvalue_/)(``object`` object, ``IntPtr`` method);</b></h4>
 	</div>
 		<h5><b>Parameters</b></h5>
 		<div>

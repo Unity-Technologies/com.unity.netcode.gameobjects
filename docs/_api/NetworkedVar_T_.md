@@ -109,12 +109,16 @@ permalink: /api/networked-var_-t_/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` ReadDelta(``Stream`` stream);</b></h4>
+		<h4 markdown="1"><b>public ``void`` ReadDelta(``Stream`` stream, ``bool`` keepDirtyDelta);</b></h4>
 		<p>Reads value from the reader and applies it</p>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``Stream`` stream</p>
 			<p>The stream to read the value from</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``bool`` keepDirtyDelta</p>
+			<p>Whether or not the container should keep the dirty delta, or mark the delta as consumed</p>
 		</div>
 	</div>
 	<br>

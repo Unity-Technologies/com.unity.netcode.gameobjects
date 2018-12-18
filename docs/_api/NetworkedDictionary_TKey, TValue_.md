@@ -1,6 +1,6 @@
 ---
 title: NetworkedDictionary<TKey, TValue>
-permalink: /api/networked-dictionary_-t-key, -t-value_/
+permalink: /api/networked-dictionary_-tkey, -tvalue_/
 ---
 
 <div style="line-height: 1;">
@@ -44,11 +44,11 @@ permalink: /api/networked-dictionary_-t-key, -t-value_/
 <div>
 	<h3>Public Constructors</h3>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``NetworkedDictionary<TKey, TValue>``](/MLAPI/api/networked-dictionary_-t-key, -t-value_/)();</b></h4>
+		<h4 markdown="1"><b>public [``NetworkedDictionary<TKey, TValue>``](/MLAPI/api/networked-dictionary_-tkey, -tvalue_/)();</b></h4>
 		<p>Creates a NetworkedDictionary with the default value and settings</p>
 	</div>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``NetworkedDictionary<TKey, TValue>``](/MLAPI/api/networked-dictionary_-t-key, -t-value_/)([``NetworkedVarSettings``](/MLAPI/api/networked-var-settings/) settings);</b></h4>
+		<h4 markdown="1"><b>public [``NetworkedDictionary<TKey, TValue>``](/MLAPI/api/networked-dictionary_-tkey, -tvalue_/)([``NetworkedVarSettings``](/MLAPI/api/networked-var-settings/) settings);</b></h4>
 		<p>Creates a NetworkedDictionary with the default value and custom settings</p>
 	</div>
 		<h5><b>Parameters</b></h5>
@@ -57,7 +57,7 @@ permalink: /api/networked-dictionary_-t-key, -t-value_/
 			<p>The settings to use for the NetworkedDictionary</p>
 		</div>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``NetworkedDictionary<TKey, TValue>``](/MLAPI/api/networked-dictionary_-t-key, -t-value_/)([``NetworkedVarSettings``](/MLAPI/api/networked-var-settings/) settings, ``IDictionary<TKey, TValue>`` value);</b></h4>
+		<h4 markdown="1"><b>public [``NetworkedDictionary<TKey, TValue>``](/MLAPI/api/networked-dictionary_-tkey, -tvalue_/)([``NetworkedVarSettings``](/MLAPI/api/networked-var-settings/) settings, ``IDictionary<TKey, TValue>`` value);</b></h4>
 	</div>
 		<h5><b>Parameters</b></h5>
 		<div>
@@ -67,7 +67,7 @@ permalink: /api/networked-dictionary_-t-key, -t-value_/
 			<p style="font-size: 20px; color: #444;" markdown="1">``IDictionary<TKey, TValue>`` value</p>
 		</div>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``NetworkedDictionary<TKey, TValue>``](/MLAPI/api/networked-dictionary_-t-key, -t-value_/)(``IDictionary<TKey, TValue>`` value);</b></h4>
+		<h4 markdown="1"><b>public [``NetworkedDictionary<TKey, TValue>``](/MLAPI/api/networked-dictionary_-tkey, -tvalue_/)(``IDictionary<TKey, TValue>`` value);</b></h4>
 	</div>
 		<h5><b>Parameters</b></h5>
 		<div>
@@ -86,10 +86,13 @@ permalink: /api/networked-dictionary_-t-key, -t-value_/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` ReadDelta(``Stream`` stream);</b></h4>
+		<h4 markdown="1"><b>public ``void`` ReadDelta(``Stream`` stream, ``bool`` keepDirtyDelta);</b></h4>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``Stream`` stream</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``bool`` keepDirtyDelta</p>
 		</div>
 	</div>
 	<br>
