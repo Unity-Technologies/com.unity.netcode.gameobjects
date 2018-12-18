@@ -8,11 +8,19 @@
     {
       "title": "{{ p.title }}",
       "url": "{{ p.url | prepend: site.baseurl }}"
-
     },
   {% endfor %}
 {% endfor %}
-
+{% for section in site.data.api %}
+  {% for item in section.api %}
+    {% assign item_url = item | prepend:"/api/" | append:"/" %}
+    {% assign p = site.api | where:"url", item_url | first %}
+    {
+      "title": "{{ p.title }}",
+      "url": "{{ p.url | prepend: site.baseurl }}"
+    },
+  {% endfor %}
+{% endfor %}
   {% for post in site.posts %}
   {
   "title": "{{ post.title | escape }}",
