@@ -1,0 +1,26067 @@
+---
+title: NetworkedBehaviour
+permalink: /api/networked-behaviour/
+---
+
+<div style="line-height: 1;">
+	<h2 markdown="1">NetworkedBehaviour ``class``</h2>
+	<p style="font-size: 20px;"><b>Namespace:</b> MLAPI</p>
+	<p style="font-size: 20px;"><b>Assembly:</b> MLAPI.dll</p>
+</div>
+<p>The base class to override to write networked code. Inherits MonoBehaviour</p>
+
+<div>
+	<h3 markdown="1">Public Properties</h3>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``bool`` isLocalPlayer { get; }</b></h4>
+		<p>Gets if the object is the the personal clients player object</p>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``bool`` isOwner { get; }</b></h4>
+		<p>Gets if the object is owned by the local player or if the object is the local player object</p>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``bool`` isOwnedByServer { get; }</b></h4>
+		<p>Gets wheter or not the object has a owner</p>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public [``NetworkedObject``](/MLAPI/api/networked-object/) networkedObject { get; }</b></h4>
+		<p>Gets the NetworkedObject that owns this NetworkedBehaviour instance</p>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``uint`` networkId { get; }</b></h4>
+		<p>Gets the NetworkId of the NetworkedObject that owns the NetworkedBehaviour instance</p>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``uint`` OwnerClientId { get; }</b></h4>
+		<p>Gets the clientId that owns the NetworkedObject</p>
+	</div>
+</div>
+<br>
+<div>
+	<h3 markdown="1">Inherited Properties</h3>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``bool`` useGUILayout { get; set; }</b></h4>
+		<h5 markdown="1">Inherited from: ``MonoBehaviour``</h5>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``bool`` runInEditMode { get; set; }</b></h4>
+		<h5 markdown="1">Inherited from: ``MonoBehaviour``</h5>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``bool`` enabled { get; set; }</b></h4>
+		<h5 markdown="1">Inherited from: ``Behaviour``</h5>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``bool`` isActiveAndEnabled { get; }</b></h4>
+		<h5 markdown="1">Inherited from: ``Behaviour``</h5>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``Transform`` transform { get; }</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``GameObject`` gameObject { get; }</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``string`` tag { get; set; }</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``Component`` rigidbody { get; }</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``Component`` rigidbody2D { get; }</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``Component`` camera { get; }</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``Component`` light { get; }</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``Component`` animation { get; }</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``Component`` constantForce { get; }</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``Component`` renderer { get; }</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``Component`` audio { get; }</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``Component`` guiText { get; }</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``Component`` networkView { get; }</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``Component`` guiElement { get; }</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``Component`` guiTexture { get; }</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``Component`` collider { get; }</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``Component`` collider2D { get; }</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``Component`` hingeJoint { get; }</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``Component`` particleEmitter { get; }</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``Component`` particleSystem { get; }</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``string`` name { get; set; }</b></h4>
+		<h5 markdown="1">Inherited from: ``Object``</h5>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``HideFlags`` hideFlags { get; set; }</b></h4>
+		<h5 markdown="1">Inherited from: ``Object``</h5>
+	</div>
+</div>
+<br>
+<div>
+	<h3 markdown="1">Public Methods</h3>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` OnDisabled();</b></h4>
+		<p>Invoked when the object is Disabled</p>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` OnDestroyed();</b></h4>
+		<p>Invoked when the object is Destroyed</p>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` OnEnabled();</b></h4>
+		<p>Invoked when the object is Enabled</p>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` OnSyncVarUpdate();</b></h4>
+		<p>Gets called when SyncedVars gets updated</p>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` OnGainedOwnership();</b></h4>
+		<p>Gets called when the local client gains ownership of this object</p>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` OnLostOwnership();</b></h4>
+		<p>Gets called when we loose ownership of this object</p>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``ushort`` GetBehaviourId();</b></h4>
+		<p>Gets behaviourId for this NetworkedBehaviour on this NetworkedObject</p>
+		<h5 markdown="1"><b>Returns ``ushort``</b></h5>
+		<div>
+			<p>The behaviourId for the current NetworkedBehaviour</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``T29`` t29, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T29`` t29</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``T29`` t29, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T29`` t29</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``T29`` t29, ``T30`` t30, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T29`` t29</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T30`` t30</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``T29`` t29, ``T30`` t30, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T29`` t29</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T30`` t30</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``T29`` t29, ``T30`` t30, ``T31`` t31, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T29`` t29</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T30`` t30</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T31`` t31</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``T29`` t29, ``T30`` t30, ``T31`` t31, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T29`` t29</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T30`` t30</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T31`` t31</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31, T32>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``T29`` t29, ``T30`` t30, ``T31`` t31, ``T32`` t32, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31, T32>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T29`` t29</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T30`` t30</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T31`` t31</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T32`` t32</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``T29`` t29, ``T30`` t30, ``T31`` t31, ``T32`` t32, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T29`` t29</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T30`` t30</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T31`` t31</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T32`` t32</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc([``RpcDelegate``](/MLAPI/api/rpc-delegate/) method, ``List<uint>`` clientIds, ``Stream`` stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``RpcDelegate``](/MLAPI/api/rpc-delegate/) method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Stream`` stream</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner([``RpcDelegate``](/MLAPI/api/rpc-delegate/) method, ``Stream`` stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``RpcDelegate``](/MLAPI/api/rpc-delegate/) method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Stream`` stream</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient([``RpcDelegate``](/MLAPI/api/rpc-delegate/) method, ``uint`` clientId, ``Stream`` stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``RpcDelegate``](/MLAPI/api/rpc-delegate/) method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Stream`` stream</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone([``RpcDelegate``](/MLAPI/api/rpc-delegate/) method, ``Stream`` stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``RpcDelegate``](/MLAPI/api/rpc-delegate/) method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Stream`` stream</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept([``RpcDelegate``](/MLAPI/api/rpc-delegate/) method, ``uint`` clientIdToIgnore, ``Stream`` stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``RpcDelegate``](/MLAPI/api/rpc-delegate/) method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Stream`` stream</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``string`` methodName, ``List<uint>`` clientIds, ``Stream`` stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Stream`` stream</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``string`` methodName, ``uint`` clientId, ``Stream`` stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Stream`` stream</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``string`` methodName, ``Stream`` stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Stream`` stream</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``string`` methodName, ``Stream`` stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Stream`` stream</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``string`` methodName, ``uint`` clientIdToIgnore, ``Stream`` stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Stream`` stream</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc([``RpcDelegate``](/MLAPI/api/rpc-delegate/) method, ``Stream`` stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``RpcDelegate``](/MLAPI/api/rpc-delegate/) method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Stream`` stream</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``string`` methodName, ``Stream`` stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Stream`` stream</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` NetworkStart();</b></h4>
+		<p>Gets called when message handlers are ready to be registered and the networking is setup</p>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` NetworkStart(``Stream`` stream);</b></h4>
+		<p>Gets called when message handlers are ready to be registered and the networking is setup. Provides a Payload if it was provided</p>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Stream`` stream</p>
+			<p>The stream containing the spawn payload</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``string`` methodName, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``T29`` t29, ``T30`` t30, ``T31`` t31, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T29`` t29</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T30`` t30</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T31`` t31</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31>`` method, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``T29`` t29, ``T30`` t30, ``T31`` t31, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T29`` t29</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T30`` t30</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T31`` t31</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``T29`` t29, ``T30`` t30, ``T31`` t31, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T29`` t29</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T30`` t30</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T31`` t31</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``T29`` t29, ``T30`` t30, ``T31`` t31, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T29`` t29</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T30`` t30</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T31`` t31</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``T29`` t29, ``T30`` t30, ``T31`` t31, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T29`` t29</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T30`` t30</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T31`` t31</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``T29`` t29, ``T30`` t30, ``T31`` t31, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T29`` t29</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T30`` t30</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T31`` t31</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31>`` method, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``T29`` t29, ``T30`` t30, ``T31`` t31, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T29`` t29</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T30`` t30</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T31`` t31</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``string`` methodName, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``T29`` t29, ``T30`` t30, ``T31`` t31, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T29`` t29</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T30`` t30</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T31`` t31</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31>`` method, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``T29`` t29, ``T30`` t30, ``T31`` t31, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T29`` t29</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T30`` t30</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T31`` t31</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``string`` methodName, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``T29`` t29, ``T30`` t30, ``T31`` t31, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T29`` t29</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T30`` t30</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T31`` t31</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``string`` methodName, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``T29`` t29, ``T30`` t30, ``T31`` t31, ``T32`` t32, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T29`` t29</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T30`` t30</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T31`` t31</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T32`` t32</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31, T32>`` method, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``T29`` t29, ``T30`` t30, ``T31`` t31, ``T32`` t32, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31, T32>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T29`` t29</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T30`` t30</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T31`` t31</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T32`` t32</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31, T32>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``T29`` t29, ``T30`` t30, ``T31`` t31, ``T32`` t32, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31, T32>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T29`` t29</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T30`` t30</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T31`` t31</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T32`` t32</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``T29`` t29, ``T30`` t30, ``T31`` t31, ``T32`` t32, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T29`` t29</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T30`` t30</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T31`` t31</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T32`` t32</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31, T32>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``T29`` t29, ``T30`` t30, ``T31`` t31, ``T32`` t32, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31, T32>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T29`` t29</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T30`` t30</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T31`` t31</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T32`` t32</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``T29`` t29, ``T30`` t30, ``T31`` t31, ``T32`` t32, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T29`` t29</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T30`` t30</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T31`` t31</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T32`` t32</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31, T32>`` method, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``T29`` t29, ``T30`` t30, ``T31`` t31, ``T32`` t32, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31, T32>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T29`` t29</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T30`` t30</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T31`` t31</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T32`` t32</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``string`` methodName, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``T29`` t29, ``T30`` t30, ``T31`` t31, ``T32`` t32, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T29`` t29</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T30`` t30</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T31`` t31</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T32`` t32</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31, T32>`` method, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``T29`` t29, ``T30`` t30, ``T31`` t31, ``T32`` t32, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30, T31, T32>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T29`` t29</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T30`` t30</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T31`` t31</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T32`` t32</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``string`` methodName, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``T29`` t29, ``T30`` t30, ``T31`` t31, ``T32`` t32, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T29`` t29</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T30`` t30</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T31`` t31</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T32`` t32</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``Action<T1>`` method, ``T1`` t1, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``string`` methodName, ``T1`` t1, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``Action<T1, T2>`` method, ``T1`` t1, ``T2`` t2, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``string`` methodName, ``T1`` t1, ``T2`` t2, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``Action<T1, T2, T3>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``Action<T1, T2, T3, T4>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``Action<T1, T2, T3, T4, T5>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``Action<T1, T2, T3, T4, T5, T6>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``Action<T1, T2, T3, T4, T5, T6, T7>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``Action<T1, T2, T3, T4, T5, T6, T7, T8>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``string`` methodName, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``string`` methodName, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26>`` method, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26>`` method, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``string`` methodName, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26>`` method, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``string`` methodName, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``string`` methodName, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27>`` method, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27>`` method, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``string`` methodName, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27>`` method, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``string`` methodName, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``string`` methodName, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28>`` method, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28>`` method, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``string`` methodName, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28>`` method, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``string`` methodName, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``string`` methodName, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``T29`` t29, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T29`` t29</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29>`` method, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``T29`` t29, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T29`` t29</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``T29`` t29, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T29`` t29</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``T29`` t29, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T29`` t29</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``T29`` t29, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T29`` t29</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``T29`` t29, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T29`` t29</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29>`` method, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``T29`` t29, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T29`` t29</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``string`` methodName, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``T29`` t29, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T29`` t29</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29>`` method, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``T29`` t29, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T29`` t29</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``string`` methodName, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``T29`` t29, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T29`` t29</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``string`` methodName, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``T29`` t29, ``T30`` t30, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T29`` t29</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T30`` t30</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30>`` method, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``T29`` t29, ``T30`` t30, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T29`` t29</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T30`` t30</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``T29`` t29, ``T30`` t30, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T29`` t29</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T30`` t30</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``T29`` t29, ``T30`` t30, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T29`` t29</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T30`` t30</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``T29`` t29, ``T30`` t30, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T29`` t29</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T30`` t30</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``T29`` t29, ``T30`` t30, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T29`` t29</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T30`` t30</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30>`` method, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``T29`` t29, ``T30`` t30, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T29`` t29</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T30`` t30</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``string`` methodName, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``T29`` t29, ``T30`` t30, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T29`` t29</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T30`` t30</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30>`` method, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``T29`` t29, ``T30`` t30, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25, T26, T27, T28, T29, T30>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T29`` t29</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T30`` t30</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``string`` methodName, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``T26`` t26, ``T27`` t27, ``T28`` t28, ``T29`` t29, ``T30`` t30, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T26`` t26</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T27`` t27</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T28`` t28</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T29`` t29</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T30`` t30</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20>`` method, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``string`` methodName, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``string`` methodName, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21>`` method, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21>`` method, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``string`` methodName, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21>`` method, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``string`` methodName, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``string`` methodName, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22>`` method, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22>`` method, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``string`` methodName, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22>`` method, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``string`` methodName, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``string`` methodName, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23>`` method, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23>`` method, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``string`` methodName, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23>`` method, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``string`` methodName, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``string`` methodName, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24>`` method, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24>`` method, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``string`` methodName, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24>`` method, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``string`` methodName, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``string`` methodName, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25>`` method, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25>`` method, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``string`` methodName, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25>`` method, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``T21`` t21, ``T22`` t22, ``T23`` t23, ``T24`` t24, ``T25`` t25, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20, T21, T22, T23, T24, T25>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T21`` t21</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T22`` t22</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T23`` t23</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T24`` t24</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T25`` t25</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``string`` methodName, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>`` method, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``string`` methodName, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``string`` methodName, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>`` method, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>`` method, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``string`` methodName, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>`` method, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``string`` methodName, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``string`` methodName, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17>`` method, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17>`` method, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``string`` methodName, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17>`` method, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``string`` methodName, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``string`` methodName, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18>`` method, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18>`` method, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``string`` methodName, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18>`` method, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``string`` methodName, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``string`` methodName, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19>`` method, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19>`` method, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``string`` methodName, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19>`` method, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``string`` methodName, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``string`` methodName, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20>`` method, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20>`` method, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, T17, T18, T19, T20>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``string`` methodName, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``T16`` t16, ``T17`` t17, ``T18`` t18, ``T19`` t19, ``T20`` t20, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T16`` t16</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T17`` t17</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T18`` t18</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T19`` t19</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T20`` t20</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>`` method, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``string`` methodName, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>`` method, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``string`` methodName, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``string`` methodName, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>`` method, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>`` method, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``string`` methodName, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>`` method, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``string`` methodName, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``string`` methodName, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>`` method, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>`` method, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``string`` methodName, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>`` method, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``string`` methodName, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``string`` methodName, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>`` method, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>`` method, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``string`` methodName, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>`` method, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``string`` methodName, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``string`` methodName, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>`` method, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>`` method, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``string`` methodName, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>`` method, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``string`` methodName, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``string`` methodName, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>`` method, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>`` method, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``T11`` t11, ``T12`` t12, ``T13`` t13, ``T14`` t14, ``T15`` t15, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T11`` t11</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T12`` t12</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T13`` t13</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T14`` t14</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T15`` t15</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``Action<T1, T2, T3, T4, T5>`` method, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``string`` methodName, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``Action<T1, T2, T3, T4, T5>`` method, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``string`` methodName, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``string`` methodName, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``Action<T1, T2, T3, T4, T5, T6>`` method, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``Action<T1, T2, T3, T4, T5, T6>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``Action<T1, T2, T3, T4, T5, T6>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``Action<T1, T2, T3, T4, T5, T6>`` method, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``string`` methodName, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``Action<T1, T2, T3, T4, T5, T6>`` method, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``string`` methodName, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``string`` methodName, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``Action<T1, T2, T3, T4, T5, T6, T7>`` method, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``Action<T1, T2, T3, T4, T5, T6, T7>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``Action<T1, T2, T3, T4, T5, T6, T7>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``Action<T1, T2, T3, T4, T5, T6, T7>`` method, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``string`` methodName, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``Action<T1, T2, T3, T4, T5, T6, T7>`` method, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``string`` methodName, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``string`` methodName, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``Action<T1, T2, T3, T4, T5, T6, T7, T8>`` method, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``Action<T1, T2, T3, T4, T5, T6, T7, T8>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``Action<T1, T2, T3, T4, T5, T6, T7, T8>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``Action<T1, T2, T3, T4, T5, T6, T7, T8>`` method, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``string`` methodName, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``Action<T1, T2, T3, T4, T5, T6, T7, T8>`` method, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``string`` methodName, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``string`` methodName, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9>`` method, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9>`` method, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``string`` methodName, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9>`` method, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``string`` methodName, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``string`` methodName, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>`` method, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``T6`` t6, ``T7`` t7, ``T8`` t8, ``T9`` t9, ``T10`` t10, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T6`` t6</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T7`` t7</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T8`` t8</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T9`` t9</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T10`` t10</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``string`` methodName, ``List<uint>`` clientIds, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc([``Action``](/MLAPI/api/action/) method, ``List<uint>`` clientIds, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``Action``](/MLAPI/api/action/) method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner([``Action``](/MLAPI/api/action/) method, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``Action``](/MLAPI/api/action/) method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``string`` methodName, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone([``Action``](/MLAPI/api/action/) method, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``Action``](/MLAPI/api/action/) method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``string`` methodName, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient([``Action``](/MLAPI/api/action/) method, ``uint`` clientId, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``Action``](/MLAPI/api/action/) method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``string`` methodName, ``uint`` clientId, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept([``Action``](/MLAPI/api/action/) method, ``uint`` clientIdToIgnore, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``Action``](/MLAPI/api/action/) method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``string`` methodName, ``uint`` clientIdToIgnore, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``string`` methodName, ``List<uint>`` clientIds, ``T1`` t1, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``Action<T1>`` method, ``List<uint>`` clientIds, ``T1`` t1, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``Action<T1>`` method, ``T1`` t1, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``string`` methodName, ``T1`` t1, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``Action<T1>`` method, ``T1`` t1, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``string`` methodName, ``T1`` t1, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``Action<T1>`` method, ``uint`` clientId, ``T1`` t1, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``string`` methodName, ``uint`` clientId, ``T1`` t1, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``Action<T1>`` method, ``uint`` clientIdToIgnore, ``T1`` t1, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``string`` methodName, ``uint`` clientIdToIgnore, ``T1`` t1, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``string`` methodName, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``Action<T1, T2>`` method, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``Action<T1, T2>`` method, ``T1`` t1, ``T2`` t2, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``string`` methodName, ``T1`` t1, ``T2`` t2, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``Action<T1, T2>`` method, ``T1`` t1, ``T2`` t2, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``string`` methodName, ``T1`` t1, ``T2`` t2, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``Action<T1, T2>`` method, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``string`` methodName, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``Action<T1, T2>`` method, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``string`` methodName, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``string`` methodName, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``Action<T1, T2, T3>`` method, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``Action<T1, T2, T3>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``Action<T1, T2, T3>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``Action<T1, T2, T3>`` method, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``string`` methodName, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``Action<T1, T2, T3>`` method, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``string`` methodName, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``string`` methodName, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``Action<T1, T2, T3, T4>`` method, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``Action<T1, T2, T3, T4>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``Action<T1, T2, T3, T4>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``Action<T1, T2, T3, T4>`` method, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``string`` methodName, ``uint`` clientId, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``Action<T1, T2, T3, T4>`` method, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``string`` methodName, ``uint`` clientIdToIgnore, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``string`` methodName, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``Action<T1, T2, T3, T4, T5>`` method, ``List<uint>`` clientIds, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``Action<T1, T2, T3, T4, T5>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``string`` methodName, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``Action<T1, T2, T3, T4, T5>`` method, ``T1`` t1, ``T2`` t2, ``T3`` t3, ``T4`` t4, ``T5`` t5, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Action<T1, T2, T3, T4, T5>`` method</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T1`` t1</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T2`` t2</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T3`` t3</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T4`` t4</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``T5`` t5</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+		</div>
+	</div>
+	<br>
+</div>
+<br>
+<div>
+	<h3 markdown="1">Inherited Methods</h3>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``bool`` IsInvoking();</b></h4>
+		<h5 markdown="1">Inherited from: ``MonoBehaviour``</h5>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` CancelInvoke();</b></h4>
+		<h5 markdown="1">Inherited from: ``MonoBehaviour``</h5>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` Invoke(``string`` methodName, ``float`` time);</b></h4>
+		<h5 markdown="1">Inherited from: ``MonoBehaviour``</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``float`` time</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` InvokeRepeating(``string`` methodName, ``float`` time, ``float`` repeatRate);</b></h4>
+		<h5 markdown="1">Inherited from: ``MonoBehaviour``</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``float`` time</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``float`` repeatRate</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` CancelInvoke(``string`` methodName);</b></h4>
+		<h5 markdown="1">Inherited from: ``MonoBehaviour``</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``bool`` IsInvoking(``string`` methodName);</b></h4>
+		<h5 markdown="1">Inherited from: ``MonoBehaviour``</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``Coroutine`` StartCoroutine(``string`` methodName);</b></h4>
+		<h5 markdown="1">Inherited from: ``MonoBehaviour``</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``Coroutine`` StartCoroutine(``string`` methodName, ``object`` value);</b></h4>
+		<h5 markdown="1">Inherited from: ``MonoBehaviour``</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``object`` value</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``Coroutine`` StartCoroutine(``IEnumerator`` routine);</b></h4>
+		<h5 markdown="1">Inherited from: ``MonoBehaviour``</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``IEnumerator`` routine</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``Coroutine`` StartCoroutine_Auto(``IEnumerator`` routine);</b></h4>
+		<h5 markdown="1">Inherited from: ``MonoBehaviour``</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``IEnumerator`` routine</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` StopCoroutine(``IEnumerator`` routine);</b></h4>
+		<h5 markdown="1">Inherited from: ``MonoBehaviour``</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``IEnumerator`` routine</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` StopCoroutine(``Coroutine`` routine);</b></h4>
+		<h5 markdown="1">Inherited from: ``MonoBehaviour``</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Coroutine`` routine</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` StopCoroutine(``string`` methodName);</b></h4>
+		<h5 markdown="1">Inherited from: ``MonoBehaviour``</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` StopAllCoroutines();</b></h4>
+		<h5 markdown="1">Inherited from: ``MonoBehaviour``</h5>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``Component`` GetComponent(``Type`` type);</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Type`` type</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``T`` GetComponent();</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``Component`` GetComponent(``string`` type);</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` type</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``Component`` GetComponentInChildren(``Type`` t, ``bool`` includeInactive);</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Type`` t</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``bool`` includeInactive</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``Component`` GetComponentInChildren(``Type`` t);</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Type`` t</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``T`` GetComponentInChildren(``bool`` includeInactive);</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``bool`` includeInactive</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``T`` GetComponentInChildren();</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``Component[]`` GetComponentsInChildren(``Type`` t, ``bool`` includeInactive);</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Type`` t</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``bool`` includeInactive</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``Component[]`` GetComponentsInChildren(``Type`` t);</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Type`` t</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``T[]`` GetComponentsInChildren(``bool`` includeInactive);</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``bool`` includeInactive</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` GetComponentsInChildren(``bool`` includeInactive, ``List<T>`` result);</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``bool`` includeInactive</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<T>`` result</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``T[]`` GetComponentsInChildren();</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` GetComponentsInChildren(``List<T>`` results);</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<T>`` results</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``Component`` GetComponentInParent(``Type`` t);</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Type`` t</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``T`` GetComponentInParent();</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``Component[]`` GetComponentsInParent(``Type`` t, ``bool`` includeInactive);</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Type`` t</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``bool`` includeInactive</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``Component[]`` GetComponentsInParent(``Type`` t);</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Type`` t</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``T[]`` GetComponentsInParent(``bool`` includeInactive);</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``bool`` includeInactive</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` GetComponentsInParent(``bool`` includeInactive, ``List<T>`` results);</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``bool`` includeInactive</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<T>`` results</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``T[]`` GetComponentsInParent();</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``Component[]`` GetComponents(``Type`` type);</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Type`` type</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` GetComponents(``Type`` type, ``List<Component>`` results);</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Type`` type</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<Component>`` results</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` GetComponents(``List<T>`` results);</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<T>`` results</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``T[]`` GetComponents();</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``bool`` CompareTag(``string`` tag);</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` tag</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` SendMessageUpwards(``string`` methodName, ``object`` value, ``SendMessageOptions`` options);</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``object`` value</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``SendMessageOptions`` options</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` SendMessageUpwards(``string`` methodName, ``object`` value);</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``object`` value</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` SendMessageUpwards(``string`` methodName);</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` SendMessageUpwards(``string`` methodName, ``SendMessageOptions`` options);</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``SendMessageOptions`` options</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` SendMessage(``string`` methodName, ``object`` value);</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``object`` value</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` SendMessage(``string`` methodName);</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` SendMessage(``string`` methodName, ``object`` value, ``SendMessageOptions`` options);</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``object`` value</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``SendMessageOptions`` options</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` SendMessage(``string`` methodName, ``SendMessageOptions`` options);</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``SendMessageOptions`` options</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` BroadcastMessage(``string`` methodName, ``object`` parameter, ``SendMessageOptions`` options);</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``object`` parameter</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``SendMessageOptions`` options</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` BroadcastMessage(``string`` methodName, ``object`` parameter);</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``object`` parameter</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` BroadcastMessage(``string`` methodName);</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` BroadcastMessage(``string`` methodName, ``SendMessageOptions`` options);</b></h4>
+		<h5 markdown="1">Inherited from: ``Component``</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``SendMessageOptions`` options</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``int`` GetInstanceID();</b></h4>
+		<h5 markdown="1">Inherited from: ``Object``</h5>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``int`` GetHashCode();</b></h4>
+		<h5 markdown="1">Inherited from: ``Object``</h5>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``bool`` Equals(``object`` other);</b></h4>
+		<h5 markdown="1">Inherited from: ``Object``</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``object`` other</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``string`` ToString();</b></h4>
+		<h5 markdown="1">Inherited from: ``Object``</h5>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``Type`` GetType();</b></h4>
+		<h5 markdown="1">Inherited from: ``object``</h5>
+	</div>
+</div>
+<br>
