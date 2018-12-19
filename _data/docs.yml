@@ -1,0 +1,35 @@
+- title: Getting Started
+  docs:
+  - home
+  - installation
+  - library-initialization
+  - connection-approval
+  - network-config
+
+- title: The Basics
+  docs:
+  - messaging-system
+  - object-spawning
+  - object-behaviour-relation
+  - modularity
+  - networkedvar
+  - scene-management
+  - object-ownership
+  - ways-to-syncronize
+
+- title: Core Components
+  docs:
+  - core-components
+  - networking-manager
+  - tracked-object
+  - networked-object
+  - networked-behaviour
+
+- title: Advanced Topics
+  docs:
+  - message-encryption
+  - object-pooling
+  - lag-compensation
+  - bitwriter-bitreader-bitstream
+  - custom-transports
+  - network-profiler-window

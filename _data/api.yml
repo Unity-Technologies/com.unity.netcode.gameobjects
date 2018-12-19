@@ -1,0 +1,131 @@
+- title: MLAPI.dll
+  api:
+  - home
+  - rpc-delegate
+  - reflection-mehtod
+  - server-rpc
+  - client-rpc
+  - networked-var_-t_
+  - networked-var-string
+  - networked-var-bool
+  - networked-var-byte
+  - networked-var-sbyte
+  - networked-var-ushort
+  - networked-var-short
+  - networked-var-uint
+  - networked-var-int
+  - networked-var-ulong
+  - networked-var-long
+  - networked-var-float
+  - networked-var-double
+  - networked-var-vector2
+  - networked-var-vector3
+  - networked-var-vector4
+  - networked-var-color
+  - networked-var-color32
+  - networked-var-ray
+  - networked-var-quaternion
+  - networked-behaviour
+  - networked-object
+  - networking-manager
+  - tracked-object
+  - tick-type
+  - profiler-tick
+  - tick-event
+  - network-profiler
+  - cryptography-helper
+  - log-level
+  - log-helper
+  - arithmetic
+  - bit-reader
+  - bit-writer
+  - bit-stream
+  - bit-writer-deprecated
+  - bit-reader-deprecated
+  - binary-helpers
+  - bit-stream-pool
+  - bit-writer-pool
+  - bit-reader-pool
+  - pooled-bit-stream
+  - pooled-bit-writer
+  - pooled-bit-reader
+  - networked-animator
+  - networked-nav-mesh-agent
+  - networked-transform
+  - fixed-queue_-t_
+  - channel-type
+  - default-transport
+  - net-event-type
+  - relayed-transport
+  - relay-transport
+  - helpers
+  - invalid-config-exception
+  - transport-host
+  - unet-transport
+  - net-id
+  - scene-switch-progress
+  - lag-compensation-manager
+  - network-pool-manager
+  - network-scene-manager
+  - spawn-manager
+  - networked-var-settings
+  - networked-var-permissions-delegate
+  - networked-var-permission
+  - networked-dictionary_-tkey, -tvalue_
+  - networked-dictionary-event_-tkey, -tvalue_
+  - networked-list_-t_
+  - networked-list-event_-t_
+  - mlapiconstants
+  - pending-client
+  - security-send-flags
+  - networked-prefab
+  - networked-client
+  - hash-code
+  - channel
+  - hash-size
+  - network-config
+  - on-value-changed-delegate_-t_
+  - action
+  - action_-t1_
+  - action_-t1, -t2_
+  - action_-t1, -t2, -t3_
+  - action_-t1, -t2, -t3, -t4_
+  - action_-t1, -t2, -t3, -t4, -t5_
+  - action_-t1, -t2, -t3, -t4, -t5, -t6_
+  - action_-t1, -t2, -t3, -t4, -t5, -t6, -t7_
+  - action_-t1, -t2, -t3, -t4, -t5, -t6, -t7, -t8_
+  - action_-t1, -t2, -t3, -t4, -t5, -t6, -t7, -t8, -t9_
+  - action_-t1, -t2, -t3, -t4, -t5, -t6, -t7, -t8, -t9, -t10_
+  - action_-t1, -t2, -t3, -t4, -t5, -t6, -t7, -t8, -t9, -t10, -t11_
+  - action_-t1, -t2, -t3, -t4, -t5, -t6, -t7, -t8, -t9, -t10, -t11, -t12_
+  - action_-t1, -t2, -t3, -t4, -t5, -t6, -t7, -t8, -t9, -t10, -t11, -t12, -t13_
+  - action_-t1, -t2, -t3, -t4, -t5, -t6, -t7, -t8, -t9, -t10, -t11, -t12, -t13, -t14_
+  - action_-t1, -t2, -t3, -t4, -t5, -t6, -t7, -t8, -t9, -t10, -t11, -t12, -t13, -t14, -t15_
+  - action_-t1, -t2, -t3, -t4, -t5, -t6, -t7, -t8, -t9, -t10, -t11, -t12, -t13, -t14, -t15, -t16_
+  - action_-t1, -t2, -t3, -t4, -t5, -t6, -t7, -t8, -t9, -t10, -t11, -t12, -t13, -t14, -t15, -t16, -t17_
+  - action_-t1, -t2, -t3, -t4, -t5, -t6, -t7, -t8, -t9, -t10, -t11, -t12, -t13, -t14, -t15, -t16, -t17, -t18_
+  - action_-t1, -t2, -t3, -t4, -t5, -t6, -t7, -t8, -t9, -t10, -t11, -t12, -t13, -t14, -t15, -t16, -t17, -t18, -t19_
+  - action_-t1, -t2, -t3, -t4, -t5, -t6, -t7, -t8, -t9, -t10, -t11, -t12, -t13, -t14, -t15, -t16, -t17, -t18, -t19, -t20_
+  - action_-t1, -t2, -t3, -t4, -t5, -t6, -t7, -t8, -t9, -t10, -t11, -t12, -t13, -t14, -t15, -t16, -t17, -t18, -t19, -t20, -t21_
+  - action_-t1, -t2, -t3, -t4, -t5, -t6, -t7, -t8, -t9, -t10, -t11, -t12, -t13, -t14, -t15, -t16, -t17, -t18, -t19, -t20, -t21, -t22_
+  - action_-t1, -t2, -t3, -t4, -t5, -t6, -t7, -t8, -t9, -t10, -t11, -t12, -t13, -t14, -t15, -t16, -t17, -t18, -t19, -t20, -t21, -t22, -t23_
+  - action_-t1, -t2, -t3, -t4, -t5, -t6, -t7, -t8, -t9, -t10, -t11, -t12, -t13, -t14, -t15, -t16, -t17, -t18, -t19, -t20, -t21, -t22, -t23, -t24_
+  - action_-t1, -t2, -t3, -t4, -t5, -t6, -t7, -t8, -t9, -t10, -t11, -t12, -t13, -t14, -t15, -t16, -t17, -t18, -t19, -t20, -t21, -t22, -t23, -t24, -t25_
+  - action_-t1, -t2, -t3, -t4, -t5, -t6, -t7, -t8, -t9, -t10, -t11, -t12, -t13, -t14, -t15, -t16, -t17, -t18, -t19, -t20, -t21, -t22, -t23, -t24, -t25, -t26_
+  - action_-t1, -t2, -t3, -t4, -t5, -t6, -t7, -t8, -t9, -t10, -t11, -t12, -t13, -t14, -t15, -t16, -t17, -t18, -t19, -t20, -t21, -t22, -t23, -t24, -t25, -t26, -t27_
+  - action_-t1, -t2, -t3, -t4, -t5, -t6, -t7, -t8, -t9, -t10, -t11, -t12, -t13, -t14, -t15, -t16, -t17, -t18, -t19, -t20, -t21, -t22, -t23, -t24, -t25, -t26, -t27, -t28_
+  - action_-t1, -t2, -t3, -t4, -t5, -t6, -t7, -t8, -t9, -t10, -t11, -t12, -t13, -t14, -t15, -t16, -t17, -t18, -t19, -t20, -t21, -t22, -t23, -t24, -t25, -t26, -t27, -t28, -t29_
+  - action_-t1, -t2, -t3, -t4, -t5, -t6, -t7, -t8, -t9, -t10, -t11, -t12, -t13, -t14, -t15, -t16, -t17, -t18, -t19, -t20, -t21, -t22, -t23, -t24, -t25, -t26, -t27, -t28, -t29, -t30_
+  - action_-t1, -t2, -t3, -t4, -t5, -t6, -t7, -t8, -t9, -t10, -t11, -t12, -t13, -t14, -t15, -t16, -t17, -t18, -t19, -t20, -t21, -t22, -t23, -t24, -t25, -t26, -t27, -t28, -t29, -t30, -t31_
+  - action_-t1, -t2, -t3, -t4, -t5, -t6, -t7, -t8, -t9, -t10, -t11, -t12, -t13, -t14, -t15, -t16, -t17, -t18, -t19, -t20, -t21, -t22, -t23, -t24, -t25, -t26, -t27, -t28, -t29, -t30, -t31, -t32_
+  - connection-approved-delegate
+  - custom-message-delegete
+  - verify-certificate-delegate
+  - move-validation-delegate
+  - on-completed-delegate
+  - on-client-loaded-scene-delegate
+  - on-dictionary-changed-delegate_-tkey, -tvalue_
+  - networked-list-event-type_-tkey, -tvalue_
+  - on-list-changed-delegate_-t_
+  - event-type_-t_
+  - state
