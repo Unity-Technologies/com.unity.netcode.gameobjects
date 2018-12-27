@@ -65,11 +65,9 @@
     <LangVersion>7</LangVersion>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="IntXLib, Version=1.0.0.0, Culture=neutral, PublicKeyToken=1744b76c74eaee1e, processorArchitecture=MSIL" Condition="!$(DefineConstants.Contains(DISABLE_CRYPTOGRAPHY))">
-      <HintPath>..\packages\IntX.1.0.1.0\lib\net20\IntXLib.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Security" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="System.Data" />
@@ -78,13 +76,12 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Libraries\Unity\UnityEngine.dll</HintPath>
     </Reference>
-    <Reference Include="IntXLib">
-      <HintPath>..\packages\IntX.1.0.1.0\lib\net20\IntXLib.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Data\BigInteger.cs" />
     <Compile Include="Data\Channel.cs" />
     <Compile Include="Data\AttributeMessageMode.cs" />
+    <Compile Include="Data\UnsignedIntegerArrayExtensions.cs" />
     <Compile Include="Data\MLAPIConstants.cs" />
     <Compile Include="Data\NetworkedCollections\NetworkedDictionary.cs" />
     <Compile Include="Data\NetworkedCollections\NetworkedList.cs" />
