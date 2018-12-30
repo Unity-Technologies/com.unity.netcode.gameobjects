@@ -78,7 +78,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Data\BigInteger.cs" />
     <Compile Include="Data\Channel.cs" />
     <Compile Include="Data\AttributeMessageMode.cs" />
     <Compile Include="Data\UnsignedIntegerArrayExtensions.cs" />
@@ -109,6 +108,7 @@
     <Compile Include="MonoBehaviours\Prototyping\NetworkedAnimator.cs" />
     <Compile Include="MonoBehaviours\Prototyping\NetworkedNavMeshAgent.cs" />
     <Compile Include="NetworkingManagerComponents\Binary\Arithmetic.cs" />
+    <Compile Include="NetworkingManagerComponents\Binary\BigInteger.cs" />
     <Compile Include="NetworkingManagerComponents\Binary\BitReader.cs" />
     <Compile Include="NetworkingManagerComponents\Binary\BitWriter.cs" />
     <Compile Include="NetworkingManagerComponents\Binary\BitStream.cs" />

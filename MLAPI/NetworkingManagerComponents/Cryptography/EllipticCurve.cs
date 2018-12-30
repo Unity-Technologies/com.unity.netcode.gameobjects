@@ -1,8 +1,8 @@
 ﻿#if !DISABLE_CRYPTOGRAPHY
-
 using MLAPI.Data;
 using System;
 using System.Collections.Generic;
+using MLAPI.Internal;
 
 namespace MLAPI.Cryptography
 {

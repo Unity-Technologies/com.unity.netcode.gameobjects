@@ -1,4 +1,4 @@
-﻿/*
+/*
    BigInteger Class Version 1.03
    
    Copyright (c) 2002 Chew Keong TAN All rights reserved.
@@ -25,7 +25,7 @@
 using System;
 using System.Security.Cryptography;
 
-namespace MLAPI.Data
+namespace MLAPI.Internal
 {
     /// <summary>
     /// This is a BigInteger class. Holds integer that is more than 64-bit (long).

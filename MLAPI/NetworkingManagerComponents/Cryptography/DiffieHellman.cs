@@ -1,9 +1,8 @@
 ﻿#if !DISABLE_CRYPTOGRAPHY
-
-using MLAPI.Data;
 using System;
 using System.Security.Cryptography;
 using System.Text;
+using MLAPI.Internal;
 using UnityEngine;
 
 namespace MLAPI.Cryptography
