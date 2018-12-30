@@ -1,22 +1,29 @@
 ﻿#if !DISABLE_CRYPTOGRAPHY
+using MLAPI.Data;
 using System;
 using System.Collections.Generic;
-using IntXLib;
+using MLAPI.Internal;
 
 namespace MLAPI.Cryptography
 {
     internal class CurvePoint
     {
         public static readonly CurvePoint POINT_AT_INFINITY = new CurvePoint();
-        public IntX X { get; private set; }
-        public IntX Y { get; private set; }
-        private bool pai = false;
-        public CurvePoint(IntX x, IntX y)
+        public BigInteger X { get; private set; }
+        public BigInteger Y { get; private set; }
+        private readonly bool pai = false;
+
+        public CurvePoint(BigInteger x, BigInteger y)
         {
             X = x;
             Y = y;
         }
-        private CurvePoint() { pai = true; } // Accessing corrdinates causes undocumented behaviour
+
+        private CurvePoint()
+        {
+            pai = true;
+        } // Accessing corrdinates causes undocumented behaviour
+
         public override string ToString()
         {
             return pai ? "(POINT_AT_INFINITY)" : "(" + X + ", " + Y + ")";
@@ -27,14 +34,14 @@ namespace MLAPI.Cryptography
     {
         public enum CurveType { Weierstrass, Montgomery }
 
-        protected readonly IntX a, b, modulo;
+        protected readonly BigInteger a, b, modulo;
         protected readonly CurveType type;
 
-        public EllipticCurve(IntX a, IntX b, IntX modulo, CurveType type = CurveType.Weierstrass)
+        public EllipticCurve(BigInteger a, BigInteger b, BigInteger modulo, CurveType type = CurveType.Weierstrass)
         {
             if (
-                (type==CurveType.Weierstrass && (4 * a * a * a) + (27 * b * b) == 0) || // Unfavourable Weierstrass curves
-                (type==CurveType.Montgomery && b * (a * a - 4)==0)                      // Unfavourable Montgomery curves
+                (type == CurveType.Weierstrass && (4 * a * a * a) + (27 * b * b) == 0) || // Unfavourable Weierstrass curves
+                (type == CurveType.Montgomery && b * (a * a - 4) == 0)                      // Unfavourable Montgomery curves
                 ) throw new Exception("Unfavourable curve");
             this.a = a;
             this.b = b;
@@ -54,11 +61,11 @@ namespace MLAPI.Cryptography
             else if (p1 == CurvePoint.POINT_AT_INFINITY) return p2;
             else if (p2 == CurvePoint.POINT_AT_INFINITY) return p1;
             else if (p1.X == p2.X && p1.Y == Inverse(p2).Y) return CurvePoint.POINT_AT_INFINITY;
-            
-            IntX x3 = 0, y3 = 0;
+
+            BigInteger x3 = 0, y3 = 0;
             if (type == CurveType.Weierstrass)
             {
-                IntX slope = p1.X == p2.X && p1.Y == p2.Y ? Mod((3 * p1.X * p1.X + a) * MulInverse(2 * p1.Y)) : Mod(Mod(p2.Y - p1.Y) * MulInverse(p2.X - p1.X));
+                BigInteger slope = p1.X == p2.X && p1.Y == p2.Y ? Mod((3 * p1.X * p1.X + a) * MulInverse(2 * p1.Y)) : Mod(Mod(p2.Y - p1.Y) * MulInverse(p2.X - p1.X));
                 x3 = Mod((slope * slope) - p1.X - p2.X);
                 y3 = Mod(-((slope * x3) + p1.Y - (slope * p1.X)));
             }
@@ -66,41 +73,41 @@ namespace MLAPI.Cryptography
             {
                 if ((p1.X == p2.X && p1.Y == p2.Y))
                 {
-                    IntX q = 3 * p1.X;
-                    IntX w = q * p1.X;
+                    BigInteger q = 3 * p1.X;
+                    BigInteger w = q * p1.X;
 
-                    IntX e = 2 * a;
-                    IntX r = e * p1.X;
+                    BigInteger e = 2 * a;
+                    BigInteger r = e * p1.X;
 
-                    IntX t = 2 * b;
-                    IntX y = t * p1.Y;
+                    BigInteger t = 2 * b;
+                    BigInteger y = t * p1.Y;
 
-                    IntX u = MulInverse(y);
+                    BigInteger u = MulInverse(y);
 
-                    IntX o = w + e + 1;
-                    IntX p = o * u;
+                    BigInteger o = w + e + 1;
+                    BigInteger p = o * u;
                 }
-                IntX co = p1.X == p2.X && p1.Y == p2.Y ? Mod((3 * p1.X * p1.X + 2 * a * p1.X + 1) * MulInverse(2 * b * p1.Y)) : Mod(Mod(p2.Y - p1.Y) * MulInverse(p2.X - p1.X)); // Compute a commonly used coefficient
+                BigInteger co = p1.X == p2.X && p1.Y == p2.Y ? Mod((3 * p1.X * p1.X + 2 * a * p1.X + 1) * MulInverse(2 * b * p1.Y)) : Mod(Mod(p2.Y - p1.Y) * MulInverse(p2.X - p1.X)); // Compute a commonly used coefficient
                 x3 = Mod(b * co * co - a - p1.X - p2.X);
                 y3 = Mod(((2 * p1.X + p2.X + a) * co) - (b * co * co * co) - p1.Y);
             }
-            
+
             return new CurvePoint(x3, y3);
         }
 
-        public CurvePoint Multiply(CurvePoint p, IntX scalar)
+        public CurvePoint Multiply(CurvePoint p, BigInteger scalar)
         {
             if (scalar <= 0) throw new Exception("Cannot multiply by a scalar which is <= 0");
             if (p == CurvePoint.POINT_AT_INFINITY) return CurvePoint.POINT_AT_INFINITY;
 
             CurvePoint p1 = new CurvePoint(p.X, p.Y);
-            scalar.GetInternalState(out uint[] u, out bool b);
+            uint[] u = scalar.GetInternalState();
             long high_bit = -1;
-            for (int i = u.Length - 1; i>=0; --i)
+            for (int i = u.Length - 1; i >= 0; --i)
                 if (u[i] != 0)
                 {
-                    for(int j = 31; j>=0; --j)
-                        if ((u[i] & (1<<j))!=0)
+                    for (int j = 31; j >= 0; --j)
+                        if ((u[i] & (1 << j)) != 0)
                         {
                             high_bit = j + i * 32;
                             goto Next;
@@ -109,7 +116,7 @@ namespace MLAPI.Cryptography
             Next:
 
             // Double-and-add method
-            while(high_bit >= 0)
+            while (high_bit >= 0)
             {
                 p1 = Add(p1, p1); // Double
                 if ((u.BitAt(high_bit)))
@@ -120,16 +127,17 @@ namespace MLAPI.Cryptography
             return p1;
         }
 
-        protected IntX MulInverse(IntX eq) => MulInverse(eq, modulo);
-        public static IntX MulInverse(IntX eq, IntX modulo)
+        protected BigInteger MulInverse(BigInteger eq) => MulInverse(eq, modulo);
+
+        public static BigInteger MulInverse(BigInteger eq, BigInteger modulo)
         {
             eq = Mod(eq, modulo);
-            Stack<IntX> collect = new Stack<IntX>();
-            IntX v = modulo; // Copy modulo
-            IntX m;
-            while((m = v % eq) != 0)
+            Stack<BigInteger> collect = new Stack<BigInteger>();
+            BigInteger v = modulo; // Copy modulo
+            BigInteger m;
+            while ((m = v % eq) != 0)
             {
-                collect.Push(-v/eq/*-(m.l_div)*/);
+                collect.Push(-v / eq/*-(m.l_div)*/);
                 v = eq;
                 eq = m;
             }
@@ -146,7 +154,8 @@ namespace MLAPI.Cryptography
         }
 
         public CurvePoint Inverse(CurvePoint p) => Inverse(p, modulo);
-        protected static CurvePoint Inverse(CurvePoint p, IntX modulo) => new CurvePoint(p.X, Mod(-p.Y, modulo));
+
+        protected static CurvePoint Inverse(CurvePoint p, BigInteger modulo) => new CurvePoint(p.X, Mod(-p.Y, modulo));
 
         public bool IsOnCurve(CurvePoint p)
         {
@@ -154,28 +163,29 @@ namespace MLAPI.Cryptography
             catch { return false; }
             return true;
         }
+
         protected void CheckOnCurve(CurvePoint p)
         {
             if (
-                p!=CurvePoint.POINT_AT_INFINITY &&                                                                      // The point at infinity is asserted to be on the curve
+                p != CurvePoint.POINT_AT_INFINITY &&                                                                      // The point at infinity is asserted to be on the curve
                 (type == CurveType.Weierstrass && Mod(p.Y * p.Y) != Mod((p.X * p.X * p.X) + (p.X * a) + b)) ||          // Weierstrass formula
                 (type == CurveType.Montgomery && Mod(b * p.Y * p.Y) != Mod((p.X * p.X * p.X) + (p.X * p.X * a) + p.X))  // Montgomery formula
                 ) throw new Exception("Point is not on curve");
         }
 
-        protected IntX Mod(IntX b) => Mod(b, modulo);
+        protected BigInteger Mod(BigInteger b) => Mod(b, modulo);
 
-        private static IntX Mod(IntX x, IntX m)
+        private static BigInteger Mod(BigInteger x, BigInteger m)
         {
-            IntX r = x.Abs() > m ? x % m : x;
+            BigInteger r = x.Abs() > m ? x % m : x;
             return r < 0 ? r + m : r;
         }
 
-        protected static IntX ModPow(IntX x, IntX power, IntX prime)
+        protected static BigInteger ModPow(BigInteger x, BigInteger power, BigInteger prime)
         {
-            IntX result = 1;
+            BigInteger result = 1;
             bool setBit = false;
-            while(power > 0)
+            while (power > 0)
             {
                 x %= prime;
                 setBit = (power & 1) == 1;
@@ -188,4 +198,5 @@ namespace MLAPI.Cryptography
         }
     }
 }
+
 #endif

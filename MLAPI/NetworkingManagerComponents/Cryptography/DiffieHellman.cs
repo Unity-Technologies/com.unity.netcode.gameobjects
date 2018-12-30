@@ -1,8 +1,8 @@
 ﻿#if !DISABLE_CRYPTOGRAPHY
 using System;
-using IntXLib;
-using System.Text;
 using System.Security.Cryptography;
+using System.Text;
+using MLAPI.Internal;
 using UnityEngine;
 
 namespace MLAPI.Cryptography
@@ -11,7 +11,7 @@ namespace MLAPI.Cryptography
     {
         protected static readonly RNGCryptoServiceProvider rand = new RNGCryptoServiceProvider();
 
-        public static IntX DEFAULT_PRIME
+        public static BigInteger DEFAULT_PRIME
         {
             get
             {
@@ -19,7 +19,7 @@ namespace MLAPI.Cryptography
                 {
                     try
                     {
-                        defaultPrime = (new IntX(1) << 255) - 19;
+                        defaultPrime = (new BigInteger("1") << 255) - 19;
                     }
                     catch (Exception)
                     {
@@ -30,10 +30,10 @@ namespace MLAPI.Cryptography
                 return defaultPrime;
             }
         }
-        private static IntX defaultPrime;
 
+        private static BigInteger defaultPrime;
 
-        public static IntX DEFAULT_ORDER
+        public static BigInteger DEFAULT_ORDER
         {
             get
             {
@@ -41,7 +41,8 @@ namespace MLAPI.Cryptography
                 {
                     try
                     {
-                        defaultOrder = (new IntX(1) << 252) + IntX.Parse("27742317777372353535851937790883648493");
+                        defaultOrder = (new BigInteger(1) << 252) +
+                                       new BigInteger("27742317777372353535851937790883648493");
                     }
                     catch (Exception)
                     {
@@ -53,9 +54,8 @@ namespace MLAPI.Cryptography
             }
         }
 
-        private static IntX defaultOrder;
-        
-        
+        private static BigInteger defaultOrder;
+
         public static EllipticCurve DEFAULT_CURVE
         {
             get
@@ -75,8 +75,9 @@ namespace MLAPI.Cryptography
                 return defaultCurve;
             }
         }
+
         private static EllipticCurve defaultCurve;
-        
+
         public static CurvePoint DEFAULT_GENERATOR
         {
             get
@@ -85,7 +86,7 @@ namespace MLAPI.Cryptography
                 {
                     try
                     {
-                        defaultGenerator = new CurvePoint(9, IntX.Parse("14781619447589544791020593568409986887264606134616475288964881837755586237401"));
+                        defaultGenerator = new CurvePoint(9, new BigInteger("14781619447589544791020593568409986887264606134616475288964881837755586237401"));
                     }
                     catch (Exception)
                     {
@@ -96,14 +97,14 @@ namespace MLAPI.Cryptography
                 return defaultGenerator;
             }
         }
+
         private static CurvePoint defaultGenerator;
 
         protected readonly EllipticCurve curve;
-        public readonly IntX priv;
+        public readonly BigInteger priv;
         protected readonly CurvePoint generator, pub;
 
-
-        public EllipticDiffieHellman(EllipticCurve curve, CurvePoint generator, IntX order, byte[] priv = null)
+        public EllipticDiffieHellman(EllipticCurve curve, CurvePoint generator, BigInteger order, byte[] priv = null)
         {
             this.curve = curve;
             this.generator = generator;
@@ -111,20 +112,10 @@ namespace MLAPI.Cryptography
             // Generate private key
             if (priv == null)
             {
-                byte[] max = order.ToArray();
-                do
-                {
-                    byte[] p1 = new byte[5 /*rand.Next(max.Length) + 1*/];
-
-                    rand.GetBytes(p1);
-
-                    if (p1.Length == max.Length) p1[p1.Length - 1] %= max[max.Length - 1];
-                    else p1[p1.Length - 1] &= 127;
-
-                    this.priv = DHHelper.FromArray(p1);
-                } while (this.priv<2);
+                this.priv = new BigInteger();
+                this.priv.GenRandomBits(order.DataLength, rand);
             }
-            else this.priv = DHHelper.FromArray(priv);
+            else this.priv = new BigInteger(priv);
 
             // Generate public key
             pub = curve.Multiply(generator, this.priv);
@@ -132,8 +123,8 @@ namespace MLAPI.Cryptography
 
         public byte[] GetPublicKey()
         {
-            byte[] p1 = pub.X.ToArray();
-            byte[] p2 = pub.Y.ToArray();
+            byte[] p1 = pub.X.GetBytes();
+            byte[] p2 = pub.Y.GetBytes();
 
             byte[] ser = new byte[4 + p1.Length + p2.Length];
             ser[0] = (byte)(p1.Length & 255);
@@ -146,45 +137,23 @@ namespace MLAPI.Cryptography
             return ser;
         }
 
-        public byte[] GetPrivateKey() => priv.ToArray();
+        public byte[] GetPrivateKey() => priv.GetBytes();
 
         public byte[] GetSharedSecret(byte[] pK)
         {
-            byte[] p1 = new byte[pK[0] | (pK[1]<<8) | (pK[2]<<16) | (pK[3]<<24)]; // Reconstruct x-axis size
+            byte[] p1 = new byte[pK[0] | (pK[1] << 8) | (pK[2] << 16) | (pK[3] << 24)]; // Reconstruct x-axis size
             byte[] p2 = new byte[pK.Length - p1.Length - 4];
             Array.Copy(pK, 4, p1, 0, p1.Length);
             Array.Copy(pK, 4 + p1.Length, p2, 0, p2.Length);
 
-            CurvePoint remotePublic = new CurvePoint(DHHelper.FromArray(p1), DHHelper.FromArray(p2));
+            CurvePoint remotePublic = new CurvePoint(new BigInteger(p1), new BigInteger(p2));
 
-            byte[] secret = curve.Multiply(remotePublic, priv).X.ToArray(); // Use the x-coordinate as the shared secret
+            byte[] secret = curve.Multiply(remotePublic, priv).X.GetBytes(); // Use the x-coordinate as the shared secret
 
             // PBKDF2-HMAC-SHA1 (Common shared secret generation method)
             return new Rfc2898DeriveBytes(secret, Encoding.UTF8.GetBytes("P1sN0R4inb0wPl5P1sPls"), 1000).GetBytes(32);
         }
     }
-
-    internal static class DHHelper
-    {
-        internal static byte[] ToArray(this IntX v)
-        {
-            v.GetInternalState(out uint[] digits, out bool negative);
-            byte[] b = DigitConverter.ToBytes(digits);
-            byte[] b1 = new byte[b.Length + 1];
-            Array.Copy(b, b1, b.Length);
-            b1[b.Length] = (byte)(negative ? 1 : 0);
-            return b1;
-        }
-        internal static IntX FromArray(byte[] b)
-        {
-            if (b.Length == 0) return new IntX();
-            byte[] b1 = new byte[b.Length - 1];
-            Array.Copy(b, b1, b1.Length);
-            uint[] u = DigitConverter.FromBytes(b1);
-            return new IntX(u, b[b.Length - 1]==1);
-        }
-        internal static bool BitAt(this uint[] data, long index) => (data[index / 32] & (1 << (int)(index % 32))) != 0;
-        internal static IntX Abs(this IntX i) => i < 0 ? -i : i;
-    }
 }
+
 #endif
