@@ -4,7 +4,7 @@ permalink: /api/networked-list-event_-t_/
 ---
 
 <div style="line-height: 1;">
-	<h2 markdown="1">NetworkedListEvent<T> ``struct``</h2>
+	<h2 markdown="1">NetworkedListEvent&lt;T&gt; ``struct``</h2>
 	<p style="font-size: 20px;"><b>Namespace:</b> MLAPI.NetworkedVar.Collections</p>
 	<p style="font-size: 20px;"><b>Assembly:</b> MLAPI.dll</p>
 </div>

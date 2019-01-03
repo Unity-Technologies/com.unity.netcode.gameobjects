@@ -26,134 +26,6 @@ permalink: /api/bit-writer/
 <div>
 	<h3 markdown="1">Public Methods</h3>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` WriteLongArrayPacked(``long[]`` b, ``long`` count);</b></h4>
-		<p>Writes a long array in a packed format</p>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long[]`` b</p>
-			<p>The array to write</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
-			<p>The amount of elements to write</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` WriteLongArrayPackedDiff(``long[]`` write, ``long[]`` compare, ``long`` count);</b></h4>
-		<p>Writes the diff between two long arrays in a packed format</p>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long[]`` write</p>
-			<p>The new array</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long[]`` compare</p>
-			<p>The previous array to use for diff</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
-			<p>The amount of elements to write</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` WriteULongArrayPacked(``ulong[]`` b, ``long`` count);</b></h4>
-		<p>Writes a ulong array in a packed format</p>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``ulong[]`` b</p>
-			<p>The array to write</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
-			<p>The amount of elements to write</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` WriteULongArrayPackedDiff(``ulong[]`` write, ``ulong[]`` compare, ``long`` count);</b></h4>
-		<p>Writes the diff between two ulong arrays in a packed format</p>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``ulong[]`` write</p>
-			<p>The new array</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``ulong[]`` compare</p>
-			<p>The previous array to use for diff</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
-			<p>The amount of elements to write</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` WriteFloatArrayPacked(``float[]`` b, ``long`` count);</b></h4>
-		<p>Writes a float array in a packed format</p>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``float[]`` b</p>
-			<p>The array to write</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
-			<p>The amount of elements to write</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` WriteFloatArrayPackedDiff(``float[]`` write, ``float[]`` compare, ``long`` count);</b></h4>
-		<p>Writes the diff between two float arrays in a packed format</p>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``float[]`` write</p>
-			<p>The new array</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``float[]`` compare</p>
-			<p>The previous array to use for diff</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
-			<p>The amount of elements to write</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` WriteDoubleArrayPacked(``double[]`` b, ``long`` count);</b></h4>
-		<p>Writes a double array in a packed format</p>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``double[]`` b</p>
-			<p>The array to write</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
-			<p>The amount of elements to write</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` WriteDoubleArrayPackedDiff(``double[]`` write, ``double[]`` compare, ``long`` count);</b></h4>
-		<p>Writes the diff between two double arrays in a packed format</p>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``double[]`` write</p>
-			<p>The new array</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``double[]`` compare</p>
-			<p>The previous array to use for diff</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
-			<p>The amount of elements to write</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``void`` SetStream(``Stream`` stream);</b></h4>
 		<p>Changes the underlying stream the writer is writing to</p>
 		<h5><b>Parameters</b></h5>
@@ -1186,15 +1058,138 @@ permalink: /api/bit-writer/
 		</div>
 	</div>
 	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` WriteLongArrayPacked(``long[]`` b, ``long`` count);</b></h4>
+		<p>Writes a long array in a packed format</p>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long[]`` b</p>
+			<p>The array to write</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
+			<p>The amount of elements to write</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` WriteLongArrayPackedDiff(``long[]`` write, ``long[]`` compare, ``long`` count);</b></h4>
+		<p>Writes the diff between two long arrays in a packed format</p>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long[]`` write</p>
+			<p>The new array</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long[]`` compare</p>
+			<p>The previous array to use for diff</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
+			<p>The amount of elements to write</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` WriteULongArrayPacked(``ulong[]`` b, ``long`` count);</b></h4>
+		<p>Writes a ulong array in a packed format</p>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``ulong[]`` b</p>
+			<p>The array to write</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
+			<p>The amount of elements to write</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` WriteULongArrayPackedDiff(``ulong[]`` write, ``ulong[]`` compare, ``long`` count);</b></h4>
+		<p>Writes the diff between two ulong arrays in a packed format</p>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``ulong[]`` write</p>
+			<p>The new array</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``ulong[]`` compare</p>
+			<p>The previous array to use for diff</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
+			<p>The amount of elements to write</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` WriteFloatArrayPacked(``float[]`` b, ``long`` count);</b></h4>
+		<p>Writes a float array in a packed format</p>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``float[]`` b</p>
+			<p>The array to write</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
+			<p>The amount of elements to write</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` WriteFloatArrayPackedDiff(``float[]`` write, ``float[]`` compare, ``long`` count);</b></h4>
+		<p>Writes the diff between two float arrays in a packed format</p>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``float[]`` write</p>
+			<p>The new array</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``float[]`` compare</p>
+			<p>The previous array to use for diff</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
+			<p>The amount of elements to write</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` WriteDoubleArrayPacked(``double[]`` b, ``long`` count);</b></h4>
+		<p>Writes a double array in a packed format</p>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``double[]`` b</p>
+			<p>The array to write</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
+			<p>The amount of elements to write</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` WriteDoubleArrayPackedDiff(``double[]`` write, ``double[]`` compare, ``long`` count);</b></h4>
+		<p>Writes the diff between two double arrays in a packed format</p>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``double[]`` write</p>
+			<p>The new array</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``double[]`` compare</p>
+			<p>The previous array to use for diff</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` count</p>
+			<p>The amount of elements to write</p>
+		</div>
+	</div>
+	<br>
 </div>
 <br>
 <div>
 	<h3 markdown="1">Inherited Methods</h3>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``string`` ToString();</b></h4>
-		<h5 markdown="1">Inherited from: ``object``</h5>
-	</div>
-	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``bool`` Equals(``object`` obj);</b></h4>
 		<h5 markdown="1">Inherited from: ``object``</h5>
@@ -1211,6 +1206,11 @@ permalink: /api/bit-writer/
 	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``Type`` GetType();</b></h4>
+		<h5 markdown="1">Inherited from: ``object``</h5>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``string`` ToString();</b></h4>
 		<h5 markdown="1">Inherited from: ``object``</h5>
 	</div>
 </div>
