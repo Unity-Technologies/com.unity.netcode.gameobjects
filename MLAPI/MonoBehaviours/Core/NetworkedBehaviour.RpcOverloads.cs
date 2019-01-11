@@ -1738,8 +1738,7 @@ namespace MLAPI
             SendServerRPCBoxed(HashMethodName(method.Method.Name), channel, security);
         }
 
-        public void InvokeServerRpc(string methodName, string channel = null,
-            SecuritySendFlags security = SecuritySendFlags.None)
+        public void InvokeServerRpc(string methodName, string channel = null, SecuritySendFlags security = SecuritySendFlags.None)
         {
             SendServerRPCBoxed(HashMethodName(methodName), channel, security);
         }
