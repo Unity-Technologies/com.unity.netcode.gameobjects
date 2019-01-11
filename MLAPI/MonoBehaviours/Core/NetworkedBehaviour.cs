@@ -661,12 +661,14 @@ namespace MLAPI
                 {
                     userStream.CopyUnreadFrom(stream);
                     userStream.Position = 0;
+                    Debug.LogError("Sender: " + senderClientId);
+                    ExecutingRpcSender = senderClientId;
 
                     if (rpc.reflectionMethod != null)
                     {
                         ExecutingRpcSender = senderClientId;
                         rpc.reflectionMethod.Invoke(this, userStream);
-                        ExecutingRpcSender = 0;
+                        //ExecutingRpcSender = 0;
                     }
 
                     if (rpc.rpcDelegate != null)
@@ -677,11 +679,15 @@ namespace MLAPI
             }
             else
             {
+                Debug.LogError("Sender: " + senderClientId);
+
+                ExecutingRpcSender = senderClientId;
+
                 if (rpc.reflectionMethod != null)
                 {
                     ExecutingRpcSender = senderClientId;
                     rpc.reflectionMethod.Invoke(this, stream);
-                    ExecutingRpcSender = 0;
+                    //ExecutingRpcSender = 0;
                 }
 
                 if (rpc.rpcDelegate != null)
