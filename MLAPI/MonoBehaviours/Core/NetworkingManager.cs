@@ -966,14 +966,24 @@ namespace MLAPI
             
             if (ConnectedClients.ContainsKey(clientId))
             {
-                if(NetworkConfig.HandleObjectSpawning)
+                if (IsServer && NetworkConfig.HandleObjectSpawning)
                 {
                     if (ConnectedClients[clientId].PlayerObject != null)
                         Destroy(ConnectedClients[clientId].PlayerObject.gameObject);
+                    
                     for (int i = 0; i < ConnectedClients[clientId].OwnedObjects.Count; i++)
                     {
                         if (ConnectedClients[clientId].OwnedObjects[i] != null)
-                            Destroy(ConnectedClients[clientId].OwnedObjects[i].gameObject);
+                        {
+                            if (!ConnectedClients[clientId].OwnedObjects[i].DontDestroyWithOwner)
+                            {
+                                Destroy(ConnectedClients[clientId].OwnedObjects[i].gameObject);
+                            }
+                            else
+                            {
+                                ConnectedClients[clientId].OwnedObjects[i].RemoveOwnership();
+                            }
+                        }
                     }
                 }
 
@@ -985,6 +995,7 @@ namespace MLAPI
                         break;
                     }
                 }
+                
                 ConnectedClients.Remove(clientId);
             }
 

@@ -109,6 +109,12 @@ namespace MLAPI
 
         internal uint sceneSpawnedInIndex = 0;
 
+        /// <summary>
+        /// Wheter or not to destroy this object if it's owner is destroyed.
+        /// If false, the objects ownership will be given to the server.
+        /// </summary>
+        public bool DontDestroyWithOwner;
+
         private void OnDestroy()
         {
             if (NetworkingManager.Singleton != null)
