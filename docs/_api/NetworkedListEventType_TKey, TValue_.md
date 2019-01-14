@@ -4,7 +4,7 @@ permalink: /api/networked-list-event-type_-tkey, -tvalue_/
 ---
 
 <div style="line-height: 1;">
-	<h2 markdown="1">NetworkedListEventType<TKey, TValue> ``enum``</h2>
+	<h2 markdown="1">NetworkedListEventType&lt;TKey, TValue&gt; ``enum``</h2>
 	<p style="font-size: 20px;"><b>Namespace:</b> MLAPI.NetworkedVar.Collections</p>
 	<p style="font-size: 20px;"><b>Assembly:</b> MLAPI.dll</p>
 </div>

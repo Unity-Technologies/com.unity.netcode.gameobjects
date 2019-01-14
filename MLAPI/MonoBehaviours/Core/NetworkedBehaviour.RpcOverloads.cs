@@ -1733,6 +1733,16 @@ namespace MLAPI
         #endregion
 
         #region BOXED SERVER RPC
+        public void InvokeServerRpc(Action method, string channel = null, SecuritySendFlags security = SecuritySendFlags.None)
+        {
+            SendServerRPCBoxed(HashMethodName(method.Method.Name), channel, security);
+        }
+
+        public void InvokeServerRpc(string methodName, string channel = null, SecuritySendFlags security = SecuritySendFlags.None)
+        {
+            SendServerRPCBoxed(HashMethodName(methodName), channel, security);
+        }
+
         public void InvokeServerRpc<T1>(Action<T1> method, T1 t1, string channel = null, SecuritySendFlags security = SecuritySendFlags.None)
         {
             SendServerRPCBoxed(HashMethodName(method.Method.Name), channel, security, t1);

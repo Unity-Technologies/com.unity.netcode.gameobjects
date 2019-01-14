@@ -4,7 +4,7 @@ permalink: /api/networked-dictionary-event_-tkey, -tvalue_/
 ---
 
 <div style="line-height: 1;">
-	<h2 markdown="1">NetworkedDictionaryEvent<TKey, TValue> ``struct``</h2>
+	<h2 markdown="1">NetworkedDictionaryEvent&lt;TKey, TValue&gt; ``struct``</h2>
 	<p style="font-size: 20px;"><b>Namespace:</b> MLAPI.NetworkedVar.Collections</p>
 	<p style="font-size: 20px;"><b>Assembly:</b> MLAPI.dll</p>
 </div>

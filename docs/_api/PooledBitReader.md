@@ -39,30 +39,6 @@ permalink: /api/pooled-bit-reader/
 <div>
 	<h3 markdown="1">Inherited Methods</h3>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``double[]`` ReadDoubleArrayDiff(``double[]`` readTo, ``long`` knownLength);</b></h4>
-		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``double[]`` readTo</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``double[]`` ReadDoubleArrayPackedDiff(``double[]`` readTo, ``long`` knownLength);</b></h4>
-		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``double[]`` readTo</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``void`` SetStream(``Stream`` stream);</b></h4>
 		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
 		<p>Changes the underlying stream the reader is reading from</p>
@@ -1022,8 +998,27 @@ permalink: /api/pooled-bit-reader/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``string`` ToString();</b></h4>
-		<h5 markdown="1">Inherited from: ``object``</h5>
+		<h4 markdown="1"><b>public ``double[]`` ReadDoubleArrayDiff(``double[]`` readTo, ``long`` knownLength);</b></h4>
+		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``double[]`` readTo</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``double[]`` ReadDoubleArrayPackedDiff(``double[]`` readTo, ``long`` knownLength);</b></h4>
+		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``double[]`` readTo</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
@@ -1042,6 +1037,11 @@ permalink: /api/pooled-bit-reader/
 	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``Type`` GetType();</b></h4>
+		<h5 markdown="1">Inherited from: ``object``</h5>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``string`` ToString();</b></h4>
 		<h5 markdown="1">Inherited from: ``object``</h5>
 	</div>
 </div>

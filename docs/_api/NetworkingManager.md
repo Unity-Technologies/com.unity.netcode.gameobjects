@@ -17,7 +17,10 @@ permalink: /api/networking-manager/
 		<p>A syncronized time, represents the time in seconds since the server application started. Is replicated across all clients</p>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public [``NetworkingManager``](/MLAPI/api/networking-manager/) singleton { get; set; }</b></h4>
+		<h4 markdown="1"><b>public [``NetworkingManager``](/MLAPI/api/networking-manager/) singleton { get; }</b></h4>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public [``NetworkingManager``](/MLAPI/api/networking-manager/) Singleton { get; set; }</b></h4>
 		<p>The singleton instance of the NetworkingManager</p>
 	</div>
 	<div style="line-height: 1;">
@@ -29,23 +32,38 @@ permalink: /api/networking-manager/
 		<p>The clientId the server calls the local client by, only valid for clients</p>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``bool`` isServer { get; set; }</b></h4>
+		<h4 markdown="1"><b>public ``bool`` isServer { get; }</b></h4>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``bool`` IsServer { get; set; }</b></h4>
 		<p>Gets wheter or not a server is running</p>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``bool`` isClient { get; set; }</b></h4>
+		<h4 markdown="1"><b>public ``bool`` isClient { get; }</b></h4>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``bool`` IsClient { get; set; }</b></h4>
 		<p>Gets wheter or not a client is running</p>
 	</div>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``bool`` isHost { get; }</b></h4>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``bool`` IsHost { get; }</b></h4>
 		<p>Gets if we are running as host</p>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``bool`` isListening { get; set; }</b></h4>
+		<h4 markdown="1"><b>public ``bool`` isListening { get; }</b></h4>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``bool`` IsListening { get; set; }</b></h4>
 		<p>Gets wheter or not we are listening for connections</p>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``bool`` isConnectedClients { get; set; }</b></h4>
+		<h4 markdown="1"><b>public ``bool`` isConnectedClients { get; }</b></h4>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``bool`` IsConnectedClient { get; set; }</b></h4>
 		<p>Gets if we are connected as a client</p>
 	</div>
 	<div style="line-height: 1;">

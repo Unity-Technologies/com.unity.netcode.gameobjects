@@ -25,11 +25,17 @@ permalink: /api/networked-object/
 		<p>The hash used to identify the NetworkedPrefab, a hash of the NetworkedPrefabName</p>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``bool`` isPlayerObject { get; set; }</b></h4>
+		<h4 markdown="1"><b>public ``bool`` isPlayerObject { get; }</b></h4>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``bool`` IsPlayerObject { get; set; }</b></h4>
 		<p>Gets if this object is a player object</p>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``bool`` isPooledObject { get; set; }</b></h4>
+		<h4 markdown="1"><b>public ``bool`` isPooledObject { get; }</b></h4>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``bool`` IsPooledObject { get; set; }</b></h4>
 		<p>Gets if this object is part of a pool</p>
 	</div>
 	<div style="line-height: 1;">
@@ -38,18 +44,30 @@ permalink: /api/networked-object/
 	</div>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``bool`` isLocalPlayer { get; }</b></h4>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``bool`` IsLocalPlayer { get; }</b></h4>
 		<p>Gets if the object is the the personal clients player object</p>
 	</div>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``bool`` isOwner { get; }</b></h4>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``bool`` IsOwner { get; }</b></h4>
 		<p>Gets if the object is owned by the local player or if the object is the local player object</p>
 	</div>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``bool`` isOwnedByServer { get; }</b></h4>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``bool`` IsOwnedByServer { get; }</b></h4>
 		<p>Gets wheter or not the object is owned by anyone</p>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``bool`` isSpawned { get; set; }</b></h4>
+		<h4 markdown="1"><b>public ``bool`` isSpawned { get; }</b></h4>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``bool`` IsSpawned { get; set; }</b></h4>
 		<p>Gets if the object has yet been spawned across the network</p>
 	</div>
 </div>
