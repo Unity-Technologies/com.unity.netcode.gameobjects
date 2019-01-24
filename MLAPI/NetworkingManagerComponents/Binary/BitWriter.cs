@@ -190,13 +190,13 @@ namespace MLAPI.Serialization
                 WriteUInt16Packed(((NetworkedBehaviour)value).GetBehaviourId());
                 return;
             } 
-            else if (value is IBitWritable)
+            else if (value is BitWritable)
             {
                 if (value == null)
                 {
                     throw new ArgumentException("BitWriter cannot write IBitWritable types with a null value");
                 }
-                ((IBitWritable)value).Write(this.sink);
+                ((BitWritable)value).Write(this.sink);
                 return;
             } 
             

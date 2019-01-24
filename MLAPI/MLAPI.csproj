@@ -116,8 +116,9 @@
     <Compile Include="NetworkingManagerComponents\Binary\BitReaderDeprecated.cs" />
     <Compile Include="NetworkingManagerComponents\Binary\BinaryHelpers.cs" />
     <Compile Include="NetworkingManagerComponents\Binary\ByteBool.cs" />
-    <Compile Include="NetworkingManagerComponents\Binary\IBitWritable.cs" />
+    <Compile Include="NetworkingManagerComponents\Binary\BitWritable.cs" />
     <Compile Include="NetworkingManagerComponents\Binary\ResourcePool.cs" />
+    <Compile Include="NetworkingManagerComponents\Binary\SerializationHelper.cs" />
     <Compile Include="NetworkingManagerComponents\Binary\UIntFloat.cs" />
     <Compile Include="NetworkingManagerComponents\Core\LogHelper.cs" />
     <Compile Include="NetworkingManagerComponents\Cryptography\CryptographyHelper.cs" />

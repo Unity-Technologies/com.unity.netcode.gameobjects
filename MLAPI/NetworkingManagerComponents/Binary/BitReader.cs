@@ -174,10 +174,10 @@ namespace MLAPI.Serialization
                     return null;
                 }
             }
-            if (typeof(IBitWritable).IsAssignableFrom(type))
+            if (typeof(BitWritable).IsAssignableFrom(type))
             {
                 object instance = Activator.CreateInstance(type);
-                ((IBitWritable)instance).Read(this.source);
+                ((BitWritable)instance).Read(this.source);
                 return instance;
             }
           
