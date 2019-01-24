@@ -39,7 +39,7 @@ namespace MLAPI
             }
         }
 
-        public void Invoke(object instance, Stream stream)
+        public object Invoke(object instance, Stream stream)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
@@ -48,7 +48,7 @@ namespace MLAPI
                     parameterRefs[i] = reader.ReadObjectPacked(parameterTypes[i]);
                 }
 
-                method.Invoke(instance, parameterRefs);
+                return method.Invoke(instance, parameterRefs);
             }
         }
     }

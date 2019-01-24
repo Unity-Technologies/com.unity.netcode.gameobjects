@@ -564,13 +564,18 @@ namespace MLAPI
                     }
 
                     ParameterInfo[] parameters = methods[i].GetParameters();
-                    if (parameters.Length == 2 && parameters[0].ParameterType == typeof(uint) && parameters[1].ParameterType == typeof(Stream))
+                    if (parameters.Length == 2 && parameters[0].ParameterType == typeof(uint) && parameters[1].ParameterType == typeof(Stream) && methods[i].ReturnType == typeof(void))
                     {
                         //use delegate
                         attributes[0].rpcDelegate = (RpcDelegate)Delegate.CreateDelegate(typeof(RpcDelegate), this, methods[i].Name);
                     }
                     else
                     {
+                        if (methods[i].ReturnType != typeof(void) && methods[i].ReturnType.GetGenericTypeDefinition() != typeof(RpcResponse<>))
+                        {
+                            if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogWarning("Invalid return type of RPC. Has to be either void or RpcResponse<T> with a serializable type");
+                        }
+
                         attributes[0].reflectionMethod = new ReflectionMehtod(methods[i]);
                     }
                     
@@ -596,13 +601,18 @@ namespace MLAPI
                     }
 
                     ParameterInfo[] parameters = methods[i].GetParameters();
-                    if (parameters.Length == 2 && parameters[0].ParameterType == typeof(uint) && parameters[1].ParameterType == typeof(Stream))
+                    if (parameters.Length == 2 && parameters[0].ParameterType == typeof(uint) && parameters[1].ParameterType == typeof(Stream) && methods[i].ReturnType == typeof(void))
                     {
                         //use delegate
                         attributes[0].rpcDelegate = (RpcDelegate)Delegate.CreateDelegate(typeof(RpcDelegate), this, methods[i].Name);
                     }
                     else
                     {
+                        if (methods[i].ReturnType != typeof(void) && methods[i].ReturnType.GetGenericTypeDefinition() != typeof(RpcResponse<>))
+                        {
+                            if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogWarning("Invalid return type of RPC. Has to be either void or RpcResponse<T> with a serializable type");
+                        }
+                        
                         attributes[0].reflectionMethod = new ReflectionMehtod(methods[i]);
                     }
 
@@ -621,37 +631,39 @@ namespace MLAPI
             }
         }
 
-        internal void OnRemoteServerRPC(ulong hash, uint senderClientId, Stream stream)
+        internal object OnRemoteServerRPC(ulong hash, uint senderClientId, Stream stream)
         {
             if (!CachedServerRpcs.ContainsKey(this) || !CachedServerRpcs[this].ContainsKey(hash))
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("ServerRPC request method not found");
-                return;
+                return null;
             }
-            InvokeServerRPCLocal(hash, senderClientId, stream);
+            
+            return InvokeServerRPCLocal(hash, senderClientId, stream);
         }
         
-        internal void OnRemoteClientRPC(ulong hash, uint senderClientId, Stream stream)
+        internal object OnRemoteClientRPC(ulong hash, uint senderClientId, Stream stream)
         {
             if (!CachedClientRpcs.ContainsKey(this) || !CachedClientRpcs[this].ContainsKey(hash))
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("ClientRPC request method not found");
-                return;
+                return null;
             }
-            InvokeClientRPCLocal(hash, senderClientId, stream);
+            
+            return InvokeClientRPCLocal(hash, senderClientId, stream);
         }
 
-        private void InvokeServerRPCLocal(ulong hash, uint senderClientId, Stream stream)
+        private object InvokeServerRPCLocal(ulong hash, uint senderClientId, Stream stream)
         {
             if (!CachedServerRpcs.ContainsKey(this) || !CachedServerRpcs[this].ContainsKey(hash))
-                return;
+                return null;
             
             ServerRPC rpc = CachedServerRpcs[this][hash];
 
             if (rpc.RequireOwnership && senderClientId != OwnerClientId)
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Only owner can invoke ServerRPC that is marked to require ownership");
-                return;
+                return null;
             }
 
             if (stream.Position != 0)
@@ -661,46 +673,47 @@ namespace MLAPI
                 {
                     userStream.CopyUnreadFrom(stream);
                     userStream.Position = 0;
-                    Debug.LogError("Sender: " + senderClientId);
                     ExecutingRpcSender = senderClientId;
 
                     if (rpc.reflectionMethod != null)
                     {
                         ExecutingRpcSender = senderClientId;
-                        rpc.reflectionMethod.Invoke(this, userStream);
-                        //ExecutingRpcSender = 0;
+                        
+                        return rpc.reflectionMethod.Invoke(this, userStream);
                     }
 
                     if (rpc.rpcDelegate != null)
                     {
                         rpc.rpcDelegate(senderClientId, userStream);
                     }
+
+                    return null;
                 }
             }
             else
             {
-                Debug.LogError("Sender: " + senderClientId);
-
                 ExecutingRpcSender = senderClientId;
 
                 if (rpc.reflectionMethod != null)
                 {
                     ExecutingRpcSender = senderClientId;
-                    rpc.reflectionMethod.Invoke(this, stream);
-                    //ExecutingRpcSender = 0;
+                    
+                    return rpc.reflectionMethod.Invoke(this, stream);
                 }
 
                 if (rpc.rpcDelegate != null)
                 {
                     rpc.rpcDelegate(senderClientId, stream);
                 }
+
+                return null;
             }
         }
 
-        private void InvokeClientRPCLocal(ulong hash, uint senderClientId, Stream stream)
+        private object InvokeClientRPCLocal(ulong hash, uint senderClientId, Stream stream)
         {
             if (!CachedClientRpcs.ContainsKey(this) || !CachedClientRpcs[this].ContainsKey(hash))
-                return;
+                return null;
             
             ClientRPC rpc = CachedClientRpcs[this][hash];
 
@@ -714,26 +727,30 @@ namespace MLAPI
 
                     if (rpc.reflectionMethod != null)
                     {
-                        rpc.reflectionMethod.Invoke(this, userStream);
+                        return rpc.reflectionMethod.Invoke(this, userStream);
                     }
 
                     if (rpc.rpcDelegate != null)
                     {
                         rpc.rpcDelegate(senderClientId, userStream);
                     }
+
+                    return null;
                 }
             }
             else
             {
                 if (rpc.reflectionMethod != null)
                 {
-                    rpc.reflectionMethod.Invoke(this, stream);
+                    return rpc.reflectionMethod.Invoke(this, stream);
                 }
 
                 if (rpc.rpcDelegate != null)
                 {
                     rpc.rpcDelegate(senderClientId, stream);
                 }
+
+                return null;
             }
         }
         
@@ -749,7 +766,55 @@ namespace MLAPI
                     {
                         writer.WriteObjectPacked(parameters[i]);
                     }
+                    
                     SendServerRPCPerformance(hash, stream, channel, security);
+                }
+            }
+        }
+        
+        internal RpcResponse<T> SendServerRPCBoxedResponse<T>(ulong hash, string channel, SecuritySendFlags security, params object[] parameters)
+        {
+            using (PooledBitStream stream = PooledBitStream.Get())
+            {
+                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                {
+                    for (int i = 0; i < parameters.Length; i++)
+                    {
+                        writer.WriteObjectPacked(parameters[i]);
+                    }
+                    
+                    return SendServerRPCPerformanceResponse<T>(hash, stream, channel, security);
+                }
+            }
+        }
+        
+        internal void SendClientRPCBoxed(ulong hash, uint clientId, string channel, SecuritySendFlags security, params object[] parameters)
+        {
+            using (PooledBitStream stream = PooledBitStream.Get())
+            {
+                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                {
+                    for (int i = 0; i < parameters.Length; i++)
+                    {
+                        writer.WriteObjectPacked(parameters[i]);
+                    }
+                    SendClientRPCPerformance(hash, clientId, stream, channel, security);
+                }
+            }
+        }
+        
+        internal RpcResponse<T> SendClientRPCBoxedResponse<T>(ulong hash, uint clientId, string channel, SecuritySendFlags security, params object[] parameters)
+        {
+            using (PooledBitStream stream = PooledBitStream.Get())
+            {
+                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                {
+                    for (int i = 0; i < parameters.Length; i++)
+                    {
+                        writer.WriteObjectPacked(parameters[i]);
+                    }
+                    
+                    return SendClientRPCPerformanceResponse<T>(hash, clientId, stream, channel, security);
                 }
             }
         }
@@ -765,21 +830,6 @@ namespace MLAPI
                         writer.WriteObjectPacked(parameters[i]);
                     }
                     SendClientRPCPerformance(hash, clientIds, stream, channel, security);
-                }
-            }
-        }
-
-        internal void SendClientRPCBoxed(ulong hash, uint clientId, string channel, SecuritySendFlags security, params object[] parameters)
-        {
-            using (PooledBitStream stream = PooledBitStream.Get())
-            {
-                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
-                {
-                    for (int i = 0; i < parameters.Length; i++)
-                    {
-                        writer.WriteObjectPacked(parameters[i]);
-                    }
-                    SendClientRPCPerformance(hash, clientId, stream, channel, security);
                 }
             }
         }
@@ -826,6 +876,63 @@ namespace MLAPI
                     else
                     {
                         InternalMessageHandler.Send(NetworkingManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_SERVER_RPC, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, SecuritySendFlags.None);
+                    }
+                }
+            }
+        }
+        
+        internal RpcResponse<T> SendServerRPCPerformanceResponse<T>(ulong hash, Stream messageStream, string channel, SecuritySendFlags security)
+        {
+            if (!IsClient && IsRunning)
+            {
+                //We are ONLY a server.
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Only server and host can invoke ServerRPC");
+                return null;
+            }
+
+            ulong responseId = InternalMessageHandler.GenerateMessageId();
+
+            using (PooledBitStream stream = PooledBitStream.Get())
+            {
+                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                {
+                    writer.WriteUInt32Packed(NetworkId);
+                    writer.WriteUInt16Packed(NetworkedObject.GetOrderIndex(this));
+                    writer.WriteUInt64Packed(hash);
+                    
+                    if (!IsHost) writer.WriteUInt64Packed(responseId);
+
+                    stream.CopyFrom(messageStream);
+
+                    if (IsHost)
+                    {
+                        messageStream.Position = 0;
+                        object result = InvokeServerRPCLocal(hash, NetworkingManager.Singleton.LocalClientId, messageStream);
+                        
+                        return new RpcResponse<T>()
+                        {
+                            Id = responseId,
+                            IsDone = true,
+                            Result = result,
+                            Type = typeof(T),
+                            ClientId = NetworkingManager.Singleton.ServerClientId
+                        };
+                    }
+                    else
+                    {                        
+                        RpcResponse<T> response = new RpcResponse<T>()
+                        {
+                            Id = responseId,
+                            IsDone = false,
+                            Type = typeof(T),
+                            ClientId = NetworkingManager.Singleton.ServerClientId
+                        };
+            
+                        InternalMessageHandler.Responses.Add(response.Id, response);
+                        
+                        InternalMessageHandler.Send(NetworkingManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_SERVER_RPC_REQUEST, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security);
+
+                        return response;
                     }
                 }
             }
@@ -949,6 +1056,63 @@ namespace MLAPI
                     else
                     {
                         InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_CLIENT_RPC, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security);
+                    }
+                }
+            }
+        }
+        
+        internal RpcResponse<T> SendClientRPCPerformanceResponse<T>(ulong hash, uint clientId, Stream messageStream, string channel, SecuritySendFlags security)
+        {
+            if (!IsServer && IsRunning)
+            {
+                //We are NOT a server.
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Only clients and host can invoke ClientRPC");
+                return null;
+            }
+
+            ulong responseId = InternalMessageHandler.GenerateMessageId();
+            
+            using (PooledBitStream stream = PooledBitStream.Get())
+            {
+                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                {
+                    writer.WriteUInt32Packed(NetworkId);
+                    writer.WriteUInt16Packed(NetworkedObject.GetOrderIndex(this));
+                    writer.WriteUInt64Packed(hash);
+                    
+                    if (!(IsHost && clientId == NetworkingManager.Singleton.LocalClientId)) writer.WriteUInt64Packed(responseId);
+
+                    stream.CopyFrom(messageStream);
+
+                    if (IsHost && clientId == NetworkingManager.Singleton.LocalClientId)
+                    {
+                        messageStream.Position = 0;
+                        object result = InvokeClientRPCLocal(hash, NetworkingManager.Singleton.LocalClientId, messageStream);
+                        
+                        return new RpcResponse<T>()
+                        {
+                            Id = responseId,
+                            IsDone = true,
+                            Result = result,
+                            Type = typeof(T),
+                            ClientId = clientId
+                        };
+                    }
+                    else
+                    {
+                        RpcResponse<T> response = new RpcResponse<T>()
+                        {
+                            Id = responseId,
+                            IsDone = false,
+                            Type = typeof(T),
+                            ClientId = clientId
+                        };
+            
+                        InternalMessageHandler.Responses.Add(response.Id, response);
+                        
+                        InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_CLIENT_RPC_REQUEST, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security);
+                        
+                        return response;
                     }
                 }
             }

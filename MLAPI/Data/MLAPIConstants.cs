@@ -26,8 +26,12 @@
         public const byte MLAPI_NETWORKED_VAR_DELTA = 15;
         public const byte MLAPI_NETWORKED_VAR_UPDATE = 16;
         public const byte MLAPI_SERVER_RPC = 17;
-        public const byte MLAPI_CLIENT_RPC = 18;
-        public const byte MLAPI_CUSTOM_MESSAGE = 19;
+        public const byte MLAPI_SERVER_RPC_REQUEST = 18;
+        public const byte MLAPI_SERVER_RPC_RESPONSE = 19;
+        public const byte MLAPI_CLIENT_RPC = 20;
+        public const byte MLAPI_CLIENT_RPC_REQUEST = 21;
+        public const byte MLAPI_CLIENT_RPC_RESPONSE = 22;
+        public const byte MLAPI_CUSTOM_MESSAGE = 23;
         public const byte INVALID = 32;
         
         public static readonly string[] MESSAGE_NAMES = {
@@ -47,14 +51,14 @@
             "MLAPI_ADD_OBJECTS",
             "MLAPI_TIME_SYNC",
             "MLAPI_NETWORKED_VAR_DELTA",
-            "MLAPI_NETWORKED_VAR_UPDATE",
-            "MLAPI_SERVER_RPC", // 16
+            "MLAPI_NETWORKED_VAR_UPDATE", // 16
+            "MLAPI_SERVER_RPC",
+            "MLAPI_SERVER_RPC_REQUEST",
+            "MLAPI_SERVER_RPC_RESPONSE",
             "MLAPI_CLIENT_RPC",
+            "MLAPI_CLIENT_RPC_REQUEST",
+            "MLAPI_CLIENT_RPC_RESPONSE",
             "MLAPI_CUSTOM_MESSAGE",
-            "",
-            "",
-            "",
-            "",
             "",
             "",
             "",

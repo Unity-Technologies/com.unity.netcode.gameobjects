@@ -80,6 +80,7 @@
   <ItemGroup>
     <Compile Include="Data\Channel.cs" />
     <Compile Include="Data\AttributeMessageMode.cs" />
+    <Compile Include="Data\RpcResponse.cs" />
     <Compile Include="Data\UnsignedIntegerArrayExtensions.cs" />
     <Compile Include="Data\MLAPIConstants.cs" />
     <Compile Include="Data\NetworkedCollections\NetworkedDictionary.cs" />

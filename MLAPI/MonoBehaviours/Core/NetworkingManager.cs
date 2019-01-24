@@ -260,6 +260,7 @@ namespace MLAPI
             ConnectedClientsList.Clear();
             messageBuffer = new byte[NetworkConfig.MessageBufferSize];
             
+            InternalMessageHandler.Responses.Clear();
             MessageManager.channels.Clear();
             MessageManager.reverseChannels.Clear();
             SpawnManager.SpawnedObjects.Clear();
@@ -827,8 +828,8 @@ namespace MLAPI
             using (BitStream inputStream = new BitStream(data))
             {
                 inputStream.SetLength(totalSize);
-                byte messageType;
-                using (BitStream messageStream = MessageManager.UnwrapMessage(inputStream, clientId, out messageType))
+                
+                using (BitStream messageStream = MessageManager.UnwrapMessage(inputStream, clientId, out byte messageType, out SecuritySendFlags security))
                 {
                     if (messageStream == null)
                     {
@@ -904,8 +905,20 @@ namespace MLAPI
                         case MLAPIConstants.MLAPI_SERVER_RPC:
                             if (IsServer) InternalMessageHandler.HandleServerRPC(clientId, messageStream, channelId);
                             break;
+                        case MLAPIConstants.MLAPI_SERVER_RPC_REQUEST:
+                            if (IsServer) InternalMessageHandler.HandleServerRPCRequest(clientId, messageStream, channelId, security);
+                            break;
+                        case MLAPIConstants.MLAPI_SERVER_RPC_RESPONSE:
+                            if (IsClient) InternalMessageHandler.HandleServerRPCResponse(clientId, messageStream, channelId);
+                            break;
                         case MLAPIConstants.MLAPI_CLIENT_RPC:
                             if (IsClient) InternalMessageHandler.HandleClientRPC(clientId, messageStream, channelId);
+                            break;
+                        case MLAPIConstants.MLAPI_CLIENT_RPC_REQUEST:
+                            if (IsClient) InternalMessageHandler.HandleClientRPCRequest(clientId, messageStream, channelId, security);
+                            break;
+                        case MLAPIConstants.MLAPI_CLIENT_RPC_RESPONSE:
+                            if (IsServer) InternalMessageHandler.HandleClientRPCResponse(clientId, messageStream, channelId);
                             break;
                         case MLAPIConstants.MLAPI_CUSTOM_MESSAGE:
                             InternalMessageHandler.HandleCustomMessage(clientId, messageStream, channelId);

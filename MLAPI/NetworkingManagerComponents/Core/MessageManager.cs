@@ -23,7 +23,7 @@ namespace MLAPI.Internal
 
         // This method is responsible for unwrapping a message, that is extracting the messagebody.
         // Could include decrypting and/or authentication.
-        internal static BitStream UnwrapMessage(BitStream inputStream, uint clientId, out byte messageType)
+        internal static BitStream UnwrapMessage(BitStream inputStream, uint clientId, out byte messageType, out SecuritySendFlags security)
         {
             using (PooledBitReader inputHeaderReader = PooledBitReader.Get(inputStream))
             {
@@ -33,11 +33,18 @@ namespace MLAPI.Internal
                     {
                         if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogError("The incomming message was too small");
                         messageType = MLAPIConstants.INVALID;
+                        security = SecuritySendFlags.None;
                         return null;
                     }
 
                     bool isEncrypted = inputHeaderReader.ReadBit();
                     bool isAuthenticated = inputHeaderReader.ReadBit();
+
+                    if (isEncrypted && isAuthenticated) security = SecuritySendFlags.Encrypted | SecuritySendFlags.Authenticated;
+                    else if (isEncrypted) security = SecuritySendFlags.Encrypted;
+                    else if (isAuthenticated) security = SecuritySendFlags.Authenticated;
+                    else security = SecuritySendFlags.None;
+                    
 
 #if !DISABLE_CRYPTOGRAPHY
                     if (isEncrypted || isAuthenticated)
@@ -172,6 +179,7 @@ namespace MLAPI.Internal
                     if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogError("Error while unwrapping headers");
                     if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError(e.ToString());
 
+                    security = SecuritySendFlags.None;
                     messageType = MLAPIConstants.INVALID;
                     return null;
                 }

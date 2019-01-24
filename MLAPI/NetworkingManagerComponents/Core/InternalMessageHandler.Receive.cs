@@ -523,6 +523,58 @@ namespace MLAPI.Internal
             }
         }
         
+        internal static void HandleServerRPCRequest(uint clientId, Stream stream, int channelId, SecuritySendFlags security)
+        {
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
+            {
+                uint networkId = reader.ReadUInt32Packed();
+                ushort behaviourId = reader.ReadUInt16Packed();
+                ulong hash = reader.ReadUInt64Packed();
+                ulong responseId = reader.ReadUInt64Packed();
+
+                if (SpawnManager.SpawnedObjects.ContainsKey(networkId)) 
+                { 
+                    NetworkedBehaviour behaviour = SpawnManager.SpawnedObjects[networkId].GetBehaviourAtOrderIndex(behaviourId);
+                    if (behaviour != null)
+                    {
+                        object result = behaviour.OnRemoteServerRPC(hash, clientId, stream);
+
+                        using (PooledBitStream responseStream = PooledBitStream.Get())
+                        {
+                            using (PooledBitWriter responseWriter = PooledBitWriter.Get(responseStream))
+                            {
+                                responseWriter.WriteUInt64Packed(responseId);
+                                responseWriter.WriteObjectPacked(result);
+                            }
+                            
+                            InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_SERVER_RPC_RESPONSE, MessageManager.reverseChannels[channelId], responseStream, security);
+                        }
+                    }
+                }
+            }
+        }
+        
+        internal static void HandleServerRPCResponse(uint clientId, Stream stream, int channelId)
+        {
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
+            {
+                ulong responseId = reader.ReadUInt64Packed();
+
+                if (InternalMessageHandler.Responses.ContainsKey(responseId))
+                {
+                    RpcResponseBase responseBase = InternalMessageHandler.Responses[responseId];
+
+                    if (responseBase.ClientId != clientId) return;
+                    
+                    InternalMessageHandler.Responses.Remove(responseId);
+                    
+                    responseBase.Result = reader.ReadObjectPacked(responseBase.Type);
+                    responseBase.IsDone = true;
+                    
+                }
+            }
+        }
+        
         internal static void HandleClientRPC(uint clientId, Stream stream, int channelId)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
@@ -530,7 +582,7 @@ namespace MLAPI.Internal
                 uint networkId = reader.ReadUInt32Packed();
                 ushort behaviourId = reader.ReadUInt16Packed();
                 ulong hash = reader.ReadUInt64Packed();
-
+                
                 if (SpawnManager.SpawnedObjects.ContainsKey(networkId)) 
                 {
                     NetworkedBehaviour behaviour = SpawnManager.SpawnedObjects[networkId].GetBehaviourAtOrderIndex(behaviourId);
@@ -538,6 +590,57 @@ namespace MLAPI.Internal
                     {
                         behaviour.OnRemoteClientRPC(hash, clientId, stream);
                     }
+                }
+            }
+        }
+        
+        internal static void HandleClientRPCRequest(uint clientId, Stream stream, int channelId, SecuritySendFlags security)
+        {
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
+            {
+                uint networkId = reader.ReadUInt32Packed();
+                ushort behaviourId = reader.ReadUInt16Packed();
+                ulong hash = reader.ReadUInt64Packed();
+                ulong responseId = reader.ReadUInt64Packed();
+                
+                if (SpawnManager.SpawnedObjects.ContainsKey(networkId)) 
+                {
+                    NetworkedBehaviour behaviour = SpawnManager.SpawnedObjects[networkId].GetBehaviourAtOrderIndex(behaviourId);
+                    if (behaviour != null)
+                    {
+                        object result = behaviour.OnRemoteClientRPC(hash, clientId, stream);
+                        
+                        using (PooledBitStream responseStream = PooledBitStream.Get())
+                        {
+                            using (PooledBitWriter responseWriter = PooledBitWriter.Get(responseStream))
+                            {
+                                responseWriter.WriteUInt64Packed(responseId);
+                                responseWriter.WriteObjectPacked(result);
+                            }
+                            
+                            InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_CLIENT_RPC_RESPONSE, MessageManager.reverseChannels[channelId], responseStream, security);
+                        }
+                    }
+                }
+            }
+        }
+        
+        internal static void HandleClientRPCResponse(uint clientId, Stream stream, int channelId)
+        {
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
+            {
+                ulong responseId = reader.ReadUInt64Packed();
+
+                if (InternalMessageHandler.Responses.ContainsKey(responseId))
+                {
+                    RpcResponseBase responseBase = InternalMessageHandler.Responses[responseId];
+                    
+                    if (responseBase.ClientId != clientId) return;
+                    
+                    InternalMessageHandler.Responses.Remove(responseId);
+                    
+                    responseBase.Result = reader.ReadObjectPacked(responseBase.Type);
+                    responseBase.IsDone = true;
                 }
             }
         }
