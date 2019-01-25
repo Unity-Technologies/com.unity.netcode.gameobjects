@@ -56,6 +56,28 @@ private void MyClientRPC(int number)
 #### Custom Type Arguments
 Custom types can be sent (Classes or Structs) if they implement the IBitWritable interface.
 
+#### Return Values
+If you use convenience RPC the MLAPI supports return values starting with version 6.0.0. The method have to return a serializable type which has the same requirements as parameters. When invoking the method you will get a ``RpcResponse<T>`` where ``T`` is the return type. Note that since this requires two way communication, the result might not be available straight away but can be waited for in a coroutine. Here is an example of a RPC with a return value.
+
+```csharp
+public IEnumerator MyRpcCoroutine()
+{
+    RpcResponse<float> response = InvokeServerRpc(MyRpcWithReturnValue, Random.Range(0f, 100f), Random.Range(0f, 100f));
+
+    while (!response.IsDone)
+    {
+        yield return null;
+    }
+
+    Debug.LogFormat("The final result was {0}!", response.Value);
+}
+
+public float MyRpcWithReturnValue(float x, float y)
+{
+    return x * y;
+}
+```
+
 #### Performance Example
 To use the performance mode, the RPC method require the following signature ``void (uint clientId, Stream readStream)`` and the sender is required to use the non generic Stream overload.
 
