@@ -560,17 +560,17 @@ namespace MLAPI.Internal
             {
                 ulong responseId = reader.ReadUInt64Packed();
 
-                if (InternalMessageHandler.Responses.ContainsKey(responseId))
+                if (ResponseMessageManager.ContainsKey(responseId))
                 {
-                    RpcResponseBase responseBase = InternalMessageHandler.Responses[responseId];
+                    RpcResponseBase responseBase = ResponseMessageManager.GetByKey(responseId);
 
                     if (responseBase.ClientId != clientId) return;
                     
-                    InternalMessageHandler.Responses.Remove(responseId);
+                    ResponseMessageManager.Remove(responseId);
                     
-                    responseBase.Result = reader.ReadObjectPacked(responseBase.Type);
                     responseBase.IsDone = true;
-                    
+                    responseBase.Result = reader.ReadObjectPacked(responseBase.Type);
+                    responseBase.IsSuccessful = true;
                 }
             }
         }
@@ -631,16 +631,17 @@ namespace MLAPI.Internal
             {
                 ulong responseId = reader.ReadUInt64Packed();
 
-                if (InternalMessageHandler.Responses.ContainsKey(responseId))
+                if (ResponseMessageManager.ContainsKey(responseId))
                 {
-                    RpcResponseBase responseBase = InternalMessageHandler.Responses[responseId];
+                    RpcResponseBase responseBase = ResponseMessageManager.GetByKey(responseId);
                     
                     if (responseBase.ClientId != clientId) return;
                     
-                    InternalMessageHandler.Responses.Remove(responseId);
+                    ResponseMessageManager.Remove(responseId);
                     
-                    responseBase.Result = reader.ReadObjectPacked(responseBase.Type);
                     responseBase.IsDone = true;
+                    responseBase.Result = reader.ReadObjectPacked(responseBase.Type);
+                    responseBase.IsSuccessful = true;
                 }
             }
         }

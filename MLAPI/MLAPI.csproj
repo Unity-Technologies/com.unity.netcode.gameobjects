@@ -122,6 +122,7 @@
     <Compile Include="NetworkingManagerComponents\Binary\SerializationHelper.cs" />
     <Compile Include="NetworkingManagerComponents\Binary\UIntFloat.cs" />
     <Compile Include="NetworkingManagerComponents\Core\LogHelper.cs" />
+    <Compile Include="NetworkingManagerComponents\Core\ResponseMessageManager.cs" />
     <Compile Include="NetworkingManagerComponents\Cryptography\CryptographyHelper.cs" />
     <Compile Include="NetworkingManagerComponents\Cryptography\DiffieHellman.cs" />
     <Compile Include="NetworkingManagerComponents\Cryptography\EllipticCurve.cs" />

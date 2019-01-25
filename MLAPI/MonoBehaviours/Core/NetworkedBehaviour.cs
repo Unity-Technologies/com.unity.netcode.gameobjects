@@ -890,7 +890,7 @@ namespace MLAPI
                 return null;
             }
 
-            ulong responseId = InternalMessageHandler.GenerateMessageId();
+            ulong responseId = ResponseMessageManager.GenerateMessageId();
 
             using (PooledBitStream stream = PooledBitStream.Get())
             {
@@ -913,6 +913,7 @@ namespace MLAPI
                         {
                             Id = responseId,
                             IsDone = true,
+                            IsSuccessful = true,
                             Result = result,
                             Type = typeof(T),
                             ClientId = NetworkingManager.Singleton.ServerClientId
@@ -924,11 +925,12 @@ namespace MLAPI
                         {
                             Id = responseId,
                             IsDone = false,
+                            IsSuccessful = false,
                             Type = typeof(T),
                             ClientId = NetworkingManager.Singleton.ServerClientId
                         };
             
-                        InternalMessageHandler.Responses.Add(response.Id, response);
+                        ResponseMessageManager.Add(response.Id, response);
                         
                         InternalMessageHandler.Send(NetworkingManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_SERVER_RPC_REQUEST, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security);
 
@@ -1070,7 +1072,7 @@ namespace MLAPI
                 return null;
             }
 
-            ulong responseId = InternalMessageHandler.GenerateMessageId();
+            ulong responseId = ResponseMessageManager.GenerateMessageId();
             
             using (PooledBitStream stream = PooledBitStream.Get())
             {
@@ -1093,6 +1095,7 @@ namespace MLAPI
                         {
                             Id = responseId,
                             IsDone = true,
+                            IsSuccessful = true,
                             Result = result,
                             Type = typeof(T),
                             ClientId = clientId
@@ -1104,11 +1107,12 @@ namespace MLAPI
                         {
                             Id = responseId,
                             IsDone = false,
+                            IsSuccessful = false,
                             Type = typeof(T),
                             ClientId = clientId
                         };
             
-                        InternalMessageHandler.Responses.Add(response.Id, response);
+                        ResponseMessageManager.Add(response.Id, response);
                         
                         InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_CLIENT_RPC_REQUEST, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security);
                         

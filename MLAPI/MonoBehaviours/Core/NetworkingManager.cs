@@ -260,7 +260,7 @@ namespace MLAPI
             ConnectedClientsList.Clear();
             messageBuffer = new byte[NetworkConfig.MessageBufferSize];
             
-            InternalMessageHandler.Responses.Clear();
+            ResponseMessageManager.Clear();
             MessageManager.channels.Clear();
             MessageManager.reverseChannels.Clear();
             SpawnManager.SpawnedObjects.Clear();
@@ -758,6 +758,7 @@ namespace MLAPI
                     NetworkProfiler.StartTick(TickType.Event);
                     eventOvershootCounter += ((NetworkTime - lastEventTickTime) - (1f / NetworkConfig.EventTickrate));
                     LagCompensationManager.AddFrames();
+                    ResponseMessageManager.CheckTimeouts();
                     lastEventTickTime = NetworkTime;
                     NetworkProfiler.EndTick();
                 }
