@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
@@ -229,7 +230,17 @@ namespace MLAPI.Internal
                 }
                 if (netManager.NetworkConfig.HandleObjectSpawning)
                 {
-                    SpawnManager.DestroySceneObjects();
+                    NetworkedObject[] sceneObjects = new NetworkedObject[0];
+                    
+                    if (netManager.NetworkConfig.RespawnSceneObjects)
+                    {
+                        SpawnManager.DestroySceneObjects();
+                    }
+                    else
+                    {
+                        sceneObjects = MonoBehaviour.FindObjectsOfType<NetworkedObject>();
+                    }
+                    
                     int objectCount = reader.ReadInt32Packed();
                     for (int i = 0; i < objectCount; i++)
                     {
@@ -239,6 +250,8 @@ namespace MLAPI.Internal
                         ulong prefabHash = reader.ReadUInt64Packed();
                         bool isActive = reader.ReadBool();
                         bool destroyWithScene = reader.ReadBool();
+                        
+                        int sceneObjectId = netManager.NetworkConfig.RespawnSceneObjects ? -1 : reader.ReadInt32Packed();
 
                         bool sceneDelayedSpawn = reader.ReadBool();
                         uint sceneSpawnedInIndex = reader.ReadUInt32Packed();
@@ -251,8 +264,24 @@ namespace MLAPI.Internal
                         float yRot = reader.ReadSinglePacked();
                         float zRot = reader.ReadSinglePacked();
 
-                        NetworkedObject netObject = SpawnManager.CreateSpawnedObject(SpawnManager.GetNetworkedPrefabIndexOfHash(prefabHash), networkId, ownerId, isPlayerObject,
-                            sceneSpawnedInIndex, sceneDelayedSpawn, destroyWithScene, new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), isActive, stream, false, 0, true);
+                        if (sceneObjectId == -1)
+                        {
+                            NetworkedObject netObject = SpawnManager.CreateSpawnedObject(SpawnManager.GetNetworkedPrefabIndexOfHash(prefabHash), networkId, ownerId, isPlayerObject,
+                                sceneSpawnedInIndex, sceneDelayedSpawn, destroyWithScene, new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), isActive, stream, false, 0, true);
+                        }
+                        else
+                        {
+                            for (int j = 0; j < sceneObjects.Length; j++)
+                            {
+                                if (sceneObjects[j].SceneObjectId == sceneObjectId)
+                                {
+                                    SpawnManager.MakeObjectSpawned(sceneObjects[j], SpawnManager.GetNetworkedPrefabIndexOfHash(prefabHash), networkId, ownerId, isPlayerObject,
+                                        sceneSpawnedInIndex, sceneDelayedSpawn, destroyWithScene, new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), isActive, stream, false, 0, true);
+                                    
+                                    break;
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -282,6 +311,8 @@ namespace MLAPI.Internal
                     bool sceneDelayedSpawn = reader.ReadBool();
                     uint sceneSpawnedInIndex = reader.ReadUInt32Packed();
 
+                    int sceneObjectId = netManager.NetworkConfig.RespawnSceneObjects ? -1 : reader.ReadInt32Packed();
+
                     float xPos = reader.ReadSinglePacked();
                     float yPos = reader.ReadSinglePacked();
                     float zPos = reader.ReadSinglePacked();
@@ -299,9 +330,25 @@ namespace MLAPI.Internal
                         netManager.ConnectedClientsList.Add(netManager.ConnectedClients[ownerId]);
                     }
 
-                    NetworkedObject netObject = SpawnManager.CreateSpawnedObject(SpawnManager.GetNetworkedPrefabIndexOfHash(prefabHash), networkId, ownerId, isPlayerObject,
-                        sceneSpawnedInIndex, sceneDelayedSpawn, destroyWithScene, new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), true, stream, hasPayload, payLoadLength, true);
-
+                    if (sceneObjectId == -1)
+                    {
+                        NetworkedObject netObject = SpawnManager.CreateSpawnedObject(SpawnManager.GetNetworkedPrefabIndexOfHash(prefabHash), networkId, ownerId, isPlayerObject,
+                            sceneSpawnedInIndex, sceneDelayedSpawn, destroyWithScene, new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), true, stream, hasPayload, payLoadLength, true);
+                    }
+                    else
+                    {
+                        NetworkedObject[] sceneObjects = MonoBehaviour.FindObjectsOfType<NetworkedObject>();
+                        for (int j = 0; j < sceneObjects.Length; j++)
+                        {
+                            if (sceneObjects[j].SceneObjectId == sceneObjectId)
+                            {
+                                SpawnManager.MakeObjectSpawned(sceneObjects[j], SpawnManager.GetNetworkedPrefabIndexOfHash(prefabHash), networkId, ownerId, isPlayerObject,
+                                    sceneSpawnedInIndex, sceneDelayedSpawn, destroyWithScene, new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), true, stream, hasPayload, payLoadLength, true);
+                                    
+                                break;
+                            }
+                        }
+                    }
                 }
                 else
                 {

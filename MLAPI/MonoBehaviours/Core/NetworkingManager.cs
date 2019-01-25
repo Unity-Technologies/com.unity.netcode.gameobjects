@@ -1107,6 +1107,11 @@ namespace MLAPI
                                 writer.WriteBit(pair.Value.destroyWithScene == null ? true : pair.Value.destroyWithScene.Value);
                                 writer.WriteBool(pair.Value.SceneDelayedSpawn);
                                 writer.WriteUInt32Packed(pair.Value.sceneSpawnedInIndex);
+                                
+                                if (!NetworkConfig.RespawnSceneObjects)
+                                {
+                                    writer.WriteInt32Packed(pair.Value.SceneObjectId);
+                                }
 
                                 writer.WriteSinglePacked(pair.Value.transform.position.x);
                                 writer.WriteSinglePacked(pair.Value.transform.position.y);
@@ -1148,6 +1153,11 @@ namespace MLAPI
 
                                 writer.WriteBool(ConnectedClients[clientId].PlayerObject.SceneDelayedSpawn);
                                 writer.WriteUInt32Packed(ConnectedClients[clientId].PlayerObject.sceneSpawnedInIndex);
+                                
+                                if (!NetworkConfig.RespawnSceneObjects)
+                                {
+                                    writer.WriteInt32Packed(-1);
+                                }
 
                                 writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.position.x);
                                 writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.position.y);

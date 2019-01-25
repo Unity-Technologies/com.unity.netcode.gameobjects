@@ -119,6 +119,12 @@ namespace MLAPI.Configuration
         /// </summary>
         public bool EnableSceneSwitching = true;
         /// <summary>
+        /// Whether or not SceneObjects should be recreated on clients when spawned.
+        /// For multi project setups, set this to true.
+        /// For single project setups, leave it to false to prevent loosing serialized data.
+        /// </summary>
+        public bool RespawnSceneObjects = false;
+        /// <summary>
         /// If your logic uses the NetworkedTime, this should probably be turned off. If however it's needed to maximize accuracy, this is recommended to be turned on
         /// </summary>
         public bool EnableTimeResync = false;
@@ -239,6 +245,7 @@ namespace MLAPI.Configuration
                     writer.WriteBool(config.EnableEncryption);
                     writer.WriteBool(config.SignKeyExchange);
                     writer.WriteBool(config.EnableSceneSwitching);
+                    writer.WriteBool(config.RespawnSceneObjects);
                     writer.WriteInt32Packed(config.LoadSceneTimeOut);
                     writer.WriteBool(config.EnableTimeResync);
                     writer.WriteBits((byte)config.RpcHashSize, 3);
@@ -318,6 +325,7 @@ namespace MLAPI.Configuration
                     config.ConnectionApproval = reader.ReadBool();
                     config.SecondsHistory = reader.ReadInt32Packed();
                     config.HandleObjectSpawning = reader.ReadBool();
+                    config.RespawnSceneObjects = reader.ReadBool();
                     config.EnableEncryption = reader.ReadBool();
                     config.SignKeyExchange = reader.ReadBool();
                     config.EnableSceneSwitching = reader.ReadBool();
@@ -374,6 +382,7 @@ namespace MLAPI.Configuration
 
                     writer.WriteBool(ForceSamePrefabs);
                     writer.WriteBool(HandleObjectSpawning);
+                    writer.WriteBool(RespawnSceneObjects);
                     writer.WriteBool(EnableEncryption);
                     writer.WriteBool(EnableSceneSwitching);
                     writer.WriteBool(SignKeyExchange);

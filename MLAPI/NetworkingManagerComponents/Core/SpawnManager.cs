@@ -207,19 +207,19 @@ namespace MLAPI.Components
                 return null;
             }
 
-            //Delayed spawning
             if (sceneDelayedSpawn && sceneSpawnedInIndex != NetworkSceneManager.CurrentActiveSceneIndex)
             {
+                // Delayed spawning
                 GameObject prefab = netManager.NetworkConfig.NetworkedPrefabs[networkedPrefabId].prefab;
                 bool prefabActive = prefab.activeSelf;
                 prefab.SetActive(false);
                 GameObject go = (position == null && rotation == null) ? MonoBehaviour.Instantiate(prefab) : MonoBehaviour.Instantiate(prefab, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity));
                 prefab.SetActive(prefabActive);
-
+                
                 //Appearantly some wierd behavior when switching scenes can occur that destroys this object even though the scene is
                 //not destroyed, therefor we set it to DontDestroyOnLoad here, to prevent that problem.
                 MonoBehaviour.DontDestroyOnLoad(go);
-
+                
                 NetworkedObject netObject = go.GetComponent<NetworkedObject>();
                 if (netObject == null)
                 {
@@ -227,6 +227,37 @@ namespace MLAPI.Components
                     netObject = go.AddComponent<NetworkedObject>();
                 }
 
+                netObject.SceneObjectId = -1;
+                                
+                MakeObjectSpawned(netObject, networkedPrefabId, networkId, owner, playerObject, sceneSpawnedInIndex, sceneDelayedSpawn, destroyWithScene, position, rotation, isActive, stream, readPayload, payloadLength, readNetworkedVar);
+
+                return netObject;
+            }
+            else
+            {
+                GameObject prefab = netManager.NetworkConfig.NetworkedPrefabs[networkedPrefabId].prefab;
+                GameObject go = (position == null && rotation == null) ? MonoBehaviour.Instantiate(prefab) : MonoBehaviour.Instantiate(prefab, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity));
+
+                NetworkedObject netObject = go.GetComponent<NetworkedObject>();
+                if (netObject == null)
+                {
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Please add a NetworkedObject component to the root of all spawnable objects");
+                    netObject = go.AddComponent<NetworkedObject>();
+                }
+                
+                netObject.SceneObjectId = -1;
+
+                MakeObjectSpawned(netObject, networkedPrefabId, networkId, owner, playerObject, sceneSpawnedInIndex, sceneDelayedSpawn, destroyWithScene, position, rotation, isActive, stream, readPayload, payloadLength, readNetworkedVar);
+
+                return netObject;
+            }
+        }
+        
+        internal static void MakeObjectSpawned(NetworkedObject netObject, int networkedPrefabId, uint networkId, uint owner, bool playerObject, uint sceneSpawnedInIndex, bool sceneDelayedSpawn, bool destroyWithScene, Vector3? position, Quaternion? rotation, bool isActive, Stream stream, bool readPayload, int payloadLength, bool readNetworkedVar)
+        {
+            //Delayed spawning
+            if (sceneDelayedSpawn && sceneSpawnedInIndex != NetworkSceneManager.CurrentActiveSceneIndex)
+            {
                 netObject.NetworkedPrefabName = netManager.NetworkConfig.NetworkedPrefabs[networkedPrefabId].name;
                 netObject.IsSpawned = false;
                 netObject.IsPooledObject = false;
@@ -267,22 +298,10 @@ namespace MLAPI.Components
                     stream.Position += payloadLength;
                     pso.payload = payloadStream;
                 }
-
-                return netObject;
             }
 
             //Normal spawning
-            { 
-                GameObject prefab = netManager.NetworkConfig.NetworkedPrefabs[networkedPrefabId].prefab;
-                GameObject go = (position == null && rotation == null) ? MonoBehaviour.Instantiate(prefab) : MonoBehaviour.Instantiate(prefab, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity));
-
-                NetworkedObject netObject = go.GetComponent<NetworkedObject>();
-                if (netObject == null)
-                {
-                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Please add a NetworkedObject component to the root of all spawnable objects");
-                    netObject = go.AddComponent<NetworkedObject>();
-                }
-
+            {
                 if (readNetworkedVar) netObject.SetNetworkedVarData(stream);
 
                 netObject.NetworkedPrefabName = netManager.NetworkConfig.NetworkedPrefabs[networkedPrefabId].name;
@@ -317,7 +336,6 @@ namespace MLAPI.Components
                 }
                
                 netObject.gameObject.SetActive(isActive);
-                return netObject;
             }
         }
 
@@ -397,6 +415,11 @@ namespace MLAPI.Components
                         writer.WriteBool(netObject.destroyWithScene == null ? true : netObject.destroyWithScene.Value);
                         writer.WriteBool(netObject.SceneDelayedSpawn);
                         writer.WriteUInt32Packed(netObject.sceneSpawnedInIndex);
+                        
+                        if (!netManager.NetworkConfig.RespawnSceneObjects)
+                        {
+                            writer.WriteInt32Packed(-1);
+                        }
 
                         writer.WriteSinglePacked(netObject.transform.position.x);
                         writer.WriteSinglePacked(netObject.transform.position.y);
@@ -476,6 +499,11 @@ namespace MLAPI.Components
                         writer.WriteBool(netObject.destroyWithScene == null ? true : netObject.destroyWithScene.Value);
                         writer.WriteBool(netObject.SceneDelayedSpawn);
                         writer.WriteUInt32Packed(netObject.sceneSpawnedInIndex);
+
+                        if (!netManager.NetworkConfig.RespawnSceneObjects)
+                        {
+                            writer.WriteInt32Packed(netObject.SceneObjectId);
+                        }
 
                         writer.WriteSinglePacked(netObject.transform.position.x);
                         writer.WriteSinglePacked(netObject.transform.position.y);

@@ -155,11 +155,14 @@ namespace MLAPI.Components
             {
                 SpawnManager.SpawnPendingObjectsForScene(CurrentActiveSceneIndex);
 
-                NetworkedObject[] netObjects = MonoBehaviour.FindObjectsOfType<NetworkedObject>();
-                for (int i = 0; i < netObjects.Length; i++)
+                if (NetworkingManager.Singleton.NetworkConfig.RespawnSceneObjects)
                 {
-                    if (netObjects[i].destroyWithScene == null)
-                        MonoBehaviour.Destroy(netObjects[i].gameObject);
+                    NetworkedObject[] netObjects = MonoBehaviour.FindObjectsOfType<NetworkedObject>();
+                    for (int i = 0; i < netObjects.Length; i++)
+                    {
+                        if (netObjects[i].destroyWithScene == null)
+                            MonoBehaviour.Destroy(netObjects[i].gameObject);
+                    }   
                 }
             }
 
