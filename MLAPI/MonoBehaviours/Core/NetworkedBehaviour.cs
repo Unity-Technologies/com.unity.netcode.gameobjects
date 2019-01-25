@@ -576,7 +576,7 @@ namespace MLAPI
                             if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogWarning("Invalid return type of RPC. Has to be either void or RpcResponse<T> with a serializable type");
                         }
 
-                        attributes[0].reflectionMethod = new ReflectionMehtod(methods[i]);
+                        attributes[0].reflectionMethod = new ReflectionMethod(methods[i]);
                     }
                     
                     ulong hash = HashMethodName(methods[i].Name);
@@ -613,7 +613,7 @@ namespace MLAPI
                             if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogWarning("Invalid return type of RPC. Has to be either void or RpcResponse<T> with a serializable type");
                         }
                         
-                        attributes[0].reflectionMethod = new ReflectionMehtod(methods[i]);
+                        attributes[0].reflectionMethod = new ReflectionMethod(methods[i]);
                     }
 
                     ulong hash = HashMethodName(methods[i].Name);
