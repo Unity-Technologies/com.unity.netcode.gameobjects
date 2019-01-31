@@ -22,7 +22,7 @@ namespace MLAPI.Serialization
     }
     
     /// <summary>
-    /// BitWritable is the base class for writable types
+    /// AutoBitWritable implements IBitWritable and automatically serializes fields using reflection
     /// </summary>
     public abstract class AutoBitWritable : IBitWritable
     {        
