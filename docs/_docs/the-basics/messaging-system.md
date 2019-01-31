@@ -72,6 +72,7 @@ public IEnumerator MyRpcCoroutine()
     Debug.LogFormat("The final result was {0}!", response.Value);
 }
 
+[ServerRPC]
 public float MyRpcWithReturnValue(float x, float y)
 {
     return x * y;

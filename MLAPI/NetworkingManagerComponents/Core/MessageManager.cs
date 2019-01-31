@@ -89,14 +89,12 @@ namespace MLAPI.Internal
                             {
                                 byte[] computedHmac = hmac.ComputeHash(inputStream.GetBuffer(), 0, (int)inputStream.Length);
 
-                                for (int i = 0; i < computedHmac.Length; i++)
+
+                                if (!CryptographyHelper.ConstTimeArrayEqual(computedHmac, HMAC_BUFFER))
                                 {
-                                    if (computedHmac[i] != HMAC_BUFFER[i])
-                                    {
-                                        if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Received HMAC at position [" + i + "] did not match the computed HMAC");
-                                        messageType = MLAPIConstants.INVALID;
-                                        return null;
-                                    }
+                                    if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Received HMAC did not match the computed HMAC");
+                                    messageType = MLAPIConstants.INVALID;
+                                    return null;
                                 }
                             }
                         }
