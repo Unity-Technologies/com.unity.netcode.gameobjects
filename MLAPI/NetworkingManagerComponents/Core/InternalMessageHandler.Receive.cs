@@ -129,22 +129,13 @@ namespace MLAPI.Internal
                             {
                                 byte[] clientHash = rsa.Decrypt(diffieHellmanPublicSignature, false);
                                 byte[] serverHash = sha.ComputeHash(diffieHellmanPublic);
-                                if (clientHash.Length != serverHash.Length)
+                                
+                                if (!CryptographyHelper.ConstTimeArrayEqual(clientHash, serverHash))
                                 {
                                     //Man in the middle.
-                                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Signature length doesnt match for the key exchange public part. Disconnecting");
+                                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Signature doesnt match for the key exchange public part. Disconnecting");
                                     netManager.DisconnectClient(clientId);
                                     return;
-                                }
-                                for (int i = 0; i < clientHash.Length; i++)
-                                {
-                                    if (clientHash[i] != serverHash[i])
-                                    {
-                                        //Man in the middle.
-                                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Signature doesnt match for the key exchange public part. Disconnecting");
-                                        netManager.DisconnectClient(clientId);
-                                        return;
-                                    }
                                 }
                             }
                         }
