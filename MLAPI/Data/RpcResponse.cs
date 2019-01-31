@@ -9,10 +9,14 @@ namespace MLAPI
     public class RpcResponse<T> : RpcResponseBase
     {
         /// <summary>
-        /// Gets the value from the operation.
-        /// Note that this is an expensive operation, grab and cache
+        /// Gets the return value of the operation
         /// </summary>
-        public T Value => Result == null ? default(T) : (T) Result;
+        public T Value { get; private set; }
+
+        internal override object Result
+        {
+            set => Value = (T) value;
+        }
     }
 
     /// <summary>
@@ -41,7 +45,7 @@ namespace MLAPI
         /// The amount of time to wait for the operation to complete
         /// </summary>
         public float Timeout { get; set; } = 10f;
-        internal object Result { get; set; }
+        internal abstract object Result { set; }
         internal Type Type { get; set; }
     }
 }
