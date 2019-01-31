@@ -571,7 +571,7 @@ namespace MLAPI
                     }
                     else
                     {
-                        if (methods[i].ReturnType != typeof(void) && methods[i].ReturnType.GetGenericTypeDefinition() != typeof(RpcResponse<>))
+                        if (methods[i].ReturnType != typeof(void) && !SerializationHelper.IsTypeSupported(methods[i].ReturnType))
                         {
                             if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogWarning("Invalid return type of RPC. Has to be either void or RpcResponse<T> with a serializable type");
                         }
@@ -608,7 +608,7 @@ namespace MLAPI
                     }
                     else
                     {
-                        if (methods[i].ReturnType != typeof(void) && methods[i].ReturnType.GetGenericTypeDefinition() != typeof(RpcResponse<>))
+                        if (methods[i].ReturnType != typeof(void) && !SerializationHelper.IsTypeSupported(methods[i].ReturnType))
                         {
                             if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogWarning("Invalid return type of RPC. Has to be either void or RpcResponse<T> with a serializable type");
                         }
