@@ -4,19 +4,27 @@ using System.Reflection;
 
 namespace MLAPI.Serialization 
 {
-    [Obsolete("The IBitWritable interface has been replaced with the abstract BitWritable class", true)]
+    /// <summary>
+    /// Interface for serializable classes and structs
+    /// </summary>
     public interface IBitWritable
     {
-        [Obsolete("The IBitWritable interface has been replaced with the abstract BitWritable class", true)]
+        /// <summary>
+        /// Reads the contents from the stream and applies it to the type instance
+        /// </summary>
+        /// <param name="stream">The stream to read from</param>
         void Read(Stream stream);
-        [Obsolete("The IBitWritable interface has been replaced with the abstract BitWritable class", true)]
+        /// <summary>
+        /// Writes the contents of the type instance to the stream
+        /// </summary>
+        /// <param name="stream">The stream to write to</param>
         void Write(Stream stream);
     }
     
     /// <summary>
     /// BitWritable is the base class for writable types
     /// </summary>
-    public abstract class BitWritable
+    public abstract class AutoBitWritable : IBitWritable
     {        
         /// <summary>
         /// Writes the contents of the type instance to the stream

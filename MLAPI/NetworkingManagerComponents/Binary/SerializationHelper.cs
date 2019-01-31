@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using MLAPI.Internal;
 using UnityEngine;
 
 namespace MLAPI.Serialization
@@ -65,7 +66,7 @@ namespace MLAPI.Serialization
         /// <returns>Whether or not the type is supported</returns>
         public static bool IsTypeSupported(Type type)
         {
-            return type.IsEnum || SupportedTypes.Contains(type) || (typeof(BitWritable).IsAssignableFrom(type));
+            return type.IsEnum || SupportedTypes.Contains(type) || type.HasInterface(typeof(IBitWritable));
         }
     }
 }
