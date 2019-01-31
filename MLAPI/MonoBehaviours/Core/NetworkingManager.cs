@@ -648,7 +648,8 @@ namespace MLAPI
                         int channelId;
                         int receivedSize;
                         byte error;
-                        eventType = NetworkConfig.NetworkTransport.PollReceive(out clientId, out channelId, ref messageBuffer, messageBuffer.Length, out receivedSize, out error);
+                        byte[] data = messageBuffer;
+                        eventType = NetworkConfig.NetworkTransport.PollReceive(out clientId, out channelId, ref data, data.Length, out receivedSize, out error);
 
                         switch (eventType)
                         {
@@ -730,7 +731,7 @@ namespace MLAPI
                             case NetEventType.Data:
                                 if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo($"Incoming Data From {clientId} : {receivedSize} bytes");
 
-                                HandleIncomingData(clientId, messageBuffer, channelId, receivedSize);
+                                HandleIncomingData(clientId, data, channelId, receivedSize);
                                 break;
                             case NetEventType.Disconnect:
                                 NetworkProfiler.StartEvent(TickType.Receive, 0, "NONE", "TRANSPORT_DISCONNECT");
