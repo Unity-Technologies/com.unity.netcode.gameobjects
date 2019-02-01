@@ -1,6 +1,8 @@
 using MLAPI;
 using MLAPI.Components;
+#if !DISABLE_CRYPTOGRAPHY
 using MLAPI.Cryptography;
+#endif
 using MLAPI.Data;
 
 namespace MLAPI_Examples
@@ -19,6 +21,7 @@ namespace MLAPI_Examples
             return SpawnManager.GetLocalPlayerObject();
         }
         
+#if !DISABLE_CRYPTOGRAPHY
         // Only runs on server
         public byte[] GetAESKeyForClient(uint clientId)
         {
@@ -30,6 +33,7 @@ namespace MLAPI_Examples
         {
             return CryptographyHelper.GetServerKey();
         }
+#endif
 
         // Contains player object, owned objects, cryptography keys and more
         public NetworkedClient GetClient(uint clientId)

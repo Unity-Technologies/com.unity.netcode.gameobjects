@@ -1,5 +1,11 @@
 version: '{branch}-{build}'
 
+configuration:
+  - Debug
+  - Release
+  - Release_Lite
+  - Debug_Lite
+
 skip_commits:
   files:
     - docs/*
@@ -16,14 +22,16 @@ before_package:
   - powershell "& "".\BuildUnityPackages.ps1"""
 
 artifacts:
-  - path: 'MLAPI\bin\Debug\MLAPI*'
+  - path: 'MLAPI\bin\Debug\MLAPI.*'
+  - path: 'MLAPI\bin\Debug\Lite\MLAPI.*'
+  - path: 'MLAPI\bin\Release\MLAPI.*'
+  - path: 'MLAPI\bin\Release\Lite\MLAPI.*'
   - path: '*.unitypackage'
-
 
 image: Visual Studio 2017
 
 test_script:
-  - .\packages\OpenCover.4.6.519\tools\OpenCover.Console.exe -returntargetcode -register:user -target:"nunit3-console.exe" -targetargs:"MLAPI.Tests\bin\Debug\MLAPI.Tests.dll" -output:"coverage.xml" -filter:"+[MLAPI*]* -[MLAPI.Tests*]* "
+  - .\packages\OpenCover.4.6.519\tools\OpenCover.Console.exe -returntargetcode -register:user -target:"nunit3-console.exe" -targetargs:"MLAPI-Tests\bin\Debug\MLAPI-Tests.dll" -output:"coverage.xml" -filter:"+[MLAPI*]* -[MLAPI-Tests*]* "
 
 
 after_test:

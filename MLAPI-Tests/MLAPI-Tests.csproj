@@ -6,8 +6,8 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{59E9F73A-398C-4F46-85E7-1DCDEEB2A85F}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>MLAPI.Tests</RootNamespace>
-    <AssemblyName>MLAPI.Tests</AssemblyName>
+    <RootNamespace>MLAPI_Tests</RootNamespace>
+    <AssemblyName>MLAPI-Tests</AssemblyName>
     <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
@@ -25,6 +25,24 @@
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <Optimize>true</Optimize>
     <OutputPath>bin\Release</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <LangVersion>7</LangVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug_Lite|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Lite\Debug</OutputPath>
+    <DefineConstants>DEBUG;DISABLE_CRYPTOGRAPHY</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <LangVersion>7</LangVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release_Lite|AnyCPU' ">
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Lite\Release</OutputPath>
+    <DefineConstants>DISABLE_CRYPTOGRAPHY</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <LangVersion>7</LangVersion>
