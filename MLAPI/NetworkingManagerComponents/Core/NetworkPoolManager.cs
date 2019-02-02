@@ -30,6 +30,7 @@ namespace MLAPI.Components
                 return;
             }
             NetworkPool pool = new NetworkPool(spawnablePrefabIndex, size, PoolIndex);
+            Pools.Add(PoolIndex, pool);
             PoolNamesToIndexes.Add(poolName, PoolIndex);
             PoolIndex++;
         }
