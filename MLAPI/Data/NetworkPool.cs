@@ -15,9 +15,10 @@ namespace MLAPI.Internal
             for (int i = 0; i < size; i++)
             {
                 GameObject go = MonoBehaviour.Instantiate(NetworkingManager.Singleton.NetworkConfig.NetworkedPrefabs[prefabId].prefab, Vector3.zero, Quaternion.identity) as GameObject;
-                go.GetComponent<NetworkedObject>().IsPooledObject = true;
-                go.GetComponent<NetworkedObject>().PoolId = poolId;
-                go.GetComponent<NetworkedObject>().Spawn();
+                objects[i] = go.GetComponent<NetworkedObject>();
+                objects[i].IsPooledObject = true;
+                objects[i].PoolId = poolId;
+                objects[i].Spawn();
                 go.name = "Pool Id: " + poolId + " #" + i;
                 go.SetActive(false);
             }
@@ -27,12 +28,13 @@ namespace MLAPI.Internal
         {
             for (int i = 0; i < objects.Length; i++)
             {
-                if (objects[i].gameObject.activeInHierarchy)
+                if (!objects[i].gameObject.activeInHierarchy)
                 {
                     GameObject go = objects[i].gameObject;
                     go.transform.position = position;
                     go.transform.rotation = rotation;
                     go.SetActive(true);
+                    return objects[i];
                 }
             }
             if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The pool " + poolId + " has ran out of space");
