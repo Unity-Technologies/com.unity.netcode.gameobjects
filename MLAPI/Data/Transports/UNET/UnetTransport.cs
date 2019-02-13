@@ -68,6 +68,17 @@ namespace MLAPI.Transports.UNET
             NetworkEventType eventType = NetworkTransport.Receive(out int hostId, out int connectionId, out channelId, data, bufferSize, out receivedSize, out byte err);
             clientId = new NetId((byte)hostId, (ushort)connectionId, false).GetClientId();
             NetworkError errorType = (NetworkError)err;
+
+            if (errorType == NetworkError.MessageToLong)
+            {
+                byte[] tempBuffer = new byte[receivedSize];
+                eventType = NetworkTransport.Receive(out hostId, out connectionId, out channelId, tempBuffer, tempBuffer.Length, out receivedSize, out err);
+                data = tempBuffer;
+            }
+            errorType = (NetworkError)err;
+            clientId = new NetId((byte)hostId, (ushort)connectionId, false).GetClientId();
+
+
             if (errorType == NetworkError.Timeout)
                 eventType = NetworkEventType.DisconnectEvent; //In UNET. Timeouts are not disconnects. We have to translate that here.
             error = 0;

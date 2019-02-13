@@ -20,6 +20,7 @@ using MLAPI.Transports;
 using MLAPI.Transports.UNET;
 using BitStream = MLAPI.Serialization.BitStream;
 using System.Security.Cryptography.X509Certificates;
+using UnityEngine.Networking;
 
 namespace MLAPI
 {
@@ -644,13 +645,13 @@ namespace MLAPI
                     do
                     {
                         processedEvents++;
-                        uint clientId;
-                        int channelId;
-                        int receivedSize;
-                        byte error;
-                        byte[] data = messageBuffer;
-                        eventType = NetworkConfig.NetworkTransport.PollReceive(out clientId, out channelId, ref data, data.Length, out receivedSize, out error);
+                        eventType = NetworkConfig.NetworkTransport.PollReceive(out uint clientId, out int channelId, ref messageBuffer, messageBuffer.Length, out int receivedSize, out byte error);
 
+                        if ((NetworkError)error == NetworkError.MessageToLong)
+                        {
+                            byte[] b = messageBuffer;
+                            eventType = NetworkConfig.NetworkTransport.PollReceive(out clientId, out channelId, ref b, b.Length, out receivedSize, out error);
+                        }
                         switch (eventType)
                         {
                             case NetEventType.Connect:
@@ -731,7 +732,7 @@ namespace MLAPI
                             case NetEventType.Data:
                                 if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo($"Incoming Data From {clientId} : {receivedSize} bytes");
 
-                                HandleIncomingData(clientId, data, channelId, receivedSize);
+                                HandleIncomingData(clientId, messageBuffer, channelId, receivedSize);
                                 break;
                             case NetEventType.Disconnect:
                                 NetworkProfiler.StartEvent(TickType.Receive, 0, "NONE", "TRANSPORT_DISCONNECT");
