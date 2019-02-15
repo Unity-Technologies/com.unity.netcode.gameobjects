@@ -8,6 +8,8 @@ namespace MLAPI.Transports.UNET
     [Serializable]
     public class UnetTransport : IUDPTransport
     {
+        private WeakReference temporaryBufferReference;
+        
         public ChannelType InternalChannel => ChannelType.ReliableFragmentedSequenced;
 		public uint ServerClientId => new NetId(0, 0, true).GetClientId();
         public int serverConnectionId;
@@ -71,7 +73,17 @@ namespace MLAPI.Transports.UNET
 
             if (errorType == NetworkError.MessageToLong)
             {
-                byte[] tempBuffer = new byte[receivedSize];
+                byte[] tempBuffer;
+                if (temporaryBufferReference != null && temporaryBufferReference.IsAlive && ((byte[]) temporaryBufferReference.Target).Length >= receivedSize)
+                {
+                    tempBuffer = (byte[])temporaryBufferReference.Target;
+                }
+                else
+                {
+                    tempBuffer = new byte[receivedSize];
+                    temporaryBufferReference = new WeakReference(tempBuffer);
+                }
+                
                 eventType = NetworkTransport.Receive(out hostId, out connectionId, out channelId, tempBuffer, tempBuffer.Length, out receivedSize, out err);
                 data = tempBuffer;
             }
