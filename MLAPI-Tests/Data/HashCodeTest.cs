@@ -1,5 +1,5 @@
 ﻿using System;
-namespace MLAPI.Tests.Data
+namespace MLAPI_Tests.Data
 {
     using MLAPI.Data;
     using NUnit.Framework;

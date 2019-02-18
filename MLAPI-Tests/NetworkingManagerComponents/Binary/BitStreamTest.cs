@@ -1,5 +1,5 @@
 ﻿using System;
-namespace MLAPI.Tests.Serialization
+namespace MLAPI_Tests.Serialization
 {
     using MLAPI.Serialization;
     using NUnit.Framework;
