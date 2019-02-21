@@ -17,20 +17,18 @@
         public const byte MLAPI_DESTROY_OBJECT = 6;
         public const byte MLAPI_SWITCH_SCENE = 7;
         public const byte MLAPI_CLIENT_SWITCH_SCENE_COMPLETED = 8;
-        public const byte MLAPI_SPAWN_POOL_OBJECT = 9;
-        public const byte MLAPI_DESTROY_POOL_OBJECT = 10;
-        public const byte MLAPI_CHANGE_OWNER = 11;
-        public const byte MLAPI_ADD_OBJECTS = 12;
-        public const byte MLAPI_TIME_SYNC = 13;
-        public const byte MLAPI_NETWORKED_VAR_DELTA = 14;
-        public const byte MLAPI_NETWORKED_VAR_UPDATE = 15;
-        public const byte MLAPI_SERVER_RPC = 16;
-        public const byte MLAPI_SERVER_RPC_REQUEST = 17;
-        public const byte MLAPI_SERVER_RPC_RESPONSE = 18;
-        public const byte MLAPI_CLIENT_RPC = 19;
-        public const byte MLAPI_CLIENT_RPC_REQUEST = 20;
-        public const byte MLAPI_CLIENT_RPC_RESPONSE = 21;
-        public const byte MLAPI_CUSTOM_MESSAGE = 22;
+        public const byte MLAPI_CHANGE_OWNER = 9;
+        public const byte MLAPI_ADD_OBJECTS = 10;
+        public const byte MLAPI_TIME_SYNC = 11;
+        public const byte MLAPI_NETWORKED_VAR_DELTA = 12;
+        public const byte MLAPI_NETWORKED_VAR_UPDATE = 13;
+        public const byte MLAPI_SERVER_RPC = 14;
+        public const byte MLAPI_SERVER_RPC_REQUEST = 15;
+        public const byte MLAPI_SERVER_RPC_RESPONSE = 16;
+        public const byte MLAPI_CLIENT_RPC = 17;
+        public const byte MLAPI_CLIENT_RPC_REQUEST = 18;
+        public const byte MLAPI_CLIENT_RPC_RESPONSE = 19;
+        public const byte MLAPI_CUSTOM_MESSAGE = 20;
         public const byte INVALID = 32;
         
         public static readonly string[] MESSAGE_NAMES = {
@@ -43,20 +41,20 @@
             "MLAPI_DESTROY_OBJECT",
             "MLAPI_SWITCH_SCENE",
             "MLAPI_CLIENT_SWITCH_SCENE_COMPLETED",
-            "MLAPI_SPAWN_POOL_OBJECT",
-            "MLAPI_DESTROY_POOL_OBJECT",
             "MLAPI_CHANGE_OWNER",
             "MLAPI_ADD_OBJECTS",
             "MLAPI_TIME_SYNC",
             "MLAPI_NETWORKED_VAR_DELTA",
             "MLAPI_NETWORKED_VAR_UPDATE",
-            "MLAPI_SERVER_RPC", // 16
+            "MLAPI_SERVER_RPC",
             "MLAPI_SERVER_RPC_REQUEST",
-            "MLAPI_SERVER_RPC_RESPONSE",
+            "MLAPI_SERVER_RPC_RESPONSE", // 16
             "MLAPI_CLIENT_RPC",
             "MLAPI_CLIENT_RPC_REQUEST",
             "MLAPI_CLIENT_RPC_RESPONSE",
             "MLAPI_CUSTOM_MESSAGE",
+            "",
+            "",
             "",
             "",
             "",

@@ -5,29 +5,18 @@ permalink: /wiki/object-pooling/
 
 
 The MLAPI has built-in support for Object Pooling. This is useful for frequently used objects such as bullets.
+This can be achieved by registering custom spawn and destroy handlers.
 
-_This feature, and it's documentation might be outdated_
 
-
-### Usage
-Here are some examples of how to use the Object Pooling system. Note that all of the calls can only be used on the server.
-#### Create a pool
+### SpawnHandler
 ```csharp
-//poolName is a string
-//spawnablePrefabIndex is the index the object has in your spawnable prefab list
-//size is the amount of objects in the pool. More objects require more memory and resources.
-NetworkPoolManager.CreatePool(myPoolName, mySpawnablePrefabIndex, mySize);
+SpawnManager.RegisterCustomSpawnHandler(SpawnManager.GetPrefabHash("myPrefabName"), (position, rotation, disabled) {
+    // Called when the MLAPI want's to spawn a prefab with the name "myPrefabName"
+});
 ```
-
-#### Destroy a pool
+### DestroyHandler
 ```csharp
-NetworkPoolManager.DestroyPool(myPoolName);
-```
-#### Spawn object
-```csharp
-NetworkPoolManager.SpawnPoolObject(myPoolName, myPos, myRot);
-```
-#### Destroy object
-```csharp
-NetworkPoolManager.DestroyPoolObject(myNetworkedObject);
+SpawnManager.RegisterCustomDestroyHandler(SpawnManager.GetPrefabHash("myPrefabName"), (networkedObject) {
+    // Called when the MLAPI want's to destroy the given NetworkedObject
+});
 ```

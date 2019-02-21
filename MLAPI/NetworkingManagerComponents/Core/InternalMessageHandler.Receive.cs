@@ -305,35 +305,6 @@ namespace MLAPI.Internal
             }
         }
 
-        internal static void HandleSpawnPoolObject(uint clientId, Stream stream, int channelId)
-        {
-            using (PooledBitReader reader = PooledBitReader.Get(stream))
-            {
-                uint netId = reader.ReadUInt32Packed();
-
-                float xPos = reader.ReadSinglePacked();
-                float yPos = reader.ReadSinglePacked();
-                float zPos = reader.ReadSinglePacked();
-
-                float xRot = reader.ReadSinglePacked();
-                float yRot = reader.ReadSinglePacked();
-                float zRot = reader.ReadSinglePacked();
-
-                SpawnManager.SpawnedObjects[netId].transform.position = new Vector3(xPos, yPos, zPos);
-                SpawnManager.SpawnedObjects[netId].transform.rotation = Quaternion.Euler(xRot, yRot, zRot);
-                SpawnManager.SpawnedObjects[netId].gameObject.SetActive(true);
-            }
-        }
-
-        internal static void HandleDestroyPoolObject(uint clientId, Stream stream, int channelId)
-        {
-            using (PooledBitReader reader = PooledBitReader.Get(stream))
-            {
-                uint netId = reader.ReadUInt32Packed();
-                SpawnManager.SpawnedObjects[netId].gameObject.SetActive(false);
-            }
-        }
-
         internal static void HandleChangeOwner(uint clientId, Stream stream, int channelId)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))

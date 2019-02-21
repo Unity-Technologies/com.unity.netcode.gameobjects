@@ -67,16 +67,6 @@ namespace MLAPI
         /// Gets if this object is a player object
         /// </summary>
         public bool IsPlayerObject { get; internal set; }
-        [Obsolete("Use IsPooledObject instead", false)]
-        public bool isPooledObject => IsPooledObject;
-        /// <summary>
-        /// Gets if this object is part of a pool
-        /// </summary>
-        public bool IsPooledObject { get; internal set; }
-        /// <summary>
-        /// Gets the poolId this object is part of
-        /// </summary>
-        public ushort PoolId { get; internal set; }
         [Obsolete("Use IsLocalPlayer instead", false)]
 		public bool isLocalPlayer => IsLocalPlayer;
         /// <summary>
