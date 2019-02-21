@@ -159,7 +159,17 @@ namespace MLAPI.Components
                 for (int i = 0; i < netObjects.Length; i++)
                 {
                     if (netObjects[i].destroyWithScene == null)
-                        MonoBehaviour.Destroy(netObjects[i].gameObject);
+                    {
+                        if (SpawnManager.customDestroyHandlers.ContainsKey(netObjects[i].NetworkedPrefabHash))
+                        {
+                            SpawnManager.customDestroyHandlers[netObjects[i].NetworkedPrefabHash](netObjects[i]);
+                            SpawnManager.OnDestroyObject(netObjects[i].NetworkId, false);
+                        }
+                        else
+                        {
+                            MonoBehaviour.Destroy(netObjects[i].gameObject);
+                        }
+                    }
                 }
             }
 

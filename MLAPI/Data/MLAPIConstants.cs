@@ -17,8 +17,6 @@
         public const byte MLAPI_DESTROY_OBJECT = 6;
         public const byte MLAPI_SWITCH_SCENE = 7;
         public const byte MLAPI_CLIENT_SWITCH_SCENE_COMPLETED = 8;
-        public const byte MLAPI_SPAWN_POOL_OBJECT = 9;
-        public const byte MLAPI_DESTROY_POOL_OBJECT = 10;
         public const byte MLAPI_CHANGE_OWNER = 11;
         public const byte MLAPI_ADD_OBJECTS = 12;
         public const byte MLAPI_TIME_SYNC = 13;

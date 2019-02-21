@@ -269,8 +269,6 @@ namespace MLAPI
             SpawnManager.SpawnedObjectsList.Clear();
             SpawnManager.releasedNetworkObjectIds.Clear();
             SpawnManager.PendingSpawnObjects.Clear();
-            NetworkPoolManager.Pools.Clear();
-            NetworkPoolManager.PoolNamesToIndexes.Clear();
             NetworkSceneManager.registeredSceneNames.Clear();
             NetworkSceneManager.sceneIndexToString.Clear();
             NetworkSceneManager.sceneNameToIndex.Clear();
@@ -879,13 +877,6 @@ namespace MLAPI
                         case MLAPIConstants.MLAPI_SWITCH_SCENE:
                             if (IsClient) InternalMessageHandler.HandleSwitchScene(clientId, messageStream, channelId);
                             break;
-                        case MLAPIConstants.MLAPI_SPAWN_POOL_OBJECT:
-                            if (IsClient) InternalMessageHandler.HandleSpawnPoolObject(clientId, messageStream, channelId);
-                            break;
-                        case MLAPIConstants.MLAPI_DESTROY_POOL_OBJECT:
-                            if (IsClient)
-                                InternalMessageHandler.HandleDestroyPoolObject(clientId, messageStream, channelId);
-                            break;
                         case MLAPIConstants.MLAPI_CHANGE_OWNER:
                             if (IsClient) InternalMessageHandler.HandleChangeOwner(clientId, messageStream, channelId);
                             break;
@@ -981,7 +972,17 @@ namespace MLAPI
                 if (IsServer)
                 {
                     if (ConnectedClients[clientId].PlayerObject != null)
-                        Destroy(ConnectedClients[clientId].PlayerObject.gameObject);
+                    {
+                        if (SpawnManager.customDestroyHandlers.ContainsKey(ConnectedClients[clientId].PlayerObject.NetworkedPrefabHash))
+                        {
+                            SpawnManager.customDestroyHandlers[ConnectedClients[clientId].PlayerObject.NetworkedPrefabHash](ConnectedClients[clientId].PlayerObject);
+                            SpawnManager.OnDestroyObject(ConnectedClients[clientId].PlayerObject.NetworkId, false);
+                        }
+                        else
+                        {
+                            Destroy(ConnectedClients[clientId].PlayerObject.gameObject);
+                        }
+                    }
                     
                     for (int i = 0; i < ConnectedClients[clientId].OwnedObjects.Count; i++)
                     {
@@ -989,7 +990,15 @@ namespace MLAPI
                         {
                             if (!ConnectedClients[clientId].OwnedObjects[i].DontDestroyWithOwner)
                             {
-                                Destroy(ConnectedClients[clientId].OwnedObjects[i].gameObject);
+                                if (SpawnManager.customDestroyHandlers.ContainsKey(ConnectedClients[clientId].OwnedObjects[i].NetworkedPrefabHash))
+                                {
+                                    SpawnManager.customDestroyHandlers[ConnectedClients[clientId].OwnedObjects[i].NetworkedPrefabHash](ConnectedClients[clientId].OwnedObjects[i]);
+                                    SpawnManager.OnDestroyObject(ConnectedClients[clientId].OwnedObjects[i].NetworkId, false);
+                                }
+                                else
+                                {
+                                    Destroy(ConnectedClients[clientId].OwnedObjects[i].gameObject);
+                                }
                             }
                             else
                             {

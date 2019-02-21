@@ -98,7 +98,6 @@
     <Compile Include="Data\Transports\NetEventType.cs" />
     <Compile Include="Data\NetworkConfig.cs" />
     <Compile Include="Data\NetworkedPrefab.cs" />
-    <Compile Include="Data\NetworkPool.cs" />
     <Compile Include="Data\TrackedPointData.cs" />
     <Compile Include="Data\Transports\UNET\RelayedTransport.cs" />
     <Compile Include="Data\Transports\UNET\RelayTransport.cs" />
@@ -135,7 +134,6 @@
     <Compile Include="MonoBehaviours\Core\TrackedObject.cs" />
     <Compile Include="MonoBehaviours\Prototyping\NetworkedTransform.cs" />
     <Compile Include="NetworkingManagerComponents\Core\MessageManager.cs" />
-    <Compile Include="NetworkingManagerComponents\Core\NetworkPoolManager.cs" />
     <Compile Include="NetworkingManagerComponents\Core\NetworkSceneManager.cs" />
     <Compile Include="NetworkingManagerComponents\Core\SpawnManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

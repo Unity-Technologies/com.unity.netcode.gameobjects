@@ -25,6 +25,49 @@ namespace MLAPI.Components
         /// </summary>
         public static readonly List<NetworkedObject> SpawnedObjectsList = new List<NetworkedObject>();
 
+        public delegate NetworkedObject SpawnHandlerDelegate(Vector3 position, Quaternion rotation, bool disabled);
+
+        public delegate void DestroyHandlerDelegate(NetworkedObject networkedObject);
+        
+        
+        private static readonly Dictionary<ulong, SpawnHandlerDelegate> customSpawnHandlers = new Dictionary<ulong, SpawnHandlerDelegate>();
+        internal static readonly Dictionary<ulong, DestroyHandlerDelegate> customDestroyHandlers = new Dictionary<ulong, DestroyHandlerDelegate>();
+
+        public static void RegisterSpawnHandler(ulong prefabHash, SpawnHandlerDelegate handler)
+        {
+            if (customSpawnHandlers.ContainsKey(prefabHash))
+            {
+                customSpawnHandlers[prefabHash] = handler;
+            }
+            else
+            {
+                customSpawnHandlers.Add(prefabHash, handler);
+            }
+        }
+
+        public static void RegisterCustomDestroyHandler(ulong prefabHash, DestroyHandlerDelegate handler)
+        {
+            if (customDestroyHandlers.ContainsKey(prefabHash))
+            {
+                customDestroyHandlers[prefabHash] = handler;
+            }
+            else
+            {
+                customDestroyHandlers.Add(prefabHash, handler);
+            }
+        }
+
+        public static void RemoveCustomSpawnHandler(ulong prefabHash)
+        {
+            customSpawnHandlers.Remove(prefabHash);
+        }
+        
+        public static void RemoveCustomDestroyHandler(ulong prefabHash)
+        {
+            customDestroyHandlers.Remove(prefabHash);
+        }
+        
+
         internal static readonly Dictionary<uint, PendingSpawnObject> PendingSpawnObjects = new Dictionary<uint, PendingSpawnObject>();
         internal static readonly Stack<uint> releasedNetworkObjectIds = new Stack<uint>();
         private static uint networkObjectIdCounter;
@@ -172,7 +215,17 @@ namespace MLAPI.Components
                 foreach (KeyValuePair<uint, NetworkedObject> netObject in SpawnedObjects)
                 {
                     if (netObject.Value.destroyWithScene != null && netObject.Value.destroyWithScene.Value == false)
-                        MonoBehaviour.Destroy(netObject.Value.gameObject);
+                    {
+                        if (customDestroyHandlers.ContainsKey(netObject.Value.NetworkedPrefabHash))
+                        {
+                            customDestroyHandlers[netObject.Value.NetworkedPrefabHash](netObject.Value);
+                            SpawnManager.OnDestroyObject(netObject.Value.NetworkId, false);
+                        }
+                        else
+                        {
+                            MonoBehaviour.Destroy(netObject.Value.gameObject);   
+                        }
+                    }
                 }
             }
         }
@@ -183,7 +236,17 @@ namespace MLAPI.Components
             for (int i = 0; i < netObjects.Length; i++)
             {
                 if (netObjects[i].destroyWithScene == null || netObjects[i].destroyWithScene.Value == true)
-                    MonoBehaviour.Destroy(netObjects[i].gameObject);
+                {
+                    if (customDestroyHandlers.ContainsKey(netObjects[i].NetworkedPrefabHash))
+                    {
+                        customDestroyHandlers[netObjects[i].NetworkedPrefabHash](netObjects[i]);
+                        SpawnManager.OnDestroyObject(netObjects[i].NetworkId, false);
+                    }
+                    else
+                    {
+                        MonoBehaviour.Destroy(netObjects[i].gameObject);
+                    }
+                }
             }
         }
 
@@ -211,11 +274,22 @@ namespace MLAPI.Components
             //Delayed spawning
             if (sceneDelayedSpawn && sceneSpawnedInIndex != NetworkSceneManager.CurrentActiveSceneIndex)
             {
-                GameObject prefab = netManager.NetworkConfig.NetworkedPrefabs[networkedPrefabId].prefab;
-                bool prefabActive = prefab.activeSelf;
-                prefab.SetActive(false);
-                GameObject go = (position == null && rotation == null) ? MonoBehaviour.Instantiate(prefab) : MonoBehaviour.Instantiate(prefab, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity));
-                prefab.SetActive(prefabActive);
+                ulong prefabHash = netManager.NetworkConfig.NetworkedPrefabs[networkedPrefabId].hash;
+
+                GameObject go;
+                
+                if (customSpawnHandlers.ContainsKey(prefabHash))
+                {
+                    go = customSpawnHandlers[prefabHash](position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity), true).gameObject;
+                }
+                else
+                {
+                    GameObject prefab = netManager.NetworkConfig.NetworkedPrefabs[networkedPrefabId].prefab;
+                    bool prefabActive = prefab.activeSelf;
+                    prefab.SetActive(false);
+                    go = (position == null && rotation == null) ? MonoBehaviour.Instantiate(prefab) : MonoBehaviour.Instantiate(prefab, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity));
+                    prefab.SetActive(prefabActive);
+                }
 
                 //Appearantly some wierd behavior when switching scenes can occur that destroys this object even though the scene is
                 //not destroyed, therefor we set it to DontDestroyOnLoad here, to prevent that problem.
@@ -230,7 +304,6 @@ namespace MLAPI.Components
 
                 netObject.NetworkedPrefabName = netManager.NetworkConfig.NetworkedPrefabs[networkedPrefabId].name;
                 netObject.IsSpawned = false;
-                netObject.IsPooledObject = false;
 
                 if (netManager.IsServer) netObject.NetworkId = GetNetworkObjectId();
                 else netObject.NetworkId = networkId;
@@ -275,9 +348,20 @@ namespace MLAPI.Components
 
             //Normal spawning
             { 
-                GameObject prefab = netManager.NetworkConfig.NetworkedPrefabs[networkedPrefabId].prefab;
-                GameObject go = (position == null && rotation == null) ? MonoBehaviour.Instantiate(prefab) : MonoBehaviour.Instantiate(prefab, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity));
+                ulong prefabHash = netManager.NetworkConfig.NetworkedPrefabs[networkedPrefabId].hash;
 
+                GameObject go;
+
+                if (customSpawnHandlers.ContainsKey(prefabHash))
+                {
+                    go = customSpawnHandlers[prefabHash](position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity), false).gameObject;
+                }
+                else
+                {
+                    GameObject prefab = netManager.NetworkConfig.NetworkedPrefabs[networkedPrefabId].prefab;
+                    go = (position == null && rotation == null) ? MonoBehaviour.Instantiate(prefab) : MonoBehaviour.Instantiate(prefab, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity));
+                }
+                
                 NetworkedObject netObject = go.GetComponent<NetworkedObject>();
                 if (netObject == null)
                 {
@@ -289,7 +373,6 @@ namespace MLAPI.Components
 
                 netObject.NetworkedPrefabName = netManager.NetworkConfig.NetworkedPrefabs[networkedPrefabId].name;
                 netObject.IsSpawned = true;
-                netObject.IsPooledObject = false;
 
                 if (netManager.IsServer) netObject.NetworkId = GetNetworkObjectId();
                 else netObject.NetworkId = networkId;
@@ -518,7 +601,17 @@ namespace MLAPI.Components
 
                 GameObject pendingGameObject = PendingSpawnObjects[networkId].netObject.gameObject;
                 if (pendingGameObject != null)
-                    MonoBehaviour.Destroy(pendingGameObject);
+                {
+                    if (customDestroyHandlers.ContainsKey(PendingSpawnObjects[networkId].netObject.NetworkedPrefabHash))
+                    {
+                        customDestroyHandlers[PendingSpawnObjects[networkId].netObject.NetworkedPrefabHash](PendingSpawnObjects[networkId].netObject);
+                        SpawnManager.OnDestroyObject(PendingSpawnObjects[networkId].netObject.NetworkId, false);
+                    }
+                    else
+                    {
+                        MonoBehaviour.Destroy(pendingGameObject);
+                    }
+                }
                 PendingSpawnObjects.Remove(networkId);
             }
 
@@ -557,7 +650,18 @@ namespace MLAPI.Components
 
             GameObject go = SpawnedObjects[networkId].gameObject;
             if (destroyGameObject && go != null)
-                MonoBehaviour.Destroy(go);
+            {
+                if (customDestroyHandlers.ContainsKey(SpawnedObjects[networkId].NetworkedPrefabHash))
+                {
+                    customDestroyHandlers[SpawnedObjects[networkId].NetworkedPrefabHash](SpawnedObjects[networkId]);
+                    SpawnManager.OnDestroyObject(networkId, false);
+                }
+                else
+                {
+                    MonoBehaviour.Destroy(go);
+                }
+            }
+            
             SpawnedObjects.Remove(networkId);
             for (int i = SpawnedObjectsList.Count - 1; i > -1; i--)
             {
