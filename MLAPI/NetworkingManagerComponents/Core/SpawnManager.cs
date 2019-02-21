@@ -30,9 +30,14 @@ namespace MLAPI.Components
         public delegate void DestroyHandlerDelegate(NetworkedObject networkedObject);
         
         
-        private static readonly Dictionary<ulong, SpawnHandlerDelegate> customSpawnHandlers = new Dictionary<ulong, SpawnHandlerDelegate>();
+        internal static readonly Dictionary<ulong, SpawnHandlerDelegate> customSpawnHandlers = new Dictionary<ulong, SpawnHandlerDelegate>();
         internal static readonly Dictionary<ulong, DestroyHandlerDelegate> customDestroyHandlers = new Dictionary<ulong, DestroyHandlerDelegate>();
 
+        /// <summary>
+        /// Registers a delegate for spawning networked prefabs, useful for object pooling
+        /// </summary>
+        /// <param name="prefabHash">The prefab hash to spawn</param>
+        /// <param name="handler">The delegate handler</param>
         public static void RegisterSpawnHandler(ulong prefabHash, SpawnHandlerDelegate handler)
         {
             if (customSpawnHandlers.ContainsKey(prefabHash))
@@ -45,6 +50,11 @@ namespace MLAPI.Components
             }
         }
 
+        /// <summary>
+        /// Registers a delegate for destroying networked objects, useful for object pooling
+        /// </summary>
+        /// <param name="prefabHash">The prefab hash to destroy</param>
+        /// <param name="handler">The delegate handler</param>
         public static void RegisterCustomDestroyHandler(ulong prefabHash, DestroyHandlerDelegate handler)
         {
             if (customDestroyHandlers.ContainsKey(prefabHash))
@@ -57,11 +67,19 @@ namespace MLAPI.Components
             }
         }
 
+        /// <summary>
+        /// Removes the custom spawn handler for a specific prefab hash
+        /// </summary>
+        /// <param name="prefabHash">The prefab hash of the prefab spawn handler that is to be removed</param>
         public static void RemoveCustomSpawnHandler(ulong prefabHash)
         {
             customSpawnHandlers.Remove(prefabHash);
         }
         
+        /// <summary>
+        /// Removes the custom destroy handler for a specific prefab hash
+        /// </summary>
+        /// <param name="prefabHash">The prefab hash of the prefab destroy handler that is to be removed</param>
         public static void RemoveCustomDestroyHandler(ulong prefabHash)
         {
             customDestroyHandlers.Remove(prefabHash);
