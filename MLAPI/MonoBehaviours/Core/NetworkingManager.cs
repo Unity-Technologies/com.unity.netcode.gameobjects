@@ -269,6 +269,8 @@ namespace MLAPI
             SpawnManager.SpawnedObjectsList.Clear();
             SpawnManager.releasedNetworkObjectIds.Clear();
             SpawnManager.PendingSpawnObjects.Clear();
+            SpawnManager.customSpawnHandlers.Clear();
+            SpawnManager.customDestroyHandlers.Clear();
             NetworkSceneManager.registeredSceneNames.Clear();
             NetworkSceneManager.sceneIndexToString.Clear();
             NetworkSceneManager.sceneNameToIndex.Clear();
