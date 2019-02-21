@@ -346,48 +346,52 @@ namespace MLAPI
             
             for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)
             {
-                //This iterates over every "channel group".
-                for (int j = 0; j < channelMappedVarIndexes.Count; j++)
+                // Do this check here to prevent doing all the expensive dirty checks
+                if (!IsServer || this.NetworkedObject.observers.Contains(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId))
                 {
-                    using (PooledBitStream stream = PooledBitStream.Get())
+                    //This iterates over every "channel group".
+                    for (int j = 0; j < channelMappedVarIndexes.Count; j++)
                     {
-                        using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                        using (PooledBitStream stream = PooledBitStream.Get())
                         {
-                            writer.WriteUInt32Packed(NetworkId);
-                            writer.WriteUInt16Packed(NetworkedObject.GetOrderIndex(this));
-
-                            uint clientId = NetworkingManager.Singleton.ConnectedClientsList[i].ClientId;
-                            bool writtenAny = false;
-                            for (int k = 0; k < networkedVarFields.Count; k++)
+                            using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                             {
-                                if (!channelMappedVarIndexes[j].Contains(k))
-                                {
-                                    //This var does not belong to the currently iterating channel group.
-                                    writer.WriteBool(false);
-                                    continue;
-                                }
+                                writer.WriteUInt32Packed(NetworkId);
+                                writer.WriteUInt16Packed(NetworkedObject.GetOrderIndex(this));
 
-                                bool isDirty = networkedVarFields[k].IsDirty(); //cache this here. You never know what operations users will do in the dirty methods
-                                writer.WriteBool(isDirty);
-
-                                if (isDirty && (!IsServer || networkedVarFields[k].CanClientRead(clientId)))
+                                uint clientId = NetworkingManager.Singleton.ConnectedClientsList[i].ClientId;
+                                bool writtenAny = false;
+                                for (int k = 0; k < networkedVarFields.Count; k++)
                                 {
-                                    writtenAny = true;
-                                    networkedVarFields[k].WriteDelta(stream);
-                                    if (!networkedVarIndexesToResetSet.Contains(k))
+                                    if (!channelMappedVarIndexes[j].Contains(k))
                                     {
-                                        networkedVarIndexesToResetSet.Add(k);
-                                        networkedVarIndexesToReset.Add(k);
+                                        //This var does not belong to the currently iterating channel group.
+                                        writer.WriteBool(false);
+                                        continue;
+                                    }
+
+                                    bool isDirty = networkedVarFields[k].IsDirty(); //cache this here. You never know what operations users will do in the dirty methods
+                                    writer.WriteBool(isDirty);
+
+                                    if (isDirty && (!IsServer || networkedVarFields[k].CanClientRead(clientId)))
+                                    {
+                                        writtenAny = true;
+                                        networkedVarFields[k].WriteDelta(stream);
+                                        if (!networkedVarIndexesToResetSet.Contains(k))
+                                        {
+                                            networkedVarIndexesToResetSet.Add(k);
+                                            networkedVarIndexesToReset.Add(k);
+                                        }
                                     }
                                 }
-                            }
-                            
-                            if (writtenAny)
-                            {
-                                if (IsServer)
-                                    InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA, channelsForVarGroups[j], stream, SecuritySendFlags.None);
-                                else
-                                    InternalMessageHandler.Send(NetworkingManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA, channelsForVarGroups[j], stream, SecuritySendFlags.None);   
+
+                                if (writtenAny)
+                                {
+                                    if (IsServer)
+                                        InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA, channelsForVarGroups[j], stream, SecuritySendFlags.None, this.NetworkedObject);
+                                    else
+                                        InternalMessageHandler.Send(NetworkingManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA, channelsForVarGroups[j], stream, SecuritySendFlags.None, null);
+                                }
                             }
                         }
                     }
@@ -875,7 +879,7 @@ namespace MLAPI
                     }
                     else
                     {
-                        InternalMessageHandler.Send(NetworkingManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_SERVER_RPC, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security);
+                        InternalMessageHandler.Send(NetworkingManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_SERVER_RPC, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security, null);
                     }
                 }
             }
@@ -932,7 +936,7 @@ namespace MLAPI
             
                         ResponseMessageManager.Add(response.Id, response);
                         
-                        InternalMessageHandler.Send(NetworkingManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_SERVER_RPC_REQUEST, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security);
+                        InternalMessageHandler.Send(NetworkingManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_SERVER_RPC_REQUEST, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security, null);
 
                         return response;
                     }
@@ -963,6 +967,11 @@ namespace MLAPI
                     {
                         for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)
                         {
+                            if (!this.NetworkedObject.observers.Contains(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId))
+                            {
+                                continue;
+                            }
+                            
                             if (IsHost && NetworkingManager.Singleton.ConnectedClientsList[i].ClientId == NetworkingManager.Singleton.LocalClientId)
                             {
                                 messageStream.Position = 0;
@@ -970,7 +979,7 @@ namespace MLAPI
                             }
                             else
                             {
-                                InternalMessageHandler.Send(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId, MLAPIConstants.MLAPI_CLIENT_RPC, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security);
+                                InternalMessageHandler.Send(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId, MLAPIConstants.MLAPI_CLIENT_RPC, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security, null);
                             }
                         }
                     }
@@ -978,6 +987,12 @@ namespace MLAPI
                     {
                         for (int i = 0; i < clientIds.Count; i++)
                         {
+                            if (!this.NetworkedObject.observers.Contains(clientIds[i]))
+                            {
+                                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot send ClientRPC to client without visibility to the object");
+                                continue;
+                            }
+                            
                             if (IsHost && clientIds[i] == NetworkingManager.Singleton.LocalClientId)
                             {
                                 messageStream.Position = 0;
@@ -985,7 +1000,7 @@ namespace MLAPI
                             }
                             else
                             {
-                                InternalMessageHandler.Send(clientIds[i], MLAPIConstants.MLAPI_CLIENT_RPC, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security);
+                                InternalMessageHandler.Send(clientIds[i], MLAPIConstants.MLAPI_CLIENT_RPC, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security, null);
                             }
                         }
                     }
@@ -1015,8 +1030,9 @@ namespace MLAPI
 
                     for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)
                     {
-                        if (NetworkingManager.Singleton.ConnectedClientsList[i].ClientId == clientIdToIgnore)
+                        if (NetworkingManager.Singleton.ConnectedClientsList[i].ClientId == clientIdToIgnore || !this.NetworkedObject.observers.Contains(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId))
                             continue;
+                        
                         if (IsHost && NetworkingManager.Singleton.ConnectedClientsList[i].ClientId == NetworkingManager.Singleton.LocalClientId)
                         {
                             messageStream.Position = 0;
@@ -1024,7 +1040,7 @@ namespace MLAPI
                         }
                         else
                         {
-                            InternalMessageHandler.Send(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId, MLAPIConstants.MLAPI_CLIENT_RPC, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security);
+                            InternalMessageHandler.Send(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId, MLAPIConstants.MLAPI_CLIENT_RPC, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security, null);
                         }
                     }
                 }
@@ -1037,6 +1053,12 @@ namespace MLAPI
             {
                 //We are NOT a server.
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Only clients and host can invoke ClientRPC");
+                return;
+            }
+            
+            if (!this.NetworkedObject.observers.Contains(clientId))
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot send ClientRPC to client without visibility to the object");
                 return;
             }
 
@@ -1057,7 +1079,7 @@ namespace MLAPI
                     }
                     else
                     {
-                        InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_CLIENT_RPC, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security);
+                        InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_CLIENT_RPC, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security, null);
                     }
                 }
             }
@@ -1072,6 +1094,12 @@ namespace MLAPI
                 return null;
             }
 
+            if (!this.NetworkedObject.observers.Contains(clientId))
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot send ClientRPC to client without visibility to the object");
+                return null;
+            }
+            
             ulong responseId = ResponseMessageManager.GenerateMessageId();
             
             using (PooledBitStream stream = PooledBitStream.Get())
@@ -1114,7 +1142,7 @@ namespace MLAPI
             
                         ResponseMessageManager.Add(response.Id, response);
                         
-                        InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_CLIENT_RPC_REQUEST, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security);
+                        InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_CLIENT_RPC_REQUEST, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security, null);
                         
                         return response;
                     }

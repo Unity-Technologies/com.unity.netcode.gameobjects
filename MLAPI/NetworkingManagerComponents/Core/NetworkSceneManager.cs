@@ -80,7 +80,7 @@ namespace MLAPI.Components
                     writer.WriteUInt32Packed(sceneNameToIndex[sceneName]);
                     writer.WriteByteArray(switchSceneProgress.guid.ToByteArray());
 
-                    InternalMessageHandler.Send(MLAPIConstants.MLAPI_SWITCH_SCENE, "MLAPI_INTERNAL", stream, SecuritySendFlags.None);
+                    InternalMessageHandler.Send(MLAPIConstants.MLAPI_SWITCH_SCENE, "MLAPI_INTERNAL", stream, SecuritySendFlags.None, null);
                 }
             }
             return switchSceneProgress;
@@ -175,7 +175,7 @@ namespace MLAPI.Components
                     using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                     {
                         writer.WriteByteArray(switchSceneGuid.ToByteArray());
-                        InternalMessageHandler.Send(NetworkingManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_CLIENT_SWITCH_SCENE_COMPLETED, "MLAPI_INTERNAL", stream, SecuritySendFlags.None);
+                        InternalMessageHandler.Send(NetworkingManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_CLIENT_SWITCH_SCENE_COMPLETED, "MLAPI_INTERNAL", stream, SecuritySendFlags.None, null);
                     }
                 }
             }

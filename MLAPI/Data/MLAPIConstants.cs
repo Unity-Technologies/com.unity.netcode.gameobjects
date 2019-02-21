@@ -14,7 +14,6 @@
         public const byte MLAPI_CONNECTION_REQUEST = 3;
         public const byte MLAPI_CONNECTION_APPROVED = 4;
         public const byte MLAPI_ADD_OBJECT = 5;
-        public const byte MLAPI_CLIENT_DISCONNECT = 6;
         public const byte MLAPI_DESTROY_OBJECT = 7;
         public const byte MLAPI_SWITCH_SCENE = 8;
         public const byte MLAPI_CLIENT_SWITCH_SCENE_COMPLETED = 9;

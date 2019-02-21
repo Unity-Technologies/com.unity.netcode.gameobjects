@@ -6,11 +6,11 @@ namespace MLAPI.Internal
 {
     internal static partial class InternalMessageHandler
     {
-        internal static void Send(uint clientId, byte messageType, string channelName, BitStream messageStream, SecuritySendFlags flags, bool skipQueue = false)
+        internal static void Send(uint clientId, byte messageType, string channelName, BitStream messageStream, SecuritySendFlags flags, NetworkedObject targetObject, bool skipQueue = false)
         {
             messageStream.PadStream();
 
-            if (NetworkingManager.Singleton.IsServer && clientId == NetworkingManager.Singleton.ServerClientId) return;
+            if (NetworkingManager.Singleton.IsServer && clientId == NetworkingManager.Singleton.ServerClientId || (targetObject != null && !targetObject.observers.Contains(clientId))) return;
 
             using (BitStream stream = MessageManager.WrapMessage(messageType, clientId, messageStream, flags))
             {
@@ -24,7 +24,7 @@ namespace MLAPI.Internal
             }
         }
 
-        internal static void Send(byte messageType, string channelName, BitStream messageStream, SecuritySendFlags flags)
+        internal static void Send(byte messageType, string channelName, BitStream messageStream, SecuritySendFlags flags, NetworkedObject targetObject)
         {
             bool encrypted = ((flags & SecuritySendFlags.Encrypted) == SecuritySendFlags.Encrypted) && netManager.NetworkConfig.EnableEncryption;
             bool authenticated = ((flags & SecuritySendFlags.Authenticated) == SecuritySendFlags.Authenticated) && netManager.NetworkConfig.EnableEncryption;
@@ -33,7 +33,7 @@ namespace MLAPI.Internal
             {
                 for (int i = 0; i < netManager.ConnectedClientsList.Count; i++)
                 {
-                    Send(netManager.ConnectedClientsList[i].ClientId, messageType, channelName, messageStream, flags);
+                    Send(netManager.ConnectedClientsList[i].ClientId, messageType, channelName, messageStream, flags, targetObject);
                 }
             }
             else
@@ -45,7 +45,7 @@ namespace MLAPI.Internal
                     NetworkProfiler.StartEvent(TickType.Send, (uint)stream.Length, channelName, MLAPIConstants.MESSAGE_NAMES[messageType]);
                     for (int i = 0; i < netManager.ConnectedClientsList.Count; i++)
                     {
-                        if (NetworkingManager.Singleton.IsServer && netManager.ConnectedClientsList[i].ClientId == NetworkingManager.Singleton.ServerClientId) continue;
+                        if (NetworkingManager.Singleton.IsServer && netManager.ConnectedClientsList[i].ClientId == NetworkingManager.Singleton.ServerClientId || (targetObject != null && !targetObject.observers.Contains(netManager.ConnectedClientsList[i].ClientId))) continue;
                         byte error;
                         netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(netManager.ConnectedClientsList[i].ClientId, stream.GetBuffer(), (int)stream.Length, MessageManager.channels[channelName], false, out error);
                     }
@@ -54,7 +54,7 @@ namespace MLAPI.Internal
             }
         }
 
-        internal static void Send(byte messageType, string channelName, uint clientIdToIgnore, BitStream messageStream, SecuritySendFlags flags)
+        internal static void Send(byte messageType, string channelName, uint clientIdToIgnore, BitStream messageStream, SecuritySendFlags flags, NetworkedObject targetObject)
         {
             bool encrypted = ((flags & SecuritySendFlags.Encrypted) == SecuritySendFlags.Encrypted) && netManager.NetworkConfig.EnableEncryption;
             bool authenticated = ((flags & SecuritySendFlags.Authenticated) == SecuritySendFlags.Authenticated) && netManager.NetworkConfig.EnableEncryption;
@@ -66,7 +66,7 @@ namespace MLAPI.Internal
                     if (netManager.ConnectedClientsList[i].ClientId == clientIdToIgnore)
                         continue;
 
-                    Send(netManager.ConnectedClientsList[i].ClientId, messageType, channelName, messageStream, flags);
+                    Send(netManager.ConnectedClientsList[i].ClientId, messageType, channelName, messageStream, flags, targetObject);
                 }
             }
             else
@@ -79,7 +79,8 @@ namespace MLAPI.Internal
                     for (int i = 0; i < netManager.ConnectedClientsList.Count; i++)
                     {
                         if (netManager.ConnectedClientsList[i].ClientId == clientIdToIgnore ||
-                            (NetworkingManager.Singleton.IsServer && netManager.ConnectedClientsList[i].ClientId == NetworkingManager.Singleton.ServerClientId))
+                            (NetworkingManager.Singleton.IsServer && netManager.ConnectedClientsList[i].ClientId == NetworkingManager.Singleton.ServerClientId) || 
+                            (targetObject != null && !targetObject.observers.Contains(netManager.ConnectedClientsList[i].ClientId)))
                             continue;
 
                         byte error;
