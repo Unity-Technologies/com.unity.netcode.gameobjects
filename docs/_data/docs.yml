@@ -15,6 +15,7 @@
   - networkedvar
   - scene-management
   - object-ownership
+  - object-visibility
   - ways-to-syncronize
 
 - title: Core Components
