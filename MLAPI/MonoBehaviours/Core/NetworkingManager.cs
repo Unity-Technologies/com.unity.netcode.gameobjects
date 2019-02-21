@@ -8,6 +8,7 @@ using System.Security.Cryptography;
 using MLAPI.Logging;
 using UnityEngine.SceneManagement;
 using System.IO;
+using System.Linq.Expressions;
 using MLAPI.Components;
 using MLAPI.Configuration;
 #if !DISABLE_CRYPTOGRAPHY
@@ -187,14 +188,14 @@ namespace MLAPI
             {
                 for (int i = 0; i < ConnectedClientsList.Count; i++)
                 {
-                    InternalMessageHandler.Send(ConnectedClientsList[i].ClientId, MLAPIConstants.MLAPI_CUSTOM_MESSAGE, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security);
+                    InternalMessageHandler.Send(ConnectedClientsList[i].ClientId, MLAPIConstants.MLAPI_CUSTOM_MESSAGE, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security, null);
                 }
             }
             else
             {
                 for (int i = 0; i < clientIds.Count; i++)
                 {
-                    InternalMessageHandler.Send(clientIds[i], MLAPIConstants.MLAPI_CUSTOM_MESSAGE, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security);
+                    InternalMessageHandler.Send(clientIds[i], MLAPIConstants.MLAPI_CUSTOM_MESSAGE, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security, null);
                 }
             }
         }
@@ -208,7 +209,7 @@ namespace MLAPI
         /// <param name="security">The security settings to apply to the message</param>
         public void SendCustomMessage(uint clientId, BitStream stream, string channel = null, SecuritySendFlags security = SecuritySendFlags.None)
         {
-            InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_CUSTOM_MESSAGE, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security);
+            InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_CUSTOM_MESSAGE, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security, null);
         }
 
         private void OnValidate()
@@ -222,31 +223,29 @@ namespace MLAPI
                 NetworkConfig.RegisteredScenes.Add(SceneManager.GetActiveScene().name);
             }
 
-            if (!NetworkConfig.EnableSceneSwitching && NetworkConfig.HandleObjectSpawning)
+            if (!NetworkConfig.EnableSceneSwitching)
             {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Please be aware that Scene objects are NOT supported if SceneManagement is turned off, even if HandleObjectSpawning is turned on");
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Please be aware that Scene objects are NOT supported if SceneManagement is turned off");
             }
 
-            if (NetworkConfig.HandleObjectSpawning)
+            for (int i = 0; i < NetworkConfig.NetworkedPrefabs.Count; i++)
             {
-                for (int i = 0; i < NetworkConfig.NetworkedPrefabs.Count; i++)
+                if (NetworkConfig.NetworkedPrefabs[i] != null && string.IsNullOrEmpty(NetworkConfig.NetworkedPrefabs[i].name))
                 {
-                    if (NetworkConfig.NetworkedPrefabs[i] != null && string.IsNullOrEmpty(NetworkConfig.NetworkedPrefabs[i].name))
-                    {
-                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The NetworkedPrefab " + NetworkConfig.NetworkedPrefabs[i].prefab.name + " does not have a NetworkedPrefabName.");
-                    }
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The NetworkedPrefab " + NetworkConfig.NetworkedPrefabs[i].prefab.name + " does not have a NetworkedPrefabName.");
                 }
-                int playerPrefabCount = NetworkConfig.NetworkedPrefabs.Count(x => x.playerPrefab == true);
-                if (playerPrefabCount == 0)
-                {
-                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("There is no NetworkedPrefab marked as a PlayerPrefab");
-                }
-                else if (playerPrefabCount > 1)
-                {
-                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Only one networked prefab can be marked as a player prefab");
-                }
-                else NetworkConfig.PlayerPrefabName = NetworkConfig.NetworkedPrefabs.Find(x => x.playerPrefab == true).name;
             }
+
+            int playerPrefabCount = NetworkConfig.NetworkedPrefabs.Count(x => x.playerPrefab == true);
+            if (playerPrefabCount == 0)
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("There is no NetworkedPrefab marked as a PlayerPrefab");
+            }
+            else if (playerPrefabCount > 1)
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Only one networked prefab can be marked as a player prefab");
+            }
+            else NetworkConfig.PlayerPrefabName = NetworkConfig.NetworkedPrefabs.Find(x => x.playerPrefab == true).name;
         }
 
         private object Init(bool server)
@@ -262,7 +261,7 @@ namespace MLAPI
             ConnectedClients.Clear();
             ConnectedClientsList.Clear();
             messageBuffer = new byte[NetworkConfig.MessageBufferSize];
-            
+
             ResponseMessageManager.Clear();
             MessageManager.channels.Clear();
             MessageManager.reverseChannels.Clear();
@@ -302,19 +301,19 @@ namespace MLAPI
 
             object settings = NetworkConfig.NetworkTransport.GetSettings(); //Gets a new "settings" object for the transport currently used.
 
-            if (NetworkConfig.HandleObjectSpawning)
+
+            HashSet<string> networkedPrefabName = new HashSet<string>();
+            for (int i = 0; i < NetworkConfig.NetworkedPrefabs.Count; i++)
             {
-                HashSet<string> networkedPrefabName = new HashSet<string>();
-                for (int i = 0; i < NetworkConfig.NetworkedPrefabs.Count; i++)
+                if (networkedPrefabName.Contains(NetworkConfig.NetworkedPrefabs[i].name))
                 {
-                    if (networkedPrefabName.Contains(NetworkConfig.NetworkedPrefabs[i].name))
-                    {
-                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Duplicate NetworkedPrefabName " + NetworkConfig.NetworkedPrefabs[i].name);
-                        continue;
-                    }
-                    networkedPrefabName.Add(NetworkConfig.NetworkedPrefabs[i].name);
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Duplicate NetworkedPrefabName " + NetworkConfig.NetworkedPrefabs[i].name);
+                    continue;
                 }
+
+                networkedPrefabName.Add(NetworkConfig.NetworkedPrefabs[i].name);
             }
+
 
             //MLAPI channels and messageTypes
             List<Channel> internalChannels = new List<Channel>
@@ -365,6 +364,7 @@ namespace MLAPI
                     if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Duplicate channel name: " + NetworkConfig.Channels[i].Name);
                     continue;
                 }
+
                 int channelId = NetworkConfig.NetworkTransport.AddChannel(internalChannels[i].Type, settings);
                 MessageManager.channels.Add(internalChannels[i].Name, channelId);
                 channelNames.Add(internalChannels[i].Name);
@@ -377,8 +377,8 @@ namespace MLAPI
                 for (int i = 0; i < NetworkConfig.RegisteredScenes.Count; i++)
                 {
                     NetworkSceneManager.registeredSceneNames.Add(NetworkConfig.RegisteredScenes[i]);
-                    NetworkSceneManager.sceneIndexToString.Add((uint)i, NetworkConfig.RegisteredScenes[i]);
-                    NetworkSceneManager.sceneNameToIndex.Add(NetworkConfig.RegisteredScenes[i], (uint)i);
+                    NetworkSceneManager.sceneIndexToString.Add((uint) i, NetworkConfig.RegisteredScenes[i]);
+                    NetworkSceneManager.sceneNameToIndex.Add(NetworkConfig.RegisteredScenes[i], (uint) i);
                 }
 
                 NetworkSceneManager.SetCurrentSceneIndex();
@@ -388,11 +388,12 @@ namespace MLAPI
             NetworkConfig.Channels = NetworkConfig.Channels.OrderBy(x => x.Name).ToList();
             for (int i = 0; i < NetworkConfig.Channels.Count; i++)
             {
-                if(channelNames.Contains(NetworkConfig.Channels[i].Name))
+                if (channelNames.Contains(NetworkConfig.Channels[i].Name))
                 {
                     if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Duplicate channel name: " + NetworkConfig.Channels[i].Name);
                     continue;
                 }
+
                 int channelId = NetworkConfig.NetworkTransport.AddChannel(NetworkConfig.Channels[i].Type, settings);
                 MessageManager.channels.Add(NetworkConfig.Channels[i].Name, channelId);
                 channelNames.Add(NetworkConfig.Channels[i].Name);
@@ -407,7 +408,7 @@ namespace MLAPI
             if (NetworkConfig.EnableSceneSwitching)
             {
                 SpawnManager.MarkSceneObjects();
-                if (IsServer && NetworkConfig.HandleObjectSpawning)
+                if (IsServer)
                 {
                     NetworkedObject[] networkedObjects = FindObjectsOfType<NetworkedObject>();
                     for (int i = 0; i < networkedObjects.Length; i++)
@@ -566,11 +567,8 @@ namespace MLAPI
             });
             ConnectedClientsList.Add(ConnectedClients[hostClientId]);
 
-            if (NetworkConfig.HandleObjectSpawning)
-            {
-                prefabId = prefabId == -1 ? SpawnManager.GetNetworkedPrefabIndexOfName(NetworkConfig.PlayerPrefabName) : prefabId;
-                SpawnManager.CreateSpawnedObject(prefabId, 0, hostClientId, true, NetworkSceneManager.CurrentActiveSceneIndex, false, false, pos.GetValueOrDefault(), rot.GetValueOrDefault(), true, null, false, 0, false);
-            }
+            prefabId = prefabId == -1 ? SpawnManager.GetNetworkedPrefabIndexOfName(NetworkConfig.PlayerPrefabName) : prefabId;
+            SpawnManager.CreateSpawnedObject(prefabId, 0, hostClientId, true, NetworkSceneManager.CurrentActiveSceneIndex, false, false, pos.GetValueOrDefault(), rot.GetValueOrDefault(), true, null, false, 0, false);
 
             SpawnSceneObjects();
 
@@ -705,7 +703,7 @@ namespace MLAPI
                                                 }
                                             }
                                             // Send the hail
-                                            InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_CERTIFICATE_HAIL, "MLAPI_INTERNAL", hailStream, SecuritySendFlags.None, true);
+                                            InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_CERTIFICATE_HAIL, "MLAPI_INTERNAL", hailStream, SecuritySendFlags.None, null, true);
                                         }
                                     }
                                     else
@@ -799,7 +797,7 @@ namespace MLAPI
                         writer.WriteByteArray(NetworkConfig.ConnectionData);
                 }
 
-                InternalMessageHandler.Send(ServerClientId, MLAPIConstants.MLAPI_CONNECTION_REQUEST, "MLAPI_INTERNAL", stream, SecuritySendFlags.Authenticated | SecuritySendFlags.Encrypted, true);
+                InternalMessageHandler.Send(ServerClientId, MLAPIConstants.MLAPI_CONNECTION_REQUEST, "MLAPI_INTERNAL", stream, SecuritySendFlags.Authenticated | SecuritySendFlags.Encrypted, null, true);
             }
         }
 
@@ -874,10 +872,6 @@ namespace MLAPI
                             break;
                         case MLAPIConstants.MLAPI_ADD_OBJECT:
                             if (IsClient) InternalMessageHandler.HandleAddObject(clientId, messageStream, channelId);
-                            break;
-                        case MLAPIConstants.MLAPI_CLIENT_DISCONNECT:
-                            if (IsClient)
-                                InternalMessageHandler.HandleClientDisconnect(clientId, messageStream, channelId);
                             break;
                         case MLAPIConstants.MLAPI_DESTROY_OBJECT:
                             if (IsClient) InternalMessageHandler.HandleDestroyObject(clientId, messageStream, channelId);
@@ -984,7 +978,7 @@ namespace MLAPI
             
             if (ConnectedClients.ContainsKey(clientId))
             {
-                if (IsServer && NetworkConfig.HandleObjectSpawning)
+                if (IsServer)
                 {
                     if (ConnectedClients[clientId].PlayerObject != null)
                         Destroy(ConnectedClients[clientId].PlayerObject.gameObject);
@@ -1003,6 +997,12 @@ namespace MLAPI
                             }
                         }
                     }
+
+                    // TODO: Could(should?) be replaced with more memory per client, by storing the visiblity
+                    for (int i = 0; i < SpawnManager.SpawnedObjectsList.Count; i++)
+                    {
+                        SpawnManager.SpawnedObjectsList[i].observers.Remove(clientId);
+                    }
                 }
 
                 for (int i = 0; i < ConnectedClientsList.Count; i++)
@@ -1016,18 +1016,6 @@ namespace MLAPI
                 
                 ConnectedClients.Remove(clientId);
             }
-
-            if (IsServer)
-            {
-                using (PooledBitStream stream = PooledBitStream.Get())
-                {
-                    using (PooledBitWriter writer = PooledBitWriter.Get(stream))
-                    {
-                        writer.WriteUInt32Packed(clientId);
-                        InternalMessageHandler.Send(MLAPIConstants.MLAPI_CLIENT_DISCONNECT, "MLAPI_INTERNAL", clientId, stream, SecuritySendFlags.None);
-                    }
-                }
-            }
         }
 
         private void SyncTime()
@@ -1040,10 +1028,12 @@ namespace MLAPI
                     writer.WriteSinglePacked(NetworkTime);
                     int timestamp = NetworkConfig.NetworkTransport.GetNetworkTimestamp();
                     writer.WriteInt32Packed(timestamp);
-                    InternalMessageHandler.Send(MLAPIConstants.MLAPI_TIME_SYNC, "MLAPI_TIME_SYNC", stream, SecuritySendFlags.None);
+                    InternalMessageHandler.Send(MLAPIConstants.MLAPI_TIME_SYNC, "MLAPI_TIME_SYNC", stream, SecuritySendFlags.None, null);
                 }
             }
         }
+        
+        private readonly List<NetworkedObject> _observedObjects = new List<NetworkedObject>();
 
         internal void HandleApproval(uint clientId, int prefabId, bool approved, Vector3? position, Quaternion? rotation)
         {
@@ -1062,16 +1052,22 @@ namespace MLAPI
                 };
                 ConnectedClients.Add(clientId, client);
                 ConnectedClientsList.Add(client);
+                
+                prefabId = prefabId == -1 ? SpawnManager.GetNetworkedPrefabIndexOfName(NetworkConfig.PlayerPrefabName) : prefabId;
+                NetworkedObject netObject = SpawnManager.CreateSpawnedObject(prefabId, 0, clientId, true, NetworkSceneManager.CurrentActiveSceneIndex, false, false, position, rotation, true, null, false, 0, false);
+                ConnectedClients[clientId].PlayerObject = netObject;
 
-                NetworkedObject netObject = null;
-                if(NetworkConfig.HandleObjectSpawning)
+                _observedObjects.Clear();
+                
+                for (int i = 0; i < SpawnManager.SpawnedObjectsList.Count; i++)
                 {
-                    prefabId = prefabId == -1 ? SpawnManager.GetNetworkedPrefabIndexOfName(NetworkConfig.PlayerPrefabName) : prefabId;
-                    netObject = SpawnManager.CreateSpawnedObject(prefabId, 0, clientId, true, NetworkSceneManager.CurrentActiveSceneIndex, false, false, position, rotation, true, null, false, 0, false);
-                    ConnectedClients[clientId].PlayerObject = netObject;
-                }
+                    if (clientId == ServerClientId || SpawnManager.SpawnedObjectsList[i].CheckObjectVisibility == null || SpawnManager.SpawnedObjectsList[i].CheckObjectVisibility(clientId))
+                    {
+                        _observedObjects.Add(SpawnManager.SpawnedObjectsList[i]);
 
-                int amountOfObjectsToSend = SpawnManager.SpawnedObjects.Values.Count;
+                        SpawnManager.SpawnedObjectsList[i].observers.Add(clientId);
+                    }
+                } 
 
                 using (PooledBitStream stream = PooledBitStream.Get())
                 {
@@ -1086,45 +1082,33 @@ namespace MLAPI
 
                         writer.WriteSinglePacked(NetworkTime);
                         writer.WriteInt32Packed(NetworkConfig.NetworkTransport.GetNetworkTimestamp());
+                        
+                        writer.WriteInt32Packed(_observedObjects.Count);
 
-                        writer.WriteInt32Packed(ConnectedClients.Count - 1);
-
-                        foreach (KeyValuePair<uint, NetworkedClient> item in ConnectedClients)
+                        for (int i = 0; i < _observedObjects.Count; i++)
                         {
-                            //Our own ID. Already added as the first one above
-                            if (item.Key == clientId)
-                                continue;
-                            writer.WriteUInt32Packed(item.Key); //ClientId
-                        }
-                        if (NetworkConfig.HandleObjectSpawning)
-                        {
-                            writer.WriteInt32Packed(amountOfObjectsToSend);
+                            writer.WriteBool(_observedObjects[i].IsPlayerObject);
+                            writer.WriteUInt32Packed(_observedObjects[i].NetworkId);
+                            writer.WriteUInt32Packed(_observedObjects[i].OwnerClientId);
+                            writer.WriteUInt64Packed(_observedObjects[i].NetworkedPrefabHash);
+                            writer.WriteBool(_observedObjects[i].gameObject.activeInHierarchy);
 
-                            foreach (KeyValuePair<uint, NetworkedObject> pair in SpawnManager.SpawnedObjects)
-                            {
-                                writer.WriteBool(pair.Value.IsPlayerObject);
-                                writer.WriteUInt32Packed(pair.Value.NetworkId);
-                                writer.WriteUInt32Packed(pair.Value.OwnerClientId);
-                                writer.WriteUInt64Packed(pair.Value.NetworkedPrefabHash);
-                                writer.WriteBool(pair.Value.gameObject.activeInHierarchy);
+                            writer.WriteBit(_observedObjects[i].destroyWithScene == null ? true : _observedObjects[i].destroyWithScene.Value);
+                            writer.WriteBool(_observedObjects[i].SceneDelayedSpawn);
+                            writer.WriteUInt32Packed(_observedObjects[i].sceneSpawnedInIndex);
 
-                                writer.WriteBit(pair.Value.destroyWithScene == null ? true : pair.Value.destroyWithScene.Value);
-                                writer.WriteBool(pair.Value.SceneDelayedSpawn);
-                                writer.WriteUInt32Packed(pair.Value.sceneSpawnedInIndex);
+                            writer.WriteSinglePacked(_observedObjects[i].transform.position.x);
+                            writer.WriteSinglePacked(_observedObjects[i].transform.position.y);
+                            writer.WriteSinglePacked(_observedObjects[i].transform.position.z);
 
-                                writer.WriteSinglePacked(pair.Value.transform.position.x);
-                                writer.WriteSinglePacked(pair.Value.transform.position.y);
-                                writer.WriteSinglePacked(pair.Value.transform.position.z);
+                            writer.WriteSinglePacked(_observedObjects[i].transform.rotation.eulerAngles.x);
+                            writer.WriteSinglePacked(_observedObjects[i].transform.rotation.eulerAngles.y);
+                            writer.WriteSinglePacked(_observedObjects[i].transform.rotation.eulerAngles.z);
 
-                                writer.WriteSinglePacked(pair.Value.transform.rotation.eulerAngles.x);
-                                writer.WriteSinglePacked(pair.Value.transform.rotation.eulerAngles.y);
-                                writer.WriteSinglePacked(pair.Value.transform.rotation.eulerAngles.z);
-
-                                pair.Value.WriteNetworkedVarData(stream, clientId);
-                            }
+                            _observedObjects[i].WriteNetworkedVarData(stream, clientId);
                         }
 
-                        InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_CONNECTION_APPROVED, "MLAPI_INTERNAL", stream, SecuritySendFlags.Encrypted | SecuritySendFlags.Authenticated, true);
+                        InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_CONNECTION_APPROVED, "MLAPI_INTERNAL", stream, SecuritySendFlags.Encrypted | SecuritySendFlags.Authenticated, null, true);
 
                         if (OnClientConnectedCallback != null)
                             OnClientConnectedCallback.Invoke(clientId);
@@ -1135,41 +1119,35 @@ namespace MLAPI
 
                 foreach (var clientPair in ConnectedClients)
                 {
-                    if (clientPair.Key == clientId)
+                    if (clientPair.Key == clientId || !ConnectedClients[clientId].PlayerObject.observers.Contains(clientPair.Key))
                         continue; //The new client.
 
                     using (PooledBitStream stream = PooledBitStream.Get())
                     {
                         using (PooledBitWriter writer = PooledBitWriter.Get(stream))
-                        {
-                            if (NetworkConfig.HandleObjectSpawning)
-                            {
-                                writer.WriteBool(true);
-                                writer.WriteUInt32Packed(ConnectedClients[clientId].PlayerObject.GetComponent<NetworkedObject>().NetworkId);
-                                writer.WriteUInt32Packed(clientId);
-                                writer.WriteUInt64Packed(NetworkingManager.Singleton.NetworkConfig.NetworkedPrefabs[prefabId].hash);
-                                writer.WriteBool(false);
+                        {    
+                            writer.WriteBool(true);
+                            writer.WriteUInt32Packed(ConnectedClients[clientId].PlayerObject.GetComponent<NetworkedObject>().NetworkId);
+                            writer.WriteUInt32Packed(clientId);
+                            writer.WriteUInt64Packed(NetworkingManager.Singleton.NetworkConfig.NetworkedPrefabs[prefabId].hash);
+                            writer.WriteBool(false);
 
-                                writer.WriteBool(ConnectedClients[clientId].PlayerObject.SceneDelayedSpawn);
-                                writer.WriteUInt32Packed(ConnectedClients[clientId].PlayerObject.sceneSpawnedInIndex);
+                            writer.WriteBool(ConnectedClients[clientId].PlayerObject.SceneDelayedSpawn);
+                            writer.WriteUInt32Packed(ConnectedClients[clientId].PlayerObject.sceneSpawnedInIndex);
 
-                                writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.position.x);
-                                writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.position.y);
-                                writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.position.z);
+                            writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.position.x);
+                            writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.position.y);
+                            writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.position.z);
 
-                                writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.x);
-                                writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.y);
-                                writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.z);
+                            writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.x);
+                            writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.y);
+                            writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.z);
 
-                                writer.WriteBool(false); //No payload data
+                            writer.WriteBool(false); //No payload data
 
-                                ConnectedClients[clientId].PlayerObject.GetComponent<NetworkedObject>().WriteNetworkedVarData(stream, clientPair.Key);
-                            }
-                            else
-                            {
-                                writer.WriteUInt32Packed(clientId);
-                            }
-                            InternalMessageHandler.Send(clientPair.Key, MLAPIConstants.MLAPI_ADD_OBJECT, "MLAPI_INTERNAL", stream, SecuritySendFlags.None);
+                            ConnectedClients[clientId].PlayerObject.GetComponent<NetworkedObject>().WriteNetworkedVarData(stream, clientPair.Key);
+                            
+                            InternalMessageHandler.Send(clientPair.Key, MLAPIConstants.MLAPI_ADD_OBJECT, "MLAPI_INTERNAL", stream, SecuritySendFlags.None, null);
                         }
                     }
                 }

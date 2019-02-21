@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.IO;
 using MLAPI.Components;
+using MLAPI.Data;
+using MLAPI.Internal;
 using MLAPI.Logging;
 using MLAPI.Serialization;
 using UnityEngine;
@@ -109,12 +111,126 @@ namespace MLAPI
 
         internal uint sceneSpawnedInIndex = 0;
 
+        public delegate bool ObserverDelegate(uint clientId);
+
+        /// <summary>
+        /// Delegate invoked when the MLAPI needs to know if the object should be visible to a client, if null it will assume true
+        /// </summary>
+        public ObserverDelegate CheckObjectVisibility = null;
+        
         /// <summary>
         /// Wheter or not to destroy this object if it's owner is destroyed.
         /// If false, the objects ownership will be given to the server.
         /// </summary>
         public bool DontDestroyWithOwner;
 
+        internal readonly HashSet<uint> observers = new HashSet<uint>();
+
+        /// <summary>
+        /// Returns Observers enumerator
+        /// </summary>
+        /// <returns>Observers enumerator</returns>
+        public HashSet<uint>.Enumerator GetObservers()
+        {
+            return observers.GetEnumerator();
+        }
+
+        /// <summary>
+        /// Whether or not this object is visible to a specific client
+        /// </summary>
+        /// <param name="clientId">The clientId of the client</param>
+        /// <returns>True if the client knows about the object</returns>
+        public bool IsNetworkVisibleTo(uint clientId)
+        {
+            return observers.Contains(clientId);
+        }
+
+        /// <summary>
+        /// Shows a previously hidden object to a client
+        /// </summary>
+        /// <param name="clientId">The client to show the object to</param>
+        /// <param name="payload">An optional payload to send as part of the spawn</param>
+        public void NetworkShow(uint clientId, Stream payload = null)
+        {
+            if (!NetworkingManager.Singleton.IsServer)
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Can only call NetworkShow on the server");
+                return;
+            }
+            
+            if (!observers.Contains(clientId))
+            {
+                // Send spawn call
+                observers.Add(clientId);
+                
+                using (PooledBitStream stream = PooledBitStream.Get())
+                {
+                    using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                    {
+                        writer.WriteBool(false);
+                        writer.WriteUInt32Packed(NetworkId);
+                        writer.WriteUInt32Packed(OwnerClientId);
+                        writer.WriteUInt64Packed(NetworkedPrefabHash);
+
+                        writer.WriteBool(destroyWithScene == null ? true : destroyWithScene.Value);
+                        writer.WriteBool(SceneDelayedSpawn);
+                        writer.WriteUInt32Packed(sceneSpawnedInIndex);
+
+                        writer.WriteSinglePacked(transform.position.x);
+                        writer.WriteSinglePacked(transform.position.y);
+                        writer.WriteSinglePacked(transform.position.z);
+
+                        writer.WriteSinglePacked(transform.rotation.eulerAngles.x);
+                        writer.WriteSinglePacked(transform.rotation.eulerAngles.y);
+                        writer.WriteSinglePacked(transform.rotation.eulerAngles.z);
+
+                        writer.WriteBool(payload != null);
+                        
+                        if (payload != null)
+                        {
+                            writer.WriteInt32Packed((int)payload.Length);
+                        }
+
+                        WriteNetworkedVarData(stream, clientId);
+
+                        if (payload != null) stream.CopyFrom(payload);
+
+                        InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_ADD_OBJECT, "MLAPI_INTERNAL", stream, SecuritySendFlags.None, null);
+                    }
+                }
+            }
+        }
+
+        /// <summary>
+        /// Hides a object from a specific client
+        /// </summary>
+        /// <param name="clientId">The client to hide the object for</param>
+        public void NetworkHide(uint clientId)
+        {
+            if (!NetworkingManager.Singleton.IsServer)
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Can only call NetworkHide on the server");
+                return;
+            }
+            
+            if (observers.Contains(clientId) && clientId != NetworkingManager.Singleton.ServerClientId)
+            {
+                // Send destroy call
+                observers.Remove(clientId);
+
+
+                using (PooledBitStream stream = PooledBitStream.Get())
+                {
+                    using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                    {
+                        writer.WriteUInt32Packed(NetworkId);
+
+                        InternalMessageHandler.Send(MLAPIConstants.MLAPI_DESTROY_OBJECT, "MLAPI_INTERNAL", stream, SecuritySendFlags.None, null);
+                    }
+                }
+            }
+        }
+        
         private void OnDestroy()
         {
             if (NetworkingManager.Singleton != null)

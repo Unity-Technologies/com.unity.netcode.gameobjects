@@ -13,7 +13,7 @@
         {% for item in section.docs %}
           {% assign item_url = item | prepend:"/wiki/" | append:"/" %}
           {% assign p = site.docs | where:"url", item_url | first %}
-          <a class="list-group-item {% if item_url == page.url %}active{% endif %}" href="{{ p.url  | prepend: site.baseurl }}">{{ p.title }}</a>
+          <a class="list-group-item list-group-item-action {% if item_url == page.url %}active{% endif %}" href="{{ p.url  | prepend: site.baseurl }}">{{ p.title }}</a>
         {% endfor %}
       </div>
     </div>

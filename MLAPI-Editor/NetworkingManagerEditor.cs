@@ -124,11 +124,9 @@ public class NetworkingManagerEditor : Editor
             EditorGUILayout.PropertyField(RunInBackgroundProperty);
             EditorGUILayout.PropertyField(LogLevelProperty);
 
-            if (networkingManager.NetworkConfig.HandleObjectSpawning)
-            {
-                EditorGUILayout.Space();
-                networkPrefabsList.DoLayoutList();
-            }
+            EditorGUILayout.Space();
+            networkPrefabsList.DoLayoutList();
+            
             EditorGUILayout.Space();
             channelsList.DoLayoutList();
             EditorGUILayout.Space();

@@ -101,7 +101,7 @@ namespace MLAPI.Internal
                     }
                 }
                 // Send HailResponse
-                InternalMessageHandler.Send(NetworkingManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_CERTIFICATE_HAIL_RESPONSE, "MLAPI_INTERNAL", outStream, SecuritySendFlags.None, true);
+                InternalMessageHandler.Send(NetworkingManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_CERTIFICATE_HAIL_RESPONSE, "MLAPI_INTERNAL", outStream, SecuritySendFlags.None, null, true);
             }
         }
 
@@ -157,7 +157,7 @@ namespace MLAPI.Internal
                 {
                     writer.WriteInt64Packed(DateTime.Now.Ticks); // This serves no purpose.
                 }
-                InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_GREETINGS, "MLAPI_INTERNAL", outStream, SecuritySendFlags.None, true);
+                InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_GREETINGS, "MLAPI_INTERNAL", outStream, SecuritySendFlags.None, null, true);
             }
         }
 
@@ -211,40 +211,31 @@ namespace MLAPI.Internal
                 netManager.NetworkTime = netTime + (msDelay / 1000f);
 
                 netManager.ConnectedClients.Add(netManager.LocalClientId, new NetworkedClient() { ClientId = netManager.LocalClientId });
-                int clientCount = reader.ReadInt32Packed();
-                for (int i = 0; i < clientCount; i++)
+                
+                SpawnManager.DestroySceneObjects();
+                int objectCount = reader.ReadInt32Packed();
+                for (int i = 0; i < objectCount; i++)
                 {
-                    uint _clientId = reader.ReadUInt32Packed();
-                    netManager.ConnectedClients.Add(_clientId, new NetworkedClient() { ClientId = _clientId });
-                    netManager.ConnectedClientsList.Add(netManager.ConnectedClients[_clientId]);
-                }
-                if (netManager.NetworkConfig.HandleObjectSpawning)
-                {
-                    SpawnManager.DestroySceneObjects();
-                    int objectCount = reader.ReadInt32Packed();
-                    for (int i = 0; i < objectCount; i++)
-                    {
-                        bool isPlayerObject = reader.ReadBool();
-                        uint networkId = reader.ReadUInt32Packed();
-                        uint ownerId = reader.ReadUInt32Packed();
-                        ulong prefabHash = reader.ReadUInt64Packed();
-                        bool isActive = reader.ReadBool();
-                        bool destroyWithScene = reader.ReadBool();
+                    bool isPlayerObject = reader.ReadBool();
+                    uint networkId = reader.ReadUInt32Packed();
+                    uint ownerId = reader.ReadUInt32Packed();
+                    ulong prefabHash = reader.ReadUInt64Packed();
+                    bool isActive = reader.ReadBool();
+                    bool destroyWithScene = reader.ReadBool();
 
-                        bool sceneDelayedSpawn = reader.ReadBool();
-                        uint sceneSpawnedInIndex = reader.ReadUInt32Packed();
+                    bool sceneDelayedSpawn = reader.ReadBool();
+                    uint sceneSpawnedInIndex = reader.ReadUInt32Packed();
 
-                        float xPos = reader.ReadSinglePacked();
-                        float yPos = reader.ReadSinglePacked();
-                        float zPos = reader.ReadSinglePacked();
+                    float xPos = reader.ReadSinglePacked();
+                    float yPos = reader.ReadSinglePacked();
+                    float zPos = reader.ReadSinglePacked();
 
-                        float xRot = reader.ReadSinglePacked();
-                        float yRot = reader.ReadSinglePacked();
-                        float zRot = reader.ReadSinglePacked();
+                    float xRot = reader.ReadSinglePacked();
+                    float yRot = reader.ReadSinglePacked();
+                    float zRot = reader.ReadSinglePacked();
 
-                        NetworkedObject netObject = SpawnManager.CreateSpawnedObject(SpawnManager.GetNetworkedPrefabIndexOfHash(prefabHash), networkId, ownerId, isPlayerObject,
-                            sceneSpawnedInIndex, sceneDelayedSpawn, destroyWithScene, new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), isActive, stream, false, 0, true);
-                    }
+                    NetworkedObject netObject = SpawnManager.CreateSpawnedObject(SpawnManager.GetNetworkedPrefabIndexOfHash(prefabHash), networkId, ownerId, isPlayerObject,
+                        sceneSpawnedInIndex, sceneDelayedSpawn, destroyWithScene, new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), isActive, stream, false, 0, true);
                 }
 
                 if (netManager.NetworkConfig.EnableSceneSwitching)
@@ -262,52 +253,28 @@ namespace MLAPI.Internal
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
-                if (netManager.NetworkConfig.HandleObjectSpawning)
-                {
-                    bool isPlayerObject = reader.ReadBool();
-                    uint networkId = reader.ReadUInt32Packed();
-                    uint ownerId = reader.ReadUInt32Packed();
-                    ulong prefabHash = reader.ReadUInt64Packed();
+                bool isPlayerObject = reader.ReadBool();
+                uint networkId = reader.ReadUInt32Packed();
+                uint ownerId = reader.ReadUInt32Packed();
+                ulong prefabHash = reader.ReadUInt64Packed();
 
-                    bool destroyWithScene = reader.ReadBool();
-                    bool sceneDelayedSpawn = reader.ReadBool();
-                    uint sceneSpawnedInIndex = reader.ReadUInt32Packed();
+                bool destroyWithScene = reader.ReadBool();
+                bool sceneDelayedSpawn = reader.ReadBool();
+                uint sceneSpawnedInIndex = reader.ReadUInt32Packed();
 
-                    float xPos = reader.ReadSinglePacked();
-                    float yPos = reader.ReadSinglePacked();
-                    float zPos = reader.ReadSinglePacked();
+                float xPos = reader.ReadSinglePacked();
+                float yPos = reader.ReadSinglePacked();
+                float zPos = reader.ReadSinglePacked();
 
-                    float xRot = reader.ReadSinglePacked();
-                    float yRot = reader.ReadSinglePacked();
-                    float zRot = reader.ReadSinglePacked();
+                float xRot = reader.ReadSinglePacked();
+                float yRot = reader.ReadSinglePacked();
+                float zRot = reader.ReadSinglePacked();
 
-                    bool hasPayload = reader.ReadBool();
-                    int payLoadLength = hasPayload ? reader.ReadInt32Packed() : 0;
+                bool hasPayload = reader.ReadBool();
+                int payLoadLength = hasPayload ? reader.ReadInt32Packed() : 0;
 
-                    if (isPlayerObject)
-                    {
-                        netManager.ConnectedClients.Add(ownerId, new NetworkedClient() { ClientId = ownerId });
-                        netManager.ConnectedClientsList.Add(netManager.ConnectedClients[ownerId]);
-                    }
-
-                    NetworkedObject netObject = SpawnManager.CreateSpawnedObject(SpawnManager.GetNetworkedPrefabIndexOfHash(prefabHash), networkId, ownerId, isPlayerObject,
-                        sceneSpawnedInIndex, sceneDelayedSpawn, destroyWithScene, new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), true, stream, hasPayload, payLoadLength, true);
-
-                }
-                else
-                {
-                    uint ownerId = reader.ReadUInt32Packed();
-                    netManager.ConnectedClients.Add(ownerId, new NetworkedClient() { ClientId = ownerId });
-                }
-            }
-        }
-
-        internal static void HandleClientDisconnect(uint clientId, Stream stream, int channelId)
-        {
-            using (PooledBitReader reader = PooledBitReader.Get(stream))
-            {
-                uint disconnectedClientId = reader.ReadUInt32Packed();
-                netManager.OnClientDisconnectFromServer(disconnectedClientId);
+                NetworkedObject netObject = SpawnManager.CreateSpawnedObject(SpawnManager.GetNetworkedPrefabIndexOfHash(prefabHash), networkId, ownerId, isPlayerObject,
+                    sceneSpawnedInIndex, sceneDelayedSpawn, destroyWithScene, new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), true, stream, hasPayload, payLoadLength, true);
             }
         }
 
@@ -391,36 +358,28 @@ namespace MLAPI.Internal
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
-                if (netManager.NetworkConfig.HandleObjectSpawning)
+                ushort objectCount = reader.ReadUInt16Packed();
+                for (int i = 0; i < objectCount; i++)
                 {
-                    ushort objectCount = reader.ReadUInt16Packed();
-                    for (int i = 0; i < objectCount; i++)
-                    {
-                        bool isPlayerObject = reader.ReadBool();
-                        uint networkId = reader.ReadUInt32Packed();
-                        uint ownerId = reader.ReadUInt32Packed();
-                        ulong prefabHash = reader.ReadUInt64Packed();
+                    bool isPlayerObject = reader.ReadBool();
+                    uint networkId = reader.ReadUInt32Packed();
+                    uint ownerId = reader.ReadUInt32Packed();
+                    ulong prefabHash = reader.ReadUInt64Packed();
 
-                        bool destroyWithScene = reader.ReadBool();
-                        bool sceneDelayedSpawn = reader.ReadBool();
-                        uint sceneSpawnedInIndex = reader.ReadUInt32Packed();
+                    bool destroyWithScene = reader.ReadBool();
+                    bool sceneDelayedSpawn = reader.ReadBool();
+                    uint sceneSpawnedInIndex = reader.ReadUInt32Packed();
 
-                        float xPos = reader.ReadSinglePacked();
-                        float yPos = reader.ReadSinglePacked();
-                        float zPos = reader.ReadSinglePacked();
+                    float xPos = reader.ReadSinglePacked();
+                    float yPos = reader.ReadSinglePacked();
+                    float zPos = reader.ReadSinglePacked();
 
-                        float xRot = reader.ReadSinglePacked();
-                        float yRot = reader.ReadSinglePacked();
-                        float zRot = reader.ReadSinglePacked();
-
-                        if (isPlayerObject)
-                        {
-                            netManager.ConnectedClients.Add(ownerId, new NetworkedClient() { ClientId = ownerId });
-                            netManager.ConnectedClientsList.Add(netManager.ConnectedClients[ownerId]);
-                        }
-                        NetworkedObject netObject = SpawnManager.CreateSpawnedObject(SpawnManager.GetNetworkedPrefabIndexOfHash(prefabHash), networkId, ownerId, isPlayerObject,
-                            sceneSpawnedInIndex, sceneDelayedSpawn, destroyWithScene, new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), true, stream, false, 0, true);
-                    }
+                    float xRot = reader.ReadSinglePacked();
+                    float yRot = reader.ReadSinglePacked();
+                    float zRot = reader.ReadSinglePacked();
+                    
+                    NetworkedObject netObject = SpawnManager.CreateSpawnedObject(SpawnManager.GetNetworkedPrefabIndexOfHash(prefabHash), networkId, ownerId, isPlayerObject,
+                        sceneSpawnedInIndex, sceneDelayedSpawn, destroyWithScene, new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), true, stream, false, 0, true);
                 }
             }
         }
@@ -538,7 +497,7 @@ namespace MLAPI.Internal
                                 responseWriter.WriteObjectPacked(result);
                             }
                             
-                            InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_SERVER_RPC_RESPONSE, MessageManager.reverseChannels[channelId], responseStream, security);
+                            InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_SERVER_RPC_RESPONSE, MessageManager.reverseChannels[channelId], responseStream, security, SpawnManager.SpawnedObjects[networkId]);
                         }
                     }
                 }
@@ -609,7 +568,7 @@ namespace MLAPI.Internal
                                 responseWriter.WriteObjectPacked(result);
                             }
                             
-                            InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_CLIENT_RPC_RESPONSE, MessageManager.reverseChannels[channelId], responseStream, security);
+                            InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_CLIENT_RPC_RESPONSE, MessageManager.reverseChannels[channelId], responseStream, security, null);
                         }
                     }
                 }
