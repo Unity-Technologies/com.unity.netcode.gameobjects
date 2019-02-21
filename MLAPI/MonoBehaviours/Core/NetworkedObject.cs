@@ -113,6 +113,9 @@ namespace MLAPI
 
         public delegate bool ObserverDelegate(uint clientId);
 
+        /// <summary>
+        /// Delegate invoked when the MLAPI needs to know if the object should be visible to a client, if null it will assume true
+        /// </summary>
         public ObserverDelegate CheckObjectVisibility = null;
         
         /// <summary>
@@ -123,11 +126,21 @@ namespace MLAPI
 
         internal readonly HashSet<uint> observers = new HashSet<uint>();
 
+        /// <summary>
+        /// Whether or not this object is visible to a specific client
+        /// </summary>
+        /// <param name="clientId">The clientId of the client</param>
+        /// <returns>True if the client knows about the object</returns>
         public bool IsNetworkVisibleTo(uint clientId)
         {
             return observers.Contains(clientId);
         }
 
+        /// <summary>
+        /// Shows a previously hidden object to a client
+        /// </summary>
+        /// <param name="clientId">The client to show the object to</param>
+        /// <param name="payload">An optional payload to send as part of the spawn</param>
         public void NetworkShow(uint clientId, Stream payload = null)
         {
             if (!NetworkingManager.Singleton.IsServer)
@@ -179,6 +192,10 @@ namespace MLAPI
             }
         }
 
+        /// <summary>
+        /// Hides a object from a specific client
+        /// </summary>
+        /// <param name="clientId">The client to hide the object for</param>
         public void NetworkHide(uint clientId)
         {
             if (!NetworkingManager.Singleton.IsServer)
