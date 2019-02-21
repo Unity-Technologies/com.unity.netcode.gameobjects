@@ -127,6 +127,15 @@ namespace MLAPI
         internal readonly HashSet<uint> observers = new HashSet<uint>();
 
         /// <summary>
+        /// Returns Observers enumerator
+        /// </summary>
+        /// <returns>Observers enumerator</returns>
+        public HashSet<uint>.Enumerator GetObservers()
+        {
+            return observers.GetEnumerator();
+        }
+
+        /// <summary>
         /// Whether or not this object is visible to a specific client
         /// </summary>
         /// <param name="clientId">The clientId of the client</param>
