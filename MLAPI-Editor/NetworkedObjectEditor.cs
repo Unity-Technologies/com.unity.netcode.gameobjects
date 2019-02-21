@@ -47,7 +47,6 @@ namespace UnityEditor
                 EditorGUILayout.LabelField("IsLocalPlayer: ", networkedObject.IsLocalPlayer.ToString(), EditorStyles.label);
                 EditorGUILayout.LabelField("IsOwner: ", networkedObject.IsOwner.ToString(), EditorStyles.label);
 				EditorGUILayout.LabelField("IsOwnedByServer: ", networkedObject.IsOwnedByServer.ToString(), EditorStyles.label);
-                EditorGUILayout.LabelField("IsPoolObject: ", networkedObject.IsPooledObject.ToString(), EditorStyles.label);
                 EditorGUILayout.LabelField("IsPlayerObject: ", networkedObject.IsPlayerObject.ToString(), EditorStyles.label);
 
                 if (NetworkingManager.Singleton != null && NetworkingManager.Singleton.IsServer)
