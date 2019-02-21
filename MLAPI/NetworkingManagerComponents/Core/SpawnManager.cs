@@ -24,11 +24,18 @@ namespace MLAPI.Components
         /// A list of the spawned objects
         /// </summary>
         public static readonly List<NetworkedObject> SpawnedObjectsList = new List<NetworkedObject>();
-
+        /// <summary>
+        /// The delegate used when spawning a networked object
+        /// </summary>
+        /// <param name="position">The position to spawn the object at</param>
+        /// <param name="rotation">The rotation to spawn the object with</param>
+        /// <param name="disabled">Whether or not the object should be disabled, only true when spawning a scene delayed object</param>
         public delegate NetworkedObject SpawnHandlerDelegate(Vector3 position, Quaternion rotation, bool disabled);
-
+        /// <summary>
+        /// The delegate used when destroying networked objects
+        /// </summary>
+        /// <param name="networkedObject">The networked object to be destroy</param>
         public delegate void DestroyHandlerDelegate(NetworkedObject networkedObject);
-        
         
         internal static readonly Dictionary<ulong, SpawnHandlerDelegate> customSpawnHandlers = new Dictionary<ulong, SpawnHandlerDelegate>();
         internal static readonly Dictionary<ulong, DestroyHandlerDelegate> customDestroyHandlers = new Dictionary<ulong, DestroyHandlerDelegate>();
