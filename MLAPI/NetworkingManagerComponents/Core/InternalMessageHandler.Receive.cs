@@ -23,24 +23,24 @@ namespace MLAPI.Internal
             byte[] serverDiffieHellmanPublicPart = null;
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
-                if (netManager.NetworkConfig.EnableEncryption)
+                if (NetworkingManager.Singleton.NetworkConfig.EnableEncryption)
                 {
                     // Read the certificate
-                    if (netManager.NetworkConfig.SignKeyExchange)
+                    if (NetworkingManager.Singleton.NetworkConfig.SignKeyExchange)
                     {
                         // Allocation justification: This runs on client and only once, at initial connection
                         certificate = new X509Certificate2(reader.ReadByteArray());
-                        if (CryptographyHelper.VerifyCertificate(certificate, netManager.ConnectedHostname))
+                        if (CryptographyHelper.VerifyCertificate(certificate, NetworkingManager.Singleton.ConnectedHostname))
                         {
                             // The certificate is not valid :(
                             // Man in the middle.
                             if (LogHelper.CurrentLogLevel <= LogLevel.Normal) if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid certificate. Disconnecting");
-                            netManager.StopClient();
+                            NetworkingManager.Singleton.StopClient();
                             return;
                         }
                         else
                         {
-                            netManager.NetworkConfig.ServerX509Certificate = certificate;
+                            NetworkingManager.Singleton.NetworkConfig.ServerX509Certificate = certificate;
                         }
                     }
 
@@ -49,7 +49,7 @@ namespace MLAPI.Internal
                     serverDiffieHellmanPublicPart = reader.ReadByteArray();
                     
                     // Verify the key exchange
-                    if (netManager.NetworkConfig.SignKeyExchange)
+                    if (NetworkingManager.Singleton.NetworkConfig.SignKeyExchange)
                     {
                         byte[] serverDiffieHellmanPublicPartSignature = reader.ReadByteArray();
 
@@ -62,7 +62,7 @@ namespace MLAPI.Internal
                                 if (!rsa.VerifyData(serverDiffieHellmanPublicPart, sha, serverDiffieHellmanPublicPartSignature))
                                 {
                                     if (LogHelper.CurrentLogLevel <= LogLevel.Normal) if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid signature. Disconnecting");
-                                    netManager.StopClient();
+                                    NetworkingManager.Singleton.StopClient();
                                     return;
                                 }   
                             }
@@ -75,14 +75,14 @@ namespace MLAPI.Internal
             {
                 using (PooledBitWriter writer = PooledBitWriter.Get(outStream))
                 {
-                    if (netManager.NetworkConfig.EnableEncryption)
+                    if (NetworkingManager.Singleton.NetworkConfig.EnableEncryption)
                     {
                         // Create a ECDH key
                         EllipticDiffieHellman diffieHellman = new EllipticDiffieHellman(EllipticDiffieHellman.DEFAULT_CURVE, EllipticDiffieHellman.DEFAULT_GENERATOR, EllipticDiffieHellman.DEFAULT_ORDER);
-                        netManager.clientAesKey = diffieHellman.GetSharedSecret(serverDiffieHellmanPublicPart);
+                        NetworkingManager.Singleton.clientAesKey = diffieHellman.GetSharedSecret(serverDiffieHellmanPublicPart);
                         byte[] diffieHellmanPublicKey = diffieHellman.GetPublicKey();
                         writer.WriteByteArray(diffieHellmanPublicKey);
-                        if (netManager.NetworkConfig.SignKeyExchange)
+                        if (NetworkingManager.Singleton.NetworkConfig.SignKeyExchange)
                         {
                             RSACryptoServiceProvider rsa = certificate.PublicKey.Key as RSACryptoServiceProvider;
 
@@ -108,19 +108,19 @@ namespace MLAPI.Internal
         // Ran on server
         internal static void HandleHailResponse(uint clientId, Stream stream, int channelId)
         {
-            if (!netManager.PendingClients.ContainsKey(clientId) || netManager.PendingClients[clientId].ConnectionState != PendingClient.State.PendingHail) return;
-            if (!netManager.NetworkConfig.EnableEncryption) return;
+            if (!NetworkingManager.Singleton.PendingClients.ContainsKey(clientId) || NetworkingManager.Singleton.PendingClients[clientId].ConnectionState != PendingClient.State.PendingHail) return;
+            if (!NetworkingManager.Singleton.NetworkConfig.EnableEncryption) return;
 
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
                 if (NetworkingManager.Singleton.PendingClients[clientId].KeyExchange != null)
                 {
                     byte[] diffieHellmanPublic = reader.ReadByteArray();
-                    netManager.PendingClients[clientId].AesKey = netManager.PendingClients[clientId].KeyExchange.GetSharedSecret(diffieHellmanPublic);
-                    if (netManager.NetworkConfig.SignKeyExchange)
+                    NetworkingManager.Singleton.PendingClients[clientId].AesKey = NetworkingManager.Singleton.PendingClients[clientId].KeyExchange.GetSharedSecret(diffieHellmanPublic);
+                    if (NetworkingManager.Singleton.NetworkConfig.SignKeyExchange)
                     {
                         byte[] diffieHellmanPublicSignature = reader.ReadByteArray();
-                        X509Certificate2 certificate = netManager.NetworkConfig.ServerX509Certificate;
+                        X509Certificate2 certificate = NetworkingManager.Singleton.NetworkConfig.ServerX509Certificate;
                         RSACryptoServiceProvider rsa = certificate.PrivateKey as RSACryptoServiceProvider;
 
                         if (rsa != null)
@@ -134,7 +134,7 @@ namespace MLAPI.Internal
                                 {
                                     //Man in the middle.
                                     if (LogHelper.CurrentLogLevel <= LogLevel.Normal) if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Signature doesnt match for the key exchange public part. Disconnecting");
-                                    netManager.DisconnectClient(clientId);
+                                    NetworkingManager.Singleton.DisconnectClient(clientId);
                                     return;
                                 }
                             }
@@ -147,8 +147,8 @@ namespace MLAPI.Internal
                 }
             }
 
-            netManager.PendingClients[clientId].ConnectionState = PendingClient.State.PendingConnection;
-            netManager.PendingClients[clientId].KeyExchange = null; // Give to GC
+            NetworkingManager.Singleton.PendingClients[clientId].ConnectionState = PendingClient.State.PendingConnection;
+            NetworkingManager.Singleton.PendingClients[clientId].KeyExchange = null; // Give to GC
             
             // Send greetings, they have passed all the handshakes
             using (PooledBitStream outStream = PooledBitStream.Get())
@@ -173,21 +173,21 @@ namespace MLAPI.Internal
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
                 ulong configHash = reader.ReadUInt64Packed();
-                if (!netManager.NetworkConfig.CompareConfig(configHash))
+                if (!NetworkingManager.Singleton.NetworkConfig.CompareConfig(configHash))
                 {
                     if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkConfiguration mismatch. The configuration between the server and client does not match");
-                    netManager.DisconnectClient(clientId);
+                    NetworkingManager.Singleton.DisconnectClient(clientId);
                     return;
                 }
 
-                if (netManager.NetworkConfig.ConnectionApproval)
+                if (NetworkingManager.Singleton.NetworkConfig.ConnectionApproval)
                 {
                     byte[] connectionBuffer = reader.ReadByteArray();
-                    netManager.ConnectionApprovalCallback(connectionBuffer, clientId, netManager.HandleApproval);
+                    NetworkingManager.Singleton.ConnectionApprovalCallback(connectionBuffer, clientId, NetworkingManager.Singleton.HandleApproval);
                 }
                 else
                 {
-                    netManager.HandleApproval(clientId, -1, true, null, null);
+                    NetworkingManager.Singleton.HandleApproval(clientId, -1, true, null, null);
                 }
             }
         }
@@ -196,10 +196,10 @@ namespace MLAPI.Internal
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
-                netManager.LocalClientId = reader.ReadUInt32Packed();
+                NetworkingManager.Singleton.LocalClientId = reader.ReadUInt32Packed();
                 uint sceneIndex = 0;
                 Guid sceneSwitchProgressGuid = new Guid();
-                if (netManager.NetworkConfig.EnableSceneSwitching) 
+                if (NetworkingManager.Singleton.NetworkConfig.EnableSceneSwitching) 
                 {
                     sceneIndex = reader.ReadUInt32Packed();
                     sceneSwitchProgressGuid = new Guid(reader.ReadByteArray());
@@ -208,9 +208,9 @@ namespace MLAPI.Internal
                 float netTime = reader.ReadSinglePacked();
                 int remoteStamp = reader.ReadInt32Packed();
                 int msDelay = NetworkingManager.Singleton.NetworkConfig.NetworkTransport.GetRemoteDelayTimeMS(clientId, remoteStamp, out byte error);
-                netManager.NetworkTime = netTime + (msDelay / 1000f);
+                NetworkingManager.Singleton.NetworkTime = netTime + (msDelay / 1000f);
 
-                netManager.ConnectedClients.Add(netManager.LocalClientId, new NetworkedClient() { ClientId = netManager.LocalClientId });
+                NetworkingManager.Singleton.ConnectedClients.Add(NetworkingManager.Singleton.LocalClientId, new NetworkedClient() { ClientId = NetworkingManager.Singleton.LocalClientId });
                 
                 SpawnManager.DestroySceneObjects();
                 int objectCount = reader.ReadInt32Packed();
@@ -238,14 +238,14 @@ namespace MLAPI.Internal
                         sceneSpawnedInIndex, sceneDelayedSpawn, destroyWithScene, new Vector3(xPos, yPos, zPos), Quaternion.Euler(xRot, yRot, zRot), isActive, stream, false, 0, true);
                 }
 
-                if (netManager.NetworkConfig.EnableSceneSwitching)
+                if (NetworkingManager.Singleton.NetworkConfig.EnableSceneSwitching)
                 {
                     NetworkSceneManager.OnSceneSwitch(sceneIndex, sceneSwitchProgressGuid);
                 }
 
-                netManager.IsConnectedClient = true;
-                if (netManager.OnClientConnectedCallback != null)
-                    netManager.OnClientConnectedCallback.Invoke(netManager.LocalClientId);
+                NetworkingManager.Singleton.IsConnectedClient = true;
+                if (NetworkingManager.Singleton.OnClientConnectedCallback != null)
+                    NetworkingManager.Singleton.OnClientConnectedCallback.Invoke(NetworkingManager.Singleton.LocalClientId);
             }
         }
 
@@ -311,12 +311,12 @@ namespace MLAPI.Internal
             {
                 uint netId = reader.ReadUInt32Packed();
                 uint ownerClientId = reader.ReadUInt32Packed();
-                if (SpawnManager.SpawnedObjects[netId].OwnerClientId == netManager.LocalClientId)
+                if (SpawnManager.SpawnedObjects[netId].OwnerClientId == NetworkingManager.Singleton.LocalClientId)
                 {
                     //We are current owner.
                     SpawnManager.SpawnedObjects[netId].InvokeBehaviourOnLostOwnership();
                 }
-                if (ownerClientId == netManager.LocalClientId)
+                if (ownerClientId == NetworkingManager.Singleton.LocalClientId)
                 {
                     //We are new owner.
                     SpawnManager.SpawnedObjects[netId].InvokeBehaviourOnGainedOwnership();
@@ -363,7 +363,7 @@ namespace MLAPI.Internal
                 int timestamp = reader.ReadInt32Packed();
 
                 int msDelay = NetworkingManager.Singleton.NetworkConfig.NetworkTransport.GetRemoteDelayTimeMS(clientId, timestamp, out byte error);
-                netManager.NetworkTime = netTime + (msDelay / 1000f);
+                NetworkingManager.Singleton.NetworkTime = netTime + (msDelay / 1000f);
             }
         }
 
