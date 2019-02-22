@@ -568,8 +568,9 @@ namespace MLAPI
             ConnectedClientsList.Add(ConnectedClients[hostClientId]);
 
             prefabId = prefabId == -1 ? SpawnManager.GetNetworkedPrefabIndexOfName(NetworkConfig.PlayerPrefabName) : prefabId;
-            SpawnManager.CreateSpawnedObject(prefabId, 0, hostClientId, true, NetworkSceneManager.CurrentActiveSceneIndex, false, false, pos.GetValueOrDefault(), rot.GetValueOrDefault(), true, null, false, 0, false);
-
+            NetworkedObject netObject = SpawnManager.CreateSpawnedObject(prefabId, 0, hostClientId, true, NetworkSceneManager.CurrentActiveSceneIndex, false, false, pos.GetValueOrDefault(), rot.GetValueOrDefault(), true, null, false, 0, false);
+            netObject.observers.Add(hostClientId);
+            
             SpawnSceneObjects();
 
             if (OnServerStarted != null)
