@@ -1,4 +1,5 @@
 ﻿using MLAPI.Data;
+using MLAPI.Logging;
 using MLAPI.Profiling;
 using MLAPI.Serialization;
 
@@ -10,8 +11,15 @@ namespace MLAPI.Internal
         {
             messageStream.PadStream();
 
-            if (NetworkingManager.Singleton.IsServer && clientId == NetworkingManager.Singleton.ServerClientId || (targetObject != null && !targetObject.observers.Contains(clientId))) return;
+            if (NetworkingManager.Singleton.IsServer && clientId == NetworkingManager.Singleton.ServerClientId) 
+                return;
 
+            if (targetObject != null && !targetObject.observers.Contains(clientId))
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogWarning("Silently suppressed send call because it was directed to an object without visibility");
+                return;
+            }
+            
             using (BitStream stream = MessageManager.WrapMessage(messageType, clientId, messageStream, flags))
             {
                 NetworkProfiler.StartEvent(TickType.Send, (uint)stream.Length, channelName, MLAPIConstants.MESSAGE_NAMES[messageType]);
@@ -45,7 +53,15 @@ namespace MLAPI.Internal
                     NetworkProfiler.StartEvent(TickType.Send, (uint)stream.Length, channelName, MLAPIConstants.MESSAGE_NAMES[messageType]);
                     for (int i = 0; i < netManager.ConnectedClientsList.Count; i++)
                     {
-                        if (NetworkingManager.Singleton.IsServer && netManager.ConnectedClientsList[i].ClientId == NetworkingManager.Singleton.ServerClientId || (targetObject != null && !targetObject.observers.Contains(netManager.ConnectedClientsList[i].ClientId))) continue;
+                        if (NetworkingManager.Singleton.IsServer && netManager.ConnectedClientsList[i].ClientId == NetworkingManager.Singleton.ServerClientId) 
+                            continue;
+
+                        if (targetObject != null && !targetObject.observers.Contains(netManager.ConnectedClientsList[i].ClientId))
+                        {
+                            if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogWarning("Silently suppressed send(all) call because it was directed to an object without visibility");
+                            continue;
+                        }
+                        
                         byte error;
                         netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(netManager.ConnectedClientsList[i].ClientId, stream.GetBuffer(), (int)stream.Length, MessageManager.channels[channelName], false, out error);
                     }
@@ -79,9 +95,14 @@ namespace MLAPI.Internal
                     for (int i = 0; i < netManager.ConnectedClientsList.Count; i++)
                     {
                         if (netManager.ConnectedClientsList[i].ClientId == clientIdToIgnore ||
-                            (NetworkingManager.Singleton.IsServer && netManager.ConnectedClientsList[i].ClientId == NetworkingManager.Singleton.ServerClientId) || 
-                            (targetObject != null && !targetObject.observers.Contains(netManager.ConnectedClientsList[i].ClientId)))
+                            (NetworkingManager.Singleton.IsServer && netManager.ConnectedClientsList[i].ClientId == NetworkingManager.Singleton.ServerClientId))
                             continue;
+
+                        if (targetObject != null && !targetObject.observers.Contains(netManager.ConnectedClientsList[i].ClientId))
+                        {
+                            if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogWarning("Silently suppressed send(ignore) call because it was directed to an object without visibility");
+                            continue;
+                        }
 
                         byte error;
                         netManager.NetworkConfig.NetworkTransport.QueueMessageForSending(netManager.ConnectedClientsList[i].ClientId, stream.GetBuffer(), (int)stream.Length, MessageManager.channels[channelName], false, out error);

@@ -969,6 +969,7 @@ namespace MLAPI
                         {
                             if (!this.NetworkedObject.observers.Contains(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId))
                             {
+                                if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogWarning("Silently suppressed ClientRPC because a target in the bulk list was not an observer");
                                 continue;
                             }
                             
@@ -1030,9 +1031,16 @@ namespace MLAPI
 
                     for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)
                     {
-                        if (NetworkingManager.Singleton.ConnectedClientsList[i].ClientId == clientIdToIgnore || !this.NetworkedObject.observers.Contains(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId))
+                        if (NetworkingManager.Singleton.ConnectedClientsList[i].ClientId == clientIdToIgnore)
                             continue;
-                        
+
+                        if (!this.NetworkedObject.observers.Contains(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId))
+                        {
+                            if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogWarning("Silently suppressed ClientRPC because a connected client was not an observer");
+                            continue;
+                        }
+
+
                         if (IsHost && NetworkingManager.Singleton.ConnectedClientsList[i].ClientId == NetworkingManager.Singleton.LocalClientId)
                         {
                             messageStream.Position = 0;
