@@ -177,7 +177,7 @@ namespace MLAPI.Prototyping
                     }
 
                     float sendDelay = (IsServer || !EnableRange || !AssumeSyncedSends) ? (1f / FixedSendsPerSecond) : GetTimeForLerp(transform.position, NetworkingManager.Singleton.ConnectedClients[NetworkingManager.Singleton.LocalClientId].PlayerObject.transform.position);
-                    lerpT += Time.time / sendDelay;
+                    lerpT += Time.unscaledDeltaTime / sendDelay;
 
                     if (ExtrapolatePosition && Time.time - lastRecieveTime < sendDelay * MaxSendsToExtrapolate)
                         transform.position = Vector3.LerpUnclamped(lerpStartPos, lerpEndPos, lerpT);
