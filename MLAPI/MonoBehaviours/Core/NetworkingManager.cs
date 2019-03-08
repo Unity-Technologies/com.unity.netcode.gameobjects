@@ -223,7 +223,19 @@ namespace MLAPI
                 NetworkConfig.RegisteredScenes.Add(SceneManager.GetActiveScene().name);
             }
             
-            // TODO: Prefab hash collision check
+            
+            // TODO: Show which two prefab generators that collide
+            HashSet<ulong> hashes = new HashSet<ulong>();
+            
+            for (int i = 0; i < NetworkConfig.NetworkedPrefabs.Count; i++)
+            {
+                if (hashes.Contains(NetworkConfig.NetworkedPrefabs[i].Hash))
+                {
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogError("PrefabHash collision! You have two prefabs with the same hash. This is not supported");
+                }
+
+                hashes.Add(NetworkConfig.NetworkedPrefabs[i].Hash);
+            }
 
             int playerPrefabCount = NetworkConfig.NetworkedPrefabs.Count(x => x.PlayerPrefab == true);
             if (playerPrefabCount == 0)
