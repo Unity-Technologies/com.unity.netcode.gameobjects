@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using MLAPI.Data;
 using UnityEngine;
 
 namespace MLAPI.Components
@@ -41,7 +42,7 @@ namespace MLAPI.Components
         /// The callback invoked when a client is done loading the scene.
         /// </summary>
         public event OnClientLoadedSceneDelegate OnClientLoadedScene;
-
+        
         internal Guid guid { get; } = Guid.NewGuid();
 
         private Coroutine timeOutCoroutine;

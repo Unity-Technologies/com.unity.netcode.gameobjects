@@ -10,48 +10,30 @@ namespace MLAPI.Data
     [Serializable]
     public class NetworkedPrefab
     {
-        internal string name
+        internal ulong Hash
         {
             get
             {
-                if (prefab == null)
-                {
-                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkedPrefab is not assigned");
-                    return string.Empty;
-                }
-                else if (prefab.GetComponent<NetworkedObject>() == null)
-                {
-                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The NetworkedPrefab " + prefab.name + " does not have a NetworkedObject");
-                    return prefab.name;
-                }
-                else return prefab.GetComponent<NetworkedObject>().NetworkedPrefabName;
-            }
-        }
-
-        internal ulong hash
-        {
-            get
-            {
-                if (prefab == null)
+                if (Prefab == null)
                 {
                     if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkedPrefab is not assigned");
                     return 0;
                 }
-                else if (prefab.GetComponent<NetworkedObject>() == null)
+                else if (Prefab.GetComponent<NetworkedObject>() == null)
                 {
-                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The NetworkedPrefab " + prefab.name + " does not have a NetworkedObject");
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The NetworkedPrefab " + Prefab.name + " does not have a NetworkedObject");
                     return 0;
                 }
-                else return prefab.GetComponent<NetworkedObject>().NetworkedPrefabHash;
+                else return Prefab.GetComponent<NetworkedObject>().PrefabHash;
             }
         }
         /// <summary>
         /// The gameobject of the prefab
         /// </summary>
-        public GameObject prefab;
+        public GameObject Prefab;
         /// <summary>
         /// Wheter or not this is a playerPrefab
         /// </summary>
-        public bool playerPrefab;
+        public bool PlayerPrefab;
     }
 }

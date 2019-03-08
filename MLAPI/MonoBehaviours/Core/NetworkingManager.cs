@@ -139,7 +139,7 @@ namespace MLAPI
         /// <param name="approved">Wheter or not the client was approved</param>
         /// <param name="position">The position to spawn the client at</param>
         /// <param name="rotation">The rotation to spawn the client with</param>
-        public delegate void ConnectionApprovedDelegate(uint clientId, int prefabId, bool approved, Vector3? position, Quaternion? rotation);
+        public delegate void ConnectionApprovedDelegate(uint clientId, ulong? prefabHash, bool approved, Vector3? position, Quaternion? rotation);
         /// <summary>
         /// The callback to invoke during connection approval
         /// </summary>
@@ -217,26 +217,15 @@ namespace MLAPI
             if (NetworkConfig == null)
                 return; //May occur when the component is added
 
-            if (NetworkConfig.EnableSceneSwitching && !NetworkConfig.RegisteredScenes.Contains(SceneManager.GetActiveScene().name))
+            if (!NetworkConfig.RegisteredScenes.Contains(SceneManager.GetActiveScene().name))
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The active scene is not registered as a networked scene. The MLAPI has added it");
                 NetworkConfig.RegisteredScenes.Add(SceneManager.GetActiveScene().name);
             }
+            
+            // TODO: Prefab hash collision check
 
-            if (!NetworkConfig.EnableSceneSwitching)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Please be aware that Scene objects are NOT supported if SceneManagement is turned off");
-            }
-
-            for (int i = 0; i < NetworkConfig.NetworkedPrefabs.Count; i++)
-            {
-                if (NetworkConfig.NetworkedPrefabs[i] != null && string.IsNullOrEmpty(NetworkConfig.NetworkedPrefabs[i].name))
-                {
-                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The NetworkedPrefab " + NetworkConfig.NetworkedPrefabs[i].prefab.name + " does not have a NetworkedPrefabName.");
-                }
-            }
-
-            int playerPrefabCount = NetworkConfig.NetworkedPrefabs.Count(x => x.playerPrefab == true);
+            int playerPrefabCount = NetworkConfig.NetworkedPrefabs.Count(x => x.PlayerPrefab == true);
             if (playerPrefabCount == 0)
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("There is no NetworkedPrefab marked as a PlayerPrefab");
@@ -245,7 +234,7 @@ namespace MLAPI
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Only one networked prefab can be marked as a player prefab");
             }
-            else NetworkConfig.PlayerPrefabName = NetworkConfig.NetworkedPrefabs.Find(x => x.playerPrefab == true).name;
+            else NetworkConfig.PlayerPrefabHash = NetworkConfig.NetworkedPrefabs.Find(x => x.PlayerPrefab == true).Hash;
         }
 
         private object Init(bool server)
@@ -268,7 +257,8 @@ namespace MLAPI
             SpawnManager.SpawnedObjects.Clear();
             SpawnManager.SpawnedObjectsList.Clear();
             SpawnManager.releasedNetworkObjectIds.Clear();
-            SpawnManager.PendingSpawnObjects.Clear();
+            //SpawnManager.PendingSpawnObjects.Clear();
+            //SpawnManager.PendingSoftSyncObjects.Clear();
             SpawnManager.customSpawnHandlers.Clear();
             SpawnManager.customDestroyHandlers.Clear();
             NetworkSceneManager.registeredSceneNames.Clear();
@@ -300,19 +290,6 @@ namespace MLAPI
                 throw new NullReferenceException("The current NetworkTransport is null");
 
             object settings = NetworkConfig.NetworkTransport.GetSettings(); //Gets a new "settings" object for the transport currently used.
-
-
-            HashSet<string> networkedPrefabName = new HashSet<string>();
-            for (int i = 0; i < NetworkConfig.NetworkedPrefabs.Count; i++)
-            {
-                if (networkedPrefabName.Contains(NetworkConfig.NetworkedPrefabs[i].name))
-                {
-                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Duplicate NetworkedPrefabName " + NetworkConfig.NetworkedPrefabs[i].name);
-                    continue;
-                }
-
-                networkedPrefabName.Add(NetworkConfig.NetworkedPrefabs[i].name);
-            }
 
 
             //MLAPI channels and messageTypes
@@ -372,17 +349,15 @@ namespace MLAPI
             }
 
             NetworkConfig.RegisteredScenes.Sort();
-            if (NetworkConfig.EnableSceneSwitching)
+            
+            for (int i = 0; i < NetworkConfig.RegisteredScenes.Count; i++)
             {
-                for (int i = 0; i < NetworkConfig.RegisteredScenes.Count; i++)
-                {
-                    NetworkSceneManager.registeredSceneNames.Add(NetworkConfig.RegisteredScenes[i]);
-                    NetworkSceneManager.sceneIndexToString.Add((uint) i, NetworkConfig.RegisteredScenes[i]);
-                    NetworkSceneManager.sceneNameToIndex.Add(NetworkConfig.RegisteredScenes[i], (uint) i);
-                }
-
-                NetworkSceneManager.SetCurrentSceneIndex();
+                NetworkSceneManager.registeredSceneNames.Add(NetworkConfig.RegisteredScenes[i]);
+                NetworkSceneManager.sceneIndexToString.Add((uint) i, NetworkConfig.RegisteredScenes[i]);
+                NetworkSceneManager.sceneNameToIndex.Add(NetworkConfig.RegisteredScenes[i], (uint) i);
             }
+
+            NetworkSceneManager.SetCurrentSceneIndex();
 
             //Register user channels
             NetworkConfig.Channels = NetworkConfig.Channels.OrderBy(x => x.Name).ToList();
@@ -403,6 +378,7 @@ namespace MLAPI
             return settings;
         }
 
+        /*
         private void SpawnSceneObjects()
         {
             if (NetworkConfig.EnableSceneSwitching)
@@ -419,6 +395,7 @@ namespace MLAPI
                 }
             }
         }
+        */
 
         /// <summary>
         /// Starts a server
@@ -447,7 +424,7 @@ namespace MLAPI
             IsClient = false;
             IsListening = true;
 
-            SpawnSceneObjects();
+            SpawnManager.ServerSpawnSceneObjectsOnStartSweep();
 
             if (OnServerStarted != null)
                 OnServerStarted.Invoke();
@@ -537,7 +514,7 @@ namespace MLAPI
         /// <summary>
         /// Starts a Host
         /// </summary>
-        public void StartHost(Vector3? pos = null, Quaternion? rot = null, int prefabId = -1)
+        public void StartHost(Vector3? position = null, Quaternion? rotation = null, ulong? prefabHash = null, Stream payloadStream = null)
         {
             if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("StartHost()");
             if (IsServer || IsClient)
@@ -567,15 +544,15 @@ namespace MLAPI
             });
             ConnectedClientsList.Add(ConnectedClients[hostClientId]);
 
-            prefabId = prefabId == -1 ? SpawnManager.GetNetworkedPrefabIndexOfName(NetworkConfig.PlayerPrefabName) : prefabId;
-            NetworkedObject netObject = SpawnManager.CreateSpawnedObject(prefabId, 0, hostClientId, true, NetworkSceneManager.CurrentActiveSceneIndex, false, false, pos.GetValueOrDefault(), rot.GetValueOrDefault(), true, null, false, 0, false);
-
+            NetworkedObject netObject = SpawnManager.CreateLocalNetworkedObject(false, 0, (prefabHash == null ? NetworkConfig.PlayerPrefabHash : prefabHash.Value), position, rotation);
+            SpawnManager.SpawnNetworkedObjectLocally(netObject, SpawnManager.GetNetworkObjectId(), false, true, hostClientId, payloadStream, payloadStream != null, payloadStream == null ? 0 : (int)payloadStream.Length, false);
+            
             if (netObject.CheckObjectVisibility == null || netObject.CheckObjectVisibility(hostClientId))
             {
                 netObject.observers.Add(hostClientId);
             }
             
-            SpawnSceneObjects();
+            SpawnManager.ServerSpawnSceneObjectsOnStartSweep();
 
             if (OnServerStarted != null)
                 OnServerStarted.Invoke();
@@ -980,9 +957,9 @@ namespace MLAPI
                 {
                     if (ConnectedClients[clientId].PlayerObject != null)
                     {
-                        if (SpawnManager.customDestroyHandlers.ContainsKey(ConnectedClients[clientId].PlayerObject.NetworkedPrefabHash))
+                        if (SpawnManager.customDestroyHandlers.ContainsKey(ConnectedClients[clientId].PlayerObject.PrefabHash))
                         {
-                            SpawnManager.customDestroyHandlers[ConnectedClients[clientId].PlayerObject.NetworkedPrefabHash](ConnectedClients[clientId].PlayerObject);
+                            SpawnManager.customDestroyHandlers[ConnectedClients[clientId].PlayerObject.PrefabHash](ConnectedClients[clientId].PlayerObject);
                             SpawnManager.OnDestroyObject(ConnectedClients[clientId].PlayerObject.NetworkId, false);
                         }
                         else
@@ -997,9 +974,9 @@ namespace MLAPI
                         {
                             if (!ConnectedClients[clientId].OwnedObjects[i].DontDestroyWithOwner)
                             {
-                                if (SpawnManager.customDestroyHandlers.ContainsKey(ConnectedClients[clientId].OwnedObjects[i].NetworkedPrefabHash))
+                                if (SpawnManager.customDestroyHandlers.ContainsKey(ConnectedClients[clientId].OwnedObjects[i].PrefabHash))
                                 {
-                                    SpawnManager.customDestroyHandlers[ConnectedClients[clientId].OwnedObjects[i].NetworkedPrefabHash](ConnectedClients[clientId].OwnedObjects[i]);
+                                    SpawnManager.customDestroyHandlers[ConnectedClients[clientId].OwnedObjects[i].PrefabHash](ConnectedClients[clientId].OwnedObjects[i]);
                                     SpawnManager.OnDestroyObject(ConnectedClients[clientId].OwnedObjects[i].NetworkId, false);
                                 }
                                 else
@@ -1051,7 +1028,7 @@ namespace MLAPI
         
         private readonly List<NetworkedObject> _observedObjects = new List<NetworkedObject>();
 
-        internal void HandleApproval(uint clientId, int prefabId, bool approved, Vector3? position, Quaternion? rotation)
+        internal void HandleApproval(uint clientId, ulong? prefabHash, bool approved, Vector3? position, Quaternion? rotation)
         {
             if(approved)
             {
@@ -1069,8 +1046,9 @@ namespace MLAPI
                 ConnectedClients.Add(clientId, client);
                 ConnectedClientsList.Add(client);
                 
-                prefabId = prefabId == -1 ? SpawnManager.GetNetworkedPrefabIndexOfName(NetworkConfig.PlayerPrefabName) : prefabId;
-                NetworkedObject netObject = SpawnManager.CreateSpawnedObject(prefabId, 0, clientId, true, NetworkSceneManager.CurrentActiveSceneIndex, false, false, position, rotation, true, null, false, 0, false);
+                NetworkedObject netObject = SpawnManager.CreateLocalNetworkedObject(false, 0, (prefabHash == null ? NetworkConfig.PlayerPrefabHash : prefabHash.Value), position, rotation);
+                SpawnManager.SpawnNetworkedObjectLocally(netObject, SpawnManager.GetNetworkObjectId(), false, true, clientId, null, false, 0, false);
+                
                 ConnectedClients[clientId].PlayerObject = netObject;
 
                 _observedObjects.Clear();
@@ -1090,28 +1068,39 @@ namespace MLAPI
                     using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                     {
                         writer.WriteUInt32Packed(clientId);
-                        if (NetworkConfig.EnableSceneSwitching) 
-                        {
-                            writer.WriteUInt32Packed(NetworkSceneManager.currentSceneIndex);
-                            writer.WriteByteArray(NetworkSceneManager.currentSceneSwitchProgressGuid.ToByteArray());
-                        }
+                        
+                        writer.WriteUInt32Packed(NetworkSceneManager.currentSceneIndex);
+                        writer.WriteByteArray(NetworkSceneManager.currentSceneSwitchProgressGuid.ToByteArray());
 
                         writer.WriteSinglePacked(NetworkTime);
                         writer.WriteInt32Packed(NetworkConfig.NetworkTransport.GetNetworkTimestamp());
                         
-                        writer.WriteInt32Packed(_observedObjects.Count);
+                        writer.WriteUInt32Packed((uint)_observedObjects.Count);
 
                         for (int i = 0; i < _observedObjects.Count; i++)
                         {
                             writer.WriteBool(_observedObjects[i].IsPlayerObject);
-                            writer.WriteUInt32Packed(_observedObjects[i].NetworkId);
+                            writer.WriteUInt64Packed(_observedObjects[i].NetworkId);
                             writer.WriteUInt32Packed(_observedObjects[i].OwnerClientId);
-                            writer.WriteUInt64Packed(_observedObjects[i].NetworkedPrefabHash);
-                            writer.WriteBool(_observedObjects[i].gameObject.activeInHierarchy);
 
-                            writer.WriteBit(_observedObjects[i].destroyWithScene == null ? true : _observedObjects[i].destroyWithScene.Value);
-                            writer.WriteBool(_observedObjects[i].SceneDelayedSpawn);
-                            writer.WriteUInt32Packed(_observedObjects[i].sceneSpawnedInIndex);
+                            if (NetworkConfig.UsePrefabSync)
+                            {
+                                writer.WriteUInt64Packed(_observedObjects[i].PrefabHash);
+                            }
+                            else
+                            {
+                                // Is this a scene object that we will soft map
+                                writer.WriteBool(_observedObjects[i].IsSceneObject == null ? true : _observedObjects[i].IsSceneObject.Value);
+
+                                if (_observedObjects[i].IsSceneObject == null || _observedObjects[i].IsSceneObject.Value == true)
+                                {
+                                    writer.WriteUInt64Packed(_observedObjects[i].PrefabInstanceId);
+                                }
+                                else
+                                {
+                                    writer.WriteUInt64Packed(_observedObjects[i].PrefabHash);
+                                }
+                            }
 
                             writer.WriteSinglePacked(_observedObjects[i].transform.position.x);
                             writer.WriteSinglePacked(_observedObjects[i].transform.position.y);
@@ -1143,13 +1132,19 @@ namespace MLAPI
                         using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                         {    
                             writer.WriteBool(true);
-                            writer.WriteUInt32Packed(ConnectedClients[clientId].PlayerObject.GetComponent<NetworkedObject>().NetworkId);
+                            writer.WriteUInt64Packed(ConnectedClients[clientId].PlayerObject.GetComponent<NetworkedObject>().NetworkId);
                             writer.WriteUInt32Packed(clientId);
-                            writer.WriteUInt64Packed(NetworkingManager.Singleton.NetworkConfig.NetworkedPrefabs[prefabId].hash);
-                            writer.WriteBool(false);
 
-                            writer.WriteBool(ConnectedClients[clientId].PlayerObject.SceneDelayedSpawn);
-                            writer.WriteUInt32Packed(ConnectedClients[clientId].PlayerObject.sceneSpawnedInIndex);
+                            if (NetworkConfig.UsePrefabSync)
+                            {
+                                writer.WriteUInt64Packed(prefabHash == null ? NetworkConfig.PlayerPrefabHash : prefabHash.Value);
+                            }
+                            else
+                            {
+                                // Not a softmap aka scene object
+                                writer.WriteBool(false);
+                                writer.WriteUInt64Packed(prefabHash == null ? NetworkConfig.PlayerPrefabHash : prefabHash.Value);
+                            }
 
                             writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.position.x);
                             writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.position.y);
