@@ -35,7 +35,7 @@ for:
   - path: 'MLAPI\bin\Debug\*\*MLAPI*'
   test:
     assemblies:
-      - 'MLAPI\bin\Debug\*\MLAPI.dll'
+      - 'MLAPI-Tests\bin\Debug\*\MLAPI.dll'
 -
   matrix:
     only:
@@ -44,7 +44,7 @@ for:
   - path: 'MLAPI\bin\Lite\Debug\*\*MLAPI*'
   test:
     assemblies:
-      - 'MLAPI\bin\Lite\Debug\*\MLAPI.dll'
+      - 'MLAPI-Tests\bin\Lite\Debug\*\MLAPI.dll'
 -
   matrix:
     only:
@@ -53,7 +53,7 @@ for:
   - path: 'MLAPI\bin\Release\*\*MLAPI*'
   test:
     assemblies:
-      - 'MLAPI\bin\Release\*\MLAPI.dll'
+      - 'MLAPI-Tests\bin\Release\*\MLAPI.dll'
 -
   matrix:
     only:
@@ -62,4 +62,4 @@ for:
   - path: 'MLAPI\bin\Lite\Release\*\*MLAPI*'
   test:
     assemblies:
-      - 'MLAPI\bin\Lite\Release\*\MLAPI.dll'
+      - 'MLAPI-Tests\bin\Lite\Release\*\MLAPI.dll'
