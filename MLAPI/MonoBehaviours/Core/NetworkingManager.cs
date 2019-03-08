@@ -377,25 +377,6 @@ namespace MLAPI
             return settings;
         }
 
-        /*
-        private void SpawnSceneObjects()
-        {
-            if (NetworkConfig.EnableSceneSwitching)
-            {
-                SpawnManager.MarkSceneObjects();
-                if (IsServer)
-                {
-                    NetworkedObject[] networkedObjects = FindObjectsOfType<NetworkedObject>();
-                    for (int i = 0; i < networkedObjects.Length; i++)
-                    {
-                        if (networkedObjects[i].destroyWithScene == null || networkedObjects[i].destroyWithScene == true)
-                            networkedObjects[i].Spawn();
-                    }
-                }
-            }
-        }
-        */
-
         /// <summary>
         /// Starts a server
         /// </summary>
