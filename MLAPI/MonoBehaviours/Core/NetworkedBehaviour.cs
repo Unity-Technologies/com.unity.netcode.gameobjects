@@ -79,11 +79,11 @@ namespace MLAPI
 
         private NetworkedObject _networkedObject = null;
         [Obsolete("Use NetworkId instead", false)]
-        public uint networkId => NetworkId;
+        public ulong networkId => NetworkId;
         /// <summary>
         /// Gets the NetworkId of the NetworkedObject that owns the NetworkedBehaviour instance
         /// </summary>
-        public uint NetworkId => NetworkedObject.NetworkId;
+        public ulong NetworkId => NetworkedObject.NetworkId;
         /// <summary>
         /// Gets the clientId that owns the NetworkedObject
         /// </summary>
@@ -356,7 +356,7 @@ namespace MLAPI
                         {
                             using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                             {
-                                writer.WriteUInt32Packed(NetworkId);
+                                writer.WriteUInt64Packed(NetworkId);
                                 writer.WriteUInt16Packed(NetworkedObject.GetOrderIndex(this));
 
                                 uint clientId = NetworkingManager.Singleton.ConnectedClientsList[i].ClientId;
@@ -866,7 +866,7 @@ namespace MLAPI
             {
                 using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                 {
-                    writer.WriteUInt32Packed(NetworkId);
+                    writer.WriteUInt64Packed(NetworkId);
                     writer.WriteUInt16Packed(NetworkedObject.GetOrderIndex(this));
                     writer.WriteUInt64Packed(hash);
 
@@ -900,7 +900,7 @@ namespace MLAPI
             {
                 using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                 {
-                    writer.WriteUInt32Packed(NetworkId);
+                    writer.WriteUInt64Packed(NetworkId);
                     writer.WriteUInt16Packed(NetworkedObject.GetOrderIndex(this));
                     writer.WriteUInt64Packed(hash);
                     
@@ -957,7 +957,7 @@ namespace MLAPI
             {
                 using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                 {
-                    writer.WriteUInt32Packed(NetworkId);
+                    writer.WriteUInt64Packed(NetworkId);
                     writer.WriteUInt16Packed(NetworkedObject.GetOrderIndex(this));
                     writer.WriteUInt64Packed(hash);
 
@@ -1022,7 +1022,7 @@ namespace MLAPI
             {
                 using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                 {
-                    writer.WriteUInt32Packed(NetworkId);
+                    writer.WriteUInt64Packed(NetworkId);
                     writer.WriteUInt16Packed(NetworkedObject.GetOrderIndex(this));
                     writer.WriteUInt64Packed(hash);
 
@@ -1074,7 +1074,7 @@ namespace MLAPI
             {
                 using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                 {
-                    writer.WriteUInt32Packed(NetworkId);
+                    writer.WriteUInt64Packed(NetworkId);
                     writer.WriteUInt16Packed(NetworkedObject.GetOrderIndex(this));
                     writer.WriteUInt64Packed(hash);
 
@@ -1114,7 +1114,7 @@ namespace MLAPI
             {
                 using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                 {
-                    writer.WriteUInt32Packed(NetworkId);
+                    writer.WriteUInt64Packed(NetworkId);
                     writer.WriteUInt16Packed(NetworkedObject.GetOrderIndex(this));
                     writer.WriteUInt64Packed(hash);
                     
@@ -1164,7 +1164,7 @@ namespace MLAPI
         /// </summary>
         /// <param name="networkId"></param>
         /// <returns></returns>
-        protected NetworkedObject GetNetworkedObject(uint networkId)
+        protected NetworkedObject GetNetworkedObject(ulong networkId)
         {
             if(SpawnManager.SpawnedObjects.ContainsKey(networkId))
                 return SpawnManager.SpawnedObjects[networkId];

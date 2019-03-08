@@ -238,7 +238,7 @@ permalink: /api/networking-manager/
 <div>
 	<h3 markdown="1">Public Methods</h3>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` SendCustomMessage(``List<uint>`` clientIds, [``BitStream``](/MLAPI/api/bit-stream/) stream, ``string`` channel);</b></h4>
+		<h4 markdown="1"><b>public ``void`` SendCustomMessage(``List<uint>`` clientIds, [``BitStream``](/MLAPI/api/bit-stream/) stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
 		<p>Sends custom message to a list of clients</p>
 		<h5><b>Parameters</b></h5>
 		<div>
@@ -253,10 +253,14 @@ permalink: /api/networking-manager/
 			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
 			<p>The channel to send the data on</p>
 		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+			<p>The security settings to apply to the message</p>
+		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` SendCustomMessage(``uint`` clientId, [``BitStream``](/MLAPI/api/bit-stream/) stream, ``string`` channel);</b></h4>
+		<h4 markdown="1"><b>public ``void`` SendCustomMessage(``uint`` clientId, [``BitStream``](/MLAPI/api/bit-stream/) stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
 		<p>Sends a custom message to a specific client</p>
 		<h5><b>Parameters</b></h5>
 		<div>
@@ -270,6 +274,10 @@ permalink: /api/networking-manager/
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
 			<p>The channel tos end the data on</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+			<p>The security settings to apply to the message</p>
 		</div>
 	</div>
 	<br>
@@ -299,17 +307,20 @@ permalink: /api/networking-manager/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` StartHost(``Nullable<Vector3>`` pos, ``Nullable<Quaternion>`` rot, ``int`` prefabId);</b></h4>
+		<h4 markdown="1"><b>public ``void`` StartHost(``Nullable<Vector3>`` position, ``Nullable<Quaternion>`` rotation, ``Nullable<ulong>`` prefabHash, ``Stream`` payloadStream);</b></h4>
 		<p>Starts a Host</p>
 		<h5><b>Parameters</b></h5>
 		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``Nullable<Vector3>`` pos</p>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Nullable<Vector3>`` position</p>
 		</div>
 		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``Nullable<Quaternion>`` rot</p>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Nullable<Quaternion>`` rotation</p>
 		</div>
 		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``int`` prefabId</p>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Nullable<ulong>`` prefabHash</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Stream`` payloadStream</p>
 		</div>
 	</div>
 	<br>

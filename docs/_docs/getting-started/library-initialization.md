@@ -12,7 +12,7 @@ This mode runs a Server and a virtual Client connected to its own server.
 
 Usage:
 ```csharp
-NetworkingManager.singleton.StartHost();
+NetworkingManager.Singleton.StartHost();
 ```
 
 
@@ -22,7 +22,7 @@ This mode runs a Client that connects to a Server or Host.
 
 Usage:
 ```csharp
-NetworkingManager.singleton.StartClient();
+NetworkingManager.Singleton.StartClient();
 ```
 
 ### Server mode
@@ -31,5 +31,5 @@ This mode runs a Server which other Clients can connect to.
 
 Usage:
 ```csharp
-NetworkingManager.singleton.StartServer();
+NetworkingManager.Singleton.StartServer();
 ```

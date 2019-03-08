@@ -60,7 +60,7 @@ namespace MLAPI.Configuration
         /// </summary>
         [SerializeField]
         [HideInInspector]
-        internal string PlayerPrefabName;
+        internal ulong PlayerPrefabHash;
         /// <summary>
         /// The size of the receive message buffer. This is the max message size including any MLAPI overheads.
         /// </summary>
@@ -111,10 +111,6 @@ namespace MLAPI.Configuration
         /// </summary>
         public int SecondsHistory = 5;
         /// <summary>
-        /// Wheter or not to enable scene switching
-        /// </summary>
-        public bool EnableSceneSwitching = true;
-        /// <summary>
         /// If your logic uses the NetworkedTime, this should probably be turned off. If however it's needed to maximize accuracy, this is recommended to be turned on
         /// </summary>
         public bool EnableTimeResync = false;
@@ -124,13 +120,14 @@ namespace MLAPI.Configuration
         /// </summary>
         public bool ForceSamePrefabs = true;
         /// <summary>
+        /// If true, all NetworkedObject's need to be prefabs and all scene objects will be replaced on server side which causes all serialization to be lost. Useful for multi project setups
+        /// If false, Only non scene objects have to be prefabs. Scene objects will be matched using their PrefabInstanceId which can be precomputed globally for a scene at build time. Useful for single projects
+        /// </summary>
+        public bool UsePrefabSync = false;
+        /// <summary>
         /// Decides how many bytes to use for Rpc messaging. Leave this to 2 bytes unless you are facing hash collisions
         /// </summary>
         public HashSize RpcHashSize = HashSize.VarIntTwoBytes;
-        /// <summary>
-        /// Decides how many bytes to use for Prefab names. Leave this to 2 bytes unless you are facing hash collisions
-        /// </summary>
-        public HashSize PrefabHashSize = HashSize.VarIntTwoBytes;
         /// <summary>
         /// Wheter or not to enable encryption
         /// The amount of seconds to wait on all clients to load requested scene before the SwitchSceneProgress onComplete callback, that waits for all clients to complete loading, is called anyway.
@@ -213,13 +210,6 @@ namespace MLAPI.Configuration
                         writer.WriteString(config.RegisteredScenes[i]);
                     }
 
-                    writer.WriteUInt16Packed((ushort)config.NetworkedPrefabs.Count);
-                    for (int i = 0; i < config.NetworkedPrefabs.Count; i++)
-                    {
-                        writer.WriteBool(config.NetworkedPrefabs[i].playerPrefab);
-                        writer.WriteString(config.NetworkedPrefabs[i].name);
-                    }
-
                     writer.WriteInt32Packed(config.MessageBufferSize);
                     writer.WriteInt32Packed(config.ReceiveTickrate);
                     writer.WriteInt32Packed(config.MaxReceiveEventsPerTickRate);
@@ -233,10 +223,11 @@ namespace MLAPI.Configuration
                     writer.WriteInt32Packed(config.SecondsHistory);
                     writer.WriteBool(config.EnableEncryption);
                     writer.WriteBool(config.SignKeyExchange);
-                    writer.WriteBool(config.EnableSceneSwitching);
                     writer.WriteInt32Packed(config.LoadSceneTimeOut);
                     writer.WriteBool(config.EnableTimeResync);
                     writer.WriteBits((byte)config.RpcHashSize, 3);
+                    writer.WriteBool(ForceSamePrefabs);
+                    writer.WriteBool(UsePrefabSync);
                     stream.PadStream();
 
                     return Convert.ToBase64String(stream.ToArray());
@@ -248,8 +239,7 @@ namespace MLAPI.Configuration
         /// Sets the NetworkConfig data with that from a base64 encoded version
         /// </summary>
         /// <param name="base64">The base64 encoded version</param>
-        /// <param name="createDummyObject">Wheter or not to create dummy objects for NetworkedPrefabs</param>
-        public void FromBase64(string base64, bool createDummyObject = false)
+        public void FromBase64(string base64)
         {
             NetworkConfig config = this;
             byte[] binary = Convert.FromBase64String(base64);
@@ -280,27 +270,6 @@ namespace MLAPI.Configuration
                         config.RegisteredScenes.Add(reader.ReadString().ToString());
                     }
 
-                    ushort networkedPrefabsCount = reader.ReadUInt16Packed();
-                    config.NetworkedPrefabs.Clear();
-                    GameObject root = createDummyObject ? new GameObject("MLAPI: Dummy prefabs") : null;
-                    for (int i = 0; i < networkedPrefabsCount; i++)
-                    {
-                        bool playerPrefab = reader.ReadBool();
-                        string prefabName = reader.ReadString().ToString();
-                        GameObject dummyPrefab = createDummyObject ? new GameObject("REPLACEME: " + prefabName + "(Dummy prefab)", typeof(NetworkedObject)) : null;
-                        if (dummyPrefab != null)
-                        {
-                            dummyPrefab.GetComponent<NetworkedObject>().NetworkedPrefabName = prefabName;
-                            dummyPrefab.transform.SetParent(root.transform); //This is just here to not ruin your hierarchy
-                        }
-                        NetworkedPrefab networkedPrefab = new NetworkedPrefab()
-                        {
-                            playerPrefab = playerPrefab,
-                            prefab = dummyPrefab
-                        };
-                        config.NetworkedPrefabs.Add(networkedPrefab);
-                    }
-
                     config.MessageBufferSize = reader.ReadInt32Packed();
                     config.ReceiveTickrate = reader.ReadInt32Packed();
                     config.MaxReceiveEventsPerTickRate = reader.ReadInt32Packed();
@@ -314,10 +283,11 @@ namespace MLAPI.Configuration
                     config.SecondsHistory = reader.ReadInt32Packed();
                     config.EnableEncryption = reader.ReadBool();
                     config.SignKeyExchange = reader.ReadBool();
-                    config.EnableSceneSwitching = reader.ReadBool();
                     config.LoadSceneTimeOut = reader.ReadInt32Packed();
                     config.EnableTimeResync = reader.ReadBool();
                     config.RpcHashSize = (HashSize)reader.ReadBits(3);
+                    config.ForceSamePrefabs = reader.ReadBool();
+                    config.UsePrefabSync = reader.ReadBool();
                 }
             }
         }
@@ -349,29 +319,25 @@ namespace MLAPI.Configuration
                         writer.WriteByte((byte)Channels[i].Type);
                     }
 
-                    if (EnableSceneSwitching)
+                    for (int i = 0; i < RegisteredScenes.Count; i++)
                     {
-                        for (int i = 0; i < RegisteredScenes.Count; i++)
-                        {
-                            writer.WriteString(RegisteredScenes[i]);
-                        }
+                        writer.WriteString(RegisteredScenes[i]);
                     }
 
                     if (ForceSamePrefabs)
                     {
-                        List<NetworkedPrefab> sortedPrefabList = NetworkedPrefabs.OrderBy(x => x.hash).ToList();
+                        List<NetworkedPrefab> sortedPrefabList = NetworkedPrefabs.OrderBy(x => x.Hash).ToList();
                         for (int i = 0; i < sortedPrefabList.Count; i++)
                         {
-                            writer.WriteUInt64Packed(sortedPrefabList[i].hash);
+                            writer.WriteUInt64Packed(sortedPrefabList[i].Hash);
                         }
                     }
 
                     writer.WriteBool(ForceSamePrefabs);
+                    writer.WriteBool(UsePrefabSync);
                     writer.WriteBool(EnableEncryption);
-                    writer.WriteBool(EnableSceneSwitching);
                     writer.WriteBool(SignKeyExchange);
                     writer.WriteBits((byte)RpcHashSize, 3);
-                    writer.WriteBits((byte)PrefabHashSize, 3);
                     stream.PadStream();
 
                     if (cache)

@@ -27,7 +27,7 @@ private void Update()
 {
     if (GUI.Button("SendRandomInt"))
     {
-        if (isServer)
+        if (IsServer)
         {
             InvokeClientRpcOnEveryone(MyClientRPC, Random.Range(-50, 50));
         }
@@ -87,24 +87,28 @@ private void Update()
 {
     if (GUI.Button("SendRandomInt"))
     {
-        if (isServer)
+        if (IsServer)
         {
             using (PooledBitStream stream = PooledBitStream.Get())
             {
-                BitWriter writer = new BitWriter(stream);
-                writer.WriteInt32Packed(Random.Range(-50, 50));
+                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                {
+                    writer.WriteInt32Packed(Random.Range(-50, 50));
 
-                InvokeClientRpcOnEveryone(MyClientRPC, stream);
+                    InvokeClientRpcOnEveryone(MyClientRPC, stream);
+                }
             }
         }
         else
         {
             using (PooledBitStream stream = PooledBitStream.Get())
             {
-                BitWriter writer = new BitWriter(stream);
-                writer.WriteInt32Packed(Random.Range(-50, 50));
+                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                {
+                    writer.WriteInt32Packed(Random.Range(-50, 50));
 
-                InvokeServerRpc(MyServerRpc, stream);
+                    InvokeServerRpc(MyServerRpc, stream);
+                }
             }
         }
     }
@@ -113,19 +117,23 @@ private void Update()
 [ServerRPC]
 private void MyServerRPC(uint clientId, Stream stream) //This signature is REQUIRED for the performance mode
 {
-    BitReader reader = new BitReader(stream);
-    int number = reader.ReadInt32Packed();
-    Debug.Log("The number recieved was: " + number);
-    Debug.Log("This method ran on the server upon the request of a client");
+    using (PooledBitReader reader = PooledBitReader.Get(stream))
+    {
+        int number = reader.ReadInt32Packed();
+        Debug.Log("The number recieved was: " + number);
+        Debug.Log("This method ran on the server upon the request of a client");
+    }
 }
 
 [ClientRPC]
 private void MyClientRPC(uint clientId, Stream stream) //This signature is REQUIRED for the performance mode
 {
-    BitReader reader = new BitReader(stream);
-    int number = reader.ReadInt32Packed();
-    Debug.Log("The number recieved was: " + number);
-    Debug.Log("This method ran on the client upon the request of the server");
+    using (PooledBitReader reader = PooledBitReader.Get(stream))
+    {
+        int number = reader.ReadInt32Packed();
+        Debug.Log("The number recieved was: " + number);
+        Debug.Log("This method ran on the client upon the request of the server");
+    }
 }
 ```
 
@@ -162,12 +170,15 @@ If you don't want to use the MLAPI's messaging. You don't have to. You can use a
 void Start()
 {
     //Recieving
-    NetworkingManager.singleton.OnIncommingCustomMessage += ((clientId, stream) {
-        BitReader reader = new BitReader(stream);
-        string message = reader.ReadString(); //Example
+    NetworkingManager.Singleton.OnIncommingCustomMessage += ((clientId, stream) =>
+    {
+        using (PooledBitReader reader = PooledBitReader.Get(stream))
+        {
+            string message = reader.ReadString(); //Example
+        }
     });
 
     //Sending
-    NetworkingManager.singleton.SendCustomMessage(clientId, myStream, "myCustomChannel"); //Channel is optional.
+    NetworkingManager.Singleton.SendCustomMessage(clientId, myStream, "myCustomChannel"); //Channel is optional.
 }
 ```

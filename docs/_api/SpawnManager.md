@@ -13,7 +13,7 @@ permalink: /api/spawn-manager/
 <div>
 	<h3 markdown="1">Public Fields</h3>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Dictionary<uint, NetworkedObject>`` SpawnedObjects;</b></h4>
+		<h4 markdown="1"><b>public ``Dictionary<ulong, NetworkedObject>`` SpawnedObjects;</b></h4>
 		<p>The currently spawned objects</p>
 	</div>
 	<div style="line-height: 1;">
@@ -25,26 +25,60 @@ permalink: /api/spawn-manager/
 <div>
 	<h3 markdown="1">Public Static Methods</h3>
 	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public static ``void`` RegisterSpawnHandler(``ulong`` prefabHash, [``SpawnHandlerDelegate``](/MLAPI/api/spawn-handler-delegate/) handler);</b></h4>
+		<p>Registers a delegate for spawning networked prefabs, useful for object pooling</p>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``ulong`` prefabHash</p>
+			<p>The prefab hash to spawn</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SpawnHandlerDelegate``](/MLAPI/api/spawn-handler-delegate/) handler</p>
+			<p>The delegate handler</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public static ``void`` RegisterCustomDestroyHandler(``ulong`` prefabHash, [``DestroyHandlerDelegate``](/MLAPI/api/destroy-handler-delegate/) handler);</b></h4>
+		<p>Registers a delegate for destroying networked objects, useful for object pooling</p>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``ulong`` prefabHash</p>
+			<p>The prefab hash to destroy</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``DestroyHandlerDelegate``](/MLAPI/api/destroy-handler-delegate/) handler</p>
+			<p>The delegate handler</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public static ``void`` RemoveCustomSpawnHandler(``ulong`` prefabHash);</b></h4>
+		<p>Removes the custom spawn handler for a specific prefab hash</p>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``ulong`` prefabHash</p>
+			<p>The prefab hash of the prefab spawn handler that is to be removed</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public static ``void`` RemoveCustomDestroyHandler(``ulong`` prefabHash);</b></h4>
+		<p>Removes the custom destroy handler for a specific prefab hash</p>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``ulong`` prefabHash</p>
+			<p>The prefab hash of the prefab destroy handler that is to be removed</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public static ``int`` GetNetworkedPrefabIndexOfHash(``ulong`` hash);</b></h4>
 		<p>Gets the prefab index of a given prefab hash</p>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``ulong`` hash</p>
 			<p>The hash of the prefab</p>
-		</div>
-		<h5 markdown="1"><b>Returns ``int``</b></h5>
-		<div>
-			<p>The index of the prefab</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public static ``int`` GetNetworkedPrefabIndexOfName(``string`` name);</b></h4>
-		<p>Gets the prefab index of a given prefab name</p>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``string`` name</p>
-			<p>The name of the prefab</p>
 		</div>
 		<h5 markdown="1"><b>Returns ``int``</b></h5>
 		<div>
