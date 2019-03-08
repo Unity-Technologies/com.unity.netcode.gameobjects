@@ -88,15 +88,21 @@ namespace MLAPI
         /// Gets if the object has yet been spawned across the network
         /// </summary>
         public bool IsSpawned { get; internal set; }
-
+        /// <summary>
+        /// Gets if the object is a SceneObject, null if it's not yet spawned but is a scene object.
+        /// </summary>
         public bool? IsSceneObject { get; internal set; }
 
-        public delegate bool ObserverDelegate(uint clientId);
+        /// <summary>
+        /// Delegate type for checking visibility
+        /// </summary>
+        /// <param name="clientId">The clientId to check visibility for</param>
+        public delegate bool VisibilityDelegate(uint clientId);
 
         /// <summary>
         /// Delegate invoked when the MLAPI needs to know if the object should be visible to a client, if null it will assume true
         /// </summary>
-        public ObserverDelegate CheckObjectVisibility = null;
+        public VisibilityDelegate CheckObjectVisibility = null;
         
         /// <summary>
         /// Whether or not to destroy this object if it's owner is destroyed.
