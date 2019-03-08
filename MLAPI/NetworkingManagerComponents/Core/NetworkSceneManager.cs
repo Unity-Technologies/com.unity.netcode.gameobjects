@@ -18,7 +18,7 @@ namespace MLAPI.Components
         internal static readonly HashSet<string> registeredSceneNames = new HashSet<string>();
         internal static readonly Dictionary<string, uint> sceneNameToIndex = new Dictionary<string, uint>();
         internal static readonly Dictionary<uint, string> sceneIndexToString = new Dictionary<uint, string>();
-        internal static Dictionary<Guid, SceneSwitchProgress> sceneSwitchProgresses = new Dictionary<Guid, SceneSwitchProgress>();
+        internal static readonly Dictionary<Guid, SceneSwitchProgress> sceneSwitchProgresses = new Dictionary<Guid, SceneSwitchProgress>();
         private static Scene lastScene;
         private static Scene nextScene;
         private static bool isSwitching = false;
