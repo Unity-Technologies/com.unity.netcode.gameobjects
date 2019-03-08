@@ -34,9 +34,6 @@ permalink: /api/mlapiconstants/
 		<h4 markdown="1"><b>public ``byte`` MLAPI_ADD_OBJECT;</b></h4>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``byte`` MLAPI_CLIENT_DISCONNECT;</b></h4>
-	</div>
-	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``byte`` MLAPI_DESTROY_OBJECT;</b></h4>
 	</div>
 	<div style="line-height: 1;">
@@ -44,12 +41,6 @@ permalink: /api/mlapiconstants/
 	</div>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``byte`` MLAPI_CLIENT_SWITCH_SCENE_COMPLETED;</b></h4>
-	</div>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``byte`` MLAPI_SPAWN_POOL_OBJECT;</b></h4>
-	</div>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``byte`` MLAPI_DESTROY_POOL_OBJECT;</b></h4>
 	</div>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``byte`` MLAPI_CHANGE_OWNER;</b></h4>
@@ -70,7 +61,19 @@ permalink: /api/mlapiconstants/
 		<h4 markdown="1"><b>public ``byte`` MLAPI_SERVER_RPC;</b></h4>
 	</div>
 	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``byte`` MLAPI_SERVER_RPC_REQUEST;</b></h4>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``byte`` MLAPI_SERVER_RPC_RESPONSE;</b></h4>
+	</div>
+	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``byte`` MLAPI_CLIENT_RPC;</b></h4>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``byte`` MLAPI_CLIENT_RPC_REQUEST;</b></h4>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``byte`` MLAPI_CLIENT_RPC_RESPONSE;</b></h4>
 	</div>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``byte`` MLAPI_CUSTOM_MESSAGE;</b></h4>

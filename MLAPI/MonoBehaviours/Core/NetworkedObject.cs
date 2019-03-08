@@ -20,17 +20,20 @@ namespace MLAPI
 
         private void OnValidate()
         {
-            if (string.IsNullOrEmpty(NetworkedPrefabName))
+            if (string.IsNullOrEmpty(PrefabHashGenerator))
             {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The NetworkedObject " + gameObject.name + " does not have a NetworkedPrefabName. It has been set to the gameObject name");
-                NetworkedPrefabName = gameObject.name;
+                PrefabHash = 0;
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The NetworkedObject " + gameObject.name + " does not have a PrefabHashGenerator. It has been set to the gameObject name");
+                PrefabHashGenerator = gameObject.name;
             }
+            
+            PrefabHash = PrefabHashGenerator.GetStableHash64();
         }
 
         /// <summary>
         /// Gets the unique ID of this object that is synced across the network
         /// </summary>
-        public uint NetworkId { get; internal set; }
+        public ulong NetworkId { get; internal set; }
         /// <summary>
         /// Gets the clientId of the owner of this NetworkedObject
         /// </summary>
@@ -52,15 +55,28 @@ namespace MLAPI
             }
         }
         private uint? _ownerClientId = null;
+        
         /// <summary>
-        /// The name of the NetworkedPrefab
+        /// InstanceId is the id that is unique to the object and scene for a scene object when UsePrefabSync is false.
+        /// If UsePrefabSync is true or if it's used on non scene objects, this has no effect.
+        /// Should not be set manually
         /// </summary>
-        [Tooltip("The prefab name is the name that identifies this prefab. It has to not be the same as any other prefabs that are registered with the MLAPI and it has to be the same across projects if multiple projects are used.")]
-        public string NetworkedPrefabName = string.Empty;
+        [HideInInspector]
+        [SerializeField]
+        public ulong NetworkedInstanceId;
         /// <summary>
-        /// The hash used to identify the NetworkedPrefab, a hash of the NetworkedPrefabName
+        /// The Prefab unique hash. This should not be set my the user but rather changed by editing the PrefabHashGenerator.
+        /// It has to be the same for all instances of a prefab
         /// </summary>
-        public ulong NetworkedPrefabHash => SpawnManager.GetPrefabHash(NetworkedPrefabName);
+        [HideInInspector]
+        [SerializeField]
+        public ulong PrefabHash;
+        /// <summary>
+        /// The generator used to change the PrefabHash. This should be set the same for all instances of a prefab.
+        /// It has to be unique in relation to other prefabs
+        /// </summary>
+        [SerializeField]
+        public string PrefabHashGenerator;
         [Obsolete("Use IsPlayerObject instead", false)]
         public bool isPlayerObject => IsPlayerObject;
         /// <summary>
@@ -91,25 +107,24 @@ namespace MLAPI
         /// Gets if the object has yet been spawned across the network
         /// </summary>
         public bool IsSpawned { get; internal set; }
-        internal bool? destroyWithScene = null;
+        /// <summary>
+        /// Gets if the object is a SceneObject, null if it's not yet spawned but is a scene object.
+        /// </summary>
+        public bool? IsSceneObject { get; internal set; }
 
         /// <summary>
-        /// When enabled this gameobject will not be spawned on the client until the scene it was originally spawned inside at the server is fully loaded on the client.
+        /// Delegate type for checking visibility
         /// </summary>
-        [Tooltip("When enabled this gameobject will not be spawned on the client until the scene it was originally spawned inside at the server is fully loaded on the client.")]
-        public bool SceneDelayedSpawn = false;
-
-        internal uint sceneSpawnedInIndex = 0;
-
-        public delegate bool ObserverDelegate(uint clientId);
+        /// <param name="clientId">The clientId to check visibility for</param>
+        public delegate bool VisibilityDelegate(uint clientId);
 
         /// <summary>
         /// Delegate invoked when the MLAPI needs to know if the object should be visible to a client, if null it will assume true
         /// </summary>
-        public ObserverDelegate CheckObjectVisibility = null;
+        public VisibilityDelegate CheckObjectVisibility = null;
         
         /// <summary>
-        /// Wheter or not to destroy this object if it's owner is destroyed.
+        /// Whether or not to destroy this object if it's owner is destroyed.
         /// If false, the objects ownership will be given to the server.
         /// </summary>
         public bool DontDestroyWithOwner;
@@ -153,41 +168,7 @@ namespace MLAPI
                 // Send spawn call
                 observers.Add(clientId);
                 
-                using (PooledBitStream stream = PooledBitStream.Get())
-                {
-                    using (PooledBitWriter writer = PooledBitWriter.Get(stream))
-                    {
-                        writer.WriteBool(false);
-                        writer.WriteUInt32Packed(NetworkId);
-                        writer.WriteUInt32Packed(OwnerClientId);
-                        writer.WriteUInt64Packed(NetworkedPrefabHash);
-
-                        writer.WriteBool(destroyWithScene == null ? true : destroyWithScene.Value);
-                        writer.WriteBool(SceneDelayedSpawn);
-                        writer.WriteUInt32Packed(sceneSpawnedInIndex);
-
-                        writer.WriteSinglePacked(transform.position.x);
-                        writer.WriteSinglePacked(transform.position.y);
-                        writer.WriteSinglePacked(transform.position.z);
-
-                        writer.WriteSinglePacked(transform.rotation.eulerAngles.x);
-                        writer.WriteSinglePacked(transform.rotation.eulerAngles.y);
-                        writer.WriteSinglePacked(transform.rotation.eulerAngles.z);
-
-                        writer.WriteBool(payload != null);
-                        
-                        if (payload != null)
-                        {
-                            writer.WriteInt32Packed((int)payload.Length);
-                        }
-
-                        WriteNetworkedVarData(stream, clientId);
-
-                        if (payload != null) stream.CopyFrom(payload);
-
-                        InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_ADD_OBJECT, "MLAPI_INTERNAL", stream, SecuritySendFlags.None, null);
-                    }
-                }
+                SpawnManager.SendSpawnCallForObject(clientId, this, payload);
             }
         }
 
@@ -207,13 +188,12 @@ namespace MLAPI
             {
                 // Send destroy call
                 observers.Remove(clientId);
-
-
+                
                 using (PooledBitStream stream = PooledBitStream.Get())
                 {
                     using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                     {
-                        writer.WriteUInt32Packed(NetworkId);
+                        writer.WriteUInt64Packed(NetworkId);
 
                         InternalMessageHandler.Send(MLAPIConstants.MLAPI_DESTROY_OBJECT, "MLAPI_INTERNAL", stream, SecuritySendFlags.None, null);
                     }
@@ -231,10 +211,18 @@ namespace MLAPI
         /// Spawns this GameObject across the network. Can only be called from the Server
         /// </summary>
         /// <param name="spawnPayload">The writer containing the spawn payload</param>
-        /// <param name="destroyWithScene">Should the object be destroyd when the scene is changed</param>
-        public void Spawn(Stream spawnPayload = null, bool destroyWithScene = false)
+        public void Spawn(Stream spawnPayload = null)
         {
-            SpawnManager.SpawnObject(this, null, spawnPayload, destroyWithScene);
+            //SpawnManager.SpawnObject(this, null, spawnPayload, destroyWithScene);
+            SpawnManager.SpawnNetworkedObjectLocally(this, SpawnManager.GetNetworkObjectId(), false, false, NetworkingManager.Singleton.ServerClientId, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false);
+
+            for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)
+            {
+                if (observers.Contains(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId))
+                {
+                    SpawnManager.SendSpawnCallForObject(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId, this, spawnPayload);
+                }
+            }
         }
 
         /// <summary>
@@ -253,7 +241,16 @@ namespace MLAPI
         /// <param name="destroyWithScene">Should the object be destroyd when the scene is changed</param>
         public void SpawnWithOwnership(uint clientId, Stream spawnPayload = null, bool destroyWithScene = false)
         {
-            SpawnManager.SpawnObject(this, clientId, spawnPayload, destroyWithScene);
+            //SpawnManager.SpawnObject(this, clientId, spawnPayload, destroyWithScene);
+            SpawnManager.SpawnNetworkedObjectLocally(this, SpawnManager.GetNetworkObjectId(), false, false, clientId, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false);
+
+            for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)
+            {
+                if (observers.Contains(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId))
+                {
+                    SpawnManager.SendSpawnCallForObject(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId, this, spawnPayload);
+                }
+            }
         }
 
         /// <summary>
@@ -263,7 +260,15 @@ namespace MLAPI
         /// <param name="spawnPayload">The writer containing the spawn payload</param>
         public void SpawnAsPlayerObject(uint clientId, Stream spawnPayload = null)
         {
-            SpawnManager.SpawnPlayerObject(this, clientId, spawnPayload);
+            SpawnManager.SpawnNetworkedObjectLocally(this, SpawnManager.GetNetworkObjectId(), false, true, clientId, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false);
+            
+            for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)
+            {
+                if (observers.Contains(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId))
+                {
+                    SpawnManager.SendSpawnCallForObject(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId, this, spawnPayload);
+                }
+            }
         }
 
         /// <summary>

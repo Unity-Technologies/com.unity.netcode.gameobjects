@@ -167,7 +167,7 @@ namespace MLAPI.Serialization
                 } 
                 else 
                 {
-                    WriteUInt32Packed(networkedObject.NetworkId);
+                    WriteUInt64Packed(networkedObject.NetworkId);
                 }
                 return;
             }
@@ -177,7 +177,7 @@ namespace MLAPI.Serialization
                 {
                     throw new ArgumentException("BitWriter cannot write NetworkedObject types with a null value");
                 }
-                WriteUInt32Packed(((NetworkedObject)value).NetworkId);
+                WriteUInt64Packed(((NetworkedObject)value).NetworkId);
                 return;
             } 
             else if (value is NetworkedBehaviour)
@@ -186,7 +186,7 @@ namespace MLAPI.Serialization
                 {
                     throw new ArgumentException("BitWriter cannot write NetworkedBehaviour types with a null value");
                 }
-                WriteUInt32Packed(((NetworkedBehaviour)value).NetworkId);
+                WriteUInt64Packed(((NetworkedBehaviour)value).NetworkId);
                 WriteUInt16Packed(((NetworkedBehaviour)value).GetBehaviourId());
                 return;
             } 

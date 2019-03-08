@@ -130,11 +130,9 @@ public class NetworkingManagerEditor : Editor
             EditorGUILayout.Space();
             channelsList.DoLayoutList();
             EditorGUILayout.Space();
-            if (networkingManager.NetworkConfig.EnableSceneSwitching)
-            {
-                registeredScenesList.DoLayoutList();
-                EditorGUILayout.Space();
-            }
+
+            registeredScenesList.DoLayoutList();
+            EditorGUILayout.Space();
 
             serializedObject.ApplyModifiedProperties();
             base.OnInspectorGUI();

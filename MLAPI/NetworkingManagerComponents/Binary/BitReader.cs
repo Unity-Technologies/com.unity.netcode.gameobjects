@@ -133,7 +133,8 @@ namespace MLAPI.Serialization
                 return ReadInt32Packed();
             if (type == typeof(GameObject))
             {
-                uint networkId = ReadUInt32Packed();
+                ulong networkId = ReadUInt64Packed();
+                
                 if (SpawnManager.SpawnedObjects.ContainsKey(networkId)) 
                 {
                     return SpawnManager.SpawnedObjects[networkId].gameObject;
@@ -147,7 +148,8 @@ namespace MLAPI.Serialization
             }
             if (type == typeof(NetworkedObject))
             {
-                uint networkId = ReadUInt32Packed();
+                ulong networkId = ReadUInt64Packed();
+                
                 if (SpawnManager.SpawnedObjects.ContainsKey(networkId)) 
                 {
                     return SpawnManager.SpawnedObjects[networkId];
@@ -161,7 +163,7 @@ namespace MLAPI.Serialization
             }
             if (type == typeof(NetworkedBehaviour))
             {
-                uint networkId = ReadUInt32Packed();
+                ulong networkId = ReadUInt64Packed();
                 ushort behaviourId = ReadUInt16Packed();
                 if (SpawnManager.SpawnedObjects.ContainsKey(networkId)) 
                 {
