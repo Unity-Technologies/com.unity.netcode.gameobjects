@@ -22,7 +22,7 @@
 
   <PropertyGroup Condition="$(Configuration.Contains('Lite'))">
     <DefineConstants>$(DefineConstants);DISABLE_CRYPTOGRAPHY</DefineConstants>
-    <OutputPath>bin\Lite\$(Configuration)\</OutputPath>
+    <OutputPath>bin\Lite\$(Configuration.Replace('_Lite',''))\</OutputPath>
   </PropertyGroup>
 
   <PropertyGroup Condition="$(Configuration.Contains('Debug'))">
