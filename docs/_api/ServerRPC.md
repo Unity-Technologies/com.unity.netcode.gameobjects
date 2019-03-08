@@ -8,6 +8,10 @@ permalink: /api/server-rpc/
 	<p style="font-size: 20px;"><b>Namespace:</b> MLAPI</p>
 	<p style="font-size: 20px;"><b>Assembly:</b> MLAPI.dll</p>
 </div>
+<p>Attribute used on methods to me marked as ServerRPC
+            ServerRPC methods can be requested from a client and will execute on the server
+            Remember that a host is a server and a client</p>
+
 <div>
 	<h3 markdown="1">Inherited Properties</h3>
 	<div style="line-height: 1;">
@@ -20,6 +24,7 @@ permalink: /api/server-rpc/
 	<h3 markdown="1">Public Fields</h3>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``bool`` RequireOwnership;</b></h4>
+		<p>Whether or not the ServerRPC should only be run if executed by the owner of the object</p>
 	</div>
 </div>
 <br>

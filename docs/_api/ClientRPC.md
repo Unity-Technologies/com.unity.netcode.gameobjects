@@ -8,6 +8,10 @@ permalink: /api/client-rpc/
 	<p style="font-size: 20px;"><b>Namespace:</b> MLAPI</p>
 	<p style="font-size: 20px;"><b>Assembly:</b> MLAPI.dll</p>
 </div>
+<p>Attribute used on methods to me marked as ClientRPC
+            ClientRPC methods can be requested from the server and will execute on a client
+            Remember that a host is a server and a client</p>
+
 <div>
 	<h3 markdown="1">Inherited Properties</h3>
 	<div style="line-height: 1;">

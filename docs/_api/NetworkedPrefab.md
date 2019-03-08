@@ -13,11 +13,11 @@ permalink: /api/networked-prefab/
 <div>
 	<h3 markdown="1">Public Fields</h3>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``GameObject`` prefab;</b></h4>
+		<h4 markdown="1"><b>public ``GameObject`` Prefab;</b></h4>
 		<p>The gameobject of the prefab</p>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``bool`` playerPrefab;</b></h4>
+		<h4 markdown="1"><b>public ``bool`` PlayerPrefab;</b></h4>
 		<p>Wheter or not this is a playerPrefab</p>
 	</div>
 </div>
