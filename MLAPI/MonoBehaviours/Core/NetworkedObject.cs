@@ -22,11 +22,11 @@ namespace MLAPI
             if (string.IsNullOrEmpty(PrefabHashGenerator))
             {
                 PrefabHash = 0;
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The NetworkedObject " + gameObject.name + " does not have a PrefabHashGenerator. It has been set to the gameObject name");
+                PrefabHashGenerator = gameObject.name;
             }
-            else
-            {
-                PrefabHash = PrefabHashGenerator.GetStableHash64();
-            }
+            
+            PrefabHash = PrefabHashGenerator.GetStableHash64();
         }
 
         /// <summary>
