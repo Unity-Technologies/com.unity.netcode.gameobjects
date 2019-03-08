@@ -119,10 +119,10 @@ namespace MLAPI.Configuration
         /// If you dynamically add prefabs at runtime, turn this OFF
         /// </summary>
         public bool ForceSamePrefabs = true;
-
-        // TODO: XML
-        // If true, replace on spawn
-        // Else, cross find
+        /// <summary>
+        /// If true, all NetworkedObject's need to be prefabs and all scene objects will be replaced on server side which causes all serialization to be lost. Useful for multi project setups
+        /// If false, Only non scene objects have to be prefabs. Scene objects will be matched using their PrefabInstanceId which can be precomputed globally for a scene at build time. Useful for single projects
+        /// </summary>
         public bool UsePrefabSync = false;
         /// <summary>
         /// Decides how many bytes to use for Rpc messaging. Leave this to 2 bytes unless you are facing hash collisions
