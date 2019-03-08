@@ -124,6 +124,26 @@ namespace MLAPI.Components
 
             return -1;
         }
+
+        /// <summary>
+        /// Returns the prefab hash for the networked prefab with a given index
+        /// </summary>
+        /// <param name="index">The networked prefab index</param>
+        /// <returns>The prefab hash for the given prefab index</returns>
+        public static ulong GetPrefabHashFromIndex(int index)
+        {
+            return NetworkingManager.Singleton.NetworkConfig.NetworkedPrefabs[index].Hash;
+        }
+
+        /// <summary>
+        /// Returns the prefab hash for a given prefab hash generator
+        /// </summary>
+        /// <param name="generator">The prefab hash generator</param>
+        /// <returns>The hash for the given generator</returns>
+        public static ulong GetPrefabHashFromGenerator(string generator)
+        {
+            return generator.GetStableHash64();
+        }
         
         /// <summary>
         /// Returns the local player object or null if one does not exist
