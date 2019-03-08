@@ -240,8 +240,6 @@ namespace MLAPI.Components
                             }
                         }
                         
-                        Debug.LogError("UnloadClient" + " pos: " +  stream.Position + " len:" + stream.Length);
-
                         InternalMessageHandler.Send(NetworkingManager.Singleton.ConnectedClientsList[j].ClientId, MLAPIConstants.MLAPI_SWITCH_SCENE, "MLAPI_INTERNAL", stream, SecuritySendFlags.None, null);
                     }
                 }
@@ -261,8 +259,6 @@ namespace MLAPI.Components
             if (NetworkingManager.Singleton.NetworkConfig.UsePrefabSync)
             {
                 SpawnManager.DestroySceneObjects();
-
-                Debug.LogError("UnloadClient" + " pos: " +  objectStream.Position + " len:" + objectStream.Length);
                 
                 using (PooledBitReader reader = PooledBitReader.Get(objectStream))
                 {
