@@ -5,7 +5,6 @@
     <TargetFrameworks>net35;net471;netstandard2.0</TargetFrameworks>
     <AssemblyTitle>MLAPI-Editor</AssemblyTitle>
     <Product>MLAPI-Editor</Product>
-    <Copyright>Copyright ©  2018</Copyright>
     <LangVersion>7</LangVersion>
   </PropertyGroup>
   <ItemGroup>
