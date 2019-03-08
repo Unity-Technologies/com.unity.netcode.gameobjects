@@ -41,7 +41,7 @@ namespace UnityEditor
             {
                 EditorGUILayout.LabelField("PrefabName: ", networkedObject.PrefabHashGenerator, EditorStyles.label);
                 EditorGUILayout.LabelField("PrefabHash: ", networkedObject.PrefabHash.ToString(), EditorStyles.label);
-                EditorGUILayout.LabelField("InstanceId: ", networkedObject.PrefabInstanceId.ToString(), EditorStyles.label);
+                EditorGUILayout.LabelField("InstanceId: ", networkedObject.NetworkedInstanceId.ToString(), EditorStyles.label);
                 EditorGUILayout.LabelField("NetworkId: ", networkedObject.NetworkId.ToString(), EditorStyles.label);
                 EditorGUILayout.LabelField("OwnerId: ", networkedObject.OwnerClientId.ToString(), EditorStyles.label);
                 EditorGUILayout.LabelField("IsSpawned: ", networkedObject.IsSpawned.ToString(), EditorStyles.label);

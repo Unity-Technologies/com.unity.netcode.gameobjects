@@ -1094,7 +1094,7 @@ namespace MLAPI
 
                                 if (_observedObjects[i].IsSceneObject == null || _observedObjects[i].IsSceneObject.Value == true)
                                 {
-                                    writer.WriteUInt64Packed(_observedObjects[i].PrefabInstanceId);
+                                    writer.WriteUInt64Packed(_observedObjects[i].NetworkedInstanceId);
                                 }
                                 else
                                 {

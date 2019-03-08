@@ -55,8 +55,26 @@ namespace MLAPI
         }
         private uint? _ownerClientId = null;
         
-        public ulong PrefabInstanceId;
+        /// <summary>
+        /// InstanceId is the id that is unique to the object and scene for a scene object when UsePrefabSync is false.
+        /// If UsePrefabSync is true or if it's used on non scene objects, this has no effect.
+        /// Should not be set manually
+        /// </summary>
+        [HideInInspector]
+        [SerializeField]
+        public ulong NetworkedInstanceId;
+        /// <summary>
+        /// The Prefab unique hash. This should not be set my the user but rather changed by editing the PrefabHashGenerator.
+        /// It has to be the same for all instances of a prefab
+        /// </summary>
+        [HideInInspector]
+        [SerializeField]
         public ulong PrefabHash;
+        /// <summary>
+        /// The generator used to change the PrefabHash. This should be set the same for all instances of a prefab.
+        /// It has to be unique in relation to other prefabs
+        /// </summary>
+        [SerializeField]
         public string PrefabHashGenerator;
         [Obsolete("Use IsPlayerObject instead", false)]
         public bool isPlayerObject => IsPlayerObject;

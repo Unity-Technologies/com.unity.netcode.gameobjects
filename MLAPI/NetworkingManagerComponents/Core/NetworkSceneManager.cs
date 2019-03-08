@@ -232,7 +232,7 @@ namespace MLAPI.Components
                                         writer.WriteUInt64Packed(newSceneObjects[i].NetworkId);
                                         writer.WriteUInt32Packed(newSceneObjects[i].OwnerClientId);
 
-                                        writer.WriteUInt64Packed(newSceneObjects[i].PrefabInstanceId);
+                                        writer.WriteUInt64Packed(newSceneObjects[i].NetworkedInstanceId);
 
                                         newSceneObjects[i].WriteNetworkedVarData(stream, NetworkingManager.Singleton.ConnectedClientsList[j].ClientId);
                                     }

@@ -311,7 +311,7 @@ namespace MLAPI.Components
 
                         if (netObject.IsSceneObject == null || netObject.IsSceneObject.Value)
                         {
-                            writer.WriteUInt64Packed(netObject.PrefabInstanceId);
+                            writer.WriteUInt64Packed(netObject.NetworkedInstanceId);
                         }
                         else
                         {
@@ -442,7 +442,7 @@ namespace MLAPI.Components
             {
                 if (networkedObjects[i].IsSceneObject == null)
                 {
-                    pendingSoftSyncObjects.Add(networkedObjects[i].PrefabInstanceId, networkedObjects[i]);
+                    pendingSoftSyncObjects.Add(networkedObjects[i].NetworkedInstanceId, networkedObjects[i]);
                 }
             }
         }
