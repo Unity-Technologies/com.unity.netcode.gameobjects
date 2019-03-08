@@ -26,6 +26,14 @@ artifacts:
 
 image: Visual Studio 2017
 
+install: 
+  - cd C:\
+  - cmd: mkdir testOutput
+  - if not exist opencover.zip appveyor DownloadFile "https://github.com/OpenCover/opencover/releases/download/4.6.519/opencover.4.6.519.zip" -FileName opencover.zip
+  - 7z x -y opencover.zip -o"C:\opencover" > nul
+
+before_build:
+  - cd %appveyor_build_folder%
 
 for:
 -
@@ -33,7 +41,7 @@ for:
     only:
       - configuration: Debug
   test_script:
-  - .\packages\OpenCover.4.6.519\tools\OpenCover.Console.exe -returntargetcode -register:user -target:"nunit3-console.exe" -targetargs:"MLAPI-Tests\bin\Debug\net35\MLAPI-Tests.dll" -output:"coverage.xml" -filter:"+[MLAPI*]* -[MLAPI-Tests*]* "
+  - C:\OpenCover\OpenCover.Console.exe -returntargetcode -register:user -target:"nunit3-console.exe" -targetargs:"MLAPI-Tests\bin\Debug\net35\MLAPI-Tests.dll" -output:"coverage.xml" -filter:"+[MLAPI*]* -[MLAPI-Tests*]* "
   artifacts:
   - path: 'MLAPI\bin\Debug\net35\MLAPI*'
 -
@@ -41,7 +49,7 @@ for:
     only:
       - configuration: Debug_Lite
   test_script:
-  - .\packages\OpenCover.4.6.519\tools\OpenCover.Console.exe -returntargetcode -register:user -target:"nunit3-console.exe" -targetargs:"MLAPI-Tests\bin\Lite\Debug\net35\MLAPI-Tests.dll" -output:"coverage.xml" -filter:"+[MLAPI*]* -[MLAPI-Tests*]* "
+  - C:\OpenCover\OpenCover.Console.exe -returntargetcode -register:user -target:"nunit3-console.exe" -targetargs:"MLAPI-Tests\bin\Lite\Debug\net35\MLAPI-Tests.dll" -output:"coverage.xml" -filter:"+[MLAPI*]* -[MLAPI-Tests*]* "
   artifacts:
   - path: 'MLAPI\bin\Lite\Debug\net35\MLAPI*'
 -
@@ -49,7 +57,7 @@ for:
     only:
       - configuration: Release
   test_script:
-  - .\packages\OpenCover.4.6.519\tools\OpenCover.Console.exe -returntargetcode -register:user -target:"nunit3-console.exe" -targetargs:"MLAPI-Tests\bin\Release\net35\MLAPI-Tests.dll" -output:"coverage.xml" -filter:"+[MLAPI*]* -[MLAPI-Tests*]* "
+  - C:\OpenCover\OpenCover.Console.exe -returntargetcode -register:user -target:"nunit3-console.exe" -targetargs:"MLAPI-Tests\bin\Release\net35\MLAPI-Tests.dll" -output:"coverage.xml" -filter:"+[MLAPI*]* -[MLAPI-Tests*]* "
   artifacts:
   - path: 'MLAPI\bin\Release\net35\MLAPI*'
 -
@@ -57,7 +65,7 @@ for:
     only:
       - configuration: Release_Lite
   test_script:
-  - .\packages\OpenCover.4.6.519\tools\OpenCover.Console.exe -returntargetcode -register:user -target:"nunit3-console.exe" -targetargs:"MLAPI-Tests\bin\Lite\Release\net35\MLAPI-Tests.dll" -output:"coverage.xml" -filter:"+[MLAPI*]* -[MLAPI-Tests*]* "
+  - C:\OpenCover\OpenCover.Console.exe -returntargetcode -register:user -target:"nunit3-console.exe" -targetargs:"MLAPI-Tests\bin\Lite\Release\net35\MLAPI-Tests.dll" -output:"coverage.xml" -filter:"+[MLAPI*]* -[MLAPI-Tests*]* "
   artifacts:
   - path: 'MLAPI\bin\Lite\Release\net35\MLAPI*'
 
