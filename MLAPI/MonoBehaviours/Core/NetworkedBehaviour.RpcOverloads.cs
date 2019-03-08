@@ -157,7 +157,9 @@ namespace MLAPI
 		public void InvokeClientRpc(string methodName, List<uint> clientIds, string channel = null, SecuritySendFlags security = SecuritySendFlags.None)
 		{
 			SendClientRPCBoxed(HashMethodName(methodName), clientIds, channel, security);
-		}public void InvokeClientRpc(RpcMethod method, List<uint> clientIds, string channel = null, SecuritySendFlags security = SecuritySendFlags.None)
+		}
+		
+		public void InvokeClientRpc(RpcMethod method, List<uint> clientIds, string channel = null, SecuritySendFlags security = SecuritySendFlags.None)
 		{
 			SendClientRPCBoxed(HashMethodName(method.Method.Name), clientIds, channel, security);
 		}
@@ -3151,11 +3153,21 @@ namespace MLAPI
 		}
 		#endregion
 		#region PERFORMANCE SERVER RPC
+		[Obsolete("Use InvokeServerRpcPerformance instead")]
 		public void InvokeServerRpc(RpcDelegate method, Stream stream, string channel = null, SecuritySendFlags security = SecuritySendFlags.None)
 		{
 			SendServerRPCPerformance(HashMethodName(method.Method.Name), stream, channel, security);
 		}
+		[Obsolete("Use InvokeServerRpcPerformance instead")]
 		public void InvokeServerRpc(string methodName, Stream stream, string channel = null, SecuritySendFlags security = SecuritySendFlags.None)
+		{
+			SendServerRPCPerformance(HashMethodName(methodName), stream, channel, security);
+		}
+		public void InvokeServerRpcPerformance(RpcDelegate method, Stream stream, string channel = null, SecuritySendFlags security = SecuritySendFlags.None)
+		{
+			SendServerRPCPerformance(HashMethodName(method.Method.Name), stream, channel, security);
+		}
+		public void InvokeServerRpcPerformance(string methodName, Stream stream, string channel = null, SecuritySendFlags security = SecuritySendFlags.None)
 		{
 			SendServerRPCPerformance(HashMethodName(methodName), stream, channel, security);
 		}
