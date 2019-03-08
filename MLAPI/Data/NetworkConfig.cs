@@ -129,10 +129,6 @@ namespace MLAPI.Configuration
         /// </summary>
         public HashSize RpcHashSize = HashSize.VarIntTwoBytes;
         /// <summary>
-        /// Decides how many bytes to use for Prefab names. Leave this to 2 bytes unless you are facing hash collisions
-        /// </summary>
-        public HashSize PrefabHashSize = HashSize.VarIntTwoBytes;
-        /// <summary>
         /// Wheter or not to enable encryption
         /// The amount of seconds to wait on all clients to load requested scene before the SwitchSceneProgress onComplete callback, that waits for all clients to complete loading, is called anyway.
         /// </summary>
@@ -230,6 +226,8 @@ namespace MLAPI.Configuration
                     writer.WriteInt32Packed(config.LoadSceneTimeOut);
                     writer.WriteBool(config.EnableTimeResync);
                     writer.WriteBits((byte)config.RpcHashSize, 3);
+                    writer.WriteBool(ForceSamePrefabs);
+                    writer.WriteBool(UsePrefabSync);
                     stream.PadStream();
 
                     return Convert.ToBase64String(stream.ToArray());
@@ -288,6 +286,8 @@ namespace MLAPI.Configuration
                     config.LoadSceneTimeOut = reader.ReadInt32Packed();
                     config.EnableTimeResync = reader.ReadBool();
                     config.RpcHashSize = (HashSize)reader.ReadBits(3);
+                    config.ForceSamePrefabs = reader.ReadBool();
+                    config.UsePrefabSync = reader.ReadBool();
                 }
             }
         }
@@ -334,10 +334,10 @@ namespace MLAPI.Configuration
                     }
 
                     writer.WriteBool(ForceSamePrefabs);
+                    writer.WriteBool(UsePrefabSync);
                     writer.WriteBool(EnableEncryption);
                     writer.WriteBool(SignKeyExchange);
                     writer.WriteBits((byte)RpcHashSize, 3);
-                    writer.WriteBits((byte)PrefabHashSize, 3);
                     stream.PadStream();
 
                     if (cache)

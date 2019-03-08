@@ -109,20 +109,6 @@ namespace MLAPI.Components
             }
         }
 
-        internal static ulong GetPrefabHash(string prefabName)
-        {
-            HashSize mode = NetworkingManager.Singleton.NetworkConfig.PrefabHashSize;
-
-            if (mode == HashSize.VarIntTwoBytes)
-                return prefabName.GetStableHash16();
-            if (mode == HashSize.VarIntFourBytes)
-                return prefabName.GetStableHash32();
-            if (mode == HashSize.VarIntEightBytes)
-                return prefabName.GetStableHash64();
-
-            return 0;
-        }
-
         /// <summary>
         /// Gets the prefab index of a given prefab hash
         /// </summary>
