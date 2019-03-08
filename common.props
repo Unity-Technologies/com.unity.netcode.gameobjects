@@ -28,6 +28,7 @@
   <PropertyGroup Condition="$(Configuration.Contains('Debug'))">
     <DefineConstants>$(DefineConstants);DEBUG;TRACE</DefineConstants>
     <DebugSymbols>true</DebugSymbols>
+    <DebugType>Full</DebugType>
     <Optimize>false</Optimize>
   </PropertyGroup>
 </Project>
