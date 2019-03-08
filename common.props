@@ -1,7 +1,6 @@
 <Project>
   <PropertyGroup>
     <Configurations>Debug;Release;Debug_Lite;Release_Lite</Configurations>
-    <Copyright>Copyright © Albin Corén 2018</Copyright>
     <LangVersion>7</LangVersion>
     <DebugSymbols>false</DebugSymbols>
     <DebugType>None</DebugType>
