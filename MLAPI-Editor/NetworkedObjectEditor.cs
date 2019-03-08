@@ -39,7 +39,7 @@ namespace UnityEditor
             }
             else if (networkedObject.IsSpawned)
             {
-                EditorGUILayout.LabelField("PrefabName: ", networkedObject.PrefabHashGenerator, EditorStyles.label);
+                EditorGUILayout.LabelField("PrefabHashGenerator: ", networkedObject.PrefabHashGenerator, EditorStyles.label);
                 EditorGUILayout.LabelField("PrefabHash: ", networkedObject.PrefabHash.ToString(), EditorStyles.label);
                 EditorGUILayout.LabelField("InstanceId: ", networkedObject.NetworkedInstanceId.ToString(), EditorStyles.label);
                 EditorGUILayout.LabelField("NetworkId: ", networkedObject.NetworkId.ToString(), EditorStyles.label);
@@ -49,6 +49,7 @@ namespace UnityEditor
                 EditorGUILayout.LabelField("IsOwner: ", networkedObject.IsOwner.ToString(), EditorStyles.label);
 				EditorGUILayout.LabelField("IsOwnedByServer: ", networkedObject.IsOwnedByServer.ToString(), EditorStyles.label);
                 EditorGUILayout.LabelField("IsPlayerObject: ", networkedObject.IsPlayerObject.ToString(), EditorStyles.label);
+                EditorGUILayout.LabelField("IsSceneObject: ", (networkedObject.IsSceneObject == null ? "Null" : networkedObject.IsSceneObject.Value.ToString()), EditorStyles.label);
 
                 if (NetworkingManager.Singleton != null && NetworkingManager.Singleton.IsServer)
                 {

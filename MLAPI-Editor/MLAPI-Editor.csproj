@@ -58,6 +58,7 @@
     <Compile Include="NetworkedBehaviourEditor.cs" />
     <Compile Include="NetworkedObjectEditor.cs" />
     <Compile Include="NetworkingManagerEditor.cs" />
+    <Compile Include="PostProcessScene.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TrackedObjectEditor.cs" />
   </ItemGroup>
