@@ -135,7 +135,7 @@ namespace MLAPI
         /// Delegate type called when connection has been approved
         /// </summary>
         /// <param name="clientId">The clientId of the approved client</param>
-        /// <param name="prefabId">The prefabId to use for the client</param>
+        /// <param name="prefabHash">The prefabHash to use for the client</param>
         /// <param name="approved">Wheter or not the client was approved</param>
         /// <param name="position">The position to spawn the client at</param>
         /// <param name="rotation">The rotation to spawn the client with</param>
