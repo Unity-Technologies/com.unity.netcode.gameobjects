@@ -2,12 +2,11 @@
   <Import Project="../common.props" />
   <PropertyGroup>
     <RootNamespace>MLAPI_Tests</RootNamespace>
-    <TargetFrameworks>net35;net471;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>net35;net471;net45;netstandard2.0</TargetFrameworks>
     <LangVersion>7</LangVersion>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="NUnit" Version="3.10.1" />
-    <PackageReference Include="OpenCover" Version="4.6.519" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MLAPI\MLAPI.csproj" />

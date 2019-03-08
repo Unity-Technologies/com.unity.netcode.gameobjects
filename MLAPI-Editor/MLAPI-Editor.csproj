@@ -2,7 +2,7 @@
   <Import Project="../common.props" />
   <PropertyGroup>
     <RootNamespace>MLAPI_Editor</RootNamespace>
-    <TargetFrameworks>net35;net471;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>net35;net471;net45;netstandard2.0</TargetFrameworks>
     <AssemblyTitle>MLAPI-Editor</AssemblyTitle>
     <Product>MLAPI-Editor</Product>
     <LangVersion>7</LangVersion>

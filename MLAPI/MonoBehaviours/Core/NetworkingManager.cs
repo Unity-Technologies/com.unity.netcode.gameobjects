@@ -915,9 +915,6 @@ namespace MLAPI
             }
         }
 
-#if NET45
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-#endif
         internal void DisconnectClient(uint clientId)
         {
             if (!IsServer)
