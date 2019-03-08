@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using MLAPI.Components;
 using MLAPI.Data;
+using MLAPI.Internal;
 using MLAPI.Logging;
 using MLAPI.Serialization;
 using UnityEngine;
@@ -167,7 +168,7 @@ namespace MLAPI
                 // Send spawn call
                 observers.Add(clientId);
                 
-                // TODO: Send show call
+                SpawnManager.SendSpawnCallForObject(clientId, this, payload);
             }
         }
 
@@ -188,7 +189,15 @@ namespace MLAPI
                 // Send destroy call
                 observers.Remove(clientId);
                 
-                // TODO: Send hide call
+                using (PooledBitStream stream = PooledBitStream.Get())
+                {
+                    using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                    {
+                        writer.WriteUInt64Packed(NetworkId);
+
+                        InternalMessageHandler.Send(MLAPIConstants.MLAPI_DESTROY_OBJECT, "MLAPI_INTERNAL", stream, SecuritySendFlags.None, null);
+                    }
+                }
             }
         }
         
