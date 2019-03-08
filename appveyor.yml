@@ -10,9 +10,6 @@ skip_commits:
   files:
     - docs/*
 
-before_build:
-  - nuget restore
-
 build:
   project: MLAPI.sln
   verbosity: minimal
@@ -34,6 +31,7 @@ install:
 
 before_build:
   - cd %appveyor_build_folder%
+  - nuget restore
 
 for:
 -
