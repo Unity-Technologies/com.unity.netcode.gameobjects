@@ -371,43 +371,6 @@ namespace MLAPI.Internal
                 objectStream.Position = 0;
                 
                 NetworkSceneManager.OnSceneSwitch(sceneIndex, switchSceneGuid, objectStream);
-                
-                if (NetworkingManager.Singleton.NetworkConfig.UsePrefabSync)
-                {
-                    /*
-                    uint count = reader.ReadUInt32Packed();
-
-                    for (int i = 0; i < count; i++)
-                    {
-                        newSceneObjects.Add(new PendingNetworkedObject()
-                        {
-                            IsPlayerObject = reader.ReadBool(),
-                            NetworkId = reader.ReadUInt64Packed(),
-                            OwnerId = reader.ReadUInt32Packed(),
-                            PrefabHash = reader.ReadUInt64Packed(),
-                            Position = new Vector3(reader.ReadSinglePacked(), reader.ReadSinglePacked(), reader.ReadSinglePacked()),
-                            Rotation = Quaternion.Euler(reader.ReadSinglePacked(), reader.ReadSinglePacked(), reader.ReadSinglePacked())
-                        });
-                    }
-                    */
-                    
-                    //NetworkSceneManager.OnSceneSwitch(sceneIndex, switchSceneGuid, objectStream);
-                }
-                else
-                {
-                    /*
-                    Dictionary<ulong, ulong> newSceneObjects = new Dictionary<ulong, ulong>();
-
-                    uint count = reader.ReadUInt32Packed();
-
-                    for (int i = 0; i < count; i++)
-                    {
-                        newSceneObjects.Add(reader.ReadUInt64Packed(), reader.ReadUInt64Packed());
-                    }
-                    */
-                    
-                   // NetworkSceneManager.OnSceneSwitch(sceneIndex, switchSceneGuid, objectStream);
-                }
             }
         }
 
