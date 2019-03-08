@@ -9,8 +9,8 @@ However, when ConnectionApproval is true you are also required to provide a call
 ```csharp
 private void Setup() 
 {
-    NetworkingManager.singleton.ConnectionApprovalCallback = ApprovalCheck;
-    NetworkingManager.singleton.StartHost();
+    NetworkingManager.Singleton.ConnectionApprovalCallback = ApprovalCheck;
+    NetworkingManager.Singleton.StartHost();
 }
 
 private void ApprovalCheck(byte[] connectionData, uint clientId, MLAPI.NetworkingManager.ConnectionApprovedDelegate callback)
@@ -18,17 +18,17 @@ private void ApprovalCheck(byte[] connectionData, uint clientId, MLAPI.Networkin
     //Your logic here
     bool approve = true;
 
-    int prefabId = SpawnManager.GetNetworkedPrefabIndexOfName("myPrefabName"); // The prefab index. Use -1 to use the default player prefab.
+    ulong? prefabHash = SpawnManager.GetPrefabHashFromGenerator("MyPrefabHashGenerator"); // The prefab hash. Use null to use the default player prefab
     
     //If approve is true, the connection gets added. If it's false. The client gets disconnected
-    callback(clientId, prefabId, approve, positionToSpawnAt, rotationToSpawnWith);
+    callback(clientId, prefabHash, approve, positionToSpawnAt, rotationToSpawnWith);
 }
 ```
 ### Connection data
 The connectionData parameter is any custom data of your choice that the client should send to the server. Usually, this should be some sort of ticket, room password or similar that will decide if a connection should be approved or not. The connectionData is specified on the Client side in the NetworkingConfig supplied when connecting. Example:
 ```csharp
-NetworkingManager.singleton.NetworkConfig.ConnectionData = System.Text.Encoding.ASCII.GetBytes("room password");
-NetworkingManager.singleton.StartClient();
+NetworkingManager.Singleton.NetworkConfig.ConnectionData = System.Text.Encoding.ASCII.GetBytes("room password");
+NetworkingManager.Singleton.StartClient();
 ```
 The ConnectionData will then be passed to the server and it will decide if the client will be approved or not.
 
