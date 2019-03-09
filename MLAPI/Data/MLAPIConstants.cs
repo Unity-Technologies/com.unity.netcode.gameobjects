@@ -6,7 +6,7 @@
     public static class MLAPIConstants
     {
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-        public const string MLAPI_PROTOCOL_VERSION = "6.0.0";
+        public const string MLAPI_PROTOCOL_VERSION = "6.0.1";
 
         public const byte MLAPI_CERTIFICATE_HAIL = 0;
         public const byte MLAPI_CERTIFICATE_HAIL_RESPONSE = 1;
