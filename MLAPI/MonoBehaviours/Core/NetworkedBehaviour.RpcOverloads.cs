@@ -3198,7 +3198,7 @@ namespace MLAPI
 		{
 			SendClientRPCPerformance(HashMethodName(methodName), null, stream, channel, security);
 		}
-		public void InvokeClientRpcOnEveryoneExcepPerformancet(string methodName, uint clientIdToIgnore, Stream stream, string channel = null, SecuritySendFlags security = SecuritySendFlags.None)
+		public void InvokeClientRpcOnEveryoneExceptPerformance(string methodName, uint clientIdToIgnore, Stream stream, string channel = null, SecuritySendFlags security = SecuritySendFlags.None)
 		{
 			SendClientRPCPerformance(HashMethodName(methodName), stream, clientIdToIgnore, channel, security);
 		}
