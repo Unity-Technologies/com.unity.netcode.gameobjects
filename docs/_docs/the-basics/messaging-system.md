@@ -95,7 +95,7 @@ private void Update()
                 {
                     writer.WriteInt32Packed(Random.Range(-50, 50));
 
-                    InvokeClientRpcOnEveryone(MyClientRPC, stream);
+                    InvokeClientRpcOnEveryonePerformance(MyClientRPC, stream);
                 }
             }
         }
@@ -107,7 +107,7 @@ private void Update()
                 {
                     writer.WriteInt32Packed(Random.Range(-50, 50));
 
-                    InvokeServerRpc(MyServerRpc, stream);
+                    InvokeServerRpcPerformance(MyServerRpc, stream);
                 }
             }
         }
