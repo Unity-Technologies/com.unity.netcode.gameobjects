@@ -58,11 +58,11 @@ public class NetworkingManagerEditor : Editor
 
             EditorGUI.LabelField(new Rect(rect.x, rect.y, firstLabelWidth, EditorGUIUtility.singleLineHeight), "Prefab");
             EditorGUI.PropertyField(new Rect(rect.x + firstLabelWidth, rect.y, rect.width - firstLabelWidth - secondLabelWidth - secondFieldWidth - reduceFirstWidth,
-                EditorGUIUtility.singleLineHeight), element.FindPropertyRelative("prefab"), GUIContent.none);
+                EditorGUIUtility.singleLineHeight), element.FindPropertyRelative("Prefab"), GUIContent.none);
 
             EditorGUI.LabelField(new Rect(rect.width - secondLabelWidth - secondFieldWidth, rect.y, secondLabelWidth, EditorGUIUtility.singleLineHeight), "Default Player Prefab");
             EditorGUI.PropertyField(new Rect(rect.width - secondFieldWidth, rect.y, secondFieldWidth,
-                EditorGUIUtility.singleLineHeight), element.FindPropertyRelative("playerPrefab"), GUIContent.none);
+                EditorGUIUtility.singleLineHeight), element.FindPropertyRelative("PlayerPrefab"), GUIContent.none);
         };
 
         networkPrefabsList.drawHeaderCallback = (Rect rect) => {
