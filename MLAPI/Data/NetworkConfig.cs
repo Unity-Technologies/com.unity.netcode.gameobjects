@@ -29,18 +29,6 @@ namespace MLAPI.Configuration
         /// </summary>
         public IUDPTransport NetworkTransport = null;
         /// <summary>
-        /// Only used if the transport is MLPAI-Relay
-        /// </summary>
-        public string RelayAddress = "127.0.0.1";
-        /// <summary>
-        /// Only used if the transport is MLPAI-Relay
-        /// </summary>
-        public ushort RelayPort = 8888;
-        /// <summary>
-        /// Wheter or not to use the relay
-        /// </summary>
-        public bool RelayEnabled = true;
-        /// <summary>
         /// Channels used by the NetworkedTransport
         /// </summary>
         [HideInInspector]
