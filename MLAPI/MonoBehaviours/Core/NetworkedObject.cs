@@ -325,7 +325,7 @@ namespace MLAPI
                 if(_childNetworkedBehaviours == null)
                 {
                     _childNetworkedBehaviours = new List<NetworkedBehaviour>();
-                    NetworkedBehaviour[] behaviours = GetComponentsInChildren<NetworkedBehaviour>();
+                    NetworkedBehaviour[] behaviours = GetComponentsInChildren<NetworkedBehaviour>(true);
                     for (int i = 0; i < behaviours.Length; i++)
                     {
                         if (behaviours[i].NetworkedObject == this)
