@@ -336,11 +336,18 @@ namespace MLAPI
             }
         }
 
-        internal static void NetworkedVarPrepareSend()
+        private static int _lastProcessedBehaviour = 0;
+        internal static void NetworkedBehaviourUpdate()
         {
-            for (int i = 0; i < NetworkedBehaviours.Count; i++)
+            int amountToProcess = NetworkingManager.Singleton.NetworkConfig.MaxBehaviourUpdatesPerTick <= 0 ? NetworkedBehaviours.Count : Mathf.Max(NetworkingManager.Singleton.NetworkConfig.MaxBehaviourUpdatesPerTick, NetworkedBehaviours.Count);
+
+            for (int i = 0; i < amountToProcess; i++)
             {
-                NetworkedBehaviours[i].NetworkedVarUpdate();
+                if (_lastProcessedBehaviour >= NetworkedBehaviours.Count)
+                    _lastProcessedBehaviour = 0;
+
+                NetworkedBehaviours[_lastProcessedBehaviour].NetworkedVarUpdate();
+                _lastProcessedBehaviour++;
             }
         }
         

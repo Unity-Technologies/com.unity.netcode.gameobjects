@@ -600,7 +600,7 @@ namespace MLAPI
             {
                 if((NetworkTime - lastSendTickTime >= (1f / NetworkConfig.SendTickrate)) || NetworkConfig.SendTickrate <= 0)
                 {
-                    NetworkedObject.NetworkedVarPrepareSend();
+                    NetworkedObject.NetworkedBehaviourUpdate();
                     foreach (KeyValuePair<uint, NetworkedClient> pair in ConnectedClients)
                     {
                         byte error;

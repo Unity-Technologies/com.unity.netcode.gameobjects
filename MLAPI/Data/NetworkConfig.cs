@@ -70,6 +70,12 @@ namespace MLAPI.Configuration
         /// </summary>
         public int EventTickrate = 64;
         /// <summary>
+        /// The maximum amount of NetworkedBehaviour's to process per tick.
+        /// This is useful to prevent the MLAPI from hanging a frame
+        /// Set this to less than or equal to 0 for unlimited
+        /// </summary>
+        public int MaxBehaviourUpdatesPerTick = -1;
+        /// <summary>
         /// The max amount of Clients that can connect.
         /// </summary>
         public int MaxConnections = 100;
