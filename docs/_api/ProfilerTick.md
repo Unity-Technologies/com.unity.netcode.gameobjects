@@ -1,5 +1,6 @@
 ---
 title: ProfilerTick
+name: ProfilerTick
 permalink: /api/profiler-tick/
 ---
 

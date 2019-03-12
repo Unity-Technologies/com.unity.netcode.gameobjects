@@ -1,5 +1,6 @@
 ---
 title: NetworkedDictionary&lt;TKey,TValue&gt;
+name: NetworkedDictionary<TKey,TValue>
 permalink: /api/networked-dictionary%3C-tkey,-tvalue%3E/
 ---
 

@@ -1,5 +1,6 @@
 ---
 title: BitWriter
+name: BitWriter
 permalink: /api/bit-writer/
 ---
 

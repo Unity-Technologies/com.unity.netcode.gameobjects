@@ -1,5 +1,6 @@
 ---
 title: ClientRPC
+name: ClientRPC
 permalink: /api/client-rpc/
 ---
 

@@ -1,5 +1,6 @@
 ---
 title: NetworkedVarColor
+name: NetworkedVarColor
 permalink: /api/networked-var-color/
 ---
 

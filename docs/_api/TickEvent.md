@@ -1,5 +1,6 @@
 ---
 title: TickEvent
+name: TickEvent
 permalink: /api/tick-event/
 ---
 

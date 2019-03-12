@@ -1,5 +1,6 @@
 ---
 title: SerializationHelper
+name: SerializationHelper
 permalink: /api/serialization-helper/
 ---
 

@@ -1,5 +1,6 @@
 ---
 title: LogHelper
+name: LogHelper
 permalink: /api/log-helper/
 ---
 

@@ -1,5 +1,6 @@
 ---
 title: RelayedTransport
+name: RelayedTransport
 permalink: /api/relayed-transport/
 ---
 

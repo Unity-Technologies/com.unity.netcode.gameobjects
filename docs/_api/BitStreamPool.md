@@ -1,5 +1,6 @@
 ---
 title: BitStreamPool
+name: BitStreamPool
 permalink: /api/bit-stream-pool/
 ---
 

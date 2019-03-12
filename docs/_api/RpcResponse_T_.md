@@ -1,5 +1,6 @@
 ---
 title: RpcResponse&lt;T&gt;
+name: RpcResponse<T>
 permalink: /api/rpc-response%3C-t%3E/
 ---
 

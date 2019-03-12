@@ -1,5 +1,6 @@
 ---
 title: EventType&lt;T&gt;
+name: EventType<T>
 permalink: /api/event-type%3C-t%3E/
 ---
 

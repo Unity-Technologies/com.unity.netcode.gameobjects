@@ -1,5 +1,6 @@
 ---
 title: ServerRPC
+name: ServerRPC
 permalink: /api/server-rpc/
 ---
 

@@ -1,5 +1,6 @@
 ---
 title: ConnectionApprovedDelegate
+name: ConnectionApprovedDelegate
 permalink: /api/connection-approved-delegate/
 ---
 
@@ -39,13 +40,13 @@ permalink: /api/connection-approved-delegate/
 <div>
 	<h3 markdown="1">Public Methods</h3>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` Invoke(``uint`` clientId, ``Nullable<ulong>`` prefabHash, ``bool`` approved, ``Nullable<Vector3>`` position, ``Nullable<Quaternion>`` rotation);</b></h4>
+		<h4 markdown="1"><b>public ``void`` Invoke(``uint`` clientId, ``int`` prefabId, ``bool`` approved, ``Nullable<Vector3>`` position, ``Nullable<Quaternion>`` rotation);</b></h4>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
 		</div>
 		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``Nullable<ulong>`` prefabHash</p>
+			<p style="font-size: 20px; color: #444;" markdown="1">``int`` prefabId</p>
 		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``bool`` approved</p>
@@ -59,13 +60,13 @@ permalink: /api/connection-approved-delegate/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``IAsyncResult`` BeginInvoke(``uint`` clientId, ``Nullable<ulong>`` prefabHash, ``bool`` approved, ``Nullable<Vector3>`` position, ``Nullable<Quaternion>`` rotation, ``AsyncCallback`` callback, ``object`` object);</b></h4>
+		<h4 markdown="1"><b>public ``IAsyncResult`` BeginInvoke(``uint`` clientId, ``int`` prefabId, ``bool`` approved, ``Nullable<Vector3>`` position, ``Nullable<Quaternion>`` rotation, ``AsyncCallback`` callback, ``object`` object);</b></h4>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
 		</div>
 		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``Nullable<ulong>`` prefabHash</p>
+			<p style="font-size: 20px; color: #444;" markdown="1">``int`` prefabId</p>
 		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``bool`` approved</p>

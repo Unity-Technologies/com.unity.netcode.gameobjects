@@ -1,5 +1,6 @@
 ---
 title: HashCode
+name: HashCode
 permalink: /api/hash-code/
 ---
 

@@ -1,5 +1,6 @@
 ---
 title: BitReaderDeprecated
+name: BitReaderDeprecated
 permalink: /api/bit-reader-deprecated/
 ---
 

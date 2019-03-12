@@ -1,5 +1,6 @@
 ---
 title: DefaultTransport
+name: DefaultTransport
 permalink: /api/default-transport/
 ---
 

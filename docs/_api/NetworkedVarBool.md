@@ -1,5 +1,6 @@
 ---
 title: NetworkedVarBool
+name: NetworkedVarBool
 permalink: /api/networked-var-bool/
 ---
 

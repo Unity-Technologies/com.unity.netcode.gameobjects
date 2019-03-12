@@ -1,5 +1,6 @@
 ---
 title: VerifyCertificateDelegate
+name: VerifyCertificateDelegate
 permalink: /api/verify-certificate-delegate/
 ---
 

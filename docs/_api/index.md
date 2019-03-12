@@ -1,5 +1,6 @@
 ---
 title: Home
+name: Home
 permalink: /api/home/
 redirect_from: /api/index.html
 redirect_from: /api/index.md

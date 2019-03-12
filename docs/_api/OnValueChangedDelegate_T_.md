@@ -1,5 +1,6 @@
 ---
 title: OnValueChangedDelegate&lt;T&gt;
+name: OnValueChangedDelegate<T>
 permalink: /api/on-value-changed-delegate%3C-t%3E/
 ---
 

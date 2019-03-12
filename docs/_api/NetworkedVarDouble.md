@@ -1,5 +1,6 @@
 ---
 title: NetworkedVarDouble
+name: NetworkedVarDouble
 permalink: /api/networked-var-double/
 ---
 

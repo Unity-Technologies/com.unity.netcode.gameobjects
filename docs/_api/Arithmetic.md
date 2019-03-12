@@ -1,5 +1,6 @@
 ---
 title: Arithmetic
+name: Arithmetic
 permalink: /api/arithmetic/
 ---
 

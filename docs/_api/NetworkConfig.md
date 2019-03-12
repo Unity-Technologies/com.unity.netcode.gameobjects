@@ -1,5 +1,6 @@
 ---
 title: NetworkConfig
+name: NetworkConfig
 permalink: /api/network-config/
 ---
 
@@ -35,6 +36,18 @@ permalink: /api/network-config/
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``IUDPTransport`` NetworkTransport;</b></h4>
 		<p>The transport hosts the sever uses</p>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``string`` RelayAddress;</b></h4>
+		<p>Only used if the transport is MLPAI-Relay</p>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``ushort`` RelayPort;</b></h4>
+		<p>Only used if the transport is MLPAI-Relay</p>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``bool`` RelayEnabled;</b></h4>
+		<p>Wheter or not to use the relay</p>
 	</div>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``List<Channel>`` Channels;</b></h4>
@@ -97,6 +110,14 @@ permalink: /api/network-config/
 		<p>The amount of seconds to keep a lag compensation position history</p>
 	</div>
 	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``bool`` HandleObjectSpawning;</b></h4>
+		<p>Wheter or not to make the library handle object spawning</p>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``bool`` EnableSceneSwitching;</b></h4>
+		<p>Wheter or not to enable scene switching</p>
+	</div>
+	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``bool`` EnableTimeResync;</b></h4>
 		<p>If your logic uses the NetworkedTime, this should probably be turned off. If however it's needed to maximize accuracy, this is recommended to be turned on</p>
 	</div>
@@ -106,13 +127,12 @@ permalink: /api/network-config/
             If you dynamically add prefabs at runtime, turn this OFF</p>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``bool`` UsePrefabSync;</b></h4>
-		<p>If true, all NetworkedObject's need to be prefabs and all scene objects will be replaced on server side which causes all serialization to be lost. Useful for multi project setups
-            If false, Only non scene objects have to be prefabs. Scene objects will be matched using their PrefabInstanceId which can be precomputed globally for a scene at build time. Useful for single projects</p>
-	</div>
-	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public [``HashSize``](/MLAPI/api/hash-size/) RpcHashSize;</b></h4>
 		<p>Decides how many bytes to use for Rpc messaging. Leave this to 2 bytes unless you are facing hash collisions</p>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public [``HashSize``](/MLAPI/api/hash-size/) PrefabHashSize;</b></h4>
+		<p>Decides how many bytes to use for Prefab names. Leave this to 2 bytes unless you are facing hash collisions</p>
 	</div>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``int`` LoadSceneTimeOut;</b></h4>
@@ -152,12 +172,16 @@ permalink: /api/network-config/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` FromBase64(``string`` base64);</b></h4>
+		<h4 markdown="1"><b>public ``void`` FromBase64(``string`` base64, ``bool`` createDummyObject);</b></h4>
 		<p>Sets the NetworkConfig data with that from a base64 encoded version</p>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``string`` base64</p>
 			<p>The base64 encoded version</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``bool`` createDummyObject</p>
+			<p>Wheter or not to create dummy objects for NetworkedPrefabs</p>
 		</div>
 	</div>
 	<br>

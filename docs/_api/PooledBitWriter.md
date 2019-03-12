@@ -1,5 +1,6 @@
 ---
 title: PooledBitWriter
+name: PooledBitWriter
 permalink: /api/pooled-bit-writer/
 ---
 

@@ -1,5 +1,6 @@
 ---
 title: FixedQueue&lt;T&gt;
+name: FixedQueue<T>
 permalink: /api/fixed-queue%3C-t%3E/
 ---
 

@@ -1,5 +1,6 @@
 ---
 title: OnClientLoadedSceneDelegate
+name: OnClientLoadedSceneDelegate
 permalink: /api/on-client-loaded-scene-delegate/
 ---
 

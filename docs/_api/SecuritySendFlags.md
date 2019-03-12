@@ -1,5 +1,6 @@
 ---
 title: SecuritySendFlags
+name: SecuritySendFlags
 permalink: /api/security-send-flags/
 ---
 

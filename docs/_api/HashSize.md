@@ -1,5 +1,6 @@
 ---
 title: HashSize
+name: HashSize
 permalink: /api/hash-size/
 ---
 

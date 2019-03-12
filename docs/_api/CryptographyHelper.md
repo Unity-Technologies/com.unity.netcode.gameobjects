@@ -1,5 +1,6 @@
 ---
 title: CryptographyHelper
+name: CryptographyHelper
 permalink: /api/cryptography-helper/
 ---
 

@@ -1,5 +1,6 @@
 ---
 title: NetworkedVar&lt;T&gt;
+name: NetworkedVar<T>
 permalink: /api/networked-var%3C-t%3E/
 ---
 

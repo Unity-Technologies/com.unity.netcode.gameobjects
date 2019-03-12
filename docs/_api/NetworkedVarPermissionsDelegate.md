@@ -1,5 +1,6 @@
 ---
 title: NetworkedVarPermissionsDelegate
+name: NetworkedVarPermissionsDelegate
 permalink: /api/networked-var-permissions-delegate/
 ---
 

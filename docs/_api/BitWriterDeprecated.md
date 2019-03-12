@@ -1,5 +1,6 @@
 ---
 title: BitWriterDeprecated
+name: BitWriterDeprecated
 permalink: /api/bit-writer-deprecated/
 ---
 

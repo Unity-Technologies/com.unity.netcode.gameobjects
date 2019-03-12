@@ -1,5 +1,6 @@
 ---
 title: LogLevel
+name: LogLevel
 permalink: /api/log-level/
 ---
 

@@ -1,5 +1,6 @@
 ---
 title: NetEventType
+name: NetEventType
 permalink: /api/net-event-type/
 ---
 

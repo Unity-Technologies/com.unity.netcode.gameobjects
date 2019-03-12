@@ -1,5 +1,6 @@
 ---
 title: PooledBitReader
+name: PooledBitReader
 permalink: /api/pooled-bit-reader/
 ---
 

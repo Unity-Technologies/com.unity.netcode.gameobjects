@@ -1,5 +1,6 @@
 ---
 title: NetworkedVarULong
+name: NetworkedVarULong
 permalink: /api/networked-var-ulong/
 ---
 

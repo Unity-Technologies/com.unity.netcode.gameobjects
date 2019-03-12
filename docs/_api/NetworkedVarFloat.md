@@ -1,5 +1,6 @@
 ---
 title: NetworkedVarFloat
+name: NetworkedVarFloat
 permalink: /api/networked-var-float/
 ---
 

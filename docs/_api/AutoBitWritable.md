@@ -1,5 +1,6 @@
 ---
 title: AutoBitWritable
+name: AutoBitWritable
 permalink: /api/auto-bit-writable/
 ---
 

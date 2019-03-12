@@ -1,5 +1,6 @@
 ---
 title: CustomMessageDelegete
+name: CustomMessageDelegete
 permalink: /api/custom-message-delegete/
 ---
 

@@ -1,5 +1,6 @@
 ---
 title: NetworkProfiler
+name: NetworkProfiler
 permalink: /api/network-profiler/
 ---
 

@@ -1,5 +1,6 @@
 ---
 title: NetworkedVarUInt
+name: NetworkedVarUInt
 permalink: /api/networked-var-uint/
 ---
 

@@ -1,5 +1,6 @@
 ---
 title: NetworkedVarShort
+name: NetworkedVarShort
 permalink: /api/networked-var-short/
 ---
 

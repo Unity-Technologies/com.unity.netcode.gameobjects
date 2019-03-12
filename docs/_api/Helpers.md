@@ -1,5 +1,6 @@
 ---
 title: Helpers
+name: Helpers
 permalink: /api/helpers/
 ---
 

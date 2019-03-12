@@ -1,5 +1,6 @@
 ---
 title: NetworkedVarLong
+name: NetworkedVarLong
 permalink: /api/networked-var-long/
 ---
 

@@ -1,5 +1,6 @@
 ---
 title: PooledBitStream
+name: PooledBitStream
 permalink: /api/pooled-bit-stream/
 ---
 

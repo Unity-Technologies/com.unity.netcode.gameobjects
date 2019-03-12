@@ -1,5 +1,6 @@
 ---
 title: TickType
+name: TickType
 permalink: /api/tick-type/
 ---
 

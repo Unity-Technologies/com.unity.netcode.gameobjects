@@ -1,5 +1,6 @@
 ---
 title: NetworkedListEvent&lt;T&gt;
+name: NetworkedListEvent<T>
 permalink: /api/networked-list-event%3C-t%3E/
 ---
 

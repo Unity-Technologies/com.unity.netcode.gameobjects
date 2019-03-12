@@ -1,5 +1,6 @@
 ---
 title: NetworkedList&lt;T&gt;
+name: NetworkedList<T>
 permalink: /api/networked-list%3C-t%3E/
 ---
 

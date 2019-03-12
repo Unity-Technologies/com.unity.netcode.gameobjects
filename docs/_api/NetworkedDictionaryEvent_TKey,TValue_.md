@@ -1,5 +1,6 @@
 ---
 title: NetworkedDictionaryEvent&lt;TKey,TValue&gt;
+name: NetworkedDictionaryEvent<TKey,TValue>
 permalink: /api/networked-dictionary-event%3C-tkey,-tvalue%3E/
 ---
 

@@ -1,5 +1,6 @@
 ---
 title: BitReader
+name: BitReader
 permalink: /api/bit-reader/
 ---
 

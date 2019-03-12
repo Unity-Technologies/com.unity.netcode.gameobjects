@@ -1,5 +1,6 @@
 ---
 title: ChannelType
+name: ChannelType
 permalink: /api/channel-type/
 ---
 

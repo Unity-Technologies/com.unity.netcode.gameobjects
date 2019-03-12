@@ -1,5 +1,6 @@
 ---
 title: RpcMethod&lt;T1,T2,T3,T4,T5,T6&gt;
+name: RpcMethod<T1,T2,T3,T4,T5,T6>
 permalink: /api/rpc-method%3C-t1,-t2,-t3,-t4,-t5,-t6%3E/
 ---
 

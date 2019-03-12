@@ -1,5 +1,6 @@
 ---
 title: InvalidConfigException
+name: InvalidConfigException
 permalink: /api/invalid-config-exception/
 ---
 

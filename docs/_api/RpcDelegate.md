@@ -1,5 +1,6 @@
 ---
 title: RpcDelegate
+name: RpcDelegate
 permalink: /api/rpc-delegate/
 ---
 

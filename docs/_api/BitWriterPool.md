@@ -1,5 +1,6 @@
 ---
 title: BitWriterPool
+name: BitWriterPool
 permalink: /api/bit-writer-pool/
 ---
 

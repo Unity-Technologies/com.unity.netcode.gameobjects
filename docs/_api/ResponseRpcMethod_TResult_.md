@@ -1,5 +1,6 @@
 ---
 title: ResponseRpcMethod&lt;TResult&gt;
+name: ResponseRpcMethod<TResult>
 permalink: /api/response-rpc-method%3C-tresult%3E/
 ---
 

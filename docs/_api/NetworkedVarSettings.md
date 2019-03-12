@@ -1,5 +1,6 @@
 ---
 title: NetworkedVarSettings
+name: NetworkedVarSettings
 permalink: /api/networked-var-settings/
 ---
 

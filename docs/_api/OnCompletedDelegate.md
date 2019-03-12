@@ -1,5 +1,6 @@
 ---
 title: OnCompletedDelegate
+name: OnCompletedDelegate
 permalink: /api/on-completed-delegate/
 ---
 

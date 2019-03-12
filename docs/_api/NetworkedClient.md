@@ -1,5 +1,6 @@
 ---
 title: NetworkedClient
+name: NetworkedClient
 permalink: /api/networked-client/
 ---
 

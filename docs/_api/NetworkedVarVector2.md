@@ -1,5 +1,6 @@
 ---
 title: NetworkedVarVector2
+name: NetworkedVarVector2
 permalink: /api/networked-var-vector2/
 ---
 

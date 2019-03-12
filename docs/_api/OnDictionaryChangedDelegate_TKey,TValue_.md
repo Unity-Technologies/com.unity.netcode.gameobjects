@@ -1,5 +1,6 @@
 ---
 title: OnDictionaryChangedDelegate&lt;TKey,TValue&gt;
+name: OnDictionaryChangedDelegate<TKey,TValue>
 permalink: /api/on-dictionary-changed-delegate%3C-tkey,-tvalue%3E/
 ---
 

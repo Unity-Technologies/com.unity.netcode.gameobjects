@@ -1,5 +1,6 @@
 ---
 title: State
+name: State
 permalink: /api/state/
 ---
 

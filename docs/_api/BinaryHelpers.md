@@ -1,5 +1,6 @@
 ---
 title: BinaryHelpers
+name: BinaryHelpers
 permalink: /api/binary-helpers/
 ---
 

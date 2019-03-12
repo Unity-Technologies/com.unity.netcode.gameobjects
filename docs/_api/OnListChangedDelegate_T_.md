@@ -1,5 +1,6 @@
 ---
 title: OnListChangedDelegate&lt;T&gt;
+name: OnListChangedDelegate<T>
 permalink: /api/on-list-changed-delegate%3C-t%3E/
 ---
 

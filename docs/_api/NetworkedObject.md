@@ -1,5 +1,6 @@
 ---
 title: NetworkedObject
+name: NetworkedObject
 permalink: /api/networked-object/
 ---
 
@@ -13,7 +14,7 @@ permalink: /api/networked-object/
 <div>
 	<h3 markdown="1">Public Properties</h3>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``ulong`` NetworkId { get; set; }</b></h4>
+		<h4 markdown="1"><b>public ``uint`` NetworkId { get; set; }</b></h4>
 		<p>Gets the unique ID of this object that is synced across the network</p>
 	</div>
 	<div style="line-height: 1;">
@@ -21,11 +22,26 @@ permalink: /api/networked-object/
 		<p>Gets the clientId of the owner of this NetworkedObject</p>
 	</div>
 	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``ulong`` NetworkedPrefabHash { get; }</b></h4>
+		<p>The hash used to identify the NetworkedPrefab, a hash of the NetworkedPrefabName</p>
+	</div>
+	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``bool`` isPlayerObject { get; }</b> <small><span class="label label-warning" title="Use IsPlayerObject instead">Obsolete</span></small></h4>
 	</div>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``bool`` IsPlayerObject { get; set; }</b></h4>
 		<p>Gets if this object is a player object</p>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``bool`` isPooledObject { get; }</b> <small><span class="label label-warning" title="Use IsPooledObject instead">Obsolete</span></small></h4>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``bool`` IsPooledObject { get; set; }</b></h4>
+		<p>Gets if this object is part of a pool</p>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``ushort`` PoolId { get; set; }</b></h4>
+		<p>Gets the poolId this object is part of</p>
 	</div>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``bool`` isLocalPlayer { get; }</b> <small><span class="label label-warning" title="Use IsLocalPlayer instead">Obsolete</span></small></h4>
@@ -54,10 +70,6 @@ permalink: /api/networked-object/
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``bool`` IsSpawned { get; set; }</b></h4>
 		<p>Gets if the object has yet been spawned across the network</p>
-	</div>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Nullable<bool>`` IsSceneObject { get; set; }</b></h4>
-		<p>Gets if the object is a SceneObject, null if it's not yet spawned but is a scene object.</p>
 	</div>
 </div>
 <br>
@@ -172,28 +184,16 @@ permalink: /api/networked-object/
 <div>
 	<h3 markdown="1">Public Fields</h3>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``ulong`` NetworkedInstanceId;</b></h4>
-		<p>InstanceId is the id that is unique to the object and scene for a scene object when UsePrefabSync is false.
-            If UsePrefabSync is true or if it's used on non scene objects, this has no effect.
-            Should not be set manually</p>
+		<h4 markdown="1"><b>public ``string`` NetworkedPrefabName;</b></h4>
+		<p>The name of the NetworkedPrefab</p>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``ulong`` PrefabHash;</b></h4>
-		<p>The Prefab unique hash. This should not be set my the user but rather changed by editing the PrefabHashGenerator.
-            It has to be the same for all instances of a prefab</p>
-	</div>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``string`` PrefabHashGenerator;</b></h4>
-		<p>The generator used to change the PrefabHash. This should be set the same for all instances of a prefab.
-            It has to be unique in relation to other prefabs</p>
-	</div>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public [``VisibilityDelegate``](/MLAPI/api/visibility-delegate/) CheckObjectVisibility;</b></h4>
-		<p>Delegate invoked when the MLAPI needs to know if the object should be visible to a client, if null it will assume true</p>
+		<h4 markdown="1"><b>public ``bool`` SceneDelayedSpawn;</b></h4>
+		<p>When enabled this gameobject will not be spawned on the client until the scene it was originally spawned inside at the server is fully loaded on the client.</p>
 	</div>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``bool`` DontDestroyWithOwner;</b></h4>
-		<p>Whether or not to destroy this object if it's owner is destroyed.
+		<p>Wheter or not to destroy this object if it's owner is destroyed.
             If false, the objects ownership will be given to the server.</p>
 	</div>
 </div>
@@ -208,59 +208,16 @@ permalink: /api/networked-object/
 <div>
 	<h3 markdown="1">Public Methods</h3>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Enumerator<uint>`` GetObservers();</b></h4>
-		<p>Returns Observers enumerator</p>
-		<h5 markdown="1"><b>Returns ``Enumerator<uint>``</b></h5>
-		<div>
-			<p>Observers enumerator</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``bool`` IsNetworkVisibleTo(``uint`` clientId);</b></h4>
-		<p>Whether or not this object is visible to a specific client</p>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
-			<p>The clientId of the client</p>
-		</div>
-		<h5 markdown="1"><b>Returns ``bool``</b></h5>
-		<div>
-			<p>True if the client knows about the object</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` NetworkShow(``uint`` clientId, ``Stream`` payload);</b></h4>
-		<p>Shows a previously hidden object to a client</p>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
-			<p>The client to show the object to</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``Stream`` payload</p>
-			<p>An optional payload to send as part of the spawn</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` NetworkHide(``uint`` clientId);</b></h4>
-		<p>Hides a object from a specific client</p>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
-			<p>The client to hide the object for</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` Spawn(``Stream`` spawnPayload);</b></h4>
+		<h4 markdown="1"><b>public ``void`` Spawn(``Stream`` spawnPayload, ``bool`` destroyWithScene);</b></h4>
 		<p>Spawns this GameObject across the network. Can only be called from the Server</p>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``Stream`` spawnPayload</p>
 			<p>The writer containing the spawn payload</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``bool`` destroyWithScene</p>
+			<p>Should the object be destroyd when the scene is changed</p>
 		</div>
 	</div>
 	<br>

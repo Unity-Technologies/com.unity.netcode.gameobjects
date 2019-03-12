@@ -1,5 +1,6 @@
 ---
 title: NetworkedVarSByte
+name: NetworkedVarSByte
 permalink: /api/networked-var-sbyte/
 ---
 

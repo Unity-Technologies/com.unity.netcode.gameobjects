@@ -1,5 +1,6 @@
 ---
 title: ResponseRpcMethod&lt;TResult,T1,T2,T3,T4&gt;
+name: ResponseRpcMethod<TResult,T1,T2,T3,T4>
 permalink: /api/response-rpc-method%3C-tresult,-t1,-t2,-t3,-t4%3E/
 ---
 

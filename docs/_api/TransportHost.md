@@ -1,5 +1,6 @@
 ---
 title: TransportHost
+name: TransportHost
 permalink: /api/transport-host/
 ---
 

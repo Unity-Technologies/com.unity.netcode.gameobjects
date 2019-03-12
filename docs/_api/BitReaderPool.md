@@ -1,5 +1,6 @@
 ---
 title: BitReaderPool
+name: BitReaderPool
 permalink: /api/bit-reader-pool/
 ---
 

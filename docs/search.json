@@ -16,7 +16,7 @@
     {% assign item_url = item | prepend:"/api/" | append:"/" %}
     {% assign p = site.api | where:"url", item_url | first %}
     {
-      "title": "{{ p.title }}",
+      "title": "{{ p.name }}",
       "url": "{{ p.url | prepend: site.baseurl }}"
     },
   {% endfor %}

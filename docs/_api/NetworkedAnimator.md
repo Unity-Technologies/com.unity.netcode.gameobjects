@@ -1,5 +1,6 @@
 ---
 title: NetworkedAnimator
+name: NetworkedAnimator
 permalink: /api/networked-animator/
 ---
 
@@ -57,11 +58,11 @@ permalink: /api/networked-animator/
 		<p>Gets the NetworkedObject that owns this NetworkedBehaviour instance</p>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``ulong`` networkId { get; }</b> <small><span class="label label-warning" title="Use NetworkId instead">Obsolete</span></small></h4>
+		<h4 markdown="1"><b>public ``uint`` networkId { get; }</b> <small><span class="label label-warning" title="Use NetworkId instead">Obsolete</span></small></h4>
 		<h5 markdown="1">Inherited from: [``NetworkedBehaviour``](/MLAPI/api/networked-behaviour/)</h5>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``ulong`` NetworkId { get; }</b></h4>
+		<h4 markdown="1"><b>public ``uint`` NetworkId { get; }</b></h4>
 		<h5 markdown="1">Inherited from: [``NetworkedBehaviour``](/MLAPI/api/networked-behaviour/)</h5>
 		<p>Gets the NetworkId of the NetworkedObject that owns the NetworkedBehaviour instance</p>
 	</div>
@@ -272,69 +273,6 @@ permalink: /api/networked-animator/
 <br>
 <div>
 	<h3 markdown="1">Inherited Methods</h3>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` NetworkStart();</b></h4>
-		<h5 markdown="1">Inherited from: [``NetworkedBehaviour``](/MLAPI/api/networked-behaviour/)</h5>
-		<p>Gets called when message handlers are ready to be registered and the networking is setup</p>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` NetworkStart(``Stream`` stream);</b></h4>
-		<h5 markdown="1">Inherited from: [``NetworkedBehaviour``](/MLAPI/api/networked-behaviour/)</h5>
-		<p>Gets called when message handlers are ready to be registered and the networking is setup. Provides a Payload if it was provided</p>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``Stream`` stream</p>
-			<p>The stream containing the spawn payload</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` OnDisabled();</b></h4>
-		<h5 markdown="1">Inherited from: [``NetworkedBehaviour``](/MLAPI/api/networked-behaviour/)</h5>
-		<p>Invoked when the object is Disabled</p>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` OnDestroyed();</b></h4>
-		<h5 markdown="1">Inherited from: [``NetworkedBehaviour``](/MLAPI/api/networked-behaviour/)</h5>
-		<p>Invoked when the object is Destroyed</p>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` OnEnabled();</b></h4>
-		<h5 markdown="1">Inherited from: [``NetworkedBehaviour``](/MLAPI/api/networked-behaviour/)</h5>
-		<p>Invoked when the object is Enabled</p>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` OnSyncVarUpdate();</b></h4>
-		<h5 markdown="1">Inherited from: [``NetworkedBehaviour``](/MLAPI/api/networked-behaviour/)</h5>
-		<p>Gets called when SyncedVars gets updated</p>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` OnGainedOwnership();</b></h4>
-		<h5 markdown="1">Inherited from: [``NetworkedBehaviour``](/MLAPI/api/networked-behaviour/)</h5>
-		<p>Gets called when the local client gains ownership of this object</p>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` OnLostOwnership();</b></h4>
-		<h5 markdown="1">Inherited from: [``NetworkedBehaviour``](/MLAPI/api/networked-behaviour/)</h5>
-		<p>Gets called when we loose ownership of this object</p>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``ushort`` GetBehaviourId();</b></h4>
-		<h5 markdown="1">Inherited from: [``NetworkedBehaviour``](/MLAPI/api/networked-behaviour/)</h5>
-		<p>Gets behaviourId for this NetworkedBehaviour on this NetworkedObject</p>
-		<h5 markdown="1"><b>Returns ``ushort``</b></h5>
-		<div>
-			<p>The behaviourId for the current NetworkedBehaviour</p>
-		</div>
-	</div>
-	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``string`` methodName, ``List<uint>`` clientIds, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
 		<h5 markdown="1">Inherited from: [``NetworkedBehaviour``](/MLAPI/api/networked-behaviour/)</h5>
@@ -38484,7 +38422,7 @@ permalink: /api/networked-animator/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` InvokeClientRpc([``RpcDelegate``](/MLAPI/api/rpc-delegate/) method, ``List<uint>`` clientIds, ``Stream`` stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b> <small><span class="label label-warning" title="Use InvokeClientRpcPerformance instead">Obsolete</span></small></h4>
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc([``RpcDelegate``](/MLAPI/api/rpc-delegate/) method, ``List<uint>`` clientIds, ``Stream`` stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
 		<h5 markdown="1">Inherited from: [``NetworkedBehaviour``](/MLAPI/api/networked-behaviour/)</h5>
 		<h5><b>Parameters</b></h5>
 		<div>
@@ -38505,7 +38443,7 @@ permalink: /api/networked-animator/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner([``RpcDelegate``](/MLAPI/api/rpc-delegate/) method, ``Stream`` stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b> <small><span class="label label-warning" title="Use InvokeClientRpcOnOwnerPerformance instead">Obsolete</span></small></h4>
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner([``RpcDelegate``](/MLAPI/api/rpc-delegate/) method, ``Stream`` stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
 		<h5 markdown="1">Inherited from: [``NetworkedBehaviour``](/MLAPI/api/networked-behaviour/)</h5>
 		<h5><b>Parameters</b></h5>
 		<div>
@@ -38523,7 +38461,7 @@ permalink: /api/networked-animator/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient([``RpcDelegate``](/MLAPI/api/rpc-delegate/) method, ``uint`` clientId, ``Stream`` stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b> <small><span class="label label-warning" title="Use InvokeClientRpcOnClientPerformance instead">Obsolete</span></small></h4>
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient([``RpcDelegate``](/MLAPI/api/rpc-delegate/) method, ``uint`` clientId, ``Stream`` stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
 		<h5 markdown="1">Inherited from: [``NetworkedBehaviour``](/MLAPI/api/networked-behaviour/)</h5>
 		<h5><b>Parameters</b></h5>
 		<div>
@@ -38544,7 +38482,7 @@ permalink: /api/networked-animator/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone([``RpcDelegate``](/MLAPI/api/rpc-delegate/) method, ``Stream`` stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b> <small><span class="label label-warning" title="Use InvokeClientRpcOnEveryonePerformance instead">Obsolete</span></small></h4>
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone([``RpcDelegate``](/MLAPI/api/rpc-delegate/) method, ``Stream`` stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
 		<h5 markdown="1">Inherited from: [``NetworkedBehaviour``](/MLAPI/api/networked-behaviour/)</h5>
 		<h5><b>Parameters</b></h5>
 		<div>
@@ -38562,7 +38500,7 @@ permalink: /api/networked-animator/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept([``RpcDelegate``](/MLAPI/api/rpc-delegate/) method, ``uint`` clientIdToIgnore, ``Stream`` stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b> <small><span class="label label-warning" title="Use InvokeClientRpcOnEveryoneExceptPerformance instead">Obsolete</span></small></h4>
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept([``RpcDelegate``](/MLAPI/api/rpc-delegate/) method, ``uint`` clientIdToIgnore, ``Stream`` stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
 		<h5 markdown="1">Inherited from: [``NetworkedBehaviour``](/MLAPI/api/networked-behaviour/)</h5>
 		<h5><b>Parameters</b></h5>
 		<div>
@@ -38583,7 +38521,7 @@ permalink: /api/networked-animator/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``string`` methodName, ``List<uint>`` clientIds, ``Stream`` stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b> <small><span class="label label-warning" title="Use InvokeClientRpcPerformance instead">Obsolete</span></small></h4>
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpc(``string`` methodName, ``List<uint>`` clientIds, ``Stream`` stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
 		<h5 markdown="1">Inherited from: [``NetworkedBehaviour``](/MLAPI/api/networked-behaviour/)</h5>
 		<h5><b>Parameters</b></h5>
 		<div>
@@ -38604,7 +38542,7 @@ permalink: /api/networked-animator/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``string`` methodName, ``uint`` clientId, ``Stream`` stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b> <small><span class="label label-warning" title="Use InvokeClientRpcOnClientPerformance instead">Obsolete</span></small></h4>
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClient(``string`` methodName, ``uint`` clientId, ``Stream`` stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
 		<h5 markdown="1">Inherited from: [``NetworkedBehaviour``](/MLAPI/api/networked-behaviour/)</h5>
 		<h5><b>Parameters</b></h5>
 		<div>
@@ -38625,7 +38563,7 @@ permalink: /api/networked-animator/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``string`` methodName, ``Stream`` stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b> <small><span class="label label-warning" title="Use InvokeClientRpcOnOwnerPerformance instead">Obsolete</span></small></h4>
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwner(``string`` methodName, ``Stream`` stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
 		<h5 markdown="1">Inherited from: [``NetworkedBehaviour``](/MLAPI/api/networked-behaviour/)</h5>
 		<h5><b>Parameters</b></h5>
 		<div>
@@ -38643,7 +38581,7 @@ permalink: /api/networked-animator/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``string`` methodName, ``Stream`` stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b> <small><span class="label label-warning" title="Use InvokeClientRpcOnEveryonePerformance instead">Obsolete</span></small></h4>
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryone(``string`` methodName, ``Stream`` stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
 		<h5 markdown="1">Inherited from: [``NetworkedBehaviour``](/MLAPI/api/networked-behaviour/)</h5>
 		<h5><b>Parameters</b></h5>
 		<div>
@@ -38661,205 +38599,7 @@ permalink: /api/networked-animator/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``string`` methodName, ``uint`` clientIdToIgnore, ``Stream`` stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b> <small><span class="label label-warning" title="Use InvokeClientRpcOnEveryoneExceptPerformance instead">Obsolete</span></small></h4>
-		<h5 markdown="1">Inherited from: [``NetworkedBehaviour``](/MLAPI/api/networked-behaviour/)</h5>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``Stream`` stream</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` InvokeClientRpcPerformance([``RpcDelegate``](/MLAPI/api/rpc-delegate/) method, ``List<uint>`` clientIds, ``Stream`` stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
-		<h5 markdown="1">Inherited from: [``NetworkedBehaviour``](/MLAPI/api/networked-behaviour/)</h5>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">[``RpcDelegate``](/MLAPI/api/rpc-delegate/) method</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``Stream`` stream</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwnerPerformance([``RpcDelegate``](/MLAPI/api/rpc-delegate/) method, ``Stream`` stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
-		<h5 markdown="1">Inherited from: [``NetworkedBehaviour``](/MLAPI/api/networked-behaviour/)</h5>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">[``RpcDelegate``](/MLAPI/api/rpc-delegate/) method</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``Stream`` stream</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClientPerformance([``RpcDelegate``](/MLAPI/api/rpc-delegate/) method, ``uint`` clientId, ``Stream`` stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
-		<h5 markdown="1">Inherited from: [``NetworkedBehaviour``](/MLAPI/api/networked-behaviour/)</h5>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">[``RpcDelegate``](/MLAPI/api/rpc-delegate/) method</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``Stream`` stream</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryonePerformance([``RpcDelegate``](/MLAPI/api/rpc-delegate/) method, ``Stream`` stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
-		<h5 markdown="1">Inherited from: [``NetworkedBehaviour``](/MLAPI/api/networked-behaviour/)</h5>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">[``RpcDelegate``](/MLAPI/api/rpc-delegate/) method</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``Stream`` stream</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExceptPerformance([``RpcDelegate``](/MLAPI/api/rpc-delegate/) method, ``uint`` clientIdToIgnore, ``Stream`` stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
-		<h5 markdown="1">Inherited from: [``NetworkedBehaviour``](/MLAPI/api/networked-behaviour/)</h5>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">[``RpcDelegate``](/MLAPI/api/rpc-delegate/) method</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientIdToIgnore</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``Stream`` stream</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` InvokeClientRpcPerformance(``string`` methodName, ``List<uint>`` clientIds, ``Stream`` stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
-		<h5 markdown="1">Inherited from: [``NetworkedBehaviour``](/MLAPI/api/networked-behaviour/)</h5>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``Stream`` stream</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnClientPerformance(``string`` methodName, ``uint`` clientId, ``Stream`` stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
-		<h5 markdown="1">Inherited from: [``NetworkedBehaviour``](/MLAPI/api/networked-behaviour/)</h5>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``Stream`` stream</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnOwnerPerformance(``string`` methodName, ``Stream`` stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
-		<h5 markdown="1">Inherited from: [``NetworkedBehaviour``](/MLAPI/api/networked-behaviour/)</h5>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``Stream`` stream</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryonePerformance(``string`` methodName, ``Stream`` stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
-		<h5 markdown="1">Inherited from: [``NetworkedBehaviour``](/MLAPI/api/networked-behaviour/)</h5>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``Stream`` stream</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExceptPerformance(``string`` methodName, ``uint`` clientIdToIgnore, ``Stream`` stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h4 markdown="1"><b>public ``void`` InvokeClientRpcOnEveryoneExcept(``string`` methodName, ``uint`` clientIdToIgnore, ``Stream`` stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
 		<h5 markdown="1">Inherited from: [``NetworkedBehaviour``](/MLAPI/api/networked-behaviour/)</h5>
 		<h5><b>Parameters</b></h5>
 		<div>
@@ -38880,7 +38620,7 @@ permalink: /api/networked-animator/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` InvokeServerRpc([``RpcDelegate``](/MLAPI/api/rpc-delegate/) method, ``Stream`` stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b> <small><span class="label label-warning" title="Use InvokeServerRpcPerformance instead">Obsolete</span></small></h4>
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc([``RpcDelegate``](/MLAPI/api/rpc-delegate/) method, ``Stream`` stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
 		<h5 markdown="1">Inherited from: [``NetworkedBehaviour``](/MLAPI/api/networked-behaviour/)</h5>
 		<h5><b>Parameters</b></h5>
 		<div>
@@ -38898,7 +38638,7 @@ permalink: /api/networked-animator/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``string`` methodName, ``Stream`` stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b> <small><span class="label label-warning" title="Use InvokeServerRpcPerformance instead">Obsolete</span></small></h4>
+		<h4 markdown="1"><b>public ``void`` InvokeServerRpc(``string`` methodName, ``Stream`` stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
 		<h5 markdown="1">Inherited from: [``NetworkedBehaviour``](/MLAPI/api/networked-behaviour/)</h5>
 		<h5><b>Parameters</b></h5>
 		<div>
@@ -38916,38 +38656,65 @@ permalink: /api/networked-animator/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` InvokeServerRpcPerformance([``RpcDelegate``](/MLAPI/api/rpc-delegate/) method, ``Stream`` stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h4 markdown="1"><b>public ``void`` NetworkStart();</b></h4>
 		<h5 markdown="1">Inherited from: [``NetworkedBehaviour``](/MLAPI/api/networked-behaviour/)</h5>
+		<p>Gets called when message handlers are ready to be registered and the networking is setup</p>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` NetworkStart(``Stream`` stream);</b></h4>
+		<h5 markdown="1">Inherited from: [``NetworkedBehaviour``](/MLAPI/api/networked-behaviour/)</h5>
+		<p>Gets called when message handlers are ready to be registered and the networking is setup. Provides a Payload if it was provided</p>
 		<h5><b>Parameters</b></h5>
 		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">[``RpcDelegate``](/MLAPI/api/rpc-delegate/) method</p>
-		</div>
-		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``Stream`` stream</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+			<p>The stream containing the spawn payload</p>
 		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` InvokeServerRpcPerformance(``string`` methodName, ``Stream`` stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h4 markdown="1"><b>public ``void`` OnDisabled();</b></h4>
 		<h5 markdown="1">Inherited from: [``NetworkedBehaviour``](/MLAPI/api/networked-behaviour/)</h5>
-		<h5><b>Parameters</b></h5>
+		<p>Invoked when the object is Disabled</p>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` OnDestroyed();</b></h4>
+		<h5 markdown="1">Inherited from: [``NetworkedBehaviour``](/MLAPI/api/networked-behaviour/)</h5>
+		<p>Invoked when the object is Destroyed</p>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` OnEnabled();</b></h4>
+		<h5 markdown="1">Inherited from: [``NetworkedBehaviour``](/MLAPI/api/networked-behaviour/)</h5>
+		<p>Invoked when the object is Enabled</p>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` OnSyncVarUpdate();</b></h4>
+		<h5 markdown="1">Inherited from: [``NetworkedBehaviour``](/MLAPI/api/networked-behaviour/)</h5>
+		<p>Gets called when SyncedVars gets updated</p>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` OnGainedOwnership();</b></h4>
+		<h5 markdown="1">Inherited from: [``NetworkedBehaviour``](/MLAPI/api/networked-behaviour/)</h5>
+		<p>Gets called when the local client gains ownership of this object</p>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` OnLostOwnership();</b></h4>
+		<h5 markdown="1">Inherited from: [``NetworkedBehaviour``](/MLAPI/api/networked-behaviour/)</h5>
+		<p>Gets called when we loose ownership of this object</p>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``ushort`` GetBehaviourId();</b></h4>
+		<h5 markdown="1">Inherited from: [``NetworkedBehaviour``](/MLAPI/api/networked-behaviour/)</h5>
+		<p>Gets behaviourId for this NetworkedBehaviour on this NetworkedObject</p>
+		<h5 markdown="1"><b>Returns ``ushort``</b></h5>
 		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``string`` methodName</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``Stream`` stream</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channel</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+			<p>The behaviourId for the current NetworkedBehaviour</p>
 		</div>
 	</div>
 	<br>

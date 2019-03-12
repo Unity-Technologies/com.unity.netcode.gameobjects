@@ -1,5 +1,6 @@
 ---
 title: NetworkedListEventType&lt;TKey,TValue&gt;
+name: NetworkedListEventType<TKey,TValue>
 permalink: /api/networked-list-event-type%3C-tkey,-tvalue%3E/
 ---
 

@@ -6,6 +6,8 @@
   - rpc-delegate
   - server-rpc
   - client-rpc
+  - rpc-response%3C-t%3E
+  - rpc-response-base
   - networked-var%3C-t%3E
   - networked-var-string
   - networked-var-bool
@@ -26,8 +28,6 @@
   - networked-var-color32
   - networked-var-ray
   - networked-var-quaternion
-  - rpc-response%3C-t%3E
-  - rpc-response-base
   - networked-behaviour
   - networked-object
   - networking-manager
@@ -99,9 +99,14 @@
   - response-rpc-method%3C-tresult,-t1,-t2,-t3,-t4,-t5,-t6,-t7,-t8,-t9,-t10,-t11,-t12,-t13,-t14,-t15,-t16,-t17,-t18,-t19,-t20,-t21,-t22,-t23,-t24,-t25,-t26,-t27,-t28,-t29,-t30%3E
   - response-rpc-method%3C-tresult,-t1,-t2,-t3,-t4,-t5,-t6,-t7,-t8,-t9,-t10,-t11,-t12,-t13,-t14,-t15,-t16,-t17,-t18,-t19,-t20,-t21,-t22,-t23,-t24,-t25,-t26,-t27,-t28,-t29,-t30,-t31%3E
   - response-rpc-method%3C-tresult,-t1,-t2,-t3,-t4,-t5,-t6,-t7,-t8,-t9,-t10,-t11,-t12,-t13,-t14,-t15,-t16,-t17,-t18,-t19,-t20,-t21,-t22,-t23,-t24,-t25,-t26,-t27,-t28,-t29,-t30,-t31,-t32%3E
-  - visibility-delegate
   - connection-approved-delegate
   - custom-message-delegete
+- title: MLAPI.Profiling
+  api:
+  - tick-type
+  - profiler-tick
+  - tick-event
+  - network-profiler
 - title: MLAPI.Cryptography
   api:
   - cryptography-helper
@@ -113,13 +118,13 @@
 - title: MLAPI.Serialization
   api:
   - arithmetic
-  - binary-helpers
   - bit-reader
-  - bit-reader-deprecated
-  - bit-stream
-  - auto-bit-writable
   - bit-writer
+  - bit-stream
   - bit-writer-deprecated
+  - bit-reader-deprecated
+  - binary-helpers
+  - auto-bit-writable
   - bit-stream-pool
   - bit-writer-pool
   - bit-reader-pool
@@ -133,6 +138,9 @@
   - networked-nav-mesh-agent
   - networked-transform
   - move-validation-delegate
+- title: MLAPI.Collections
+  api:
+  - fixed-queue%3C-t%3E
 - title: MLAPI.Transports
   api:
   - channel-type
@@ -140,29 +148,22 @@
   - net-event-type
 - title: MLAPI.Transports.UNET
   api:
-  - net-id
   - relayed-transport
   - relay-transport
   - helpers
   - invalid-config-exception
   - transport-host
   - unet-transport
+  - net-id
 - title: MLAPI.Components
   api:
   - scene-switch-progress
   - lag-compensation-manager
+  - network-pool-manager
   - network-scene-manager
   - spawn-manager
   - on-completed-delegate
   - on-client-loaded-scene-delegate
-  - spawn-handler-delegate
-  - destroy-handler-delegate
-- title: MLAPI.Profiling
-  api:
-  - network-profiler
-  - tick-type
-  - profiler-tick
-  - tick-event
 - title: MLAPI.NetworkedVar
   api:
   - networked-var-settings
@@ -180,18 +181,15 @@
   - event-type%3C-t%3E
 - title: MLAPI.Data
   api:
-  - hash-code
   - mlapiconstants
-  - networked-client
-  - networked-prefab
   - pending-client
   - security-send-flags
+  - networked-prefab
+  - networked-client
+  - hash-code
   - state
-- title: MLAPI.Collections
-  api:
-  - fixed-queue%3C-t%3E
 - title: MLAPI.Configuration
   api:
-  - hash-size
   - channel
+  - hash-size
   - network-config

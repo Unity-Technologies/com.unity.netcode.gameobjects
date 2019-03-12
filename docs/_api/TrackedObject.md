@@ -1,5 +1,6 @@
 ---
 title: TrackedObject
+name: TrackedObject
 permalink: /api/tracked-object/
 ---
 

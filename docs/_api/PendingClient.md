@@ -1,5 +1,6 @@
 ---
 title: PendingClient
+name: PendingClient
 permalink: /api/pending-client/
 ---
 

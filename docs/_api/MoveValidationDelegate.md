@@ -1,5 +1,6 @@
 ---
 title: MoveValidationDelegate
+name: MoveValidationDelegate
 permalink: /api/move-validation-delegate/
 ---
 

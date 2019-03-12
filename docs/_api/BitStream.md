@@ -1,5 +1,6 @@
 ---
 title: BitStream
+name: BitStream
 permalink: /api/bit-stream/
 ---
 

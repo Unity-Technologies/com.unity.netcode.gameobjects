@@ -1,5 +1,6 @@
 ---
 title: LagCompensationManager
+name: LagCompensationManager
 permalink: /api/lag-compensation-manager/
 ---
 

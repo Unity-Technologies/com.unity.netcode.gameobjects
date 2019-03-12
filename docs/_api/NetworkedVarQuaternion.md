@@ -1,5 +1,6 @@
 ---
 title: NetworkedVarQuaternion
+name: NetworkedVarQuaternion
 permalink: /api/networked-var-quaternion/
 ---
 

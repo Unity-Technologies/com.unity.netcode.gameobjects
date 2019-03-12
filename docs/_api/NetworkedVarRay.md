@@ -1,5 +1,6 @@
 ---
 title: NetworkedVarRay
+name: NetworkedVarRay
 permalink: /api/networked-var-ray/
 ---
 

@@ -1,5 +1,6 @@
 ---
 title: NetworkSceneManager
+name: NetworkSceneManager
 permalink: /api/network-scene-manager/
 ---
 

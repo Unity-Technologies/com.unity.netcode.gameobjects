@@ -1,5 +1,6 @@
 ---
 title: Channel
+name: Channel
 permalink: /api/channel/
 ---
 

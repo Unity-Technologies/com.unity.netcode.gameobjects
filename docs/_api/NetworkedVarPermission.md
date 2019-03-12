@@ -1,5 +1,6 @@
 ---
 title: NetworkedVarPermission
+name: NetworkedVarPermission
 permalink: /api/networked-var-permission/
 ---
 

@@ -1,5 +1,6 @@
 ---
 title: SceneSwitchProgress
+name: SceneSwitchProgress
 permalink: /api/scene-switch-progress/
 ---
 

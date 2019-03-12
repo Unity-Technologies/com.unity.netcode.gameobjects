@@ -1,5 +1,6 @@
 ---
 title: RpcMethod&lt;T1&gt;
+name: RpcMethod<T1>
 permalink: /api/rpc-method%3C-t1%3E/
 ---
 

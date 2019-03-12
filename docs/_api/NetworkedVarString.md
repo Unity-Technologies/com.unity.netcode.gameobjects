@@ -1,5 +1,6 @@
 ---
 title: NetworkedVarString
+name: NetworkedVarString
 permalink: /api/networked-var-string/
 ---
 

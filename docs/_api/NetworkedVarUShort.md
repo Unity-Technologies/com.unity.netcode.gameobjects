@@ -1,5 +1,6 @@
 ---
 title: NetworkedVarUShort
+name: NetworkedVarUShort
 permalink: /api/networked-var-ushort/
 ---
 

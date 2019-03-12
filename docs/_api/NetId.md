@@ -1,5 +1,6 @@
 ---
 title: NetId
+name: NetId
 permalink: /api/net-id/
 ---
 

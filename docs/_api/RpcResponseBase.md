@@ -1,5 +1,6 @@
 ---
 title: RpcResponseBase
+name: RpcResponseBase
 permalink: /api/rpc-response-base/
 ---
 
