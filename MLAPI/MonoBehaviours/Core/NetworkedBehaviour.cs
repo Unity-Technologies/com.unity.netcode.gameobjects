@@ -586,7 +586,7 @@ namespace MLAPI
                         attributes[0].reflectionMethod = new ReflectionMethod(methods[i]);
                     }
                     
-                    ulong hash = HashMethodName(methods[i].Name);
+                    ulong hash = HashMethod(methods[i]);
                     if (HashResults.ContainsKey(hash) && HashResults[hash] != methods[i].Name)
                     {
                         if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError($"Hash collision detected for RPC method. The method \"{methods[i].Name}\" collides with the method \"{HashResults[hash]}\". This can be solved by increasing the amount of bytes to use for hashing in the NetworkConfig or changing the name of one of the conflicting methods.");
@@ -623,7 +623,7 @@ namespace MLAPI
                         attributes[0].reflectionMethod = new ReflectionMethod(methods[i]);
                     }
 
-                    ulong hash = HashMethodName(methods[i].Name);
+                    ulong hash = HashMethod(methods[i]);
                     if (HashResults.ContainsKey(hash) && HashResults[hash] != methods[i].Name)
                     {
                         if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError($"Hash collision detected for RPC method. The method \"{methods[i].Name}\" collides with the method \"{HashResults[hash]}\". This can be solved by increasing the amount of bytes to use for hashing in the NetworkConfig or changing the name of one of the conflicting methods.");
@@ -633,7 +633,7 @@ namespace MLAPI
                         HashResults.Add(hash, methods[i].Name);
                     }
 
-                    CachedClientRpcs[this].Add(HashMethodName(methods[i].Name), attributes[0]);
+                    CachedClientRpcs[this].Add(HashMethod(methods[i]), attributes[0]);
                 }     
             }
         }
