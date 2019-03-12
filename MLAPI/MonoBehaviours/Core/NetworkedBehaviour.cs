@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Linq;
 using MLAPI.Data;
 using System.IO;
+using System.Text;
 using MLAPI.Components;
 using MLAPI.Configuration;
 using MLAPI.Internal;
@@ -505,6 +506,8 @@ namespace MLAPI
         private readonly Dictionary<NetworkedBehaviour, Dictionary<ulong, ServerRPC>> CachedServerRpcs = new Dictionary<NetworkedBehaviour, Dictionary<ulong, ServerRPC>>();
         private static readonly Dictionary<Type, MethodInfo[]> Methods = new Dictionary<Type, MethodInfo[]>();
         private static readonly Dictionary<ulong, string> HashResults = new Dictionary<ulong, string>();
+        private static readonly Dictionary<MethodInfo, ulong> methodInfoHashTable = new Dictionary<MethodInfo, ulong>();
+        private static readonly StringBuilder methodInfoStringBuilder = new StringBuilder();
 
         private ulong HashMethodName(string name)
         {
@@ -518,6 +521,32 @@ namespace MLAPI
                 return name.GetStableHash64();
 
             return 0;
+        }
+        
+        private ulong HashMethod(MethodInfo method)
+        {
+            if (methodInfoHashTable.ContainsKey(method))
+            {
+                return methodInfoHashTable[method];
+            }
+            else
+            {
+                methodInfoStringBuilder.Length = 0;
+                methodInfoStringBuilder.Append(method.Name);
+
+                ParameterInfo[] parameters = method.GetParameters();
+                
+                for (int i = 0; i < parameters.Length; i++)
+                {
+                    methodInfoStringBuilder.Append(parameters[i].ParameterType.Name);
+                }
+
+                ulong val = HashMethodName(methodInfoStringBuilder.ToString());
+                
+                methodInfoHashTable.Add(method, val);
+
+                return val;
+            }
         }
 
         private MethodInfo[] GetNetworkedBehaviorChildClassesMethods(Type type, List<MethodInfo> list = null) 
