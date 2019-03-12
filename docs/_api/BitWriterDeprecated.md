@@ -4,7 +4,7 @@ permalink: /api/bit-writer-deprecated/
 ---
 
 <div style="line-height: 1;">
-	<h2 markdown="1">BitWriterDeprecated ``class``</h2>
+	<h2 markdown="1">BitWriterDeprecated ``class`` <small><span class="label label-warning" title="">Obsolete</span></small></h2>
 	<p style="font-size: 20px;"><b>Namespace:</b> MLAPI.Serialization</p>
 	<p style="font-size: 20px;"><b>Assembly:</b> MLAPI.dll</p>
 </div>

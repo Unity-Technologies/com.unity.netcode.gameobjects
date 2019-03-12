@@ -11,13 +11,13 @@ permalink: /api/relay-transport/
 <div>
 	<h3 markdown="1">Public Properties</h3>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``bool`` Enabled { get; }</b></h4>
+		<h4 markdown="1"><b>public ``bool`` Enabled { get; set; }</b></h4>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``string`` RelayAddress { get; }</b></h4>
+		<h4 markdown="1"><b>public ``string`` RelayAddress { get; set; }</b></h4>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``ushort`` RelayPort { get; }</b></h4>
+		<h4 markdown="1"><b>public ``ushort`` RelayPort { get; set; }</b></h4>
 	</div>
 </div>
 <br>

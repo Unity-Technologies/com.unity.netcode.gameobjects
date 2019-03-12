@@ -1,6 +1,6 @@
 ---
-title: NetworkedList<T>
-permalink: /api/networked-list_-t_/
+title: NetworkedList&lt;T&gt;
+permalink: /api/networked-list%3C-t%3E/
 ---
 
 <div style="line-height: 1;">
@@ -38,11 +38,11 @@ permalink: /api/networked-list_-t_/
 <div>
 	<h3>Public Constructors</h3>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``NetworkedList<T>``](/MLAPI/api/networked-list_-t_/)();</b></h4>
+		<h4 markdown="1"><b>public [``NetworkedList<T>``](/MLAPI/api/networked-list%3C-t%3E/)();</b></h4>
 		<p>Creates a NetworkedList with the default value and settings</p>
 	</div>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``NetworkedList<T>``](/MLAPI/api/networked-list_-t_/)([``NetworkedVarSettings``](/MLAPI/api/networked-var-settings/) settings);</b></h4>
+		<h4 markdown="1"><b>public [``NetworkedList<T>``](/MLAPI/api/networked-list%3C-t%3E/)([``NetworkedVarSettings``](/MLAPI/api/networked-var-settings/) settings);</b></h4>
 		<p>Creates a NetworkedList with the default value and custom settings</p>
 	</div>
 		<h5><b>Parameters</b></h5>
@@ -51,7 +51,7 @@ permalink: /api/networked-list_-t_/
 			<p>The settings to use for the NetworkedList</p>
 		</div>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``NetworkedList<T>``](/MLAPI/api/networked-list_-t_/)([``NetworkedVarSettings``](/MLAPI/api/networked-var-settings/) settings, ``IList<T>`` value);</b></h4>
+		<h4 markdown="1"><b>public [``NetworkedList<T>``](/MLAPI/api/networked-list%3C-t%3E/)([``NetworkedVarSettings``](/MLAPI/api/networked-var-settings/) settings, ``IList<T>`` value);</b></h4>
 	</div>
 		<h5><b>Parameters</b></h5>
 		<div>
@@ -61,7 +61,7 @@ permalink: /api/networked-list_-t_/
 			<p style="font-size: 20px; color: #444;" markdown="1">``IList<T>`` value</p>
 		</div>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``NetworkedList<T>``](/MLAPI/api/networked-list_-t_/)(``IList<T>`` value);</b></h4>
+		<h4 markdown="1"><b>public [``NetworkedList<T>``](/MLAPI/api/networked-list%3C-t%3E/)(``IList<T>`` value);</b></h4>
 	</div>
 		<h5><b>Parameters</b></h5>
 		<div>

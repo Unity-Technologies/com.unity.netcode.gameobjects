@@ -37,18 +37,6 @@ permalink: /api/network-config/
 		<p>The transport hosts the sever uses</p>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``string`` RelayAddress;</b></h4>
-		<p>Only used if the transport is MLPAI-Relay</p>
-	</div>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``ushort`` RelayPort;</b></h4>
-		<p>Only used if the transport is MLPAI-Relay</p>
-	</div>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``bool`` RelayEnabled;</b></h4>
-		<p>Wheter or not to use the relay</p>
-	</div>
-	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``List<Channel>`` Channels;</b></h4>
 		<p>Channels used by the NetworkedTransport</p>
 	</div>

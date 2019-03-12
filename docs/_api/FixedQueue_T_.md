@@ -1,6 +1,6 @@
 ---
-title: FixedQueue<T>
-permalink: /api/fixed-queue_-t_/
+title: FixedQueue&lt;T&gt;
+permalink: /api/fixed-queue%3C-t%3E/
 ---
 
 <div style="line-height: 1;">
@@ -24,7 +24,7 @@ permalink: /api/fixed-queue_-t_/
 <div>
 	<h3>Public Constructors</h3>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``FixedQueue<T>``](/MLAPI/api/fixed-queue_-t_/)(``int`` maxSize);</b></h4>
+		<h4 markdown="1"><b>public [``FixedQueue<T>``](/MLAPI/api/fixed-queue%3C-t%3E/)(``int`` maxSize);</b></h4>
 		<p>Creates a new FixedQueue with a given size</p>
 	</div>
 		<h5><b>Parameters</b></h5>

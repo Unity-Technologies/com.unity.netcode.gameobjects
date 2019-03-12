@@ -1,6 +1,6 @@
 ---
-title: NetworkedVar<T>
-permalink: /api/networked-var_-t_/
+title: NetworkedVar&lt;T&gt;
+permalink: /api/networked-var%3C-t%3E/
 ---
 
 <div style="line-height: 1;">
@@ -41,11 +41,11 @@ permalink: /api/networked-var_-t_/
 <div>
 	<h3>Public Constructors</h3>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``NetworkedVar<T>``](/MLAPI/api/networked-var_-t_/)();</b></h4>
+		<h4 markdown="1"><b>public [``NetworkedVar<T>``](/MLAPI/api/networked-var%3C-t%3E/)();</b></h4>
 		<p>Creates a NetworkedVar with the default value and settings</p>
 	</div>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``NetworkedVar<T>``](/MLAPI/api/networked-var_-t_/)([``NetworkedVarSettings``](/MLAPI/api/networked-var-settings/) settings);</b></h4>
+		<h4 markdown="1"><b>public [``NetworkedVar<T>``](/MLAPI/api/networked-var%3C-t%3E/)([``NetworkedVarSettings``](/MLAPI/api/networked-var-settings/) settings);</b></h4>
 		<p>Creates a NetworkedVar with the default value and custom settings</p>
 	</div>
 		<h5><b>Parameters</b></h5>
@@ -54,7 +54,7 @@ permalink: /api/networked-var_-t_/
 			<p>The settings to use for the NetworkedVar</p>
 		</div>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``NetworkedVar<T>``](/MLAPI/api/networked-var_-t_/)([``NetworkedVarSettings``](/MLAPI/api/networked-var-settings/) settings, ``T`` value);</b></h4>
+		<h4 markdown="1"><b>public [``NetworkedVar<T>``](/MLAPI/api/networked-var%3C-t%3E/)([``NetworkedVarSettings``](/MLAPI/api/networked-var-settings/) settings, ``T`` value);</b></h4>
 	</div>
 		<h5><b>Parameters</b></h5>
 		<div>
@@ -64,7 +64,7 @@ permalink: /api/networked-var_-t_/
 			<p style="font-size: 20px; color: #444;" markdown="1">``T`` value</p>
 		</div>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``NetworkedVar<T>``](/MLAPI/api/networked-var_-t_/)(``T`` value);</b></h4>
+		<h4 markdown="1"><b>public [``NetworkedVar<T>``](/MLAPI/api/networked-var%3C-t%3E/)(``T`` value);</b></h4>
 	</div>
 		<h5><b>Parameters</b></h5>
 		<div>

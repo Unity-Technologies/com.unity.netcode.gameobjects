@@ -1,6 +1,6 @@
 ---
-title: NetworkedListEvent<T>
-permalink: /api/networked-list-event_-t_/
+title: NetworkedListEvent&lt;T&gt;
+permalink: /api/networked-list-event%3C-t%3E/
 ---
 
 <div style="line-height: 1;">

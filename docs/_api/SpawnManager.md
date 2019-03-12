@@ -13,7 +13,7 @@ permalink: /api/spawn-manager/
 <div>
 	<h3 markdown="1">Public Fields</h3>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Dictionary<ulong, NetworkedObject>`` SpawnedObjects;</b></h4>
+		<h4 markdown="1"><b>public ``Dictionary<ulong,NetworkedObject>`` SpawnedObjects;</b></h4>
 		<p>The currently spawned objects</p>
 	</div>
 	<div style="line-height: 1;">
@@ -83,6 +83,34 @@ permalink: /api/spawn-manager/
 		<h5 markdown="1"><b>Returns ``int``</b></h5>
 		<div>
 			<p>The index of the prefab</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public static ``ulong`` GetPrefabHashFromIndex(``int`` index);</b></h4>
+		<p>Returns the prefab hash for the networked prefab with a given index</p>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``int`` index</p>
+			<p>The networked prefab index</p>
+		</div>
+		<h5 markdown="1"><b>Returns ``ulong``</b></h5>
+		<div>
+			<p>The prefab hash for the given prefab index</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public static ``ulong`` GetPrefabHashFromGenerator(``string`` generator);</b></h4>
+		<p>Returns the prefab hash for a given prefab hash generator</p>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` generator</p>
+			<p>The prefab hash generator</p>
+		</div>
+		<h5 markdown="1"><b>Returns ``ulong``</b></h5>
+		<div>
+			<p>The hash for the given generator</p>
 		</div>
 	</div>
 	<br>

@@ -1,6 +1,6 @@
 ---
-title: RpcResponse<T>
-permalink: /api/rpc-response_-t_/
+title: RpcResponse&lt;T&gt;
+permalink: /api/rpc-response%3C-t%3E/
 ---
 
 <div style="line-height: 1;">
@@ -50,7 +50,7 @@ permalink: /api/rpc-response_-t_/
 <div>
 	<h3>Public Constructors</h3>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``RpcResponse<T>``](/MLAPI/api/rpc-response_-t_/)();</b></h4>
+		<h4 markdown="1"><b>public [``RpcResponse<T>``](/MLAPI/api/rpc-response%3C-t%3E/)();</b></h4>
 	</div>
 </div>
 <br>

@@ -1,6 +1,6 @@
 ---
-title: EventType<T>
-permalink: /api/event-type_-t_/
+title: EventType&lt;T&gt;
+permalink: /api/event-type%3C-t%3E/
 ---
 
 <div style="line-height: 1;">

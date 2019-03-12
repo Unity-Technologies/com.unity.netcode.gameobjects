@@ -21,35 +21,35 @@ permalink: /api/networked-object/
 		<p>Gets the clientId of the owner of this NetworkedObject</p>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``bool`` isPlayerObject { get; }</b></h4>
+		<h4 markdown="1"><b>public ``bool`` isPlayerObject { get; }</b> <small><span class="label label-warning" title="Use IsPlayerObject instead">Obsolete</span></small></h4>
 	</div>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``bool`` IsPlayerObject { get; set; }</b></h4>
 		<p>Gets if this object is a player object</p>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``bool`` isLocalPlayer { get; }</b></h4>
+		<h4 markdown="1"><b>public ``bool`` isLocalPlayer { get; }</b> <small><span class="label label-warning" title="Use IsLocalPlayer instead">Obsolete</span></small></h4>
 	</div>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``bool`` IsLocalPlayer { get; }</b></h4>
 		<p>Gets if the object is the the personal clients player object</p>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``bool`` isOwner { get; }</b></h4>
+		<h4 markdown="1"><b>public ``bool`` isOwner { get; }</b> <small><span class="label label-warning" title="Use IsOwner instead">Obsolete</span></small></h4>
 	</div>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``bool`` IsOwner { get; }</b></h4>
 		<p>Gets if the object is owned by the local player or if the object is the local player object</p>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``bool`` isOwnedByServer { get; }</b></h4>
+		<h4 markdown="1"><b>public ``bool`` isOwnedByServer { get; }</b> <small><span class="label label-warning" title="Use IsOwnedByServer instead">Obsolete</span></small></h4>
 	</div>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``bool`` IsOwnedByServer { get; }</b></h4>
 		<p>Gets wheter or not the object is owned by anyone</p>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``bool`` isSpawned { get; }</b></h4>
+		<h4 markdown="1"><b>public ``bool`` isSpawned { get; }</b> <small><span class="label label-warning" title="Use IsSpawned instead">Obsolete</span></small></h4>
 	</div>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``bool`` IsSpawned { get; set; }</b></h4>
@@ -92,71 +92,71 @@ permalink: /api/networked-object/
 		<h5 markdown="1">Inherited from: ``Component``</h5>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Component`` rigidbody { get; }</b></h4>
+		<h4 markdown="1"><b>public ``Component`` rigidbody { get; }</b> <small><span class="label label-warning" title="Property rigidbody has been deprecated. Use GetComponent<Rigidbody>() instead. (UnityUpgradable)">Obsolete</span></small></h4>
 		<h5 markdown="1">Inherited from: ``Component``</h5>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Component`` rigidbody2D { get; }</b></h4>
+		<h4 markdown="1"><b>public ``Component`` rigidbody2D { get; }</b> <small><span class="label label-warning" title="Property rigidbody2D has been deprecated. Use GetComponent<Rigidbody2D>() instead. (UnityUpgradable)">Obsolete</span></small></h4>
 		<h5 markdown="1">Inherited from: ``Component``</h5>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Component`` camera { get; }</b></h4>
+		<h4 markdown="1"><b>public ``Component`` camera { get; }</b> <small><span class="label label-warning" title="Property camera has been deprecated. Use GetComponent<Camera>() instead. (UnityUpgradable)">Obsolete</span></small></h4>
 		<h5 markdown="1">Inherited from: ``Component``</h5>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Component`` light { get; }</b></h4>
+		<h4 markdown="1"><b>public ``Component`` light { get; }</b> <small><span class="label label-warning" title="Property light has been deprecated. Use GetComponent<Light>() instead. (UnityUpgradable)">Obsolete</span></small></h4>
 		<h5 markdown="1">Inherited from: ``Component``</h5>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Component`` animation { get; }</b></h4>
+		<h4 markdown="1"><b>public ``Component`` animation { get; }</b> <small><span class="label label-warning" title="Property animation has been deprecated. Use GetComponent<Animation>() instead. (UnityUpgradable)">Obsolete</span></small></h4>
 		<h5 markdown="1">Inherited from: ``Component``</h5>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Component`` constantForce { get; }</b></h4>
+		<h4 markdown="1"><b>public ``Component`` constantForce { get; }</b> <small><span class="label label-warning" title="Property constantForce has been deprecated. Use GetComponent<ConstantForce>() instead. (UnityUpgradable)">Obsolete</span></small></h4>
 		<h5 markdown="1">Inherited from: ``Component``</h5>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Component`` renderer { get; }</b></h4>
+		<h4 markdown="1"><b>public ``Component`` renderer { get; }</b> <small><span class="label label-warning" title="Property renderer has been deprecated. Use GetComponent<Renderer>() instead. (UnityUpgradable)">Obsolete</span></small></h4>
 		<h5 markdown="1">Inherited from: ``Component``</h5>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Component`` audio { get; }</b></h4>
+		<h4 markdown="1"><b>public ``Component`` audio { get; }</b> <small><span class="label label-warning" title="Property audio has been deprecated. Use GetComponent<AudioSource>() instead. (UnityUpgradable)">Obsolete</span></small></h4>
 		<h5 markdown="1">Inherited from: ``Component``</h5>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Component`` guiText { get; }</b></h4>
+		<h4 markdown="1"><b>public ``Component`` guiText { get; }</b> <small><span class="label label-warning" title="Property guiText has been deprecated. Use GetComponent<GUIText>() instead. (UnityUpgradable)">Obsolete</span></small></h4>
 		<h5 markdown="1">Inherited from: ``Component``</h5>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Component`` networkView { get; }</b></h4>
+		<h4 markdown="1"><b>public ``Component`` networkView { get; }</b> <small><span class="label label-warning" title="Property networkView has been deprecated. Use GetComponent<NetworkView>() instead. (UnityUpgradable)">Obsolete</span></small></h4>
 		<h5 markdown="1">Inherited from: ``Component``</h5>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Component`` guiElement { get; }</b></h4>
+		<h4 markdown="1"><b>public ``Component`` guiElement { get; }</b> <small><span class="label label-warning" title="Property guiElement has been deprecated. Use GetComponent<GUIElement>() instead. (UnityUpgradable)">Obsolete</span></small></h4>
 		<h5 markdown="1">Inherited from: ``Component``</h5>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Component`` guiTexture { get; }</b></h4>
+		<h4 markdown="1"><b>public ``Component`` guiTexture { get; }</b> <small><span class="label label-warning" title="Property guiTexture has been deprecated. Use GetComponent<GUITexture>() instead. (UnityUpgradable)">Obsolete</span></small></h4>
 		<h5 markdown="1">Inherited from: ``Component``</h5>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Component`` collider { get; }</b></h4>
+		<h4 markdown="1"><b>public ``Component`` collider { get; }</b> <small><span class="label label-warning" title="Property collider has been deprecated. Use GetComponent<Collider>() instead. (UnityUpgradable)">Obsolete</span></small></h4>
 		<h5 markdown="1">Inherited from: ``Component``</h5>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Component`` collider2D { get; }</b></h4>
+		<h4 markdown="1"><b>public ``Component`` collider2D { get; }</b> <small><span class="label label-warning" title="Property collider2D has been deprecated. Use GetComponent<Collider2D>() instead. (UnityUpgradable)">Obsolete</span></small></h4>
 		<h5 markdown="1">Inherited from: ``Component``</h5>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Component`` hingeJoint { get; }</b></h4>
+		<h4 markdown="1"><b>public ``Component`` hingeJoint { get; }</b> <small><span class="label label-warning" title="Property hingeJoint has been deprecated. Use GetComponent<HingeJoint>() instead. (UnityUpgradable)">Obsolete</span></small></h4>
 		<h5 markdown="1">Inherited from: ``Component``</h5>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Component`` particleEmitter { get; }</b></h4>
+		<h4 markdown="1"><b>public ``Component`` particleEmitter { get; }</b> <small><span class="label label-warning" title="Property particleEmitter has been deprecated. Use GetComponent<ParticleEmitter>() instead. (UnityUpgradable)">Obsolete</span></small></h4>
 		<h5 markdown="1">Inherited from: ``Component``</h5>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Component`` particleSystem { get; }</b></h4>
+		<h4 markdown="1"><b>public ``Component`` particleSystem { get; }</b> <small><span class="label label-warning" title="Property particleSystem has been deprecated. Use GetComponent<ParticleSystem>() instead. (UnityUpgradable)">Obsolete</span></small></h4>
 		<h5 markdown="1">Inherited from: ``Component``</h5>
 	</div>
 	<div style="line-height: 1;">
@@ -406,7 +406,7 @@ permalink: /api/networked-object/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Coroutine`` StartCoroutine_Auto(``IEnumerator`` routine);</b></h4>
+		<h4 markdown="1"><b>public ``Coroutine`` StartCoroutine_Auto(``IEnumerator`` routine);</b> <small><span class="label label-warning" title="StartCoroutine_Auto has been deprecated. Use StartCoroutine instead (UnityUpgradable) -> StartCoroutine([mscorlib] System.Collections.IEnumerator)">Obsolete</span></small></h4>
 		<h5 markdown="1">Inherited from: ``MonoBehaviour``</h5>
 		<h5><b>Parameters</b></h5>
 		<div>
