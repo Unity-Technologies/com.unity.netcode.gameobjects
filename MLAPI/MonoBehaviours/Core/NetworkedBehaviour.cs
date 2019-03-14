@@ -37,20 +37,20 @@ namespace MLAPI
         /// <summary>
         /// Gets if we are executing as server
         /// </summary>
-        protected bool IsServer => IsRunning && NetworkingManager.Singleton != null && NetworkingManager.Singleton.IsServer;
+        protected bool IsServer => IsRunning && NetworkingManager.Singleton.IsServer;
         [Obsolete("Use IsClient instead")]
         protected bool isClient => IsClient;
         /// <summary>
         /// Gets if we are executing as client
         /// </summary>
-        protected bool IsClient => IsRunning && NetworkingManager.Singleton != null && NetworkingManager.Singleton.IsClient;
+        protected bool IsClient => IsRunning && NetworkingManager.Singleton.IsClient;
         [Obsolete("Use IsHost instead", false)]
         protected bool isHost => IsHost;
         /// <summary>
         /// Gets if we are executing as Host, I.E Server and Client
         /// </summary>
-        protected bool IsHost => IsRunning && NetworkingManager.Singleton != null && NetworkingManager.Singleton.IsHost;
-        private bool IsRunning => NetworkingManager.Singleton != null && (NetworkingManager.Singleton == null || NetworkingManager.Singleton.IsListening);
+        protected bool IsHost => IsRunning && NetworkingManager.Singleton.IsHost;
+        private bool IsRunning => NetworkingManager.Singleton != null && NetworkingManager.Singleton.IsListening;
         [Obsolete("Use IsOwnedByServer instead", false)]
 		public bool isOwnedByServer => IsOwnedByServer;
         /// <summary>
