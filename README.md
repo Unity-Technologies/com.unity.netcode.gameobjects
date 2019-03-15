@@ -2,16 +2,17 @@
 
 MLAPI (Mid level API) is a framework that hopefully simplifies building networked games in Unity. It is built on the LLAPI and is similar to the HLAPI in many ways. It does not however integrate into the compiler and it's meant to offer much greater flexibility than the HLAPI while keeping some of it's simplicity. It offers greater performance over the HLAPI.
 
-[![Github All Releases](https://img.shields.io/github/downloads/MidLevel/MLAPI/total.svg)](https://github.com/MidLevel/MLAPI/releases)
-[![GitHub Release](https://img.shields.io/github/release/MidLevel/MLAPI.svg)](https://github.com/MidLevel/MLAPI/releases)
-[![Build status](https://ci.appveyor.com/api/projects/status/isxpxba8r76x7chu/branch/master?svg=true)](https://ci.appveyor.com/project/MidLevel/mlapi/branch/master)
-[![AppVeyor tests branch](https://img.shields.io/appveyor/tests/MidLevel/MLAPI/master.svg)](https://ci.appveyor.com/project/MidLevel/mlapi/build/tests)
-[![Discord](https://img.shields.io/discord/449263083769036810.svg)](https://discord.gg/FM8SE9E)
+[![GitHub Release](https://img.shields.io/github/release/MidLevel/MLAPI.svg?logo=github)](https://github.com/MidLevel/MLAPI/releases)
+[![Github All Releases](https://img.shields.io/github/downloads/MidLevel/MLAPI/total.svg?logo=github&color=informational)](https://github.com/MidLevel/MLAPI/releases)
+[![Discord](https://img.shields.io/discord/449263083769036810.svg?label=discord&logo=discord&color=informational)](https://discord.gg/FM8SE9E)
+[![Build Status](https://img.shields.io/appveyor/ci/midlevel/mlapi/master.svg?logo=appveyor)](https://ci.appveyor.com/project/MidLevel/mlapi/branch/master)
+[![AppVeyor Tests](https://img.shields.io/appveyor/tests/midlevel/mlapi/master.svg?logo=AppVeyor)](https://ci.appveyor.com/project/MidLevel/mlapi/build/tests)
 
 
-[![Licence](https://img.shields.io/github/license/MidLevel/MLAPI.svg)](https://github.com/MidLevel/MLAPI/blob/master/LICENCE)
-[![Website](https://img.shields.io/badge/docs-website-green.svg)](https://midlevel.github.io/MLAPI/)
-[![Wiki](https://img.shields.io/badge/docs-wiki-green.svg)](https://midlevel.github.io/MLAPI/wiki/)
+[![Licence](https://img.shields.io/github/license/midlevel/mlapi.svg?color=informational)](https://github.com/MidLevel/MLAPI/blob/master/LICENCE)
+[![Website](https://img.shields.io/badge/docs-website-informational.svg)](https://midlevel.github.io/MLAPI/)
+[![Wiki](https://img.shields.io/badge/docs-wiki-informational.svg)](https://midlevel.github.io/MLAPI/wiki/)
+[![Api](https://img.shields.io/badge/docs-api-informational.svg)](https://midlevel.github.io/MLAPI/api/)
 
 ### Documentation
 To get started, check the [Wiki](https://midlevel.github.io/MLAPI/).
