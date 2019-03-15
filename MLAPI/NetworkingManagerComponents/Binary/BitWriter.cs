@@ -45,7 +45,11 @@ namespace MLAPI.Serialization
         /// <param name="value">The object to write</param>
         public void WriteObjectPacked(object value)
         {
-            if (value is byte)
+            if (value == null)
+            {
+                throw new NullReferenceException("BitWriter cannot write null values");
+            }
+            else if (value is byte)
             {
                 WriteByte((byte)value);
                 return;
@@ -97,10 +101,6 @@ namespace MLAPI.Serialization
             }
             else if (value is string)
             {
-                if (value == null)
-                {
-                    throw new ArgumentException("BitWriter cannot write strings with a null value");
-                }
                 WriteStringPacked((string)value);
                 return;
             }
@@ -156,10 +156,6 @@ namespace MLAPI.Serialization
             }
             else if (value is GameObject) 
             {
-                if(value == null) 
-                {
-                    throw new ArgumentException("BitWriter cannot write GameObject types with a null value");
-                }
                 NetworkedObject networkedObject = ((GameObject)value).GetComponent<NetworkedObject>();
                 if(networkedObject == null) 
                 {
@@ -173,29 +169,17 @@ namespace MLAPI.Serialization
             }
             else if (value is NetworkedObject)
             {
-                if (value == null) 
-                {
-                    throw new ArgumentException("BitWriter cannot write NetworkedObject types with a null value");
-                }
                 WriteUInt64Packed(((NetworkedObject)value).NetworkId);
                 return;
             } 
             else if (value is NetworkedBehaviour)
             {
-                if(value == null) 
-                {
-                    throw new ArgumentException("BitWriter cannot write NetworkedBehaviour types with a null value");
-                }
                 WriteUInt64Packed(((NetworkedBehaviour)value).NetworkId);
                 WriteUInt16Packed(((NetworkedBehaviour)value).GetBehaviourId());
                 return;
             } 
             else if (value is IBitWritable)
             {
-                if (value == null)
-                {
-                    throw new ArgumentException("BitWriter cannot write IBitWritable types with a null value");
-                }
                 ((IBitWritable)value).Write(this.sink);
                 return;
             } 
