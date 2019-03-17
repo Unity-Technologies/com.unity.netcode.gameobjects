@@ -602,23 +602,26 @@ namespace MLAPI
                         HashResults.Add(nameHash, methods[i].Name);
                     }
                     CachedServerRpcs[this].Add(nameHash, attributes[0]);
-                    
-                    
-                    // Alloc justification: This is done only when first created. We are still allocing a whole NetworkedBehaviour. Allocing a string extra is NOT BAD
-                    // As long as we dont alloc the string every RPC invoke. It's fine
-                    string hashableMethodSignature = GetHashableMethodSignature(methods[i]);
 
-                    ulong methodHash = HashMethodName(hashableMethodSignature);
+
+                    if (methods[i].GetParameters().Length > 0)
+                    {
+                        // Alloc justification: This is done only when first created. We are still allocing a whole NetworkedBehaviour. Allocing a string extra is NOT BAD
+                        // As long as we dont alloc the string every RPC invoke. It's fine
+                        string hashableMethodSignature = GetHashableMethodSignature(methods[i]);
+
+                        ulong methodHash = HashMethodName(hashableMethodSignature);
                     
-                    if (HashResults.ContainsKey(methodHash) && HashResults[methodHash] != hashableMethodSignature)
-                    {
-                        if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError($"Hash collision detected for RPC method. The method \"{hashableMethodSignature}\" collides with the method \"{HashResults[methodHash]}\". This can be solved by increasing the amount of bytes to use for hashing in the NetworkConfig or changing the name of one of the conflicting methods.");
+                        if (HashResults.ContainsKey(methodHash) && HashResults[methodHash] != hashableMethodSignature)
+                        {
+                            if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError($"Hash collision detected for RPC method. The method \"{hashableMethodSignature}\" collides with the method \"{HashResults[methodHash]}\". This can be solved by increasing the amount of bytes to use for hashing in the NetworkConfig or changing the name of one of the conflicting methods.");
+                        }
+                        else if (!HashResults.ContainsKey(methodHash))
+                        {
+                            HashResults.Add(methodHash, hashableMethodSignature);
+                        }
+                        CachedServerRpcs[this].Add(methodHash, attributes[0]);   
                     }
-                    else if (!HashResults.ContainsKey(methodHash))
-                    {
-                        HashResults.Add(methodHash, hashableMethodSignature);
-                    }
-                    CachedServerRpcs[this].Add(methodHash, attributes[0]);
                 }
                 
                 if (methods[i].IsDefined(typeof(ClientRPC), true))
@@ -657,23 +660,26 @@ namespace MLAPI
                         HashResults.Add(nameHash, methods[i].Name);
                     }
                     CachedClientRpcs[this].Add(nameHash, attributes[0]);
-                    
-                    
-                    // Alloc justification: This is done only when first created. We are still allocing a whole NetworkedBehaviour. Allocing a string extra is NOT BAD
-                    // As long as we dont alloc the string every RPC invoke. It's fine
-                    string hashableMethodSignature = GetHashableMethodSignature(methods[i]);
 
-                    ulong methodHash = HashMethodName(hashableMethodSignature);
+
+                    if (methods[i].GetParameters().Length > 0)
+                    {
+                        // Alloc justification: This is done only when first created. We are still allocing a whole NetworkedBehaviour. Allocing a string extra is NOT BAD
+                        // As long as we dont alloc the string every RPC invoke. It's fine
+                        string hashableMethodSignature = GetHashableMethodSignature(methods[i]);
+
+                        ulong methodHash = HashMethodName(hashableMethodSignature);
                     
-                    if (HashResults.ContainsKey(methodHash) && HashResults[methodHash] != hashableMethodSignature)
-                    {
-                        if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError($"Hash collision detected for RPC method. The method \"{hashableMethodSignature}\" collides with the method \"{HashResults[methodHash]}\". This can be solved by increasing the amount of bytes to use for hashing in the NetworkConfig or changing the name of one of the conflicting methods.");
+                        if (HashResults.ContainsKey(methodHash) && HashResults[methodHash] != hashableMethodSignature)
+                        {
+                            if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError($"Hash collision detected for RPC method. The method \"{hashableMethodSignature}\" collides with the method \"{HashResults[methodHash]}\". This can be solved by increasing the amount of bytes to use for hashing in the NetworkConfig or changing the name of one of the conflicting methods.");
+                        }
+                        else if (!HashResults.ContainsKey(methodHash))
+                        {
+                            HashResults.Add(methodHash, hashableMethodSignature);
+                        }
+                        CachedClientRpcs[this].Add(methodHash, attributes[0]);
                     }
-                    else if (!HashResults.ContainsKey(methodHash))
-                    {
-                        HashResults.Add(methodHash, hashableMethodSignature);
-                    }
-                    CachedClientRpcs[this].Add(methodHash, attributes[0]);
                 }     
             }
         }
