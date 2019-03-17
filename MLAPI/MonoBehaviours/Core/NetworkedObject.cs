@@ -213,7 +213,9 @@ namespace MLAPI
         /// <param name="spawnPayload">The writer containing the spawn payload</param>
         public void Spawn(Stream spawnPayload = null)
         {
-            //SpawnManager.SpawnObject(this, null, spawnPayload, destroyWithScene);
+            if (spawnPayload != null)
+                spawnPayload.Position = 0;
+            
             SpawnManager.SpawnNetworkedObjectLocally(this, SpawnManager.GetNetworkObjectId(), false, false, NetworkingManager.Singleton.ServerClientId, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false);
 
             for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)
@@ -241,7 +243,9 @@ namespace MLAPI
         /// <param name="destroyWithScene">Should the object be destroyd when the scene is changed</param>
         public void SpawnWithOwnership(uint clientId, Stream spawnPayload = null, bool destroyWithScene = false)
         {
-            //SpawnManager.SpawnObject(this, clientId, spawnPayload, destroyWithScene);
+            if (spawnPayload != null)
+                spawnPayload.Position = 0;
+            
             SpawnManager.SpawnNetworkedObjectLocally(this, SpawnManager.GetNetworkObjectId(), false, false, clientId, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false);
 
             for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)
@@ -260,6 +264,9 @@ namespace MLAPI
         /// <param name="spawnPayload">The writer containing the spawn payload</param>
         public void SpawnAsPlayerObject(uint clientId, Stream spawnPayload = null)
         {
+            if (spawnPayload != null)
+                spawnPayload.Position = 0;
+            
             SpawnManager.SpawnNetworkedObjectLocally(this, SpawnManager.GetNetworkObjectId(), false, true, clientId, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false);
             
             for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)

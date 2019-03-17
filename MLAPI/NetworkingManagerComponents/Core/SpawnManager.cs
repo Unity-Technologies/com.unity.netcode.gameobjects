@@ -302,6 +302,7 @@ namespace MLAPI.Components
                 {
                     payloadStream.CopyUnreadFrom(dataStream, payloadLength);
                     dataStream.Position += payloadLength;
+                    payloadStream.Position = 0;
                     netObject.InvokeBehaviourNetworkSpawn(payloadStream);
                 }
             }
