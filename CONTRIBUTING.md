@@ -34,6 +34,10 @@ to read on GitHub as well as in various git tools.
 
 The footer should contain a [closing reference to an issue](https://help.github.com/articles/closing-issues-via-commit-messages/) if any.
 
+If the change isn't backwards compatible. You have to disclose that in the footer like this. Here is an example:
+```
+perf(networked-vars): Improved performance by removing duplex functionality
+
 Samples:
 
 ```
