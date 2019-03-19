@@ -10,6 +10,8 @@ skip_commits:
   files:
     - docs/*
 
+skip_tags: true
+
 build:
   project: MLAPI.sln
   verbosity: minimal
@@ -54,6 +56,17 @@ for:
   test:
     assemblies:
       - 'MLAPI-Tests\bin\Release\*\MLAPI-Tests.dll'
+-
+  matrix:
+    only:
+      - branch: master
+      - configuration: Release
+  cache:
+  - '%APPDATA%\npm'
+  install:
+  - npm install -g semantic-release
+  deploy_script:
+  - semantic-release
 -
   matrix:
     only:
