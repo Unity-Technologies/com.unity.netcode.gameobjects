@@ -161,7 +161,7 @@ namespace MLAPI.Serialization
                     return null;
                 }
             }
-            if (type == typeof(NetworkedBehaviour))
+            if (typeof(NetworkedBehaviour).IsAssignableFrom(type))
             {
                 ulong networkId = ReadUInt64Packed();
                 ushort behaviourId = ReadUInt16Packed();
