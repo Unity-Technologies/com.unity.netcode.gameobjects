@@ -37,7 +37,7 @@ The footer should contain a [closing reference to an issue](https://help.github.
 If the change isn't backwards compatible. You have to disclose that in the footer like this. Here is an example:
 ```
 perf(networked-vars): Improved performance by removing duplex functionality
-
+```
 Samples:
 
 ```
