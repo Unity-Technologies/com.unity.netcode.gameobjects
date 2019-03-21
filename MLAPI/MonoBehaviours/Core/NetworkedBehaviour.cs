@@ -20,30 +20,45 @@ namespace MLAPI
     /// </summary>
     public abstract partial class NetworkedBehaviour : MonoBehaviour
     {
+        /// <summary>
+        /// Gets if the object is the the personal clients player object
+        /// </summary>
         [Obsolete("Use IsLocalPlayer instead", false)]
         public bool isLocalPlayer => IsLocalPlayer;
         /// <summary>
         /// Gets if the object is the the personal clients player object
         /// </summary>
         public bool IsLocalPlayer => NetworkedObject.IsLocalPlayer;
+        /// <summary>
+        /// Gets if the object is owned by the local player or if the object is the local player object
+        /// </summary>
         [Obsolete("Use IsOwner instead", false)]
         public bool isOwner => IsOwner;
         /// <summary>
         /// Gets if the object is owned by the local player or if the object is the local player object
         /// </summary>
         public bool IsOwner => NetworkedObject.IsOwner;
+        /// <summary>
+        /// Gets if we are executing as server
+        /// </summary>
         [Obsolete("Use IsServer instead", false)]
         protected bool isServer => IsServer;
         /// <summary>
         /// Gets if we are executing as server
         /// </summary>
         protected bool IsServer => IsRunning && NetworkingManager.Singleton.IsServer;
+        /// <summary>
+        /// Gets if we are executing as client
+        /// </summary>
         [Obsolete("Use IsClient instead")]
         protected bool isClient => IsClient;
         /// <summary>
         /// Gets if we are executing as client
         /// </summary>
         protected bool IsClient => IsRunning && NetworkingManager.Singleton.IsClient;
+        /// <summary>
+        /// Gets if we are executing as Host, I.E Server and Client
+        /// </summary>
         [Obsolete("Use IsHost instead", false)]
         protected bool isHost => IsHost;
         /// <summary>
@@ -51,6 +66,9 @@ namespace MLAPI
         /// </summary>
         protected bool IsHost => IsRunning && NetworkingManager.Singleton.IsHost;
         private bool IsRunning => NetworkingManager.Singleton != null && NetworkingManager.Singleton.IsListening;
+        /// <summary>
+        /// Gets wheter or not the object has a owner
+        /// </summary>
         [Obsolete("Use IsOwnedByServer instead", false)]
 		public bool isOwnedByServer => IsOwnedByServer;
         /// <summary>
@@ -61,6 +79,9 @@ namespace MLAPI
         /// Contains the sender of the currently executing RPC. Useful for the convenience RPC methods
         /// </summary>
         protected uint ExecutingRpcSender { get; private set; }
+        /// <summary>
+        /// Gets the NetworkedObject that owns this NetworkedBehaviour instance
+        /// </summary>
         [Obsolete("Use NetworkedObject instead", false)]
         public NetworkedObject networkedObject => NetworkedObject;
         /// <summary>
@@ -79,6 +100,9 @@ namespace MLAPI
         }
 
         private NetworkedObject _networkedObject = null;
+        /// <summary>
+        /// Gets the NetworkId of the NetworkedObject that owns the NetworkedBehaviour instance
+        /// </summary>
         [Obsolete("Use NetworkId instead", false)]
         public ulong networkId => NetworkId;
         /// <summary>
