@@ -86,9 +86,6 @@ namespace MLAPI.Components
                 return; //This scene is already loaded. This usually happends at first load
             }
 
-            //  This has been commented out as it shouldn't be needed. The server send messages about removed
-            //  objects, the client should not need to determine by itself what objects to remove.
-            //SpawnManager.DestroySceneObjects();
             lastScene = SceneManager.GetActiveScene();
 
             string sceneName = sceneIndexToString[sceneIndex];
