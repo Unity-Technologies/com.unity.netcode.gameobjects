@@ -415,8 +415,6 @@ namespace MLAPI
 
         internal static void HandleNetworkedVarDeltas(List<INetworkedVar> networkedVarList, Stream stream, uint clientId, NetworkedBehaviour logInstance)
         {
-            // TODO: Lot's of performance improvements to do here.
-
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
                 for (int i = 0; i < networkedVarList.Count; i++)
