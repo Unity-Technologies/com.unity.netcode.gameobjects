@@ -72,7 +72,7 @@ namespace MLAPI.Prototyping
 
                         if (!EnableProximity)
                         {
-                            InvokeClientRpcOnEveryone(OnNavMeshStateUpdate, stream);
+                            InvokeClientRpcOnEveryonePerformance(OnNavMeshStateUpdate, stream);
                         }
                         else
                         {
@@ -82,7 +82,7 @@ namespace MLAPI.Prototyping
                                 if (Vector3.Distance(client.Value.PlayerObject.transform.position, transform.position) <= ProximityRange)
                                     proximityClients.Add(client.Key);
                             }
-                            InvokeClientRpc(OnNavMeshStateUpdate, proximityClients, stream);
+                            InvokeClientRpcPerformance(OnNavMeshStateUpdate, proximityClients, stream);
                         }
                     }
                 }
@@ -105,7 +105,7 @@ namespace MLAPI.Prototyping
 
                         if (!EnableProximity)
                         {
-                            InvokeClientRpcOnEveryone(OnNavMeshCorrectionUpdate, stream);
+                            InvokeClientRpcOnEveryonePerformance(OnNavMeshCorrectionUpdate, stream);
                         }
                         else
                         {
@@ -115,7 +115,7 @@ namespace MLAPI.Prototyping
                                 if (Vector3.Distance(client.Value.PlayerObject.transform.position, transform.position) <= ProximityRange)
                                     proximityClients.Add(client.Key);
                             }
-                            InvokeClientRpc(OnNavMeshCorrectionUpdate, proximityClients, stream);
+                            InvokeClientRpcPerformance(OnNavMeshCorrectionUpdate, proximityClients, stream);
                         }
                     }
                 }

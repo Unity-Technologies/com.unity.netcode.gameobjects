@@ -157,9 +157,9 @@ namespace MLAPI.Prototyping
                             writer.WriteSinglePacked(transform.rotation.eulerAngles.z);
 
                             if (IsServer)
-                                InvokeClientRpcOnEveryoneExcept(ApplyTransform, OwnerClientId, stream);
+                                InvokeClientRpcOnEveryoneExceptPerformance(ApplyTransform, OwnerClientId, stream);
                             else
-                                InvokeServerRpc(SubmitTransform, stream);
+                                InvokeServerRpcPerformance(SubmitTransform, stream);
                         }
                     }
 
@@ -285,7 +285,7 @@ namespace MLAPI.Prototyping
                                     info.lastMissedPosition = null;
                                     info.lastMissedRotation = null;
 
-                                    InvokeClientRpcOnClient(ApplyTransform, NetworkingManager.Singleton.ConnectedClientsList[i].ClientId, writeStream);
+                                    InvokeClientRpcOnClientPerformance(ApplyTransform, NetworkingManager.Singleton.ConnectedClientsList[i].ClientId, writeStream);
                                 }
                                 else
                                 {
@@ -296,7 +296,7 @@ namespace MLAPI.Prototyping
                         }
                         else
                         {
-                            InvokeClientRpcOnEveryoneExcept(ApplyTransform, OwnerClientId, writeStream);
+                            InvokeClientRpcOnEveryoneExceptPerformance(ApplyTransform, OwnerClientId, writeStream);
                         }
                     }
                 }
@@ -342,7 +342,7 @@ namespace MLAPI.Prototyping
                             writer.WriteSinglePacked(rot.y);
                             writer.WriteSinglePacked(rot.z);
 
-                            InvokeClientRpcOnClient(ApplyTransform, NetworkingManager.Singleton.ConnectedClientsList[i].ClientId, stream);
+                            InvokeClientRpcOnClientPerformance(ApplyTransform, NetworkingManager.Singleton.ConnectedClientsList[i].ClientId, stream);
                         }
                     }
                 }

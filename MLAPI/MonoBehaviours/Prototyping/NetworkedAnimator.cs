@@ -127,16 +127,16 @@ namespace MLAPI.Prototyping
                                 if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
                                     clientsInProximity.Add(client.Key);
                             }
-                            InvokeClientRpc(ApplyAnimParamMsg, clientsInProximity, stream);
+                            InvokeClientRpcPerformance(ApplyAnimParamMsg, clientsInProximity, stream);
                         }
                         else
                         {
-                            InvokeClientRpcOnEveryoneExcept(ApplyAnimMsg, OwnerClientId, stream);
+                            InvokeClientRpcOnEveryoneExceptPerformance(ApplyAnimMsg, OwnerClientId, stream);
                         }
                     }
                     else
                     {
-                        InvokeServerRpc(SubmitAnimMsg, stream);
+                        InvokeServerRpcPerformance(SubmitAnimMsg, stream);
                     }
                 }
             }
@@ -199,16 +199,16 @@ namespace MLAPI.Prototyping
                                     if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
                                         clientsInProximity.Add(client.Key);
                                 }
-                                InvokeClientRpc(ApplyAnimParamMsg, clientsInProximity, stream);
+                                InvokeClientRpcPerformance(ApplyAnimParamMsg, clientsInProximity, stream);
                             }
                             else
                             {
-                                InvokeClientRpcOnEveryoneExcept(ApplyAnimParamMsg, OwnerClientId, stream);
+                                InvokeClientRpcOnEveryoneExceptPerformance(ApplyAnimParamMsg, OwnerClientId, stream);
                             }
                         }
                         else
                         {
-                            InvokeServerRpc(SubmitAnimParamMsg, stream);
+                            InvokeServerRpcPerformance(SubmitAnimParamMsg, stream);
                         }
                     }
                 }
@@ -252,11 +252,11 @@ namespace MLAPI.Prototyping
                     if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
                         clientsInProximity.Add(client.Key);
                 }
-                InvokeClientRpc(ApplyAnimMsg, clientsInProximity, stream);
+                InvokeClientRpcPerformance(ApplyAnimMsg, clientsInProximity, stream);
             }
             else
             {
-                InvokeClientRpcOnEveryoneExcept(ApplyAnimMsg, OwnerClientId, stream);
+                InvokeClientRpcOnEveryoneExceptPerformance(ApplyAnimMsg, OwnerClientId, stream);
             }
         }
 
@@ -286,11 +286,11 @@ namespace MLAPI.Prototyping
                     if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
                         clientsInProximity.Add(client.Key);
                 }
-                InvokeClientRpc(ApplyAnimParamMsg, clientsInProximity, stream);
+                InvokeClientRpcPerformance(ApplyAnimParamMsg, clientsInProximity, stream);
             }
             else
             {
-                InvokeClientRpcOnEveryoneExcept(ApplyAnimParamMsg, OwnerClientId, stream);
+                InvokeClientRpcOnEveryoneExceptPerformance(ApplyAnimParamMsg, OwnerClientId, stream);
             }
         }
 
@@ -311,11 +311,11 @@ namespace MLAPI.Prototyping
                     if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
                         clientsInProximity.Add(client.Key);
                 }
-                InvokeClientRpc(ApplyAnimTriggerMsg, clientsInProximity, stream);
+                InvokeClientRpcPerformance(ApplyAnimTriggerMsg, clientsInProximity, stream);
             }
             else
             {
-                InvokeClientRpcOnEveryoneExcept(ApplyAnimTriggerMsg, OwnerClientId, stream);
+                InvokeClientRpcOnEveryoneExceptPerformance(ApplyAnimTriggerMsg, OwnerClientId, stream);
             }
         }
 
@@ -438,16 +438,16 @@ namespace MLAPI.Prototyping
                                     if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
                                         clientsInProximity.Add(client.Key);
                                 }
-                                InvokeClientRpc(ApplyAnimTriggerMsg, clientsInProximity, stream);
+                                InvokeClientRpcPerformance(ApplyAnimTriggerMsg, clientsInProximity, stream);
                             }
                             else
                             {
-                                InvokeClientRpcOnEveryoneExcept(ApplyAnimTriggerMsg, OwnerClientId, stream);
+                                InvokeClientRpcOnEveryoneExceptPerformance(ApplyAnimTriggerMsg, OwnerClientId, stream);
                             }
                         }
                         else
                         {
-                            InvokeServerRpc(SubmitAnimTriggerMsg, stream);
+                            InvokeServerRpcPerformance(SubmitAnimTriggerMsg, stream);
                         }
                     }
                 }
