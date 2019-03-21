@@ -77,30 +77,45 @@ namespace MLAPI
         /// </summary>
         [SerializeField]
         public string PrefabHashGenerator;
+        /// <summary>
+        /// Gets if this object is a player object
+        /// </summary>
         [Obsolete("Use IsPlayerObject instead", false)]
         public bool isPlayerObject => IsPlayerObject;
         /// <summary>
         /// Gets if this object is a player object
         /// </summary>
         public bool IsPlayerObject { get; internal set; }
+        /// <summary>
+        /// Gets if the object is the the personal clients player object
+        /// </summary>
         [Obsolete("Use IsLocalPlayer instead", false)]
 		public bool isLocalPlayer => IsLocalPlayer;
         /// <summary>
         /// Gets if the object is the the personal clients player object
         /// </summary>
         public bool IsLocalPlayer => NetworkingManager.Singleton != null && IsPlayerObject && OwnerClientId == NetworkingManager.Singleton.LocalClientId;
+        /// <summary>
+        /// Gets if the object is owned by the local player or if the object is the local player object
+        /// </summary>
         [Obsolete("Use IsOwner instead", false)]
         public bool isOwner => IsOwner;
         /// <summary>
         /// Gets if the object is owned by the local player or if the object is the local player object
         /// </summary>
         public bool IsOwner => NetworkingManager.Singleton != null && OwnerClientId == NetworkingManager.Singleton.LocalClientId;
+        /// <summary>
+        /// Gets wheter or not the object is owned by anyone
+        /// </summary>
         [Obsolete("Use IsOwnedByServer instead", false)]
 		public bool isOwnedByServer => IsOwnedByServer;
         /// <summary>
         /// Gets wheter or not the object is owned by anyone
         /// </summary>
         public bool IsOwnedByServer => NetworkingManager.Singleton != null && OwnerClientId == NetworkingManager.Singleton.ServerClientId;
+        /// <summary>
+        /// Gets if the object has yet been spawned across the network
+        /// </summary>
         [Obsolete("Use IsSpawned instead", false)]
         public bool isSpawned => IsSpawned;
         /// <summary>
