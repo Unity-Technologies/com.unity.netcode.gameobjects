@@ -415,6 +415,18 @@ namespace MLAPI.Serialization
         }
 
         /// <summary>
+        /// Writes the rotation to the stream.
+        /// </summary>
+        /// <param name="rotation">Rotation to write</param>
+        public void WriteRotation(Quaternion rotation)
+        {
+            WriteSingle(rotation.x);
+            WriteSingle(rotation.y);
+            WriteSingle(rotation.z);
+            WriteSingle(rotation.w);
+        }
+
+        /// <summary>
         /// Writes a single bit
         /// </summary>
         /// <param name="bit"></param>

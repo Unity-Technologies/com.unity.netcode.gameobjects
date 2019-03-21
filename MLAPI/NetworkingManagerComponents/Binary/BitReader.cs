@@ -353,6 +353,20 @@ namespace MLAPI.Serialization
         }
 
         /// <summary>
+        /// Reads the rotation from the stream
+        /// </summary>
+        /// <returns>The rotation read from the stream</returns>
+        public Quaternion ReadRotation()
+        {
+            float x = ReadSingle();
+            float y = ReadSingle();
+            float z = ReadSingle();
+            float w = ReadSingle();
+
+            return new Quaternion(x, y, z, w);
+        }
+
+        /// <summary>
         /// Read a certain amount of bits from the stream.
         /// </summary>
         /// <param name="bitCount">How many bits to read. Minimum 0, maximum 8.</param>
