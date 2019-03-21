@@ -2,9 +2,9 @@ version: '{branch}-{build}'
 
 configuration:
   - Debug
-  - Release
-  - Release_Lite
   - Debug_Lite
+  - Release_Lite
+  - Release
 
 skip_commits:
   files:
@@ -27,6 +27,9 @@ image: Visual Studio 2017
 
 before_build:
   - nuget restore
+
+matrix:
+  fast_finish: true
 
 for:
 -
