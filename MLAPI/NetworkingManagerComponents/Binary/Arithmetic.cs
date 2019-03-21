@@ -1,5 +1,4 @@
-﻿#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-namespace MLAPI.Serialization
+﻿namespace MLAPI.Serialization
 {
     public static class Arithmetic
     {
@@ -51,4 +50,3 @@ namespace MLAPI.Serialization
         internal static long Div8Ceil(ulong value) => (long)((value >> 3) + ((value & 1UL) | ((value >> 1) & 1UL) | ((value >> 2) & 1UL)));
     }
 }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member

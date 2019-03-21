@@ -1,5 +1,4 @@
-﻿#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-namespace MLAPI.Serialization
+﻿namespace MLAPI.Serialization
 {
     public static class BinaryHelpers
     {
@@ -16,4 +15,3 @@ namespace MLAPI.Serialization
             ((value << 8)  & (0xFFUL << 32)) ;
     }
 }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member

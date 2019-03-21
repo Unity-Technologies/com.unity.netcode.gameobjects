@@ -29,7 +29,6 @@ namespace MLAPI.Configuration
 
 namespace MLAPI
 {
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
     public delegate void RpcDelegate(uint clientId, Stream stream);
 
     internal class ReflectionMethod
@@ -92,6 +91,4 @@ namespace MLAPI
         internal ReflectionMethod reflectionMethod;
         internal RpcDelegate rpcDelegate;
     }
-    
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 }

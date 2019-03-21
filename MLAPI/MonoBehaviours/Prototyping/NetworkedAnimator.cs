@@ -35,7 +35,6 @@ namespace MLAPI.Prototyping
         private float sendTimer;
 
 
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
         // tracking - these should probably move to a Preview component. -- Comment from HLAPI. Needs clarification
         public string param0;
         public string param1;
@@ -43,7 +42,6 @@ namespace MLAPI.Prototyping
         public string param3;
         public string param4;
         public string param5;
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 
         /// <summary>
         /// Gets or sets the animator component used for syncing the animations
@@ -100,10 +98,8 @@ namespace MLAPI.Prototyping
 
             CheckSendRate();
 
-#pragma warning disable IDE0018 // Inline variable declaration, Unity's Mono version doesn't support it
             int stateHash;
             float normalizedTime;
-#pragma warning restore IDE0018 // Inline variable declaration, Unity's Mono version doesn't support it
             if (!CheckAnimStateChanged(out stateHash, out normalizedTime))
             {
                 return;

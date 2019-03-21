@@ -2,7 +2,6 @@
 
 namespace MLAPI.Logging
 {
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
     public enum LogLevel
     {
         Developer,
@@ -28,5 +27,4 @@ namespace MLAPI.Logging
         public static void LogWarning(string message) => Debug.LogWarning("[MLAPI] " + message);
         public static void LogError(string message) => Debug.LogError("[MLAPI] " + message);
     }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 }

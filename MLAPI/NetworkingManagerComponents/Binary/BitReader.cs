@@ -539,7 +539,6 @@ namespace MLAPI.Serialization
             return res;
         }
 
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
         // Read arrays
         public StringBuilder ReadString(bool oneByteChars) => ReadString(null, oneByteChars);
         public StringBuilder ReadString(StringBuilder builder = null, bool oneByteChars = false)
@@ -1321,6 +1320,5 @@ namespace MLAPI.Serialization
             bitSource.BitPosition = data;
             return writeTo;
         }
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
     }
 }
