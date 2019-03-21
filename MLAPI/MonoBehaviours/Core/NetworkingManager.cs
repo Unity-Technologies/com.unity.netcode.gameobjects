@@ -50,6 +50,9 @@ namespace MLAPI
         /// </summary>
         [HideInInspector]
         public LogLevel LogLevel = LogLevel.Normal;
+        /// <summary>
+        /// The singleton instance of the NetworkingManager
+        /// </summary>
         [Obsolete("Use Singleton instead", false)]
         public static NetworkingManager singleton => Singleton;
         /// <summary>
@@ -88,24 +91,36 @@ namespace MLAPI
         /// Gets a dictionary of the clients that have been accepted by the transport but are still pending by the MLAPI.
         /// </summary>
         public readonly Dictionary<uint, PendingClient> PendingClients = new Dictionary<uint, PendingClient>();
+        /// <summary>
+        /// Gets wheter or not a server is running
+        /// </summary>
         [Obsolete("Use IsServer instead", false)]
         public bool isServer => IsServer;
         /// <summary>
         /// Gets wheter or not a server is running
         /// </summary>
         public bool IsServer { get; internal set; }
+        /// <summary>
+        /// Gets wheter or not a client is running
+        /// </summary>
         [Obsolete("Use IsClient instead", false)]
         public bool isClient => IsClient;
         /// <summary>
         /// Gets wheter or not a client is running
         /// </summary>
         public bool IsClient { get; internal set; }
+        /// <summary>
+        /// Gets if we are running as host
+        /// </summary>
         [Obsolete("Use IsHost instead", false)]
         public bool isHost => IsHost;
         /// <summary>
         /// Gets if we are running as host
         /// </summary>
         public bool IsHost => IsServer && IsClient;
+        /// <summary>
+        /// Gets wheter or not we are listening for connections
+        /// </summary>
         [Obsolete("Use IsListening instead", false)]
         public bool isListening => IsListening;
         /// <summary>
@@ -113,6 +128,9 @@ namespace MLAPI
         /// </summary>
         public bool IsListening { get; internal set; }
         private byte[] messageBuffer;
+        /// <summary>
+        /// Gets if we are connected as a client
+        /// </summary>
         [Obsolete("Use IsConnectedClient instead", false)]
         public bool isConnectedClients => IsConnectedClient;
         /// <summary>
