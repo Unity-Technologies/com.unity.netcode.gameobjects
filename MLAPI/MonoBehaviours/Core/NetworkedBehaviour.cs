@@ -335,8 +335,6 @@ namespace MLAPI
             if (!networkedVarInit)
                 NetworkedVarInit();
 
-            //TODO: Do this efficiently.
-
             if (!CouldHaveDirtyVars()) 
                 return;
 
