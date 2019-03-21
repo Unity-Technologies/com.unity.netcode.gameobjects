@@ -346,6 +346,10 @@ namespace MLAPI.Serialization
             return new Quaternion(x, y, z, w);
         }
 
+        /// <summary>
+        /// Reads the rotation from the stream
+        /// </summary>
+        /// <returns>The rotation read from the stream</returns>
         [Obsolete("Use ReadRotationPacked instead")]
         public Quaternion ReadRotation(int bytesPerAngle)
         {
