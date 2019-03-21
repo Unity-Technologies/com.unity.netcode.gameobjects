@@ -73,11 +73,7 @@ namespace MLAPI.Components
             return switchSceneProgress;
         }
 
-        /// <summary>
-        /// Called on client
-        /// </summary>
-        /// <param name="sceneIndex"></param>
-        /// <param name="switchSceneGuid"></param>
+        // Called on client
         internal static void OnSceneSwitch(uint sceneIndex, Guid switchSceneGuid, Stream objectStream)
         {
             if (!sceneIndexToString.ContainsKey(sceneIndex) || !registeredSceneNames.Contains(sceneIndexToString[sceneIndex]))
@@ -321,11 +317,7 @@ namespace MLAPI.Components
             return SceneManager.GetActiveScene().name != sceneIndexToString[sceneIndex];
         }
 
-        /// <summary>
-        /// Called on server
-        /// </summary>
-        /// <param name="clientId"></param>
-        /// <param name="switchSceneGuid"></param>
+        // Called on server
         internal static void OnClientSwitchSceneCompleted(uint clientId, Guid switchSceneGuid) 
         {
             if (switchSceneGuid == Guid.Empty) 
