@@ -126,7 +126,7 @@ namespace MLAPI.Serialization
             if (type == typeof(Ray))
                 return ReadRayPacked();
             if (type == typeof(Quaternion))
-                return ReadRotation(3);
+                return ReadRotationPacked();
             if (type == typeof(char))
                 return ReadCharPacked();
             if (type.IsEnum)
@@ -332,19 +332,24 @@ namespace MLAPI.Serialization
         }
 
         /// <summary>
-        /// Read a rotation from the stream.
+        /// Reads the rotation from the stream
         /// </summary>
-        /// <param name="bytesPerAngle">How many bytes each angle occupies. Must be between 1 and 4 (inclusive)</param>
         /// <returns>The rotation read from the stream</returns>
+        public Quaternion ReadRotationPacked()
+        {
+            float x = ReadSinglePacked();
+            float y = ReadSinglePacked();
+            float z = ReadSinglePacked();
+
+            float w = Mathf.Sqrt(1 - ((Mathf.Pow(x, 2) - (Mathf.Pow(y, 2) - (Mathf.Pow(z, 2))))));
+
+            return new Quaternion(x, y, z, w);
+        }
+
+        [Obsolete("Use ReadRotationPacked instead")]
         public Quaternion ReadRotation(int bytesPerAngle)
         {
-            if (bytesPerAngle < 1 || bytesPerAngle > 4) throw new ArgumentOutOfRangeException("Bytes per angle must be at least 1 byte and at most 4 bytes!");
-            if (bytesPerAngle == 4) return Quaternion.Euler(ReadVector3());
-            else return Quaternion.Euler(
-                ReadRangedSingle(0f, 360f, bytesPerAngle),  // X
-                ReadRangedSingle(0f, 360f, bytesPerAngle),  // Y
-                ReadRangedSingle(0f, 360f, bytesPerAngle)   // Z
-                );
+            return ReadRotationPacked();
         }
 
         /// <summary>

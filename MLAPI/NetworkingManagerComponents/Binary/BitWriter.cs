@@ -141,7 +141,7 @@ namespace MLAPI.Serialization
             }
             else if (value is Quaternion)
             {
-                WriteRotation((Quaternion)value, 3);
+                WriteRotationPacked((Quaternion)value);
                 return;
             }
             else if (value is char)
@@ -389,21 +389,29 @@ namespace MLAPI.Serialization
         }
 
         /// <summary>
-        /// Write a rotation to the stream.
+        /// Writes the rotation to the stream.
         /// </summary>
         /// <param name="rotation">Rotation to write</param>
-        /// <param name="bytesPerAngle">How many bytes each written angle should occupy. Must be between 1 and 4 (inclusive)</param>
-        public void WriteRotation(Quaternion rotation, int bytesPerAngle)
+        public void WriteRotationPacked(Quaternion rotation)
         {
-            if (bytesPerAngle < 1 || bytesPerAngle > 4) throw new ArgumentOutOfRangeException("Bytes per angle must be at least 1 byte and at most 4 bytes!");
-            if (bytesPerAngle == 4) WriteVector3(rotation.eulerAngles);
+            if (Mathf.Sign(rotation.w) < 0)
+            {
+                WriteSinglePacked(-rotation.x);
+                WriteSinglePacked(-rotation.y);
+                WriteSinglePacked(-rotation.z);
+            }
             else
             {
-                Vector3 rot = rotation.eulerAngles;
-                WriteRangedSingle(rot.x, 0f, 360f, bytesPerAngle);
-                WriteRangedSingle(rot.y, 0f, 360f, bytesPerAngle);
-                WriteRangedSingle(rot.z, 0f, 360f, bytesPerAngle);
+                WriteSinglePacked(rotation.x);
+                WriteSinglePacked(rotation.y);
+                WriteSinglePacked(rotation.z);
             }
+        }
+
+        [Obsolete("Use WriteRotationPacked instead")]
+        public void WriteRotation(Quaternion rotation, int bytesPerAngle)
+        {
+            WriteRotationPacked(rotation);
         }
 
         /// <summary>
