@@ -25,7 +25,7 @@ namespace MLAPI
     public abstract class RpcResponseBase
     {
         /// <summary>
-        /// Unique ID for the Rpc Request & Response pair
+        /// Unique ID for the Rpc Request and Response pair
         /// </summary>
         public ulong Id { get; internal set; }
         /// <summary>
