@@ -544,7 +544,7 @@ namespace MLAPI.Serialization
         /// <summary>
         /// Read a string from the stream.
         /// </summary>
-        /// <returns>The string that was read.<returns>
+        /// <returns>The string that was read.</returns>
         /// <param name="oneByteChars">If set to <c>true</c> one byte chars are used and only ASCII is supported.</param>
         public StringBuilder ReadString(bool oneByteChars) => ReadString(null, oneByteChars);
         /// <summary>
