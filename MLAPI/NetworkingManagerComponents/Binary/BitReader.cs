@@ -540,7 +540,19 @@ namespace MLAPI.Serialization
         }
 
         // Read arrays
+
+        /// <summary>
+        /// Read a string from the stream.
+        /// </summary>
+        /// <returns>The string that was read.</returns>
+        /// <param name="oneByteChars">If set to <c>true</c> one byte chars are used and only ASCII is supported.</param>
         public StringBuilder ReadString(bool oneByteChars) => ReadString(null, oneByteChars);
+        /// <summary>
+        /// Read a string from the stream.
+        /// </summary>
+        /// <returns>The string that was read.</returns>
+        /// <param name="builder">The builder to read the values into or null to use a new builder.</param>
+        /// <param name="oneByteChars">If set to <c>true</c> one byte chars are used and only ASCII is supported.</param>
         public StringBuilder ReadString(StringBuilder builder = null, bool oneByteChars = false)
         {
             int expectedLength = (int)ReadUInt32Packed();
@@ -550,7 +562,11 @@ namespace MLAPI.Serialization
                 builder.Insert(i, oneByteChars ? (char)ReadByte() : ReadChar());
             return builder;
         }
-
+        /// <summary>
+        /// Read string encoded as a varint from the stream.
+        /// </summary>
+        /// <returns>The string that was read.</returns>
+        /// <param name="builder">The builder to read the string into or null to use a new builder</param>
         public StringBuilder ReadStringPacked(StringBuilder builder = null)
         {
             int expectedLength = (int)ReadUInt32Packed();
@@ -560,8 +576,20 @@ namespace MLAPI.Serialization
                 builder.Insert(i, ReadCharPacked());
             return builder;
         }
-
+        /// <summary>
+        /// Read string diff from the stream.
+        /// </summary>
+        /// <returns>The string based on the diff and the old version.</returns>
+        /// <param name="compare">The version to compare the diff to.</param>
+        /// <param name="oneByteChars">If set to <c>true</c> one byte chars are used and only ASCII is supported.</param>
         public StringBuilder ReadStringDiff(string compare, bool oneByteChars = false) => ReadStringDiff(null, compare, oneByteChars);
+        /// <summary>
+        /// Read string diff from the stream.
+        /// </summary>
+        /// <returns>The string based on the diff and the old version</returns>
+        /// <param name="builder">The builder to read the string into or null to use a new builder.</param>
+        /// <param name="compare">The version to compare the diff to.</param>
+        /// <param name="oneByteChars">If set to <c>true</c> one byte chars are used and only ASCII is supported.</param>
         public StringBuilder ReadStringDiff(StringBuilder builder, string compare, bool oneByteChars = false)
         {
             if (bitSource == null) throw new InvalidOperationException("Cannot read bits on a non BitStream stream");
@@ -593,7 +621,12 @@ namespace MLAPI.Serialization
             bitSource.BitPosition = dBlockStart;
             return builder;
         }
-
+        /// <summary>
+        /// Read string diff from the stream.
+        /// </summary>
+        /// <returns>The string based on the diff and the old version.</returns>
+        /// <param name="compareAndBuffer">The builder containing the current version and that will also be used as the output buffer.</param>
+        /// <param name="oneByteChars">If set to <c>true</c> one byte chars will be used and only ASCII will be supported.</param>
         public StringBuilder ReadStringDiff(StringBuilder compareAndBuffer, bool oneByteChars = false)
         {
             if (bitSource == null) throw new InvalidOperationException("Cannot read bits on a non BitStream stream");
@@ -624,8 +657,18 @@ namespace MLAPI.Serialization
             bitSource.BitPosition = dBlockStart;
             return compareAndBuffer;
         }
-
+        /// <summary>
+        /// Read string diff encoded as varints from the stream.
+        /// </summary>
+        /// <returns>The string based on the diff and the old version.</returns>
+        /// <param name="compare">The version to compare the diff to.</param>
         public StringBuilder ReadStringPackedDiff(string compare) => ReadStringPackedDiff(null, compare);
+        /// <summary>
+        /// Read string diff encoded as varints from the stream.
+        /// </summary>
+        /// <returns>The string based on the diff and the old version</returns>
+        /// <param name="builder">The builder to read the string into or null to use a new builder.</param>
+        /// <param name="compare">The version to compare the diff to.</param>
         public StringBuilder ReadStringPackedDiff(StringBuilder builder, string compare)
         {
             if (bitSource == null) throw new InvalidOperationException("Cannot read bits on a non BitStream stream");
@@ -657,7 +700,11 @@ namespace MLAPI.Serialization
             bitSource.BitPosition = dBlockStart;
             return builder;
         }
-
+        /// <summary>
+        /// Read string diff encoded as varints from the stream.
+        /// </summary>
+        /// <returns>The string based on the diff and the old version.</returns>
+        /// <param name="compareAndBuffer">The builder containing the current version and that will also be used as the output buffer.</param>
         public StringBuilder ReadStringPackedDiff(StringBuilder compareAndBuffer)
         {
             if (bitSource == null) throw new InvalidOperationException("Cannot read bits on a non BitStream stream");
@@ -688,7 +735,12 @@ namespace MLAPI.Serialization
             bitSource.BitPosition = dBlockStart;
             return compareAndBuffer;
         }
-
+        /// <summary>
+        /// Read byte array into an optional buffer from the stream.
+        /// </summary>
+        /// <returns>The byte array that has been read.</returns>
+        /// <param name="readTo">The array to read into. If the array is not large enough or if it's null. A new array is created.</param>
+        /// <param name="knownLength">The length of the array if it's known. Otherwise -1</param>
         public byte[] ReadByteArray(byte[] readTo = null, long knownLength = -1)
         {
             if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
@@ -696,7 +748,12 @@ namespace MLAPI.Serialization
             for (long i = 0; i < knownLength; ++i) readTo[i] = ReadByteDirect();
             return readTo;
         }
-
+        /// <summary>
+        /// Read byte array diff into an optional buffer from the stream.
+        /// </summary>
+        /// <returns>The byte array created from the diff and original.</returns>
+        /// <param name="readTo">The buffer containing the old version or null.</param>
+        /// <param name="knownLength">The length of the array if it's known. Otherwise -1</param>
         public byte[] ReadByteArrayDiff(byte[] readTo = null, long knownLength = -1)
         {
             if (bitSource == null) throw new InvalidOperationException("Cannot read bits on a non BitStream stream");
@@ -727,7 +784,12 @@ namespace MLAPI.Serialization
             bitSource.BitPosition = dBlockStart;
             return writeTo;
         }
-
+        /// <summary>
+        /// Read short array from the stream.
+        /// </summary>
+        /// <returns>The array read from the stream.</returns>
+        /// <param name="readTo">The buffer to read into or null to create a new array</param>
+        /// <param name="knownLength">The known length or -1 if unknown</param>
         public short[] ReadShortArray(short[] readTo = null, long knownLength = -1)
         {
             if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
@@ -735,7 +797,12 @@ namespace MLAPI.Serialization
             for (long i = 0; i < knownLength; ++i) readTo[i] = ReadInt16();
             return readTo;
         }
-
+        /// <summary>
+        /// Read short array in a packed format from the stream.
+        /// </summary>
+        /// <returns>The array read from the stream.</returns>
+        /// <param name="readTo">The buffer to read into or null to create a new array</param>
+        /// <param name="knownLength">The known length or -1 if unknown</param>
         public short[] ReadShortArrayPacked(short[] readTo = null, long knownLength = -1)
         {
             if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
@@ -743,7 +810,12 @@ namespace MLAPI.Serialization
             for (long i = 0; i < knownLength; ++i) readTo[i] = ReadInt16Packed();
             return readTo;
         }
-
+        /// <summary>
+        /// Read short array diff from the stream.
+        /// </summary>
+        /// <returns>The array created from the diff and the current version.</returns>
+        /// <param name="readTo">The buffer containing the old version or null.</param>
+        /// <param name="knownLength">The known length or -1 if unknown</param>
         public short[] ReadShortArrayDiff(short[] readTo = null, long knownLength = -1)
         {
             if (bitSource == null) throw new InvalidOperationException("Cannot read bits on a non BitStream stream");
@@ -774,7 +846,12 @@ namespace MLAPI.Serialization
             bitSource.BitPosition = dBlockStart;
             return writeTo;
         }
-
+        /// <summary>
+        /// Read short array diff in a packed format from the stream.
+        /// </summary>
+        /// <returns>The array created from the diff and the current version.</returns>
+        /// <param name="readTo">The buffer containing the old version or null.</param>
+        /// <param name="knownLength">The known length or -1 if unknown</param>
         public short[] ReadShortArrayPackedDiff(short[] readTo = null, long knownLength = -1)
         {
             if (bitSource == null) throw new InvalidOperationException("Cannot read bits on a non BitStream stream");
@@ -805,7 +882,12 @@ namespace MLAPI.Serialization
             bitSource.BitPosition = data;
             return writeTo;
         }
-
+        /// <summary>
+        /// Read ushort array from the stream.
+        /// </summary>
+        /// <returns>The array read from the stream.</returns>
+        /// <param name="readTo">The buffer to read into or null to create a new array</param>
+        /// <param name="knownLength">The known length or -1 if unknown</param>
         public ushort[] ReadUShortArray(ushort[] readTo = null, long knownLength = -1)
         {
             if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
@@ -813,7 +895,12 @@ namespace MLAPI.Serialization
             for (long i = 0; i < knownLength; ++i) readTo[i] = ReadUInt16();
             return readTo;
         }
-
+        /// <summary>
+        /// Read ushort array in a packed format from the stream.
+        /// </summary>
+        /// <returns>The array read from the stream.</returns>
+        /// <param name="readTo">The buffer to read into or null to create a new array</param>
+        /// <param name="knownLength">The known length or -1 if unknown</param>
         public ushort[] ReadUShortArrayPacked(ushort[] readTo = null, long knownLength = -1)
         {
             if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
@@ -821,7 +908,12 @@ namespace MLAPI.Serialization
             for (long i = 0; i < knownLength; ++i) readTo[i] = ReadUInt16Packed();
             return readTo;
         }
-
+        /// <summary>
+        /// Read ushort array diff from the stream.
+        /// </summary>
+        /// <returns>The array created from the diff and the current version.</returns>
+        /// <param name="readTo">The buffer containing the old version or null.</param>
+        /// <param name="knownLength">The known length or -1 if unknown</param>
         public ushort[] ReadUShortArrayDiff(ushort[] readTo = null, long knownLength = -1)
         {
             if (bitSource == null) throw new InvalidOperationException("Cannot read bits on a non BitStream stream");
@@ -852,7 +944,12 @@ namespace MLAPI.Serialization
             bitSource.BitPosition = dBlockStart;
             return writeTo;
         }
-
+        /// <summary>
+        /// Read ushort array diff in a packed format from the stream.
+        /// </summary>
+        /// <returns>The array created from the diff and the current version.</returns>
+        /// <param name="readTo">The buffer containing the old version or null.</param>
+        /// <param name="knownLength">The known length or -1 if unknown</param>
         public ushort[] ReadUShortArrayPackedDiff(ushort[] readTo = null, long knownLength = -1)
         {
             if (bitSource == null) throw new InvalidOperationException("Cannot read bits on a non BitStream stream");
@@ -883,7 +980,12 @@ namespace MLAPI.Serialization
             bitSource.BitPosition = data;
             return writeTo;
         }
-
+        /// <summary>
+        /// Read int array from the stream.
+        /// </summary>
+        /// <returns>The array read from the stream.</returns>
+        /// <param name="readTo">The buffer to read into or null to create a new array</param>
+        /// <param name="knownLength">The known length or -1 if unknown</param>
         public int[] ReadIntArray(int[] readTo = null, long knownLength = -1)
         {
             if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
@@ -891,7 +993,12 @@ namespace MLAPI.Serialization
             for (long i = 0; i < knownLength; ++i) readTo[i] = ReadInt32();
             return readTo;
         }
-
+        /// <summary>
+        /// Read int array in a packed format from the stream.
+        /// </summary>
+        /// <returns>The array read from the stream.</returns>
+        /// <param name="readTo">The buffer to read into or null to create a new array</param>
+        /// <param name="knownLength">The known length or -1 if unknown</param>
         public int[] ReadIntArrayPacked(int[] readTo = null, long knownLength = -1)
         {
             if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
@@ -899,7 +1006,12 @@ namespace MLAPI.Serialization
             for (long i = 0; i < knownLength; ++i) readTo[i] = ReadInt32Packed();
             return readTo;
         }
-
+        /// <summary>
+        /// Read int array diff from the stream.
+        /// </summary>
+        /// <returns>The array created from the diff and the current version.</returns>
+        /// <param name="readTo">The buffer containing the old version or null.</param>
+        /// <param name="knownLength">The known length or -1 if unknown</param>
         public int[] ReadIntArrayDiff(int[] readTo = null, long knownLength = -1)
         {
             if (bitSource == null) throw new InvalidOperationException("Cannot read bits on a non BitStream stream");
@@ -930,7 +1042,12 @@ namespace MLAPI.Serialization
             bitSource.BitPosition = dBlockStart;
             return writeTo;
         }
-
+        /// <summary>
+        /// Read int array diff in a packed format from the stream.
+        /// </summary>
+        /// <returns>The array created from the diff and the current version.</returns>
+        /// <param name="readTo">The buffer containing the old version or null.</param>
+        /// <param name="knownLength">The known length or -1 if unknown</param>
         public int[] ReadIntArrayPackedDiff(int[] readTo = null, long knownLength = -1)
         {
             if (bitSource == null) throw new InvalidOperationException("Cannot read bits on a non BitStream stream");
@@ -961,7 +1078,12 @@ namespace MLAPI.Serialization
             bitSource.BitPosition = data;
             return writeTo;
         }
-
+        /// <summary>
+        /// Read uint array from the stream.
+        /// </summary>
+        /// <returns>The array read from the stream.</returns>
+        /// <param name="readTo">The buffer to read into or null to create a new array</param>
+        /// <param name="knownLength">The known length or -1 if unknown</param>
         public uint[] ReadUIntArray(uint[] readTo = null, long knownLength = -1)
         {
             if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
@@ -969,7 +1091,12 @@ namespace MLAPI.Serialization
             for (long i = 0; i < knownLength; ++i) readTo[i] = ReadUInt32();
             return readTo;
         }
-
+        /// <summary>
+        /// Read uint array in a packed format from the stream.
+        /// </summary>
+        /// <returns>The array read from the stream.</returns>
+        /// <param name="readTo">The buffer to read into or null to create a new array</param>
+        /// <param name="knownLength">The known length or -1 if unknown</param>
         public uint[] ReadUIntArrayPacked(uint[] readTo = null, long knownLength = -1)
         {
             if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
@@ -977,7 +1104,12 @@ namespace MLAPI.Serialization
             for (long i = 0; i < knownLength; ++i) readTo[i] = ReadUInt32Packed();
             return readTo;
         }
-
+        /// <summary>
+        /// Read uint array diff from the stream.
+        /// </summary>
+        /// <returns>The array created from the diff and the current version.</returns>
+        /// <param name="readTo">The buffer containing the old version or null.</param>
+        /// <param name="knownLength">The known length or -1 if unknown</param>
         public uint[] ReadUIntArrayDiff(uint[] readTo = null, long knownLength = -1)
         {
             if (bitSource == null) throw new InvalidOperationException("Cannot read bits on a non BitStream stream");
@@ -1008,7 +1140,12 @@ namespace MLAPI.Serialization
             bitSource.BitPosition = dBlockStart;
             return writeTo;
         }
-
+        /// <summary>
+        /// Read long array from the stream.
+        /// </summary>
+        /// <returns>The array read from the stream.</returns>
+        /// <param name="readTo">The buffer to read into or null to create a new array</param>
+        /// <param name="knownLength">The known length or -1 if unknown</param>
         public long[] ReadLongArray(long[] readTo = null, long knownLength = -1)
         {
             if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
@@ -1016,7 +1153,12 @@ namespace MLAPI.Serialization
             for (long i = 0; i < knownLength; ++i) readTo[i] = ReadInt64();
             return readTo;
         }
-
+        /// <summary>
+        /// Read long array in a packed format from the stream.
+        /// </summary>
+        /// <returns>The array read from the stream.</returns>
+        /// <param name="readTo">The buffer to read into or null to create a new array</param>
+        /// <param name="knownLength">The known length or -1 if unknown</param>
         public long[] ReadLongArrayPacked(long[] readTo = null, long knownLength = -1)
         {
             if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
@@ -1024,7 +1166,12 @@ namespace MLAPI.Serialization
             for (long i = 0; i < knownLength; ++i) readTo[i] = ReadInt64Packed();
             return readTo;
         }
-
+        /// <summary>
+        /// Read long array diff from the stream.
+        /// </summary>
+        /// <returns>The array created from the diff and the current version.</returns>
+        /// <param name="readTo">The buffer containing the old version or null.</param>
+        /// <param name="knownLength">The known length or -1 if unknown</param>
         public long[] ReadLongArrayDiff(long[] readTo = null, long knownLength = -1)
         {
             if (bitSource == null) throw new InvalidOperationException("Cannot read bits on a non BitStream stream");
@@ -1055,7 +1202,12 @@ namespace MLAPI.Serialization
             bitSource.BitPosition = dBlockStart;
             return writeTo;
         }
-
+        /// <summary>
+        /// Read long array diff in a packed format from the stream.
+        /// </summary>
+        /// <returns>The array created from the diff and the current version.</returns>
+        /// <param name="readTo">The buffer containing the old version or null.</param>
+        /// <param name="knownLength">The known length or -1 if unknown</param>
         public long[] ReadLongArrayPackedDiff(long[] readTo = null, long knownLength = -1)
         {
             if (bitSource == null) throw new InvalidOperationException("Cannot read bits on a non BitStream stream");
@@ -1086,7 +1238,12 @@ namespace MLAPI.Serialization
             bitSource.BitPosition = data;
             return writeTo;
         }
-
+        /// <summary>
+        /// Read ulong array from the stream.
+        /// </summary>
+        /// <returns>The array read from the stream.</returns>
+        /// <param name="readTo">The buffer to read into or null to create a new array</param>
+        /// <param name="knownLength">The known length or -1 if unknown</param>
         public ulong[] ReadULongArray(ulong[] readTo = null, long knownLength = -1)
         {
             if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
@@ -1094,7 +1251,12 @@ namespace MLAPI.Serialization
             for (long i = 0; i < knownLength; ++i) readTo[i] = ReadUInt64();
             return readTo;
         }
-
+        /// <summary>
+        /// Read ulong array in a packed format from the stream.
+        /// </summary>
+        /// <returns>The array read from the stream.</returns>
+        /// <param name="readTo">The buffer to read into or null to create a new array</param>
+        /// <param name="knownLength">The known length or -1 if unknown</param>
         public ulong[] ReadULongArrayPacked(ulong[] readTo = null, long knownLength = -1)
         {
             if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
@@ -1102,7 +1264,12 @@ namespace MLAPI.Serialization
             for (long i = 0; i < knownLength; ++i) readTo[i] = ReadUInt64Packed();
             return readTo;
         }
-
+        /// <summary>
+        /// Read ulong array diff from the stream.
+        /// </summary>
+        /// <returns>The array created from the diff and the current version.</returns>
+        /// <param name="readTo">The buffer containing the old version or null.</param>
+        /// <param name="knownLength">The known length or -1 if unknown</param>
         public ulong[] ReadULongArrayDiff(ulong[] readTo = null, long knownLength = -1)
         {
             if (bitSource == null) throw new InvalidOperationException("Cannot read bits on a non BitStream stream");
@@ -1133,7 +1300,12 @@ namespace MLAPI.Serialization
             bitSource.BitPosition = dBlockStart;
             return writeTo;
         }
-
+        /// <summary>
+        /// Read ulong array diff in a packed format from the stream.
+        /// </summary>
+        /// <returns>The array created from the diff and the current version.</returns>
+        /// <param name="readTo">The buffer containing the old version or null.</param>
+        /// <param name="knownLength">The known length or -1 if unknown</param>
         public ulong[] ReadULongArrayPackedDiff(ulong[] readTo = null, long knownLength = -1)
         {
             if (bitSource == null) throw new InvalidOperationException("Cannot read bits on a non BitStream stream");
@@ -1164,7 +1336,12 @@ namespace MLAPI.Serialization
             bitSource.BitPosition = data;
             return writeTo;
         }
-
+        /// <summary>
+        /// Read float array from the stream.
+        /// </summary>
+        /// <returns>The array read from the stream.</returns>
+        /// <param name="readTo">The buffer to read into or null to create a new array</param>
+        /// <param name="knownLength">The known length or -1 if unknown</param>
         public float[] ReadFloatArray(float[] readTo = null, long knownLength = -1)
         {
             if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
@@ -1172,7 +1349,12 @@ namespace MLAPI.Serialization
             for (long i = 0; i < knownLength; ++i) readTo[i] = ReadSingle();
             return readTo;
         }
-
+        /// <summary>
+        /// Read float array in a packed format from the stream.
+        /// </summary>
+        /// <returns>The array read from the stream.</returns>
+        /// <param name="readTo">The buffer to read into or null to create a new array</param>
+        /// <param name="knownLength">The known length or -1 if unknown</param>
         public float[] ReadFloatArrayPacked(float[] readTo = null, long knownLength = -1)
         {
             if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
@@ -1180,7 +1362,12 @@ namespace MLAPI.Serialization
             for (long i = 0; i < knownLength; ++i) readTo[i] = ReadSinglePacked();
             return readTo;
         }
-
+        /// <summary>
+        /// Read float array diff from the stream.
+        /// </summary>
+        /// <returns>The array created from the diff and the current version.</returns>
+        /// <param name="readTo">The buffer containing the old version or null.</param>
+        /// <param name="knownLength">The known length or -1 if unknown</param>
         public float[] ReadFloatArrayDiff(float[] readTo = null, long knownLength = -1)
         {
             if (bitSource == null) throw new InvalidOperationException("Cannot read bits on a non BitStream stream");
@@ -1211,7 +1398,12 @@ namespace MLAPI.Serialization
             bitSource.BitPosition = dBlockStart;
             return writeTo;
         }
-
+        /// <summary>
+        /// Read float array diff in a packed format from the stream.
+        /// </summary>
+        /// <returns>The array created from the diff and the current version.</returns>
+        /// <param name="readTo">The buffer containing the old version or null.</param>
+        /// <param name="knownLength">The known length or -1 if unknown</param>
         public float[] ReadFloatArrayPackedDiff(float[] readTo = null, long knownLength = -1)
         {
             if (bitSource == null) throw new InvalidOperationException("Cannot read bits on a non BitStream stream");
@@ -1242,7 +1434,12 @@ namespace MLAPI.Serialization
             bitSource.BitPosition = data;
             return writeTo;
         }
-
+        /// <summary>
+        /// Read double array from the stream.
+        /// </summary>
+        /// <returns>The array read from the stream.</returns>
+        /// <param name="readTo">The buffer to read into or null to create a new array</param>
+        /// <param name="knownLength">The known length or -1 if unknown</param>
         public double[] ReadDoubleArray(double[] readTo = null, long knownLength = -1)
         {
             if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
@@ -1250,7 +1447,12 @@ namespace MLAPI.Serialization
             for (long i = 0; i < knownLength; ++i) readTo[i] = ReadDouble();
             return readTo;
         }
-
+        /// <summary>
+        /// Read double array in a packed format from the stream.
+        /// </summary>
+        /// <returns>The array read from the stream.</returns>
+        /// <param name="readTo">The buffer to read into or null to create a new array</param>
+        /// <param name="knownLength">The known length or -1 if unknown</param>
         public double[] ReadDoubleArrayPacked(double[] readTo = null, long knownLength = -1)
         {
             if (knownLength < 0) knownLength = (long)ReadUInt64Packed();
@@ -1258,7 +1460,12 @@ namespace MLAPI.Serialization
             for (long i = 0; i < knownLength; ++i) readTo[i] = ReadDoublePacked();
             return readTo;
         }
-
+        /// <summary>
+        /// Read double array diff from the stream.
+        /// </summary>
+        /// <returns>The array created from the diff and the current version.</returns>
+        /// <param name="readTo">The buffer containing the old version or null.</param>
+        /// <param name="knownLength">The known length or -1 if unknown</param>
         public double[] ReadDoubleArrayDiff(double[] readTo = null, long knownLength = -1)
         {
             if (bitSource == null) throw new InvalidOperationException("Cannot read bits on a non BitStream stream");
@@ -1289,7 +1496,12 @@ namespace MLAPI.Serialization
             bitSource.BitPosition = dBlockStart;
             return writeTo;
         }
-
+        /// <summary>
+        /// Read double array diff in a packed format from the stream.
+        /// </summary>
+        /// <returns>The array created from the diff and the current version.</returns>
+        /// <param name="readTo">The buffer containing the old version or null.</param>
+        /// <param name="knownLength">The known length or -1 if unknown</param>
         public double[] ReadDoubleArrayPackedDiff(double[] readTo = null, long knownLength = -1)
         {
             if (bitSource == null) throw new InvalidOperationException("Cannot read bits on a non BitStream stream");

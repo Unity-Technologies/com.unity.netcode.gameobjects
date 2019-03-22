@@ -36,12 +36,15 @@ namespace MLAPI.Prototyping
 
 
         // tracking - these should probably move to a Preview component. -- Comment from HLAPI. Needs clarification
+        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
         public string param0;
         public string param1;
         public string param2;
         public string param3;
         public string param4;
         public string param5;
+        #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+
 
         /// <summary>
         /// Gets or sets the animator component used for syncing the animations
