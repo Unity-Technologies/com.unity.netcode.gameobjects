@@ -1,5 +1,8 @@
 ﻿namespace MLAPI.Serialization
 {
+    /// <summary>
+    /// Arithmetic helper class
+    /// </summary>
     public static class Arithmetic
     {
         // Sign bits for different data types
