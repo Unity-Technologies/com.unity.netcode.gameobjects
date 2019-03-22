@@ -29,6 +29,9 @@ namespace MLAPI.Configuration
 
 namespace MLAPI
 {
+    /// <summary>
+    /// Delegate definition for performance RPC's.
+    /// </summary>
     public delegate void RpcDelegate(uint clientId, Stream stream);
 
     internal class ReflectionMethod
