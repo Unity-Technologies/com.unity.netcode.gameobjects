@@ -22,4 +22,8 @@
   </ItemGroup>
   <ItemGroup>
   </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="NetworkingManagerComponents\Binary\BitWriterDeprecated.cs" />
+    <Compile Remove="NetworkingManagerComponents\Binary\BitReaderDeprecated.cs" />
+  </ItemGroup>
 </Project>
