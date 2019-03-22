@@ -3,21 +3,21 @@
     public static class Arithmetic
     {
         // Sign bits for different data types
-        public const long SIGN_BIT_64 = -9223372036854775808;
-        public const int SIGN_BIT_32 = -2147483648;
-        public const short SIGN_BIT_16 = -32768;
-        public const sbyte SIGN_BIT_8 = -128;
+        internal const long SIGN_BIT_64 = -9223372036854775808;
+        internal const int SIGN_BIT_32 = -2147483648;
+        internal const short SIGN_BIT_16 = -32768;
+        internal const sbyte SIGN_BIT_8 = -128;
 
         // Ceiling function that doesn't deal with floating point values
         // these only work correctly with possitive numbers
-        public static ulong CeilingExact(ulong u1, ulong u2) => (u1 + u2 - 1) / u2;
-        public static long CeilingExact(long u1, long u2) => (u1 + u2 - 1) / u2;
-        public static uint CeilingExact(uint u1, uint u2) => (u1 + u2 - 1) / u2;
-        public static int CeilingExact(int u1, int u2) => (u1 + u2 - 1) / u2;
-        public static ushort CeilingExact(ushort u1, ushort u2) => (ushort)((u1 + u2 - 1) / u2);
-        public static short CeilingExact(short u1, short u2) => (short)((u1 + u2 - 1) / u2);
-        public static byte CeilingExact(byte u1, byte u2) => (byte)((u1 + u2 - 1) / u2);
-        public static sbyte CeilingExact(sbyte u1, sbyte u2) => (sbyte)((u1 + u2 - 1) / u2);
+        internal static ulong CeilingExact(ulong u1, ulong u2) => (u1 + u2 - 1) / u2;
+        internal static long CeilingExact(long u1, long u2) => (u1 + u2 - 1) / u2;
+        internal static uint CeilingExact(uint u1, uint u2) => (u1 + u2 - 1) / u2;
+        internal static int CeilingExact(int u1, int u2) => (u1 + u2 - 1) / u2;
+        internal static ushort CeilingExact(ushort u1, ushort u2) => (ushort)((u1 + u2 - 1) / u2);
+        internal static short CeilingExact(short u1, short u2) => (short)((u1 + u2 - 1) / u2);
+        internal static byte CeilingExact(byte u1, byte u2) => (byte)((u1 + u2 - 1) / u2);
+        internal static sbyte CeilingExact(sbyte u1, sbyte u2) => (sbyte)((u1 + u2 - 1) / u2);
 
         /// <summary>
         /// ZigZag encodes a signed integer and maps it to a unsigned integer
