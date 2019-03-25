@@ -1,4 +1,4 @@
-$editorFiles = @("MLAPIProfiler.cs", "NetworkedAnimatorEditor.cs", "NetworkedBehaviourEditor.cs", "NetworkedObjectEditor.cs", "NetworkingManagerEditor.cs", "TrackedObjectEditor.cs")
+$editorFiles = @("MLAPIProfiler.cs", "NetworkedAnimatorEditor.cs", "NetworkedBehaviourEditor.cs", "NetworkedObjectEditor.cs", "NetworkingManagerEditor.cs", "TrackedObjectEditor.cs", "PostProcessScene.cs")
 $installerFiles = @("MLAPIEditor.cs")
 
 $myPath = (Get-Item -Path ".\").FullName;
