@@ -6,6 +6,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using MLAPI.Internal;
 using UnityEngine;
 
 namespace MLAPI.Serialization
@@ -45,11 +46,17 @@ namespace MLAPI.Serialization
         /// <param name="value">The object to write</param>
         public void WriteObjectPacked(object value)
         {
-            if (value == null)
+            if (value.IsNullable())
             {
-                throw new NullReferenceException("BitWriter cannot write null values");
+                WriteBool(value == null);
+
+                if (value == null)
+                {
+                    return;
+                }
             }
-            else if (value is byte)
+            
+            if (value is byte)
             {
                 WriteByte((byte)value);
                 return;

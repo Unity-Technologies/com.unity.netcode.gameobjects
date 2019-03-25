@@ -89,6 +89,16 @@ namespace MLAPI.Serialization
         /// <returns>Returns the boxed read object</returns>
         public object ReadObjectPacked(Type type)
         {
+            if (type.IsNullable())
+            {
+                bool isNull = ReadBool();
+
+                if (isNull)
+                {
+                    return null;
+                }
+            }
+            
             if (type == typeof(byte))
                 return ReadByteDirect();
             if (type == typeof(sbyte))
