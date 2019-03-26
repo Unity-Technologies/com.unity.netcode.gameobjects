@@ -27,29 +27,6 @@ For bug reports or feature requests you want to propose, please use the Issue Tr
 * Unity 2017 or newer
 * .NET 4.6 or .NET 3.5 with .NET 2.0 non subset
 
-## Feature highlights
-* Host support (Client hosts the server)
-* Object and player spawning \[[Wiki page](https://midlevel.github.io/MLAPI/wiki/object-spawning/)\]
-* Connection approval \[[Wiki page](https://midlevel.github.io/MLAPI/wiki/connection-approval/)\]
-* Strongly Typed RPC Messaging \[[Wiki page](https://midlevel.github.io/MLAPI/wiki/messaging-system/)\]
-* Replace the integer QOS with names. When you setup the networking you specify names that are associated with a channel. This makes it easier to manage. You can thus specify that a message should be sent on the "damage" channel which handles all damage related logic and is running on the AllCostDelivery channel.
-* ProtocolVersion to allow making different versions not talk to each other.
-* NetworkedBehaviours does not have to be on the root, it's simply just a class that implements the send methods etc.
-* Custom tickrate
-* Synced network time
-* Supports separate Unity projects crosstalking
-* Scene Management \[[Wiki page](https://midlevel.github.io/MLAPI/wiki/scene-management/)\]
-* Built in Lag compensation \[[Wiki page](https://midlevel.github.io/MLAPI/wiki/lag-compensation/)\]
-* NetworkTransform replacement
-* Port of NetworkedAnimator
-* Networked NavMeshAgent
-* Networked Object Pooling \[[Wiki page](https://midlevel.github.io/MLAPI/wiki/object-pooling/)\]
-* Networked Vars \[[Wiki page](https://midlevel.github.io/MLAPI/wiki/networkedvar/)\]
-* Encryption \[[Wiki page](https://midlevel.github.io/MLAPI/wiki/message-encryption/)\]
-* Super efficient BitWriter & BitReader \[[Wiki page](https://midlevel.github.io/MLAPI/wiki/bitwriter-bitreader-bitstream/)\]
-* Custom UDP transport support \[[Wiki page](https://midlevel.github.io/MLAPI/wiki/custom-transports/)\]
-* NetworkProfiler \[[Wiki page](https://midlevel.github.io/MLAPI/wiki/network-profiler-window/)\]
-
 ## Special thanks
 Special thanks to [Gabriel Tofvesson](https://github.com/GabrielTofvesson) for writing the BitWriter, BitReader & ECDH implementation
 
