@@ -25,9 +25,11 @@ This is also where most documentation lies. Follow the [quickstart](https://mlap
 ### Support
 For bug reports or feature requests you want to propose, please use the Issue Tracker on GitHub. For general questions, networking advice or to discuss changes before proposing them, please use the [Discord server](https://discord.gg/FM8SE9E).
 
-### Requirements
-* Unity 2017 or newer
-* .NET 4.6 or .NET 3.5 with .NET 2.0 non subset
+### Compatibility
+The MLAPI is built to work everywhere. It will run in the web, on many Unity versions, .NET runtimes and such.
+
+The requirements for the MLAPI are:
+* Unity >= 2017
 
 ## Special thanks
 Special thanks to [Gabriel Tofvesson](https://github.com/GabrielTofvesson) for writing the BitWriter, BitReader & ECDH implementation.
