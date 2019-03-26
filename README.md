@@ -54,9 +54,10 @@ public class Chat : NetworkedBehaviour
 
     private void OnGUI()
     {
-        if (isClient)
+        if (IsClient)
         {
             textField = GUILayout.TextField(textField, GUILayout.Width(200));
+            
             if (GUILayout.Button("Send") && !string.IsNullOrWhiteSpace(textField))
             {
                 ChatMessages.Add(textField);
