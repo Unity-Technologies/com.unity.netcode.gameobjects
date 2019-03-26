@@ -30,10 +30,10 @@ For bug reports or feature requests you want to propose, please use the Issue Tr
 * .NET 4.6 or .NET 3.5 with .NET 2.0 non subset
 
 ## Special thanks
-Special thanks to [Gabriel Tofvesson](https://github.com/GabrielTofvesson) for writing the BitWriter, BitReader & ECDH implementation
+Special thanks to [Gabriel Tofvesson](https://github.com/GabrielTofvesson) for writing the BitWriter, BitReader & ECDH implementation.
 
 ## Issues and missing features
-If there are any issues, bugs or features that are missing. Please open an issue on the GitHub [issues page](https://github.com/MidLevel/MLAPI/issues)
+If there are any issues, bugs or features that are missing. Please open an issue on the GitHub [issues page](https://github.com/MidLevel/MLAPI/issues).
 
 ## Example
 Here is a sample MonoBehaviour showing a chat script where everyone can write and read from. This shows the basis of the MLAPI and the abstractions it adds.
