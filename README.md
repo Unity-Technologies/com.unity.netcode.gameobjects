@@ -56,11 +56,6 @@ Special thanks to [Gabriel Tofvesson](https://github.com/GabrielTofvesson) for w
 ## Issues and missing features
 If there are any issues, bugs or features that are missing. Please open an issue on the GitHub [issues page](https://github.com/MidLevel/MLAPI/issues)
 
-## Example
-[Example project](https://github.com/MidLevel/MLAPI-Examples)
-
-The example project has a much lower priority compared to the library itself. If something doesn't exist in the example nor the wiki. Please open an issue on GitHub.
-
 
 ### Sample Chat
 Here is a sample MonoBehaviour showing a chat script where everyone can write and read from.
