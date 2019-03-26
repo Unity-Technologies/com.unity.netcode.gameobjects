@@ -31,13 +31,13 @@ The MLAPI is built to work everywhere. It will run in the web, on many Unity ver
 The requirements for the MLAPI are:
 * Unity >= 2017
 
-## Special thanks
+### Special thanks
 Special thanks to [Gabriel Tofvesson](https://github.com/GabrielTofvesson) for writing the BitWriter, BitReader & ECDH implementation.
 
-## Issues and missing features
+### Issues and missing features
 If there are any issues, bugs or features that are missing. Please open an issue on the GitHub [issues page](https://github.com/MidLevel/MLAPI/issues).
 
-## Example
+### Example
 Here is a sample MonoBehaviour showing a chat script where everyone can write and read from. This shows the basis of the MLAPI and the abstractions it adds.
 
 ```csharp
