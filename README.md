@@ -1,7 +1,5 @@
 [![](https://i.imgur.com/d0amtqs.png)](https://midlevel.github.io/MLAPI/)
 
-MLAPI (Mid level API) is a framework that hopefully simplifies building networked games in Unity. It is built on the LLAPI and is similar to the HLAPI in many ways. It does not however integrate into the compiler and it's meant to offer much greater flexibility than the HLAPI while keeping some of it's simplicity. It offers greater performance over the HLAPI.
-
 [![GitHub Release](https://img.shields.io/github/release/MidLevel/MLAPI.svg?logo=github)](https://github.com/MidLevel/MLAPI/releases)
 [![Github All Releases](https://img.shields.io/github/downloads/MidLevel/MLAPI/total.svg?logo=github&color=informational)](https://github.com/MidLevel/MLAPI/releases)
 [![Discord](https://img.shields.io/discord/449263083769036810.svg?label=discord&logo=discord&color=informational)](https://discord.gg/FM8SE9E)
@@ -13,6 +11,12 @@ MLAPI (Mid level API) is a framework that hopefully simplifies building networke
 [![Website](https://img.shields.io/badge/docs-website-informational.svg)](https://midlevel.github.io/MLAPI/)
 [![Wiki](https://img.shields.io/badge/docs-wiki-informational.svg)](https://midlevel.github.io/MLAPI/wiki/)
 [![Api](https://img.shields.io/badge/docs-api-informational.svg)](https://midlevel.github.io/MLAPI/api/)
+
+MLAPI (Mid level API) is a framework that simplifies building networked games in Unity. It offers **low level** access to core networking while at the same time offering **high level** abstractions. The MLAPI aims to remove the repetetive tasks and reduces the network code dramatically, no matter how many of the **modular** features you use.
+
+
+The MLAPI has features matched by nobody else, any more features are added when requested. The MLAPI is constantly evolving. Read about our features [here](https://mlapi.network/features/).
+
 
 ### Documentation
 To get started, check the [Wiki](https://midlevel.github.io/MLAPI/).
