@@ -15,6 +15,15 @@ namespace MLAPI.Components
     /// </summary>
     public static class NetworkSceneManager
     {
+        /// <summary>
+        /// Delegate for when the scene has been switched
+        /// </summary>
+        public delegate void SceneSwitchedDelegate();
+        /// <summary>
+        /// Event that is invoked when the scene is switched
+        /// </summary>
+        public static event SceneSwitchedDelegate OnSceneSwitched;
+        
         internal static readonly HashSet<string> registeredSceneNames = new HashSet<string>();
         internal static readonly Dictionary<string, uint> sceneNameToIndex = new Dictionary<string, uint>();
         internal static readonly Dictionary<uint, string> sceneIndexToString = new Dictionary<uint, string>();
@@ -245,6 +254,11 @@ namespace MLAPI.Components
             }
 
             isSwitching = false;
+            
+            if (OnSceneSwitched != null)
+            {
+                OnSceneSwitched();
+            }
         }
 
         private static void OnSceneUnloadClient(AsyncOperation operation, Guid switchSceneGuid, Stream objectStream)
@@ -307,6 +321,11 @@ namespace MLAPI.Components
             }
             
             isSwitching = false;
+            
+            if (OnSceneSwitched != null)
+            {
+                OnSceneSwitched();
+            }
         }
 
         internal static bool HasSceneMismatch(uint sceneIndex)
