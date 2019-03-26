@@ -46,7 +46,7 @@ namespace MLAPI.Serialization
         /// <param name="value">The object to write</param>
         public void WriteObjectPacked(object value)
         {
-            if (value.IsNullable())
+            if (value == null || value.GetType().IsNullable())
             {
                 WriteBool(value == null);
 
