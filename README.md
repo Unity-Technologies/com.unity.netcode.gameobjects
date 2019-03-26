@@ -18,11 +18,9 @@ MLAPI (Mid level API) is a framework that simplifies building networked games in
 The MLAPI has features matched by nobody else, any more features are added when requested. The MLAPI is constantly evolving. Read about our features [here](https://mlapi.network/features/).
 
 
-### Documentation
-To get started, check the [Wiki](https://midlevel.github.io/MLAPI/).
-This is also where most documentation lies.
-
-To get the latest features, the CI server automatically builds the latest commits from master branch. Note that this build still requires the other DLL's. It might be unstable. You can download it [Here](https://ci.appveyor.com/project/MidLevel/mlapi/build/artifacts)
+### Getting Started
+To get started, check the [Wiki](https://mlapi.network/wiki/).
+This is also where most documentation lies. Follow the [quickstart](https://mlapi.network/wiki/installation/), join our [discord](http://discord.mlapi.network/) and get started today!
 
 ### Support
 For bug reports or feature requests you want to propose, please use the Issue Tracker on GitHub. For general questions, networking advice or to discuss changes before proposing them, please use the [Discord server](https://discord.gg/FM8SE9E).
