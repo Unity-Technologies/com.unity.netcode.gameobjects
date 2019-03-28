@@ -341,7 +341,7 @@ namespace MLAPI
             networkedVarIndexesToReset.Clear();
             networkedVarIndexesToResetSet.Clear();
             
-            for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)
+            for (int i = 0; i < (IsServer ? NetworkingManager.Singleton.ConnectedClientsList.Count : 1); i++)
             {
                 // Do this check here to prevent doing all the expensive dirty checks
                 if (!IsServer || this.NetworkedObject.observers.Contains(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId))
@@ -356,7 +356,7 @@ namespace MLAPI
                                 writer.WriteUInt64Packed(NetworkId);
                                 writer.WriteUInt16Packed(NetworkedObject.GetOrderIndex(this));
 
-                                uint clientId = NetworkingManager.Singleton.ConnectedClientsList[i].ClientId;
+                                uint clientId = IsServer ?  NetworkingManager.Singleton.ConnectedClientsList[i].ClientId : NetworkingManager.Singleton.ServerClientId;
                                 bool writtenAny = false;
                                 for (int k = 0; k < networkedVarFields.Count; k++)
                                 {
