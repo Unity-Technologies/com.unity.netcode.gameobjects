@@ -260,7 +260,7 @@ namespace MLAPI.Internal
                                 }
                             }
 
-                            bool destroyWithScene = reader.ReadBool();
+                            bool destroyWithScene = continuationReader.ReadBool();
 
                             Vector3 pos = new Vector3(continuationReader.ReadSinglePacked(), continuationReader.ReadSinglePacked(), continuationReader.ReadSinglePacked());
                             Quaternion rot = Quaternion.Euler(continuationReader.ReadSinglePacked(), continuationReader.ReadSinglePacked(), continuationReader.ReadSinglePacked());
