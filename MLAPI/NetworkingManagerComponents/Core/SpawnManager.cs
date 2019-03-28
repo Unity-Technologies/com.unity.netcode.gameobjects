@@ -255,7 +255,7 @@ namespace MLAPI.Components
         }
 
         // Ran on both server and client
-        internal static void SpawnNetworkedObjectLocally(NetworkedObject netObject, ulong networkId, bool sceneObject, bool playerObject, uint ownerClientId, Stream dataStream, bool readPayload, int payloadLength, bool readNetworkedVar)
+        internal static void SpawnNetworkedObjectLocally(NetworkedObject netObject, ulong networkId, bool sceneObject, bool playerObject, uint ownerClientId, Stream dataStream, bool readPayload, int payloadLength, bool readNetworkedVar, bool destroyWithScene)
         {
             if (netObject == null)
             {
@@ -276,6 +276,8 @@ namespace MLAPI.Components
 
             netObject.IsSceneObject = sceneObject;
             netObject.NetworkId = networkId;
+
+            netObject.DestroyWithScene = sceneObject || destroyWithScene;
 
             netObject.OwnerClientId = ownerClientId;
             netObject.IsPlayerObject = playerObject;
@@ -340,6 +342,8 @@ namespace MLAPI.Components
                         }
                     }
                     
+                    writer.WriteBool(netObject.DestroyWithScene);
+
                     writer.WriteSinglePacked(netObject.transform.position.x);
                     writer.WriteSinglePacked(netObject.transform.position.y);
                     writer.WriteSinglePacked(netObject.transform.position.z);
@@ -384,7 +388,7 @@ namespace MLAPI.Components
         {
             for (int i = 0; i < SpawnedObjectsList.Count; i++)
             {
-                if (SpawnedObjectsList[i].IsSceneObject != null && SpawnedObjectsList[i].IsSceneObject == true)
+                if (SpawnedObjectsList[i].IsSceneObject != null && SpawnedObjectsList[i].DestroyWithScene)
                 {
                     if (customDestroyHandlers.ContainsKey(SpawnedObjectsList[i].PrefabHash))
                     {
@@ -449,7 +453,7 @@ namespace MLAPI.Components
             {
                 if (networkedObjects[i].IsSceneObject == null)
                 {
-                    SpawnNetworkedObjectLocally(networkedObjects[i], GetNetworkObjectId(), true, false, NetworkingManager.Singleton.ServerClientId, null, false, 0, false);
+                    SpawnNetworkedObjectLocally(networkedObjects[i], GetNetworkObjectId(), true, false, NetworkingManager.Singleton.ServerClientId, null, false, 0, false, true);
                 }
             }
         }
