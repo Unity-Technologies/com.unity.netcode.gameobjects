@@ -178,7 +178,7 @@ namespace MLAPI.Components
                 {
                     if (networkedObjects[i].IsSceneObject == null)
                     {
-                        SpawnManager.SpawnNetworkedObjectLocally(networkedObjects[i], SpawnManager.GetNetworkObjectId(), true, false, NetworkingManager.Singleton.ServerClientId, null, false, 0, false);
+                        SpawnManager.SpawnNetworkedObjectLocally(networkedObjects[i], SpawnManager.GetNetworkObjectId(), true, false, NetworkingManager.Singleton.ServerClientId, null, false, 0, false, true);
                     
                         newSceneObjects.Add(networkedObjects[i]);
                     }
@@ -218,6 +218,8 @@ namespace MLAPI.Components
 
                                         writer.WriteUInt64Packed(newSceneObjects[i].PrefabHash);
 
+                                        writer.WriteBool(newSceneObjects[i].DestroyWithScene);
+
                                         writer.WriteSinglePacked(newSceneObjects[i].transform.position.x);
                                         writer.WriteSinglePacked(newSceneObjects[i].transform.position.y);
                                         writer.WriteSinglePacked(newSceneObjects[i].transform.position.z);
@@ -235,6 +237,8 @@ namespace MLAPI.Components
                                         writer.WriteUInt64Packed(newSceneObjects[i].OwnerClientId);
 
                                         writer.WriteUInt64Packed(newSceneObjects[i].NetworkedInstanceId);
+
+                                        writer.WriteBool(newSceneObjects[i].DestroyWithScene);
 
                                         newSceneObjects[i].WriteNetworkedVarData(stream, NetworkingManager.Singleton.ConnectedClientsList[j].ClientId);
                                     }
@@ -279,11 +283,13 @@ namespace MLAPI.Components
 
                         ulong prefabHash = reader.ReadUInt64Packed();
                         
+                        bool destroyWithScene = reader.ReadBool();
+
                         Vector3 position = new Vector3(reader.ReadSinglePacked(), reader.ReadSinglePacked(), reader.ReadSinglePacked());
                         Quaternion rotation = Quaternion.Euler(reader.ReadSinglePacked(), reader.ReadSinglePacked(), reader.ReadSinglePacked());
                         
                         NetworkedObject networkedObject = SpawnManager.CreateLocalNetworkedObject(false, 0, prefabHash, position, rotation);
-                        SpawnManager.SpawnNetworkedObjectLocally(networkedObject, networkId, true, isPlayerObject, owner, objectStream, false, 0, true);
+                        SpawnManager.SpawnNetworkedObjectLocally(networkedObject, networkId, true, isPlayerObject, owner, objectStream, false, 0, true, destroyWithScene);
                     }
                 }
             }
@@ -305,8 +311,10 @@ namespace MLAPI.Components
 
                         ulong instanceId = reader.ReadUInt64Packed();
                         
+                        bool destroyWithScene = reader.ReadBool();
+
                         NetworkedObject networkedObject = SpawnManager.CreateLocalNetworkedObject(true, instanceId, 0, null, null);
-                        SpawnManager.SpawnNetworkedObjectLocally(networkedObject, networkId, true, isPlayerObject, owner, objectStream, false, 0, true);
+                        SpawnManager.SpawnNetworkedObjectLocally(networkedObject, networkId, true, isPlayerObject, owner, objectStream, false, 0, true, destroyWithScene);
                     }
                 }
             }

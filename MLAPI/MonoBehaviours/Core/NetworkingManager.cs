@@ -493,7 +493,7 @@ namespace MLAPI
             ConnectedClientsList.Add(ConnectedClients[hostClientId]);
 
             NetworkedObject netObject = SpawnManager.CreateLocalNetworkedObject(false, 0, (prefabHash == null ? NetworkConfig.PlayerPrefabHash : prefabHash.Value), position, rotation);
-            SpawnManager.SpawnNetworkedObjectLocally(netObject, SpawnManager.GetNetworkObjectId(), false, true, hostClientId, payloadStream, payloadStream != null, payloadStream == null ? 0 : (int)payloadStream.Length, false);
+            SpawnManager.SpawnNetworkedObjectLocally(netObject, SpawnManager.GetNetworkObjectId(), false, true, hostClientId, payloadStream, payloadStream != null, payloadStream == null ? 0 : (int)payloadStream.Length, false, false);
             
             if (netObject.CheckObjectVisibility == null || netObject.CheckObjectVisibility(hostClientId))
             {
@@ -988,7 +988,7 @@ namespace MLAPI
                 ConnectedClientsList.Add(client);
                 
                 NetworkedObject netObject = SpawnManager.CreateLocalNetworkedObject(false, 0, (prefabHash == null ? NetworkConfig.PlayerPrefabHash : prefabHash.Value), position, rotation);
-                SpawnManager.SpawnNetworkedObjectLocally(netObject, SpawnManager.GetNetworkObjectId(), false, true, clientId, null, false, 0, false);
+                SpawnManager.SpawnNetworkedObjectLocally(netObject, SpawnManager.GetNetworkObjectId(), false, true, clientId, null, false, 0, false, false);
                 
                 ConnectedClients[clientId].PlayerObject = netObject;
 
@@ -1042,6 +1042,8 @@ namespace MLAPI
                                 }
                             }
 
+                            writer.WriteBool(_observedObjects[i].DestroyWithScene);
+
                             writer.WriteSinglePacked(_observedObjects[i].transform.position.x);
                             writer.WriteSinglePacked(_observedObjects[i].transform.position.y);
                             writer.WriteSinglePacked(_observedObjects[i].transform.position.z);
@@ -1085,6 +1087,8 @@ namespace MLAPI
                                 writer.WriteBool(false);
                                 writer.WriteUInt64Packed(prefabHash == null ? NetworkConfig.PlayerPrefabHash : prefabHash.Value);
                             }
+
+                            writer.WriteBool(false); //Object won't have DestroyWithScene enabled.
 
                             writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.position.x);
                             writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.position.y);
