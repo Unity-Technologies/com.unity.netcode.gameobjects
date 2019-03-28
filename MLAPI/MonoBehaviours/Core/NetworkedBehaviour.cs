@@ -78,7 +78,7 @@ namespace MLAPI
         /// <summary>
         /// Contains the sender of the currently executing RPC. Useful for the convenience RPC methods
         /// </summary>
-        protected uint ExecutingRpcSender { get; private set; }
+        protected ulong ExecutingRpcSender { get; private set; }
         /// <summary>
         /// Gets the NetworkedObject that owns this NetworkedBehaviour instance
         /// </summary>
@@ -112,7 +112,7 @@ namespace MLAPI
         /// <summary>
         /// Gets the clientId that owns the NetworkedObject
         /// </summary>
-        public uint OwnerClientId => NetworkedObject.OwnerClientId;
+        public ulong OwnerClientId => NetworkedObject.OwnerClientId;
 
         private void OnEnable()
         {
@@ -356,7 +356,7 @@ namespace MLAPI
                                 writer.WriteUInt64Packed(NetworkId);
                                 writer.WriteUInt16Packed(NetworkedObject.GetOrderIndex(this));
 
-                                uint clientId = NetworkingManager.Singleton.ConnectedClientsList[i].ClientId;
+                                ulong clientId = NetworkingManager.Singleton.ConnectedClientsList[i].ClientId;
                                 bool writtenAny = false;
                                 for (int k = 0; k < networkedVarFields.Count; k++)
                                 {
@@ -413,7 +413,7 @@ namespace MLAPI
         }
 
 
-        internal static void HandleNetworkedVarDeltas(List<INetworkedVar> networkedVarList, Stream stream, uint clientId, NetworkedBehaviour logInstance)
+        internal static void HandleNetworkedVarDeltas(List<INetworkedVar> networkedVarList, Stream stream, ulong clientId, NetworkedBehaviour logInstance)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
@@ -441,7 +441,7 @@ namespace MLAPI
             }
         }
 
-        internal static void HandleNetworkedVarUpdate(List<INetworkedVar> networkedVarList, Stream stream, uint clientId, NetworkedBehaviour logInstance)
+        internal static void HandleNetworkedVarUpdate(List<INetworkedVar> networkedVarList, Stream stream, ulong clientId, NetworkedBehaviour logInstance)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
@@ -468,7 +468,7 @@ namespace MLAPI
             }
         }
 
-        internal static void WriteNetworkedVarData(List<INetworkedVar> networkedVarList, PooledBitWriter writer, Stream stream, uint clientId)
+        internal static void WriteNetworkedVarData(List<INetworkedVar> networkedVarList, PooledBitWriter writer, Stream stream, ulong clientId)
         {
             if (networkedVarList.Count == 0)
                 return;
@@ -596,7 +596,7 @@ namespace MLAPI
                     }
 
                     ParameterInfo[] parameters = methods[i].GetParameters();
-                    if (parameters.Length == 2 && parameters[0].ParameterType == typeof(uint) && parameters[1].ParameterType == typeof(Stream) && methods[i].ReturnType == typeof(void))
+                    if (parameters.Length == 2 && parameters[0].ParameterType == typeof(ulong) && parameters[1].ParameterType == typeof(Stream) && methods[i].ReturnType == typeof(void))
                     {
                         //use delegate
                         attributes[0].rpcDelegate = (RpcDelegate)Delegate.CreateDelegate(typeof(RpcDelegate), this, methods[i].Name);
@@ -653,7 +653,7 @@ namespace MLAPI
                     }
 
                     ParameterInfo[] parameters = methods[i].GetParameters();
-                    if (parameters.Length == 2 && parameters[0].ParameterType == typeof(uint) && parameters[1].ParameterType == typeof(Stream) && methods[i].ReturnType == typeof(void))
+                    if (parameters.Length == 2 && parameters[0].ParameterType == typeof(ulong) && parameters[1].ParameterType == typeof(Stream) && methods[i].ReturnType == typeof(void))
                     {
                         //use delegate
                         attributes[0].rpcDelegate = (RpcDelegate)Delegate.CreateDelegate(typeof(RpcDelegate), this, methods[i].Name);
@@ -704,7 +704,7 @@ namespace MLAPI
             }
         }
 
-        internal object OnRemoteServerRPC(ulong hash, uint senderClientId, Stream stream)
+        internal object OnRemoteServerRPC(ulong hash, ulong senderClientId, Stream stream)
         {
             if (!CachedServerRpcs.ContainsKey(this) || !CachedServerRpcs[this].ContainsKey(hash))
             {
@@ -715,7 +715,7 @@ namespace MLAPI
             return InvokeServerRPCLocal(hash, senderClientId, stream);
         }
         
-        internal object OnRemoteClientRPC(ulong hash, uint senderClientId, Stream stream)
+        internal object OnRemoteClientRPC(ulong hash, ulong senderClientId, Stream stream)
         {
             if (!CachedClientRpcs.ContainsKey(this) || !CachedClientRpcs[this].ContainsKey(hash))
             {
@@ -726,7 +726,7 @@ namespace MLAPI
             return InvokeClientRPCLocal(hash, senderClientId, stream);
         }
 
-        private object InvokeServerRPCLocal(ulong hash, uint senderClientId, Stream stream)
+        private object InvokeServerRPCLocal(ulong hash, ulong senderClientId, Stream stream)
         {
             if (!CachedServerRpcs.ContainsKey(this) || !CachedServerRpcs[this].ContainsKey(hash))
                 return null;
@@ -783,7 +783,7 @@ namespace MLAPI
             }
         }
 
-        private object InvokeClientRPCLocal(ulong hash, uint senderClientId, Stream stream)
+        private object InvokeClientRPCLocal(ulong hash, ulong senderClientId, Stream stream)
         {
             if (!CachedClientRpcs.ContainsKey(this) || !CachedClientRpcs[this].ContainsKey(hash))
                 return null;
@@ -861,7 +861,7 @@ namespace MLAPI
             }
         }
         
-        internal void SendClientRPCBoxed(ulong hash, uint clientId, string channel, SecuritySendFlags security, params object[] parameters)
+        internal void SendClientRPCBoxedToClient(ulong hash, ulong clientId, string channel, SecuritySendFlags security, params object[] parameters)
         {
             using (PooledBitStream stream = PooledBitStream.Get())
             {
@@ -876,7 +876,7 @@ namespace MLAPI
             }
         }
         
-        internal RpcResponse<T> SendClientRPCBoxedResponse<T>(ulong hash, uint clientId, string channel, SecuritySendFlags security, params object[] parameters)
+        internal RpcResponse<T> SendClientRPCBoxedResponse<T>(ulong hash, ulong clientId, string channel, SecuritySendFlags security, params object[] parameters)
         {
             using (PooledBitStream stream = PooledBitStream.Get())
             {
@@ -892,7 +892,7 @@ namespace MLAPI
             }
         }
         
-        internal void SendClientRPCBoxed(ulong hash, List<uint> clientIds, string channel, SecuritySendFlags security, params object[] parameters)
+        internal void SendClientRPCBoxed(ulong hash, List<ulong> clientIds, string channel, SecuritySendFlags security, params object[] parameters)
         {
             using (PooledBitStream stream = PooledBitStream.Get())
             {
@@ -907,7 +907,7 @@ namespace MLAPI
             }
         }
 
-        internal void SendClientRPCBoxed(uint clientIdToIgnore, ulong hash, string channel, SecuritySendFlags security, params object[] parameters)
+        internal void SendClientRPCBoxedToEveryoneExcept(ulong clientIdToIgnore, ulong hash, string channel, SecuritySendFlags security, params object[] parameters)
         {
             using (PooledBitStream stream = PooledBitStream.Get())
             {
@@ -1013,7 +1013,7 @@ namespace MLAPI
             }
         }
 
-        internal void SendClientRPCPerformance(ulong hash,  List<uint> clientIds, Stream messageStream, string channel, SecuritySendFlags security)
+        internal void SendClientRPCPerformance(ulong hash,  List<ulong> clientIds, Stream messageStream, string channel, SecuritySendFlags security)
         {            
             if (!IsServer && IsRunning)
             {
@@ -1078,7 +1078,7 @@ namespace MLAPI
             }
         }
 
-        internal void SendClientRPCPerformance(ulong hash, Stream messageStream, uint clientIdToIgnore, string channel, SecuritySendFlags security)
+        internal void SendClientRPCPerformance(ulong hash, Stream messageStream, ulong clientIdToIgnore, string channel, SecuritySendFlags security)
         {
             if (!IsServer && IsRunning)
             {
@@ -1124,7 +1124,7 @@ namespace MLAPI
             }
         }
 
-        internal void SendClientRPCPerformance(ulong hash, uint clientId, Stream messageStream, string channel, SecuritySendFlags security)
+        internal void SendClientRPCPerformance(ulong hash, ulong clientId, Stream messageStream, string channel, SecuritySendFlags security)
         {
             if (!IsServer && IsRunning)
             {
@@ -1162,7 +1162,7 @@ namespace MLAPI
             }
         }
         
-        internal RpcResponse<T> SendClientRPCPerformanceResponse<T>(ulong hash, uint clientId, Stream messageStream, string channel, SecuritySendFlags security)
+        internal RpcResponse<T> SendClientRPCPerformanceResponse<T>(ulong hash, ulong clientId, Stream messageStream, string channel, SecuritySendFlags security)
         {
             if (!IsServer && IsRunning)
             {

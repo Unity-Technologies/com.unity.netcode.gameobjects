@@ -120,8 +120,8 @@ namespace MLAPI.Prototyping
                     {
                         if (EnableProximity)
                         {
-                            List<uint> clientsInProximity = new List<uint>();
-                            foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.Singleton.ConnectedClients)
+                            List<ulong> clientsInProximity = new List<ulong>();
+                            foreach (KeyValuePair<ulong, NetworkedClient> client in NetworkingManager.Singleton.ConnectedClients)
                             {
                                 if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
                                     clientsInProximity.Add(client.Key);
@@ -192,8 +192,8 @@ namespace MLAPI.Prototyping
                         {
                             if (EnableProximity)
                             {
-                                List<uint> clientsInProximity = new List<uint>();
-                                foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.Singleton.ConnectedClients)
+                                List<ulong> clientsInProximity = new List<ulong>();
+                                foreach (KeyValuePair<ulong, NetworkedClient> client in NetworkingManager.Singleton.ConnectedClients)
                                 {
                                     if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
                                         clientsInProximity.Add(client.Key);
@@ -237,7 +237,7 @@ namespace MLAPI.Prototyping
         }
 
         [ServerRPC]
-        private void SubmitAnimMsg(uint clientId, Stream stream)
+        private void SubmitAnimMsg(ulong clientId, Stream stream)
         {
             // usually transitions will be triggered by parameters, if not, play anims directly.
             // NOTE: this plays "animations", not transitions, so any transitions will be skipped.
@@ -245,8 +245,8 @@ namespace MLAPI.Prototyping
 
             if (EnableProximity)
             {
-                List<uint> clientsInProximity = new List<uint>();
-                foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.Singleton.ConnectedClients)
+                List<ulong> clientsInProximity = new List<ulong>();
+                foreach (KeyValuePair<ulong, NetworkedClient> client in NetworkingManager.Singleton.ConnectedClients)
                 {
                     if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
                         clientsInProximity.Add(client.Key);
@@ -260,7 +260,7 @@ namespace MLAPI.Prototyping
         }
 
         [ClientRPC]
-        private void ApplyAnimMsg(uint clientId, Stream stream)
+        private void ApplyAnimMsg(ulong clientId, Stream stream)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
@@ -275,12 +275,12 @@ namespace MLAPI.Prototyping
         }
 
         [ServerRPC]
-        private void SubmitAnimParamMsg(uint clientId, Stream stream)
+        private void SubmitAnimParamMsg(ulong clientId, Stream stream)
         {
             if (EnableProximity)
             {
-                List<uint> clientsInProximity = new List<uint>();
-                foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.Singleton.ConnectedClients)
+                List<ulong> clientsInProximity = new List<ulong>();
+                foreach (KeyValuePair<ulong, NetworkedClient> client in NetworkingManager.Singleton.ConnectedClients)
                 {
                     if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
                         clientsInProximity.Add(client.Key);
@@ -294,18 +294,18 @@ namespace MLAPI.Prototyping
         }
 
         [ClientRPC]
-        private void ApplyAnimParamMsg(uint clientId, Stream stream)
+        private void ApplyAnimParamMsg(ulong clientId, Stream stream)
         {
             ReadParameters(stream, true);
         }
 
         [ServerRPC]
-        private void SubmitAnimTriggerMsg(uint clientId, Stream stream)
+        private void SubmitAnimTriggerMsg(ulong clientId, Stream stream)
         {
             if (EnableProximity)
             {
-                List<uint> clientsInProximity = new List<uint>();
-                foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.Singleton.ConnectedClients)
+                List<ulong> clientsInProximity = new List<ulong>();
+                foreach (KeyValuePair<ulong, NetworkedClient> client in NetworkingManager.Singleton.ConnectedClients)
                 {
                     if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
                         clientsInProximity.Add(client.Key);
@@ -319,7 +319,7 @@ namespace MLAPI.Prototyping
         }
 
         [ClientRPC]
-        private void ApplyAnimTriggerMsg(uint clientId, Stream stream)
+        private void ApplyAnimTriggerMsg(ulong clientId, Stream stream)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
@@ -431,8 +431,8 @@ namespace MLAPI.Prototyping
                         {
                             if (EnableProximity)
                             {
-                                List<uint> clientsInProximity = new List<uint>();
-                                foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.Singleton.ConnectedClients)
+                                List<ulong> clientsInProximity = new List<ulong>();
+                                foreach (KeyValuePair<ulong, NetworkedClient> client in NetworkingManager.Singleton.ConnectedClients)
                                 {
                                     if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
                                         clientsInProximity.Add(client.Key);

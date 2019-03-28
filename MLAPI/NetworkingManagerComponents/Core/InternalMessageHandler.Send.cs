@@ -1,13 +1,15 @@
-﻿using MLAPI.Data;
+﻿using System;
+using MLAPI.Data;
 using MLAPI.Logging;
 using MLAPI.Profiling;
-using MLAPI.Serialization;
+using UnityEngine;
+using BitStream = MLAPI.Serialization.BitStream;
 
 namespace MLAPI.Internal
 {
     internal static partial class InternalMessageHandler
     {
-        internal static void Send(uint clientId, byte messageType, string channelName, BitStream messageStream, SecuritySendFlags flags, NetworkedObject targetObject, bool skipQueue = false)
+        internal static void Send(ulong clientId, byte messageType, string channelName, BitStream messageStream, SecuritySendFlags flags, NetworkedObject targetObject, bool skipQueue = false)
         {
             messageStream.PadStream();
 
@@ -23,11 +25,9 @@ namespace MLAPI.Internal
             using (BitStream stream = MessageManager.WrapMessage(messageType, clientId, messageStream, flags))
             {
                 NetworkProfiler.StartEvent(TickType.Send, (uint)stream.Length, channelName, MLAPIConstants.MESSAGE_NAMES[messageType]);
-                byte error;
-                if (skipQueue)
-                    NetworkingManager.Singleton.NetworkConfig.NetworkTransport.QueueMessageForSending(clientId, stream.GetBuffer(), (int)stream.Length, MessageManager.channels[channelName], true, out error);
-                else
-                    NetworkingManager.Singleton.NetworkConfig.NetworkTransport.QueueMessageForSending(clientId, stream.GetBuffer(), (int)stream.Length, MessageManager.channels[channelName], false, out error);
+                
+                NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(clientId, new ArraySegment<byte>(stream.GetBuffer(), 0, (int)stream.Length), channelName, skipQueue);
+
                 NetworkProfiler.EndEvent();
             }
         }
@@ -62,15 +62,14 @@ namespace MLAPI.Internal
                             continue;
                         }
                         
-                        byte error;
-                        NetworkingManager.Singleton.NetworkConfig.NetworkTransport.QueueMessageForSending(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId, stream.GetBuffer(), (int)stream.Length, MessageManager.channels[channelName], false, out error);
+                        NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId, new ArraySegment<byte>(stream.GetBuffer(), 0, (int)stream.Length), channelName, false);
                     }
                     NetworkProfiler.EndEvent();
                 }
             }
         }
 
-        internal static void Send(byte messageType, string channelName, uint clientIdToIgnore, BitStream messageStream, SecuritySendFlags flags, NetworkedObject targetObject)
+        internal static void Send(byte messageType, string channelName, ulong clientIdToIgnore, BitStream messageStream, SecuritySendFlags flags, NetworkedObject targetObject)
         {
             bool encrypted = ((flags & SecuritySendFlags.Encrypted) == SecuritySendFlags.Encrypted) && NetworkingManager.Singleton.NetworkConfig.EnableEncryption;
             bool authenticated = ((flags & SecuritySendFlags.Authenticated) == SecuritySendFlags.Authenticated) && NetworkingManager.Singleton.NetworkConfig.EnableEncryption;
@@ -104,8 +103,7 @@ namespace MLAPI.Internal
                             continue;
                         }
 
-                        byte error;
-                        NetworkingManager.Singleton.NetworkConfig.NetworkTransport.QueueMessageForSending(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId, stream.GetBuffer(), (int)stream.Length, MessageManager.channels[channelName], false, out error);
+                        NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId, new ArraySegment<byte>(stream.GetBuffer(), 0, (int)stream.Length), channelName, false);
                     }
                     NetworkProfiler.EndEvent();
                 }

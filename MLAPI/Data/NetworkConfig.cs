@@ -21,18 +21,9 @@ namespace MLAPI.Configuration
         /// </summary>
         public ushort ProtocolVersion = 0;
         /// <summary>
-        /// The transport to be used
-        /// </summary>
-        public DefaultTransport Transport = DefaultTransport.UNET;
-        /// <summary>
         /// The transport hosts the sever uses
         /// </summary>
-        public IUDPTransport NetworkTransport = null;
-        /// <summary>
-        /// Channels used by the NetworkedTransport
-        /// </summary>
-        [HideInInspector]
-        public List<Channel> Channels = new List<Channel>();
+        public Transport NetworkTransport = null;
         /// <summary>
         /// A list of SceneNames that can be used during networked games.
         /// </summary>
@@ -49,10 +40,6 @@ namespace MLAPI.Configuration
         [SerializeField]
         [HideInInspector]
         internal ulong PlayerPrefabHash;
-        /// <summary>
-        /// The size of the receive message buffer. This is the max message size including any MLAPI overheads.
-        /// </summary>
-        public int MessageBufferSize = 1024;
         /// <summary>
         /// Amount of times per second the receive queue is emptied and all messages inside are processed.
         /// </summary>
@@ -75,18 +62,6 @@ namespace MLAPI.Configuration
         /// Set this to less than or equal to 0 for unlimited
         /// </summary>
         public int MaxBehaviourUpdatesPerTick = -1;
-        /// <summary>
-        /// The max amount of Clients that can connect.
-        /// </summary>
-        public int MaxConnections = 100;
-        /// <summary>
-        /// The port for the NetworkTransport to use when connecting
-        /// </summary>
-        public int ConnectPort = 7777;
-        /// <summary>
-        /// The address to connect to
-        /// </summary>
-        public string ConnectAddress = "127.0.0.1";
         /// <summary>
         /// The amount of seconds to wait for handshake to complete before timing out a client
         /// </summary>
@@ -130,7 +105,6 @@ namespace MLAPI.Configuration
         /// <summary>
         /// Wheter or not to enable the ECDHE key exchange to allow for encryption and authentication of messages
         /// </summary>
-        [Header("Cryptography")]
         public bool EnableEncryption = false;
         /// <summary>
         /// Wheter or not to enable signed diffie hellman key exchange.
@@ -173,7 +147,6 @@ namespace MLAPI.Configuration
 
         private void Sort()
         {
-            Channels = Channels.OrderBy(x => x.Name).ToList();
             RegisteredScenes.Sort();
         }
 
@@ -189,29 +162,18 @@ namespace MLAPI.Configuration
                 using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                 {
                     writer.WriteUInt16Packed(config.ProtocolVersion);
-                    writer.WriteBits((byte)config.Transport, 5);
-
-                    writer.WriteUInt16Packed((ushort)config.Channels.Count);
-                    for (int i = 0; i < config.Channels.Count; i++)
-                    {
-                        writer.WriteString(config.Channels[i].Name);
-                        writer.WriteBits((byte)config.Channels[i].Type, 5);
-                    }
 
                     writer.WriteUInt16Packed((ushort)config.RegisteredScenes.Count);
+                    
                     for (int i = 0; i < config.RegisteredScenes.Count; i++)
                     {
                         writer.WriteString(config.RegisteredScenes[i]);
                     }
 
-                    writer.WriteInt32Packed(config.MessageBufferSize);
                     writer.WriteInt32Packed(config.ReceiveTickrate);
                     writer.WriteInt32Packed(config.MaxReceiveEventsPerTickRate);
                     writer.WriteInt32Packed(config.SendTickrate);
                     writer.WriteInt32Packed(config.EventTickrate);
-                    writer.WriteInt32Packed(config.MaxConnections);
-                    writer.WriteInt32Packed(config.ConnectPort);
-                    writer.WriteString(config.ConnectAddress);
                     writer.WriteInt32Packed(config.ClientConnectionBufferTimeout);
                     writer.WriteBool(config.ConnectionApproval);
                     writer.WriteInt32Packed(config.SecondsHistory);
@@ -241,37 +203,20 @@ namespace MLAPI.Configuration
             {
                 using (PooledBitReader reader = PooledBitReader.Get(stream))
                 {
-
                     config.ProtocolVersion = reader.ReadUInt16Packed();
-                    config.Transport = (DefaultTransport)reader.ReadBits(5);
-
-                    ushort channelCount = reader.ReadUInt16Packed();
-                    config.Channels.Clear();
-                    for (int i = 0; i < channelCount; i++)
-                    {
-                        Channel channel = new Channel()
-                        {
-                            Name = reader.ReadString().ToString(),
-                            Type = (ChannelType)reader.ReadBits(5)
-                        };
-                        config.Channels.Add(channel);
-                    }
 
                     ushort sceneCount = reader.ReadUInt16Packed();
                     config.RegisteredScenes.Clear();
+                    
                     for (int i = 0; i < sceneCount; i++)
                     {
                         config.RegisteredScenes.Add(reader.ReadString().ToString());
                     }
 
-                    config.MessageBufferSize = reader.ReadInt32Packed();
                     config.ReceiveTickrate = reader.ReadInt32Packed();
                     config.MaxReceiveEventsPerTickRate = reader.ReadInt32Packed();
                     config.SendTickrate = reader.ReadInt32Packed();
                     config.EventTickrate = reader.ReadInt32Packed();
-                    config.MaxConnections = reader.ReadInt32Packed();
-                    config.ConnectPort = reader.ReadInt32Packed();
-                    config.ConnectAddress = reader.ReadString().ToString();
                     config.ClientConnectionBufferTimeout = reader.ReadInt32Packed();
                     config.ConnectionApproval = reader.ReadBool();
                     config.SecondsHistory = reader.ReadInt32Packed();
@@ -306,12 +251,6 @@ namespace MLAPI.Configuration
                 {
                     writer.WriteUInt16Packed(ProtocolVersion);
                     writer.WriteString(MLAPIConstants.MLAPI_PROTOCOL_VERSION);
-
-                    for (int i = 0; i < Channels.Count; i++)
-                    {
-                        writer.WriteString(Channels[i].Name);
-                        writer.WriteByte((byte)Channels[i].Type);
-                    }
 
                     for (int i = 0; i < RegisteredScenes.Count; i++)
                     {

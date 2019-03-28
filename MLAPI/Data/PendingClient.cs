@@ -12,7 +12,7 @@ namespace MLAPI.Data
         /// <summary>
         /// The ClientId of the client
         /// </summary>
-        public uint ClientId;
+        public ulong ClientId;
         
 #if !DISABLE_CRYPTOGRAPHY
         internal EllipticDiffieHellman KeyExchange;

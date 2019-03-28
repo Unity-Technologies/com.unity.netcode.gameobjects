@@ -40,7 +40,7 @@ namespace MLAPI.Cryptography
         /// </summary>
         /// <param name="clientId">The clientId of the client whose aes key we want</param>
         /// <returns>The aes key in binary</returns>
-        public static byte[] GetClientKey(uint clientId)
+        public static byte[] GetClientKey(ulong clientId)
         {
             if (NetworkingManager.Singleton.IsServer)
             {

@@ -20,7 +20,7 @@ namespace MLAPI_Examples
         [ServerRPC(RequireOwnership = false)]
         public void PingServer(int number)
         {
-            uint sender = ExecutingRpcSender;
+            ulong sender = ExecutingRpcSender;
 
             Debug.LogFormat("Got pinged by {0} with the number {1}", sender, number);
             

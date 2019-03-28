@@ -37,7 +37,7 @@ namespace MLAPI
         /// <summary>
         /// Gets the clientId of the owner of this NetworkedObject
         /// </summary>
-        public uint OwnerClientId
+        public ulong OwnerClientId
         {
             get
             {
@@ -54,7 +54,7 @@ namespace MLAPI
                     _ownerClientId = value;
             }
         }
-        private uint? _ownerClientId = null;
+        private ulong? _ownerClientId = null;
         
         /// <summary>
         /// InstanceId is the id that is unique to the object and scene for a scene object when UsePrefabSync is false.
@@ -131,7 +131,7 @@ namespace MLAPI
         /// Delegate type for checking visibility
         /// </summary>
         /// <param name="clientId">The clientId to check visibility for</param>
-        public delegate bool VisibilityDelegate(uint clientId);
+        public delegate bool VisibilityDelegate(ulong clientId);
 
         /// <summary>
         /// Delegate invoked when the MLAPI needs to know if the object should be visible to a client, if null it will assume true
@@ -144,13 +144,13 @@ namespace MLAPI
         /// </summary>
         public bool DontDestroyWithOwner;
 
-        internal readonly HashSet<uint> observers = new HashSet<uint>();
+        internal readonly HashSet<ulong> observers = new HashSet<ulong>();
 
         /// <summary>
         /// Returns Observers enumerator
         /// </summary>
         /// <returns>Observers enumerator</returns>
-        public HashSet<uint>.Enumerator GetObservers()
+        public HashSet<ulong>.Enumerator GetObservers()
         {
             return observers.GetEnumerator();
         }
@@ -160,7 +160,7 @@ namespace MLAPI
         /// </summary>
         /// <param name="clientId">The clientId of the client</param>
         /// <returns>True if the client knows about the object</returns>
-        public bool IsNetworkVisibleTo(uint clientId)
+        public bool IsNetworkVisibleTo(ulong clientId)
         {
             return observers.Contains(clientId);
         }
@@ -170,7 +170,7 @@ namespace MLAPI
         /// </summary>
         /// <param name="clientId">The client to show the object to</param>
         /// <param name="payload">An optional payload to send as part of the spawn</param>
-        public void NetworkShow(uint clientId, Stream payload = null)
+        public void NetworkShow(ulong clientId, Stream payload = null)
         {
             if (!NetworkingManager.Singleton.IsServer)
             {
@@ -191,7 +191,7 @@ namespace MLAPI
         /// Hides a object from a specific client
         /// </summary>
         /// <param name="clientId">The client to hide the object for</param>
-        public void NetworkHide(uint clientId)
+        public void NetworkHide(ulong clientId)
         {
             if (!NetworkingManager.Singleton.IsServer)
             {
@@ -256,7 +256,7 @@ namespace MLAPI
         /// <param name="clientId">The clientId to own the object</param>
         /// <param name="spawnPayload">The writer containing the spawn payload</param>
         /// <param name="destroyWithScene">Should the object be destroyd when the scene is changed</param>
-        public void SpawnWithOwnership(uint clientId, Stream spawnPayload = null, bool destroyWithScene = false)
+        public void SpawnWithOwnership(ulong clientId, Stream spawnPayload = null, bool destroyWithScene = false)
         {
             if (spawnPayload != null)
                 spawnPayload.Position = 0;
@@ -277,7 +277,7 @@ namespace MLAPI
         /// </summary>
         /// <param name="clientId">The clientId whos player object this is</param>
         /// <param name="spawnPayload">The writer containing the spawn payload</param>
-        public void SpawnAsPlayerObject(uint clientId, Stream spawnPayload = null)
+        public void SpawnAsPlayerObject(ulong clientId, Stream spawnPayload = null)
         {
             if (spawnPayload != null)
                 spawnPayload.Position = 0;
@@ -304,7 +304,7 @@ namespace MLAPI
         /// Changes the owner of the object. Can only be called from server
         /// </summary>
         /// <param name="newOwnerClientId">The new owner clientId</param>
-        public void ChangeOwnership(uint newOwnerClientId)
+        public void ChangeOwnership(ulong newOwnerClientId)
         {
             SpawnManager.ChangeOwnership(NetworkId, newOwnerClientId);
         }
@@ -373,7 +373,7 @@ namespace MLAPI
             }
         }
         
-        internal void WriteNetworkedVarData(Stream stream, uint clientId)
+        internal void WriteNetworkedVarData(Stream stream, ulong clientId)
         {
             using (PooledBitWriter writer = PooledBitWriter.Get(stream))
             {

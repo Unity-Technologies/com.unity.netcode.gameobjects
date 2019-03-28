@@ -159,7 +159,7 @@ namespace MLAPI.Components
         /// Returns the player object with a given clientId or null if one does not exist
         /// </summary>
         /// <returns>The player object with a given clientId or null if one does not exist</returns>
-        public static NetworkedObject GetPlayerObject(uint clientId)
+        public static NetworkedObject GetPlayerObject(ulong clientId)
         {
             if (!NetworkingManager.Singleton.ConnectedClients.ContainsKey(clientId)) return null;
             return NetworkingManager.Singleton.ConnectedClients[clientId].PlayerObject;
@@ -186,14 +186,14 @@ namespace MLAPI.Components
                 using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                 {
                     writer.WriteUInt64Packed(networkId);
-                    writer.WriteUInt32Packed(netObject.OwnerClientId);
+                    writer.WriteUInt64Packed(netObject.OwnerClientId);
 
                     InternalMessageHandler.Send(MLAPIConstants.MLAPI_CHANGE_OWNER, "MLAPI_INTERNAL", stream, SecuritySendFlags.None, netObject);
                 }
             }
         }
 
-        internal static void ChangeOwnership(ulong networkId, uint clientId)
+        internal static void ChangeOwnership(ulong networkId, ulong clientId)
         {
             if (!NetworkingManager.Singleton.IsServer)
             {
@@ -214,7 +214,7 @@ namespace MLAPI.Components
                 using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                 {
                     writer.WriteUInt64Packed(networkId);
-                    writer.WriteUInt32Packed(clientId);
+                    writer.WriteUInt64Packed(clientId);
 
                     InternalMessageHandler.Send(MLAPIConstants.MLAPI_CHANGE_OWNER, "MLAPI_INTERNAL", stream, SecuritySendFlags.None, netObject);
                 }
@@ -255,7 +255,7 @@ namespace MLAPI.Components
         }
 
         // Ran on both server and client
-        internal static void SpawnNetworkedObjectLocally(NetworkedObject netObject, ulong networkId, bool sceneObject, bool playerObject, uint ownerClientId, Stream dataStream, bool readPayload, int payloadLength, bool readNetworkedVar)
+        internal static void SpawnNetworkedObjectLocally(NetworkedObject netObject, ulong networkId, bool sceneObject, bool playerObject, ulong ownerClientId, Stream dataStream, bool readPayload, int payloadLength, bool readNetworkedVar)
         {
             if (netObject == null)
             {
@@ -312,7 +312,7 @@ namespace MLAPI.Components
             }
         }
 
-        internal static void SendSpawnCallForObject(uint clientId, NetworkedObject netObject, Stream payload)
+        internal static void SendSpawnCallForObject(ulong clientId, NetworkedObject netObject, Stream payload)
         {
             using (PooledBitStream stream = PooledBitStream.Get())
             {
@@ -320,7 +320,7 @@ namespace MLAPI.Components
                 {
                     writer.WriteBool(netObject.IsPlayerObject);
                     writer.WriteUInt64Packed(netObject.NetworkId);
-                    writer.WriteUInt32Packed(netObject.OwnerClientId);
+                    writer.WriteUInt64Packed(netObject.OwnerClientId);
 
                     if (NetworkingManager.Singleton.NetworkConfig.UsePrefabSync)
                     {

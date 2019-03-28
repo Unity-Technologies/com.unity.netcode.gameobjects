@@ -57,7 +57,7 @@ namespace UnityEditor
 
                     if (showObservers)
                     {
-                        HashSet<uint>.Enumerator observerClientIds = networkedObject.GetObservers();
+                        HashSet<ulong>.Enumerator observerClientIds = networkedObject.GetObservers();
                     
                         EditorGUI.indentLevel += 1;
                         

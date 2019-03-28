@@ -93,7 +93,7 @@ namespace MLAPI.NetworkedVar.Collections
         }
 
         /// <inheritdoc />
-        public bool CanClientWrite(uint clientId)
+        public bool CanClientWrite(ulong clientId)
         {
             switch (Settings.WritePermission)
             {
@@ -114,7 +114,7 @@ namespace MLAPI.NetworkedVar.Collections
         }
 
         /// <inheritdoc />
-        public bool CanClientRead(uint clientId)
+        public bool CanClientRead(ulong clientId)
         {
             switch (Settings.ReadPermission)
             {

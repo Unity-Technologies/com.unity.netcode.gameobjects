@@ -16,10 +16,10 @@ namespace MLAPI_Examples
         {
             Regex digitsOnly = new Regex(@"[^\d]");
 
-            if (serverPort == -1) serverPort = NetworkingManager.Singleton.NetworkConfig.ConnectPort;
-            if (hostPort == -1) hostPort = NetworkingManager.Singleton.NetworkConfig.ConnectPort;
-            if (connectPort == -1) connectPort = NetworkingManager.Singleton.NetworkConfig.ConnectPort;
-            if (string.IsNullOrEmpty(connectAddress)) connectAddress = NetworkingManager.Singleton.NetworkConfig.ConnectAddress;
+            //if (serverPort == -1) serverPort = NetworkingManager.Singleton.NetworkConfig.ConnectPort;
+            //if (hostPort == -1) hostPort = NetworkingManager.Singleton.NetworkConfig.ConnectPort;
+            //if (connectPort == -1) connectPort = NetworkingManager.Singleton.NetworkConfig.ConnectPort;
+            //if (string.IsNullOrEmpty(connectAddress)) connectAddress = NetworkingManager.Singleton.NetworkConfig.ConnectAddress;
 
             if (!NetworkingManager.Singleton.IsListening)
             {
@@ -29,7 +29,7 @@ namespace MLAPI_Examples
                 {
                     if (GUILayout.Button("Start Host", GUILayout.MinWidth(150)))
                     {
-                        UnetTransport.ServerTransports[0].Port = hostPort;
+                       // UnetTransport.ServerTransports[0].Port = hostPort;
                         NetworkingManager.Singleton.StartHost();
                     }
 
@@ -46,7 +46,7 @@ namespace MLAPI_Examples
                 {
                     if (GUILayout.Button("Start Server", GUILayout.MinWidth(150)))
                     {
-                        UnetTransport.ServerTransports[0].Port = serverPort;
+                        //UnetTransport.ServerTransports[0].Port = serverPort;
                         NetworkingManager.Singleton.StartServer();
                     }
 
@@ -63,8 +63,8 @@ namespace MLAPI_Examples
                 {
                     if (GUILayout.Button("Connect Client", GUILayout.MinWidth(150)))
                     {
-                        NetworkingManager.Singleton.NetworkConfig.ConnectPort = connectPort;
-                        NetworkingManager.Singleton.NetworkConfig.ConnectAddress = connectAddress;
+                        //NetworkingManager.Singleton.NetworkConfig.ConnectPort = connectPort;
+                        //NetworkingManager.Singleton.NetworkConfig.ConnectAddress = connectAddress;
                         NetworkingManager.Singleton.StartClient();
                     }
 
