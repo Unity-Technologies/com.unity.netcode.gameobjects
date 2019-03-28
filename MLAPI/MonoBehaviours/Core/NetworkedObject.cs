@@ -126,6 +126,10 @@ namespace MLAPI
         /// Gets if the object is a SceneObject, null if it's not yet spawned but is a scene object.
         /// </summary>
         public bool? IsSceneObject { get; internal set; }
+        /// <summary>
+        /// Gets whether or not the object should be automatically removed when the scene is unloaded.
+        /// </summary>
+        public bool DestroyWithScene { get; internal set; }
 
         /// <summary>
         /// Delegate type for checking visibility
@@ -226,12 +230,13 @@ namespace MLAPI
         /// Spawns this GameObject across the network. Can only be called from the Server
         /// </summary>
         /// <param name="spawnPayload">The writer containing the spawn payload</param>
-        public void Spawn(Stream spawnPayload = null)
+        /// <param name="destroyWithScene">Should the object be destroyd when the scene is changed</param>
+        public void Spawn(Stream spawnPayload = null, bool destroyWithScene = false)
         {
             if (spawnPayload != null)
                 spawnPayload.Position = 0;
             
-            SpawnManager.SpawnNetworkedObjectLocally(this, SpawnManager.GetNetworkObjectId(), false, false, NetworkingManager.Singleton.ServerClientId, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false);
+            SpawnManager.SpawnNetworkedObjectLocally(this, SpawnManager.GetNetworkObjectId(), false, false, NetworkingManager.Singleton.ServerClientId, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false, destroyWithScene);
 
             for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)
             {
@@ -261,7 +266,7 @@ namespace MLAPI
             if (spawnPayload != null)
                 spawnPayload.Position = 0;
             
-            SpawnManager.SpawnNetworkedObjectLocally(this, SpawnManager.GetNetworkObjectId(), false, false, clientId, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false);
+            SpawnManager.SpawnNetworkedObjectLocally(this, SpawnManager.GetNetworkObjectId(), false, false, clientId, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false, destroyWithScene);
 
             for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)
             {
@@ -277,12 +282,13 @@ namespace MLAPI
         /// </summary>
         /// <param name="clientId">The clientId whos player object this is</param>
         /// <param name="spawnPayload">The writer containing the spawn payload</param>
-        public void SpawnAsPlayerObject(uint clientId, Stream spawnPayload = null)
+        /// <param name="destroyWithScene">Should the object be destroyd when the scene is changed</param>
+        public void SpawnAsPlayerObject(uint clientId, Stream spawnPayload = null, bool destroyWithScene = false)
         {
             if (spawnPayload != null)
                 spawnPayload.Position = 0;
             
-            SpawnManager.SpawnNetworkedObjectLocally(this, SpawnManager.GetNetworkObjectId(), false, true, clientId, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false);
+            SpawnManager.SpawnNetworkedObjectLocally(this, SpawnManager.GetNetworkObjectId(), false, true, clientId, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false, destroyWithScene);
             
             for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)
             {

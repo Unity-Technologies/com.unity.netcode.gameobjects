@@ -260,11 +260,13 @@ namespace MLAPI.Internal
                                 }
                             }
 
+                            bool destroyWithScene = continuationReader.ReadBool();
+
                             Vector3 pos = new Vector3(continuationReader.ReadSinglePacked(), continuationReader.ReadSinglePacked(), continuationReader.ReadSinglePacked());
                             Quaternion rot = Quaternion.Euler(continuationReader.ReadSinglePacked(), continuationReader.ReadSinglePacked(), continuationReader.ReadSinglePacked());
 
                             NetworkedObject netObject = SpawnManager.CreateLocalNetworkedObject(softSync, instanceId, prefabHash, pos, rot);
-                            SpawnManager.SpawnNetworkedObjectLocally(netObject, networkId, softSync, isPlayerObject, ownerId, continuationStream, false, 0, true);
+                            SpawnManager.SpawnNetworkedObjectLocally(netObject, networkId, softSync, isPlayerObject, ownerId, continuationStream, false, 0, true, destroyWithScene);
                         }
 
                         NetworkingManager.Singleton.IsConnectedClient = true;
@@ -334,6 +336,8 @@ namespace MLAPI.Internal
                     }
                 }
 
+                bool destroyWithScene = reader.ReadBool();
+
                 Vector3 pos = new Vector3(reader.ReadSinglePacked(), reader.ReadSinglePacked(), reader.ReadSinglePacked());
                 Quaternion rot = Quaternion.Euler(reader.ReadSinglePacked(), reader.ReadSinglePacked(), reader.ReadSinglePacked());
 
@@ -341,7 +345,7 @@ namespace MLAPI.Internal
                 int payLoadLength = hasPayload ? reader.ReadInt32Packed() : 0;
                 
                 NetworkedObject netObject = SpawnManager.CreateLocalNetworkedObject(softSync, instanceId, prefabHash, pos, rot);
-                SpawnManager.SpawnNetworkedObjectLocally(netObject, networkId, softSync, isPlayerObject, ownerId, stream, hasPayload, payLoadLength, true);
+                SpawnManager.SpawnNetworkedObjectLocally(netObject, networkId, softSync, isPlayerObject, ownerId, stream, hasPayload, payLoadLength, true, destroyWithScene);
 
                 /*
                 NetworkedObject netObject = SpawnManager.CreateSpawnedObject(SpawnManager.GetNetworkedPrefabIndexOfHash(prefabHash), networkId, ownerId, isPlayerObject,
@@ -440,6 +444,8 @@ namespace MLAPI.Internal
                         }
                     }
                     
+                    bool destroyWithScene = reader.ReadBool();
+
                     Vector3 pos = new Vector3(reader.ReadSinglePacked(), reader.ReadSinglePacked(), reader.ReadSinglePacked());
                     Quaternion rot = Quaternion.Euler(reader.ReadSinglePacked(), reader.ReadSinglePacked(), reader.ReadSinglePacked());
                     
@@ -449,7 +455,7 @@ namespace MLAPI.Internal
                         */
                     
                     NetworkedObject netObject = SpawnManager.CreateLocalNetworkedObject(softSync, instanceId, prefabHash, pos, rot);
-                    SpawnManager.SpawnNetworkedObjectLocally(netObject, networkId, softSync, isPlayerObject, ownerId, stream, false, 0, true);
+                    SpawnManager.SpawnNetworkedObjectLocally(netObject, networkId, softSync, isPlayerObject, ownerId, stream, false, 0, true, destroyWithScene);
                 }
             }
         }
