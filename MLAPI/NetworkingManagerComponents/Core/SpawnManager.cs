@@ -388,7 +388,7 @@ namespace MLAPI.Components
         {
             for (int i = 0; i < SpawnedObjectsList.Count; i++)
             {
-                if (SpawnedObjectsList[i].IsSceneObject != null && SpawnedObjectsList[i].DestroyWithScene)
+                if ((SpawnedObjectsList[i].IsSceneObject != null && SpawnedObjectsList[i].IsSceneObject == true) || SpawnedObjectsList[i].DestroyWithScene)
                 {
                     if (customDestroyHandlers.ContainsKey(SpawnedObjectsList[i].PrefabHash))
                     {
