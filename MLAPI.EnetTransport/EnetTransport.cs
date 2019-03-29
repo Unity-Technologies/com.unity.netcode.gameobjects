@@ -3,6 +3,8 @@ using System;
 using System.Collections.Generic;
 using ENet;
 using MLAPI.Transports;
+using Event = ENet.Event;
+using EventType = ENet.EventType;
 
 namespace MLAPI.EnetTransport
 {
@@ -47,7 +49,7 @@ namespace MLAPI.EnetTransport
             packet.Create(data.Array, data.Offset, data.Count, internalChannels[channelNameToId[channelName]].Flags);
             
             GetEnetConnectionDetails(clientId, out uint peerId);
-            
+
             connectedEnetPeers[peerId].Send(channelNameToId[channelName], ref packet);
         }
 
@@ -60,95 +62,95 @@ namespace MLAPI.EnetTransport
         {
             Event @event;
 
-            if (host.CheckEvents(out @event) <= 0 && host.Service(0, out @event) > 0)
+            if (host.CheckEvents(out @event) <= 0)
             {
-                clientId = GetMLAPIClientId(@event.Peer.ID, false);
-                
-                switch (@event.Type)
+                if (host.Service(0, out @event) <= 0)
                 {
-                    case EventType.None:
-                    {
-                        channelName = null;
-                        payload = new ArraySegment<byte>();
-                        
-                        return NetEventType.Nothing;
-                    }
-                    case EventType.Connect:
-                    {
-                        channelName = null;
-                        payload = new ArraySegment<byte>();
-                        
-                        connectedEnetPeers.Add(@event.Peer.ID, @event.Peer);
-                        
-                        return NetEventType.Connect;
-                    }
-                    case EventType.Disconnect:
-                    {
-                        channelName = null;
-                        payload = new ArraySegment<byte>();
+                    clientId = 0;
+                    channelName = null;
+                    payload = new ArraySegment<byte>();
 
-                        connectedEnetPeers.Remove(@event.Peer.ID);
-                        
-                        return NetEventType.Disconnect;
-                    }
-                    case EventType.Receive:
+                    return NetEventType.Nothing;
+                }
+            }
+
+            clientId = GetMLAPIClientId(@event.Peer.ID, false);
+
+            switch (@event.Type)
+            {
+                case EventType.None:
+                {
+                    channelName = null;
+                    payload = new ArraySegment<byte>();
+
+                    return NetEventType.Nothing;
+                }
+                case EventType.Connect:
+                {
+                    channelName = null;
+                    payload = new ArraySegment<byte>();
+
+                    connectedEnetPeers.Add(@event.Peer.ID, @event.Peer);
+
+                    return NetEventType.Connect;
+                }
+                case EventType.Disconnect:
+                {
+                    channelName = null;
+                    payload = new ArraySegment<byte>();
+
+                    connectedEnetPeers.Remove(@event.Peer.ID);
+
+                    return NetEventType.Disconnect;
+                }
+                case EventType.Receive:
+                {
+                    channelName = channelIdToName[@event.ChannelID];
+                    int size = @event.Packet.Length;
+
+                    if (size > messageBuffer.Length)
                     {
-                        channelName = channelIdToName[@event.ChannelID];
-                        int size = @event.Packet.Length;
-                        
-                        if (size > messageBuffer.Length)
+                        byte[] tempBuffer;
+
+                        if (temporaryBufferReference != null && temporaryBufferReference.IsAlive && ((byte[]) temporaryBufferReference.Target).Length >= size)
                         {
-                            byte[] tempBuffer;
-                            
-                            if (temporaryBufferReference != null && temporaryBufferReference.IsAlive && ((byte[]) temporaryBufferReference.Target).Length >= size)
-                            {
-                                tempBuffer = (byte[])temporaryBufferReference.Target;
-                            }
-                            else
-                            {
-                                tempBuffer = new byte[size];
-                                temporaryBufferReference = new WeakReference(tempBuffer);
-                            }
-                
-                            @event.Packet.CopyTo(tempBuffer);
-                            payload = new ArraySegment<byte>(tempBuffer, 0, size);
+                            tempBuffer = (byte[]) temporaryBufferReference.Target;
                         }
                         else
                         {
-                            @event.Packet.CopyTo(messageBuffer);
-                            payload = new ArraySegment<byte>(messageBuffer, 0, size);
+                            tempBuffer = new byte[size];
+                            temporaryBufferReference = new WeakReference(tempBuffer);
                         }
-                        
-                        
-                        @event.Packet.Dispose();
-                        
-                        return NetEventType.Data;
+
+                        @event.Packet.CopyTo(tempBuffer);
+                        payload = new ArraySegment<byte>(tempBuffer, 0, size);
                     }
-                    case EventType.Timeout:
+                    else
                     {
-                        channelName = null;
-                        payload = new ArraySegment<byte>();
-                        
-                        connectedEnetPeers.Remove(@event.Peer.ID);
-                        
-                        return NetEventType.Disconnect;
+                        @event.Packet.CopyTo(messageBuffer);
+                        payload = new ArraySegment<byte>(messageBuffer, 0, size);
                     }
-                    default:
-                    {
-                        channelName = null;
-                        payload = new ArraySegment<byte>();
-                        
-                        return NetEventType.Nothing;
-                    }
+
+                    @event.Packet.Dispose();
+
+                    return NetEventType.Data;
                 }
-            }
-            else
-            {
-                channelName = null;
-                payload = new ArraySegment<byte>();
-                clientId = 0;
-                
-                return NetEventType.Nothing;
+                case EventType.Timeout:
+                {
+                    channelName = null;
+                    payload = new ArraySegment<byte>();
+
+                    connectedEnetPeers.Remove(@event.Peer.ID);
+
+                    return NetEventType.Disconnect;
+                }
+                default:
+                {
+                    channelName = null;
+                    payload = new ArraySegment<byte>();
+
+                    return NetEventType.Nothing;
+                }
             }
         }
 
@@ -156,13 +158,12 @@ namespace MLAPI.EnetTransport
         {
             host = new Host();
             
-            Address address = new Address();
+            host.Create(1, MLAPI_CHANNELS.Length + Channels.Count);
 
+            Address address = new Address();
             address.Port = Port;
             address.SetHost(Address);
             
-            host.Create(address, 1);
-
             Peer serverPeer = host.Connect(address, MLAPI_CHANNELS.Length + Channels.Count);
 
             serverPeerId = serverPeer.ID;
@@ -171,14 +172,11 @@ namespace MLAPI.EnetTransport
         public override void StartServer()
         {
             host = new Host();
-
-            host.SetChannelLimit(MLAPI_CHANNELS.Length + Channels.Count);
             
             Address address = new Address();
-
             address.Port = Port;
             
-            host.Create(address, MaxClients);
+            host.Create(address, MaxClients, MLAPI_CHANNELS.Length + Channels.Count);
         }
 
         public override void DisconnectRemoteClient(ulong clientId)
