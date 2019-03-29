@@ -199,7 +199,12 @@ namespace MLAPI.Transports.UNET
             return NetworkTransport.QueueMessageForSending(hostId, relayConnectionId, channelId, buffer, size, out error);
         }
 
-        public static bool SendQueuedMessages(int hostId, int connectionId, out byte error) => NetworkTransport.SendQueuedMessages(hostId, relayConnectionId, out error);
+        public static bool SendQueuedMessages(int hostId, int connectionId, out byte error)
+        {
+            if (!Enabled) return NetworkTransport.SendQueuedMessages(hostId, connectionId, out error);   
+
+            return NetworkTransport.SendQueuedMessages(hostId, relayConnectionId, out error);   
+        }
 
         public static NetworkEventType ReceiveFromHost(int hostId, out int connectionId, out int channelId, byte[] buffer, int bufferSize, out int receivedSize, out byte error)
         {

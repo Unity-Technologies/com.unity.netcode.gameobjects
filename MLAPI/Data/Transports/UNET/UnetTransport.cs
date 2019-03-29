@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using MLAPI.Logging;
+using UnityEngine;
 using UnityEngine.Networking;
 
 namespace MLAPI.Transports.UNET
@@ -38,9 +39,7 @@ namespace MLAPI.Transports.UNET
         public override ulong ServerClientId => GetMLAPIClientId(0, 0, true);
         
         public override void Send(ulong clientId, ArraySegment<byte> data, string channelName, bool skipQueue)
-        {
-            UpdateRelay();
-            
+        {            
             GetUnetConnectionDetails(clientId, out byte hostId, out ushort connectionId);
             
             int channelId = channelNameToId[channelName];
@@ -87,19 +86,15 @@ namespace MLAPI.Transports.UNET
 
         public override void FlushSendQueue(ulong clientId)
         {
-            UpdateRelay();
-            
             GetUnetConnectionDetails(clientId, out byte hostId, out ushort connectionId);
             
             RelayTransport.SendQueuedMessages(hostId, connectionId, out byte error);
         }
 
         public override NetEventType PollEvent(out ulong clientId, out string channelName, out ArraySegment<byte> payload)
-        {
-            UpdateRelay();
-            
+        {            
             NetworkEventType eventType = RelayTransport.Receive(out int hostId, out int connectionId, out int channelId, messageBuffer, messageBuffer.Length, out int receivedSize, out byte error);
-
+            
             clientId = GetMLAPIClientId((byte) hostId, (ushort) connectionId, false);
 
             NetworkError networkError = (NetworkError) error;
@@ -128,7 +123,6 @@ namespace MLAPI.Transports.UNET
 
             channelName = channelIdToName[channelId];
 
-
             if (networkError == NetworkError.Timeout)
             {
                 // In UNET. Timeouts are not disconnects. We have to translate that here.
@@ -154,9 +148,7 @@ namespace MLAPI.Transports.UNET
         }
 
         public override void StartClient()
-        {
-            UpdateRelay();
-            
+        {   
             serverHostId = RelayTransport.AddHost(new HostTopology(GetConfig(), 1), false);
             
             serverConnectionId = RelayTransport.Connect(serverHostId, ConnectAddress, ConnectPort, 0, out byte error);
@@ -164,8 +156,6 @@ namespace MLAPI.Transports.UNET
 
         public override void StartServer()
         {
-            UpdateRelay();
-            
             HostTopology topology = new HostTopology(GetConfig(), MaxConnections);
             
             if (SupportWebsocket)
@@ -186,8 +176,6 @@ namespace MLAPI.Transports.UNET
 
         public override void DisconnectRemoteClient(ulong clientId)
         {
-            UpdateRelay();
-            
             GetUnetConnectionDetails(clientId, out byte hostId, out ushort connectionId);
 
             RelayTransport.Disconnect((int) hostId, (int) connectionId, out byte error);
@@ -195,8 +183,6 @@ namespace MLAPI.Transports.UNET
 
         public override void DisconnectLocalClient()
         {
-            UpdateRelay();
-            
             RelayTransport.Disconnect(serverHostId, serverConnectionId, out byte error);
         }
 
@@ -221,6 +207,8 @@ namespace MLAPI.Transports.UNET
 
         public override void Init()
         {
+            UpdateRelay();
+            
             messageBuffer = new byte[MessageBufferSize];
             
             NetworkTransport.Init();
