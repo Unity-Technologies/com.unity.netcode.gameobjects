@@ -21,7 +21,7 @@ public class VersionUpgradePopup : EditorWindow
     }
 
     public void OnGUI()
-    {
+    {        
         float padding = 20f;
         float extraPaddingBottom = 30f;
         GUILayout.BeginArea(new Rect(padding, padding, position.width - (padding * 2f), (position.height - (padding * 2f)) - extraPaddingBottom));
@@ -220,22 +220,22 @@ public class MLAPIEditor : EditorWindow
     {
         get
         {
-            return EditorPrefs.GetString("MLAPI_version", "None");
+            return EditorPrefs.GetString(Application.productName + "/MLAPI_version", "None");
         }
         set
         {
-            EditorPrefs.SetString("MLAPI_version", value);
+            EditorPrefs.SetString(Application.productName + "/MLAPI_version", value);
         }
     }
     private long lastUpdated
     {
         get
         {
-            return Convert.ToInt64(EditorPrefs.GetString("MLAPI_lastUpdated", "0"));
+            return Convert.ToInt64(EditorPrefs.GetString(Application.productName + "/MLAPI_lastUpdated", "0"));
         }
         set
         {
-            EditorPrefs.SetString("MLAPI_lastUpdated", Convert.ToString(value));
+            EditorPrefs.SetString(Application.productName + "/MLAPI_lastUpdated", Convert.ToString(value));
         }
     }
 
@@ -362,8 +362,8 @@ public class MLAPIEditor : EditorWindow
         {
             releases = new GithubRelease[0];
             foldoutStatus = new bool[0];
-            if (EditorPrefs.HasKey("MLAPI_version")) EditorPrefs.DeleteKey("MLAPI_version");
-            if (EditorPrefs.HasKey("MLAPI_lastUpdated")) EditorPrefs.DeleteKey("MLAPI_lastUpdated");
+            if (EditorPrefs.HasKey(Application.productName + "/MLAPI_version")) EditorPrefs.DeleteKey(Application.productName + "/MLAPI_version");
+            if (EditorPrefs.HasKey(Application.productName + "/MLAPI_lastUpdated")) EditorPrefs.DeleteKey(Application.productName + "/MLAPI_lastUpdated");
         }
 
         GUILayout.EndArea();
