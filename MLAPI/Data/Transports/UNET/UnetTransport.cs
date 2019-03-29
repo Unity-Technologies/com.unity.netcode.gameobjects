@@ -5,7 +5,7 @@ using UnityEngine.Networking;
 
 namespace MLAPI.Transports.UNET
 {
-    public class UNETTransport : Transport
+    public class UnetTransport : Transport
     {
         // Inspector / settings
         public int MessageBufferSize = 1024 * 5;

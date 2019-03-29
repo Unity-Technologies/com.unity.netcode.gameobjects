@@ -1,8 +1,11 @@
+using System;
+
 namespace MLAPI.Transports
 {
     /// <summary>
     /// A transport channel used by the MLAPI
     /// </summary>
+    [Serializable]
     public class TransportChannel
     {
         /// <summary>
