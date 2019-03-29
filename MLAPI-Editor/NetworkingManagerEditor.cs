@@ -274,8 +274,12 @@ public class NetworkingManagerEditor : Editor
             EditorGUILayout.PropertyField(maxReceiveEventsPerTickRateProperty);
             EditorGUILayout.PropertyField(sendTickrateProperty);
             EditorGUILayout.PropertyField(eventTickrateProperty);
-            EditorGUILayout.PropertyField(maxBehaviourUpdatesPerTickProperty);
             EditorGUILayout.PropertyField(enableNetworkedVarProperty);
+
+            using (new EditorGUI.DisabledScope(!networkingManager.NetworkConfig.EnableNetworkedVar))
+            {
+                EditorGUILayout.PropertyField(maxBehaviourUpdatesPerTickProperty);
+            }            
             
             EditorGUILayout.LabelField("Connection", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(connectionApprovalProperty);
