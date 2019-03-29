@@ -284,11 +284,18 @@ namespace MLAPI.Components
 
             SpawnedObjects.Add(netObject.NetworkId, netObject);
             SpawnedObjectsList.Add(netObject);
-            
-            if (playerObject && NetworkingManager.Singleton.IsServer) NetworkingManager.Singleton.ConnectedClients[ownerClientId].PlayerObject = netObject;
 
             if (NetworkingManager.Singleton.IsServer)
             {
+                if (playerObject) 
+                {
+                    NetworkingManager.Singleton.ConnectedClients[ownerClientId].PlayerObject = netObject;
+                }
+                else
+                {
+                    NetworkingManager.Singleton.ConnectedClients[ownerClientId].OwnedObjects.Add(netObject);
+                }
+
                 for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)
                 {
                     if (netObject.CheckObjectVisibility == null || netObject.CheckObjectVisibility(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId))
