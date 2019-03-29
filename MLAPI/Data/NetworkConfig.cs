@@ -19,105 +19,123 @@ namespace MLAPI.Configuration
         /// <summary>
         /// The protocol version. Different versions doesn't talk to each other.
         /// </summary>
+        [Tooltip("Use this to make two builds incompatible with each other")]
         public ushort ProtocolVersion = 0;
         /// <summary>
         /// The transport hosts the sever uses
         /// </summary>
+        [Tooltip("The NetworkTransport to use")]
         public Transport NetworkTransport = null;
         /// <summary>
         /// A list of SceneNames that can be used during networked games.
         /// </summary>
-        [HideInInspector]
+        [Tooltip("The Scenes that can be switched to by the server")]
         public List<string> RegisteredScenes = new List<string>();
         /// <summary>
         /// A list of spawnable prefabs
         /// </summary>
-        [HideInInspector]
+        [Tooltip("The prefabs that can be spawned across the network")]
         public List<NetworkedPrefab> NetworkedPrefabs = new List<NetworkedPrefab>();
         /// <summary>
         /// The default player prefab
         /// </summary>
         [SerializeField]
-        [HideInInspector]
         internal ulong PlayerPrefabHash;
         /// <summary>
         /// Amount of times per second the receive queue is emptied and all messages inside are processed.
         /// </summary>
+        [Tooltip("The amount of times per second the receive queue is emptied from pending incoming messages")]
         public int ReceiveTickrate = 64;
         /// <summary>
         /// The max amount of messages to process per ReceiveTickrate. This is to prevent flooding.
         /// </summary>
+        [Tooltip("The maximum amount of Receive events to poll per Receive tick. This is to prevent flooding and freezing on the server")]
         public int MaxReceiveEventsPerTickRate = 500;
         /// <summary>
         /// The amount of times per second every pending message will be sent away.
         /// </summary>
+        [Tooltip("The amount of times per second the pending messages are sent")]
         public int SendTickrate = 64;
         /// <summary>
         /// The amount of times per second internal frame events will occur, examples include SyncedVar send checking.
         /// </summary>
+        [Tooltip("The amount of times per second the internal event loop will run. This includes for example SyncedVar checking and LagCompensation tracking")]
         public int EventTickrate = 64;
         /// <summary>
         /// The maximum amount of NetworkedBehaviour's to process per tick.
         /// This is useful to prevent the MLAPI from hanging a frame
         /// Set this to less than or equal to 0 for unlimited
         /// </summary>
+        [Tooltip("The maximum amount of NetworkedBehaviour SyncedVars to process per Event tick. This is to prevent freezing")]
         public int MaxBehaviourUpdatesPerTick = -1;
         /// <summary>
         /// The amount of seconds to wait for handshake to complete before timing out a client
         /// </summary>
+        [Tooltip("The amount of seconds to wait for the handshake to complete before the client times out")]
         public int ClientConnectionBufferTimeout = 10;
         /// <summary>
         /// Wheter or not to use connection approval
         /// </summary>
+        [Tooltip("Whether or not to force clients to be approved before they connect")]
         public bool ConnectionApproval = false;
         /// <summary>
         /// The data to send during connection which can be used to decide on if a client should get accepted
         /// </summary>
-        [HideInInspector]
+        [Tooltip("The connection data sent along with connection requests")]
         public byte[] ConnectionData = new byte[0];
         /// <summary>
         /// The amount of seconds to keep a lag compensation position history
         /// </summary>
+        [Tooltip("The amount of seconds to keep lag compensation position history")]
         public int SecondsHistory = 5;
         /// <summary>
         /// If your logic uses the NetworkedTime, this should probably be turned off. If however it's needed to maximize accuracy, this is recommended to be turned on
         /// </summary>
+        [Tooltip("Enable this to resync the NetworkedTime after the initial sync")]
         public bool EnableTimeResync = false;
         /// <summary>
         /// Whether or not to enable the NetworkedVar system. This system runs in the Update loop and will degrade performance, but it can be a huge convenience.
         /// Only turn it off if you have no need for the NetworkedVar system.
         /// </summary>
+        [Tooltip("Whether or not to enable the NetworkedVar system")]
         public bool EnableNetworkedVar = true;
         /// <summary>
         /// Wheter or not the MLAPI should check for differences in the prefabs at connection. 
         /// If you dynamically add prefabs at runtime, turn this OFF
         /// </summary>
+        [Tooltip("Whether or not the MLAPI should check for differences in the prefab lists at connection")]
         public bool ForceSamePrefabs = true;
         /// <summary>
         /// If true, all NetworkedObject's need to be prefabs and all scene objects will be replaced on server side which causes all serialization to be lost. Useful for multi project setups
         /// If false, Only non scene objects have to be prefabs. Scene objects will be matched using their PrefabInstanceId which can be precomputed globally for a scene at build time. Useful for single projects
         /// </summary>
+        [Tooltip("If true, all NetworkedObject's need to be prefabs and all scene objects will be replaced on server side which causes all serialization to be lost. Useful for multi project setups\n" +
+                 "If false, Only non scene objects have to be prefabs. Scene objects will be matched using their PrefabInstanceId which can be precomputed globally for a scene at build time. Useful for single projects")]
         public bool UsePrefabSync = false;
         /// <summary>
         /// Decides how many bytes to use for Rpc messaging. Leave this to 2 bytes unless you are facing hash collisions
         /// </summary>
+        [Tooltip("The maximum amount of bytes to use for RPC messages. Leave this to 2 unless you are facing hash collisions")]
         public HashSize RpcHashSize = HashSize.VarIntTwoBytes;
         /// <summary>
-        /// Wheter or not to enable encryption
         /// The amount of seconds to wait on all clients to load requested scene before the SwitchSceneProgress onComplete callback, that waits for all clients to complete loading, is called anyway.
         /// </summary>
+        [Tooltip("The amount of seconds to wait for all clients to load a requested scene")]
         public int LoadSceneTimeOut = 120;
         /// <summary>
         /// Wheter or not to enable the ECDHE key exchange to allow for encryption and authentication of messages
         /// </summary>
+        [Tooltip("Whether or not to enable the ECDHE key exchange to allow for encryption and authentication of messages")]
         public bool EnableEncryption = false;
         /// <summary>
         /// Wheter or not to enable signed diffie hellman key exchange.
         /// </summary>
+        [Tooltip("Whether or not to sign the diffie hellman key exchange to prevent MITM attacks on")]
         public bool SignKeyExchange = false;
         /// <summary>
         /// Pfx file in base64 encoding containing private and public key
         /// </summary>
+        [Tooltip("The certificate in base64 encoded PFX format")]
         [TextArea]
         public string ServerBase64PfxCertificate;
         /// <summary>
