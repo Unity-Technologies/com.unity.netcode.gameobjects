@@ -473,6 +473,12 @@ namespace MLAPI.Internal
 
         internal static void HandleNetworkedVarDelta(ulong clientId, Stream stream)
         {
+            if (!NetworkingManager.Singleton.NetworkConfig.EnableNetworkedVar)
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkedVar delta received but EnableNetworkedVar is false");
+                return;
+            }
+            
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
                 ulong networkId = reader.ReadUInt64Packed();
@@ -498,6 +504,12 @@ namespace MLAPI.Internal
 
         internal static void HandleNetworkedVarUpdate(ulong clientId, Stream stream)
         {
+            if (!NetworkingManager.Singleton.NetworkConfig.EnableNetworkedVar)
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkedVar update received but EnableNetworkedVar is false");
+                return;
+            }
+            
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
                 ulong networkId = reader.ReadUInt64Packed();

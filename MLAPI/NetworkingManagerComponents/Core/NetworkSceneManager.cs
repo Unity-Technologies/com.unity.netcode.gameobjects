@@ -228,7 +228,10 @@ namespace MLAPI.Components
                                         writer.WriteSinglePacked(newSceneObjects[i].transform.rotation.eulerAngles.y);
                                         writer.WriteSinglePacked(newSceneObjects[i].transform.rotation.eulerAngles.z);
 
-                                        newSceneObjects[i].WriteNetworkedVarData(stream, NetworkingManager.Singleton.ConnectedClientsList[j].ClientId);
+                                        if (NetworkingManager.Singleton.NetworkConfig.EnableNetworkedVar)
+                                        {
+                                            newSceneObjects[i].WriteNetworkedVarData(stream, NetworkingManager.Singleton.ConnectedClientsList[j].ClientId);
+                                        }
                                     }
                                     else
                                     {
@@ -240,7 +243,10 @@ namespace MLAPI.Components
 
                                         writer.WriteBool(newSceneObjects[i].DestroyWithScene);
 
-                                        newSceneObjects[i].WriteNetworkedVarData(stream, NetworkingManager.Singleton.ConnectedClientsList[j].ClientId);
+                                        if (NetworkingManager.Singleton.NetworkConfig.EnableNetworkedVar)
+                                        {
+                                            newSceneObjects[i].WriteNetworkedVarData(stream, NetworkingManager.Singleton.ConnectedClientsList[j].ClientId);
+                                        }
                                     }
                                 }
                             }

@@ -556,7 +556,10 @@ namespace MLAPI
             {
                 if ((NetworkTime - lastSendTickTime >= (1f / NetworkConfig.SendTickrate)) || NetworkConfig.SendTickrate <= 0)
                 {
-                    NetworkedObject.NetworkedBehaviourUpdate();
+                    if (NetworkConfig.EnableNetworkedVar)
+                    {
+                        NetworkedObject.NetworkedBehaviourUpdate();
+                    }
                     
                     foreach (KeyValuePair<ulong, NetworkedClient> pair in ConnectedClients)
                     {
@@ -1052,7 +1055,10 @@ namespace MLAPI
                             writer.WriteSinglePacked(_observedObjects[i].transform.rotation.eulerAngles.y);
                             writer.WriteSinglePacked(_observedObjects[i].transform.rotation.eulerAngles.z);
 
-                            _observedObjects[i].WriteNetworkedVarData(stream, clientId);
+                            if (NetworkConfig.EnableNetworkedVar)
+                            {
+                                _observedObjects[i].WriteNetworkedVarData(stream, clientId);
+                            }
                         }
 
                         InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_CONNECTION_APPROVED, "MLAPI_INTERNAL", stream, SecuritySendFlags.Encrypted | SecuritySendFlags.Authenticated, null, true);
@@ -1100,7 +1106,10 @@ namespace MLAPI
 
                             writer.WriteBool(false); //No payload data
 
-                            ConnectedClients[clientId].PlayerObject.GetComponent<NetworkedObject>().WriteNetworkedVarData(stream, clientPair.Key);
+                            if (NetworkConfig.EnableNetworkedVar)
+                            {
+                                ConnectedClients[clientId].PlayerObject.WriteNetworkedVarData(stream, clientPair.Key);
+                            }
                             
                             InternalMessageHandler.Send(clientPair.Key, MLAPIConstants.MLAPI_ADD_OBJECT, "MLAPI_INTERNAL", stream, SecuritySendFlags.None, null);
                         }

@@ -270,7 +270,7 @@ namespace MLAPI.Components
             }
             
             
-            if (readNetworkedVar) netObject.SetNetworkedVarData(dataStream);
+            if (readNetworkedVar && NetworkingManager.Singleton.NetworkConfig.EnableNetworkedVar) netObject.SetNetworkedVarData(dataStream);
             
             netObject.IsSpawned = true;
 
@@ -359,7 +359,10 @@ namespace MLAPI.Components
                         writer.WriteInt32Packed((int)payload.Length);
                     }
 
-                    netObject.WriteNetworkedVarData(stream, clientId);
+                    if (NetworkingManager.Singleton.NetworkConfig.EnableNetworkedVar)
+                    {
+                        netObject.WriteNetworkedVarData(stream, clientId);
+                    }
 
                     if (payload != null) stream.CopyFrom(payload);
                 }
