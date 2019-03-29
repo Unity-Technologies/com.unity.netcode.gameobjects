@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Text;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Networking;
 
 public class VersionUpgradePopup : EditorWindow
 {
@@ -471,10 +472,11 @@ public class MLAPIEditor : EditorWindow
             bool downloadFail = false;
             for (int i = 0; i < releases[index].assets.Length; i++)
             {
-                WWW www = new WWW(releases[index].assets[i].browser_download_url);
+                UnityWebRequest www = UnityWebRequest.Get(releases[index].assets[i].browser_download_url);
+                www.SendWebRequest();
                 while (!www.isDone && string.IsNullOrEmpty(www.error))
                 {
-                    statusMessage = "Downloading " + releases[index].assets[i].name + "(" + (i + 1) + "/" + releases[index].assets.Length + ") " + www.progress + "%";
+                    statusMessage = "Downloading " + releases[index].assets[i].name + "(" + (i + 1) + "/" + releases[index].assets.Length + ") " + www.downloadProgress + "%";
                     yield return null;
                 }
 
@@ -494,7 +496,7 @@ public class MLAPIEditor : EditorWindow
                     statusMessage = "Writing " + releases[index].assets[i].name + " to disk";
                     yield return null;
 
-                    File.WriteAllBytes(Application.dataPath + "/MLAPI/Lib/" + releases[index].assets[i].name, www.bytes);
+                    File.WriteAllBytes(Application.dataPath + "/MLAPI/Lib/" + releases[index].assets[i].name, www.downloadHandler.data);
 
                     if (releases[index].assets[i].name.EndsWith(".unitypackage"))
                     {
@@ -520,11 +522,12 @@ public class MLAPIEditor : EditorWindow
     {
         lastUpdated = DateTime.Now.Ticks;
 
-        WWW www = new WWW(API_URL);
+        UnityWebRequest www = UnityWebRequest.Get(API_URL);
+        www.SendWebRequest();
         isFetching = true;
         while (!www.isDone && string.IsNullOrEmpty(www.error))
         {
-            statusMessage = "Fetching releases " + www.progress + "%";
+            statusMessage = "Fetching releases " + www.downloadProgress + "%";
             yield return null;
         }
 
@@ -542,7 +545,7 @@ public class MLAPIEditor : EditorWindow
         {
             isFetching = false;
             isParsing = true;
-            string json = www.text;
+            string json = www.downloadHandler.text;
 
             //This makes it from a json array to the individual objects in the array. 
             //The JSON serializer cant take arrays. We have to split it up outselves.
