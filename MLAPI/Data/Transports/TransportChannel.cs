@@ -11,10 +11,11 @@ namespace MLAPI.Transports
         /// <summary>
         /// The name of the channel
         /// </summary>
-        public string Name { get; set; }
+        public string Name;
+
         /// <summary>
         /// The type of channel
         /// </summary>
-        public ChannelType Type { get; set; }
+        public ChannelType Type;
     }
 }
