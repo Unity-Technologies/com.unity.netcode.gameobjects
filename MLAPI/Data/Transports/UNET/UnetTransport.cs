@@ -17,6 +17,8 @@ namespace MLAPI.Transports.UNET
         public int ServerListenPort = 7777;
         public int ServerWebsocketListenPort = 8887;
         public bool SupportWebsocket = false;
+        public List<TransportChannel> Channels = new List<TransportChannel>();
+        
         
         // Relay
         public bool UseMLAPIRelay = false;
@@ -260,6 +262,14 @@ namespace MLAPI.Transports.UNET
                 
                 channelIdToName.Add(channelId, MLAPI_CHANNELS[i].Name);
                 channelNameToId.Add(MLAPI_CHANNELS[i].Name, channelId);
+            }
+
+            for (int i = 0; i < Channels.Count; i++)
+            {
+                int channelId = AddChannel(Channels[i].Type, config);
+                
+                channelIdToName.Add(channelId, Channels[i].Name);
+                channelNameToId.Add(Channels[i].Name, channelId);
             }
 
             return config;
