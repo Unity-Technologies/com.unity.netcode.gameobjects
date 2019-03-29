@@ -8,6 +8,7 @@ namespace MLAPI.EnetTransport
 {
     public class EnetTransport : Transport
     {
+        [Serializable]
         public struct EnetChannel
         {
             public byte Id;
