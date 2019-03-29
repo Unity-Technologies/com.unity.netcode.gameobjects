@@ -32,6 +32,7 @@ public class NetworkingManagerEditor : Editor
     private SerializedProperty connectionApprovalProperty;
     private SerializedProperty secondsHistoryProperty;
     private SerializedProperty enableTimeResyncProperty;
+    private SerializedProperty enableNetworkedVarProperty;
     private SerializedProperty forceSamePrefabsProperty;
     private SerializedProperty usePrefabSyncProperty;
     private SerializedProperty rpcHashSizeProperty;
@@ -104,6 +105,7 @@ public class NetworkingManagerEditor : Editor
         connectionApprovalProperty = networkConfigProperty.FindPropertyRelative("ConnectionApproval");
         secondsHistoryProperty = networkConfigProperty.FindPropertyRelative("SecondsHistory");
         enableTimeResyncProperty = networkConfigProperty.FindPropertyRelative("EnableTimeResync");
+        enableNetworkedVarProperty = networkConfigProperty.FindPropertyRelative("EnableNetworkedVar");
         forceSamePrefabsProperty = networkConfigProperty.FindPropertyRelative("ForceSamePrefabs");
         usePrefabSyncProperty = networkConfigProperty.FindPropertyRelative("UsePrefabSync");
         rpcHashSizeProperty = networkConfigProperty.FindPropertyRelative("RpcHashSize");
@@ -136,6 +138,7 @@ public class NetworkingManagerEditor : Editor
         connectionApprovalProperty = networkConfigProperty.FindPropertyRelative("ConnectionApproval");
         secondsHistoryProperty = networkConfigProperty.FindPropertyRelative("SecondsHistory");
         enableTimeResyncProperty = networkConfigProperty.FindPropertyRelative("EnableTimeResync");
+        enableNetworkedVarProperty = networkConfigProperty.FindPropertyRelative("EnableNetworkedVar");
         forceSamePrefabsProperty = networkConfigProperty.FindPropertyRelative("ForceSamePrefabs");
         usePrefabSyncProperty = networkConfigProperty.FindPropertyRelative("UsePrefabSync");
         rpcHashSizeProperty = networkConfigProperty.FindPropertyRelative("RpcHashSize");
@@ -272,6 +275,7 @@ public class NetworkingManagerEditor : Editor
             EditorGUILayout.PropertyField(sendTickrateProperty);
             EditorGUILayout.PropertyField(eventTickrateProperty);
             EditorGUILayout.PropertyField(maxBehaviourUpdatesPerTickProperty);
+            EditorGUILayout.PropertyField(enableNetworkedVarProperty);
             
             EditorGUILayout.LabelField("Connection", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(connectionApprovalProperty);
