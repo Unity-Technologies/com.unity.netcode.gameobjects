@@ -304,6 +304,10 @@ namespace MLAPI.Components
                     }
                 }
             }
+            else if (playerObject && ownerClientId == NetworkingManager.Singleton.LocalClientId)
+            {
+                NetworkingManager.Singleton.ConnectedClients[ownerClientId].PlayerObject = netObject;
+            }
             
             if (readPayload)
             {
