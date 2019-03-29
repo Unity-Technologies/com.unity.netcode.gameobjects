@@ -76,8 +76,8 @@ namespace MLAPI.Prototyping
                         }
                         else
                         {
-                            List<uint> proximityClients = new List<uint>();
-                            foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.Singleton.ConnectedClients)
+                            List<ulong> proximityClients = new List<ulong>();
+                            foreach (KeyValuePair<ulong, NetworkedClient> client in NetworkingManager.Singleton.ConnectedClients)
                             {
                                 if (Vector3.Distance(client.Value.PlayerObject.transform.position, transform.position) <= ProximityRange)
                                     proximityClients.Add(client.Key);
@@ -109,8 +109,8 @@ namespace MLAPI.Prototyping
                         }
                         else
                         {
-                            List<uint> proximityClients = new List<uint>();
-                            foreach (KeyValuePair<uint, NetworkedClient> client in NetworkingManager.Singleton.ConnectedClients)
+                            List<ulong> proximityClients = new List<ulong>();
+                            foreach (KeyValuePair<ulong, NetworkedClient> client in NetworkingManager.Singleton.ConnectedClients)
                             {
                                 if (Vector3.Distance(client.Value.PlayerObject.transform.position, transform.position) <= ProximityRange)
                                     proximityClients.Add(client.Key);
@@ -124,7 +124,7 @@ namespace MLAPI.Prototyping
         }
 
         [ClientRPC]
-        private void OnNavMeshStateUpdate(uint clientId, Stream stream)
+        private void OnNavMeshStateUpdate(ulong clientId, Stream stream)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
@@ -155,7 +155,7 @@ namespace MLAPI.Prototyping
         }
 
         [ClientRPC]
-        private void OnNavMeshCorrectionUpdate(uint clientId, Stream stream)
+        private void OnNavMeshCorrectionUpdate(ulong clientId, Stream stream)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {

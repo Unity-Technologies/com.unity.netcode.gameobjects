@@ -14,24 +14,21 @@ namespace MLAPI.Internal
 {
     internal static class MessageManager
     {
-        internal static readonly Dictionary<string, int> channels = new Dictionary<string, int>();
-        internal static readonly Dictionary<int, string> reverseChannels = new Dictionary<int, string>();
-
         private static readonly byte[] IV_BUFFER = new byte[16];
         private static readonly byte[] HMAC_BUFFER = new byte[32];
         private static readonly byte[] HMAC_PLACEHOLDER = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
         // This method is responsible for unwrapping a message, that is extracting the messagebody.
         // Could include decrypting and/or authentication.
-        internal static BitStream UnwrapMessage(BitStream inputStream, uint clientId, out byte messageType, out SecuritySendFlags security)
-        {
+        internal static BitStream UnwrapMessage(BitStream inputStream, ulong clientId, out byte messageType, out SecuritySendFlags security)
+        {      
             using (PooledBitReader inputHeaderReader = PooledBitReader.Get(inputStream))
             {
                 try
                 {
                     if (inputStream.Length < 1)
                     {
-                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogError("The incomming message was too small");
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogError("The incoming message was too small");
                         messageType = MLAPIConstants.INVALID;
                         security = SecuritySendFlags.None;
                         return null;
@@ -137,7 +134,7 @@ namespace MLAPI.Internal
 
                                 if (outputStream.Length == 0)
                                 {
-                                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogError("The incomming message was too small");
+                                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogError("The incoming message was too small");
                                     messageType = MLAPIConstants.INVALID;
                                     return null;
                                 }
@@ -152,7 +149,7 @@ namespace MLAPI.Internal
                         {
                             if (inputStream.Length - inputStream.Position <= 0)
                             {
-                                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogError("The incomming message was too small");
+                                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogError("The incoming message was too small");
                                 messageType = MLAPIConstants.INVALID;
                                 return null;
                             }
@@ -184,7 +181,7 @@ namespace MLAPI.Internal
             }
         }
 
-        internal static BitStream WrapMessage(byte messageType, uint clientId, BitStream messageBody, SecuritySendFlags flags)
+        internal static BitStream WrapMessage(byte messageType, ulong clientId, BitStream messageBody, SecuritySendFlags flags)
         {
             try
             {

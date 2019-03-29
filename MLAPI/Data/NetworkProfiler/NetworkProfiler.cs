@@ -113,13 +113,13 @@ namespace MLAPI.Profiling
             CurrentTick = null;
         }
         
-        internal static void StartEvent(TickType eventType, uint bytes, int channelId, byte messageType)
+        internal static void StartEvent(TickType eventType, uint bytes, string channelName, byte messageType)
         {
             if (!isRunning)
                 return;
             if (CurrentTick == null)
                 return;
-            string channelName = MessageManager.reverseChannels.ContainsKey(channelId) ? MessageManager.reverseChannels[channelId] : "INVALID_CHANNEL";
+            
             string messageName = MLAPIConstants.MESSAGE_NAMES.Length < messageType ? MLAPIConstants.MESSAGE_NAMES[messageType] : "INVALID_MESSAGE_TYPE";
 
             CurrentTick.StartEvent(eventType, bytes, channelName, messageName);

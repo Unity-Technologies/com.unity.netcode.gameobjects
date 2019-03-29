@@ -13,7 +13,7 @@ namespace MLAPI.Components
         /// <summary>
         /// List of clientIds of those clients that is done loading the scene.
         /// </summary>
-        public List<uint> DoneClients { get; } = new List<uint>();
+        public List<ulong> DoneClients { get; } = new List<ulong>();
         /// <summary>
         /// The NetworkTime time at the moment the scene switch was initiated by the server.
         /// </summary>
@@ -37,7 +37,7 @@ namespace MLAPI.Components
         /// <summary>
         /// Delegate type for when a client is done loading the scene.
         /// </summary>
-        public delegate void OnClientLoadedSceneDelegate(uint clientId);
+        public delegate void OnClientLoadedSceneDelegate(ulong clientId);
         /// <summary>
         /// The callback invoked when a client is done loading the scene.
         /// </summary>
@@ -53,7 +53,7 @@ namespace MLAPI.Components
             timeOutCoroutine = NetworkingManager.Singleton.StartCoroutine(NetworkingManager.Singleton.TimeOutSwitchSceneProgress(this));
         }
 
-        internal void AddClientAsDone(uint clientId)
+        internal void AddClientAsDone(ulong clientId)
         {
             DoneClients.Add(clientId);
             if (OnClientLoadedScene != null)
@@ -61,7 +61,7 @@ namespace MLAPI.Components
             CheckCompletion();
         }
 
-        internal void RemoveClientAsDone(uint clientId)
+        internal void RemoveClientAsDone(ulong clientId)
         {
             DoneClients.Remove(clientId);
             CheckCompletion();

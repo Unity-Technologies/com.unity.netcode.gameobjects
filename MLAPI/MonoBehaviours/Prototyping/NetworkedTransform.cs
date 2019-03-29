@@ -15,7 +15,7 @@ namespace MLAPI.Prototyping
     {
         internal class ClientSendInfo
         {
-            public uint clientId;
+            public ulong clientId;
             public float lastSent;
             public Vector3? lastMissedPosition;
             public Quaternion? lastMissedRotation;
@@ -87,7 +87,7 @@ namespace MLAPI.Prototyping
         /// The curve to use to calculate the send rate
         /// </summary>
         public AnimationCurve DistanceSendrate = AnimationCurve.Constant(0, 500, 20);
-        private readonly Dictionary<uint, ClientSendInfo> clientSendInfo = new Dictionary<uint, ClientSendInfo>();
+        private readonly Dictionary<ulong, ClientSendInfo> clientSendInfo = new Dictionary<ulong, ClientSendInfo>();
 
         /// <summary>
         /// The delegate used to check if a move is valid
@@ -195,7 +195,7 @@ namespace MLAPI.Prototyping
         }
 
         [ClientRPC]
-        private void ApplyTransform(uint clientId, Stream stream)
+        private void ApplyTransform(ulong clientId, Stream stream)
         {
             if (!enabled) return;
             using (PooledBitReader reader = PooledBitReader.Get(stream))
@@ -227,12 +227,11 @@ namespace MLAPI.Prototyping
         }
 
         [ServerRPC]
-        private void SubmitTransform(uint clientId, Stream stream)
+        private void SubmitTransform(ulong clientId, Stream stream)
         {
             if (!enabled) return;
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
-
                 float xPos = reader.ReadSinglePacked();
                 float yPos = reader.ReadSinglePacked();
                 float zPos = reader.ReadSinglePacked();

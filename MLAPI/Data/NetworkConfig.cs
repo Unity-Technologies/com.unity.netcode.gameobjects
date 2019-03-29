@@ -19,126 +19,123 @@ namespace MLAPI.Configuration
         /// <summary>
         /// The protocol version. Different versions doesn't talk to each other.
         /// </summary>
+        [Tooltip("Use this to make two builds incompatible with each other")]
         public ushort ProtocolVersion = 0;
-        /// <summary>
-        /// The transport to be used
-        /// </summary>
-        public DefaultTransport Transport = DefaultTransport.UNET;
         /// <summary>
         /// The transport hosts the sever uses
         /// </summary>
-        public IUDPTransport NetworkTransport = null;
-        /// <summary>
-        /// Channels used by the NetworkedTransport
-        /// </summary>
-        [HideInInspector]
-        public List<Channel> Channels = new List<Channel>();
+        [Tooltip("The NetworkTransport to use")]
+        public Transport NetworkTransport = null;
         /// <summary>
         /// A list of SceneNames that can be used during networked games.
         /// </summary>
-        [HideInInspector]
+        [Tooltip("The Scenes that can be switched to by the server")]
         public List<string> RegisteredScenes = new List<string>();
         /// <summary>
         /// A list of spawnable prefabs
         /// </summary>
-        [HideInInspector]
+        [Tooltip("The prefabs that can be spawned across the network")]
         public List<NetworkedPrefab> NetworkedPrefabs = new List<NetworkedPrefab>();
         /// <summary>
         /// The default player prefab
         /// </summary>
         [SerializeField]
-        [HideInInspector]
         internal ulong PlayerPrefabHash;
-        /// <summary>
-        /// The size of the receive message buffer. This is the max message size including any MLAPI overheads.
-        /// </summary>
-        public int MessageBufferSize = 1024;
         /// <summary>
         /// Amount of times per second the receive queue is emptied and all messages inside are processed.
         /// </summary>
+        [Tooltip("The amount of times per second the receive queue is emptied from pending incoming messages")]
         public int ReceiveTickrate = 64;
         /// <summary>
         /// The max amount of messages to process per ReceiveTickrate. This is to prevent flooding.
         /// </summary>
+        [Tooltip("The maximum amount of Receive events to poll per Receive tick. This is to prevent flooding and freezing on the server")]
         public int MaxReceiveEventsPerTickRate = 500;
         /// <summary>
         /// The amount of times per second every pending message will be sent away.
         /// </summary>
+        [Tooltip("The amount of times per second the pending messages are sent")]
         public int SendTickrate = 64;
         /// <summary>
         /// The amount of times per second internal frame events will occur, examples include SyncedVar send checking.
         /// </summary>
+        [Tooltip("The amount of times per second the internal event loop will run. This includes for example SyncedVar checking and LagCompensation tracking")]
         public int EventTickrate = 64;
         /// <summary>
         /// The maximum amount of NetworkedBehaviour's to process per tick.
         /// This is useful to prevent the MLAPI from hanging a frame
         /// Set this to less than or equal to 0 for unlimited
         /// </summary>
+        [Tooltip("The maximum amount of NetworkedBehaviour SyncedVars to process per Event tick. This is to prevent freezing")]
         public int MaxBehaviourUpdatesPerTick = -1;
-        /// <summary>
-        /// The max amount of Clients that can connect.
-        /// </summary>
-        public int MaxConnections = 100;
-        /// <summary>
-        /// The port for the NetworkTransport to use when connecting
-        /// </summary>
-        public int ConnectPort = 7777;
-        /// <summary>
-        /// The address to connect to
-        /// </summary>
-        public string ConnectAddress = "127.0.0.1";
         /// <summary>
         /// The amount of seconds to wait for handshake to complete before timing out a client
         /// </summary>
+        [Tooltip("The amount of seconds to wait for the handshake to complete before the client times out")]
         public int ClientConnectionBufferTimeout = 10;
         /// <summary>
         /// Wheter or not to use connection approval
         /// </summary>
+        [Tooltip("Whether or not to force clients to be approved before they connect")]
         public bool ConnectionApproval = false;
         /// <summary>
         /// The data to send during connection which can be used to decide on if a client should get accepted
         /// </summary>
-        [HideInInspector]
+        [Tooltip("The connection data sent along with connection requests")]
         public byte[] ConnectionData = new byte[0];
         /// <summary>
         /// The amount of seconds to keep a lag compensation position history
         /// </summary>
+        [Tooltip("The amount of seconds to keep lag compensation position history")]
         public int SecondsHistory = 5;
         /// <summary>
         /// If your logic uses the NetworkedTime, this should probably be turned off. If however it's needed to maximize accuracy, this is recommended to be turned on
         /// </summary>
+        [Tooltip("Enable this to resync the NetworkedTime after the initial sync")]
         public bool EnableTimeResync = false;
+        /// <summary>
+        /// Whether or not to enable the NetworkedVar system. This system runs in the Update loop and will degrade performance, but it can be a huge convenience.
+        /// Only turn it off if you have no need for the NetworkedVar system.
+        /// </summary>
+        [Tooltip("Whether or not to enable the NetworkedVar system")]
+        public bool EnableNetworkedVar = true;
         /// <summary>
         /// Wheter or not the MLAPI should check for differences in the prefabs at connection. 
         /// If you dynamically add prefabs at runtime, turn this OFF
         /// </summary>
+        [Tooltip("Whether or not the MLAPI should check for differences in the prefab lists at connection")]
         public bool ForceSamePrefabs = true;
         /// <summary>
         /// If true, all NetworkedObject's need to be prefabs and all scene objects will be replaced on server side which causes all serialization to be lost. Useful for multi project setups
         /// If false, Only non scene objects have to be prefabs. Scene objects will be matched using their PrefabInstanceId which can be precomputed globally for a scene at build time. Useful for single projects
         /// </summary>
+        [Tooltip("If true, all NetworkedObject's need to be prefabs and all scene objects will be replaced on server side which causes all serialization to be lost. Useful for multi project setups\n" +
+                 "If false, Only non scene objects have to be prefabs. Scene objects will be matched using their PrefabInstanceId which can be precomputed globally for a scene at build time. Useful for single projects")]
         public bool UsePrefabSync = false;
         /// <summary>
         /// Decides how many bytes to use for Rpc messaging. Leave this to 2 bytes unless you are facing hash collisions
         /// </summary>
+        [Tooltip("The maximum amount of bytes to use for RPC messages. Leave this to 2 unless you are facing hash collisions")]
         public HashSize RpcHashSize = HashSize.VarIntTwoBytes;
         /// <summary>
-        /// Wheter or not to enable encryption
         /// The amount of seconds to wait on all clients to load requested scene before the SwitchSceneProgress onComplete callback, that waits for all clients to complete loading, is called anyway.
         /// </summary>
+        [Tooltip("The amount of seconds to wait for all clients to load a requested scene")]
         public int LoadSceneTimeOut = 120;
         /// <summary>
         /// Wheter or not to enable the ECDHE key exchange to allow for encryption and authentication of messages
         /// </summary>
-        [Header("Cryptography")]
+        [Tooltip("Whether or not to enable the ECDHE key exchange to allow for encryption and authentication of messages")]
         public bool EnableEncryption = false;
         /// <summary>
         /// Wheter or not to enable signed diffie hellman key exchange.
         /// </summary>
+        [Tooltip("Whether or not to sign the diffie hellman key exchange to prevent MITM attacks on")]
         public bool SignKeyExchange = false;
         /// <summary>
         /// Pfx file in base64 encoding containing private and public key
         /// </summary>
+        [Tooltip("The certificate in base64 encoded PFX format")]
         [TextArea]
         public string ServerBase64PfxCertificate;
         /// <summary>
@@ -173,7 +170,6 @@ namespace MLAPI.Configuration
 
         private void Sort()
         {
-            Channels = Channels.OrderBy(x => x.Name).ToList();
             RegisteredScenes.Sort();
         }
 
@@ -189,29 +185,18 @@ namespace MLAPI.Configuration
                 using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                 {
                     writer.WriteUInt16Packed(config.ProtocolVersion);
-                    writer.WriteBits((byte)config.Transport, 5);
-
-                    writer.WriteUInt16Packed((ushort)config.Channels.Count);
-                    for (int i = 0; i < config.Channels.Count; i++)
-                    {
-                        writer.WriteString(config.Channels[i].Name);
-                        writer.WriteBits((byte)config.Channels[i].Type, 5);
-                    }
 
                     writer.WriteUInt16Packed((ushort)config.RegisteredScenes.Count);
+                    
                     for (int i = 0; i < config.RegisteredScenes.Count; i++)
                     {
                         writer.WriteString(config.RegisteredScenes[i]);
                     }
 
-                    writer.WriteInt32Packed(config.MessageBufferSize);
                     writer.WriteInt32Packed(config.ReceiveTickrate);
                     writer.WriteInt32Packed(config.MaxReceiveEventsPerTickRate);
                     writer.WriteInt32Packed(config.SendTickrate);
                     writer.WriteInt32Packed(config.EventTickrate);
-                    writer.WriteInt32Packed(config.MaxConnections);
-                    writer.WriteInt32Packed(config.ConnectPort);
-                    writer.WriteString(config.ConnectAddress);
                     writer.WriteInt32Packed(config.ClientConnectionBufferTimeout);
                     writer.WriteBool(config.ConnectionApproval);
                     writer.WriteInt32Packed(config.SecondsHistory);
@@ -222,6 +207,7 @@ namespace MLAPI.Configuration
                     writer.WriteBits((byte)config.RpcHashSize, 3);
                     writer.WriteBool(ForceSamePrefabs);
                     writer.WriteBool(UsePrefabSync);
+                    writer.WriteBool(EnableNetworkedVar);
                     stream.PadStream();
 
                     return Convert.ToBase64String(stream.ToArray());
@@ -241,37 +227,20 @@ namespace MLAPI.Configuration
             {
                 using (PooledBitReader reader = PooledBitReader.Get(stream))
                 {
-
                     config.ProtocolVersion = reader.ReadUInt16Packed();
-                    config.Transport = (DefaultTransport)reader.ReadBits(5);
-
-                    ushort channelCount = reader.ReadUInt16Packed();
-                    config.Channels.Clear();
-                    for (int i = 0; i < channelCount; i++)
-                    {
-                        Channel channel = new Channel()
-                        {
-                            Name = reader.ReadString().ToString(),
-                            Type = (ChannelType)reader.ReadBits(5)
-                        };
-                        config.Channels.Add(channel);
-                    }
 
                     ushort sceneCount = reader.ReadUInt16Packed();
                     config.RegisteredScenes.Clear();
+                    
                     for (int i = 0; i < sceneCount; i++)
                     {
                         config.RegisteredScenes.Add(reader.ReadString().ToString());
                     }
 
-                    config.MessageBufferSize = reader.ReadInt32Packed();
                     config.ReceiveTickrate = reader.ReadInt32Packed();
                     config.MaxReceiveEventsPerTickRate = reader.ReadInt32Packed();
                     config.SendTickrate = reader.ReadInt32Packed();
                     config.EventTickrate = reader.ReadInt32Packed();
-                    config.MaxConnections = reader.ReadInt32Packed();
-                    config.ConnectPort = reader.ReadInt32Packed();
-                    config.ConnectAddress = reader.ReadString().ToString();
                     config.ClientConnectionBufferTimeout = reader.ReadInt32Packed();
                     config.ConnectionApproval = reader.ReadBool();
                     config.SecondsHistory = reader.ReadInt32Packed();
@@ -282,6 +251,7 @@ namespace MLAPI.Configuration
                     config.RpcHashSize = (HashSize)reader.ReadBits(3);
                     config.ForceSamePrefabs = reader.ReadBool();
                     config.UsePrefabSync = reader.ReadBool();
+                    config.EnableNetworkedVar = reader.ReadBool();
                 }
             }
         }
@@ -307,12 +277,6 @@ namespace MLAPI.Configuration
                     writer.WriteUInt16Packed(ProtocolVersion);
                     writer.WriteString(MLAPIConstants.MLAPI_PROTOCOL_VERSION);
 
-                    for (int i = 0; i < Channels.Count; i++)
-                    {
-                        writer.WriteString(Channels[i].Name);
-                        writer.WriteByte((byte)Channels[i].Type);
-                    }
-
                     for (int i = 0; i < RegisteredScenes.Count; i++)
                     {
                         writer.WriteString(RegisteredScenes[i]);
@@ -327,6 +291,7 @@ namespace MLAPI.Configuration
                         }
                     }
 
+                    writer.WriteBool(EnableNetworkedVar);
                     writer.WriteBool(ForceSamePrefabs);
                     writer.WriteBool(UsePrefabSync);
                     writer.WriteBool(EnableEncryption);

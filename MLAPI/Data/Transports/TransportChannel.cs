@@ -1,20 +1,20 @@
-﻿using System;
-using MLAPI.Transports;
+using System;
 
-namespace MLAPI.Configuration
+namespace MLAPI.Transports
 {
     /// <summary>
-    /// A data object that represents a NetworkTransport channel
+    /// A transport channel used by the MLAPI
     /// </summary>
     [Serializable]
-    public class Channel
+    public class TransportChannel
     {
         /// <summary>
         /// The name of the channel
         /// </summary>
         public string Name;
+
         /// <summary>
-        /// The Transport QOS type
+        /// The type of channel
         /// </summary>
         public ChannelType Type;
     }

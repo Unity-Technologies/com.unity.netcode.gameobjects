@@ -1,79 +1,113 @@
-﻿#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 using System;
 using System.Collections.Generic;
+using MLAPI.Logging;
 using UnityEngine.Networking;
 
 namespace MLAPI.Transports.UNET
 {
-    [Serializable]
-    public class UnetTransport : IUDPTransport
+    public class UnetTransport : Transport
     {
-        private WeakReference temporaryBufferReference;
+        // Inspector / settings
+        public int MessageBufferSize = 1024 * 5;
+        public int MaxConnections = 100;
+
+        public string ConnectAddress = "127.0.0.1";
+        public int ConnectPort = 7777;
+        public int ServerListenPort = 7777;
+        public int ServerWebsocketListenPort = 8887;
+        public bool SupportWebsocket = false;
+        public List<TransportChannel> Channels = new List<TransportChannel>();
         
-        public ChannelType InternalChannel => ChannelType.ReliableFragmentedSequenced;
-		public uint ServerClientId => new NetId(0, 0, true).GetClientId();
-        public int serverConnectionId;
-        public int serverHostId;
-        public static readonly List<TransportHost> ServerTransports = new List<TransportHost>()
+        
+        // Relay
+        public bool UseMLAPIRelay = false;
+        public string MLAPIRelayAddress = "184.72.104.138";
+        public int MLAPIRelayPort = 8888;
+        
+        // Runtime / state
+        private byte[] messageBuffer;
+        private WeakReference temporaryBufferReference;
+
+        // Lookup / translation
+        private readonly Dictionary<string, int> channelNameToId = new Dictionary<string, int>();
+        private readonly Dictionary<int, string> channelIdToName = new Dictionary<int, string>();
+        private int serverConnectionId;
+        private int serverHostId;
+
+        public override ulong ServerClientId => GetMLAPIClientId(0, 0, true);
+        
+        public override void Send(ulong clientId, ArraySegment<byte> data, string channelName, bool skipQueue)
         {
-            new TransportHost()
+            UpdateRelay();
+            
+            GetUnetConnectionDetails(clientId, out byte hostId, out ushort connectionId);
+            
+            int channelId = channelNameToId[channelName];
+
+            byte[] buffer;
+
+            if (data.Offset > 0)
             {
-                Name = "UDP Socket",
-                Port = 7777,
-                Websockets = false
+                // UNET cant handle this, do a copy
+
+                if (messageBuffer.Length >= data.Count)
+                {
+                    buffer = messageBuffer;
+                }
+                else
+                {
+                    if (temporaryBufferReference != null && temporaryBufferReference.IsAlive && ((byte[]) temporaryBufferReference.Target).Length >= data.Count)
+                    {
+                        buffer = (byte[])temporaryBufferReference.Target;
+                    }
+                    else
+                    {
+                        buffer = new byte[data.Count];
+                        temporaryBufferReference = new WeakReference(buffer);
+                    }
+                }
+                
+                Buffer.BlockCopy(data.Array, data.Offset, buffer, 0, data.Count);
             }
-        };
-
-        public int Connect(string address, int port, object settings, bool websocket, out byte error)
-        {
-            NetworkTransport.Init();
-            int hostId = NetworkTransport.AddHost((HostTopology)settings);
-            return NetworkTransport.Connect(hostId, address, port, 0, out error);
-        }
-
-        public void DisconnectClient(uint clientId)
-        {
-            NetId netId = new NetId(clientId);
-			if (netId.IsServer())
-                return;
-            NetworkTransport.Disconnect(netId.HostId, netId.ConnectionId, out byte error);
-        }
-
-        public void DisconnectFromServer() => NetworkTransport.Disconnect(serverHostId, serverConnectionId, out byte error);
-
-        public int GetCurrentRTT(uint clientId, out byte error)
-        {
-            NetId netId = new NetId(clientId);
-			if (netId.IsServer())
-			{
-				netId.ConnectionId = (ushort)serverConnectionId;
-				netId.HostId = (byte)serverHostId;
-			}
-            return NetworkTransport.GetCurrentRTT(netId.HostId, netId.ConnectionId, out error);
-        }
-
-        public int GetNetworkTimestamp() => NetworkTransport.GetNetworkTimestamp();
-
-        public int GetRemoteDelayTimeMS(uint clientId, int remoteTimestamp, out byte error)
-        {
-            NetId netId = new NetId(clientId);
-			if (netId.IsServer())
+            else
             {
-                netId.ConnectionId = (ushort)serverConnectionId;
-                netId.HostId = (byte)serverHostId;
+                buffer = data.Array;
             }
-            return NetworkTransport.GetRemoteDelayTimeMS(netId.HostId, netId.ConnectionId, remoteTimestamp, out error);
+
+            if (skipQueue)
+            {
+                RelayTransport.Send(hostId, connectionId, channelId, buffer, data.Count, out byte error);
+            }
+            else
+            {
+                RelayTransport.QueueMessageForSending(hostId, connectionId, channelId, buffer, data.Count, out byte error);
+            }
         }
 
-        public NetEventType PollReceive(out uint clientId, out int channelId, ref byte[] data, int bufferSize, out int receivedSize, out byte error)
+        public override void FlushSendQueue(ulong clientId)
         {
-            NetworkEventType eventType = NetworkTransport.Receive(out int hostId, out int connectionId, out channelId, data, bufferSize, out receivedSize, out byte err);
-            clientId = new NetId((byte)hostId, (ushort)connectionId, false).GetClientId();
-            NetworkError errorType = (NetworkError)err;
+            UpdateRelay();
+            
+            GetUnetConnectionDetails(clientId, out byte hostId, out ushort connectionId);
+            
+            RelayTransport.SendQueuedMessages(hostId, connectionId, out byte error);
+        }
 
-            if (errorType == NetworkError.MessageToLong)
+        public override NetEventType PollEvent(out ulong clientId, out string channelName, out ArraySegment<byte> payload)
+        {
+            UpdateRelay();
+            
+            NetworkEventType eventType = RelayTransport.Receive(out int hostId, out int connectionId, out int channelId, messageBuffer, messageBuffer.Length, out int receivedSize, out byte error);
+
+            clientId = GetMLAPIClientId((byte) hostId, (ushort) connectionId, false);
+
+            NetworkError networkError = (NetworkError) error;
+            
+            if (networkError == NetworkError.MessageToLong)
             {
                 byte[] tempBuffer;
+                
                 if (temporaryBufferReference != null && temporaryBufferReference.IsAlive && ((byte[]) temporaryBufferReference.Target).Length >= receivedSize)
                 {
                     tempBuffer = (byte[])temporaryBufferReference.Target;
@@ -84,18 +118,24 @@ namespace MLAPI.Transports.UNET
                     temporaryBufferReference = new WeakReference(tempBuffer);
                 }
                 
-                eventType = NetworkTransport.Receive(out hostId, out connectionId, out channelId, tempBuffer, tempBuffer.Length, out receivedSize, out err);
-                data = tempBuffer;
+                eventType = RelayTransport.Receive(out hostId, out connectionId, out channelId, tempBuffer, tempBuffer.Length, out receivedSize, out error);
+                payload = new ArraySegment<byte>(tempBuffer, 0, receivedSize);
             }
-            errorType = (NetworkError)err;
-            clientId = new NetId((byte)hostId, (ushort)connectionId, false).GetClientId();
+            else
+            {
+                payload = new ArraySegment<byte>(messageBuffer, 0, receivedSize);
+            }
+
+            channelName = channelIdToName[channelId];
 
 
-            if (errorType == NetworkError.Timeout)
-                eventType = NetworkEventType.DisconnectEvent; //In UNET. Timeouts are not disconnects. We have to translate that here.
-            error = 0;
+            if (networkError == NetworkError.Timeout)
+            {
+                // In UNET. Timeouts are not disconnects. We have to translate that here.
+                eventType = NetworkEventType.DisconnectEvent;
+            }
 
-            //Translate NetworkEventType to NetEventType
+            // Translate NetworkEventType to NetEventType
             switch (eventType)
             {
                 case NetworkEventType.DataEvent:
@@ -109,52 +149,134 @@ namespace MLAPI.Transports.UNET
                 case NetworkEventType.BroadcastEvent:
                     return NetEventType.Nothing;
             }
+            
             return NetEventType.Nothing;
         }
 
-        public void QueueMessageForSending(uint clientId, byte[] dataBuffer, int dataSize, int channelId, bool skipqueue, out byte error)
+        public override void StartClient()
         {
-            NetId netId = new NetId(clientId);
-			if (netId.IsServer())
-            {
-                netId.ConnectionId = (ushort)serverConnectionId;
-                netId.HostId = (byte)serverHostId;
-            }
-
-            if (skipqueue)
-                NetworkTransport.Send(netId.HostId, netId.ConnectionId, channelId, dataBuffer, dataSize, out error);
-            else
-                NetworkTransport.QueueMessageForSending(netId.HostId, netId.ConnectionId, channelId, dataBuffer, dataSize, out error);
+            UpdateRelay();
+            
+            serverHostId = RelayTransport.AddHost(new HostTopology(GetConfig(), 1), false);
+            
+            serverConnectionId = RelayTransport.Connect(serverHostId, ConnectAddress, ConnectPort, 0, out byte error);
         }
 
-        public void Shutdown() => NetworkTransport.Shutdown();
-
-        public void SendQueue(uint clientId, out byte error)
+        public override void StartServer()
         {
-            NetId netId = new NetId(clientId);
-			if (netId.IsServer())
+            UpdateRelay();
+            
+            HostTopology topology = new HostTopology(GetConfig(), MaxConnections);
+            
+            if (SupportWebsocket)
             {
-                netId.ConnectionId = (ushort)serverConnectionId;
-                netId.HostId = (byte)serverHostId;
-            }
-            NetworkTransport.SendQueuedMessages(netId.HostId, netId.ConnectionId, out error);
-        }
-
-        public void RegisterServerListenSocket(object settings)
-        {
-            HostTopology topology = new HostTopology((ConnectionConfig)settings, NetworkingManager.Singleton.NetworkConfig.MaxConnections);
-            for (int i = 0; i < ServerTransports.Count; i++)
-            {
-                if (ServerTransports[i].Websockets)
-                    NetworkTransport.AddWebsocketHost(topology, ServerTransports[i].Port);
+                if (!UseMLAPIRelay)
+                {
+                    int websocketHostId = NetworkTransport.AddWebsocketHost(topology, ServerWebsocketListenPort);
+                }
                 else
-                    NetworkTransport.AddHost(topology, ServerTransports[i].Port);
+                {
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Cannot create websocket host when using MLAPI relay");
+                }
+                    
+            }
+            
+            int normalHostId = RelayTransport.AddHost(topology, ServerListenPort, true);
+        }
+
+        public override void DisconnectRemoteClient(ulong clientId)
+        {
+            UpdateRelay();
+            
+            GetUnetConnectionDetails(clientId, out byte hostId, out ushort connectionId);
+
+            RelayTransport.Disconnect((int) hostId, (int) connectionId, out byte error);
+        }
+
+        public override void DisconnectLocalClient()
+        {
+            UpdateRelay();
+            
+            RelayTransport.Disconnect(serverHostId, serverConnectionId, out byte error);
+        }
+
+        public override ulong GetCurrentRtt(ulong clientId)
+        {
+            GetUnetConnectionDetails(clientId, out byte hostId, out ushort connectionId);
+
+            if (UseMLAPIRelay)
+            {
+                return 0;
+            }
+            else
+            {
+                return (ulong)NetworkTransport.GetCurrentRTT((int) hostId, (int) connectionId, out byte error);
             }
         }
 
-        public int AddChannel(ChannelType type, object settings)
+        public override void Shutdown()
         {
-            ConnectionConfig config = (ConnectionConfig)settings;
+            NetworkTransport.Shutdown();
+        }
+
+        public override void Init()
+        {
+            messageBuffer = new byte[MessageBufferSize];
+            
+            NetworkTransport.Init();
+        }
+        
+        public ulong GetMLAPIClientId(byte hostId, ushort connectionId, bool isServer)
+        {
+            if (isServer)
+            {
+                return 0;
+            }
+            else
+            {
+                return ((ulong)connectionId | (ulong)hostId << 16) + 1;
+            }
+        }
+
+        public void GetUnetConnectionDetails(ulong clientId, out byte hostId, out ushort connectionId)
+        {
+            if (clientId == 0)
+            {
+                hostId = (byte)serverHostId;
+                connectionId = (ushort)serverConnectionId;
+            }
+            else
+            {
+                hostId = (byte) ((clientId - 1) >> 16);
+                connectionId = (ushort) ((clientId - 1));
+            }
+        }
+
+        public ConnectionConfig GetConfig()
+        {
+            ConnectionConfig config = new ConnectionConfig();
+            
+            for (int i = 0; i < MLAPI_CHANNELS.Length; i++)
+            {
+                int channelId = AddChannel(MLAPI_CHANNELS[i].Type, config);
+                
+                channelIdToName.Add(channelId, MLAPI_CHANNELS[i].Name);
+                channelNameToId.Add(MLAPI_CHANNELS[i].Name, channelId);
+            }
+
+            for (int i = 0; i < Channels.Count; i++)
+            {
+                int channelId = AddChannel(Channels[i].Type, config);
+                
+                channelIdToName.Add(channelId, Channels[i].Name);
+                channelNameToId.Add(Channels[i].Name, channelId);
+            }
+
+            return config;
+        }
+        
+        public int AddChannel(ChannelType type, ConnectionConfig config)
+        {
             switch (type)
             {
                 case ChannelType.Unreliable:
@@ -183,19 +305,11 @@ namespace MLAPI.Transports.UNET
             return 0;
         }
 
-        public object GetSettings()
+        private void UpdateRelay()
         {
-            NetworkTransport.Init();
-            return new ConnectionConfig()
-            {
-                SendDelay = 0
-            };
-        }
-
-        public void Connect(string address, int port, object settings, out byte error)
-        {
-            serverHostId = NetworkTransport.AddHost(new HostTopology((ConnectionConfig)settings, 1));
-            serverConnectionId = NetworkTransport.Connect(serverHostId, address, port, 0, out error);
+            RelayTransport.Enabled = UseMLAPIRelay;
+            RelayTransport.RelayAddress = MLAPIRelayAddress;
+            RelayTransport.RelayPort = (ushort)MLAPIRelayPort;
         }
     }
 }

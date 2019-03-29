@@ -10,7 +10,7 @@ namespace MLAPI_Examples
     // Features example calls for things often needed for things like Game managers
     public class ManagerExamples : NetworkedBehaviour
     {
-        public NetworkedObject GetPlayerGameObject(uint clientId)
+        public NetworkedObject GetPlayerGameObject(ulong clientId)
         {
             return SpawnManager.GetPlayerObject(clientId);
         }
@@ -23,7 +23,7 @@ namespace MLAPI_Examples
         
 #if !DISABLE_CRYPTOGRAPHY
         // Only runs on server
-        public byte[] GetAESKeyForClient(uint clientId)
+        public byte[] GetAESKeyForClient(ulong clientId)
         {
             return CryptographyHelper.GetClientKey(clientId);
         }
@@ -36,7 +36,7 @@ namespace MLAPI_Examples
 #endif
 
         // Contains player object, owned objects, cryptography keys and more
-        public NetworkedClient GetClient(uint clientId)
+        public NetworkedClient GetClient(ulong clientId)
         {
             return NetworkingManager.Singleton.ConnectedClients[clientId];
         }

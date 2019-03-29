@@ -10,7 +10,7 @@ namespace MLAPI.Data
         /// <summary>
         /// The Id of the NetworkedClient
         /// </summary>
-        public uint ClientId;
+        public ulong ClientId;
         /// <summary>
         /// The PlayerObject of the Client
         /// </summary>

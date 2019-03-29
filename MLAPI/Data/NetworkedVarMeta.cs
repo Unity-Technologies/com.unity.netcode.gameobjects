@@ -27,13 +27,13 @@ namespace MLAPI.NetworkedVar
         /// </summary>
         /// <param name="clientId">The clientId of the remote client</param>
         /// <returns>Wheter or not the client can write to the variable</returns>
-        bool CanClientWrite(uint clientId);
+        bool CanClientWrite(ulong clientId);
         /// <summary>
         /// Gets wheter or not a specific client can read to the varaible
         /// </summary>
         /// <param name="clientId">The clientId of the remote client</param>
         /// <returns>Wheter or not the client can read to the variable</returns>
-        bool CanClientRead(uint clientId);
+        bool CanClientRead(ulong clientId);
         /// <summary>
         /// Writes the dirty changes, that is, the changes since the variable was last dirty, to the writer
         /// </summary>
@@ -107,7 +107,7 @@ namespace MLAPI.NetworkedVar
     /// Delegate type for permission checking
     /// </summary>
     /// <param name="clientId">The clientId whose permissions to check</param>
-    public delegate bool NetworkedVarPermissionsDelegate(uint clientId);
+    public delegate bool NetworkedVarPermissionsDelegate(ulong clientId);
 
     /// <summary>
     /// Permission type

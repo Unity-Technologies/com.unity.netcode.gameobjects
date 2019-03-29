@@ -32,7 +32,7 @@ namespace MLAPI
     /// <summary>
     /// Delegate definition for performance RPC's.
     /// </summary>
-    public delegate void RpcDelegate(uint clientId, Stream stream);
+    public delegate void RpcDelegate(ulong clientId, Stream stream);
 
     internal class ReflectionMethod
     {

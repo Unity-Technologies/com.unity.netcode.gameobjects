@@ -40,7 +40,7 @@ namespace MLAPI
         /// <summary>
         /// The clientId which the Request/Response was done wit
         /// </summary>
-        public uint ClientId { get; internal set; }
+        public ulong ClientId { get; internal set; }
         /// <summary>
         /// The amount of time to wait for the operation to complete
         /// </summary>

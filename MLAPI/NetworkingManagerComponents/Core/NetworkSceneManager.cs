@@ -214,7 +214,7 @@ namespace MLAPI.Components
                                     {
                                         writer.WriteBool(newSceneObjects[i].IsPlayerObject);
                                         writer.WriteUInt64Packed(newSceneObjects[i].NetworkId);
-                                        writer.WriteUInt32Packed(newSceneObjects[i].OwnerClientId);
+                                        writer.WriteUInt64Packed(newSceneObjects[i].OwnerClientId);
 
                                         writer.WriteUInt64Packed(newSceneObjects[i].PrefabHash);
 
@@ -228,19 +228,25 @@ namespace MLAPI.Components
                                         writer.WriteSinglePacked(newSceneObjects[i].transform.rotation.eulerAngles.y);
                                         writer.WriteSinglePacked(newSceneObjects[i].transform.rotation.eulerAngles.z);
 
-                                        newSceneObjects[i].WriteNetworkedVarData(stream, NetworkingManager.Singleton.ConnectedClientsList[j].ClientId);
+                                        if (NetworkingManager.Singleton.NetworkConfig.EnableNetworkedVar)
+                                        {
+                                            newSceneObjects[i].WriteNetworkedVarData(stream, NetworkingManager.Singleton.ConnectedClientsList[j].ClientId);
+                                        }
                                     }
                                     else
                                     {
                                         writer.WriteBool(newSceneObjects[i].IsPlayerObject);
                                         writer.WriteUInt64Packed(newSceneObjects[i].NetworkId);
-                                        writer.WriteUInt32Packed(newSceneObjects[i].OwnerClientId);
+                                        writer.WriteUInt64Packed(newSceneObjects[i].OwnerClientId);
 
                                         writer.WriteUInt64Packed(newSceneObjects[i].NetworkedInstanceId);
 
                                         writer.WriteBool(newSceneObjects[i].DestroyWithScene);
 
-                                        newSceneObjects[i].WriteNetworkedVarData(stream, NetworkingManager.Singleton.ConnectedClientsList[j].ClientId);
+                                        if (NetworkingManager.Singleton.NetworkConfig.EnableNetworkedVar)
+                                        {
+                                            newSceneObjects[i].WriteNetworkedVarData(stream, NetworkingManager.Singleton.ConnectedClientsList[j].ClientId);
+                                        }
                                     }
                                 }
                             }
@@ -279,7 +285,7 @@ namespace MLAPI.Components
                     {
                         bool isPlayerObject = reader.ReadBool();
                         ulong networkId = reader.ReadUInt64Packed();
-                        uint owner = reader.ReadUInt32Packed();
+                        ulong owner = reader.ReadUInt64Packed();
 
                         ulong prefabHash = reader.ReadUInt64Packed();
                         
@@ -307,7 +313,7 @@ namespace MLAPI.Components
                     {
                         bool isPlayerObject = reader.ReadBool();
                         ulong networkId = reader.ReadUInt64Packed();
-                        uint owner = reader.ReadUInt32Packed();
+                        ulong owner = reader.ReadUInt64Packed();
 
                         ulong instanceId = reader.ReadUInt64Packed();
                         
@@ -328,6 +334,8 @@ namespace MLAPI.Components
                 }
             }
             
+            // EVENT GOES HERE
+            
             isSwitching = false;
             
             if (OnSceneSwitched != null)
@@ -342,7 +350,7 @@ namespace MLAPI.Components
         }
 
         // Called on server
-        internal static void OnClientSwitchSceneCompleted(uint clientId, Guid switchSceneGuid) 
+        internal static void OnClientSwitchSceneCompleted(ulong clientId, Guid switchSceneGuid) 
         {
             if (switchSceneGuid == Guid.Empty) 
             {
@@ -358,7 +366,7 @@ namespace MLAPI.Components
         }
 
 
-        internal static void RemoveClientFromSceneSwitchProgresses(uint clientId) 
+        internal static void RemoveClientFromSceneSwitchProgresses(ulong clientId) 
         {
             foreach (SceneSwitchProgress switchSceneProgress in sceneSwitchProgresses.Values)
                 switchSceneProgress.RemoveClientAsDone(clientId);

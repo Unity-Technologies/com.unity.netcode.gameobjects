@@ -21,7 +21,7 @@ namespace MLAPI.Internal
     {
 #if !DISABLE_CRYPTOGRAPHY
         // Runs on client
-        internal static void HandleHailRequest(uint clientId, Stream stream, int channelId)
+        internal static void HandleHailRequest(ulong clientId, Stream stream)
         {
             X509Certificate2 certificate = null;
             byte[] serverDiffieHellmanPublicPart = null;
@@ -110,7 +110,7 @@ namespace MLAPI.Internal
         }
 
         // Ran on server
-        internal static void HandleHailResponse(uint clientId, Stream stream, int channelId)
+        internal static void HandleHailResponse(ulong clientId, Stream stream)
         {
             if (!NetworkingManager.Singleton.PendingClients.ContainsKey(clientId) || NetworkingManager.Singleton.PendingClients[clientId].ConnectionState != PendingClient.State.PendingHail) return;
             if (!NetworkingManager.Singleton.NetworkConfig.EnableEncryption) return;
@@ -165,14 +165,14 @@ namespace MLAPI.Internal
             }
         }
 
-        internal static void HandleGreetings(uint clientId, Stream stream, int channelId)
+        internal static void HandleGreetings(ulong clientId, Stream stream)
         {
             // Server greeted us, we can now initiate our request to connect.
             NetworkingManager.Singleton.SendConnectionRequest();
         }
 #endif
 
-        internal static void HandleConnectionRequest(uint clientId, Stream stream, int channelId)
+        internal static void HandleConnectionRequest(ulong clientId, Stream stream)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
@@ -196,18 +196,18 @@ namespace MLAPI.Internal
             }
         }
 
-        internal static void HandleConnectionApproved(uint clientId, Stream stream, int channelId)
+        internal static void HandleConnectionApproved(ulong clientId, Stream stream)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
-                NetworkingManager.Singleton.LocalClientId = reader.ReadUInt32Packed();
+                NetworkingManager.Singleton.LocalClientId = reader.ReadUInt64Packed();
                 
                 uint sceneIndex = reader.ReadUInt32Packed();
                 Guid sceneSwitchProgressGuid = new Guid(reader.ReadByteArray());
 
                 float netTime = reader.ReadSinglePacked();
-                int remoteStamp = reader.ReadInt32Packed();
-                int msDelay = NetworkingManager.Singleton.NetworkConfig.NetworkTransport.GetRemoteDelayTimeMS(clientId, remoteStamp, out byte error);
+                ulong msDelay = NetworkingManager.Singleton.NetworkConfig.NetworkTransport.GetCurrentRtt(clientId);
+                
                 NetworkingManager.Singleton.NetworkTime = netTime + (msDelay / 1000f);
 
                 NetworkingManager.Singleton.ConnectedClients.Add(NetworkingManager.Singleton.LocalClientId, new NetworkedClient() { ClientId = NetworkingManager.Singleton.LocalClientId });
@@ -232,7 +232,7 @@ namespace MLAPI.Internal
                         {
                             bool isPlayerObject = continuationReader.ReadBool();
                             ulong networkId = continuationReader.ReadUInt64Packed();
-                            uint ownerId = continuationReader.ReadUInt32Packed();
+                            ulong ownerId = continuationReader.ReadUInt64Packed();
 
                             ulong prefabHash;
                             ulong instanceId;
@@ -302,13 +302,13 @@ namespace MLAPI.Internal
             }
         }
 
-        internal static void HandleAddObject(uint clientId, Stream stream, int channelId)
+        internal static void HandleAddObject(ulong clientId, Stream stream)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
                 bool isPlayerObject = reader.ReadBool();
                 ulong networkId = reader.ReadUInt64Packed();
-                uint ownerId = reader.ReadUInt32Packed();
+                ulong ownerId = reader.ReadUInt64Packed();
                 
                 ulong prefabHash;
                 ulong instanceId;
@@ -354,7 +354,7 @@ namespace MLAPI.Internal
             }
         }
 
-        internal static void HandleDestroyObject(uint clientId, Stream stream, int channelId)
+        internal static void HandleDestroyObject(ulong clientId, Stream stream)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
@@ -363,7 +363,7 @@ namespace MLAPI.Internal
             }
         }
 
-        internal static void HandleSwitchScene(uint clientId, Stream stream, int channelId)
+        internal static void HandleSwitchScene(ulong clientId, Stream stream)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
@@ -378,7 +378,7 @@ namespace MLAPI.Internal
             }
         }
 
-        internal static void HandleClientSwitchSceneCompleted(uint clientId, Stream stream, int channelId)
+        internal static void HandleClientSwitchSceneCompleted(ulong clientId, Stream stream)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream)) 
             {
@@ -386,12 +386,12 @@ namespace MLAPI.Internal
             }
         }
 
-        internal static void HandleChangeOwner(uint clientId, Stream stream, int channelId)
+        internal static void HandleChangeOwner(ulong clientId, Stream stream)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
                 ulong networkId = reader.ReadUInt64Packed();
-                uint ownerClientId = reader.ReadUInt32Packed();
+                ulong ownerClientId = reader.ReadUInt64Packed();
                 
                 if (SpawnManager.SpawnedObjects[networkId].OwnerClientId == NetworkingManager.Singleton.LocalClientId)
                 {
@@ -407,7 +407,7 @@ namespace MLAPI.Internal
             }
         }
 
-        internal static void HandleAddObjects(uint clientId, Stream stream, int channelId)
+        internal static void HandleAddObjects(ulong clientId, Stream stream)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
@@ -416,7 +416,7 @@ namespace MLAPI.Internal
                 {
                     bool isPlayerObject = reader.ReadBool();
                     ulong networkId = reader.ReadUInt64Packed();
-                    uint ownerId = reader.ReadUInt32Packed();
+                    ulong ownerId = reader.ReadUInt64Packed();
 
                     ulong prefabHash;
                     ulong instanceId;
@@ -460,20 +460,25 @@ namespace MLAPI.Internal
             }
         }
 
-        internal static void HandleTimeSync(uint clientId, Stream stream, int channelId)
+        internal static void HandleTimeSync(ulong clientId, Stream stream)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
                 float netTime = reader.ReadSinglePacked();
-                int timestamp = reader.ReadInt32Packed();
-
-                int msDelay = NetworkingManager.Singleton.NetworkConfig.NetworkTransport.GetRemoteDelayTimeMS(clientId, timestamp, out byte error);
+                ulong msDelay = NetworkingManager.Singleton.NetworkConfig.NetworkTransport.GetCurrentRtt(clientId);
+                
                 NetworkingManager.Singleton.NetworkTime = netTime + (msDelay / 1000f);
             }
         }
 
-        internal static void HandleNetworkedVarDelta(uint clientId, Stream stream, int channelId)
+        internal static void HandleNetworkedVarDelta(ulong clientId, Stream stream)
         {
+            if (!NetworkingManager.Singleton.NetworkConfig.EnableNetworkedVar)
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkedVar delta received but EnableNetworkedVar is false");
+                return;
+            }
+            
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
                 ulong networkId = reader.ReadUInt64Packed();
@@ -497,8 +502,14 @@ namespace MLAPI.Internal
             }
         }
 
-        internal static void HandleNetworkedVarUpdate(uint clientId, Stream stream, int channelId)
+        internal static void HandleNetworkedVarUpdate(ulong clientId, Stream stream)
         {
+            if (!NetworkingManager.Singleton.NetworkConfig.EnableNetworkedVar)
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkedVar update received but EnableNetworkedVar is false");
+                return;
+            }
+            
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
                 ulong networkId = reader.ReadUInt64Packed();
@@ -522,7 +533,7 @@ namespace MLAPI.Internal
             }
         }
         
-        internal static void HandleServerRPC(uint clientId, Stream stream, int channelId)
+        internal static void HandleServerRPC(ulong clientId, Stream stream)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
@@ -541,7 +552,7 @@ namespace MLAPI.Internal
             }
         }
         
-        internal static void HandleServerRPCRequest(uint clientId, Stream stream, int channelId, SecuritySendFlags security)
+        internal static void HandleServerRPCRequest(ulong clientId, Stream stream, string channelName, SecuritySendFlags security)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
@@ -565,14 +576,14 @@ namespace MLAPI.Internal
                                 responseWriter.WriteObjectPacked(result);
                             }
                             
-                            InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_SERVER_RPC_RESPONSE, MessageManager.reverseChannels[channelId], responseStream, security, SpawnManager.SpawnedObjects[networkId]);
+                            InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_SERVER_RPC_RESPONSE, channelName, responseStream, security, SpawnManager.SpawnedObjects[networkId]);
                         }
                     }
                 }
             }
         }
         
-        internal static void HandleServerRPCResponse(uint clientId, Stream stream, int channelId)
+        internal static void HandleServerRPCResponse(ulong clientId, Stream stream)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
@@ -593,7 +604,7 @@ namespace MLAPI.Internal
             }
         }
         
-        internal static void HandleClientRPC(uint clientId, Stream stream, int channelId)
+        internal static void HandleClientRPC(ulong clientId, Stream stream)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
@@ -612,7 +623,7 @@ namespace MLAPI.Internal
             }
         }
         
-        internal static void HandleClientRPCRequest(uint clientId, Stream stream, int channelId, SecuritySendFlags security)
+        internal static void HandleClientRPCRequest(ulong clientId, Stream stream, string channelName, SecuritySendFlags security)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
@@ -636,14 +647,14 @@ namespace MLAPI.Internal
                                 responseWriter.WriteObjectPacked(result);
                             }
                             
-                            InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_CLIENT_RPC_RESPONSE, MessageManager.reverseChannels[channelId], responseStream, security, null);
+                            InternalMessageHandler.Send(clientId, MLAPIConstants.MLAPI_CLIENT_RPC_RESPONSE, channelName, responseStream, security, null);
                         }
                     }
                 }
             }
         }
         
-        internal static void HandleClientRPCResponse(uint clientId, Stream stream, int channelId)
+        internal static void HandleClientRPCResponse(ulong clientId, Stream stream)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
@@ -664,7 +675,7 @@ namespace MLAPI.Internal
             }
         }
         
-        internal static void HandleCustomMessage(uint clientId, Stream stream, int channelId)
+        internal static void HandleCustomMessage(ulong clientId, Stream stream)
         {
             NetworkingManager.Singleton.InvokeOnIncomingCustomMessage(clientId, stream);
         }

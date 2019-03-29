@@ -80,7 +80,7 @@ public float MyRpcWithReturnValue(float x, float y)
 ```
 
 #### Performance Example
-To use the performance mode, the RPC method require the following signature ``void (uint clientId, Stream readStream)`` and the sender is required to use the non generic Stream overload.
+To use the performance mode, the RPC method require the following signature ``void (ulong clientId, Stream readStream)`` and the sender is required to use the non generic Stream overload.
 
 ```csharp
 private void Update()
@@ -115,7 +115,7 @@ private void Update()
 }
 
 [ServerRPC]
-private void MyServerRPC(uint clientId, Stream stream) //This signature is REQUIRED for the performance mode
+private void MyServerRPC(ulong clientId, Stream stream) //This signature is REQUIRED for the performance mode
 {
     using (PooledBitReader reader = PooledBitReader.Get(stream))
     {
@@ -126,7 +126,7 @@ private void MyServerRPC(uint clientId, Stream stream) //This signature is REQUI
 }
 
 [ClientRPC]
-private void MyClientRPC(uint clientId, Stream stream) //This signature is REQUIRED for the performance mode
+private void MyClientRPC(ulong clientId, Stream stream) //This signature is REQUIRED for the performance mode
 {
     using (PooledBitReader reader = PooledBitReader.Get(stream))
     {

@@ -116,7 +116,7 @@ namespace MLAPI
         }
 
         /// <inheritdoc />
-        public bool CanClientRead(uint clientId)
+        public bool CanClientRead(ulong clientId)
         {
             switch (Settings.ReadPermission)
             {
@@ -142,7 +142,7 @@ namespace MLAPI
         public void WriteDelta(Stream stream) => WriteField(stream); //The NetworkedVar is built for simple data types and has no delta.
 
         /// <inheritdoc />
-        public bool CanClientWrite(uint clientId)
+        public bool CanClientWrite(ulong clientId)
         {
             switch (Settings.WritePermission)
             {

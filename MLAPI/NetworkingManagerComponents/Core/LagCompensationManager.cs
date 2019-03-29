@@ -39,21 +39,20 @@ namespace MLAPI.Components
             }
         }
 
-        private static byte error = 0;
         /// <summary>
         /// Turns time back a given amount of seconds, invokes an action and turns it back. The time is based on the estimated RTT of a clientId
         /// </summary>
         /// <param name="clientId">The clientId's RTT to use</param>
         /// <param name="action">The action to invoke when time is turned back</param>
-        public static void Simulate(uint clientId, Action action)
+        public static void Simulate(ulong clientId, Action action)
         {
             if (!NetworkingManager.Singleton.IsServer)
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Lag compensation simulations are only to be ran on the server");
                 return;
             }
-            float milisecondsDelay = NetworkingManager.Singleton.NetworkConfig.NetworkTransport.GetCurrentRTT(clientId, out error) / 2f;
-            Simulate(milisecondsDelay * 1000f, action);
+            float millisecondsDelay = NetworkingManager.Singleton.NetworkConfig.NetworkTransport.GetCurrentRtt(clientId) / 2f;
+            Simulate(millisecondsDelay * 1000f, action);
         }
 
         internal static void AddFrames()

@@ -18,7 +18,7 @@ The MLAPI comes with 3 main components
 ##### MLAPI.dll
 This DLL's is the runtime portion. The actual library. This file is thus **required**. It comes in two variants. A "Lite" and a normal version. Most people will do fine with the full version. The Lite version has less features. At the time of writing the only difference is that it does not include encryption which adds better support on certain platforms. Note that the lite version might not be as stable as the full version and could contain additional bugs.
 ##### MLAPI-Editor.unitypackage
-This unitypackage includes the source files for all the Editor scripts. The UnityPackage will automatically place these source files in the Editor folder to avoid it being included in a build. **While the MLAPI will function without this, it is not designed to work without the editor part and is thus recommended for all users**.
+This unitypackage includes the source files for all the Editor scripts. The UnityPackage will automatically place these source files in the Editor folder to avoid it being included in a build. **This is required**.
 ##### MLAPI-Installer.unitypackage
 This unitypackage includes the source file for the installer. This component is totally optional. The Installer can help you manage versions. If you don't want to use the installer, you can simply place the MLAPI.dll and the Editor source files in your project and it will work just as well.
 
