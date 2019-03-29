@@ -68,11 +68,14 @@ namespace MLAPI.EnetTransport
                     case EventType.None:
                     {
                         channelName = null;
+                        payload = new ArraySegment<byte>();
+                        
                         return NetEventType.Nothing;
                     }
                     case EventType.Connect:
                     {
                         channelName = null;
+                        payload = new ArraySegment<byte>();
                         
                         connectedEnetPeers.Add(@event.Peer.ID, @event.Peer);
                         
@@ -81,6 +84,7 @@ namespace MLAPI.EnetTransport
                     case EventType.Disconnect:
                     {
                         channelName = null;
+                        payload = new ArraySegment<byte>();
 
                         connectedEnetPeers.Remove(@event.Peer.ID);
                         
@@ -94,7 +98,7 @@ namespace MLAPI.EnetTransport
                         if (size > messageBuffer.Length)
                         {
                             byte[] tempBuffer;
-                
+                            
                             if (temporaryBufferReference != null && temporaryBufferReference.IsAlive && ((byte[]) temporaryBufferReference.Target).Length >= size)
                             {
                                 tempBuffer = (byte[])temporaryBufferReference.Target;
@@ -116,11 +120,13 @@ namespace MLAPI.EnetTransport
                         
                         
                         @event.Packet.Dispose();
+                        
                         return NetEventType.Data;
                     }
                     case EventType.Timeout:
                     {
                         channelName = null;
+                        payload = new ArraySegment<byte>();
                         
                         connectedEnetPeers.Remove(@event.Peer.ID);
                         
@@ -129,6 +135,7 @@ namespace MLAPI.EnetTransport
                     default:
                     {
                         channelName = null;
+                        payload = new ArraySegment<byte>();
                         
                         return NetEventType.Nothing;
                     }
@@ -137,6 +144,7 @@ namespace MLAPI.EnetTransport
             else
             {
                 channelName = null;
+                payload = new ArraySegment<byte>();
                 clientId = 0;
                 
                 return NetEventType.Nothing;
