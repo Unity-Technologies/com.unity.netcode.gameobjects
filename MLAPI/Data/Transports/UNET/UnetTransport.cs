@@ -1,3 +1,4 @@
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 using System;
 using System.Collections.Generic;
 using MLAPI.Logging;
@@ -302,3 +303,4 @@ namespace MLAPI.Transports.UNET
         }
     }
 }
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
