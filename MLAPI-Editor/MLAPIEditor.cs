@@ -472,39 +472,43 @@ public class MLAPIEditor : EditorWindow
             bool downloadFail = false;
             for (int i = 0; i < releases[index].assets.Length; i++)
             {
-                UnityWebRequest www = UnityWebRequest.Get(releases[index].assets[i].browser_download_url);
-                www.SendWebRequest();
-                while (!www.isDone && string.IsNullOrEmpty(www.error))
+                using (UnityWebRequest www = UnityWebRequest.Get(releases[index].assets[i].browser_download_url))
                 {
-                    statusMessage = "Downloading " + releases[index].assets[i].name + "(" + (i + 1) + "/" + releases[index].assets.Length + ") " + www.downloadProgress + "%";
-                    yield return null;
-                }
-
-                if (!string.IsNullOrEmpty(www.error))
-                {
-                    //Some kind of error
-                    downloadFail = true;
-                    statusMessage = "Failed to download asset " + releases[index].assets[i].name + ". Error: " + www.error;
-                    double startTime = EditorApplication.timeSinceStartup;
-                    //Basically = yield return new WaitForSeconds(5);
-                    while (EditorApplication.timeSinceStartup - startTime <= 5f)
-                        yield return null;
-                    statusMessage = "";
-                }
-                else
-                {
-                    statusMessage = "Writing " + releases[index].assets[i].name + " to disk";
-                    yield return null;
-
-                    File.WriteAllBytes(Application.dataPath + "/MLAPI/Lib/" + releases[index].assets[i].name, www.downloadHandler.data);
-
-                    if (releases[index].assets[i].name.EndsWith(".unitypackage"))
+                    www.SendWebRequest();
+                    while (!www.isDone && string.IsNullOrEmpty(www.error))
                     {
-                        PendingPackages.Add(releases[index].assets[i].name);
+                        statusMessage = "Downloading " + releases[index].assets[i].name + "(" + (i + 1) + "/" + releases[index].assets.Length + ") " + www.downloadProgress + "%";
+                        yield return null;
                     }
-                    yield return null;
+
+                    if (!string.IsNullOrEmpty(www.error))
+                    {
+                        //Some kind of error
+                        downloadFail = true;
+                        statusMessage = "Failed to download asset " + releases[index].assets[i].name + ". Error: " + www.error;
+                        double startTime = EditorApplication.timeSinceStartup;
+                        //Basically = yield return new WaitForSeconds(5);
+                        while (EditorApplication.timeSinceStartup - startTime <= 5f)
+                            yield return null;
+                        statusMessage = "";
+                    }
+                    else
+                    {
+                        statusMessage = "Writing " + releases[index].assets[i].name + " to disk";
+                        yield return null;
+
+                        File.WriteAllBytes(Application.dataPath + "/MLAPI/Lib/" + releases[index].assets[i].name, www.downloadHandler.data);
+
+                        if (releases[index].assets[i].name.EndsWith(".unitypackage"))
+                        {
+                            PendingPackages.Add(releases[index].assets[i].name);
+                        }
+
+                        yield return null;
+                    }
+
+                    progress = i;
                 }
-                progress = i;
             }
 
             yield return null;
@@ -522,86 +526,88 @@ public class MLAPIEditor : EditorWindow
     {
         lastUpdated = DateTime.Now.Ticks;
 
-        UnityWebRequest www = UnityWebRequest.Get(API_URL);
-        www.SendWebRequest();
-        isFetching = true;
-        while (!www.isDone && string.IsNullOrEmpty(www.error))
+        using (UnityWebRequest www = UnityWebRequest.Get(API_URL))
         {
-            statusMessage = "Fetching releases " + www.downloadProgress + "%";
-            yield return null;
-        }
-
-        if (!string.IsNullOrEmpty(www.error))
-        {
-            //Some kind of error
-            statusMessage = "Failed to fetch releases. Error: " + www.error;
-            double startTime = EditorApplication.timeSinceStartup;
-            //Basically = yield return new WaitForSeconds(5);
-            while (EditorApplication.timeSinceStartup - startTime <= 5f)
-                yield return null;
-            statusMessage = "";
-        }
-        else
-        {
-            isFetching = false;
-            isParsing = true;
-            string json = www.downloadHandler.text;
-
-            //This makes it from a json array to the individual objects in the array. 
-            //The JSON serializer cant take arrays. We have to split it up outselves.
-            List<string> releasesJson = new List<string>();
-            int depth = 0;
-            StringBuilder builder = new StringBuilder();
-            for (int i = 1; i < json.Length - 1; i++)
+            www.SendWebRequest();
+            isFetching = true;
+            while (!www.isDone && string.IsNullOrEmpty(www.error))
             {
-                if (json[i] == '[')
-                    depth++;
-                else if (json[i] == ']')
-                    depth--;
-                else if (json[i] == '{')
-                    depth++;
-                else if (json[i] == '}')
-                    depth--;
+                statusMessage = "Fetching releases " + www.downloadProgress + "%";
+                yield return null;
+            }
 
-                if ((depth == 0 && json[i] != ',') || depth > 0)
-                    builder.Append(json[i]);
+            if (!string.IsNullOrEmpty(www.error))
+            {
+                //Some kind of error
+                statusMessage = "Failed to fetch releases. Error: " + www.error;
+                double startTime = EditorApplication.timeSinceStartup;
+                //Basically = yield return new WaitForSeconds(5);
+                while (EditorApplication.timeSinceStartup - startTime <= 5f)
+                    yield return null;
+                statusMessage = "";
+            }
+            else
+            {
+                isFetching = false;
+                isParsing = true;
+                string json = www.downloadHandler.text;
 
-                if (depth == 0 && json[i] == ',')
+                //This makes it from a json array to the individual objects in the array. 
+                //The JSON serializer cant take arrays. We have to split it up outselves.
+                List<string> releasesJson = new List<string>();
+                int depth = 0;
+                StringBuilder builder = new StringBuilder();
+                for (int i = 1; i < json.Length - 1; i++)
                 {
-                    releasesJson.Add(builder.ToString());
-                    builder.Length = 0;
+                    if (json[i] == '[')
+                        depth++;
+                    else if (json[i] == ']')
+                        depth--;
+                    else if (json[i] == '{')
+                        depth++;
+                    else if (json[i] == '}')
+                        depth--;
+
+                    if ((depth == 0 && json[i] != ',') || depth > 0)
+                        builder.Append(json[i]);
+
+                    if (depth == 0 && json[i] == ',')
+                    {
+                        releasesJson.Add(builder.ToString());
+                        builder.Length = 0;
+                    }
+
+                    //Parse in smaller batches
+                    if (i % (json.Length / 100) == 0)
+                    {
+                        statusMessage = "Splitting JSON " + (i / (float) json.Length) * 100f + "%";
+                        yield return null;
+                    }
+
+                    statusMessage = "";
                 }
 
-                //Parse in smaller batches
-                if (i % (json.Length / 100) == 0)
+                releases = new GithubRelease[releasesJson.Count];
+                foldoutStatus = new bool[releasesJson.Count];
+
+                for (int i = 0; i < releasesJson.Count; i++)
                 {
-                    statusMessage = "Splitting JSON " + (i / (float)json.Length) * 100f + "%";
-                    yield return null;
+                    releases[i] = JsonUtility.FromJson<GithubRelease>(releasesJson[i]);
+                    if (i == 0)
+                        foldoutStatus[i] = true;
+                    else
+                        foldoutStatus[i] = false;
+
+                    if (i % (releasesJson.Count / 30f) == 0)
+                    {
+                        yield return null;
+                        statusMessage = "Parsing JSON " + (i / (float) releasesJson.Count) * 100f + "%";
+                    }
                 }
 
                 statusMessage = "";
+                isParsing = false;
             }
-
-            releases = new GithubRelease[releasesJson.Count];
-            foldoutStatus = new bool[releasesJson.Count];
-
-            for (int i = 0; i < releasesJson.Count; i++)
-            {
-                releases[i] = JsonUtility.FromJson<GithubRelease>(releasesJson[i]);
-                if (i == 0)
-                    foldoutStatus[i] = true;
-                else
-                    foldoutStatus[i] = false;
-
-                if (i % (releasesJson.Count / 30f) == 0)
-                {
-                    yield return null;
-                    statusMessage = "Parsing JSON " + (i / (float)releasesJson.Count) * 100f + "%";
-                }
-            }
-
-            statusMessage = "";
-            isParsing = false;
         }
     }
 
