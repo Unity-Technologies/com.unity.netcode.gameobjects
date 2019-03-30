@@ -26,20 +26,22 @@ NetworkingManager.Singleton.GetComponent<UnetTransport>().ConnectPort = 12345;  
 Disconnecting is rather simple, but you have to remember, that you cannot use the ```NetworkSceneManager``` for scene switching in most Disconnecting cases. As soon as you stop the Client, Server or Host you have to use UnityEngine.SceneManagement instead.
 ```csharp
 public void Disconnect()
-        {
-            if (IsHost) {
-                NetworkingManager.Singleton.StopHost();
-            }
-
-            else if (IsClient) {
-                NetworkingManager.Singleton.StopClient();
-            }
-
-            else if (IsServer) {
-                NetworkingManager.Singleton.StopServer();
-            }            
-            UnityEngine.SceneManagement.SceneManager.LoadScene("MainMenu");
-        }
+{
+    if (IsHost) 
+    {
+        NetworkingManager.Singleton.StopHost();
+    }
+    else if (IsClient) 
+    {
+        NetworkingManager.Singleton.StopClient();
+    }
+    else if (IsServer) 
+    {
+        NetworkingManager.Singleton.StopServer();
+    }
+    
+    UnityEngine.SceneManagement.SceneManager.LoadScene("MainMenu");
+}
 ```
 
 The only case where you could use the ```NetworkSceneManager``` for disconnecting, would be if the Server/Host switches back to MainMenu or similar for everyone and then Stopping the Server and all the Clients. 
