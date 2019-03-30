@@ -12,6 +12,14 @@ GameObject go = Instantiate(myPrefab, Vector3.zero, Quaternion.identity);
 go.GetComponent<NetworkedObject>().Spawn();
 ```
 
+The .Spawn() method takes 2 parameters, both with default values, so they are optional.
+```csharp
+public void Spawn(Stream spawnPayload = null, bool destroyWithScene = false);
+```
+The first parameter is a System.IO.Stream and can be retrieved in the NetworkStart() to sync values once when spawning this object. Note however, that the payload data is only avalible for people that get the spawn call straight away. People that join later on won't get the payload data.
+
+The second parameter speaks for itself. If set to true, the object will be destroyed on scene switching. This can only be set inside the spawn call.
+
 ## Scene Objects
 Any objects already on the server with NetworkedObject components (static scene objects) will get automatically replicated. 
 
