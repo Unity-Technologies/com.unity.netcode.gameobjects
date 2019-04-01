@@ -13,6 +13,8 @@ NetworkingManager.Singleton.StartServer();      //or
 NetworkingManager.Singleton.StartHost();        //or
 NetworkingManager.Singleton.StartClient();
 ```
+Note: When starting a Server or joining a running session as client, the NetworkingManager will spawn a "Player Object" belonging to that Player. You can choose which prefab shall be spawned as "Player Object" in the NetworkingManager Component under ```NetworkedPrefabs```. Simply tick the corresponding ```Default Player Prefab``` checkbox there.
+Only the "Player Object" will return true for ```IsLocalPlayer``` on the corresponding machine, use ```IsOwner``` for non Player Objects instead.
 
 ### Connecting
 When Starting a Client, the NetworkingManager uses the IP and the Port provided in your "Transport" component for connecting.
