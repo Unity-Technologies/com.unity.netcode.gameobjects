@@ -207,8 +207,8 @@ namespace MLAPI.NetworkedVar.Collections
                         {
                             TKey key = (TKey) reader.ReadObjectPacked(typeof(TKey));
                             TValue value = (TValue) reader.ReadObjectPacked(typeof(TValue));
-                            if (dictionary.ContainsKey(key))
-                                dictionary[key] = value;
+
+                            dictionary[key] = value;
 
                             if (OnDictionaryChanged != null)
                             {
