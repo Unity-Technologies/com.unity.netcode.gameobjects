@@ -73,18 +73,24 @@ namespace MLAPI.Components
             sceneSwitchProgresses.Add(switchSceneProgress.guid, switchSceneProgress);
             currentSceneSwitchProgressGuid = switchSceneProgress.guid;
 
-            
-            nextScene = SceneManager.GetSceneByName(sceneName);
-
             Scene temporaryScene = SceneManager.CreateScene("MLAPI_tmp_switch_" + currentSceneSwitchProgressGuid);
 
             // Move ALL networked objects to the temp scene
             MoveAllNetworkedObjectsToScene(temporaryScene);
+
+            AsyncOperation unloadCurrentScene = SceneManager.UnloadSceneAsync(lastScene);
             
-            // Switch scene
-            AsyncOperation sceneLoad = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Single);
-            sceneLoad.completed += (AsyncOperation asyncOp) => { OnSceneLoaded(switchSceneProgress.guid, temporaryScene, null); };
-            switchSceneProgress.SetSceneLoadOperation(sceneLoad);
+            unloadCurrentScene.completed += (AsyncOperation asyncOp1) =>
+            {
+                // Switch scene
+                AsyncOperation sceneLoad = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
+            
+                nextScene = SceneManager.GetSceneByName(sceneName);
+            
+                sceneLoad.completed += (AsyncOperation asyncOp2) => { OnSceneLoaded(switchSceneProgress.guid, temporaryScene, null); };
+            
+                switchSceneProgress.SetSceneLoadOperation(sceneLoad);  
+            };
             
             return switchSceneProgress;
         }
@@ -110,9 +116,20 @@ namespace MLAPI.Components
             MoveAllNetworkedObjectsToScene(temporaryScene);
 
             string sceneName = sceneIndexToString[sceneIndex];
-            AsyncOperation sceneLoad = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Single);
-            nextScene = SceneManager.GetSceneByName(sceneName);
-            sceneLoad.completed += (AsyncOperation operation) => { OnSceneLoaded(switchSceneGuid, temporaryScene, objectStream); };
+            
+            AsyncOperation unloadCurrentScene = SceneManager.UnloadSceneAsync(lastScene);
+            
+            unloadCurrentScene.completed += (AsyncOperation asyncOp1) =>
+            {
+                AsyncOperation sceneLoad = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
+            
+                nextScene = SceneManager.GetSceneByName(sceneName);
+            
+                sceneLoad.completed += (AsyncOperation asyncOp2) =>
+                {
+                    OnSceneLoaded(switchSceneGuid, temporaryScene, objectStream);
+                };  
+            };
         }
 
         internal static void OnFirstSceneSwitchSync(uint sceneIndex, Guid switchSceneGuid)
