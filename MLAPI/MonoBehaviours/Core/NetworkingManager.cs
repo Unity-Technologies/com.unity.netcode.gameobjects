@@ -195,7 +195,7 @@ namespace MLAPI
         /// <param name="stream">The message stream containing the data</param>
         /// <param name="channel">The channel to send the data on</param>
         /// <param name="security">The security settings to apply to the message</param>
-        public void SendCustomMessage(List<uint> clientIds, BitStream stream, string channel = null, SecuritySendFlags security = SecuritySendFlags.None)
+        public void SendCustomMessage(List<ulong> clientIds, BitStream stream, string channel = null, SecuritySendFlags security = SecuritySendFlags.None)
         {
             if (!IsServer)
             {
