@@ -31,8 +31,8 @@ namespace MLAPI.Transports.UNET
         private WeakReference temporaryBufferReference;
 
         // Lookup / translation
-        private readonly Dictionary<string, int> channelNameToId = new Dictionary<string, int>();
-        private readonly Dictionary<int, string> channelIdToName = new Dictionary<int, string>();
+        private Dictionary<string, int> channelNameToId = new Dictionary<string, int>();
+        private Dictionary<int, string> channelIdToName = new Dictionary<int, string>();
         private int serverConnectionId;
         private int serverHostId;
 
@@ -202,6 +202,8 @@ namespace MLAPI.Transports.UNET
 
         public override void Shutdown()
         {
+            channelIdToName.Clear();
+            channelNameToId.Clear();
             NetworkTransport.Shutdown();
         }
 
