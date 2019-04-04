@@ -202,6 +202,8 @@ namespace MLAPI.Transports.UNET
 
         public override void Shutdown()
         {
+            channelIdToName.Clear();
+            channelNameToId.Clear();
             NetworkTransport.Shutdown();
         }
 
