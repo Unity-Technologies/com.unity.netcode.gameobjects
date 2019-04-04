@@ -72,25 +72,18 @@ namespace MLAPI.Components
             SceneSwitchProgress switchSceneProgress = new SceneSwitchProgress();
             sceneSwitchProgresses.Add(switchSceneProgress.guid, switchSceneProgress);
             currentSceneSwitchProgressGuid = switchSceneProgress.guid;
-
-            Scene temporaryScene = SceneManager.CreateScene("MLAPI_tmp_switch_" + currentSceneSwitchProgressGuid);
-
+            
             // Move ALL networked objects to the temp scene
-            MoveAllNetworkedObjectsToScene(temporaryScene);
+            MoveObjectsToDontDestroyOnLoad();
 
-            AsyncOperation unloadCurrentScene = SceneManager.UnloadSceneAsync(lastScene);
+            // Switch scene
+            AsyncOperation sceneLoad = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Single);
             
-            unloadCurrentScene.completed += (AsyncOperation asyncOp1) =>
-            {
-                // Switch scene
-                AsyncOperation sceneLoad = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
+            nextScene = SceneManager.GetSceneByName(sceneName);
             
-                nextScene = SceneManager.GetSceneByName(sceneName);
+            sceneLoad.completed += (AsyncOperation asyncOp2) => { OnSceneLoaded(switchSceneProgress.guid, null); };
             
-                sceneLoad.completed += (AsyncOperation asyncOp2) => { OnSceneLoaded(switchSceneProgress.guid, temporaryScene, null); };
-            
-                switchSceneProgress.SetSceneLoadOperation(sceneLoad);  
-            };
+            switchSceneProgress.SetSceneLoadOperation(sceneLoad);  
             
             return switchSceneProgress;
         }
@@ -109,26 +102,19 @@ namespace MLAPI.Components
             }
 
             lastScene = SceneManager.GetActiveScene();
-            
-            Scene temporaryScene = SceneManager.CreateScene("MLAPI_tmp_switch_" + switchSceneGuid);
-            
+                        
             // Move ALL networked objects to the temp scene
-            MoveAllNetworkedObjectsToScene(temporaryScene);
+            MoveObjectsToDontDestroyOnLoad();
 
             string sceneName = sceneIndexToString[sceneIndex];
             
-            AsyncOperation unloadCurrentScene = SceneManager.UnloadSceneAsync(lastScene);
+            AsyncOperation sceneLoad = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Single);
             
-            unloadCurrentScene.completed += (AsyncOperation asyncOp1) =>
+            nextScene = SceneManager.GetSceneByName(sceneName);
+            
+            sceneLoad.completed += (AsyncOperation asyncOp2) =>
             {
-                AsyncOperation sceneLoad = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
-            
-                nextScene = SceneManager.GetSceneByName(sceneName);
-            
-                sceneLoad.completed += (AsyncOperation asyncOp2) =>
-                {
-                    OnSceneLoaded(switchSceneGuid, temporaryScene, objectStream);
-                };  
+                OnSceneLoaded(switchSceneGuid, objectStream);
             };
         }
 
@@ -163,27 +149,22 @@ namespace MLAPI.Components
             isSwitching = false;
         }
 
-        private static void OnSceneLoaded(Guid switchSceneGuid, Scene temporaryScene, Stream objectStream)
+        private static void OnSceneLoaded(Guid switchSceneGuid, Stream objectStream)
         {
             CurrentActiveSceneIndex = sceneNameToIndex[nextScene.name];
             SceneManager.SetActiveScene(nextScene);
             
             // Move all objects to the new scene
-            MoveAllNetworkedObjectsToScene(nextScene);
+            MoveObjectsToScene(nextScene);
 
-            AsyncOperation temporarySceneUnload = SceneManager.UnloadSceneAsync(temporaryScene);
-            
-            temporarySceneUnload.completed += (AsyncOperation asyncOp) =>
+            if (NetworkingManager.Singleton.IsServer)
             {
-                if (NetworkingManager.Singleton.IsServer)
-                {
-                    OnSceneUnloadServer(switchSceneGuid);
-                }
-                else
-                {
-                    OnSceneUnloadClient(switchSceneGuid, objectStream);
-                }
-            };
+                OnSceneUnloadServer(switchSceneGuid);
+            }
+            else
+            {
+                OnSceneUnloadClient(switchSceneGuid, objectStream);
+            }
         }
 
         private static void OnSceneUnloadServer(Guid switchSceneGuid)
@@ -392,8 +373,25 @@ namespace MLAPI.Components
             }
         }
 
-        private static void MoveAllNetworkedObjectsToScene(Scene scene)
-        {
+        private static void MoveObjectsToDontDestroyOnLoad()
+        {            
+            // Move ALL networked objects to the temp scene
+            List<NetworkedObject> objectsToKeep = SpawnManager.SpawnedObjectsList;
+            
+            for (int i = 0; i < objectsToKeep.Count; i++)
+            {
+                //In case an object has been set as a child of another object it has to be unchilded in order to be moved from one scene to another.
+                if (objectsToKeep[i].gameObject.transform.parent != null)
+                {
+                    objectsToKeep[i].gameObject.transform.parent = null;
+                }
+                
+                MonoBehaviour.DontDestroyOnLoad(objectsToKeep[i].gameObject);
+            }
+        }
+        
+        private static void MoveObjectsToScene(Scene scene)
+        {            
             // Move ALL networked objects to the temp scene
             List<NetworkedObject> objectsToKeep = SpawnManager.SpawnedObjectsList;
             
