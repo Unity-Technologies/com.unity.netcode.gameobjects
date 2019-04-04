@@ -179,7 +179,7 @@ namespace MLAPI.Components
                 if (NetworkingManager.Singleton.ConnectedClients[netObject.OwnerClientId].OwnedObjects[i].NetworkId == networkId)
                     NetworkingManager.Singleton.ConnectedClients[netObject.OwnerClientId].OwnedObjects.RemoveAt(i);
             }
-			netObject.OwnerClientId = NetworkingManager.Singleton.ServerClientId;
+			netObject._ownerClientId = null;
 
             using (PooledBitStream stream = PooledBitStream.Get())
             {
