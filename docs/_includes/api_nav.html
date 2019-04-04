@@ -2,7 +2,7 @@
   {% for section in site.data.api %}
     <div class="panel panel-default">
       <div class="panel-heading">
-        <h4 class="panel-title" style="overflow: scroll">
+        <h4 class="panel-title" style="overflow: auto">
           <a role="button" data-toggle="collapse" data-parent="#accordion" href="#collapse-{{forloop.index}}" aria-expanded="false" aria-controls="collapse-{{forloop.index}}">
             {{ section.title }}
           </a>
