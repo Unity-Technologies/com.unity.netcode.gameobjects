@@ -255,7 +255,7 @@ namespace MLAPI.Components
         }
 
         // Ran on both server and client
-        internal static void SpawnNetworkedObjectLocally(NetworkedObject netObject, ulong networkId, bool sceneObject, bool playerObject, ulong ownerClientId, Stream dataStream, bool readPayload, int payloadLength, bool readNetworkedVar, bool destroyWithScene)
+        internal static void SpawnNetworkedObjectLocally(NetworkedObject netObject, ulong networkId, bool sceneObject, bool playerObject, ulong? ownerClientId, Stream dataStream, bool readPayload, int payloadLength, bool readNetworkedVar, bool destroyWithScene)
         {
             if (netObject == null)
             {
@@ -279,34 +279,37 @@ namespace MLAPI.Components
 
             netObject.DestroyWithScene = sceneObject || destroyWithScene;
 
-            netObject.OwnerClientId = ownerClientId;
+            netObject._ownerClientId = ownerClientId;
             netObject.IsPlayerObject = playerObject;
 
             SpawnedObjects.Add(netObject.NetworkId, netObject);
             SpawnedObjectsList.Add(netObject);
 
-            if (NetworkingManager.Singleton.IsServer)
+            if (ownerClientId != null)
             {
-                if (playerObject) 
+                if (NetworkingManager.Singleton.IsServer)
                 {
-                    NetworkingManager.Singleton.ConnectedClients[ownerClientId].PlayerObject = netObject;
-                }
-                else
-                {
-                    NetworkingManager.Singleton.ConnectedClients[ownerClientId].OwnedObjects.Add(netObject);
-                }
-
-                for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)
-                {
-                    if (netObject.CheckObjectVisibility == null || netObject.CheckObjectVisibility(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId))
+                    if (playerObject) 
                     {
-                        netObject.observers.Add(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId);
+                        NetworkingManager.Singleton.ConnectedClients[ownerClientId.Value].PlayerObject = netObject;
+                    }
+                    else
+                    {
+                        NetworkingManager.Singleton.ConnectedClients[ownerClientId.Value].OwnedObjects.Add(netObject);
+                    }
+                    
+                    for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)
+                    {
+                        if (netObject.CheckObjectVisibility == null || netObject.CheckObjectVisibility(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId))
+                        {
+                            netObject.observers.Add(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId);
+                        }
                     }
                 }
-            }
-            else if (playerObject && ownerClientId == NetworkingManager.Singleton.LocalClientId)
-            {
-                NetworkingManager.Singleton.ConnectedClients[ownerClientId].PlayerObject = netObject;
+                else if (playerObject && ownerClientId.Value == NetworkingManager.Singleton.LocalClientId)
+                {
+                    NetworkingManager.Singleton.ConnectedClients[ownerClientId.Value].PlayerObject = netObject;
+                }   
             }
             
             if (readPayload)
@@ -467,7 +470,7 @@ namespace MLAPI.Components
             {
                 if (networkedObjects[i].IsSceneObject == null)
                 {
-                    SpawnNetworkedObjectLocally(networkedObjects[i], GetNetworkObjectId(), true, false, NetworkingManager.Singleton.ServerClientId, null, false, 0, false, true);
+                    SpawnNetworkedObjectLocally(networkedObjects[i], GetNetworkObjectId(), true, false, null, null, false, 0, false, true);
                 }
             }
         }

@@ -54,7 +54,8 @@ namespace MLAPI
                     _ownerClientId = value;
             }
         }
-        private ulong? _ownerClientId = null;
+        
+        internal ulong? _ownerClientId = null;
         
         /// <summary>
         /// InstanceId is the id that is unique to the object and scene for a scene object when UsePrefabSync is false.
@@ -236,7 +237,7 @@ namespace MLAPI
             if (spawnPayload != null)
                 spawnPayload.Position = 0;
             
-            SpawnManager.SpawnNetworkedObjectLocally(this, SpawnManager.GetNetworkObjectId(), false, false, NetworkingManager.Singleton.ServerClientId, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false, destroyWithScene);
+            SpawnManager.SpawnNetworkedObjectLocally(this, SpawnManager.GetNetworkObjectId(), false, false, null, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false, destroyWithScene);
 
             for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)
             {

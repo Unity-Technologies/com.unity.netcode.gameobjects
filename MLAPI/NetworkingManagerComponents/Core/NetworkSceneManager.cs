@@ -198,7 +198,7 @@ namespace MLAPI.Components
                 {
                     if (networkedObjects[i].IsSceneObject == null)
                     {
-                        SpawnManager.SpawnNetworkedObjectLocally(networkedObjects[i], SpawnManager.GetNetworkObjectId(), true, false, NetworkingManager.Singleton.ServerClientId, null, false, 0, false, true);
+                        SpawnManager.SpawnNetworkedObjectLocally(networkedObjects[i], SpawnManager.GetNetworkObjectId(), true, false, null, null, false, 0, false, true);
                     
                         newSceneObjects.Add(networkedObjects[i]);
                     }
