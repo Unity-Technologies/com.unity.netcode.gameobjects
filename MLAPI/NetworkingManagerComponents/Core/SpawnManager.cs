@@ -297,20 +297,24 @@ namespace MLAPI.Components
                     {
                         NetworkingManager.Singleton.ConnectedClients[ownerClientId.Value].OwnedObjects.Add(netObject);
                     }
-                    
-                    for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)
-                    {
-                        if (netObject.CheckObjectVisibility == null || netObject.CheckObjectVisibility(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId))
-                        {
-                            netObject.observers.Add(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId);
-                        }
-                    }
                 }
                 else if (playerObject && ownerClientId.Value == NetworkingManager.Singleton.LocalClientId)
                 {
                     NetworkingManager.Singleton.ConnectedClients[ownerClientId.Value].PlayerObject = netObject;
                 }   
             }
+
+            if (NetworkingManager.Singleton.IsServer)
+            {
+                for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)
+                {
+                    if (netObject.CheckObjectVisibility == null || netObject.CheckObjectVisibility(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId))
+                    {
+                        netObject.observers.Add(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId);
+                    }
+                }
+            }
+            
             
             if (readPayload)
             {
