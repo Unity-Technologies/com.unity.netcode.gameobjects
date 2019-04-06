@@ -9,10 +9,15 @@ invoke the spawn method on the NetworkedObject component that should be attached
 Here is an example on how to spawn a object
 ```csharp
 GameObject go = Instantiate(myPrefab, Vector3.zero, Quaternion.identity);
+//go.RunSomeMethod();       //make changes to the instance before sending it to clients
 go.GetComponent<NetworkedObject>().Spawn();
 ```
 
-The .Spawn() method takes 2 parameters, both with default values, so they are optional.
+## .Spawn()
+The .Spawn() Method replicates the gameObject, which is attached to the NetworkedObject you called ```Spawn();``` on, in its current configuration to all connected Clients. Any changes made to the instantiated gameObject *before* calling ```Spawn();```
+will get send directly with the gameObejct itself, so all values are set, when the Instance arrives at clients. If you change any networkedVars of the gameobject *after* calling ```Spawn();``` the Values will be send after the gameObject, and thus might not be instantly available.
+
+## .Spawn(Stream spawnPayload = null, bool destroyWithScene = false)
 ```csharp
 public void Spawn(Stream spawnPayload = null, bool destroyWithScene = false);
 ```
