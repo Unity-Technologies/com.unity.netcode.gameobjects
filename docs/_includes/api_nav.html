@@ -2,7 +2,7 @@
   {% for section in site.data.api %}
     <div class="panel panel-default">
       <div class="panel-heading">
-        <h4 class="panel-title">
+        <h4 class="panel-title" style="overflow: auto">
           <a role="button" data-toggle="collapse" data-parent="#accordion" href="#collapse-{{forloop.index}}" aria-expanded="false" aria-controls="collapse-{{forloop.index}}">
             {{ section.title }}
           </a>
@@ -13,7 +13,7 @@
           {% for item in section.api %}
             {% assign item_url = item | prepend:"/api/" | append:"/" %}
             {% assign p = site.api | where:"url", item_url | first %}
-            <a class="list-group-item {% if item_url == page.url %}active{% endif %}" href="{{ p.url  | prepend: site.baseurl }}">{{ p.title }}</a>
+            <a class="list-group-item {% if item_url == page.url %}active{% endif %}" data-toggle="tooltip" data-placement="top" title="{{ p.title }}" href="{{ p.url  | prepend: site.baseurl }}" style="overflow: auto" >{{ p.title }}</a>
           {% endfor %}
         </div>
       </div>
