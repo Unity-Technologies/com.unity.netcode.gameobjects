@@ -21,7 +21,7 @@ The first parameter is a System.IO.Stream and can be retrieved in the NetworkSta
 The second parameter speaks for itself. If set to true, the object will be destroyed on scene switching. This can only be set inside the spawn call.
 
 ## Spawn with Ownership
-Any changes to the Ownership can only be done after calling ```.Spawn()``` and are not instantly available. To spawn an object directly with a certain ownership use ```SpawnWithOwnership(ulong clientID)``` instead of the default spawn method. 
+Any changes to the Ownership can only be done after calling ```.Spawn()``` and are not instantly available. To spawn an object directly with a certain ownership use ```SpawnWithOwnership(ulong clientId)``` instead of the default spawn method. 
 
 ## Scene Objects
 Any objects already on the server with NetworkedObject components (static scene objects) will get automatically replicated. 
