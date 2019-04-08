@@ -1,14 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
-using JetBrains.Annotations;
-using MLAPI.Configuration;
 using MLAPI.Data;
+using MLAPI.Exceptions;
 using MLAPI.Internal;
 using MLAPI.Logging;
-using MLAPI.NetworkedVar;
 using MLAPI.Serialization;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace MLAPI.Components
 {
@@ -165,27 +163,31 @@ namespace MLAPI.Components
             return NetworkingManager.Singleton.ConnectedClients[clientId].PlayerObject;
         }
 
-        internal static void RemoveOwnership(ulong networkId)
+        internal static void RemoveOwnership(NetworkedObject netObject)
         {
             if (!NetworkingManager.Singleton.IsServer)
             {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("You can only remove ownership from Server");
-                return;
+                throw new NotServerException("Only the server can change ownership");
+            }
+
+            if (!netObject.IsSpawned)
+            {
+                throw new SpawnStateException("Object is not spawned");
             }
             
-            NetworkedObject netObject = SpawnManager.SpawnedObjects[networkId];
             for (int i = NetworkingManager.Singleton.ConnectedClients[netObject.OwnerClientId].OwnedObjects.Count - 1; i > -1; i--)
             {
-                if (NetworkingManager.Singleton.ConnectedClients[netObject.OwnerClientId].OwnedObjects[i].NetworkId == networkId)
+                if (NetworkingManager.Singleton.ConnectedClients[netObject.OwnerClientId].OwnedObjects[i] == netObject)
                     NetworkingManager.Singleton.ConnectedClients[netObject.OwnerClientId].OwnedObjects.RemoveAt(i);
             }
+            
 			netObject._ownerClientId = null;
 
             using (PooledBitStream stream = PooledBitStream.Get())
             {
                 using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                 {
-                    writer.WriteUInt64Packed(networkId);
+                    writer.WriteUInt64Packed(netObject.NetworkId);
                     writer.WriteUInt64Packed(netObject.OwnerClientId);
 
                     InternalMessageHandler.Send(MLAPIConstants.MLAPI_CHANGE_OWNER, "MLAPI_INTERNAL", stream, SecuritySendFlags.None, netObject);
@@ -193,19 +195,24 @@ namespace MLAPI.Components
             }
         }
 
-        internal static void ChangeOwnership(ulong networkId, ulong clientId)
+        internal static void ChangeOwnership(NetworkedObject netObject, ulong clientId)
         {
             if (!NetworkingManager.Singleton.IsServer)
             {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("You can only change ownership from Server");
-                return;
+                throw new NotServerException("Only the server can change ownership");
             }
-            NetworkedObject netObject = SpawnManager.SpawnedObjects[networkId];
+
+            if (!netObject.IsSpawned)
+            {
+                throw new SpawnStateException("Object is not spawned");
+            }
+            
             for (int i = NetworkingManager.Singleton.ConnectedClients[netObject.OwnerClientId].OwnedObjects.Count - 1; i > -1; i--)
             {
-                if (NetworkingManager.Singleton.ConnectedClients[netObject.OwnerClientId].OwnedObjects[i].NetworkId == networkId)
+                if (NetworkingManager.Singleton.ConnectedClients[netObject.OwnerClientId].OwnedObjects[i] == netObject)
                     NetworkingManager.Singleton.ConnectedClients[netObject.OwnerClientId].OwnedObjects.RemoveAt(i);
             }
+            
             NetworkingManager.Singleton.ConnectedClients[clientId].OwnedObjects.Add(netObject);
             netObject.OwnerClientId = clientId;
 
@@ -213,7 +220,7 @@ namespace MLAPI.Components
             {
                 using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                 {
-                    writer.WriteUInt64Packed(networkId);
+                    writer.WriteUInt64Packed(netObject.NetworkId);
                     writer.WriteUInt64Packed(clientId);
 
                     InternalMessageHandler.Send(MLAPIConstants.MLAPI_CHANGE_OWNER, "MLAPI_INTERNAL", stream, SecuritySendFlags.None, netObject);
@@ -259,14 +266,12 @@ namespace MLAPI.Components
         {
             if (netObject == null)
             {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Cannot spawn null object");
-                return;
+                throw new ArgumentNullException(nameof(netObject), "Cannot spawn null object");
             }
 
             if (netObject.IsSpawned)
             {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Cannot spawn already spawned object");
-                return;
+                throw new SpawnStateException("Object is already spawned");
             }
             
             
@@ -393,13 +398,12 @@ namespace MLAPI.Components
         {
             if (!netObject.IsSpawned)
             {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot unspawn objects that are not spawned");
-                return;
+                throw new SpawnStateException("Object is not spawned");
             }
-            else if (!NetworkingManager.Singleton.IsServer)
+            
+            if (!NetworkingManager.Singleton.IsServer)
             {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Only server can unspawn objects");
-                return;
+                throw new NotServerException("Only server unspawn objects");
             }
 
             OnDestroyObject(netObject.NetworkId, false);

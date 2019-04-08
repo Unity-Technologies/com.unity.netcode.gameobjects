@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using MLAPI.Exceptions;
 using MLAPI.Logging;
 
 namespace MLAPI.Components
@@ -21,11 +22,11 @@ namespace MLAPI.Components
         /// <param name="action">The action to invoke when time is turned back</param>
         public static void Simulate(float secondsAgo, Action action)
         {
-            if(!NetworkingManager.Singleton.IsServer)
+            if (!NetworkingManager.Singleton.IsServer)
             {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Lag compensation simulations are only to be ran on the server");
-                return;
+                throw new NotServerException("Only the server can perform lag compensation");
             }
+            
             for (int i = 0; i < simulationObjects.Count; i++)
             {
                 simulationObjects[i].ReverseTransform(secondsAgo);
@@ -48,9 +49,9 @@ namespace MLAPI.Components
         {
             if (!NetworkingManager.Singleton.IsServer)
             {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Lag compensation simulations are only to be ran on the server");
-                return;
+                throw new NotServerException("Only the server can perform lag compensation");
             }
+            
             float millisecondsDelay = NetworkingManager.Singleton.NetworkConfig.NetworkTransport.GetCurrentRtt(clientId) / 2f;
             Simulate(millisecondsDelay * 1000f, action);
         }

@@ -2,6 +2,7 @@
 using System;
 using System.IO;
 using MLAPI.Data;
+using MLAPI.Exceptions;
 using MLAPI.Internal;
 using MLAPI.Logging;
 using MLAPI.Serialization;
@@ -53,7 +54,11 @@ namespace MLAPI.Components
         /// <param name="sceneName">The name of the scene to switch to</param>
         public static SceneSwitchProgress SwitchScene(string sceneName)
         {
-            if (isSwitching)
+            if (!NetworkingManager.Singleton.IsServer)
+            {
+                throw new NotServerException("Only server can start a scene switch");
+            }
+            else if (isSwitching)
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Scene switch already in progress");
                 return null;

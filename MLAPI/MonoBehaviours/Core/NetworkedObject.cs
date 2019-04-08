@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using MLAPI.Components;
 using MLAPI.Data;
+using MLAPI.Exceptions;
 using MLAPI.Internal;
 using MLAPI.Logging;
 using MLAPI.Serialization;
@@ -157,6 +158,11 @@ namespace MLAPI
         /// <returns>Observers enumerator</returns>
         public HashSet<ulong>.Enumerator GetObservers()
         {
+            if (!IsSpawned)
+            {
+                throw new SpawnStateException("Object is not spawned");
+            }
+            
             return observers.GetEnumerator();
         }
 
@@ -167,6 +173,11 @@ namespace MLAPI
         /// <returns>True if the client knows about the object</returns>
         public bool IsNetworkVisibleTo(ulong clientId)
         {
+            if (!IsSpawned)
+            {
+                throw new SpawnStateException("Object is not spawned");
+            }
+            
             return observers.Contains(clientId);
         }
 
@@ -177,10 +188,14 @@ namespace MLAPI
         /// <param name="payload">An optional payload to send as part of the spawn</param>
         public void NetworkShow(ulong clientId, Stream payload = null)
         {
+            if (!IsSpawned)
+            {
+                throw new SpawnStateException("Object is not spawned");
+            }
+            
             if (!NetworkingManager.Singleton.IsServer)
             {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Can only call NetworkShow on the server");
-                return;
+                throw new NotServerException("Only server can change visibility");
             }
             
             if (!observers.Contains(clientId))
@@ -198,10 +213,14 @@ namespace MLAPI
         /// <param name="clientId">The client to hide the object for</param>
         public void NetworkHide(ulong clientId)
         {
+            if (!IsSpawned)
+            {
+                throw new SpawnStateException("Object is not spawned");
+            }
+            
             if (!NetworkingManager.Singleton.IsServer)
             {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Can only call NetworkHide on the server");
-                return;
+                throw new NotServerException("Only server can change visibility");
             }
             
             if (observers.Contains(clientId) && clientId != NetworkingManager.Singleton.ServerClientId)
@@ -252,7 +271,7 @@ namespace MLAPI
         /// Unspawns this GameObject and destroys it for other clients. This should be used if the object should be kept on the server
         /// </summary>
         public void UnSpawn()
-        {
+        {            
             SpawnManager.UnSpawnObject(this);
         }
 
@@ -305,7 +324,7 @@ namespace MLAPI
         /// </summary>
         public void RemoveOwnership()
         {
-            SpawnManager.RemoveOwnership(NetworkId);
+            SpawnManager.RemoveOwnership(this);
         }
         /// <summary>
         /// Changes the owner of the object. Can only be called from server
@@ -313,7 +332,7 @@ namespace MLAPI
         /// <param name="newOwnerClientId">The new owner clientId</param>
         public void ChangeOwnership(ulong newOwnerClientId)
         {
-            SpawnManager.ChangeOwnership(NetworkId, newOwnerClientId);
+            SpawnManager.ChangeOwnership(this, newOwnerClientId);
         }
 
         internal void InvokeBehaviourOnLostOwnership()
