@@ -927,7 +927,7 @@ namespace MLAPI
             if (!IsClient && IsRunning)
             {
                 //We are ONLY a server.
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Only server and host can invoke ServerRPC");
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Only client and host can invoke ServerRPC");
                 return;
             }
 
@@ -959,7 +959,7 @@ namespace MLAPI
             if (!IsClient && IsRunning)
             {
                 //We are ONLY a server.
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Only server and host can invoke ServerRPC");
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Only client and host can invoke ServerRPC");
                 return null;
             }
 
