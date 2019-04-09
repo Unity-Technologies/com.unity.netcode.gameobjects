@@ -8,6 +8,7 @@ using MLAPI.Internal;
 using MLAPI.Logging;
 using MLAPI.Serialization;
 using UnityEngine;
+using BitStream = MLAPI.Serialization.BitStream;
 
 namespace MLAPI
 {
@@ -401,25 +402,19 @@ namespace MLAPI
         
         internal void WriteNetworkedVarData(Stream stream, ulong clientId)
         {
-            using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+            for (int i = 0; i < childNetworkedBehaviours.Count; i++)
             {
-                for (int i = 0; i < childNetworkedBehaviours.Count; i++)
-                {
-                    childNetworkedBehaviours[i].NetworkedVarInit();
-                    NetworkedBehaviour.WriteNetworkedVarData(childNetworkedBehaviours[i].networkedVarFields, writer, stream, clientId);
-                }
+                childNetworkedBehaviours[i].NetworkedVarInit();
+                NetworkedBehaviour.WriteNetworkedVarData(childNetworkedBehaviours[i].networkedVarFields, stream, clientId);
             }
         }
 
         internal void SetNetworkedVarData(Stream stream)
         {
-            using (PooledBitReader reader = PooledBitReader.Get(stream))
+            for (int i = 0; i < childNetworkedBehaviours.Count; i++)
             {
-                for (int i = 0; i < childNetworkedBehaviours.Count; i++)
-                {
-                    childNetworkedBehaviours[i].NetworkedVarInit();
-                    NetworkedBehaviour.SetNetworkedVarData(childNetworkedBehaviours[i].networkedVarFields, reader, stream);
-                }
+                childNetworkedBehaviours[i].NetworkedVarInit();
+                NetworkedBehaviour.SetNetworkedVarData(childNetworkedBehaviours[i].networkedVarFields, stream);
             }
         }
 

@@ -12,6 +12,7 @@ using MLAPI.Internal;
 using MLAPI.Logging;
 using MLAPI.NetworkedVar;
 using MLAPI.Serialization;
+using BitStream = MLAPI.Serialization.BitStream;
 
 namespace MLAPI
 {
@@ -363,17 +364,53 @@ namespace MLAPI
                                     if (!channelMappedVarIndexes[j].Contains(k))
                                     {
                                         //This var does not belong to the currently iterating channel group.
-                                        writer.WriteBool(false);
+                                        if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
+                                        {
+                                            writer.WriteUInt16Packed(0);
+                                        }
+                                        else
+                                        {
+                                            writer.WriteBool(false);
+                                        }
                                         continue;
                                     }
 
                                     bool isDirty = networkedVarFields[k].IsDirty(); //cache this here. You never know what operations users will do in the dirty methods
-                                    writer.WriteBool(isDirty);
+                                    bool shouldWrite = isDirty && (!IsServer || networkedVarFields[k].CanClientRead(clientId));
+                                    
+                                    
+                                    if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
+                                    {
+                                        if (!shouldWrite)
+                                        {
+                                            writer.WriteUInt16Packed(0);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        writer.WriteBool(shouldWrite);
+                                    }
 
-                                    if (isDirty && (!IsServer || networkedVarFields[k].CanClientRead(clientId)))
+                                    if (shouldWrite)
                                     {
                                         writtenAny = true;
-                                        networkedVarFields[k].WriteDelta(stream);
+
+                                        if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
+                                        {
+                                            using (PooledBitStream varStream = PooledBitStream.Get())
+                                            {
+                                                networkedVarFields[k].WriteDelta(varStream);
+                                                varStream.PadStream();
+                                                
+                                                writer.WriteUInt16Packed((ushort)varStream.Length);
+                                                stream.CopyFrom(varStream);
+                                            }
+                                        }
+                                        else
+                                        {
+                                            networkedVarFields[k].WriteDelta(stream);
+                                        }
+
                                         if (!networkedVarIndexesToResetSet.Contains(k))
                                         {
                                             networkedVarIndexesToResetSet.Add(k);
@@ -419,24 +456,63 @@ namespace MLAPI
             {
                 for (int i = 0; i < networkedVarList.Count; i++)
                 {
-                    if (!reader.ReadBool())
-                        continue;
+                    ushort varSize = 0;
+                    
+                    if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
+                    {
+                        varSize = reader.ReadUInt16Packed();
+                        
+                        if (varSize == 0)
+                            continue;
+                    }
+                    else
+                    {
+                        if (!reader.ReadBool())
+                            continue;   
+                    }
 
                     if (NetworkingManager.Singleton.IsServer && !networkedVarList[i].CanClientWrite(clientId))
                     {
-                        //This client wrote somewhere they are not allowed. This is critical
-                        //We can't just skip this field. Because we don't actually know how to dummy read
-                        //That is, we don't know how many bytes to skip. Because the interface doesn't have a 
-                        //Read that gives us the value. Only a Read that applies the value straight away
-                        //A dummy read COULD be added to the interface for this situation, but it's just being too nice.
-                        //This is after all a developer fault. A critical error should be fine.
-                        // - TwoTen
+                        if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
+                        {
+                            if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Client wrote to NetworkedVar without permission. " + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
+                            stream.Position += varSize;
+                            continue;
+                        }
+                        else
+                        {
+                            //This client wrote somewhere they are not allowed. This is critical
+                            //We can't just skip this field. Because we don't actually know how to dummy read
+                            //That is, we don't know how many bytes to skip. Because the interface doesn't have a 
+                            //Read that gives us the value. Only a Read that applies the value straight away
+                            //A dummy read COULD be added to the interface for this situation, but it's just being too nice.
+                            //This is after all a developer fault. A critical error should be fine.
+                            // - TwoTen
 
-                        if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Client wrote to NetworkedVar without permission. No more variables can be read. This is critical. " + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
-                        return;
+                            if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Client wrote to NetworkedVar without permission. No more variables can be read. This is critical. " + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
+                            return;   
+                        }
                     }
 
+                    long readStartPos = stream.Position;
+                    
                     networkedVarList[i].ReadDelta(stream, NetworkingManager.Singleton.IsServer);
+
+                    if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
+                    {
+                        (stream as BitStream).SkipPadBits();
+                        
+                        if (stream.Position > (readStartPos + varSize))
+                        {
+                            if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Var delta read too far. " + (stream.Position - (readStartPos + varSize)) + " bytes." + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
+                            stream.Position = readStartPos + varSize;
+                        }
+                        else if (stream.Position < (readStartPos + varSize))
+                        {
+                            if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Var delta read too little. " + ((readStartPos + varSize) - stream.Position) + " bytes." + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
+                            stream.Position = readStartPos + varSize;
+                        }
+                    }
                 }
             }
         }
@@ -447,48 +523,161 @@ namespace MLAPI
             {
                 for (int i = 0; i < networkedVarList.Count; i++)
                 {
-                    if (!reader.ReadBool())
-                        continue;
-
+                    ushort varSize = 0;
+                    
+                    if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
+                    {
+                        varSize = reader.ReadUInt16Packed();
+                        
+                        if (varSize == 0)
+                            continue;
+                    }
+                    else
+                    {
+                        if (!reader.ReadBool())
+                            continue;   
+                    }
+                    
                     if (NetworkingManager.Singleton.IsServer && !networkedVarList[i].CanClientWrite(clientId))
                     {
-                        //This client wrote somewhere they are not allowed. This is critical
-                        //We can't just skip this field. Because we don't actually know how to dummy read
-                        //That is, we don't know how many bytes to skip. Because the interface doesn't have a 
-                        //Read that gives us the value. Only a Read that applies the value straight away
-                        //A dummy read COULD be added to the interface for this situation, but it's just being too nice.
-                        //This is after all a developer fault. A critical error should be fine.
-                        // - TwoTen
-                        if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Client wrote to NetworkedVar without permission. No more variables can be read. This is critical. " + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
-                        return;
+                        if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
+                        {
+                            if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Client wrote to NetworkedVar without permission. " + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
+                            stream.Position += varSize;
+                            continue;
+                        }
+                        else
+                        {
+                            //This client wrote somewhere they are not allowed. This is critical
+                            //We can't just skip this field. Because we don't actually know how to dummy read
+                            //That is, we don't know how many bytes to skip. Because the interface doesn't have a 
+                            //Read that gives us the value. Only a Read that applies the value straight away
+                            //A dummy read COULD be added to the interface for this situation, but it's just being too nice.
+                            //This is after all a developer fault. A critical error should be fine.
+                            // - TwoTen
+                            if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Client wrote to NetworkedVar without permission. No more variables can be read. This is critical. " + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
+                            return;   
+                        }
                     }
 
+                    long readStartPos = stream.Position;
+                    
                     networkedVarList[i].ReadField(stream);
+                    
+                    if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
+                    {
+                        if (stream is BitStream bitStream)
+                        {
+                            bitStream.SkipPadBits();
+                        }
+                        
+                        if (stream.Position > (readStartPos + varSize))
+                        {
+                            if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Var update read too far. " + (stream.Position - (readStartPos + varSize)) + " bytes." + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
+                            stream.Position = readStartPos + varSize;
+                        }
+                        else if (stream.Position < (readStartPos + varSize))
+                        {
+                            if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Var update read too little. " + ((readStartPos + varSize) - stream.Position) + " bytes." + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
+                            stream.Position = readStartPos + varSize;
+                        }
+                    }
                 }
             }
         }
 
-        internal static void WriteNetworkedVarData(List<INetworkedVar> networkedVarList, PooledBitWriter writer, Stream stream, ulong clientId)
+        internal static void WriteNetworkedVarData(List<INetworkedVar> networkedVarList, Stream stream, ulong clientId)
         {
             if (networkedVarList.Count == 0)
                 return;
 
-            for (int j = 0; j < networkedVarList.Count; j++)
+            using (PooledBitWriter writer = PooledBitWriter.Get(stream))
             {
-                bool canClientRead = networkedVarList[j].CanClientRead(clientId);
-                writer.WriteBool(canClientRead);
-                if (canClientRead) networkedVarList[j].WriteField(stream);
+                for (int j = 0; j < networkedVarList.Count; j++)
+                {
+                    bool canClientRead = networkedVarList[j].CanClientRead(clientId);
+
+                    if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
+                    {
+                        if (!canClientRead)
+                        {
+                            writer.WriteUInt16Packed(0);
+                        }
+                    }
+                    else
+                    {
+                        writer.WriteBool(canClientRead);
+                    }
+
+                    if (canClientRead)
+                    {
+                        if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
+                        {
+                            using (PooledBitStream varStream = PooledBitStream.Get())
+                            {
+                                networkedVarList[j].WriteField(varStream);
+                                varStream.PadStream();
+                                                
+                                writer.WriteUInt16Packed((ushort)varStream.Length);
+                                varStream.CopyTo(stream);
+                            }
+                        }
+                        else
+                        {
+                            networkedVarList[j].WriteField(stream);
+                        }
+                    }
+                }   
             }
         }
 
-        internal static void SetNetworkedVarData(List<INetworkedVar> networkedVarList, PooledBitReader reader, Stream stream)
+        internal static void SetNetworkedVarData(List<INetworkedVar> networkedVarList, Stream stream)
         {
             if (networkedVarList.Count == 0)
                 return;
 
-            for (int j = 0; j < networkedVarList.Count; j++)
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
-                if (reader.ReadBool()) networkedVarList[j].ReadField(stream);
+                for (int j = 0; j < networkedVarList.Count; j++)
+                {
+                    ushort varSize = 0;
+                    
+                    if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
+                    {
+                        varSize = reader.ReadUInt16Packed();
+                        
+                        if (varSize == 0)
+                            continue;
+                    }
+                    else
+                    {
+                        if (!reader.ReadBool())
+                            continue;   
+                    }
+
+                    long readStartPos = stream.Position;
+                    
+                    networkedVarList[j].ReadField(stream);
+                    
+                    if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
+                    {
+                        if (stream is BitStream bitStream)
+                        {
+                            bitStream.SkipPadBits();
+                        }
+                        
+                        if (stream.Position > (readStartPos + varSize))
+                        {
+                            if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Var data read too far. " + (stream.Position - (readStartPos + varSize)) + " bytes.");
+                            stream.Position = readStartPos + varSize;
+                        }
+                        else if (stream.Position < (readStartPos + varSize))
+                        {
+                            if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Var data read too little. " + ((readStartPos + varSize) - stream.Position) + " bytes.");
+                            stream.Position = readStartPos + varSize;
+                        }
+                    }
+                }   
             }
         }
 
