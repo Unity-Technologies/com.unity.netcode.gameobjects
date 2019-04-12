@@ -364,8 +364,6 @@ namespace MLAPI.Components
                             writer.WriteUInt64Packed(netObject.PrefabHash);
                         }
                     }
-                    
-                    writer.WriteBool(netObject.DestroyWithScene);
 
                     writer.WriteSinglePacked(netObject.transform.position.x);
                     writer.WriteSinglePacked(netObject.transform.position.y);

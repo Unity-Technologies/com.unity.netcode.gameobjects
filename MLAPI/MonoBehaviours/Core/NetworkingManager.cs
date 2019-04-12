@@ -1050,8 +1050,6 @@ namespace MLAPI
                                 }
                             }
 
-                            writer.WriteBool(_observedObjects[i].DestroyWithScene);
-
                             writer.WriteSinglePacked(_observedObjects[i].transform.position.x);
                             writer.WriteSinglePacked(_observedObjects[i].transform.position.y);
                             writer.WriteSinglePacked(_observedObjects[i].transform.position.z);
