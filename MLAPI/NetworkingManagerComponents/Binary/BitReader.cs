@@ -99,6 +99,8 @@ namespace MLAPI.Serialization
                 }
             }
             
+            if (ExternalSerializationManager.TryDeserialize(source, type, out object obj))
+                return obj;
             if (type == typeof(byte))
                 return ReadByteDirect();
             if (type == typeof(sbyte))
