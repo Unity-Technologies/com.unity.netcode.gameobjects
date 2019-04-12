@@ -31,40 +31,54 @@ namespace MLAPI.Internal
 
                     foreach (MethodInfo method in methods)
                     {
-                        if (method.IsDefined(typeof(SerializerAttribute), true))
+                        try
                         {
-                            ParameterInfo[] parameters = method.GetParameters();
-                            
-                            if (!method.IsStatic)
+                            if (method.IsDefined(typeof(SerializerAttribute), true))
                             {
-                                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogError("The Serializer method " + type.FullName + "." + method.Name + " has to be static.");
-                            }
-                            else if (method.ReturnType != typeof(void) || parameters.Length != 2 || parameters[0].ParameterType != typeof(Stream))
-                            {
-                                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogError("The Serializer method " + type.FullName + "." + method.Name + " has the wrong signature.");
-                            }
-                            else
-                            {
-                                cachedExternalSerializers.Add(parameters[1].ParameterType, method);
+                                ParameterInfo[] parameters = method.GetParameters();
+
+                                if (!method.IsStatic)
+                                {
+                                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogError("The Serializer method " + type.FullName + "." + method.Name + " has to be static.");
+                                }
+                                else if (method.ReturnType != typeof(void) || parameters.Length != 2 || parameters[0].ParameterType != typeof(Stream))
+                                {
+                                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogError("The Serializer method " + type.FullName + "." + method.Name + " has the wrong signature.");
+                                }
+                                else
+                                {
+                                    cachedExternalSerializers.Add(parameters[1].ParameterType, method);
+                                }
                             }
                         }
-                        
-                        if (method.IsDefined(typeof(DeserializerAttribute), true))
+                        catch (BadImageFormatException)
                         {
-                            ParameterInfo[] parameters = method.GetParameters();
+                            // Mono throws this
+                        }
 
-                            if (!method.IsStatic)
+                        try
+                        {
+                            if (method.IsDefined(typeof(DeserializerAttribute), true))
                             {
-                                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogError("The Deserializer method " + type.FullName + "." + method.Name + " has to be static.");
+                                ParameterInfo[] parameters = method.GetParameters();
+
+                                if (!method.IsStatic)
+                                {
+                                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogError("The Deserializer method " + type.FullName + "." + method.Name + " has to be static.");
+                                }
+                                else if (method.ReturnType == typeof(void) || parameters.Length != 1 || parameters[0].ParameterType != typeof(Stream))
+                                {
+                                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogError("The Deserializer method " + type.FullName + "." + method.Name + " has the wrong signature.");
+                                }
+                                else
+                                {
+                                    cachedExternalDeserializers.Add(method.ReturnType, method);
+                                }
                             }
-                            else if (method.ReturnType == typeof(void) || parameters.Length != 1 || parameters[0].ParameterType != typeof(Stream))
-                            {
-                                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogError("The Deserializer method " + type.FullName + "." + method.Name + " has the wrong signature.");
-                            }
-                            else
-                            {
-                                cachedExternalDeserializers.Add(method.ReturnType, method);
-                            }
+                        }
+                        catch (BadImageFormatException)
+                        {
+                            // Mono throws this
                         }
                     }
                 }
