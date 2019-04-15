@@ -118,8 +118,7 @@ namespace MLAPI
         {
             if (_networkedObject == null)
                 _networkedObject = GetComponentInParent<NetworkedObject>();
-
-            NetworkedObject.NetworkedBehaviours.Add(this);
+            
             OnEnabled();
         }
 
@@ -130,7 +129,6 @@ namespace MLAPI
 
         private void OnDestroy()
         {
-            NetworkedObject.NetworkedBehaviours.Remove(this); // O(n)
             CachedClientRpcs.Remove(this);
             CachedServerRpcs.Remove(this);
             OnDestroyed();
