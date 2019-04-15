@@ -293,6 +293,27 @@ namespace MLAPI.Serialization
         }
 
         /// <summary>
+        /// Write byte value to the internal stream buffer.
+        /// </summary>
+        /// <param name="value">The byte value to write.</param>
+        public override void WriteByte(byte value)
+        {
+            // Check bit alignment. If misaligned, each byte written has to be misaligned
+            if (BitAligned) 
+            {
+                if (Position + 1 >= target.Length) Grow(1);
+                target[Position] = value;
+                Position += 1;
+            } 
+            else
+            {
+                if (Position + 1 + 1 >= target.Length) Grow(1);
+                _WriteMisaligned(value);
+            }
+            if (BitPosition > BitLength) BitLength = BitPosition;
+        }
+
+        /// <summary>
         /// Write a misaligned byte. NOTE: Using this when the bit position isn't byte-misaligned may cause an IndexOutOfBoundsException! This does not update the current Length of the stream.
         /// </summary>
         /// <param name="value">Value to write</param>
