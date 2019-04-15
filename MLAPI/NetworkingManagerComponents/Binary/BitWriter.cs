@@ -55,8 +55,12 @@ namespace MLAPI.Serialization
                     return;
                 }
             }
-            
-            if (value is byte)
+
+            if (SerializationManager.TrySerialize(sink, value))
+            {
+                return;
+            }
+            else if (value is byte)
             {
                 WriteByte((byte)value);
                 return;
