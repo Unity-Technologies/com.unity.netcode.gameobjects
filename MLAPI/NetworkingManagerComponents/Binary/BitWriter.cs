@@ -56,7 +56,7 @@ namespace MLAPI.Serialization
                 }
             }
 
-            if (ExternalSerializationManager.TrySerialize(sink, value))
+            if (SerializationManager.TrySerialize(sink, value))
             {
                 return;
             }
