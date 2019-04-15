@@ -38,15 +38,29 @@ namespace MLAPI.Serialization
         /// Registers a custom serialization and deserialization pair for a object.
         /// This is useful for writing objects that are behind the third party wall. Such as .NET types.
         /// </summary>
-        /// <param name="onSerialize">The delegate to invoke to serialize the type</param>
-        /// <param name="onDeserialize">The delegate to invoke to deserialize the type</param>
-        /// <typeparam name="T">The type to register</typeparam>
+        /// <param name="onSerialize">The delegate to invoke to serialize the type.</param>
+        /// <param name="onDeserialize">The delegate to invoke to deserialize the type.</param>
+        /// <typeparam name="T">The type to register.</typeparam>
         public static void RegisterSerializationHandlers<T>(CustomSerializationDelegate<T> onSerialize, CustomDeserializationDelegate<T> onDeserialize)
         {
             cachedExternalSerializers[typeof(T)] = delegate(Stream stream, object instance) { onSerialize(stream, (T)instance); };
             cachedExternalDeserializers[typeof(T)] = delegate(Stream stream) { return onDeserialize(stream); };
         }
 
+        /// <summary>
+        /// Removes a serialization handler that was registered previously for a specific type.
+        /// This will remove both the serialization and deserialization handler.
+        /// </summary>
+        /// <typeparam name="T">The type for the serialization handlers to remove.</typeparam>
+        /// <returns>Whether or not either the serialization or deserialization handlers for the type was removed.</returns>
+        public static bool RemoveSerializationHandlers<T>()
+        {
+            bool serializationRemoval = cachedExternalSerializers.Remove(typeof(T));
+            bool deserializationRemoval = cachedExternalDeserializers.Remove(typeof(T));
+
+            return serializationRemoval || deserializationRemoval;
+        }
+        
         internal static bool TrySerialize(Stream stream, object obj)
         {
             if (cachedExternalSerializers.ContainsKey(obj.GetType()))
