@@ -103,7 +103,7 @@ namespace MLAPI.Configuration
         /// Whether or not to ensure that NetworkedVars can be read even if a client accidentally writes where its not allowed to. This costs some CPU and bandwdith.
         /// </summary>
         [Tooltip("Ensures that NetworkedVars can be read even if a client accidental writes where its not allowed to. This will cost some CPU time and bandwidth")]
-        public bool EnsureNetworkedVarLengthSafety = true;
+        public bool EnsureNetworkedVarLengthSafety = false;
         /// <summary>
         /// Wheter or not the MLAPI should check for differences in the prefabs at connection. 
         /// If you dynamically add prefabs at runtime, turn this OFF
