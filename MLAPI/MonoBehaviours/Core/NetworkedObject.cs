@@ -18,8 +18,6 @@ namespace MLAPI
     [AddComponentMenu("MLAPI/NetworkedObject", -99)]
     public sealed class NetworkedObject : MonoBehaviour
     {
-        internal static readonly List<NetworkedBehaviour> NetworkedBehaviours = new List<NetworkedBehaviour>();
-
         private void OnValidate()
         {
             if (string.IsNullOrEmpty(PrefabHashGenerator))
@@ -385,18 +383,21 @@ namespace MLAPI
             }
         }
 
-        private static int _lastProcessedBehaviour = 0;
+        private static int _lastProcessedObject = 0;
         internal static void NetworkedBehaviourUpdate()
         {
-            int amountToProcess = NetworkingManager.Singleton.NetworkConfig.MaxBehaviourUpdatesPerTick <= 0 ? NetworkedBehaviours.Count : Mathf.Max(NetworkingManager.Singleton.NetworkConfig.MaxBehaviourUpdatesPerTick, NetworkedBehaviours.Count);
+            int amountToProcess = NetworkingManager.Singleton.NetworkConfig.MaxObjectUpdatesPerTick <= 0 ? SpawnManager.SpawnedObjectsList.Count : Mathf.Max(NetworkingManager.Singleton.NetworkConfig.MaxObjectUpdatesPerTick, SpawnManager.SpawnedObjectsList.Count);
 
             for (int i = 0; i < amountToProcess; i++)
             {
-                if (_lastProcessedBehaviour >= NetworkedBehaviours.Count)
-                    _lastProcessedBehaviour = 0;
-
-                NetworkedBehaviours[_lastProcessedBehaviour].NetworkedVarUpdate();
-                _lastProcessedBehaviour++;
+                if (_lastProcessedObject >= SpawnManager.SpawnedObjectsList.Count)
+                    _lastProcessedObject = 0;
+                
+                // Sync all vars
+                for (int j = 0; j < SpawnManager.SpawnedObjectsList[_lastProcessedObject].childNetworkedBehaviours.Count; j++)
+                    SpawnManager.SpawnedObjectsList[_lastProcessedObject].childNetworkedBehaviours[j].NetworkedVarUpdate();
+                
+                _lastProcessedObject++;
             }
         }
         

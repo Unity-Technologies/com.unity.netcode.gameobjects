@@ -7,6 +7,7 @@ using MLAPI.Serialization;
 using MLAPI.Transports;
 using BitStream = MLAPI.Serialization.BitStream;
 using System.Security.Cryptography.X509Certificates;
+using UnityEngine.Serialization;
 
 namespace MLAPI.Configuration
 {
@@ -62,12 +63,13 @@ namespace MLAPI.Configuration
         [Tooltip("The amount of times per second the internal event loop will run. This includes for example SyncedVar checking and LagCompensation tracking")]
         public int EventTickrate = 64;
         /// <summary>
-        /// The maximum amount of NetworkedBehaviour's to process per tick.
+        /// The maximum amount of NetworkedObject's to process per tick.
         /// This is useful to prevent the MLAPI from hanging a frame
         /// Set this to less than or equal to 0 for unlimited
         /// </summary>
-        [Tooltip("The maximum amount of NetworkedBehaviour SyncedVars to process per Event tick. This is to prevent freezing")]
-        public int MaxBehaviourUpdatesPerTick = -1;
+        [FormerlySerializedAs("MaxBehaviourUpdatesPerTick")] 
+        [Tooltip("The maximum amount of NetworkedObject SyncedVars to process per Event tick. This is to prevent freezing")]
+        public int MaxObjectUpdatesPerTick = -1;
         /// <summary>
         /// The amount of seconds to wait for handshake to complete before timing out a client
         /// </summary>
