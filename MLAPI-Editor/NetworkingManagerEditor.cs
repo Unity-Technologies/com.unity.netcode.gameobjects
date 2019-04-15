@@ -33,6 +33,7 @@ public class NetworkingManagerEditor : Editor
     private SerializedProperty secondsHistoryProperty;
     private SerializedProperty enableTimeResyncProperty;
     private SerializedProperty enableNetworkedVarProperty;
+    private SerializedProperty ensureNetworkedVarLengthSafetyProperty;
     private SerializedProperty forceSamePrefabsProperty;
     private SerializedProperty usePrefabSyncProperty;
     private SerializedProperty rpcHashSizeProperty;
@@ -106,6 +107,7 @@ public class NetworkingManagerEditor : Editor
         secondsHistoryProperty = networkConfigProperty.FindPropertyRelative("SecondsHistory");
         enableTimeResyncProperty = networkConfigProperty.FindPropertyRelative("EnableTimeResync");
         enableNetworkedVarProperty = networkConfigProperty.FindPropertyRelative("EnableNetworkedVar");
+        ensureNetworkedVarLengthSafetyProperty = networkConfigProperty.FindPropertyRelative("EnsureNetworkedVarLengthSafety");
         forceSamePrefabsProperty = networkConfigProperty.FindPropertyRelative("ForceSamePrefabs");
         usePrefabSyncProperty = networkConfigProperty.FindPropertyRelative("UsePrefabSync");
         rpcHashSizeProperty = networkConfigProperty.FindPropertyRelative("RpcHashSize");
@@ -139,6 +141,7 @@ public class NetworkingManagerEditor : Editor
         secondsHistoryProperty = networkConfigProperty.FindPropertyRelative("SecondsHistory");
         enableTimeResyncProperty = networkConfigProperty.FindPropertyRelative("EnableTimeResync");
         enableNetworkedVarProperty = networkConfigProperty.FindPropertyRelative("EnableNetworkedVar");
+        ensureNetworkedVarLengthSafetyProperty = networkConfigProperty.FindPropertyRelative("EnsureNetworkedVarLengthSafety");
         forceSamePrefabsProperty = networkConfigProperty.FindPropertyRelative("ForceSamePrefabs");
         usePrefabSyncProperty = networkConfigProperty.FindPropertyRelative("UsePrefabSync");
         rpcHashSizeProperty = networkConfigProperty.FindPropertyRelative("RpcHashSize");
@@ -279,6 +282,7 @@ public class NetworkingManagerEditor : Editor
             using (new EditorGUI.DisabledScope(!networkingManager.NetworkConfig.EnableNetworkedVar))
             {
                 EditorGUILayout.PropertyField(maxObjectUpdatesPerTickProperty);
+                EditorGUILayout.PropertyField(ensureNetworkedVarLengthSafetyProperty);
             }            
             
             EditorGUILayout.LabelField("Connection", EditorStyles.boldLabel);

@@ -102,6 +102,11 @@ namespace MLAPI.Configuration
         [Tooltip("Whether or not to enable the NetworkedVar system")]
         public bool EnableNetworkedVar = true;
         /// <summary>
+        /// Whether or not to ensure that NetworkedVars can be read even if a client accidentally writes where its not allowed to. This costs some CPU and bandwdith.
+        /// </summary>
+        [Tooltip("Ensures that NetworkedVars can be read even if a client accidental writes where its not allowed to. This will cost some CPU time and bandwidth")]
+        public bool EnsureNetworkedVarLengthSafety = false;
+        /// <summary>
         /// Wheter or not the MLAPI should check for differences in the prefabs at connection. 
         /// If you dynamically add prefabs at runtime, turn this OFF
         /// </summary>
@@ -206,6 +211,7 @@ namespace MLAPI.Configuration
                     writer.WriteBool(config.SignKeyExchange);
                     writer.WriteInt32Packed(config.LoadSceneTimeOut);
                     writer.WriteBool(config.EnableTimeResync);
+                    writer.WriteBool(config.EnsureNetworkedVarLengthSafety);
                     writer.WriteBits((byte)config.RpcHashSize, 3);
                     writer.WriteBool(ForceSamePrefabs);
                     writer.WriteBool(UsePrefabSync);
@@ -250,6 +256,7 @@ namespace MLAPI.Configuration
                     config.SignKeyExchange = reader.ReadBool();
                     config.LoadSceneTimeOut = reader.ReadInt32Packed();
                     config.EnableTimeResync = reader.ReadBool();
+                    config.EnsureNetworkedVarLengthSafety = reader.ReadBool();
                     config.RpcHashSize = (HashSize)reader.ReadBits(3);
                     config.ForceSamePrefabs = reader.ReadBool();
                     config.UsePrefabSync = reader.ReadBool();
@@ -296,6 +303,7 @@ namespace MLAPI.Configuration
                     writer.WriteBool(EnableNetworkedVar);
                     writer.WriteBool(ForceSamePrefabs);
                     writer.WriteBool(UsePrefabSync);
+                    writer.WriteBool(EnsureNetworkedVarLengthSafety);
                     writer.WriteBool(EnableEncryption);
                     writer.WriteBool(SignKeyExchange);
                     writer.WriteBits((byte)RpcHashSize, 3);

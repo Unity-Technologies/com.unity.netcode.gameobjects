@@ -353,10 +353,6 @@ namespace MLAPI.Serialization
             UpdateLength();
         }
 
-
-
-
-
         /// <summary>
         /// Copy data from another stream
         /// </summary>
@@ -378,6 +374,20 @@ namespace MLAPI.Serialization
 
                 s.Position = currentPosition;
             }
+        }
+
+        /// <summary>
+        /// Copies internal buffer to stream
+        /// </summary>
+        /// <param name="stream">The stream to copy to</param>
+        /// <param name="count">The maximum amount of bytes to copy. Set to value less than one to copy the full length</param>
+#if !NET35
+        public new void CopyTo(Stream stream, int count = -1)
+#else
+        public void CopyTo(Stream stream, int count = -1)
+#endif
+        {
+            stream.Write(target, 0, count < 0 ? (int) Length : count);
         }
 
         /// <summary>
@@ -452,6 +462,17 @@ namespace MLAPI.Serialization
             while (!BitAligned)
             {
                 WriteBit(false);
+            }
+        }
+        
+        /// <summary>
+        /// Reads zeros until the the stream is byte aligned
+        /// </summary>
+        public void SkipPadBits()
+        {
+            while (!BitAligned)
+            {
+                ReadBit();
             }
         }
 
