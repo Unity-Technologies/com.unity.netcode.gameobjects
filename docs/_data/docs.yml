@@ -34,3 +34,4 @@
   - bitwriter-bitreader-bitstream
   - custom-transports
   - network-profiler-window
+  - custom-serialization
