@@ -34,6 +34,7 @@ namespace MLAPI.Components
         private static bool isSwitching = false;
         internal static uint currentSceneIndex = 0;
         internal static Guid currentSceneSwitchProgressGuid = new Guid();
+        internal static bool IsSpawnedObjectsPendingInDontDestroyOnLoad = false;
 
         internal static void SetCurrentSceneIndex()
         {
@@ -110,6 +111,7 @@ namespace MLAPI.Components
                         
             // Move ALL networked objects to the temp scene
             MoveObjectsToDontDestroyOnLoad();
+            IsSpawnedObjectsPendingInDontDestroyOnLoad = true;
 
             string sceneName = sceneIndexToString[sceneIndex];
             
@@ -161,6 +163,7 @@ namespace MLAPI.Components
             
             // Move all objects to the new scene
             MoveObjectsToScene(nextScene);
+            IsSpawnedObjectsPendingInDontDestroyOnLoad = false;
 
             if (NetworkingManager.Singleton.IsServer)
             {

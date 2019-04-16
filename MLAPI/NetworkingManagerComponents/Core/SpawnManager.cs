@@ -241,7 +241,12 @@ namespace MLAPI.Components
                 else
                 {
                     GameObject prefab = NetworkingManager.Singleton.NetworkConfig.NetworkedPrefabs[GetNetworkedPrefabIndexOfHash(prefabHash)].Prefab;
-                    return ((position == null && rotation == null) ? MonoBehaviour.Instantiate(prefab) : MonoBehaviour.Instantiate(prefab, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity))).GetComponent<NetworkedObject>();
+                    NetworkedObject networkedObject = ((position == null && rotation == null) ? MonoBehaviour.Instantiate(prefab) : MonoBehaviour.Instantiate(prefab, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity))).GetComponent<NetworkedObject>();
+                    if (NetworkSceneManager.IsSpawnedObjectsPendingInDontDestroyOnLoad)
+                    {
+                        GameObject.DontDestroyOnLoad(networkedObject.gameObject);
+                    }
+                    return networkedObject;
                 }
             }
             else
