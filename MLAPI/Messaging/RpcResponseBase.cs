@@ -2,7 +2,6 @@ using System;
 
 namespace MLAPI.Messaging
 {
-
     /// <summary>
     /// Abstract base class for RpcResponse
     /// </summary>
