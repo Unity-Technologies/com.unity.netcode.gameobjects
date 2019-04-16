@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using UnityEngine;
+using AsyncOperation = UnityEngine.AsyncOperation;
 
 namespace MLAPI.SceneManagement
 {
@@ -28,11 +30,23 @@ namespace MLAPI.SceneManagement
         /// <summary>
         /// Is this scene switch progresses completed, all clients are done loading the scene or a timeout has occured.
         /// </summary>
-        public bool isCompleted { get; private set; }
+        public bool IsCompleted { get; private set; }
+        /// <summary>
+        /// Is this scene switch progresses completed, all clients are done loading the scene or a timeout has occured.
+        /// </summary>
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        [Obsolete("Use IsCompleted instead", false)]
+        public bool isCompleted => IsCompleted;
         /// <summary>
         /// If all clients are done loading the scene, at the moment of completed.
         /// </summary>
-        public bool isAllClientsDoneLoading { get; private set; }
+        public bool IsAllClientsDoneLoading { get; private set; }
+        /// <summary>
+        /// If all clients are done loading the scene, at the moment of completed.
+        /// </summary>
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        [Obsolete("Use IsCompleted instead", false)]
+        public bool isAllClientsDoneLoading => IsAllClientsDoneLoading;
         /// <summary>
         /// Delegate type for when a client is done loading the scene.
         /// </summary>
@@ -74,10 +88,10 @@ namespace MLAPI.SceneManagement
 
         internal void CheckCompletion()
         {
-            if (!isCompleted && DoneClients.Count == NetworkingManager.Singleton.ConnectedClientsList.Count && sceneLoadOperation.isDone)
+            if (!IsCompleted && DoneClients.Count == NetworkingManager.Singleton.ConnectedClientsList.Count && sceneLoadOperation.isDone)
             {
-                isCompleted = true;
-                isAllClientsDoneLoading = true;
+                IsCompleted = true;
+                IsAllClientsDoneLoading = true;
                 NetworkSceneManager.sceneSwitchProgresses.Remove(guid);
                 if (OnComplete != null)
                     OnComplete.Invoke(false);
@@ -88,9 +102,9 @@ namespace MLAPI.SceneManagement
 
         internal void SetTimedOut()
         {
-            if (!isCompleted)
+            if (!IsCompleted)
             {
-                isCompleted = true;
+                IsCompleted = true;
                 NetworkSceneManager.sceneSwitchProgresses.Remove(guid);
                 if (OnComplete != null)
                     OnComplete.Invoke(true);
