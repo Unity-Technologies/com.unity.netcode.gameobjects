@@ -4,9 +4,7 @@ using UnityEngine;
 using System.Linq;
 using MLAPI.Transports;
 using BitStream = MLAPI.Serialization.BitStream;
-#if !DISABLE_CRYPTOGRAPHY
 using System.Security.Cryptography.X509Certificates;
-#endif
 using MLAPI.Hashing;
 using MLAPI.Serialization.Pooled;
 using UnityEngine.Serialization;

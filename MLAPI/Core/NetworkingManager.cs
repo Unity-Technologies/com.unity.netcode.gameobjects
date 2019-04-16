@@ -3,13 +3,11 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
-#if !DISABLE_CRYPTOGRAPHY
-using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
-#endif
 using MLAPI.Logging;
 using UnityEngine.SceneManagement;
 using System.IO;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using MLAPI.Configuration;
 using MLAPI.Security;
 using MLAPI.Internal;
