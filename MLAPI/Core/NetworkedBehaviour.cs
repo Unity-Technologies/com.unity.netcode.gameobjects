@@ -174,21 +174,25 @@ namespace MLAPI
 
         private void WarnUnityReflectionMethodUse()
         {
-            MethodInfo[] methods = GetType().GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-            for (int i = 0; i < methods.Length; i++)
+            if (Debug.isDebugBuild)
             {
-                if (methods[i].Name == "OnDestroy")
+                MethodInfo[] methods = GetType().GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+                
+                for (int i = 0; i < methods.Length; i++)
                 {
-                    throw new Exception("The method \"OnDestroy\" is not allowed to be defined in classes that inherit NetworkedBehaviour. Please override the \"OnDestroyed\" method instead");
-                }
-                else if (methods[i].Name == "OnDisable")
-                {
-                    throw new Exception("The method \"OnDisable\" is not allowed to be defined in classes that inherit NetworkedBehaviour. Please override the \"OnDisabled\" method instead");
-                }
-                else if (methods[i].Name == "OnEnable")
-                {
-                    throw new Exception("The method \"OnEnable\" is not allowed to be defined in classes that inherit NetworkedBehaviour. Please override the \"OnEnable\" method instead");
-                }
+                    if (methods[i].Name == "OnDestroy")
+                    {
+                        throw new Exception("The method \"OnDestroy\" is not allowed to be defined in classes that inherit NetworkedBehaviour. Please override the \"OnDestroyed\" method instead");
+                    }
+                    else if (methods[i].Name == "OnDisable")
+                    {
+                        throw new Exception("The method \"OnDisable\" is not allowed to be defined in classes that inherit NetworkedBehaviour. Please override the \"OnDisabled\" method instead");
+                    }
+                    else if (methods[i].Name == "OnEnable")
+                    {
+                        throw new Exception("The method \"OnEnable\" is not allowed to be defined in classes that inherit NetworkedBehaviour. Please override the \"OnEnable\" method instead");
+                    }
+                }   
             }
         }
 
