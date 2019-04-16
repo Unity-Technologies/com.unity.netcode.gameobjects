@@ -18,7 +18,7 @@ namespace MLAPI.Connection
         /// <summary>
         /// The NetworkedObject's owned by this Client
         /// </summary>
-        public List<NetworkedObject> OwnedObjects = new List<NetworkedObject>();
+        public readonly List<NetworkedObject> OwnedObjects = new List<NetworkedObject>();
         /// <summary>
         /// The encryption key used for this client
         /// </summary>
