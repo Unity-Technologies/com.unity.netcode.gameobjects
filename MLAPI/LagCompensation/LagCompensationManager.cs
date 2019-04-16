@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using MLAPI.Exceptions;
 
 namespace MLAPI.LagCompensation
@@ -12,7 +13,14 @@ namespace MLAPI.LagCompensation
         /// <summary>
         /// Simulation objects
         /// </summary>
-        public static readonly List<TrackedObject> simulationObjects = new List<TrackedObject>();
+        public static readonly List<TrackedObject> SimulationObjects = new List<TrackedObject>();
+        /// <summary>
+        /// Simulation objects
+        /// </summary>
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        [Obsolete("Use SimulationObjects instead", false)]
+        public static List<TrackedObject> simulationObjects => SimulationObjects;
+
 
         /// <summary>
         /// Turns time back a given amount of seconds, invokes an action and turns it back
@@ -26,16 +34,16 @@ namespace MLAPI.LagCompensation
                 throw new NotServerException("Only the server can perform lag compensation");
             }
             
-            for (int i = 0; i < simulationObjects.Count; i++)
+            for (int i = 0; i < SimulationObjects.Count; i++)
             {
-                simulationObjects[i].ReverseTransform(secondsAgo);
+                SimulationObjects[i].ReverseTransform(secondsAgo);
             }
 
             action.Invoke();
 
-            for (int i = 0; i < simulationObjects.Count; i++)
+            for (int i = 0; i < SimulationObjects.Count; i++)
             {
-                simulationObjects[i].ResetStateTransform();
+                SimulationObjects[i].ResetStateTransform();
             }
         }
 
@@ -57,9 +65,9 @@ namespace MLAPI.LagCompensation
 
         internal static void AddFrames()
         {
-            for (int i = 0; i < simulationObjects.Count; i++)
+            for (int i = 0; i < SimulationObjects.Count; i++)
             {
-                simulationObjects[i].AddFrame();
+                SimulationObjects[i].AddFrame();
             }
         }
     }

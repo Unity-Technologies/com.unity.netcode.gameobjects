@@ -99,12 +99,12 @@ namespace MLAPI.LagCompensation
         {
             Framekeys = new FixedQueue<float>(maxPoints);
             Framekeys.Enqueue(0);
-            LagCompensationManager.simulationObjects.Add(this);
+            LagCompensationManager.SimulationObjects.Add(this);
         }
 
         void OnDestroy()
         {
-            LagCompensationManager.simulationObjects.Remove(this);
+            LagCompensationManager.SimulationObjects.Remove(this);
         }
 
         internal void AddFrame()
