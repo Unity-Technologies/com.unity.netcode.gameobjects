@@ -5,7 +5,7 @@
     /// </summary>
     internal static class MLAPIConstants
     {
-        internal const string MLAPI_PROTOCOL_VERSION = "6.0.1";
+        internal const string MLAPI_PROTOCOL_VERSION = "9.0.0";
 
         internal const byte MLAPI_CERTIFICATE_HAIL = 0;
         internal const byte MLAPI_CERTIFICATE_HAIL_RESPONSE = 1;
