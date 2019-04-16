@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
 using MLAPI.Collections;
 using MLAPI.Configuration;
 using UnityEngine;
@@ -17,7 +19,14 @@ namespace MLAPI.Profiling
         /// <summary>
         /// Whether or not the profiler is recording data
         /// </summary>
-        public static bool isRunning { get; private set; }
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        [Obsolete("Use IsRunning instead", false)]
+        public static bool isRunning => IsRunning;
+        /// <summary>
+        /// Whether or not the profiler is recording data
+        /// </summary>
+        public static bool IsRunning { get; private set; }
+
         private static int tickHistory = 1024;
         private static int EventIdCounter = 0;
         private static ProfilerTick CurrentTick;
@@ -28,13 +37,13 @@ namespace MLAPI.Profiling
         /// <param name="historyLength">The amount of ticks to keep in memory</param>
         public static void Start(int historyLength)
         {
-            if (isRunning)
+            if (IsRunning)
                 return;
             EventIdCounter = 0;
             Ticks = new FixedQueue<ProfilerTick>(historyLength);
             tickHistory = historyLength;
             CurrentTick = null;
-            isRunning = true;
+            IsRunning = true;
         }
 
         /// <summary>
@@ -44,7 +53,7 @@ namespace MLAPI.Profiling
         {
             Ticks = null; //leave to GC
             CurrentTick = null; //leave to GC
-            isRunning = false;
+            IsRunning = false;
         }
 
         /// <summary>
@@ -54,14 +63,14 @@ namespace MLAPI.Profiling
         /// <returns>The number of ticks recorded</returns>
         public static int Stop(ref ProfilerTick[] tickBuffer)
         {
-            if (!isRunning)
+            if (!IsRunning)
                 return 0;
             int iteration = Ticks.Count > tickBuffer.Length ? tickBuffer.Length : Ticks.Count;
             for (int i = 0; i < iteration; i++) tickBuffer[i] = Ticks[i];
 
             Ticks = null; //leave to GC
             CurrentTick = null; //leave to GC
-            isRunning = false;
+            IsRunning = false;
 
             return iteration;
         }
@@ -73,21 +82,21 @@ namespace MLAPI.Profiling
         /// <returns>The number of ticks recorded</returns>
         public static int Stop(ref List<ProfilerTick> tickBuffer)
         {
-            if (!isRunning)
+            if (!IsRunning)
                 return 0;
             int iteration = Ticks.Count > tickBuffer.Count ? tickBuffer.Count : Ticks.Count;
             for (int i = 0; i < iteration; i++) tickBuffer[i] = Ticks[i];
 
             Ticks = null; //leave to GC
             CurrentTick = null; //leave to GC
-            isRunning = false;
+            IsRunning = false;
 
             return iteration; 
         }
 
         internal static void StartTick(TickType type)
         {
-            if (!isRunning)
+            if (!IsRunning)
                 return;
             if (Ticks.Count == tickHistory)
                 Ticks.Dequeue();
@@ -105,7 +114,7 @@ namespace MLAPI.Profiling
 
         internal static void EndTick()
         {
-            if (!isRunning)
+            if (!IsRunning)
                 return;
             if (CurrentTick == null)
                 return;
@@ -114,7 +123,7 @@ namespace MLAPI.Profiling
         
         internal static void StartEvent(TickType eventType, uint bytes, string channelName, byte messageType)
         {
-            if (!isRunning)
+            if (!IsRunning)
                 return;
             if (CurrentTick == null)
                 return;
@@ -126,7 +135,7 @@ namespace MLAPI.Profiling
 
         internal static void StartEvent(TickType eventType, uint bytes, string channelName, string messageName)
         {
-            if (!isRunning)
+            if (!IsRunning)
                 return;
             if (CurrentTick == null)
                 return;
@@ -136,7 +145,7 @@ namespace MLAPI.Profiling
 
         internal static void EndEvent()
         {
-            if (!isRunning)
+            if (!IsRunning)
                 return;
             if (CurrentTick == null)
                 return;
