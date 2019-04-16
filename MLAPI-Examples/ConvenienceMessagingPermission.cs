@@ -1,4 +1,5 @@
 using MLAPI;
+using MLAPI.Messaging;
 
 namespace MLAPI_Examples
 {
