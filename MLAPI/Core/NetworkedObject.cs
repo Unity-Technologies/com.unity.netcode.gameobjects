@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using MLAPI.Configuration;
 using MLAPI.Exceptions;
@@ -85,6 +86,7 @@ namespace MLAPI
         /// <summary>
         /// Gets if this object is a player object
         /// </summary>
+        [EditorBrowsable(EditorBrowsableState.Never)]
         [Obsolete("Use IsPlayerObject instead", false)]
         public bool isPlayerObject => IsPlayerObject;
         /// <summary>
@@ -94,6 +96,7 @@ namespace MLAPI
         /// <summary>
         /// Gets if the object is the the personal clients player object
         /// </summary>
+        [EditorBrowsable(EditorBrowsableState.Never)]
         [Obsolete("Use IsLocalPlayer instead", false)]
 		public bool isLocalPlayer => IsLocalPlayer;
         /// <summary>
@@ -103,6 +106,7 @@ namespace MLAPI
         /// <summary>
         /// Gets if the object is owned by the local player or if the object is the local player object
         /// </summary>
+        [EditorBrowsable(EditorBrowsableState.Never)]
         [Obsolete("Use IsOwner instead", false)]
         public bool isOwner => IsOwner;
         /// <summary>
@@ -112,6 +116,7 @@ namespace MLAPI
         /// <summary>
         /// Gets wheter or not the object is owned by anyone
         /// </summary>
+        [EditorBrowsable(EditorBrowsableState.Never)]
         [Obsolete("Use IsOwnedByServer instead", false)]
 		public bool isOwnedByServer => IsOwnedByServer;
         /// <summary>
@@ -121,6 +126,7 @@ namespace MLAPI
         /// <summary>
         /// Gets if the object has yet been spawned across the network
         /// </summary>
+        [EditorBrowsable(EditorBrowsableState.Never)]
         [Obsolete("Use IsSpawned instead", false)]
         public bool isSpawned => IsSpawned;
         /// <summary>

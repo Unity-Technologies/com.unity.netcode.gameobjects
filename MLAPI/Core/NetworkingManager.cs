@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using UnityEngine;
 using System.Linq;
 using MLAPI.Logging;
@@ -52,6 +53,7 @@ namespace MLAPI
         /// <summary>
         /// The singleton instance of the NetworkingManager
         /// </summary>
+        [EditorBrowsable(EditorBrowsableState.Never)]
         [Obsolete("Use Singleton instead", false)]
         public static NetworkingManager singleton => Singleton;
         /// <summary>
@@ -93,6 +95,7 @@ namespace MLAPI
         /// <summary>
         /// Gets wheter or not a server is running
         /// </summary>
+        [EditorBrowsable(EditorBrowsableState.Never)]
         [Obsolete("Use IsServer instead", false)]
         public bool isServer => IsServer;
         /// <summary>
@@ -102,6 +105,7 @@ namespace MLAPI
         /// <summary>
         /// Gets wheter or not a client is running
         /// </summary>
+        [EditorBrowsable(EditorBrowsableState.Never)]
         [Obsolete("Use IsClient instead", false)]
         public bool isClient => IsClient;
         /// <summary>
@@ -111,6 +115,7 @@ namespace MLAPI
         /// <summary>
         /// Gets if we are running as host
         /// </summary>
+        [EditorBrowsable(EditorBrowsableState.Never)]
         [Obsolete("Use IsHost instead", false)]
         public bool isHost => IsHost;
         /// <summary>
@@ -120,6 +125,7 @@ namespace MLAPI
         /// <summary>
         /// Gets wheter or not we are listening for connections
         /// </summary>
+        [EditorBrowsable(EditorBrowsableState.Never)]
         [Obsolete("Use IsListening instead", false)]
         public bool isListening => IsListening;
         /// <summary>
@@ -129,6 +135,7 @@ namespace MLAPI
         /// <summary>
         /// Gets if we are connected as a client
         /// </summary>
+        [EditorBrowsable(EditorBrowsableState.Never)]
         [Obsolete("Use IsConnectedClient instead", false)]
         public bool isConnectedClients => IsConnectedClient;
         /// <summary>

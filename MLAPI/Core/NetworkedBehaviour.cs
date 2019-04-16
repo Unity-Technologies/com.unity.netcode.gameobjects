@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using UnityEngine;
 using System.Reflection;
 using System.Linq;
@@ -27,6 +28,7 @@ namespace MLAPI
         /// <summary>
         /// Gets if the object is the the personal clients player object
         /// </summary>
+        [EditorBrowsable(EditorBrowsableState.Never)]
         [Obsolete("Use IsLocalPlayer instead", false)]
         public bool isLocalPlayer => IsLocalPlayer;
         /// <summary>
@@ -36,6 +38,7 @@ namespace MLAPI
         /// <summary>
         /// Gets if the object is owned by the local player or if the object is the local player object
         /// </summary>
+        [EditorBrowsable(EditorBrowsableState.Never)]
         [Obsolete("Use IsOwner instead", false)]
         public bool isOwner => IsOwner;
         /// <summary>
@@ -45,6 +48,7 @@ namespace MLAPI
         /// <summary>
         /// Gets if we are executing as server
         /// </summary>
+        [EditorBrowsable(EditorBrowsableState.Never)]
         [Obsolete("Use IsServer instead", false)]
         protected bool isServer => IsServer;
         /// <summary>
@@ -54,6 +58,7 @@ namespace MLAPI
         /// <summary>
         /// Gets if we are executing as client
         /// </summary>
+        [EditorBrowsable(EditorBrowsableState.Never)]
         [Obsolete("Use IsClient instead")]
         protected bool isClient => IsClient;
         /// <summary>
@@ -63,6 +68,7 @@ namespace MLAPI
         /// <summary>
         /// Gets if we are executing as Host, I.E Server and Client
         /// </summary>
+        [EditorBrowsable(EditorBrowsableState.Never)]
         [Obsolete("Use IsHost instead", false)]
         protected bool isHost => IsHost;
         /// <summary>
@@ -73,6 +79,7 @@ namespace MLAPI
         /// <summary>
         /// Gets wheter or not the object has a owner
         /// </summary>
+        [EditorBrowsable(EditorBrowsableState.Never)]
         [Obsolete("Use IsOwnedByServer instead", false)]
 		public bool isOwnedByServer => IsOwnedByServer;
         /// <summary>
@@ -86,6 +93,7 @@ namespace MLAPI
         /// <summary>
         /// Gets the NetworkedObject that owns this NetworkedBehaviour instance
         /// </summary>
+        [EditorBrowsable(EditorBrowsableState.Never)]
         [Obsolete("Use NetworkedObject instead", false)]
         public NetworkedObject networkedObject => NetworkedObject;
         /// <summary>
@@ -107,6 +115,7 @@ namespace MLAPI
         /// <summary>
         /// Gets the NetworkId of the NetworkedObject that owns the NetworkedBehaviour instance
         /// </summary>
+        [EditorBrowsable(EditorBrowsableState.Never)]
         [Obsolete("Use NetworkId instead", false)]
         public ulong networkId => NetworkId;
         /// <summary>

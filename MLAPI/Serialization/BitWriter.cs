@@ -4,6 +4,7 @@
 #define ARRAY_DIFF_ALLOW_RESIZE // Whether or not to permit writing diffs of differently sized arrays
 
 using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using MLAPI.Reflection;
@@ -424,6 +425,7 @@ namespace MLAPI.Serialization
         /// </summary>
         /// <param name="rotation">Rotation to write</param>
         /// <param name="bytesPerAngle">Unused</param>
+        [EditorBrowsable(EditorBrowsableState.Never)]
         [Obsolete("Use WriteRotationPacked instead")]
         public void WriteRotation(Quaternion rotation, int bytesPerAngle)
         {

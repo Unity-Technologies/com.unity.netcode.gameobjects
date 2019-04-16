@@ -4,6 +4,7 @@
 #define ARRAY_DIFF_ALLOW_RESIZE // Whether or not to permit writing diffs of differently sized arrays
 
 using System;
+using System.ComponentModel;
 using System.IO;
 using System.Text;
 using MLAPI.Reflection;
@@ -362,6 +363,7 @@ namespace MLAPI.Serialization
         /// Reads the rotation from the stream
         /// </summary>
         /// <returns>The rotation read from the stream</returns>
+        [EditorBrowsable(EditorBrowsableState.Never)]
         [Obsolete("Use ReadRotationPacked instead")]
         public Quaternion ReadRotation(int bytesPerAngle)
         {
