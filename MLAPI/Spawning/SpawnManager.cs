@@ -96,13 +96,13 @@ namespace MLAPI.Spawning
             customDestroyHandlers.Remove(prefabHash);
         }
         
-        internal static readonly Stack<ulong> releasedNetworkObjectIds = new Stack<ulong>();
+        internal static readonly Queue<ReleasedNetworkId> releasedNetworkObjectIds = new Queue<ReleasedNetworkId>();
         private static ulong networkObjectIdCounter;
         internal static ulong GetNetworkObjectId()
         {
-            if (releasedNetworkObjectIds.Count > 0)
+            if (releasedNetworkObjectIds.Count > 0 && NetworkingManager.Singleton.NetworkConfig.RecycleNetworkIds && (Time.unscaledTime - releasedNetworkObjectIds.Peek().ReleaseTime) >= NetworkingManager.Singleton.NetworkConfig.NetworkIdRecycleDelay)
             {
-                return releasedNetworkObjectIds.Pop();
+                return releasedNetworkObjectIds.Dequeue().NetworkId;
             }
             else
             {
@@ -522,7 +522,14 @@ namespace MLAPI.Spawning
 
             if (NetworkingManager.Singleton != null && NetworkingManager.Singleton.IsServer)
             {
-                releasedNetworkObjectIds.Push(networkId);
+                if (NetworkingManager.Singleton.NetworkConfig.RecycleNetworkIds)
+                {
+                    releasedNetworkObjectIds.Enqueue(new ReleasedNetworkId()
+                    {
+                        NetworkId = networkId,
+                        ReleaseTime = Time.unscaledTime
+                    });   
+                }
                 
                 if (SpawnedObjects[networkId] != null)
                 {

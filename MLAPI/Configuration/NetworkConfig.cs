@@ -122,6 +122,16 @@ namespace MLAPI.Configuration
                  "If false, Only non scene objects have to be prefabs. Scene objects will be matched using their PrefabInstanceId which can be precomputed globally for a scene at build time. Useful for single projects")]
         public bool UsePrefabSync = false;
         /// <summary>
+        /// If true, NetworkIds will be reused after the NetworkIdRecycleDelay.
+        /// </summary>
+        [Tooltip("If true, NetworkIds will be reused after the NetworkIdRecycleDelay")]
+        public bool RecycleNetworkIds = true;
+        /// <summary>
+        /// The amount of seconds a NetworkId has to be unused in order for it to be reused.
+        /// </summary>
+        [Tooltip("The amount of seconds a NetworkId has to unused in order for it to be reused")]
+        public float NetworkIdRecycleDelay = 120f;
+        /// <summary>
         /// Decides how many bytes to use for Rpc messaging. Leave this to 2 bytes unless you are facing hash collisions
         /// </summary>
         [Tooltip("The maximum amount of bytes to use for RPC messages. Leave this to 2 unless you are facing hash collisions")]
