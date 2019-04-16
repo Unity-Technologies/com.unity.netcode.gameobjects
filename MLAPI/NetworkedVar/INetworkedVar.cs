@@ -17,21 +17,21 @@ namespace MLAPI.NetworkedVar
         /// </summary>
         void ResetDirty();
         /// <summary>
-        /// Gets wheter or not the container is dirty
+        /// Gets Whether or not the container is dirty
         /// </summary>
-        /// <returns>Wheter or not the container is dirty</returns>
+        /// <returns>Whether or not the container is dirty</returns>
         bool IsDirty();
         /// <summary>
-        /// Gets wheter or not a specific client can write to the varaible
+        /// Gets Whether or not a specific client can write to the varaible
         /// </summary>
         /// <param name="clientId">The clientId of the remote client</param>
-        /// <returns>Wheter or not the client can write to the variable</returns>
+        /// <returns>Whether or not the client can write to the variable</returns>
         bool CanClientWrite(ulong clientId);
         /// <summary>
-        /// Gets wheter or not a specific client can read to the varaible
+        /// Gets Whether or not a specific client can read to the varaible
         /// </summary>
         /// <param name="clientId">The clientId of the remote client</param>
-        /// <returns>Wheter or not the client can read to the variable</returns>
+        /// <returns>Whether or not the client can read to the variable</returns>
         bool CanClientRead(ulong clientId);
         /// <summary>
         /// Writes the dirty changes, that is, the changes since the variable was last dirty, to the writer

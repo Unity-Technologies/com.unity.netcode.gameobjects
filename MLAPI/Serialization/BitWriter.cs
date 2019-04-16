@@ -662,7 +662,7 @@ namespace MLAPI.Serialization
         /// Writes a string
         /// </summary>
         /// <param name="s">The string to write</param>
-        /// <param name="oneByteChars">Wheter or not to use one byte per character. This will only allow ASCII</param>
+        /// <param name="oneByteChars">Whether or not to use one byte per character. This will only allow ASCII</param>
         public void WriteString(string s, bool oneByteChars = false)
         {
             WriteUInt32Packed((uint)s.Length);
@@ -688,7 +688,7 @@ namespace MLAPI.Serialization
         /// </summary>
         /// <param name="write">The new array</param>
         /// <param name="compare">The previous array to use for diff</param>
-        /// <param name="oneByteChars">Wheter or not to use single byte chars. This will only allow ASCII characters</param>
+        /// <param name="oneByteChars">Whether or not to use single byte chars. This will only allow ASCII characters</param>
         public void WriteStringDiff(string write, string compare, bool oneByteChars = false)
         {
 #if !ARRAY_DIFF_ALLOW_RESIZE

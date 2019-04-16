@@ -15,7 +15,7 @@ namespace MLAPI.Profiling
         /// </summary>
         public static FixedQueue<ProfilerTick> Ticks { get; private set; }
         /// <summary>
-        /// Wheter or not the profiler is recording data
+        /// Whether or not the profiler is recording data
         /// </summary>
         public static bool isRunning { get; private set; }
         private static int tickHistory = 1024;

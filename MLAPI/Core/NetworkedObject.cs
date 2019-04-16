@@ -114,13 +114,13 @@ namespace MLAPI
         /// </summary>
         public bool IsOwner => NetworkingManager.Singleton != null && OwnerClientId == NetworkingManager.Singleton.LocalClientId;
         /// <summary>
-        /// Gets wheter or not the object is owned by anyone
+        /// Gets Whether or not the object is owned by anyone
         /// </summary>
         [EditorBrowsable(EditorBrowsableState.Never)]
         [Obsolete("Use IsOwnedByServer instead", false)]
 		public bool isOwnedByServer => IsOwnedByServer;
         /// <summary>
-        /// Gets wheter or not the object is owned by anyone
+        /// Gets Whether or not the object is owned by anyone
         /// </summary>
         public bool IsOwnedByServer => NetworkingManager.Singleton != null && OwnerClientId == NetworkingManager.Singleton.ServerClientId;
         /// <summary>

@@ -71,7 +71,7 @@ namespace MLAPI.Serialization
         public override bool CanRead => true;
 
         /// <summary>
-        /// Wheter or not or there is any data to be read from the stream.
+        /// Whether or not or there is any data to be read from the stream.
         /// </summary>
         public bool HasDataToRead => Position < Length;
 
@@ -435,7 +435,7 @@ namespace MLAPI.Serialization
         /// </summary>
         /// <param name="stream">The stream to copy from</param>
         /// <param name="dataCount">The amount of data evel</param>
-        /// <param name="copyBits">Wheter or not to copy at the bit level rather than the byte level</param>
+        /// <param name="copyBits">Whether or not to copy at the bit level rather than the byte level</param>
         public void CopyFrom(BitStream stream, int dataCount, bool copyBits)
         {
             if (!copyBits)

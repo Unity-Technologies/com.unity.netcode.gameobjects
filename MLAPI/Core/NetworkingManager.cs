@@ -93,23 +93,23 @@ namespace MLAPI
         /// </summary>
         public readonly Dictionary<ulong, PendingClient> PendingClients = new Dictionary<ulong, PendingClient>();
         /// <summary>
-        /// Gets wheter or not a server is running
+        /// Gets Whether or not a server is running
         /// </summary>
         [EditorBrowsable(EditorBrowsableState.Never)]
         [Obsolete("Use IsServer instead", false)]
         public bool isServer => IsServer;
         /// <summary>
-        /// Gets wheter or not a server is running
+        /// Gets Whether or not a server is running
         /// </summary>
         public bool IsServer { get; internal set; }
         /// <summary>
-        /// Gets wheter or not a client is running
+        /// Gets Whether or not a client is running
         /// </summary>
         [EditorBrowsable(EditorBrowsableState.Never)]
         [Obsolete("Use IsClient instead", false)]
         public bool isClient => IsClient;
         /// <summary>
-        /// Gets wheter or not a client is running
+        /// Gets Whether or not a client is running
         /// </summary>
         public bool IsClient { get; internal set; }
         /// <summary>
@@ -123,13 +123,13 @@ namespace MLAPI
         /// </summary>
         public bool IsHost => IsServer && IsClient;
         /// <summary>
-        /// Gets wheter or not we are listening for connections
+        /// Gets Whether or not we are listening for connections
         /// </summary>
         [EditorBrowsable(EditorBrowsableState.Never)]
         [Obsolete("Use IsListening instead", false)]
         public bool isListening => IsListening;
         /// <summary>
-        /// Gets wheter or not we are listening for connections
+        /// Gets Whether or not we are listening for connections
         /// </summary>
         public bool IsListening { get; internal set; }
         /// <summary>
@@ -159,7 +159,7 @@ namespace MLAPI
         /// </summary>
         /// <param name="clientId">The clientId of the approved client</param>
         /// <param name="prefabHash">The prefabHash to use for the client</param>
-        /// <param name="approved">Wheter or not the client was approved</param>
+        /// <param name="approved">Whether or not the client was approved</param>
         /// <param name="position">The position to spawn the client at</param>
         /// <param name="rotation">The rotation to spawn the client with</param>
         public delegate void ConnectionApprovedDelegate(ulong clientId, ulong? prefabHash, bool approved, Vector3? position, Quaternion? rotation);

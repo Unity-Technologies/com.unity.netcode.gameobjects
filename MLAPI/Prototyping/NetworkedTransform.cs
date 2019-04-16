@@ -93,7 +93,7 @@ namespace MLAPI.Prototyping
         /// </summary>
         /// <param name="oldPos">The previous position</param>
         /// <param name="newPos">The new requested position</param>
-        /// <returns>Returns wheter or not the move is valid</returns>
+        /// <returns>Returns Whether or not the move is valid</returns>
         public delegate bool MoveValidationDelegate(Vector3 oldPos, Vector3 newPos);
         /// <summary>
         /// If set, moves will only be accepted if the custom delegate returns true

@@ -143,7 +143,7 @@ namespace MLAPI.Profiling
         /// </summary>
         public string MessageType;
         /// <summary>
-        /// Wheter or not the event is closed
+        /// Whether or not the event is closed
         /// </summary>
         public bool Closed;
 

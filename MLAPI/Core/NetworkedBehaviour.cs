@@ -77,13 +77,13 @@ namespace MLAPI
         protected bool IsHost => IsRunning && NetworkingManager.Singleton.IsHost;
         private bool IsRunning => NetworkingManager.Singleton != null && NetworkingManager.Singleton.IsListening;
         /// <summary>
-        /// Gets wheter or not the object has a owner
+        /// Gets Whether or not the object has a owner
         /// </summary>
         [EditorBrowsable(EditorBrowsableState.Never)]
         [Obsolete("Use IsOwnedByServer instead", false)]
 		public bool isOwnedByServer => IsOwnedByServer;
         /// <summary>
-        /// Gets wheter or not the object has a owner
+        /// Gets Whether or not the object has a owner
         /// </summary>
         public bool IsOwnedByServer => NetworkedObject.IsOwnedByServer;
         /// <summary>

@@ -13,7 +13,7 @@ namespace MLAPI.NetworkedVar
     public class NetworkedVar<T> : INetworkedVar
     {
         /// <summary>
-        /// Gets or sets wheter or not the variable needs to be delta synced
+        /// Gets or sets Whether or not the variable needs to be delta synced
         /// </summary>
         public bool isDirty { get; set; }
         /// <summary>

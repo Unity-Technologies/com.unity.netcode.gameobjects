@@ -76,7 +76,7 @@ namespace MLAPI.Configuration
         [Tooltip("The amount of seconds to wait for the handshake to complete before the client times out")]
         public int ClientConnectionBufferTimeout = 10;
         /// <summary>
-        /// Wheter or not to use connection approval
+        /// Whether or not to use connection approval
         /// </summary>
         [Tooltip("Whether or not to force clients to be approved before they connect")]
         public bool ConnectionApproval = false;
@@ -107,7 +107,7 @@ namespace MLAPI.Configuration
         [Tooltip("Ensures that NetworkedVars can be read even if a client accidental writes where its not allowed to. This will cost some CPU time and bandwidth")]
         public bool EnsureNetworkedVarLengthSafety = false;
         /// <summary>
-        /// Wheter or not the MLAPI should check for differences in the prefabs at connection. 
+        /// Whether or not the MLAPI should check for differences in the prefabs at connection. 
         /// If you dynamically add prefabs at runtime, turn this OFF
         /// </summary>
         [Tooltip("Whether or not the MLAPI should check for differences in the prefab lists at connection")]
@@ -140,12 +140,12 @@ namespace MLAPI.Configuration
         [Tooltip("The amount of seconds to wait for all clients to load a requested scene")]
         public int LoadSceneTimeOut = 120;
         /// <summary>
-        /// Wheter or not to enable the ECDHE key exchange to allow for encryption and authentication of messages
+        /// Whether or not to enable the ECDHE key exchange to allow for encryption and authentication of messages
         /// </summary>
         [Tooltip("Whether or not to enable the ECDHE key exchange to allow for encryption and authentication of messages")]
         public bool EnableEncryption = false;
         /// <summary>
-        /// Wheter or not to enable signed diffie hellman key exchange.
+        /// Whether or not to enable signed diffie hellman key exchange.
         /// </summary>
         [Tooltip("Whether or not to sign the diffie hellman key exchange to prevent MITM attacks on")]
         public bool SignKeyExchange = false;

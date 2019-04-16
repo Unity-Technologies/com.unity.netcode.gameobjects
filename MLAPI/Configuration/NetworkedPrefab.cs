@@ -32,7 +32,7 @@ namespace MLAPI.Configuration
         /// </summary>
         public GameObject Prefab;
         /// <summary>
-        /// Wheter or not this is a playerPrefab
+        /// Whether or not this is a playerPrefab
         /// </summary>
         public bool PlayerPrefab;
     }
