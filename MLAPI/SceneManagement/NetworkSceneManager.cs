@@ -84,6 +84,8 @@ namespace MLAPI.SceneManagement
             
             // Move ALL networked objects to the temp scene
             MoveObjectsToDontDestroyOnLoad();
+            
+            isSpawnedObjectsPendingInDontDestroyOnLoad = true;
 
             // Switch scene
             AsyncOperation sceneLoad = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Single);
