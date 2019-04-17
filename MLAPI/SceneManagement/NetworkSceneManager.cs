@@ -74,7 +74,6 @@ namespace MLAPI.SceneManagement
             }
             
             SpawnManager.ServerDestroySpawnedSceneObjects(); //Destroy current scene objects before switching.
-            currentSceneIndex = sceneNameToIndex[sceneName];
             isSwitching = true;
             lastScene = SceneManager.GetActiveScene();
 
@@ -171,6 +170,8 @@ namespace MLAPI.SceneManagement
             MoveObjectsToScene(nextScene);
             
             isSpawnedObjectsPendingInDontDestroyOnLoad = false;
+            
+            currentSceneIndex = CurrentActiveSceneIndex;
 
             if (NetworkingManager.Singleton.IsServer)
             {
