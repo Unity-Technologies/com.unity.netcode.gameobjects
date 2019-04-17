@@ -281,7 +281,7 @@ namespace MLAPI.Serialization
             if (BitAligned)
             {
                 if (Position + count >= target.Length) Grow(count);
-                Array.Copy(buffer, offset, target, Position, count);
+                Buffer.BlockCopy(buffer, offset, target, (int)Position, count);
                 Position += count;
             }
             else
