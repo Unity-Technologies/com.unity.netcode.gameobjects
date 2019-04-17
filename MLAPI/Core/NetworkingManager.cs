@@ -252,6 +252,10 @@ namespace MLAPI
                 NetworkConfig.RegisteredScenes.Add(SceneManager.GetActiveScene().name);
             }
             
+            for (int i = 0; i < NetworkConfig.NetworkedPrefabs.Count; i++)
+            {
+                NetworkConfig.NetworkedPrefabs[i].Prefab.GetComponent<NetworkedObject>().ValidateHash();
+            }
             
             // TODO: Show which two prefab generators that collide
             HashSet<ulong> hashes = new HashSet<ulong>();
@@ -348,6 +352,11 @@ namespace MLAPI
             }
 
             NetworkSceneManager.SetCurrentSceneIndex();
+
+            for (int i = 0; i < NetworkConfig.NetworkedPrefabs.Count; i++)
+            {
+                NetworkConfig.NetworkedPrefabs[i].Prefab.GetComponent<NetworkedObject>().ValidateHash();
+            }
             
             NetworkConfig.NetworkTransport.Init();
         }

@@ -25,10 +25,14 @@ namespace MLAPI
     {
         private void OnValidate()
         {
+            // Set this so the hash can be serialized on Scene objects. For prefabs, they are generated at runtime.
+            ValidateHash();
+        }
+
+        internal void ValidateHash()
+        {
             if (string.IsNullOrEmpty(PrefabHashGenerator))
             {
-                PrefabHash = 0;
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The NetworkedObject " + gameObject.name + " does not have a PrefabHashGenerator. It has been set to the gameObject name");
                 PrefabHashGenerator = gameObject.name;
             }
             
