@@ -7,6 +7,7 @@ using MLAPI.Hashing;
 using MLAPI.Internal;
 using MLAPI.Logging;
 using MLAPI.Messaging;
+using MLAPI.SceneManagement;
 using MLAPI.Security;
 using MLAPI.Serialization;
 using MLAPI.Serialization.Pooled;
@@ -240,12 +241,27 @@ namespace MLAPI.Spawning
                 // Create the object
                 if (customSpawnHandlers.ContainsKey(prefabHash))
                 {
-                    return customSpawnHandlers[prefabHash](position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity));
+                    NetworkedObject networkedObject = customSpawnHandlers[prefabHash](position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity));
+                    
+                    if (NetworkSceneManager.isSpawnedObjectsPendingInDontDestroyOnLoad)
+                    {
+                        GameObject.DontDestroyOnLoad(networkedObject.gameObject);
+                    }
+
+                    return networkedObject;
                 }
                 else
                 {
                     GameObject prefab = NetworkingManager.Singleton.NetworkConfig.NetworkedPrefabs[GetNetworkedPrefabIndexOfHash(prefabHash)].Prefab;
-                    return ((position == null && rotation == null) ? MonoBehaviour.Instantiate(prefab) : MonoBehaviour.Instantiate(prefab, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity))).GetComponent<NetworkedObject>();
+                    
+                    NetworkedObject networkedObject = ((position == null && rotation == null) ? MonoBehaviour.Instantiate(prefab) : MonoBehaviour.Instantiate(prefab, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity))).GetComponent<NetworkedObject>();
+                    
+                    if (NetworkSceneManager.isSpawnedObjectsPendingInDontDestroyOnLoad)
+                    {
+                        GameObject.DontDestroyOnLoad(networkedObject.gameObject);
+                    }
+                    
+                    return networkedObject;
                 }
             }
             else
