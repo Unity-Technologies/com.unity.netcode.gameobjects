@@ -127,26 +127,6 @@ namespace MLAPI
         /// </summary>
         public ulong OwnerClientId => NetworkedObject.OwnerClientId;
 
-        private void OnEnable()
-        {
-            if (_networkedObject == null)
-                _networkedObject = GetComponentInParent<NetworkedObject>();
-            
-            OnEnabled();
-        }
-
-        private void OnDisable()
-        {
-            OnDisabled();
-        }
-
-        private void OnDestroy()
-        {
-            CachedClientRpcs.Remove(this);
-            CachedServerRpcs.Remove(this);
-            OnDestroyed();
-        }
-
         internal bool networkedStartInvoked = false;
         /// <summary>
         /// Gets called when message handlers are ready to be registered and the networking is setup
@@ -168,58 +148,9 @@ namespace MLAPI
         internal void InternalNetworkStart()
         {
             CacheAttributes();
-            WarnUnityReflectionMethodUse();
             NetworkedVarInit();
         }
-
-        private void WarnUnityReflectionMethodUse()
-        {
-            if (Debug.isDebugBuild)
-            {
-                MethodInfo[] methods = GetType().GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-                
-                for (int i = 0; i < methods.Length; i++)
-                {
-                    if (methods[i].Name == "OnDestroy")
-                    {
-                        throw new Exception("The method \"OnDestroy\" is not allowed to be defined in classes that inherit NetworkedBehaviour. Please override the \"OnDestroyed\" method instead");
-                    }
-                    else if (methods[i].Name == "OnDisable")
-                    {
-                        throw new Exception("The method \"OnDisable\" is not allowed to be defined in classes that inherit NetworkedBehaviour. Please override the \"OnDisabled\" method instead");
-                    }
-                    else if (methods[i].Name == "OnEnable")
-                    {
-                        throw new Exception("The method \"OnEnable\" is not allowed to be defined in classes that inherit NetworkedBehaviour. Please override the \"OnEnable\" method instead");
-                    }
-                }   
-            }
-        }
-
-        /// <summary>
-        /// Invoked when the object is Disabled
-        /// </summary>
-        public virtual void OnDisabled()
-        {
-
-        }
-
-        /// <summary>
-        /// Invoked when the object is Destroyed
-        /// </summary>
-        public virtual void OnDestroyed()
-        {
-
-        }
-
-        /// <summary>
-        /// Invoked when the object is Enabled
-        /// </summary>
-        public virtual void OnEnabled()
-        {
-
-        }
-
+        
         /// <summary>                                                                               
         /// Gets called when SyncedVars gets updated                                                
         /// </summary>                                                                              
@@ -699,8 +630,8 @@ namespace MLAPI
         #endregion
 
         #region MESSAGING_SYSTEM
-        private readonly Dictionary<NetworkedBehaviour, Dictionary<ulong, ClientRPCAttribute>> CachedClientRpcs = new Dictionary<NetworkedBehaviour, Dictionary<ulong, ClientRPCAttribute>>();
-        private readonly Dictionary<NetworkedBehaviour, Dictionary<ulong, ServerRPCAttribute>> CachedServerRpcs = new Dictionary<NetworkedBehaviour, Dictionary<ulong, ServerRPCAttribute>>();
+        internal readonly Dictionary<NetworkedBehaviour, Dictionary<ulong, ClientRPCAttribute>> CachedClientRpcs = new Dictionary<NetworkedBehaviour, Dictionary<ulong, ClientRPCAttribute>>();
+        internal readonly Dictionary<NetworkedBehaviour, Dictionary<ulong, ServerRPCAttribute>> CachedServerRpcs = new Dictionary<NetworkedBehaviour, Dictionary<ulong, ServerRPCAttribute>>();
         private static readonly Dictionary<Type, MethodInfo[]> Methods = new Dictionary<Type, MethodInfo[]>();
         private static readonly Dictionary<ulong, string> HashResults = new Dictionary<ulong, string>();
         private static readonly Dictionary<MethodInfo, ulong> methodInfoHashTable = new Dictionary<MethodInfo, ulong>();

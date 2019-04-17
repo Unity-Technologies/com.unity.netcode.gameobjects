@@ -252,7 +252,15 @@ namespace MLAPI
         private void OnDestroy()
         {
             if (NetworkingManager.Singleton != null)
+            {
                 SpawnManager.OnDestroyObject(NetworkId, false);
+
+                for (int i = 0; i < childNetworkedBehaviours.Count; i++)
+                {
+                    childNetworkedBehaviours[i].CachedServerRpcs.Remove(childNetworkedBehaviours[i]);
+                    childNetworkedBehaviours[i].CachedClientRpcs.Remove(childNetworkedBehaviours[i]);
+                }
+            }
         }
 
         /// <summary>
