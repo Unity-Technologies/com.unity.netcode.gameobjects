@@ -1,7 +1,7 @@
 ﻿using System;
 namespace MLAPI_Tests.Data
 {
-    using MLAPI.Data;
+    using MLAPI.Hashing;
     using NUnit.Framework;
 
 

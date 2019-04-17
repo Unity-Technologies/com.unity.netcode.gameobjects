@@ -1,4 +1,5 @@
 using MLAPI;
+using MLAPI.Messaging;
 using UnityEngine;
 
 namespace MLAPI_Examples

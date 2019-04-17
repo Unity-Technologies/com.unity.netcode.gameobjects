@@ -76,7 +76,7 @@ namespace UnityEditor
 
         private void StartRecording()
         {
-            if (NetworkProfiler.isRunning)
+            if (NetworkProfiler.IsRunning)
                 StopRecording();
 
             if (NetworkProfiler.Ticks != null && NetworkProfiler.Ticks.Count >= 2)
@@ -97,7 +97,7 @@ namespace UnityEditor
 
         private void ChangeRecordState()
         {
-            if (NetworkProfiler.isRunning) StopRecording();
+            if (NetworkProfiler.IsRunning) StopRecording();
             else StartRecording();
         }
 
@@ -105,7 +105,7 @@ namespace UnityEditor
         double lastSetup = 0;
         private void OnGUI()
         {
-            bool recording = NetworkProfiler.isRunning;
+            bool recording = NetworkProfiler.IsRunning;
             float deltaTime = (float)(EditorApplication.timeSinceStartup - lastSetup);
             lastSetup = EditorApplication.timeSinceStartup;
 
@@ -174,7 +174,7 @@ namespace UnityEditor
             if (prevHis != captureCount) StartRecording();
 
             //Cache
-            if (NetworkProfiler.isRunning)
+            if (NetworkProfiler.IsRunning)
             {
                 if (Time.unscaledTime - lastDrawn > updateDelay)
                 {

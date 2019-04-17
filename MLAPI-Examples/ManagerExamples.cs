@@ -1,9 +1,7 @@
 using MLAPI;
-using MLAPI.Components;
-#if !DISABLE_CRYPTOGRAPHY
-using MLAPI.Cryptography;
-#endif
-using MLAPI.Data;
+using MLAPI.Connection;
+using MLAPI.Security;
+using MLAPI.Spawning;
 
 namespace MLAPI_Examples
 {
