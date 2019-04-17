@@ -36,6 +36,8 @@ public class NetworkingManagerEditor : Editor
     private SerializedProperty ensureNetworkedVarLengthSafetyProperty;
     private SerializedProperty forceSamePrefabsProperty;
     private SerializedProperty usePrefabSyncProperty;
+    private SerializedProperty recycleNetworkIdsProperty;
+    private SerializedProperty networkIdRecycleDelayProperty;
     private SerializedProperty rpcHashSizeProperty;
     private SerializedProperty loadSceneTimeOutProperty;
     private SerializedProperty enableEncryptionProperty;
@@ -110,6 +112,8 @@ public class NetworkingManagerEditor : Editor
         ensureNetworkedVarLengthSafetyProperty = networkConfigProperty.FindPropertyRelative("EnsureNetworkedVarLengthSafety");
         forceSamePrefabsProperty = networkConfigProperty.FindPropertyRelative("ForceSamePrefabs");
         usePrefabSyncProperty = networkConfigProperty.FindPropertyRelative("UsePrefabSync");
+        recycleNetworkIdsProperty = networkConfigProperty.FindPropertyRelative("RecycleNetworkIds");
+        networkIdRecycleDelayProperty = networkConfigProperty.FindPropertyRelative("NetworkIdRecycleDelay");
         rpcHashSizeProperty = networkConfigProperty.FindPropertyRelative("RpcHashSize");
         loadSceneTimeOutProperty = networkConfigProperty.FindPropertyRelative("LoadSceneTimeOut");
         enableEncryptionProperty = networkConfigProperty.FindPropertyRelative("EnableEncryption");
@@ -144,6 +148,8 @@ public class NetworkingManagerEditor : Editor
         ensureNetworkedVarLengthSafetyProperty = networkConfigProperty.FindPropertyRelative("EnsureNetworkedVarLengthSafety");
         forceSamePrefabsProperty = networkConfigProperty.FindPropertyRelative("ForceSamePrefabs");
         usePrefabSyncProperty = networkConfigProperty.FindPropertyRelative("UsePrefabSync");
+        recycleNetworkIdsProperty = networkConfigProperty.FindPropertyRelative("RecycleNetworkIds");
+        networkIdRecycleDelayProperty = networkConfigProperty.FindPropertyRelative("NetworkIdRecycleDelay");
         rpcHashSizeProperty = networkConfigProperty.FindPropertyRelative("RpcHashSize");
         loadSceneTimeOutProperty = networkConfigProperty.FindPropertyRelative("LoadSceneTimeOut");
         enableEncryptionProperty = networkConfigProperty.FindPropertyRelative("EnableEncryption");
@@ -299,6 +305,13 @@ public class NetworkingManagerEditor : Editor
             EditorGUILayout.LabelField("Spawning", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(forceSamePrefabsProperty);
             EditorGUILayout.PropertyField(usePrefabSyncProperty);
+            
+            EditorGUILayout.PropertyField(recycleNetworkIdsProperty);
+            
+            using (new EditorGUI.DisabledScope(!networkingManager.NetworkConfig.RecycleNetworkIds))
+            {
+                EditorGUILayout.PropertyField(networkIdRecycleDelayProperty);
+            }
             
             EditorGUILayout.LabelField("Bandwidth", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(rpcHashSizeProperty);
