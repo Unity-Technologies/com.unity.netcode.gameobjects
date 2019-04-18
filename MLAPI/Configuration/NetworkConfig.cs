@@ -225,6 +225,8 @@ namespace MLAPI.Configuration
                     writer.WriteBits((byte)config.RpcHashSize, 3);
                     writer.WriteBool(ForceSamePrefabs);
                     writer.WriteBool(UsePrefabSync);
+                    writer.WriteBool(RecycleNetworkIds);
+                    writer.WriteSinglePacked(NetworkIdRecycleDelay);
                     writer.WriteBool(EnableNetworkedVar);
                     stream.PadStream();
 
@@ -270,6 +272,8 @@ namespace MLAPI.Configuration
                     config.RpcHashSize = (HashSize)reader.ReadBits(3);
                     config.ForceSamePrefabs = reader.ReadBool();
                     config.UsePrefabSync = reader.ReadBool();
+                    config.RecycleNetworkIds = reader.ReadBool();
+                    config.NetworkIdRecycleDelay = reader.ReadSinglePacked();
                     config.EnableNetworkedVar = reader.ReadBool();
                 }
             }
