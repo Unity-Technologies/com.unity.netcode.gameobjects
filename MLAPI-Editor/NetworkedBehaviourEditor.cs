@@ -28,11 +28,11 @@ namespace UnityEditor
 
             networkedVarLabelGuiContent = new GUIContent("NetworkedVar", "This variable is a NetworkedVar. It can not be serialized and can only be changed during runtime.");
 
-            FieldInfo[] fields = script.GetClass().GetFields(BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy | BindingFlags.NonPublic);
+            FieldInfo[] fields = script.GetClass().GetFields(BindingFlags.Public | BindingFlags.Instance | BindingFlags.FlattenHierarchy);
             for (int i = 0; i < fields.Length; i++)
             {
                 Type ft = fields[i].FieldType;
-                if (ft.IsGenericType && ft.GetGenericTypeDefinition() == typeof(NetworkedVar<>))
+                if (ft.IsGenericType && ft.GetGenericTypeDefinition() == typeof(NetworkedVar<>) && !fields[i].IsDefined(typeof(HideInInspector), true))
                 {
                     networkedVarNames.Add(fields[i].Name);
                     networkedVarFields.Add(fields[i].Name, fields[i]);
