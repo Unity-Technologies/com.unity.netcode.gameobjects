@@ -28,6 +28,7 @@
         internal const byte MLAPI_CLIENT_RPC_REQUEST = 18;
         internal const byte MLAPI_CLIENT_RPC_RESPONSE = 19;
         internal const byte MLAPI_CUSTOM_MESSAGE = 20;
+        internal const byte MLAPI_DESTROY_OBJECTS = 21;
         internal const byte INVALID = 32;
 
         internal static readonly string[] MESSAGE_NAMES = {
@@ -52,7 +53,7 @@
             "MLAPI_CLIENT_RPC_REQUEST",
             "MLAPI_CLIENT_RPC_RESPONSE",
             "MLAPI_CUSTOM_MESSAGE",
-            "",
+            "MLAPI_DESTROY_OBJECTS",
             "",
             "",
             "",

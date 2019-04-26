@@ -836,6 +836,9 @@ namespace MLAPI
                         case MLAPIConstants.MLAPI_ADD_OBJECTS:
                             if (IsClient) InternalMessageHandler.HandleAddObjects(clientId, messageStream);
                             break;
+                        case MLAPIConstants.MLAPI_DESTROY_OBJECTS:
+                            if (IsClient) InternalMessageHandler.HandleDestroyObjects(clientId, messageStream);
+                            break;
                         case MLAPIConstants.MLAPI_TIME_SYNC:
                             if (IsClient) InternalMessageHandler.HandleTimeSync(clientId, messageStream);
                             break;

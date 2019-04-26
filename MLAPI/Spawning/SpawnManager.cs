@@ -361,54 +361,59 @@ namespace MLAPI.Spawning
         {
             using (PooledBitStream stream = PooledBitStream.Get())
             {
-                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
-                {
-                    writer.WriteBool(netObject.IsPlayerObject);
-                    writer.WriteUInt64Packed(netObject.NetworkId);
-                    writer.WriteUInt64Packed(netObject.OwnerClientId);
+                WriteSpawnCallForObject(stream, clientId, netObject, payload);
+                
+                InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_ADD_OBJECT, "MLAPI_INTERNAL", stream, SecuritySendFlags.None, null);
+            }
+        }
 
-                    if (NetworkingManager.Singleton.NetworkConfig.UsePrefabSync)
+        internal static void WriteSpawnCallForObject(MLAPI.Serialization.BitStream stream, ulong clientId, NetworkedObject netObject, Stream payload)
+        {
+            using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+            {
+                writer.WriteBool(netObject.IsPlayerObject);
+                writer.WriteUInt64Packed(netObject.NetworkId);
+                writer.WriteUInt64Packed(netObject.OwnerClientId);
+
+                if (NetworkingManager.Singleton.NetworkConfig.UsePrefabSync)
+                {
+                    writer.WriteUInt64Packed(netObject.PrefabHash);
+                }
+                else
+                {
+                    writer.WriteBool(netObject.IsSceneObject == null ? true : netObject.IsSceneObject.Value);
+
+                    if (netObject.IsSceneObject == null || netObject.IsSceneObject.Value)
                     {
-                        writer.WriteUInt64Packed(netObject.PrefabHash);
+                        writer.WriteUInt64Packed(netObject.NetworkedInstanceId);
                     }
                     else
                     {
-                        writer.WriteBool(netObject.IsSceneObject == null ? true : netObject.IsSceneObject.Value);
-
-                        if (netObject.IsSceneObject == null || netObject.IsSceneObject.Value)
-                        {
-                            writer.WriteUInt64Packed(netObject.NetworkedInstanceId);
-                        }
-                        else
-                        {
-                            writer.WriteUInt64Packed(netObject.PrefabHash);
-                        }
+                        writer.WriteUInt64Packed(netObject.PrefabHash);
                     }
-
-                    writer.WriteSinglePacked(netObject.transform.position.x);
-                    writer.WriteSinglePacked(netObject.transform.position.y);
-                    writer.WriteSinglePacked(netObject.transform.position.z);
-
-                    writer.WriteSinglePacked(netObject.transform.rotation.eulerAngles.x);
-                    writer.WriteSinglePacked(netObject.transform.rotation.eulerAngles.y);
-                    writer.WriteSinglePacked(netObject.transform.rotation.eulerAngles.z);
-
-                    writer.WriteBool(payload != null);
-                    
-                    if (payload != null)
-                    {
-                        writer.WriteInt32Packed((int)payload.Length);
-                    }
-
-                    if (NetworkingManager.Singleton.NetworkConfig.EnableNetworkedVar)
-                    {
-                        netObject.WriteNetworkedVarData(stream, clientId);
-                    }
-
-                    if (payload != null) stream.CopyFrom(payload);
                 }
-                
-                InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_ADD_OBJECT, "MLAPI_INTERNAL", stream, SecuritySendFlags.None, null);
+
+                writer.WriteSinglePacked(netObject.transform.position.x);
+                writer.WriteSinglePacked(netObject.transform.position.y);
+                writer.WriteSinglePacked(netObject.transform.position.z);
+
+                writer.WriteSinglePacked(netObject.transform.rotation.eulerAngles.x);
+                writer.WriteSinglePacked(netObject.transform.rotation.eulerAngles.y);
+                writer.WriteSinglePacked(netObject.transform.rotation.eulerAngles.z);
+
+                writer.WriteBool(payload != null);
+
+                if (payload != null)
+                {
+                    writer.WriteInt32Packed((int) payload.Length);
+                }
+
+                if (NetworkingManager.Singleton.NetworkConfig.EnableNetworkedVar)
+                {
+                    netObject.WriteNetworkedVarData(stream, clientId);
+                }
+
+                if (payload != null) stream.CopyFrom(payload);
             }
         }
 

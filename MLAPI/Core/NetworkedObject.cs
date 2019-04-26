@@ -210,13 +210,61 @@ namespace MLAPI
             {
                 throw new NotServerException("Only server can change visibility");
             }
-            
-            if (!observers.Contains(clientId))
+
+            if (observers.Contains(clientId))
             {
-                // Send spawn call
-                observers.Add(clientId);
+                throw new VisibilityChangeException("The object is already visible");
+            }
+            
+            // Send spawn call
+            observers.Add(clientId);
                 
-                SpawnManager.SendSpawnCallForObject(clientId, this, payload);
+            SpawnManager.SendSpawnCallForObject(clientId, this, payload);
+        }
+
+        /// <summary>
+        /// Shows a list of previously hidden objects to a client
+        /// </summary>
+        /// <param name="networkedObjects">The objects to show</param>
+        /// <param name="clientId">The client to show the objects to</param>
+        /// <param name="payload">An optional payload to send as part of the spawns</param>
+        public static void NetworkShow(List<NetworkedObject> networkedObjects, ulong clientId, Stream payload = null)
+        {
+            if (!NetworkingManager.Singleton.IsServer)
+            {
+                throw new NotServerException("Only server can change visibility");
+            }
+
+            // Do the safety loop first to prevent putting the MLAPI in an invalid state.
+            for (int i = 0; i < networkedObjects.Count; i++)
+            {
+                if (!networkedObjects[i].IsSpawned)
+                {
+                    throw new SpawnStateException("Object is not spawned");
+                }
+
+                if (networkedObjects[i].observers.Contains(clientId))
+                {
+                    throw new VisibilityChangeException("NetworkedObject with NetworkId: " + networkedObjects[i].NetworkId + " is already visible");
+                }
+            }
+            
+            using (PooledBitStream stream = PooledBitStream.Get())
+            {
+                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                {
+                    writer.WriteUInt16Packed((ushort)networkedObjects.Count);
+                }
+                
+                for (int i = 0; i < networkedObjects.Count; i++)
+                {
+                    // Send spawn call
+                    networkedObjects[i].observers.Add(clientId);
+                        
+                    SpawnManager.WriteSpawnCallForObject(stream, clientId, networkedObjects[i], payload);
+                }
+                
+                InternalMessageSender.Send(MLAPIConstants.MLAPI_ADD_OBJECTS, "MLAPI_INTERNAL", stream, SecuritySendFlags.None, null);
             }
         }
 
@@ -235,21 +283,80 @@ namespace MLAPI
             {
                 throw new NotServerException("Only server can change visibility");
             }
-            
-            if (observers.Contains(clientId) && clientId != NetworkingManager.Singleton.ServerClientId)
-            {
-                // Send destroy call
-                observers.Remove(clientId);
-                
-                using (PooledBitStream stream = PooledBitStream.Get())
-                {
-                    using (PooledBitWriter writer = PooledBitWriter.Get(stream))
-                    {
-                        writer.WriteUInt64Packed(NetworkId);
 
-                        InternalMessageSender.Send(MLAPIConstants.MLAPI_DESTROY_OBJECT, "MLAPI_INTERNAL", stream, SecuritySendFlags.None, null);
+            if (!observers.Contains(clientId))
+            {
+                throw new VisibilityChangeException("The object is already hidden");
+            }
+
+            if (clientId == NetworkingManager.Singleton.ServerClientId)
+            {
+                throw new VisibilityChangeException("Cannot hide an object from the server");
+            }
+            
+            
+            // Send destroy call
+            observers.Remove(clientId);
+                
+            using (PooledBitStream stream = PooledBitStream.Get())
+            {
+                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                {
+                    writer.WriteUInt64Packed(NetworkId);
+
+                    InternalMessageSender.Send(MLAPIConstants.MLAPI_DESTROY_OBJECT, "MLAPI_INTERNAL", stream, SecuritySendFlags.None, null);
+                }
+            }
+        }
+        
+        /// <summary>
+        /// Hides a list of objects from a client
+        /// </summary>
+        /// <param name="networkedObjects">The objects to hide</param>
+        /// <param name="clientId">The client to hide the objects from</param>
+        public static void NetworkHide(List<NetworkedObject> networkedObjects, ulong clientId)
+        {
+            if (!NetworkingManager.Singleton.IsServer)
+            {
+                throw new NotServerException("Only server can change visibility");
+            }
+            
+            if (clientId == NetworkingManager.Singleton.ServerClientId)
+            {
+                throw new VisibilityChangeException("Cannot hide an object from the server");
+            }
+
+            // Do the safety loop first to prevent putting the MLAPI in an invalid state.
+            for (int i = 0; i < networkedObjects.Count; i++)
+            {
+                if (!networkedObjects[i].IsSpawned)
+                {
+                    throw new SpawnStateException("Object is not spawned");
+                }
+
+                if (!networkedObjects[i].observers.Contains(clientId))
+                {
+                    throw new VisibilityChangeException("NetworkedObject with NetworkId: " + networkedObjects[i].NetworkId + " is already hidden");
+                }
+            }
+
+
+            using (PooledBitStream stream = PooledBitStream.Get())
+            {
+                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                {
+                    writer.WriteUInt16Packed((ushort)networkedObjects.Count);
+                    
+                    for (int i = 0; i < networkedObjects.Count; i++)
+                    {
+                        // Send destroy call
+                        networkedObjects[i].observers.Remove(clientId);
+                        
+                        writer.WriteUInt64Packed(networkedObjects[i].NetworkId);
                     }
                 }
+                
+                InternalMessageSender.Send(MLAPIConstants.MLAPI_DESTROY_OBJECTS, "MLAPI_INTERNAL", stream, SecuritySendFlags.None, null);
             }
         }
         

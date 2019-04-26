@@ -403,43 +403,23 @@ namespace MLAPI.Messaging
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
                 ushort objectCount = reader.ReadUInt16Packed();
+                
                 for (int i = 0; i < objectCount; i++)
                 {
-                    bool isPlayerObject = reader.ReadBool();
-                    ulong networkId = reader.ReadUInt64Packed();
-                    ulong ownerId = reader.ReadUInt64Packed();
-
-                    ulong prefabHash;
-                    ulong instanceId;
-                    bool softSync;
-                    
-                    if (NetworkingManager.Singleton.NetworkConfig.UsePrefabSync)
-                    {
-                        softSync = false;
-                        instanceId = 0;
-                        prefabHash = reader.ReadUInt64Packed();
-                    }
-                    else
-                    {
-                        softSync = reader.ReadBool();
-
-                        if (softSync)
-                        {
-                            instanceId = reader.ReadUInt64Packed();
-                            prefabHash = 0;
-                        }
-                        else
-                        {
-                            prefabHash = reader.ReadUInt64Packed();
-                            instanceId = 0;
-                        }
-                    }
-
-                    Vector3 pos = new Vector3(reader.ReadSinglePacked(), reader.ReadSinglePacked(), reader.ReadSinglePacked());
-                    Quaternion rot = Quaternion.Euler(reader.ReadSinglePacked(), reader.ReadSinglePacked(), reader.ReadSinglePacked());
-                    
-                    NetworkedObject netObject = SpawnManager.CreateLocalNetworkedObject(softSync, instanceId, prefabHash, pos, rot);
-                    SpawnManager.SpawnNetworkedObjectLocally(netObject, networkId, softSync, isPlayerObject, ownerId, stream, false, 0, true, false);
+                    HandleAddObject(clientId, stream);
+                }
+            }
+        }
+        
+        internal static void HandleDestroyObjects(ulong clientId, Stream stream)
+        {
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
+            {
+                ushort objectCount = reader.ReadUInt16Packed();
+                
+                for (int i = 0; i < objectCount; i++)
+                {
+                    HandleDestroyObject(clientId, stream);
                 }
             }
         }
