@@ -5,7 +5,7 @@ permalink: /wiki/network-profiler-window/
 
 The MLAPI NetworkProfiler is an Editor window for profiling bandwidth usage for a game. It uses the public MLAPI NetworkProfiler API. The Editor Window is included in the Editor unityasset starting with version v1.3.0
 
-![](https://i.imgur.com/VwTLPGB.png)
+![](https://i.imgur.com/iCwjLkm.png)
 
 The first toggle states if the NetworkProfiler should be recording. The second field states how many Ticks of history the profiler should keep track of. The third is the delay between each refresh of the window. Higher refreshes might make it difficult to read the values you want. Real-time can be achieved by setting this to 0. The last AnimationCurve shows time along the X-axis and the number of bytes sent on the Y-axis. It's not to be edited. It's useful for finding where bytes are used in a large capture. The third range specifies the range of the capture to show in the window. Note that this is useful together with the AnimationCurve as they should line up fairly well.
 
