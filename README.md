@@ -5,6 +5,7 @@
 [![Discord](https://img.shields.io/discord/449263083769036810.svg?label=discord&logo=discord&color=informational)](https://discord.gg/FM8SE9E)
 [![Build Status](https://img.shields.io/appveyor/ci/midlevel/mlapi/master.svg?logo=appveyor)](https://ci.appveyor.com/project/MidLevel/mlapi/branch/master)
 [![AppVeyor Tests](https://img.shields.io/appveyor/tests/midlevel/mlapi/master.svg?logo=AppVeyor)](https://ci.appveyor.com/project/MidLevel/mlapi/build/tests)
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FMidLevel%2FMLAPI.svg?type=shield)](https://app.fossa.io/projects/git%2Bgithub.com%2FMidLevel%2FMLAPI?ref=badge_shield)
 
 
 [![Licence](https://img.shields.io/github/license/midlevel/mlapi.svg?color=informational)](https://github.com/MidLevel/MLAPI/blob/master/LICENCE)
@@ -72,3 +73,6 @@ public class Chat : NetworkedBehaviour
     }
 }
 ```
+
+## License
+[![FOSSA Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2FMidLevel%2FMLAPI.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2FMidLevel%2FMLAPI?ref=badge_large)
