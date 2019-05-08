@@ -284,6 +284,7 @@ namespace MLAPI.Messaging
                     void OnSceneLoadComplete()
                     {
                         SceneManager.activeSceneChanged -= onSceneLoaded;
+                        NetworkSceneManager.isSpawnedObjectsPendingInDontDestroyOnLoad = false;
                         DelayedSpawnAction(continuationStream);
                     }
 
