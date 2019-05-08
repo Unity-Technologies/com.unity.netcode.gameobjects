@@ -147,6 +147,7 @@ namespace MLAPI.SceneManagement
             nextScene = SceneManager.GetSceneByName(sceneName);
             CurrentActiveSceneIndex = sceneNameToIndex[sceneName];
 
+            isSpawnedObjectsPendingInDontDestroyOnLoad = true;
             SceneManager.LoadScene(sceneName);
             
             using (PooledBitStream stream = PooledBitStream.Get())
