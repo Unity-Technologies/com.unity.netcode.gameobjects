@@ -515,6 +515,9 @@ namespace MLAPI
         private static int _lastProcessedObject = 0;
         internal static void NetworkedBehaviourUpdate()
         {
+            if (SpawnManager.SpawnedObjectsList.Count == 0)
+                return;
+
             int amountToProcess = NetworkingManager.Singleton.NetworkConfig.MaxObjectUpdatesPerTick <= 0 ? SpawnManager.SpawnedObjectsList.Count : Mathf.Max(NetworkingManager.Singleton.NetworkConfig.MaxObjectUpdatesPerTick, SpawnManager.SpawnedObjectsList.Count);
 
             for (int i = 0; i < amountToProcess; i++)
