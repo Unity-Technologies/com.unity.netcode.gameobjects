@@ -432,7 +432,7 @@ namespace MLAPI.Messaging
                 float netTime = reader.ReadSinglePacked();
                 ulong msDelay = NetworkingManager.Singleton.NetworkConfig.NetworkTransport.GetCurrentRtt(clientId);
                 
-                NetworkingManager.Singleton.NetworkTime = netTime + (msDelay / 1000f);
+                NetworkingManager.Singleton.NetworkTime = netTime + (msDelay / 2f / 1000f);
             }
         }
 
