@@ -15,6 +15,10 @@ namespace MLAPI.Messaging
         /// </summary>
         public bool RequireOwnership = true;
         internal ReflectionMethod reflectionMethod;
+#if ENABLE_IL2CPP
+        internal System.Reflection.MethodInfo perfMethod;
+#else
         internal RpcDelegate rpcDelegate;
-    }
+#endif
+  }
 }

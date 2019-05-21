@@ -11,6 +11,10 @@ namespace MLAPI.Messaging
     public class ClientRPCAttribute : Attribute
     {
         internal ReflectionMethod reflectionMethod;
+#if ENABLE_IL2CPP
+        internal System.Reflection.MethodInfo perfMethod;
+#else
         internal RpcDelegate rpcDelegate;
-    }
+#endif
+  }
 }
