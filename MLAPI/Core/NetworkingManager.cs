@@ -254,7 +254,17 @@ namespace MLAPI
             
             for (int i = 0; i < NetworkConfig.NetworkedPrefabs.Count; i++)
             {
-                NetworkConfig.NetworkedPrefabs[i].Prefab.GetComponent<NetworkedObject>().ValidateHash();
+                if (NetworkConfig.NetworkedPrefabs[i] != null && NetworkConfig.NetworkedPrefabs[i].Prefab != null)
+                {
+                    if (NetworkConfig.NetworkedPrefabs[i].Prefab.GetComponent<NetworkedObject>() == null)
+                    {
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The network prefab [" + i + "] does not have a NetworkedObject component");
+                    }
+                    else
+                    {
+                        NetworkConfig.NetworkedPrefabs[i].Prefab.GetComponent<NetworkedObject>().ValidateHash();
+                    }
+                }
             }
             
             // TODO: Show which two prefab generators that collide
