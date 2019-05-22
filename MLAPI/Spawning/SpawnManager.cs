@@ -340,6 +340,7 @@ namespace MLAPI.Spawning
                 }
             }
             
+            netObject.ResetNetworkedStartInvoked();
             
             if (readPayload)
             {
