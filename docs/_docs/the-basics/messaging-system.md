@@ -23,9 +23,9 @@ void MyMethod(int myInt)
 
 #### Convenience Example
 ```csharp
-private void Update()
+private void OnGUI()
 {
-    if (GUI.Button("SendRandomInt"))
+    if (GUILayout.Button("SendRandomInt"))
     {
         if (IsServer)
         {
@@ -41,14 +41,14 @@ private void Update()
 [ServerRPC]
 private void MyServerRPC(int number)
 {
-    Debug.Log("The number recieved was: " + number);
+    Debug.Log("The number received was: " + number);
     Debug.Log("This method ran on the server upon the request of a client");
 }
 
 [ClientRPC]
 private void MyClientRPC(int number)
 {
-    Debug.Log("The number recieved was: " + number);
+    Debug.Log("The number received was: " + number);
     Debug.Log("This method ran on the client upon the request of the server");
 }
 ```
@@ -83,9 +83,9 @@ public float MyRpcWithReturnValue(float x, float y)
 To use the performance mode, the RPC method require the following signature ``void (ulong clientId, Stream readStream)`` and the sender is required to use the non generic Stream overload.
 
 ```csharp
-private void Update()
+private void OnGUI()
 {
-    if (GUI.Button("SendRandomInt"))
+    if (GUILayout.Button("SendRandomInt"))
     {
         if (IsServer)
         {
@@ -120,7 +120,7 @@ private void MyServerRPC(ulong clientId, Stream stream) //This signature is REQU
     using (PooledBitReader reader = PooledBitReader.Get(stream))
     {
         int number = reader.ReadInt32Packed();
-        Debug.Log("The number recieved was: " + number);
+        Debug.Log("The number received was: " + number);
         Debug.Log("This method ran on the server upon the request of a client");
     }
 }
@@ -131,7 +131,7 @@ private void MyClientRPC(ulong clientId, Stream stream) //This signature is REQU
     using (PooledBitReader reader = PooledBitReader.Get(stream))
     {
         int number = reader.ReadInt32Packed();
-        Debug.Log("The number recieved was: " + number);
+        Debug.Log("The number received was: " + number);
         Debug.Log("This method ran on the client upon the request of the server");
     }
 }
@@ -167,9 +167,9 @@ If you don't want to use the MLAPI's messaging. You don't have to. You can use a
 
 #### Usage
 ```csharp
-void Start()
+private void Start()
 {
-    //Recieving
+    //Receiving
     NetworkingManager.Singleton.OnIncommingCustomMessage += ((clientId, stream) =>
     {
         using (PooledBitReader reader = PooledBitReader.Get(stream))
