@@ -206,9 +206,7 @@ namespace MLAPI.Messaging
                 Guid sceneSwitchProgressGuid = new Guid(reader.ReadByteArray());
 
                 float netTime = reader.ReadSinglePacked();
-                ulong msDelay = NetworkingManager.Singleton.NetworkConfig.NetworkTransport.GetCurrentRtt(clientId);
-                
-                NetworkingManager.Singleton.NetworkTime = netTime + (msDelay / 1000f);
+                NetworkingManager.Singleton.UpdateNetworkTime(clientId, netTime);
 
                 NetworkingManager.Singleton.ConnectedClients.Add(NetworkingManager.Singleton.LocalClientId, new NetworkedClient() { ClientId = NetworkingManager.Singleton.LocalClientId });
 
@@ -430,9 +428,7 @@ namespace MLAPI.Messaging
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
                 float netTime = reader.ReadSinglePacked();
-                ulong msDelay = NetworkingManager.Singleton.NetworkConfig.NetworkTransport.GetCurrentRtt(clientId);
-                
-                NetworkingManager.Singleton.NetworkTime = netTime + (msDelay / 1000f);
+                NetworkingManager.Singleton.UpdateNetworkTime(clientId, netTime);
             }
         }
 
@@ -644,5 +640,6 @@ namespace MLAPI.Messaging
         {
             NetworkingManager.Singleton.InvokeOnIncomingCustomMessage(clientId, stream);
         }
+
     }
 }

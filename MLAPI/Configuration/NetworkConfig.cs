@@ -96,6 +96,11 @@ namespace MLAPI.Configuration
         [Tooltip("Enable this to resync the NetworkedTime after the initial sync")]
         public bool EnableTimeResync = false;
         /// <summary>
+        /// If time resync is turned on, this specifies the interval between syncs in seconds.
+        /// </summary>
+        [Tooltip("The amount of seconds between resyncs of NetworkedTime, if enabled")]
+        public int TimeResyncInterval = 30;
+        /// <summary>
         /// Whether or not to enable the NetworkedVar system. This system runs in the Update loop and will degrade performance, but it can be a huge convenience.
         /// Only turn it off if you have no need for the NetworkedVar system.
         /// </summary>
