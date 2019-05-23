@@ -40,18 +40,18 @@ permalink: /api/networked-var-permissions-delegate/
 <div>
 	<h3 markdown="1">Public Methods</h3>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``bool`` Invoke(``uint`` clientId);</b></h4>
+		<h4 markdown="1"><b>public ``bool`` Invoke(``ulong`` clientId);</b></h4>
 		<h5><b>Parameters</b></h5>
 		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+			<p style="font-size: 20px; color: #444;" markdown="1">``ulong`` clientId</p>
 		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``IAsyncResult`` BeginInvoke(``uint`` clientId, ``AsyncCallback`` callback, ``object`` object);</b></h4>
+		<h4 markdown="1"><b>public ``IAsyncResult`` BeginInvoke(``ulong`` clientId, ``AsyncCallback`` callback, ``object`` object);</b></h4>
 		<h5><b>Parameters</b></h5>
 		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+			<p style="font-size: 20px; color: #444;" markdown="1">``ulong`` clientId</p>
 		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``AsyncCallback`` callback</p>
@@ -95,12 +95,12 @@ permalink: /api/networked-var-permissions-delegate/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``int`` GetHashCode();</b></h4>
+		<h4 markdown="1"><b>public ``Delegate[]`` GetInvocationList();</b></h4>
 		<h5 markdown="1">Inherited from: ``MulticastDelegate``</h5>
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Delegate[]`` GetInvocationList();</b></h4>
+		<h4 markdown="1"><b>public ``int`` GetHashCode();</b></h4>
 		<h5 markdown="1">Inherited from: ``MulticastDelegate``</h5>
 	</div>
 	<br>
@@ -119,12 +119,12 @@ permalink: /api/networked-var-permissions-delegate/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Type`` GetType();</b></h4>
+		<h4 markdown="1"><b>public ``string`` ToString();</b></h4>
 		<h5 markdown="1">Inherited from: ``object``</h5>
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``string`` ToString();</b></h4>
+		<h4 markdown="1"><b>public ``Type`` GetType();</b></h4>
 		<h5 markdown="1">Inherited from: ``object``</h5>
 	</div>
 </div>

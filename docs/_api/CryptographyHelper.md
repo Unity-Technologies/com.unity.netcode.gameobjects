@@ -6,7 +6,7 @@ permalink: /api/cryptography-helper/
 
 <div style="line-height: 1;">
 	<h2 markdown="1">CryptographyHelper ``class``</h2>
-	<p style="font-size: 20px;"><b>Namespace:</b> MLAPI.Cryptography</p>
+	<p style="font-size: 20px;"><b>Namespace:</b> MLAPI.Security</p>
 	<p style="font-size: 20px;"><b>Assembly:</b> MLAPI.dll</p>
 </div>
 <p>Helper class for encryption purposes</p>
@@ -40,11 +40,11 @@ permalink: /api/cryptography-helper/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public static ``byte[]`` GetClientKey(``uint`` clientId);</b></h4>
+		<h4 markdown="1"><b>public static ``byte[]`` GetClientKey(``ulong`` clientId);</b></h4>
 		<p>Gets the aes key for any given clientId</p>
 		<h5><b>Parameters</b></h5>
 		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+			<p style="font-size: 20px; color: #444;" markdown="1">``ulong`` clientId</p>
 			<p>The clientId of the client whose aes key we want</p>
 		</div>
 		<h5 markdown="1"><b>Returns ``byte[]``</b></h5>
@@ -67,6 +67,11 @@ permalink: /api/cryptography-helper/
 <div>
 	<h3 markdown="1">Inherited Methods</h3>
 	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``string`` ToString();</b></h4>
+		<h5 markdown="1">Inherited from: ``object``</h5>
+	</div>
+	<br>
+	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``bool`` Equals(``object`` obj);</b></h4>
 		<h5 markdown="1">Inherited from: ``object``</h5>
 		<h5><b>Parameters</b></h5>
@@ -82,11 +87,6 @@ permalink: /api/cryptography-helper/
 	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``Type`` GetType();</b></h4>
-		<h5 markdown="1">Inherited from: ``object``</h5>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``string`` ToString();</b></h4>
 		<h5 markdown="1">Inherited from: ``object``</h5>
 	</div>
 </div>

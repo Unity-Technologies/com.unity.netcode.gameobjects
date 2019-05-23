@@ -6,7 +6,7 @@ permalink: /api/pending-client/
 
 <div style="line-height: 1;">
 	<h2 markdown="1">PendingClient ``class``</h2>
-	<p style="font-size: 20px;"><b>Namespace:</b> MLAPI.Data</p>
+	<p style="font-size: 20px;"><b>Namespace:</b> MLAPI.Connection</p>
 	<p style="font-size: 20px;"><b>Assembly:</b> MLAPI.dll</p>
 </div>
 <p>A class representing a client that is currently in the process of connecting</p>
@@ -14,7 +14,7 @@ permalink: /api/pending-client/
 <div>
 	<h3 markdown="1">Public Fields</h3>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``uint`` ClientId;</b></h4>
+		<h4 markdown="1"><b>public ``ulong`` ClientId;</b></h4>
 		<p>The ClientId of the client</p>
 	</div>
 	<div style="line-height: 1;">
@@ -37,6 +37,11 @@ permalink: /api/pending-client/
 <div>
 	<h3 markdown="1">Inherited Methods</h3>
 	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``string`` ToString();</b></h4>
+		<h5 markdown="1">Inherited from: ``object``</h5>
+	</div>
+	<br>
+	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``bool`` Equals(``object`` obj);</b></h4>
 		<h5 markdown="1">Inherited from: ``object``</h5>
 		<h5><b>Parameters</b></h5>
@@ -52,11 +57,6 @@ permalink: /api/pending-client/
 	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``Type`` GetType();</b></h4>
-		<h5 markdown="1">Inherited from: ``object``</h5>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``string`` ToString();</b></h4>
 		<h5 markdown="1">Inherited from: ``object``</h5>
 	</div>
 </div>

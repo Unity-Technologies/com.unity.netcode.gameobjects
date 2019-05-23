@@ -6,7 +6,7 @@ permalink: /api/pooled-bit-stream/
 
 <div style="line-height: 1;">
 	<h2 markdown="1">PooledBitStream ``class``</h2>
-	<p style="font-size: 20px;"><b>Namespace:</b> MLAPI.Serialization</p>
+	<p style="font-size: 20px;"><b>Namespace:</b> MLAPI.Serialization.Pooled</p>
 	<p style="font-size: 20px;"><b>Assembly:</b> MLAPI.dll</p>
 </div>
 <p>Disposable BitStream that returns the Stream to the BitStreamPool when disposed</p>
@@ -31,7 +31,7 @@ permalink: /api/pooled-bit-stream/
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``bool`` HasDataToRead { get; }</b></h4>
 		<h5 markdown="1">Inherited from: [``BitStream``](/MLAPI/api/bit-stream/)</h5>
-		<p>Wheter or not or there is any data to be read from the stream.</p>
+		<p>Whether or not or there is any data to be read from the stream.</p>
 	</div>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``bool`` CanSeek { get; }</b></h4>
@@ -227,6 +227,17 @@ permalink: /api/pooled-bit-stream/
 	</div>
 	<br>
 	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` WriteByte(``byte`` value);</b></h4>
+		<h5 markdown="1">Inherited from: [``BitStream``](/MLAPI/api/bit-stream/)</h5>
+		<p>Write byte value to the internal stream buffer.</p>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``byte`` value</p>
+			<p>The byte value to write.</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``void`` Write(``byte[]`` buffer);</b></h4>
 		<h5 markdown="1">Inherited from: [``BitStream``](/MLAPI/api/bit-stream/)</h5>
 		<p>Write data from the given buffer to the internal stream buffer.</p>
@@ -264,6 +275,21 @@ permalink: /api/pooled-bit-stream/
 	</div>
 	<br>
 	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` CopyTo(``Stream`` stream, ``int`` count);</b></h4>
+		<h5 markdown="1">Inherited from: [``BitStream``](/MLAPI/api/bit-stream/)</h5>
+		<p>Copies internal buffer to stream</p>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Stream`` stream</p>
+			<p>The stream to copy to</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``int`` count</p>
+			<p>The maximum amount of bytes to copy. Set to value less than one to copy the full length</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``void`` CopyUnreadFrom(``Stream`` s, ``int`` count);</b></h4>
 		<h5 markdown="1">Inherited from: [``BitStream``](/MLAPI/api/bit-stream/)</h5>
 		<p>Copies urnead bytes from the source stream</p>
@@ -293,7 +319,7 @@ permalink: /api/pooled-bit-stream/
 		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``bool`` copyBits</p>
-			<p>Wheter or not to copy at the bit level rather than the byte level</p>
+			<p>Whether or not to copy at the bit level rather than the byte level</p>
 		</div>
 	</div>
 	<br>
@@ -321,6 +347,12 @@ permalink: /api/pooled-bit-stream/
 		<h4 markdown="1"><b>public ``void`` PadStream();</b></h4>
 		<h5 markdown="1">Inherited from: [``BitStream``](/MLAPI/api/bit-stream/)</h5>
 		<p>Writes zeros to fill the last byte</p>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` SkipPadBits();</b></h4>
+		<h5 markdown="1">Inherited from: [``BitStream``](/MLAPI/api/bit-stream/)</h5>
+		<p>Reads zeros until the the stream is byte aligned</p>
 	</div>
 	<br>
 	<div style="line-height: 1;">
@@ -541,54 +573,13 @@ permalink: /api/pooled-bit-stream/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` WriteByte(``byte`` value);</b></h4>
-		<h5 markdown="1">Inherited from: ``Stream``</h5>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``byte`` value</p>
-		</div>
+		<h4 markdown="1"><b>public ``object`` GetLifetimeService();</b></h4>
+		<h5 markdown="1">Inherited from: ``MarshalByRefObject``</h5>
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``int`` Read(``Span<byte>`` destination);</b></h4>
-		<h5 markdown="1">Inherited from: ``Stream``</h5>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``Span<byte>`` destination</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` Write(``ReadOnlySpan<byte>`` source);</b></h4>
-		<h5 markdown="1">Inherited from: ``Stream``</h5>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``ReadOnlySpan<byte>`` source</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``ValueTask<int>`` ReadAsync(``Memory<byte>`` destination, ``CancellationToken`` cancellationToken);</b></h4>
-		<h5 markdown="1">Inherited from: ``Stream``</h5>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``Memory<byte>`` destination</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``CancellationToken`` cancellationToken</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``ValueTask`` WriteAsync(``ReadOnlyMemory<byte>`` source, ``CancellationToken`` cancellationToken);</b></h4>
-		<h5 markdown="1">Inherited from: ``Stream``</h5>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``ReadOnlyMemory<byte>`` source</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``CancellationToken`` cancellationToken</p>
-		</div>
+		<h4 markdown="1"><b>public ``object`` InitializeLifetimeService();</b></h4>
+		<h5 markdown="1">Inherited from: ``MarshalByRefObject``</h5>
 	</div>
 	<br>
 	<div style="line-height: 1;">
@@ -598,16 +589,6 @@ permalink: /api/pooled-bit-stream/
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``Type`` requestedType</p>
 		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``object`` GetLifetimeService();</b></h4>
-		<h5 markdown="1">Inherited from: ``MarshalByRefObject``</h5>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``object`` InitializeLifetimeService();</b></h4>
-		<h5 markdown="1">Inherited from: ``MarshalByRefObject``</h5>
 	</div>
 	<br>
 	<div style="line-height: 1;">

@@ -1,41 +1,42 @@
 ---
-title: TransportHost
-name: TransportHost
-permalink: /api/transport-host/
+title: TransportChannel
+name: TransportChannel
+permalink: /api/transport-channel/
 ---
 
 <div style="line-height: 1;">
-	<h2 markdown="1">TransportHost ``class``</h2>
-	<p style="font-size: 20px;"><b>Namespace:</b> MLAPI.Transports.UNET</p>
+	<h2 markdown="1">TransportChannel ``class``</h2>
+	<p style="font-size: 20px;"><b>Namespace:</b> MLAPI.Transports</p>
 	<p style="font-size: 20px;"><b>Assembly:</b> MLAPI.dll</p>
 </div>
-<p>Represents a Transport host</p>
+<p>A transport channel used by the MLAPI</p>
 
 <div>
 	<h3 markdown="1">Public Fields</h3>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``string`` Name;</b></h4>
-		<p>The name of the host</p>
+		<p>The name of the channel</p>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``int`` Port;</b></h4>
-		<p>The port the host should listen to</p>
-	</div>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``bool`` Websockets;</b></h4>
-		<p>If true, the socket will listen on TCP-Websockets, otherwise UDP</p>
+		<h4 markdown="1"><b>public [``ChannelType``](/MLAPI/api/channel-type/) Type;</b></h4>
+		<p>The type of channel</p>
 	</div>
 </div>
 <br>
 <div>
 	<h3>Public Constructors</h3>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``TransportHost``](/MLAPI/api/transport-host/)();</b></h4>
+		<h4 markdown="1"><b>public [``TransportChannel``](/MLAPI/api/transport-channel/)();</b></h4>
 	</div>
 </div>
 <br>
 <div>
 	<h3 markdown="1">Inherited Methods</h3>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``string`` ToString();</b></h4>
+		<h5 markdown="1">Inherited from: ``object``</h5>
+	</div>
+	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``bool`` Equals(``object`` obj);</b></h4>
 		<h5 markdown="1">Inherited from: ``object``</h5>
@@ -52,11 +53,6 @@ permalink: /api/transport-host/
 	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``Type`` GetType();</b></h4>
-		<h5 markdown="1">Inherited from: ``object``</h5>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``string`` ToString();</b></h4>
 		<h5 markdown="1">Inherited from: ``object``</h5>
 	</div>
 </div>

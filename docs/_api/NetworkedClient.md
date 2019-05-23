@@ -6,7 +6,7 @@ permalink: /api/networked-client/
 
 <div style="line-height: 1;">
 	<h2 markdown="1">NetworkedClient ``class``</h2>
-	<p style="font-size: 20px;"><b>Namespace:</b> MLAPI.Data</p>
+	<p style="font-size: 20px;"><b>Namespace:</b> MLAPI.Connection</p>
 	<p style="font-size: 20px;"><b>Assembly:</b> MLAPI.dll</p>
 </div>
 <p>A NetworkedClient</p>
@@ -14,7 +14,7 @@ permalink: /api/networked-client/
 <div>
 	<h3 markdown="1">Public Fields</h3>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``uint`` ClientId;</b></h4>
+		<h4 markdown="1"><b>public ``ulong`` ClientId;</b></h4>
 		<p>The Id of the NetworkedClient</p>
 	</div>
 	<div style="line-height: 1;">
@@ -41,6 +41,11 @@ permalink: /api/networked-client/
 <div>
 	<h3 markdown="1">Inherited Methods</h3>
 	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``string`` ToString();</b></h4>
+		<h5 markdown="1">Inherited from: ``object``</h5>
+	</div>
+	<br>
+	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``bool`` Equals(``object`` obj);</b></h4>
 		<h5 markdown="1">Inherited from: ``object``</h5>
 		<h5><b>Parameters</b></h5>
@@ -56,11 +61,6 @@ permalink: /api/networked-client/
 	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``Type`` GetType();</b></h4>
-		<h5 markdown="1">Inherited from: ``object``</h5>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``string`` ToString();</b></h4>
 		<h5 markdown="1">Inherited from: ``object``</h5>
 	</div>
 </div>

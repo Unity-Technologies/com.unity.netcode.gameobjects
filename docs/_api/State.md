@@ -6,7 +6,7 @@ permalink: /api/state/
 
 <div style="line-height: 1;">
 	<h2 markdown="1">State ``enum``</h2>
-	<p style="font-size: 20px;"><b>Namespace:</b> MLAPI.Data</p>
+	<p style="font-size: 20px;"><b>Namespace:</b> MLAPI.Connection</p>
 	<p style="font-size: 20px;"><b>Assembly:</b> MLAPI.dll</p>
 </div>
 <p>The states of a connection</p>
