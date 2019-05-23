@@ -36,7 +36,7 @@ The ConnectionData will then be passed to the server and it will decide if the c
 
 
 ### Timeout
-The MLAPI uses a callback system in order to allow for external validation. Forexample, you might have a steam authentication ticket sent as the ConnectionData (encrypted and authenticated by the MLAPI) that you want to validate against steams servers. This can take some time. If you don't call the callback method within the time specified in the ``ClientConnectionBufferTimeout`` configuration. The connection will be dropped. This time starts counting when the transport has told the MLAPI about the connection. This means that you cannot attack the MLAPI by never sending the buffer, it will still time you out.
+The MLAPI uses a callback system in order to allow for external validation. For example, you might have a steam authentication ticket sent as the ConnectionData (encrypted and authenticated by the MLAPI) that you want to validate against steams servers. This can take some time. If you don't call the callback method within the time specified in the ``ClientConnectionBufferTimeout`` configuration the connection will be dropped. This time starts counting when the transport has told the MLAPI about the connection. This means that you cannot attack the MLAPI by never sending the buffer, it will still time you out.
 
 
 ### Security
