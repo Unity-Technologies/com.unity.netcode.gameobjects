@@ -32,6 +32,7 @@ public class NetworkingManagerEditor : Editor
     private SerializedProperty connectionApprovalProperty;
     private SerializedProperty secondsHistoryProperty;
     private SerializedProperty enableTimeResyncProperty;
+    private SerializedProperty timeResyncIntervalProperty;
     private SerializedProperty enableNetworkedVarProperty;
     private SerializedProperty ensureNetworkedVarLengthSafetyProperty;
     private SerializedProperty forceSamePrefabsProperty;
@@ -108,6 +109,7 @@ public class NetworkingManagerEditor : Editor
         connectionApprovalProperty = networkConfigProperty.FindPropertyRelative("ConnectionApproval");
         secondsHistoryProperty = networkConfigProperty.FindPropertyRelative("SecondsHistory");
         enableTimeResyncProperty = networkConfigProperty.FindPropertyRelative("EnableTimeResync");
+        timeResyncIntervalProperty = networkConfigProperty.FindPropertyRelative("TimeResyncInterval");
         enableNetworkedVarProperty = networkConfigProperty.FindPropertyRelative("EnableNetworkedVar");
         ensureNetworkedVarLengthSafetyProperty = networkConfigProperty.FindPropertyRelative("EnsureNetworkedVarLengthSafety");
         forceSamePrefabsProperty = networkConfigProperty.FindPropertyRelative("ForceSamePrefabs");
@@ -144,6 +146,7 @@ public class NetworkingManagerEditor : Editor
         connectionApprovalProperty = networkConfigProperty.FindPropertyRelative("ConnectionApproval");
         secondsHistoryProperty = networkConfigProperty.FindPropertyRelative("SecondsHistory");
         enableTimeResyncProperty = networkConfigProperty.FindPropertyRelative("EnableTimeResync");
+        timeResyncIntervalProperty = networkConfigProperty.FindPropertyRelative("TimeResyncInterval");
         enableNetworkedVarProperty = networkConfigProperty.FindPropertyRelative("EnableNetworkedVar");
         ensureNetworkedVarLengthSafetyProperty = networkConfigProperty.FindPropertyRelative("EnsureNetworkedVarLengthSafety");
         forceSamePrefabsProperty = networkConfigProperty.FindPropertyRelative("ForceSamePrefabs");
@@ -277,7 +280,8 @@ public class NetworkingManagerEditor : Editor
             }
             
             EditorGUILayout.PropertyField(enableTimeResyncProperty);
-            
+            EditorGUILayout.PropertyField(timeResyncIntervalProperty);
+
             EditorGUILayout.LabelField("Performance", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(receiveTickrateProperty);
             EditorGUILayout.PropertyField(maxReceiveEventsPerTickRateProperty);

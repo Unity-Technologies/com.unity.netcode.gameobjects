@@ -32,9 +32,12 @@ namespace MLAPI
     public class NetworkingManager : MonoBehaviour
     {
         /// <summary>
-        /// A syncronized time, represents the time in seconds since the server application started. Is replicated across all clients
+        /// A synchronized time, represents the time in seconds since the server application started. Is replicated across all clients
         /// </summary>
-        public float NetworkTime { get; internal set; }
+        public float NetworkTime => Time.unscaledTime + currentNetworkTimeOffset;
+        private float networkTimeOffset;
+        private float currentNetworkTimeOffset;
+        private bool networkTimeInitialized;
         /// <summary>
         /// Gets or sets if the NetworkingManager should be marked as DontDestroyOnLoad
         /// </summary>
@@ -287,7 +290,9 @@ namespace MLAPI
             if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Init()");
             
             LocalClientId = 0;
-            NetworkTime = 0f;
+            networkTimeOffset = 0f;
+            currentNetworkTimeOffset = 0f;
+            networkTimeInitialized = false;
             lastSendTickTime = 0f;
             lastEventTickTime = 0f;
             lastReceiveTickTime = 0f;
@@ -723,7 +728,7 @@ namespace MLAPI
                     NetworkProfiler.EndTick();
                 }
 
-                if (IsServer && NetworkConfig.EnableTimeResync && NetworkTime - lastTimeSyncTime >= 30)
+                if (IsServer && NetworkConfig.EnableTimeResync && NetworkTime - lastTimeSyncTime >= NetworkConfig.TimeResyncInterval)
                 {
                     NetworkProfiler.StartTick(TickType.Event);
                     SyncTime();
@@ -731,11 +736,27 @@ namespace MLAPI
                     NetworkProfiler.EndTick();
                 }
 
-                NetworkTime += Time.unscaledDeltaTime;
+                if (!Mathf.Approximately(networkTimeOffset, currentNetworkTimeOffset)) {
+                    // Smear network time adjustments by no more than 200ms per second.  This should help code deal with
+                    // changes more gracefully, since the network time will always flow forward at a reasonable pace.
+                    float maxDelta = Mathf.Max(0.001f, 0.2f * Time.unscaledDeltaTime);
+                    currentNetworkTimeOffset += Mathf.Clamp(networkTimeOffset - currentNetworkTimeOffset, -maxDelta, maxDelta);
+                }
             }
         }
 
-        internal void SendConnectionRequest()
+        internal void UpdateNetworkTime(ulong clientId, float netTime)
+        {
+            float rtt = NetworkConfig.NetworkTransport.GetCurrentRtt(clientId) / 1000f;
+            networkTimeOffset = netTime - Time.realtimeSinceStartup + rtt / 2f;
+            if (!networkTimeInitialized) {
+                currentNetworkTimeOffset = networkTimeOffset;
+                networkTimeInitialized = true;
+            }
+            if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo($"Received network time {netTime}, RTT to server is {rtt}, setting offset to {networkTimeOffset} (delta {networkTimeOffset - currentNetworkTimeOffset})");
+    }
+
+    internal void SendConnectionRequest()
         {
             using (PooledBitStream stream = PooledBitStream.Get())
             {
@@ -987,8 +1008,8 @@ namespace MLAPI
             {
                 using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                 {
-                    writer.WriteSinglePacked(NetworkTime);
-                    InternalMessageSender.Send(MLAPIConstants.MLAPI_TIME_SYNC, "MLAPI_TIME_SYNC", stream, SecuritySendFlags.None, null);
+                    writer.WriteSinglePacked(Time.realtimeSinceStartup);
+                    InternalMessageSender.Send(MLAPIConstants.MLAPI_TIME_SYNC, "MLAPI_TIME_SYNC", stream, SecuritySendFlags.None, null, true);
                 }
             }
         }
@@ -1039,7 +1060,7 @@ namespace MLAPI
                         writer.WriteUInt32Packed(NetworkSceneManager.currentSceneIndex);
                         writer.WriteByteArray(NetworkSceneManager.currentSceneSwitchProgressGuid.ToByteArray());
 
-                        writer.WriteSinglePacked(NetworkTime);
+                        writer.WriteSinglePacked(Time.realtimeSinceStartup);
                         
                         writer.WriteUInt32Packed((uint)_observedObjects.Count);
 
