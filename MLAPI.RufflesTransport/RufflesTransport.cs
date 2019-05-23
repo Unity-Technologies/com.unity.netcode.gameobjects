@@ -239,10 +239,10 @@ namespace MLAPI.RufflesTransport
                     return Ruffles.Channeling.ChannelType.ReliableSequenced;
                 case ChannelType.ReliableSequenced:
                     return Ruffles.Channeling.ChannelType.ReliableSequenced;
-                case ChannelType.StateUpdate:
-                    return Ruffles.Channeling.ChannelType.Unreliable;
                 case ChannelType.Unreliable:
                     return Ruffles.Channeling.ChannelType.Unreliable;
+                case ChannelType.UnreliableSequenced:
+                    return Ruffles.Channeling.ChannelType.UnreliableSequenced;
             }
 
             return Ruffles.Channeling.ChannelType.Reliable;

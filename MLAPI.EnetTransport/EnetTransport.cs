@@ -265,13 +265,13 @@ namespace MLAPI.EnetTransport
                 {
                     return PacketFlags.Reliable;
                 }
-                case ChannelType.StateUpdate:
-                {
-                    return PacketFlags.None;
-                }
                 case ChannelType.ReliableFragmentedSequenced:
                 {
                     return PacketFlags.Reliable;
+                }
+                case ChannelType.UnreliableSequenced:
+                {
+                    return PacketFlags.None;
                 }
                 default:
                 {

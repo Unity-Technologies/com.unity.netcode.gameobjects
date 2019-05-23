@@ -32,7 +32,7 @@ namespace MLAPI.Transports
             new TransportChannel()
             {
                 Name = "MLAPI_POSITION_UPDATE",
-                Type = ChannelType.StateUpdate
+                Type = ChannelType.UnreliableSequenced
             },
             new TransportChannel()
             {
@@ -47,7 +47,7 @@ namespace MLAPI.Transports
             new TransportChannel()
             {
                 Name = "MLAPI_NAV_AGENT_CORRECTION",
-                Type = ChannelType.StateUpdate
+                Type = ChannelType.UnreliableSequenced
             },
             new TransportChannel()
             {

@@ -273,11 +273,12 @@ namespace MLAPI.Transports.UNET
                     return config.AddChannel(QosType.Reliable);
                 case ChannelType.ReliableSequenced:
                     return config.AddChannel(QosType.ReliableSequenced);
-                case ChannelType.StateUpdate:
-                    return config.AddChannel(QosType.StateUpdate);
                 case ChannelType.ReliableFragmentedSequenced:
                     return config.AddChannel(QosType.ReliableFragmentedSequenced);
+                case ChannelType.UnreliableSequenced:
+                    return config.AddChannel(QosType.UnreliableSequenced);
             }
+
             return 0;
         }
         
@@ -308,6 +309,7 @@ namespace MLAPI.Transports.UNET
                 case QosType.ReliableFragmentedSequenced:
                     return config.AddChannel(QosType.ReliableFragmentedSequenced);
             }
+
             return 0;
         }
 
