@@ -6,7 +6,7 @@ permalink: /api/pooled-bit-reader/
 
 <div style="line-height: 1;">
 	<h2 markdown="1">PooledBitReader ``class``</h2>
-	<p style="font-size: 20px;"><b>Namespace:</b> MLAPI.Serialization</p>
+	<p style="font-size: 20px;"><b>Namespace:</b> MLAPI.Serialization.Pooled</p>
 	<p style="font-size: 20px;"><b>Assembly:</b> MLAPI.dll</p>
 </div>
 <p>Disposable BitReader that returns the Reader to the BitReaderPool when disposed</p>
@@ -39,6 +39,82 @@ permalink: /api/pooled-bit-reader/
 <br>
 <div>
 	<h3 markdown="1">Inherited Methods</h3>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``double[]`` ReadDoubleArray(``double[]`` readTo, ``long`` knownLength);</b></h4>
+		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<p>Read double array from the stream.</p>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``double[]`` readTo</p>
+			<p>The buffer to read into or null to create a new array</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+			<p>The known length or -1 if unknown</p>
+		</div>
+		<h5 markdown="1"><b>Returns ``double[]``</b></h5>
+		<div>
+			<p>The array read from the stream.</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``double[]`` ReadDoubleArrayPacked(``double[]`` readTo, ``long`` knownLength);</b></h4>
+		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<p>Read double array in a packed format from the stream.</p>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``double[]`` readTo</p>
+			<p>The buffer to read into or null to create a new array</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+			<p>The known length or -1 if unknown</p>
+		</div>
+		<h5 markdown="1"><b>Returns ``double[]``</b></h5>
+		<div>
+			<p>The array read from the stream.</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``double[]`` ReadDoubleArrayDiff(``double[]`` readTo, ``long`` knownLength);</b></h4>
+		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<p>Read double array diff from the stream.</p>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``double[]`` readTo</p>
+			<p>The buffer containing the old version or null.</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+			<p>The known length or -1 if unknown</p>
+		</div>
+		<h5 markdown="1"><b>Returns ``double[]``</b></h5>
+		<div>
+			<p>The array created from the diff and the current version.</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``double[]`` ReadDoubleArrayPackedDiff(``double[]`` readTo, ``long`` knownLength);</b></h4>
+		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<p>Read double array diff in a packed format from the stream.</p>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``double[]`` readTo</p>
+			<p>The buffer containing the old version or null.</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+			<p>The known length or -1 if unknown</p>
+		</div>
+		<h5 markdown="1"><b>Returns ``double[]``</b></h5>
+		<div>
+			<p>The array created from the diff and the current version.</p>
+		</div>
+	</div>
+	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``void`` SetStream(``Stream`` stream);</b></h4>
 		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
@@ -308,14 +384,33 @@ permalink: /api/pooled-bit-reader/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Quaternion`` ReadRotation(``int`` bytesPerAngle);</b></h4>
+		<h4 markdown="1"><b>public ``Quaternion`` ReadRotationPacked();</b></h4>
 		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
-		<p>Read a rotation from the stream.</p>
+		<p>Reads the rotation from the stream</p>
+		<h5 markdown="1"><b>Returns ``Quaternion``</b></h5>
+		<div>
+			<p>The rotation read from the stream</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``Quaternion`` ReadRotation(``int`` bytesPerAngle);</b> <small><span class="label label-warning" title="Use ReadRotationPacked instead">Obsolete</span></small></h4>
+		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<p>Reads the rotation from the stream</p>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``int`` bytesPerAngle</p>
-			<p>How many bytes each angle occupies. Must be between 1 and 4 (inclusive)</p>
 		</div>
+		<h5 markdown="1"><b>Returns ``Quaternion``</b></h5>
+		<div>
+			<p>The rotation read from the stream</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``Quaternion`` ReadRotation();</b></h4>
+		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<p>Reads the rotation from the stream</p>
 		<h5 markdown="1"><b>Returns ``Quaternion``</b></h5>
 		<div>
 			<p>The rotation read from the stream</p>
@@ -530,496 +625,716 @@ permalink: /api/pooled-bit-reader/
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``StringBuilder`` ReadString(``bool`` oneByteChars);</b></h4>
 		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<p>Read a string from the stream.</p>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``bool`` oneByteChars</p>
+			<p>If set to true one byte chars are used and only ASCII is supported.</p>
+		</div>
+		<h5 markdown="1"><b>Returns ``StringBuilder``</b></h5>
+		<div>
+			<p>The string that was read.</p>
 		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``StringBuilder`` ReadString(``StringBuilder`` builder, ``bool`` oneByteChars);</b></h4>
 		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<p>Read a string from the stream.</p>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``StringBuilder`` builder</p>
+			<p>The builder to read the values into or null to use a new builder.</p>
 		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``bool`` oneByteChars</p>
+			<p>If set to true one byte chars are used and only ASCII is supported.</p>
+		</div>
+		<h5 markdown="1"><b>Returns ``StringBuilder``</b></h5>
+		<div>
+			<p>The string that was read.</p>
 		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``StringBuilder`` ReadStringPacked(``StringBuilder`` builder);</b></h4>
 		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<p>Read string encoded as a varint from the stream.</p>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``StringBuilder`` builder</p>
+			<p>The builder to read the string into or null to use a new builder</p>
+		</div>
+		<h5 markdown="1"><b>Returns ``StringBuilder``</b></h5>
+		<div>
+			<p>The string that was read.</p>
 		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``StringBuilder`` ReadStringDiff(``string`` compare, ``bool`` oneByteChars);</b></h4>
 		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<p>Read string diff from the stream.</p>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``string`` compare</p>
+			<p>The version to compare the diff to.</p>
 		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``bool`` oneByteChars</p>
+			<p>If set to true one byte chars are used and only ASCII is supported.</p>
+		</div>
+		<h5 markdown="1"><b>Returns ``StringBuilder``</b></h5>
+		<div>
+			<p>The string based on the diff and the old version.</p>
 		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``StringBuilder`` ReadStringDiff(``StringBuilder`` builder, ``string`` compare, ``bool`` oneByteChars);</b></h4>
 		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<p>Read string diff from the stream.</p>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``StringBuilder`` builder</p>
+			<p>The builder to read the string into or null to use a new builder.</p>
 		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``string`` compare</p>
+			<p>The version to compare the diff to.</p>
 		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``bool`` oneByteChars</p>
+			<p>If set to true one byte chars are used and only ASCII is supported.</p>
+		</div>
+		<h5 markdown="1"><b>Returns ``StringBuilder``</b></h5>
+		<div>
+			<p>The string based on the diff and the old version</p>
 		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``StringBuilder`` ReadStringDiff(``StringBuilder`` compareAndBuffer, ``bool`` oneByteChars);</b></h4>
 		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<p>Read string diff from the stream.</p>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``StringBuilder`` compareAndBuffer</p>
+			<p>The builder containing the current version and that will also be used as the output buffer.</p>
 		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``bool`` oneByteChars</p>
+			<p>If set to true one byte chars will be used and only ASCII will be supported.</p>
+		</div>
+		<h5 markdown="1"><b>Returns ``StringBuilder``</b></h5>
+		<div>
+			<p>The string based on the diff and the old version.</p>
 		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``StringBuilder`` ReadStringPackedDiff(``string`` compare);</b></h4>
 		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<p>Read string diff encoded as varints from the stream.</p>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``string`` compare</p>
+			<p>The version to compare the diff to.</p>
+		</div>
+		<h5 markdown="1"><b>Returns ``StringBuilder``</b></h5>
+		<div>
+			<p>The string based on the diff and the old version.</p>
 		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``StringBuilder`` ReadStringPackedDiff(``StringBuilder`` builder, ``string`` compare);</b></h4>
 		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<p>Read string diff encoded as varints from the stream.</p>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``StringBuilder`` builder</p>
+			<p>The builder to read the string into or null to use a new builder.</p>
 		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``string`` compare</p>
+			<p>The version to compare the diff to.</p>
+		</div>
+		<h5 markdown="1"><b>Returns ``StringBuilder``</b></h5>
+		<div>
+			<p>The string based on the diff and the old version</p>
 		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``StringBuilder`` ReadStringPackedDiff(``StringBuilder`` compareAndBuffer);</b></h4>
 		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<p>Read string diff encoded as varints from the stream.</p>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``StringBuilder`` compareAndBuffer</p>
+			<p>The builder containing the current version and that will also be used as the output buffer.</p>
+		</div>
+		<h5 markdown="1"><b>Returns ``StringBuilder``</b></h5>
+		<div>
+			<p>The string based on the diff and the old version.</p>
 		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``byte[]`` ReadByteArray(``byte[]`` readTo, ``long`` knownLength);</b></h4>
 		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<p>Read byte array into an optional buffer from the stream.</p>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``byte[]`` readTo</p>
+			<p>The array to read into. If the array is not large enough or if it's null. A new array is created.</p>
 		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+			<p>The length of the array if it's known. Otherwise -1</p>
+		</div>
+		<h5 markdown="1"><b>Returns ``byte[]``</b></h5>
+		<div>
+			<p>The byte array that has been read.</p>
 		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``byte[]`` ReadByteArrayDiff(``byte[]`` readTo, ``long`` knownLength);</b></h4>
 		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<p>Read byte array diff into an optional buffer from the stream.</p>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``byte[]`` readTo</p>
+			<p>The buffer containing the old version or null.</p>
 		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+			<p>The length of the array if it's known. Otherwise -1</p>
+		</div>
+		<h5 markdown="1"><b>Returns ``byte[]``</b></h5>
+		<div>
+			<p>The byte array created from the diff and original.</p>
 		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``short[]`` ReadShortArray(``short[]`` readTo, ``long`` knownLength);</b></h4>
 		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<p>Read short array from the stream.</p>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``short[]`` readTo</p>
+			<p>The buffer to read into or null to create a new array</p>
 		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+			<p>The known length or -1 if unknown</p>
+		</div>
+		<h5 markdown="1"><b>Returns ``short[]``</b></h5>
+		<div>
+			<p>The array read from the stream.</p>
 		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``short[]`` ReadShortArrayPacked(``short[]`` readTo, ``long`` knownLength);</b></h4>
 		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<p>Read short array in a packed format from the stream.</p>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``short[]`` readTo</p>
+			<p>The buffer to read into or null to create a new array</p>
 		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+			<p>The known length or -1 if unknown</p>
+		</div>
+		<h5 markdown="1"><b>Returns ``short[]``</b></h5>
+		<div>
+			<p>The array read from the stream.</p>
 		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``short[]`` ReadShortArrayDiff(``short[]`` readTo, ``long`` knownLength);</b></h4>
 		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<p>Read short array diff from the stream.</p>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``short[]`` readTo</p>
+			<p>The buffer containing the old version or null.</p>
 		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+			<p>The known length or -1 if unknown</p>
+		</div>
+		<h5 markdown="1"><b>Returns ``short[]``</b></h5>
+		<div>
+			<p>The array created from the diff and the current version.</p>
 		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``short[]`` ReadShortArrayPackedDiff(``short[]`` readTo, ``long`` knownLength);</b></h4>
 		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<p>Read short array diff in a packed format from the stream.</p>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``short[]`` readTo</p>
+			<p>The buffer containing the old version or null.</p>
 		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+			<p>The known length or -1 if unknown</p>
+		</div>
+		<h5 markdown="1"><b>Returns ``short[]``</b></h5>
+		<div>
+			<p>The array created from the diff and the current version.</p>
 		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``ushort[]`` ReadUShortArray(``ushort[]`` readTo, ``long`` knownLength);</b></h4>
 		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<p>Read ushort array from the stream.</p>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``ushort[]`` readTo</p>
+			<p>The buffer to read into or null to create a new array</p>
 		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+			<p>The known length or -1 if unknown</p>
+		</div>
+		<h5 markdown="1"><b>Returns ``ushort[]``</b></h5>
+		<div>
+			<p>The array read from the stream.</p>
 		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``ushort[]`` ReadUShortArrayPacked(``ushort[]`` readTo, ``long`` knownLength);</b></h4>
 		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<p>Read ushort array in a packed format from the stream.</p>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``ushort[]`` readTo</p>
+			<p>The buffer to read into or null to create a new array</p>
 		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+			<p>The known length or -1 if unknown</p>
+		</div>
+		<h5 markdown="1"><b>Returns ``ushort[]``</b></h5>
+		<div>
+			<p>The array read from the stream.</p>
 		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``ushort[]`` ReadUShortArrayDiff(``ushort[]`` readTo, ``long`` knownLength);</b></h4>
 		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<p>Read ushort array diff from the stream.</p>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``ushort[]`` readTo</p>
+			<p>The buffer containing the old version or null.</p>
 		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+			<p>The known length or -1 if unknown</p>
+		</div>
+		<h5 markdown="1"><b>Returns ``ushort[]``</b></h5>
+		<div>
+			<p>The array created from the diff and the current version.</p>
 		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``ushort[]`` ReadUShortArrayPackedDiff(``ushort[]`` readTo, ``long`` knownLength);</b></h4>
 		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<p>Read ushort array diff in a packed format from the stream.</p>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``ushort[]`` readTo</p>
+			<p>The buffer containing the old version or null.</p>
 		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+			<p>The known length or -1 if unknown</p>
+		</div>
+		<h5 markdown="1"><b>Returns ``ushort[]``</b></h5>
+		<div>
+			<p>The array created from the diff and the current version.</p>
 		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``int[]`` ReadIntArray(``int[]`` readTo, ``long`` knownLength);</b></h4>
 		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<p>Read int array from the stream.</p>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``int[]`` readTo</p>
+			<p>The buffer to read into or null to create a new array</p>
 		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+			<p>The known length or -1 if unknown</p>
+		</div>
+		<h5 markdown="1"><b>Returns ``int[]``</b></h5>
+		<div>
+			<p>The array read from the stream.</p>
 		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``int[]`` ReadIntArrayPacked(``int[]`` readTo, ``long`` knownLength);</b></h4>
 		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<p>Read int array in a packed format from the stream.</p>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``int[]`` readTo</p>
+			<p>The buffer to read into or null to create a new array</p>
 		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+			<p>The known length or -1 if unknown</p>
+		</div>
+		<h5 markdown="1"><b>Returns ``int[]``</b></h5>
+		<div>
+			<p>The array read from the stream.</p>
 		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``int[]`` ReadIntArrayDiff(``int[]`` readTo, ``long`` knownLength);</b></h4>
 		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<p>Read int array diff from the stream.</p>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``int[]`` readTo</p>
+			<p>The buffer containing the old version or null.</p>
 		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+			<p>The known length or -1 if unknown</p>
+		</div>
+		<h5 markdown="1"><b>Returns ``int[]``</b></h5>
+		<div>
+			<p>The array created from the diff and the current version.</p>
 		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``int[]`` ReadIntArrayPackedDiff(``int[]`` readTo, ``long`` knownLength);</b></h4>
 		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<p>Read int array diff in a packed format from the stream.</p>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``int[]`` readTo</p>
+			<p>The buffer containing the old version or null.</p>
 		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+			<p>The known length or -1 if unknown</p>
+		</div>
+		<h5 markdown="1"><b>Returns ``int[]``</b></h5>
+		<div>
+			<p>The array created from the diff and the current version.</p>
 		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``uint[]`` ReadUIntArray(``uint[]`` readTo, ``long`` knownLength);</b></h4>
 		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<p>Read uint array from the stream.</p>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``uint[]`` readTo</p>
+			<p>The buffer to read into or null to create a new array</p>
 		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+			<p>The known length or -1 if unknown</p>
+		</div>
+		<h5 markdown="1"><b>Returns ``uint[]``</b></h5>
+		<div>
+			<p>The array read from the stream.</p>
 		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``uint[]`` ReadUIntArrayPacked(``uint[]`` readTo, ``long`` knownLength);</b></h4>
 		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<p>Read uint array in a packed format from the stream.</p>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``uint[]`` readTo</p>
+			<p>The buffer to read into or null to create a new array</p>
 		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+			<p>The known length or -1 if unknown</p>
+		</div>
+		<h5 markdown="1"><b>Returns ``uint[]``</b></h5>
+		<div>
+			<p>The array read from the stream.</p>
 		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``uint[]`` ReadUIntArrayDiff(``uint[]`` readTo, ``long`` knownLength);</b></h4>
 		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<p>Read uint array diff from the stream.</p>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``uint[]`` readTo</p>
+			<p>The buffer containing the old version or null.</p>
 		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+			<p>The known length or -1 if unknown</p>
+		</div>
+		<h5 markdown="1"><b>Returns ``uint[]``</b></h5>
+		<div>
+			<p>The array created from the diff and the current version.</p>
 		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``long[]`` ReadLongArray(``long[]`` readTo, ``long`` knownLength);</b></h4>
 		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<p>Read long array from the stream.</p>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``long[]`` readTo</p>
+			<p>The buffer to read into or null to create a new array</p>
 		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+			<p>The known length or -1 if unknown</p>
+		</div>
+		<h5 markdown="1"><b>Returns ``long[]``</b></h5>
+		<div>
+			<p>The array read from the stream.</p>
 		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``long[]`` ReadLongArrayPacked(``long[]`` readTo, ``long`` knownLength);</b></h4>
 		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<p>Read long array in a packed format from the stream.</p>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``long[]`` readTo</p>
+			<p>The buffer to read into or null to create a new array</p>
 		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+			<p>The known length or -1 if unknown</p>
+		</div>
+		<h5 markdown="1"><b>Returns ``long[]``</b></h5>
+		<div>
+			<p>The array read from the stream.</p>
 		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``long[]`` ReadLongArrayDiff(``long[]`` readTo, ``long`` knownLength);</b></h4>
 		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<p>Read long array diff from the stream.</p>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``long[]`` readTo</p>
+			<p>The buffer containing the old version or null.</p>
 		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+			<p>The known length or -1 if unknown</p>
+		</div>
+		<h5 markdown="1"><b>Returns ``long[]``</b></h5>
+		<div>
+			<p>The array created from the diff and the current version.</p>
 		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``long[]`` ReadLongArrayPackedDiff(``long[]`` readTo, ``long`` knownLength);</b></h4>
 		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<p>Read long array diff in a packed format from the stream.</p>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``long[]`` readTo</p>
+			<p>The buffer containing the old version or null.</p>
 		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+			<p>The known length or -1 if unknown</p>
+		</div>
+		<h5 markdown="1"><b>Returns ``long[]``</b></h5>
+		<div>
+			<p>The array created from the diff and the current version.</p>
 		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``ulong[]`` ReadULongArray(``ulong[]`` readTo, ``long`` knownLength);</b></h4>
 		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<p>Read ulong array from the stream.</p>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``ulong[]`` readTo</p>
+			<p>The buffer to read into or null to create a new array</p>
 		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+			<p>The known length or -1 if unknown</p>
+		</div>
+		<h5 markdown="1"><b>Returns ``ulong[]``</b></h5>
+		<div>
+			<p>The array read from the stream.</p>
 		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``ulong[]`` ReadULongArrayPacked(``ulong[]`` readTo, ``long`` knownLength);</b></h4>
 		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<p>Read ulong array in a packed format from the stream.</p>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``ulong[]`` readTo</p>
+			<p>The buffer to read into or null to create a new array</p>
 		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+			<p>The known length or -1 if unknown</p>
+		</div>
+		<h5 markdown="1"><b>Returns ``ulong[]``</b></h5>
+		<div>
+			<p>The array read from the stream.</p>
 		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``ulong[]`` ReadULongArrayDiff(``ulong[]`` readTo, ``long`` knownLength);</b></h4>
 		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<p>Read ulong array diff from the stream.</p>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``ulong[]`` readTo</p>
+			<p>The buffer containing the old version or null.</p>
 		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+			<p>The known length or -1 if unknown</p>
+		</div>
+		<h5 markdown="1"><b>Returns ``ulong[]``</b></h5>
+		<div>
+			<p>The array created from the diff and the current version.</p>
 		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``ulong[]`` ReadULongArrayPackedDiff(``ulong[]`` readTo, ``long`` knownLength);</b></h4>
 		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<p>Read ulong array diff in a packed format from the stream.</p>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``ulong[]`` readTo</p>
+			<p>The buffer containing the old version or null.</p>
 		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+			<p>The known length or -1 if unknown</p>
+		</div>
+		<h5 markdown="1"><b>Returns ``ulong[]``</b></h5>
+		<div>
+			<p>The array created from the diff and the current version.</p>
 		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``float[]`` ReadFloatArray(``float[]`` readTo, ``long`` knownLength);</b></h4>
 		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<p>Read float array from the stream.</p>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``float[]`` readTo</p>
+			<p>The buffer to read into or null to create a new array</p>
 		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+			<p>The known length or -1 if unknown</p>
+		</div>
+		<h5 markdown="1"><b>Returns ``float[]``</b></h5>
+		<div>
+			<p>The array read from the stream.</p>
 		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``float[]`` ReadFloatArrayPacked(``float[]`` readTo, ``long`` knownLength);</b></h4>
 		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<p>Read float array in a packed format from the stream.</p>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``float[]`` readTo</p>
+			<p>The buffer to read into or null to create a new array</p>
 		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+			<p>The known length or -1 if unknown</p>
+		</div>
+		<h5 markdown="1"><b>Returns ``float[]``</b></h5>
+		<div>
+			<p>The array read from the stream.</p>
 		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``float[]`` ReadFloatArrayDiff(``float[]`` readTo, ``long`` knownLength);</b></h4>
 		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<p>Read float array diff from the stream.</p>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``float[]`` readTo</p>
+			<p>The buffer containing the old version or null.</p>
 		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+			<p>The known length or -1 if unknown</p>
+		</div>
+		<h5 markdown="1"><b>Returns ``float[]``</b></h5>
+		<div>
+			<p>The array created from the diff and the current version.</p>
 		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``float[]`` ReadFloatArrayPackedDiff(``float[]`` readTo, ``long`` knownLength);</b></h4>
 		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
+		<p>Read float array diff in a packed format from the stream.</p>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``float[]`` readTo</p>
+			<p>The buffer containing the old version or null.</p>
 		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
+			<p>The known length or -1 if unknown</p>
+		</div>
+		<h5 markdown="1"><b>Returns ``float[]``</b></h5>
+		<div>
+			<p>The array created from the diff and the current version.</p>
 		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``double[]`` ReadDoubleArray(``double[]`` readTo, ``long`` knownLength);</b></h4>
-		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``double[]`` readTo</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``double[]`` ReadDoubleArrayPacked(``double[]`` readTo, ``long`` knownLength);</b></h4>
-		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``double[]`` readTo</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``double[]`` ReadDoubleArrayDiff(``double[]`` readTo, ``long`` knownLength);</b></h4>
-		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``double[]`` readTo</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``double[]`` ReadDoubleArrayPackedDiff(``double[]`` readTo, ``long`` knownLength);</b></h4>
-		<h5 markdown="1">Inherited from: [``BitReader``](/MLAPI/api/bit-reader/)</h5>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``double[]`` readTo</p>
-		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``long`` knownLength</p>
-		</div>
+		<h4 markdown="1"><b>public ``string`` ToString();</b></h4>
+		<h5 markdown="1">Inherited from: ``object``</h5>
 	</div>
 	<br>
 	<div style="line-height: 1;">
@@ -1038,11 +1353,6 @@ permalink: /api/pooled-bit-reader/
 	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``Type`` GetType();</b></h4>
-		<h5 markdown="1">Inherited from: ``object``</h5>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``string`` ToString();</b></h4>
 		<h5 markdown="1">Inherited from: ``object``</h5>
 	</div>
 </div>

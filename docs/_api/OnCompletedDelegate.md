@@ -6,7 +6,7 @@ permalink: /api/on-completed-delegate/
 
 <div style="line-height: 1;">
 	<h2 markdown="1">OnCompletedDelegate ``class``</h2>
-	<p style="font-size: 20px;"><b>Namespace:</b> MLAPI.Components</p>
+	<p style="font-size: 20px;"><b>Namespace:</b> MLAPI.SceneManagement</p>
 	<p style="font-size: 20px;"><b>Assembly:</b> MLAPI.dll</p>
 </div>
 <p>Delegate type for when the switch scene progress is completed. Either by all clients done loading the scene or by time out.</p>
@@ -95,12 +95,12 @@ permalink: /api/on-completed-delegate/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``int`` GetHashCode();</b></h4>
+		<h4 markdown="1"><b>public ``Delegate[]`` GetInvocationList();</b></h4>
 		<h5 markdown="1">Inherited from: ``MulticastDelegate``</h5>
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Delegate[]`` GetInvocationList();</b></h4>
+		<h4 markdown="1"><b>public ``int`` GetHashCode();</b></h4>
 		<h5 markdown="1">Inherited from: ``MulticastDelegate``</h5>
 	</div>
 	<br>
@@ -119,12 +119,12 @@ permalink: /api/on-completed-delegate/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Type`` GetType();</b></h4>
+		<h4 markdown="1"><b>public ``string`` ToString();</b></h4>
 		<h5 markdown="1">Inherited from: ``object``</h5>
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``string`` ToString();</b></h4>
+		<h4 markdown="1"><b>public ``Type`` GetType();</b></h4>
 		<h5 markdown="1">Inherited from: ``object``</h5>
 	</div>
 </div>

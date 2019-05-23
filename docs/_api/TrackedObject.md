@@ -6,7 +6,7 @@ permalink: /api/tracked-object/
 
 <div style="line-height: 1;">
 	<h2 markdown="1">TrackedObject ``class``</h2>
-	<p style="font-size: 20px;"><b>Namespace:</b> MLAPI</p>
+	<p style="font-size: 20px;"><b>Namespace:</b> MLAPI.LagCompensation</p>
 	<p style="font-size: 20px;"><b>Assembly:</b> MLAPI.dll</p>
 </div>
 <p>A component used for lag compensation. Each object with this component will get tracked</p>

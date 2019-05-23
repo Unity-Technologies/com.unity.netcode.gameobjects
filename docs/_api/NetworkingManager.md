@@ -14,40 +14,44 @@ permalink: /api/networking-manager/
 <div>
 	<h3 markdown="1">Public Properties</h3>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``float`` NetworkTime { get; set; }</b></h4>
-		<p>A syncronized time, represents the time in seconds since the server application started. Is replicated across all clients</p>
+		<h4 markdown="1"><b>public ``float`` NetworkTime { get; }</b></h4>
+		<p>A synchronized time, represents the time in seconds since the server application started. Is replicated across all clients</p>
 	</div>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public [``NetworkingManager``](/MLAPI/api/networking-manager/) singleton { get; }</b> <small><span class="label label-warning" title="Use Singleton instead">Obsolete</span></small></h4>
+		<p>The singleton instance of the NetworkingManager</p>
 	</div>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public [``NetworkingManager``](/MLAPI/api/networking-manager/) Singleton { get; set; }</b></h4>
 		<p>The singleton instance of the NetworkingManager</p>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``uint`` ServerClientId { get; }</b></h4>
+		<h4 markdown="1"><b>public ``ulong`` ServerClientId { get; }</b></h4>
 		<p>Gets the networkId of the server</p>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``uint`` LocalClientId { get; set; }</b></h4>
+		<h4 markdown="1"><b>public ``ulong`` LocalClientId { get; set; }</b></h4>
 		<p>The clientId the server calls the local client by, only valid for clients</p>
 	</div>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``bool`` isServer { get; }</b> <small><span class="label label-warning" title="Use IsServer instead">Obsolete</span></small></h4>
+		<p>Gets Whether or not a server is running</p>
 	</div>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``bool`` IsServer { get; set; }</b></h4>
-		<p>Gets wheter or not a server is running</p>
+		<p>Gets Whether or not a server is running</p>
 	</div>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``bool`` isClient { get; }</b> <small><span class="label label-warning" title="Use IsClient instead">Obsolete</span></small></h4>
+		<p>Gets Whether or not a client is running</p>
 	</div>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``bool`` IsClient { get; set; }</b></h4>
-		<p>Gets wheter or not a client is running</p>
+		<p>Gets Whether or not a client is running</p>
 	</div>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``bool`` isHost { get; }</b> <small><span class="label label-warning" title="Use IsHost instead">Obsolete</span></small></h4>
+		<p>Gets if we are running as host</p>
 	</div>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``bool`` IsHost { get; }</b></h4>
@@ -55,13 +59,15 @@ permalink: /api/networking-manager/
 	</div>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``bool`` isListening { get; }</b> <small><span class="label label-warning" title="Use IsListening instead">Obsolete</span></small></h4>
+		<p>Gets Whether or not we are listening for connections</p>
 	</div>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``bool`` IsListening { get; set; }</b></h4>
-		<p>Gets wheter or not we are listening for connections</p>
+		<p>Gets Whether or not we are listening for connections</p>
 	</div>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``bool`` isConnectedClients { get; }</b> <small><span class="label label-warning" title="Use IsConnectedClient instead">Obsolete</span></small></h4>
+		<p>Gets if we are connected as a client</p>
 	</div>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``bool`` IsConnectedClient { get; set; }</b></h4>
@@ -196,7 +202,7 @@ permalink: /api/networking-manager/
 		<p>The log level to use</p>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Dictionary<uint,NetworkedClient>`` ConnectedClients;</b></h4>
+		<h4 markdown="1"><b>public ``Dictionary<ulong,NetworkedClient>`` ConnectedClients;</b></h4>
 		<p>Gets a dictionary of connected clients and their clientId keys</p>
 	</div>
 	<div style="line-height: 1;">
@@ -204,15 +210,15 @@ permalink: /api/networking-manager/
 		<p>Gets a list of connected clients</p>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Dictionary<uint,PendingClient>`` PendingClients;</b></h4>
+		<h4 markdown="1"><b>public ``Dictionary<ulong,PendingClient>`` PendingClients;</b></h4>
 		<p>Gets a dictionary of the clients that have been accepted by the transport but are still pending by the MLAPI.</p>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Action<uint>`` OnClientConnectedCallback;</b></h4>
+		<h4 markdown="1"><b>public ``Action<ulong>`` OnClientConnectedCallback;</b></h4>
 		<p>The callback to invoke once a client connects</p>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Action<uint>`` OnClientDisconnectCallback;</b></h4>
+		<h4 markdown="1"><b>public ``Action<ulong>`` OnClientDisconnectCallback;</b></h4>
 		<p>The callback to invoke when a client disconnects</p>
 	</div>
 	<div style="line-height: 1;">
@@ -220,7 +226,7 @@ permalink: /api/networking-manager/
 		<p>The callback to invoke once the server is ready</p>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Action<byte[],uint,ConnectionApprovedDelegate>`` ConnectionApprovalCallback;</b></h4>
+		<h4 markdown="1"><b>public ``Action<byte[],ulong,ConnectionApprovedDelegate>`` ConnectionApprovalCallback;</b></h4>
 		<p>The callback to invoke during connection approval</p>
 	</div>
 	<div style="line-height: 1;">
@@ -239,11 +245,11 @@ permalink: /api/networking-manager/
 <div>
 	<h3 markdown="1">Public Methods</h3>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` SendCustomMessage(``List<uint>`` clientIds, [``BitStream``](/MLAPI/api/bit-stream/) stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h4 markdown="1"><b>public ``void`` SendCustomMessage(``List<ulong>`` clientIds, [``BitStream``](/MLAPI/api/bit-stream/) stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
 		<p>Sends custom message to a list of clients</p>
 		<h5><b>Parameters</b></h5>
 		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``List<uint>`` clientIds</p>
+			<p style="font-size: 20px; color: #444;" markdown="1">``List<ulong>`` clientIds</p>
 			<p>The clients to send to, sends to everyone if null</p>
 		</div>
 		<div>
@@ -261,11 +267,11 @@ permalink: /api/networking-manager/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` SendCustomMessage(``uint`` clientId, [``BitStream``](/MLAPI/api/bit-stream/) stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h4 markdown="1"><b>public ``void`` SendCustomMessage(``ulong`` clientId, [``BitStream``](/MLAPI/api/bit-stream/) stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
 		<p>Sends a custom message to a specific client</p>
 		<h5><b>Parameters</b></h5>
 		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` clientId</p>
+			<p style="font-size: 20px; color: #444;" markdown="1">``ulong`` clientId</p>
 			<p>The client to send the message to</p>
 		</div>
 		<div>
@@ -308,17 +314,20 @@ permalink: /api/networking-manager/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` StartHost(``Nullable<Vector3>`` pos, ``Nullable<Quaternion>`` rot, ``int`` prefabId);</b></h4>
+		<h4 markdown="1"><b>public ``void`` StartHost(``Nullable<Vector3>`` position, ``Nullable<Quaternion>`` rotation, ``Nullable<ulong>`` prefabHash, ``Stream`` payloadStream);</b></h4>
 		<p>Starts a Host</p>
 		<h5><b>Parameters</b></h5>
 		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``Nullable<Vector3>`` pos</p>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Nullable<Vector3>`` position</p>
 		</div>
 		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``Nullable<Quaternion>`` rot</p>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Nullable<Quaternion>`` rotation</p>
 		</div>
 		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``int`` prefabId</p>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Nullable<ulong>`` prefabHash</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Stream`` payloadStream</p>
 		</div>
 	</div>
 	<br>

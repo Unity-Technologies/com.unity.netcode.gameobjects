@@ -1,12 +1,12 @@
 ---
-title: ServerRPC
-name: ServerRPC
-permalink: /api/server-rpc/
+title: ServerRPCAttribute
+name: ServerRPCAttribute
+permalink: /api/server-rpcattribute/
 ---
 
 <div style="line-height: 1;">
-	<h2 markdown="1">ServerRPC ``class``</h2>
-	<p style="font-size: 20px;"><b>Namespace:</b> MLAPI</p>
+	<h2 markdown="1">ServerRPCAttribute ``class``</h2>
+	<p style="font-size: 20px;"><b>Namespace:</b> MLAPI.Messaging</p>
 	<p style="font-size: 20px;"><b>Assembly:</b> MLAPI.dll</p>
 </div>
 <p>Attribute used on methods to me marked as ServerRPC
@@ -32,7 +32,7 @@ permalink: /api/server-rpc/
 <div>
 	<h3>Public Constructors</h3>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``ServerRPC``](/MLAPI/api/server-rpc/)();</b></h4>
+		<h4 markdown="1"><b>public [``ServerRPCAttribute``](/MLAPI/api/server-rpcattribute/)();</b></h4>
 	</div>
 </div>
 <br>
@@ -67,12 +67,12 @@ permalink: /api/server-rpc/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Type`` GetType();</b></h4>
+		<h4 markdown="1"><b>public ``string`` ToString();</b></h4>
 		<h5 markdown="1">Inherited from: ``object``</h5>
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``string`` ToString();</b></h4>
+		<h4 markdown="1"><b>public ``Type`` GetType();</b></h4>
 		<h5 markdown="1">Inherited from: ``object``</h5>
 	</div>
 </div>

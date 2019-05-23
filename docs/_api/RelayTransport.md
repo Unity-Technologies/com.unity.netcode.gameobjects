@@ -12,13 +12,13 @@ permalink: /api/relay-transport/
 <div>
 	<h3 markdown="1">Public Properties</h3>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``bool`` Enabled { get; }</b></h4>
+		<h4 markdown="1"><b>public ``bool`` Enabled { get; set; }</b></h4>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``string`` RelayAddress { get; }</b></h4>
+		<h4 markdown="1"><b>public ``string`` RelayAddress { get; set; }</b></h4>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``ushort`` RelayPort { get; }</b></h4>
+		<h4 markdown="1"><b>public ``ushort`` RelayPort { get; set; }</b></h4>
 	</div>
 </div>
 <br>
@@ -380,6 +380,11 @@ permalink: /api/relay-transport/
 <div>
 	<h3 markdown="1">Inherited Methods</h3>
 	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``string`` ToString();</b></h4>
+		<h5 markdown="1">Inherited from: ``object``</h5>
+	</div>
+	<br>
+	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``bool`` Equals(``object`` obj);</b></h4>
 		<h5 markdown="1">Inherited from: ``object``</h5>
 		<h5><b>Parameters</b></h5>
@@ -395,11 +400,6 @@ permalink: /api/relay-transport/
 	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``Type`` GetType();</b></h4>
-		<h5 markdown="1">Inherited from: ``object``</h5>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``string`` ToString();</b></h4>
 		<h5 markdown="1">Inherited from: ``object``</h5>
 	</div>
 </div>

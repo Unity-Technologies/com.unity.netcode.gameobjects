@@ -6,7 +6,7 @@ permalink: /api/rpc-response%3C-t%3E/
 
 <div style="line-height: 1;">
 	<h2 markdown="1">RpcResponse&lt;T&gt; ``class``</h2>
-	<p style="font-size: 20px;"><b>Namespace:</b> MLAPI</p>
+	<p style="font-size: 20px;"><b>Namespace:</b> MLAPI.Messaging</p>
 	<p style="font-size: 20px;"><b>Assembly:</b> MLAPI.dll</p>
 </div>
 <p>The RpcResponse class exposed by the API. Represents a network Request/Response operation with a result</p>
@@ -24,6 +24,7 @@ permalink: /api/rpc-response%3C-t%3E/
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``ulong`` Id { get; set; }</b></h4>
 		<h5 markdown="1">Inherited from: [``RpcResponseBase``](/MLAPI/api/rpc-response-base/)</h5>
+		<p>Unique ID for the Rpc Request and Response pair</p>
 	</div>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``bool`` IsDone { get; set; }</b></h4>
@@ -37,7 +38,7 @@ permalink: /api/rpc-response%3C-t%3E/
 		<p>Whether or not a valid result was received</p>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``uint`` ClientId { get; set; }</b></h4>
+		<h4 markdown="1"><b>public ``ulong`` ClientId { get; set; }</b></h4>
 		<h5 markdown="1">Inherited from: [``RpcResponseBase``](/MLAPI/api/rpc-response-base/)</h5>
 		<p>The clientId which the Request/Response was done wit</p>
 	</div>
@@ -58,6 +59,11 @@ permalink: /api/rpc-response%3C-t%3E/
 <div>
 	<h3 markdown="1">Inherited Methods</h3>
 	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``string`` ToString();</b></h4>
+		<h5 markdown="1">Inherited from: ``object``</h5>
+	</div>
+	<br>
+	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``bool`` Equals(``object`` obj);</b></h4>
 		<h5 markdown="1">Inherited from: ``object``</h5>
 		<h5><b>Parameters</b></h5>
@@ -73,11 +79,6 @@ permalink: /api/rpc-response%3C-t%3E/
 	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``Type`` GetType();</b></h4>
-		<h5 markdown="1">Inherited from: ``object``</h5>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``string`` ToString();</b></h4>
 		<h5 markdown="1">Inherited from: ``object``</h5>
 	</div>
 </div>

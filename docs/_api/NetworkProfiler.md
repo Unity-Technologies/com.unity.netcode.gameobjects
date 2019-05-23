@@ -18,8 +18,12 @@ permalink: /api/network-profiler/
 		<p>The ticks that has been recorded</p>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``bool`` isRunning { get; set; }</b></h4>
-		<p>Wheter or not the profiler is recording data</p>
+		<h4 markdown="1"><b>public ``bool`` isRunning { get; }</b> <small><span class="label label-warning" title="Use IsRunning instead">Obsolete</span></small></h4>
+		<p>Whether or not the profiler is recording data</p>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``bool`` IsRunning { get; set; }</b></h4>
+		<p>Whether or not the profiler is recording data</p>
 	</div>
 </div>
 <br>
@@ -67,6 +71,11 @@ permalink: /api/network-profiler/
 <div>
 	<h3 markdown="1">Inherited Methods</h3>
 	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``string`` ToString();</b></h4>
+		<h5 markdown="1">Inherited from: ``object``</h5>
+	</div>
+	<br>
+	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``bool`` Equals(``object`` obj);</b></h4>
 		<h5 markdown="1">Inherited from: ``object``</h5>
 		<h5><b>Parameters</b></h5>
@@ -82,11 +91,6 @@ permalink: /api/network-profiler/
 	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``Type`` GetType();</b></h4>
-		<h5 markdown="1">Inherited from: ``object``</h5>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``string`` ToString();</b></h4>
 		<h5 markdown="1">Inherited from: ``object``</h5>
 	</div>
 </div>
