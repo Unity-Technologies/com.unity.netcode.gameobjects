@@ -305,7 +305,9 @@ public class MLAPIEditor : EditorWindow
                 {
                     if (releases[i] == null)
                         continue;
-                    foldoutStatus[i] = EditorGUILayout.Foldout(foldoutStatus[i], releases[i].tag_name + " - " + releases[i].name);
+
+                    foldoutStatus[i] = EditorGUILayout.Foldout(foldoutStatus[i], releases[i].tag_name + ((releases[i].tag_name == currentVersion) ? " - [Installed]" : ""));
+
                     if (foldoutStatus[i])
                     {
                         EditorGUI.indentLevel++;
