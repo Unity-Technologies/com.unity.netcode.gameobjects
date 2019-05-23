@@ -21,7 +21,7 @@ namespace MLAPI.EnetTransport
         public ushort Port = 7777;
         public string Address = "127.0.0.1";
         public int MaxClients = 100;
-        public List<TransportChannel> Channels = new List<TransportChannel>();
+        public List<EnetChannel> Channels = new List<EnetChannel>();
         public int MessageBufferSize = 1024 * 5;
         
         
@@ -227,7 +227,7 @@ namespace MLAPI.EnetTransport
                 {
                     Id = i,
                     Name = MLAPI_CHANNELS[i].Name,
-                    Flags = ChannelTypeToPacketFlag(MLAPI_CHANNELS[i].Type)
+                    Flags = MLAPIChannelTypeToPacketFlag(MLAPI_CHANNELS[i].Type)
                 });
             }
             
@@ -242,14 +242,14 @@ namespace MLAPI.EnetTransport
                 {
                     Id = id,
                     Name = Channels[i].Name,
-                    Flags = ChannelTypeToPacketFlag(Channels[i].Type)
+                    Flags = Channels[i].Flags
                 });
             }
             
             messageBuffer = new byte[MessageBufferSize];
         }
 
-        public PacketFlags ChannelTypeToPacketFlag(ChannelType type)
+        public PacketFlags MLAPIChannelTypeToPacketFlag(ChannelType type)
         {
             switch (type)
             {
@@ -257,19 +257,7 @@ namespace MLAPI.EnetTransport
                 {
                     return PacketFlags.Unsequenced | PacketFlags.UnreliableFragment;
                 }
-                case ChannelType.UnreliableFragmented:
-                {
-                    return PacketFlags.Unsequenced | PacketFlags.UnreliableFragment;
-                }
-                case ChannelType.UnreliableSequenced:
-                {
-                    return PacketFlags.UnreliableFragment;
-                }
                 case ChannelType.Reliable:
-                {
-                    return PacketFlags.Reliable | PacketFlags.Unsequenced;
-                }
-                case ChannelType.ReliableFragmented:
                 {
                     return PacketFlags.Reliable | PacketFlags.Unsequenced;
                 }
@@ -280,18 +268,6 @@ namespace MLAPI.EnetTransport
                 case ChannelType.StateUpdate:
                 {
                     return PacketFlags.None;
-                }
-                case ChannelType.ReliableStateUpdate:
-                {
-                    return PacketFlags.Reliable;
-                }
-                case ChannelType.AllCostDelivery:
-                {
-                    return PacketFlags.Reliable;
-                }
-                case ChannelType.UnreliableFragmentedSequenced:
-                {
-                    return PacketFlags.UnreliableFragment;
                 }
                 case ChannelType.ReliableFragmentedSequenced:
                 {

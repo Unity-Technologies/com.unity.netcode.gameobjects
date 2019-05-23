@@ -20,4 +20,7 @@
       <Private>false</Private>
     </Reference>
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Ruffles" Version="1.0.5" />
+  </ItemGroup>
 </Project>

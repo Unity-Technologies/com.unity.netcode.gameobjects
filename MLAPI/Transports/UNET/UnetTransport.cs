@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using MLAPI.Logging;
-using UnityEngine;
 using UnityEngine.Networking;
 
 namespace MLAPI.Transports.UNET
@@ -18,8 +17,7 @@ namespace MLAPI.Transports.UNET
         public int ServerListenPort = 7777;
         public int ServerWebsocketListenPort = 8887;
         public bool SupportWebsocket = false;
-        public List<TransportChannel> Channels = new List<TransportChannel>();
-        
+        public List<UnetChannel> Channels = new List<UnetChannel>();
         
         // Relay
         public bool UseMLAPIRelay = false;
@@ -248,7 +246,7 @@ namespace MLAPI.Transports.UNET
             
             for (int i = 0; i < MLAPI_CHANNELS.Length; i++)
             {
-                int channelId = AddChannel(MLAPI_CHANNELS[i].Type, config);
+                int channelId = AddMLAPIChannel(MLAPI_CHANNELS[i].Type, config);
                 
                 channelIdToName.Add(channelId, MLAPI_CHANNELS[i].Name);
                 channelNameToId.Add(MLAPI_CHANNELS[i].Name, channelId);
@@ -256,7 +254,7 @@ namespace MLAPI.Transports.UNET
 
             for (int i = 0; i < Channels.Count; i++)
             {
-                int channelId = AddChannel(Channels[i].Type, config);
+                int channelId = AddUNETChannel(Channels[i].Type, config);
                 
                 channelIdToName.Add(channelId, Channels[i].Name);
                 channelNameToId.Add(Channels[i].Name, channelId);
@@ -265,31 +263,49 @@ namespace MLAPI.Transports.UNET
             return config;
         }
         
-        public int AddChannel(ChannelType type, ConnectionConfig config)
+        public int AddMLAPIChannel(ChannelType type, ConnectionConfig config)
         {
             switch (type)
             {
                 case ChannelType.Unreliable:
                     return config.AddChannel(QosType.Unreliable);
-                case ChannelType.UnreliableFragmented:
-                    return config.AddChannel(QosType.UnreliableFragmented);
-                case ChannelType.UnreliableSequenced:
-                    return config.AddChannel(QosType.UnreliableSequenced);
                 case ChannelType.Reliable:
                     return config.AddChannel(QosType.Reliable);
-                case ChannelType.ReliableFragmented:
-                    return config.AddChannel(QosType.ReliableFragmented);
                 case ChannelType.ReliableSequenced:
                     return config.AddChannel(QosType.ReliableSequenced);
                 case ChannelType.StateUpdate:
                     return config.AddChannel(QosType.StateUpdate);
-                case ChannelType.ReliableStateUpdate:
-                    return config.AddChannel(QosType.ReliableStateUpdate);
-                case ChannelType.AllCostDelivery:
-                    return config.AddChannel(QosType.AllCostDelivery);
-                case ChannelType.UnreliableFragmentedSequenced:
-                    return config.AddChannel(QosType.UnreliableFragmentedSequenced);
                 case ChannelType.ReliableFragmentedSequenced:
+                    return config.AddChannel(QosType.ReliableFragmentedSequenced);
+            }
+            return 0;
+        }
+        
+        public int AddUNETChannel(QosType type, ConnectionConfig config)
+        {
+            switch (type)
+            {
+                case QosType.Unreliable:
+                    return config.AddChannel(QosType.Unreliable);
+                case QosType.UnreliableFragmented:
+                    return config.AddChannel(QosType.UnreliableFragmented);
+                case QosType.UnreliableSequenced:
+                    return config.AddChannel(QosType.UnreliableSequenced);
+                case QosType.Reliable:
+                    return config.AddChannel(QosType.Reliable);
+                case QosType.ReliableFragmented:
+                    return config.AddChannel(QosType.ReliableFragmented);
+                case QosType.ReliableSequenced:
+                    return config.AddChannel(QosType.ReliableSequenced);
+                case QosType.StateUpdate:
+                    return config.AddChannel(QosType.StateUpdate);
+                case QosType.ReliableStateUpdate:
+                    return config.AddChannel(QosType.ReliableStateUpdate);
+                case QosType.AllCostDelivery:
+                    return config.AddChannel(QosType.AllCostDelivery);
+                case QosType.UnreliableFragmentedSequenced:
+                    return config.AddChannel(QosType.UnreliableFragmentedSequenced);
+                case QosType.ReliableFragmentedSequenced:
                     return config.AddChannel(QosType.ReliableFragmentedSequenced);
             }
             return 0;

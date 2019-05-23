@@ -38,6 +38,7 @@ for:
       - configuration: Debug
   artifacts:
   - path: 'MLAPI\bin\Debug\*\*MLAPI*'
+  - path: 'MLAPI\bin\Debug\*\*Ruffles*'
   test:
     assemblies:
       - 'MLAPI-Tests\bin\Debug\*\MLAPI-Tests.dll'
@@ -47,6 +48,7 @@ for:
       - configuration: Debug_Lite
   artifacts:
   - path: 'MLAPI\bin\Lite\Debug\*\*MLAPI*'
+  - path: 'MLAPI\bin\Lite\Debug\*\*Ruffles*'
   test:
     assemblies:
       - 'MLAPI-Tests\bin\Lite\Debug\*\MLAPI-Tests.dll'
@@ -56,6 +58,7 @@ for:
       - configuration: Release
   artifacts:
   - path: 'MLAPI\bin\Release\*\*MLAPI*'
+  - path: 'MLAPI\bin\Release\*\*Ruffles*'
   test:
     assemblies:
       - 'MLAPI-Tests\bin\Release\*\MLAPI-Tests.dll'
@@ -71,6 +74,7 @@ for:
       - configuration: Release_Lite
   artifacts:
   - path: 'MLAPI\bin\Lite\Release\*\*MLAPI*'
+  - path: 'MLAPI\bin\Lite\Release\*\*Ruffles*'
   test:
     assemblies:
       - 'MLAPI-Tests\bin\Lite\Release\*\MLAPI-Tests.dll'
