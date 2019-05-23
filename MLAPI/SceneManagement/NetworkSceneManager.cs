@@ -33,7 +33,7 @@ namespace MLAPI.SceneManagement
         internal static readonly Dictionary<uint, string> sceneIndexToString = new Dictionary<uint, string>();
         internal static readonly Dictionary<Guid, SceneSwitchProgress> sceneSwitchProgresses = new Dictionary<Guid, SceneSwitchProgress>();
         private static Scene lastScene;
-        private static Scene nextScene;
+        private static string nextSceneName;
         private static bool isSwitching = false;
         internal static uint currentSceneIndex = 0;
         internal static Guid currentSceneSwitchProgressGuid = new Guid();
@@ -88,9 +88,8 @@ namespace MLAPI.SceneManagement
 
             // Switch scene
             AsyncOperation sceneLoad = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Single);
-            
-            nextScene = SceneManager.GetSceneByName(sceneName);
-            
+            nextSceneName = sceneName;
+
             sceneLoad.completed += (AsyncOperation asyncOp2) => { OnSceneLoaded(switchSceneProgress.guid, null); };
             
             switchSceneProgress.SetSceneLoadOperation(sceneLoad);  
@@ -121,9 +120,8 @@ namespace MLAPI.SceneManagement
             string sceneName = sceneIndexToString[sceneIndex];
             
             AsyncOperation sceneLoad = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Single);
-            
-            nextScene = SceneManager.GetSceneByName(sceneName);
-            
+            nextSceneName = sceneName;
+
             sceneLoad.completed += (AsyncOperation asyncOp2) =>
             {
                 OnSceneLoaded(switchSceneGuid, objectStream);
@@ -144,7 +142,7 @@ namespace MLAPI.SceneManagement
             
             lastScene = SceneManager.GetActiveScene();
             string sceneName = sceneIndexToString[sceneIndex];
-            nextScene = SceneManager.GetSceneByName(sceneName);
+            nextSceneName = sceneName;
             CurrentActiveSceneIndex = sceneNameToIndex[sceneName];
 
             isSpawnedObjectsPendingInDontDestroyOnLoad = true;
@@ -164,7 +162,8 @@ namespace MLAPI.SceneManagement
 
         private static void OnSceneLoaded(Guid switchSceneGuid, Stream objectStream)
         {
-            CurrentActiveSceneIndex = sceneNameToIndex[nextScene.name];
+            CurrentActiveSceneIndex = sceneNameToIndex[nextSceneName];
+            Scene nextScene = SceneManager.GetSceneByName(nextSceneName);
             SceneManager.SetActiveScene(nextScene);
             
             // Move all objects to the new scene
