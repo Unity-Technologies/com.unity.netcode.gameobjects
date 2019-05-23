@@ -128,6 +128,7 @@ namespace MLAPI
         public ulong OwnerClientId => NetworkedObject.OwnerClientId;
 
         internal bool networkedStartInvoked = false;
+        internal bool internalNetworkedStartInvoked = false;
         /// <summary>
         /// Gets called when message handlers are ready to be registered and the networking is setup
         /// </summary>

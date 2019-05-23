@@ -479,6 +479,14 @@ namespace MLAPI
             }
         }
 
+        internal void ResetNetworkedStartInvoked() 
+        {
+            for (int i = 0; i < childNetworkedBehaviours.Count; i++)
+            {
+                childNetworkedBehaviours[i].networkedStartInvoked = false;
+            }
+        }
+
         internal void InvokeBehaviourNetworkSpawn(Stream stream)
         {
             for (int i = 0; i < childNetworkedBehaviours.Count; i++)
@@ -486,7 +494,11 @@ namespace MLAPI
                 //We check if we are it's networkedObject owner incase a networkedObject exists as a child of our networkedObject.
                 if(!childNetworkedBehaviours[i].networkedStartInvoked)
                 {
-                    childNetworkedBehaviours[i].InternalNetworkStart();
+                    if(!childNetworkedBehaviours[i].internalNetworkedStartInvoked)
+                    {
+                        childNetworkedBehaviours[i].InternalNetworkStart();
+                        childNetworkedBehaviours[i].internalNetworkedStartInvoked = true;
+                    }
                     childNetworkedBehaviours[i].NetworkStart(stream);
                     childNetworkedBehaviours[i].networkedStartInvoked = true;
                 }
