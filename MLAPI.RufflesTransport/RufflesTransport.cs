@@ -94,8 +94,7 @@ namespace MLAPI.RufflesTransport
                 payload = new ArraySegment<byte>();
             }
 
-            // TODO: FIX, ruffles needs to give us the channel
-            channelName = channelIdToName[0];
+            channelName = channelIdToName[@event.ChannelId];
 
             // Translate NetworkEventType to NetEventType
             switch (@event.Type)
