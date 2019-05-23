@@ -19,7 +19,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="ENet-CSharp" Version="2.2.3" />
+    <PackageReference Include="ENet-CSharp" Version="2.2.6" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MLAPI\MLAPI.csproj" />
