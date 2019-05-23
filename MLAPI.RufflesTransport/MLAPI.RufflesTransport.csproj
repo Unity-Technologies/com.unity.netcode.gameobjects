@@ -1,23 +1,27 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <Import Project="../common.props" />
   <PropertyGroup>
     <ImplicitlyExpandNETStandardFacades>false</ImplicitlyExpandNETStandardFacades>
     <DisableHandlePackageFileConflicts>true</DisableHandlePackageFileConflicts>
-    <AssemblyTitle>MLAPI</AssemblyTitle>
-    <Product>MLAPI</Product>
-    <Description>Game networking stack for Unity.</Description>
-    <Version>6.0.0</Version>
+    <AssemblyTitle>MLAPI.RufflesTransport</AssemblyTitle>
+    <Product>MLAPI.RufflesTransport</Product>
+    <Description>Ruffles Transport for MLAPI</Description>
+    <Version>1.0.0</Version>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <TargetFrameworks>net35;net471;net45;netstandard2.0</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>
-    <Reference Include="System.Security" Condition="$(TargetFramework) != 'netstandard2.0'" />
-    <Reference Include="System.Data.DataSetExtensions" Condition="$(TargetFramework) != 'netstandard2.0'" />
     <Reference Include="UnityEngine, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\Libraries\Unity\UnityEngine.dll</HintPath>
       <SpecificVersion>False</SpecificVersion>
       <Private>false</Private>
     </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Ruffles" Version="1.0.5" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MLAPI\MLAPI.csproj" />
   </ItemGroup>
 </Project>

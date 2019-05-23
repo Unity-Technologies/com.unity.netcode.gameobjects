@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27130.2027
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MLAPI", "MLAPI\MLAPI.csproj", "{EE431720-A9ED-43DC-9E74-10B693816D38}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MLAPI", "MLAPI\MLAPI.csproj", "{EE431720-A9ED-43DC-9E74-10B693816D38}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MLAPI-Editor", "MLAPI-Editor\MLAPI-Editor.csproj", "{A45DBD43-D640-4562-9F24-6745269CEDF7}"
 EndProject
@@ -12,6 +12,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MLAPI-Examples", "MLAPI-Examples\MLAPI-Examples.csproj", "{FED83E10-8157-42C6-A58F-C2545C0D93B4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MLAPI.EnetTransport", "MLAPI.EnetTransport\MLAPI.EnetTransport.csproj", "{059FA226-17AB-4BD4-92BC-BCE3574FCAA0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MLAPI.RufflesTransport", "MLAPI.RufflesTransport\MLAPI.RufflesTransport.csproj", "{E05E5DBB-A5E0-4BA1-ABFF-99DC463EA3C0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -61,6 +63,14 @@ Global
 		{059FA226-17AB-4BD4-92BC-BCE3574FCAA0}.Release_Lite|Any CPU.Build.0 = Debug|Any CPU
 		{059FA226-17AB-4BD4-92BC-BCE3574FCAA0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{059FA226-17AB-4BD4-92BC-BCE3574FCAA0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E05E5DBB-A5E0-4BA1-ABFF-99DC463EA3C0}.Debug_Lite|Any CPU.ActiveCfg = Debug|Any CPU
+		{E05E5DBB-A5E0-4BA1-ABFF-99DC463EA3C0}.Debug_Lite|Any CPU.Build.0 = Debug|Any CPU
+		{E05E5DBB-A5E0-4BA1-ABFF-99DC463EA3C0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E05E5DBB-A5E0-4BA1-ABFF-99DC463EA3C0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E05E5DBB-A5E0-4BA1-ABFF-99DC463EA3C0}.Release_Lite|Any CPU.ActiveCfg = Debug|Any CPU
+		{E05E5DBB-A5E0-4BA1-ABFF-99DC463EA3C0}.Release_Lite|Any CPU.Build.0 = Debug|Any CPU
+		{E05E5DBB-A5E0-4BA1-ABFF-99DC463EA3C0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E05E5DBB-A5E0-4BA1-ABFF-99DC463EA3C0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -9,7 +9,6 @@
         ["@semantic-release/github", {
             "assets": [
                 {"path": "MLAPI/bin/Release/net35/MLAPI.dll"},
-                {"path": "MLAPI/bin/Release/net35/Ruffles.dll"},
                 {"path": "*.unitypackage"}
             ]
         }]

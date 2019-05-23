@@ -4,11 +4,19 @@ using System.Collections.Generic;
 using Ruffles.Core;
 using Ruffles.Configuration;
 using System.Net;
+using MLAPI.Transports;
 
-namespace MLAPI.Transports.Ruffles
+namespace MLAPI.RufflesTransport
 {
     public class RufflesTransport : Transport
     {
+        [Serializable]
+        public class RufflesChannel
+        {
+            public string Name;
+            public Ruffles.Channeling.ChannelType Type;
+        }
+
         // Inspector / settings
         public int MessageBufferSize = 1024 * 5;
         public int MaxConnections = 100;
@@ -23,10 +31,10 @@ namespace MLAPI.Transports.Ruffles
         private bool isConnector = false;
 
         // Lookup / translation
-        private readonly Dictionary<ulong, global::Ruffles.Connections.Connection> connections = new Dictionary<ulong, global::Ruffles.Connections.Connection>();
+        private readonly Dictionary<ulong, Ruffles.Connections.Connection> connections = new Dictionary<ulong, Ruffles.Connections.Connection>();
         private readonly Dictionary<string, byte> channelNameToId = new Dictionary<string, byte>();
         private readonly Dictionary<byte, string> channelIdToName = new Dictionary<byte, string>();
-        private global::Ruffles.Connections.Connection serverConnection;
+        private Ruffles.Connections.Connection serverConnection;
 
         // Ruffles
         private RuffleSocket socket;
@@ -181,7 +189,7 @@ namespace MLAPI.Transports.Ruffles
             }
             else
             {
-                return (ulong)connectionId + 1;
+                return connectionId + 1;
             }
         }
 
@@ -202,7 +210,7 @@ namespace MLAPI.Transports.Ruffles
             SocketConfig config = new SocketConfig();
 
             int channelCount = MLAPI_CHANNELS.Length + Channels.Count;
-            config.ChannelTypes = new global::Ruffles.Channeling.ChannelType[channelCount];
+            config.ChannelTypes = new Ruffles.Channeling.ChannelType[channelCount];
 
             for (byte i = 0; i < MLAPI_CHANNELS.Length; i++)
             {
@@ -221,25 +229,24 @@ namespace MLAPI.Transports.Ruffles
             return config;
         }
 
-        private global::Ruffles.Channeling.ChannelType ConvertChannelType(ChannelType type)
+        private Ruffles.Channeling.ChannelType ConvertChannelType(ChannelType type)
         {
             switch (type)
             {
                 case ChannelType.Reliable:
-                    return global::Ruffles.Channeling.ChannelType.Reliable;
+                    return Ruffles.Channeling.ChannelType.Reliable;
                 case ChannelType.ReliableFragmentedSequenced:
-                    return global::Ruffles.Channeling.ChannelType.ReliableSequenced;
+                    return Ruffles.Channeling.ChannelType.ReliableSequenced;
                 case ChannelType.ReliableSequenced:
-                    return global::Ruffles.Channeling.ChannelType.ReliableSequenced;
+                    return Ruffles.Channeling.ChannelType.ReliableSequenced;
                 case ChannelType.StateUpdate:
-                    return global::Ruffles.Channeling.ChannelType.Unreliable;
+                    return Ruffles.Channeling.ChannelType.Unreliable;
                 case ChannelType.Unreliable:
-                    return global::Ruffles.Channeling.ChannelType.Unreliable;
+                    return Ruffles.Channeling.ChannelType.Unreliable;
             }
 
-            return global::Ruffles.Channeling.ChannelType.Reliable;
+            return Ruffles.Channeling.ChannelType.Reliable;
         }
     }
 }
 #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-
