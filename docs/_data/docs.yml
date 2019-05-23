@@ -36,3 +36,7 @@
   - network-profiler-window
   - custom-serialization
   - boxing-systems
+
+- title: Troubleshooting
+  docs:
+  - common-mistakes
