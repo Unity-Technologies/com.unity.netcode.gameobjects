@@ -25,9 +25,5 @@
     <file src="MLAPI/bin/$configuration$/net45/*" target="lib/net45"/>
     <file src="MLAPI/bin/$configuration$/net471/*" target="lib/net471"/>
 	<file src="MLAPI/bin/$configuration$/netstandard2.0/*" target="lib/netstandard2.0"/>
-    <file src="Libraries/Unity/UnityEngine*" target="lib/net35"/>
-    <file src="Libraries/Unity/UnityEngine*" target="lib/net45"/>
-    <file src="Libraries/Unity/UnityEngine*" target="lib/net471"/>
-    <file src="Libraries/Unity/UnityEngine*" target="lib/netstandard2.0"/>
   </files>
 </package>
