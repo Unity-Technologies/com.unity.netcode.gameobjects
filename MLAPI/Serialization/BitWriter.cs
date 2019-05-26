@@ -61,6 +61,22 @@ namespace MLAPI.Serialization
             {
                 return;
             }
+            else if (value is Array array)
+            {
+                Type elementType = value.GetType().GetElementType();
+
+                if (SerializationManager.IsTypeSupported(elementType))
+                {
+                    WriteInt32Packed(array.Length);
+
+                    for (int i = 0; i < array.Length; i++)
+                    {
+                        WriteObjectPacked(array.GetValue(i));
+                    }
+
+                    return;
+                }
+            }
             else if (value is byte)
             {
                 WriteByte((byte)value);
@@ -161,19 +177,19 @@ namespace MLAPI.Serialization
                 WriteCharPacked((char)value);
                 return;
             }
-            else if (value.GetType().IsEnum) 
+            else if (value.GetType().IsEnum)
             {
                 WriteInt32Packed((int)value);
                 return;
             }
-            else if (value is GameObject) 
+            else if (value is GameObject)
             {
                 NetworkedObject networkedObject = ((GameObject)value).GetComponent<NetworkedObject>();
-                if(networkedObject == null) 
+                if (networkedObject == null)
                 {
                     throw new ArgumentException("BitWriter cannot write GameObject types that does not has a NetworkedObject component attached. GameObject: " + ((GameObject)value).name);
-                } 
-                else 
+                }
+                else
                 {
                     WriteUInt64Packed(networkedObject.NetworkId);
                 }
@@ -183,19 +199,19 @@ namespace MLAPI.Serialization
             {
                 WriteUInt64Packed(((NetworkedObject)value).NetworkId);
                 return;
-            } 
+            }
             else if (value is NetworkedBehaviour)
             {
                 WriteUInt64Packed(((NetworkedBehaviour)value).NetworkId);
                 WriteUInt16Packed(((NetworkedBehaviour)value).GetBehaviourId());
                 return;
-            } 
+            }
             else if (value is IBitWritable)
             {
                 ((IBitWritable)value).Write(this.sink);
                 return;
-            } 
-            
+            }
+
 
             throw new ArgumentException("BitWriter cannot write type " + value.GetType().Name);
         }

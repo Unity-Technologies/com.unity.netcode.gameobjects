@@ -141,8 +141,9 @@ namespace MLAPI.Serialization
         /// <returns>Whether or not the type is supported</returns>
         public static bool IsTypeSupported(Type type)
         {
-            return type.IsEnum || SupportedTypes.Contains(type) || type.HasInterface(typeof(IBitWritable)) || 
-                   (cachedExternalSerializers.ContainsKey(type) && cachedExternalDeserializers.ContainsKey(type));
+            return type.IsEnum || SupportedTypes.Contains(type) || type.HasInterface(typeof(IBitWritable)) ||
+                   (cachedExternalSerializers.ContainsKey(type) && cachedExternalDeserializers.ContainsKey(type)) ||
+                    (type.IsArray && type.HasElementType && IsTypeSupported(type.GetElementType()));
         }
     }
 }

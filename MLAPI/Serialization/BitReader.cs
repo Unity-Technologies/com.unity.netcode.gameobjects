@@ -102,6 +102,19 @@ namespace MLAPI.Serialization
             
             if (SerializationManager.TryDeserialize(source, type, out object obj))
                 return obj;
+            if (type.IsArray && type.HasElementType)
+            {
+                int size = ReadInt32Packed();
+
+                Array array = Array.CreateInstance(type.GetElementType(), size);
+
+                for (int i = 0; i < size; i++)
+                {
+                    array.SetValue(ReadObjectPacked(type.GetElementType()), i);
+                }
+
+                return array;
+            }
             if (type == typeof(byte))
                 return ReadByteDirect();
             if (type == typeof(sbyte))
