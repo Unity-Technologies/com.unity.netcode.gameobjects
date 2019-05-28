@@ -72,21 +72,12 @@ namespace MLAPI.Transports.UNET
                 buffer = data.Array;
             }
 
-            if (skipQueue)
-            {
-                RelayTransport.Send(hostId, connectionId, channelId, buffer, data.Count, out byte error);
-            }
-            else
-            {
-                RelayTransport.QueueMessageForSending(hostId, connectionId, channelId, buffer, data.Count, out byte error);
-            }
+            RelayTransport.Send(hostId, connectionId, channelId, buffer, data.Count, out byte error);
         }
 
         public override void FlushSendQueue(ulong clientId)
         {
-            GetUnetConnectionDetails(clientId, out byte hostId, out ushort connectionId);
-            
-            RelayTransport.SendQueuedMessages(hostId, connectionId, out byte error);
+            // This is broken in UNET.
         }
 
         public override NetEventType PollEvent(out ulong clientId, out string channelName, out ArraySegment<byte> payload)
