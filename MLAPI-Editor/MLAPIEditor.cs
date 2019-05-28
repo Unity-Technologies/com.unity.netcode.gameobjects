@@ -374,7 +374,7 @@ public class MLAPIEditor : EditorWindow
                     {
                         EditorGUI.indentLevel++;
 
-                        string transportDirectory = Path.Combine(Path.Combine(Path.Combine(Path.Combine(Application.dataPath, "MLAPI"), "Lib"), "OfficialTransports"), transportArtifacts[i].id);
+                        string transportDirectory = Path.Combine(Path.Combine(Path.Combine(Application.dataPath, "MLAPI"), "OfficialTransports"), transportArtifacts[i].id);
 
                         EditorGUILayout.LabelField("Description", EditorStyles.boldLabel);
                         EditorGUILayout.LabelField(transportArtifacts[i].description, EditorStyles.wordWrappedLabel);
@@ -598,7 +598,7 @@ public class MLAPIEditor : EditorWindow
         statusMessage = "Cleaning transport folder";
         yield return null;
 
-        string transportDirectory = Path.Combine(Path.Combine(Path.Combine(Path.Combine(Application.dataPath, "MLAPI"), "Lib"), "OfficialTransports"), transportArtifacts[index].id);
+        string transportDirectory = Path.Combine(Path.Combine(Path.Combine(Application.dataPath, "MLAPI"), "OfficialTransports"), transportArtifacts[index].id);
 
         if (Directory.Exists(transportDirectory))
             Directory.Delete(transportDirectory, true);
