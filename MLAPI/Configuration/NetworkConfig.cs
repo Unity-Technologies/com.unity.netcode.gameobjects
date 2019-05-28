@@ -34,10 +34,10 @@ namespace MLAPI.Configuration
         public List<string> RegisteredScenes = new List<string>();
         /// <summary>
         /// Whether or not runtime scene changes should be allowed and expected.
-        /// If this is true, clients with different initial configurations will not worth together.
+        /// If this is true, clients with different initial configurations will not work together.
         /// </summary>
         [Tooltip("Whether or not runtime scene changes should be allowed and expected.\n " +
-        	     "If this is true, clients with different initial configurations will not worth together.")]
+        	     "If this is true, clients with different initial configurations will not work together.")]
         public bool AllowRuntimeSceneChanges = false;
         /// <summary>
         /// A list of spawnable prefabs

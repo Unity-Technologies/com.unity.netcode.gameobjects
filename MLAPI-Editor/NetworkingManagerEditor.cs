@@ -22,6 +22,7 @@ public class NetworkingManagerEditor : Editor
     
     // NetworkConfig fields
     private SerializedProperty protocolVersionProperty;
+    private SerializedProperty allowRuntimeSceneChanges;
     private SerializedProperty networkTransportProperty;
     private SerializedProperty receiveTickrateProperty;
     private SerializedProperty maxReceiveEventsPerTickRateProperty;
@@ -99,6 +100,7 @@ public class NetworkingManagerEditor : Editor
         
         // NetworkConfig properties
         protocolVersionProperty = networkConfigProperty.FindPropertyRelative("ProtocolVersion");
+        allowRuntimeSceneChanges = networkConfigProperty.FindPropertyRelative("AllowRuntimeSceneChanges");
         networkTransportProperty = networkConfigProperty.FindPropertyRelative("NetworkTransport");
         receiveTickrateProperty = networkConfigProperty.FindPropertyRelative("ReceiveTickrate");
         maxReceiveEventsPerTickRateProperty = networkConfigProperty.FindPropertyRelative("MaxReceiveEventsPerTickRate");
@@ -136,6 +138,7 @@ public class NetworkingManagerEditor : Editor
         
         // NetworkConfig properties
         protocolVersionProperty = networkConfigProperty.FindPropertyRelative("ProtocolVersion");
+        allowRuntimeSceneChanges = networkConfigProperty.FindPropertyRelative("AllowRuntimeSceneChanges");
         networkTransportProperty = networkConfigProperty.FindPropertyRelative("NetworkTransport");
         receiveTickrateProperty = networkConfigProperty.FindPropertyRelative("ReceiveTickrate");
         maxReceiveEventsPerTickRateProperty = networkConfigProperty.FindPropertyRelative("MaxReceiveEventsPerTickRate");
@@ -322,6 +325,7 @@ public class NetworkingManagerEditor : Editor
 
             EditorGUILayout.LabelField("Scene Management", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(loadSceneTimeOutProperty);
+            EditorGUILayout.PropertyField(allowRuntimeSceneChanges);
             
             EditorGUILayout.LabelField("Cryptography", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(enableEncryptionProperty);
