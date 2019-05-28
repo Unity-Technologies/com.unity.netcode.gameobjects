@@ -53,8 +53,6 @@ namespace MLAPI.Messaging
                 serverTarget = false;
             }
 
-            parameterTypes = new Type[parameters.Length];
-
             if (parameters.Length == 2 && method.ReturnType == typeof(void) && parameters[0].ParameterType == typeof(ulong) && parameters[1].ParameterType == typeof(Stream))
             {
                 useDelegate = true;
@@ -63,6 +61,7 @@ namespace MLAPI.Messaging
             {
                 useDelegate = false;
 
+                parameterTypes = new Type[parameters.Length];
                 parameterRefs = new object[parameters.Length];
 
                 for (int i = 0; i < parameters.Length; i++)
