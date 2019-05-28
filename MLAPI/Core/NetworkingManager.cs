@@ -575,6 +575,7 @@ namespace MLAPI
             IsServer = false;
             IsClient = false;
             SpawnManager.DestroyNonSceneObjects();
+            SpawnManager.ServerResetShudownStateForSceneObjects();
 
             if (NetworkConfig != null && NetworkConfig.NetworkTransport != null) //The Transport is set during Init time, thus it is possible for the Transport to be null
                 NetworkConfig.NetworkTransport.Shutdown();

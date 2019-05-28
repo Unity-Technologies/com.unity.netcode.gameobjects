@@ -433,6 +433,20 @@ namespace MLAPI.Spawning
             OnDestroyObject(netObject.NetworkId, false);
         }
 
+        // Makes scene objects ready to be reused
+        internal static void ServerResetShudownStateForSceneObjects()
+        {
+            for (int i = 0; i < SpawnedObjectsList.Count; i++)
+            {
+                if ((SpawnedObjectsList[i].IsSceneObject != null && SpawnedObjectsList[i].IsSceneObject == true) || SpawnedObjectsList[i].DestroyWithScene)
+                {
+                    SpawnedObjectsList[i].IsSpawned = false;
+                    SpawnedObjectsList[i].DestroyWithScene = false;
+                    SpawnedObjectsList[i].IsSceneObject = null;
+                }
+            }
+        }
+
         internal static void ServerDestroySpawnedSceneObjects()
         {
             for (int i = 0; i < SpawnedObjectsList.Count; i++)
