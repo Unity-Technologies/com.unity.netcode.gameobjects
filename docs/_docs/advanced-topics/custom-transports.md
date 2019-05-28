@@ -7,4 +7,9 @@ The MLAPI supports custom transports. It uses UNET by default. You can also writ
 
 Usually, transports doesn't support support all channel types and event types. Sometimes they have more, in that case you manually have to do translation between them. See the ENET transport for examples.
 
-To get started writing transport interfaces, the current implementations for Unet and ENET are great starting points for learning their flow. If you do write a transport for a well known transport, feel free to open a PR to add it to the default supported.
+### Official Transports
+The MLAPI has some official transport implementations you can use. They can be found [here](https://github.com/midlevel/MLAPI.Transports). All you have to do is download the ZIP file you want from the CI server and export it into your assets folder and it will show up in the NetworkingManager automatically.
+
+
+### Writing Your Own
+To get started writing transport interfaces, the current implementations for Unet, ENET and Ruffles are great starting points for learning their flow. If you do write a transport for a well known transport, feel free to open a PR to add it to the official transports repo.
