@@ -13,7 +13,6 @@ using MLAPI.Messaging;
 using MLAPI.NetworkedVar;
 using MLAPI.Reflection;
 using MLAPI.Security;
-using MLAPI.Serialization;
 using MLAPI.Serialization.Pooled;
 using MLAPI.Spawning;
 using BitStream = MLAPI.Serialization.BitStream;
@@ -149,8 +148,9 @@ namespace MLAPI
 
         internal void InternalNetworkStart()
         {
-            rpcInfo = NetworkedTypeInfo.Obtain(GetType());
-            rpcDelegates = rpcInfo.InitializeRpcDelegates(this);
+            rpcDefinition = RpcTypeDefinition.Get(GetType());
+            rpcDelegates = rpcDefinition.CreateTargetedDelegates(this);
+
             NetworkedVarInit();
         }
         
@@ -635,15 +635,20 @@ namespace MLAPI
         #region MESSAGING_SYSTEM
         private static readonly StringBuilder methodInfoStringBuilder = new StringBuilder();
         private static readonly Dictionary<MethodInfo, ulong> methodInfoHashTable = new Dictionary<MethodInfo, ulong>();
-        private NetworkedTypeInfo rpcInfo;
+        private RpcTypeDefinition rpcDefinition;
         internal RpcDelegate[] rpcDelegates;
 
         internal static ulong HashMethodName(string name)
         {
             HashSize mode = NetworkingManager.Singleton.NetworkConfig.RpcHashSize;
-            if (mode == HashSize.VarIntTwoBytes) return name.GetStableHash16();
-            if (mode == HashSize.VarIntFourBytes) return name.GetStableHash32();
-            if (mode == HashSize.VarIntEightBytes) return name.GetStableHash64();
+
+            if (mode == HashSize.VarIntTwoBytes)
+                return name.GetStableHash16();
+            if (mode == HashSize.VarIntFourBytes)
+                return name.GetStableHash32();
+            if (mode == HashSize.VarIntEightBytes)
+                return name.GetStableHash64();
+
             return 0;
         }
 
@@ -652,14 +657,12 @@ namespace MLAPI
             if (methodInfoHashTable.ContainsKey(method))
             {
                 return methodInfoHashTable[method];
-            } else
-            {
-                ulong val = HashMethodName(GetHashableMethodSignature(method));
-
-                methodInfoHashTable.Add(method, val);
-
-                return val;
             }
+
+            ulong hash = HashMethodName(GetHashableMethodSignature(method));
+            methodInfoHashTable.Add(method, hash);
+
+            return hash;
         }
 
         internal static string GetHashableMethodSignature(MethodInfo method)
@@ -679,7 +682,7 @@ namespace MLAPI
 
         internal object OnRemoteServerRPC(ulong hash, ulong senderClientId, Stream stream)
         {
-            if (!rpcInfo.serverMethods.ContainsKey(hash))
+            if (!rpcDefinition.serverMethods.ContainsKey(hash))
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("ServerRPC request method not found");
                 return null;
@@ -691,7 +694,7 @@ namespace MLAPI
         
         internal object OnRemoteClientRPC(ulong hash, ulong senderClientId, Stream stream)
         {
-            if (!rpcInfo.clientMethods.ContainsKey(hash))
+            if (!rpcDefinition.clientMethods.ContainsKey(hash))
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("ClientRPC request method not found");
                 return null;
@@ -702,14 +705,22 @@ namespace MLAPI
 
         private object InvokeServerRPCLocal(ulong hash, ulong senderClientId, Stream stream)
         {
-            if (!rpcInfo.serverMethods.TryGetValue(hash, out ReflectionMethod rpcMethod)) return null;
-            return rpcMethod.Invoke(this, senderClientId, stream);
+            if (rpcDefinition.serverMethods.ContainsKey(hash))
+            {
+                return rpcDefinition.serverMethods[hash].Invoke(this, senderClientId, stream);
+            }
+
+            return null;
         }
 
         private object InvokeClientRPCLocal(ulong hash, ulong senderClientId, Stream stream)
         {
-            if (!rpcInfo.clientMethods.TryGetValue(hash, out ReflectionMethod rpcMethod)) return null;
-            return rpcMethod.Invoke(this, senderClientId, stream);
+            if (rpcDefinition.clientMethods.ContainsKey(hash))
+            {
+                return rpcDefinition.clientMethods[hash].Invoke(this, senderClientId, stream);
+            }
+
+            return null;
         }
         
         //Technically boxed writes are not needed. But save LOC for the non performance sends.

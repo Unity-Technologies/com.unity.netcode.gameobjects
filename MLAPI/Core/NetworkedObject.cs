@@ -5,15 +5,12 @@ using System.IO;
 using MLAPI.Configuration;
 using MLAPI.Exceptions;
 using MLAPI.Hashing;
-using MLAPI.Internal;
 using MLAPI.Logging;
 using MLAPI.Messaging;
 using MLAPI.Security;
-using MLAPI.Serialization;
 using MLAPI.Serialization.Pooled;
 using MLAPI.Spawning;
 using UnityEngine;
-using BitStream = MLAPI.Serialization.BitStream;
 
 namespace MLAPI
 {
@@ -362,7 +359,10 @@ namespace MLAPI
         
         private void OnDestroy()
         {
-            if (NetworkingManager.Singleton != null) SpawnManager.OnDestroyObject(NetworkId, false);
+            if (NetworkingManager.Singleton != null)
+            {
+                SpawnManager.OnDestroyObject(NetworkId, false);
+            }
         }
 
         /// <summary>
