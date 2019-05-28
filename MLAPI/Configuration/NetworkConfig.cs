@@ -33,6 +33,13 @@ namespace MLAPI.Configuration
         [Tooltip("The Scenes that can be switched to by the server")]
         public List<string> RegisteredScenes = new List<string>();
         /// <summary>
+        /// Whether or not runtime scene changes should be allowed and expected.
+        /// If this is true, clients with different initial configurations will not worth together.
+        /// </summary>
+        [Tooltip("Whether or not runtime scene changes should be allowed and expected.\n " +
+        	     "If this is true, clients with different initial configurations will not worth together.")]
+        public bool AllowRuntimeSceneChanges = false;
+        /// <summary>
         /// A list of spawnable prefabs
         /// </summary>
         [Tooltip("The prefabs that can be spawned across the network")]
@@ -233,6 +240,7 @@ namespace MLAPI.Configuration
                     writer.WriteBool(RecycleNetworkIds);
                     writer.WriteSinglePacked(NetworkIdRecycleDelay);
                     writer.WriteBool(EnableNetworkedVar);
+                    writer.WriteBool(AllowRuntimeSceneChanges);
                     stream.PadStream();
 
                     return Convert.ToBase64String(stream.ToArray());
@@ -280,6 +288,7 @@ namespace MLAPI.Configuration
                     config.RecycleNetworkIds = reader.ReadBool();
                     config.NetworkIdRecycleDelay = reader.ReadSinglePacked();
                     config.EnableNetworkedVar = reader.ReadBool();
+                    config.AllowRuntimeSceneChanges = reader.ReadBool();
                 }
             }
         }
@@ -305,9 +314,12 @@ namespace MLAPI.Configuration
                     writer.WriteUInt16Packed(ProtocolVersion);
                     writer.WriteString(MLAPIConstants.MLAPI_PROTOCOL_VERSION);
 
-                    for (int i = 0; i < RegisteredScenes.Count; i++)
+                    if (!AllowRuntimeSceneChanges)
                     {
-                        writer.WriteString(RegisteredScenes[i]);
+                        for (int i = 0; i < RegisteredScenes.Count; i++)
+                        {
+                            writer.WriteString(RegisteredScenes[i]);
+                        }
                     }
 
                     if (ForceSamePrefabs)
