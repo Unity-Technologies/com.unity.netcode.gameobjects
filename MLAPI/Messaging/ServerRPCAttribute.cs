@@ -8,13 +8,11 @@ namespace MLAPI.Messaging
     /// Remember that a host is a server and a client
     /// </summary>
     [AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = false)]
-    public class ServerRPCAttribute : Attribute
+    public class ServerRPCAttribute : RPCAttribute
     {
         /// <summary>
         /// Whether or not the ServerRPC should only be run if executed by the owner of the object
         /// </summary>
         public bool RequireOwnership = true;
-        internal ReflectionMethod reflectionMethod;
-        internal RpcDelegate rpcDelegate;
     }
 }

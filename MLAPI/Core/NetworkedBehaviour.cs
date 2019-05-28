@@ -13,7 +13,6 @@ using MLAPI.Messaging;
 using MLAPI.NetworkedVar;
 using MLAPI.Reflection;
 using MLAPI.Security;
-using MLAPI.Serialization;
 using MLAPI.Serialization.Pooled;
 using MLAPI.Spawning;
 using BitStream = MLAPI.Serialization.BitStream;
@@ -89,7 +88,8 @@ namespace MLAPI
         /// <summary>
         /// Contains the sender of the currently executing RPC. Useful for the convenience RPC methods
         /// </summary>
-        protected ulong ExecutingRpcSender { get; private set; }
+        protected ulong ExecutingRpcSender => executingRpcSender;
+        internal ulong executingRpcSender;
         /// <summary>
         /// Gets the NetworkedObject that owns this NetworkedBehaviour instance
         /// </summary>
@@ -148,7 +148,9 @@ namespace MLAPI
 
         internal void InternalNetworkStart()
         {
-            CacheAttributes();
+            rpcDefinition = RpcTypeDefinition.Get(GetType());
+            rpcDelegates = rpcDefinition.CreateTargetedDelegates(this);
+
             NetworkedVarInit();
         }
         
@@ -631,17 +633,15 @@ namespace MLAPI
         #endregion
 
         #region MESSAGING_SYSTEM
-        internal readonly Dictionary<NetworkedBehaviour, Dictionary<ulong, ClientRPCAttribute>> CachedClientRpcs = new Dictionary<NetworkedBehaviour, Dictionary<ulong, ClientRPCAttribute>>();
-        internal readonly Dictionary<NetworkedBehaviour, Dictionary<ulong, ServerRPCAttribute>> CachedServerRpcs = new Dictionary<NetworkedBehaviour, Dictionary<ulong, ServerRPCAttribute>>();
-        private static readonly Dictionary<Type, MethodInfo[]> Methods = new Dictionary<Type, MethodInfo[]>();
-        private static readonly Dictionary<ulong, string> HashResults = new Dictionary<ulong, string>();
-        private static readonly Dictionary<MethodInfo, ulong> methodInfoHashTable = new Dictionary<MethodInfo, ulong>();
         private static readonly StringBuilder methodInfoStringBuilder = new StringBuilder();
+        private static readonly Dictionary<MethodInfo, ulong> methodInfoHashTable = new Dictionary<MethodInfo, ulong>();
+        private RpcTypeDefinition rpcDefinition;
+        internal RpcDelegate[] rpcDelegates;
 
-        private ulong HashMethodName(string name)
+        internal static ulong HashMethodName(string name)
         {
             HashSize mode = NetworkingManager.Singleton.NetworkConfig.RpcHashSize;
-            
+
             if (mode == HashSize.VarIntTwoBytes)
                 return name.GetStableHash16();
             if (mode == HashSize.VarIntFourBytes)
@@ -651,30 +651,27 @@ namespace MLAPI
 
             return 0;
         }
-        
+
         private ulong HashMethod(MethodInfo method)
         {
             if (methodInfoHashTable.ContainsKey(method))
             {
                 return methodInfoHashTable[method];
             }
-            else
-            {
-                ulong val = HashMethodName(GetHashableMethodSignature(method));
-                
-                methodInfoHashTable.Add(method, val);
 
-                return val;
-            }
+            ulong hash = HashMethodName(GetHashableMethodSignature(method));
+            methodInfoHashTable.Add(method, hash);
+
+            return hash;
         }
 
-        private string GetHashableMethodSignature(MethodInfo method)
+        internal static string GetHashableMethodSignature(MethodInfo method)
         {
             methodInfoStringBuilder.Length = 0;
             methodInfoStringBuilder.Append(method.Name);
 
             ParameterInfo[] parameters = method.GetParameters();
-                
+
             for (int i = 0; i < parameters.Length; i++)
             {
                 methodInfoStringBuilder.Append(parameters[i].ParameterType.Name);
@@ -683,176 +680,21 @@ namespace MLAPI
             return methodInfoStringBuilder.ToString();
         }
 
-        private MethodInfo[] GetNetworkedBehaviorChildClassesMethods(Type type, List<MethodInfo> list = null) 
-        {
-            if (list == null) 
-            {
-                list = new List<MethodInfo>();
-                list.AddRange(type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance));
-            }
-            else
-            {
-                list.AddRange(type.GetMethods(BindingFlags.NonPublic | BindingFlags.Instance));
-            }
-
-            if (type.BaseType != null && type.BaseType != typeof(NetworkedBehaviour))
-            {
-                return GetNetworkedBehaviorChildClassesMethods(type.BaseType, list);
-            }
-            else
-            {
-                return list.ToArray();
-            }
-        }
-
-        private void CacheAttributes()
-        {
-            Type type = GetType();
-            
-            CachedClientRpcs.Add(this, new Dictionary<ulong, ClientRPCAttribute>());
-            CachedServerRpcs.Add(this, new Dictionary<ulong, ServerRPCAttribute>());
-
-            MethodInfo[] methods;
-            if (Methods.ContainsKey(type)) methods = Methods[type];
-            else
-            {
-                methods = GetNetworkedBehaviorChildClassesMethods(type);
-                Methods.Add(type, methods);
-            }
-
-            for (int i = 0; i < methods.Length; i++)
-            {
-                if (methods[i].IsDefined(typeof(ServerRPCAttribute), true))
-                {
-                    ServerRPCAttribute[] attributes = (ServerRPCAttribute[])methods[i].GetCustomAttributes(typeof(ServerRPCAttribute), true);
-                    if (attributes.Length > 1)
-                    {
-                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Having more than 1 ServerRPC attribute per method is not supported.");
-                    }
-
-                    ParameterInfo[] parameters = methods[i].GetParameters();
-                    if (parameters.Length == 2 && parameters[0].ParameterType == typeof(ulong) && parameters[1].ParameterType == typeof(Stream) && methods[i].ReturnType == typeof(void))
-                    {
-                        //use delegate
-                        attributes[0].rpcDelegate = (RpcDelegate)Delegate.CreateDelegate(typeof(RpcDelegate), this, methods[i].Name);
-                    }
-                    else
-                    {
-                        if (methods[i].ReturnType != typeof(void) && !SerializationManager.IsTypeSupported(methods[i].ReturnType))
-                        {
-                            if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogWarning("Invalid return type of RPC. Has to be either void or RpcResponse<T> with a serializable type");
-                        }
-
-                        attributes[0].reflectionMethod = new ReflectionMethod(methods[i]);
-                    }
-
-                    ulong nameHash = HashMethodName(methods[i].Name);
-                    
-                    if (HashResults.ContainsKey(nameHash) && HashResults[nameHash] != methods[i].Name)
-                    {
-                        if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError($"Hash collision detected for RPC method. The method \"{methods[i].Name}\" collides with the method \"{HashResults[nameHash]}\". This can be solved by increasing the amount of bytes to use for hashing in the NetworkConfig or changing the name of one of the conflicting methods.");
-                    }
-                    else if (!HashResults.ContainsKey(nameHash))
-                    {
-                        HashResults.Add(nameHash, methods[i].Name);
-                    }
-                    CachedServerRpcs[this].Add(nameHash, attributes[0]);
-
-
-                    if (methods[i].GetParameters().Length > 0)
-                    {
-                        // Alloc justification: This is done only when first created. We are still allocing a whole NetworkedBehaviour. Allocing a string extra is NOT BAD
-                        // As long as we dont alloc the string every RPC invoke. It's fine
-                        string hashableMethodSignature = GetHashableMethodSignature(methods[i]);
-
-                        ulong methodHash = HashMethodName(hashableMethodSignature);
-                    
-                        if (HashResults.ContainsKey(methodHash) && HashResults[methodHash] != hashableMethodSignature)
-                        {
-                            if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError($"Hash collision detected for RPC method. The method \"{hashableMethodSignature}\" collides with the method \"{HashResults[methodHash]}\". This can be solved by increasing the amount of bytes to use for hashing in the NetworkConfig or changing the name of one of the conflicting methods.");
-                        }
-                        else if (!HashResults.ContainsKey(methodHash))
-                        {
-                            HashResults.Add(methodHash, hashableMethodSignature);
-                        }
-                        CachedServerRpcs[this].Add(methodHash, attributes[0]);   
-                    }
-                }
-                
-                if (methods[i].IsDefined(typeof(ClientRPCAttribute), true))
-                {
-                    ClientRPCAttribute[] attributes = (ClientRPCAttribute[])methods[i].GetCustomAttributes(typeof(ClientRPCAttribute), true);
-                    if (attributes.Length > 1)
-                    {
-                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Having more than 1 ClientRPC attribute per method is not supported.");
-                    }
-
-                    ParameterInfo[] parameters = methods[i].GetParameters();
-                    if (parameters.Length == 2 && parameters[0].ParameterType == typeof(ulong) && parameters[1].ParameterType == typeof(Stream) && methods[i].ReturnType == typeof(void))
-                    {
-                        //use delegate
-                        attributes[0].rpcDelegate = (RpcDelegate)Delegate.CreateDelegate(typeof(RpcDelegate), this, methods[i].Name);
-                    }
-                    else
-                    {
-                        if (methods[i].ReturnType != typeof(void) && !SerializationManager.IsTypeSupported(methods[i].ReturnType))
-                        {
-                            if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogWarning("Invalid return type of RPC. Has to be either void or RpcResponse<T> with a serializable type");
-                        }
-                        
-                        attributes[0].reflectionMethod = new ReflectionMethod(methods[i]);
-                    }
-
-
-                    ulong nameHash = HashMethodName(methods[i].Name);
-                    
-                    if (HashResults.ContainsKey(nameHash) && HashResults[nameHash] != methods[i].Name)
-                    {
-                        if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError($"Hash collision detected for RPC method. The method \"{methods[i].Name}\" collides with the method \"{HashResults[nameHash]}\". This can be solved by increasing the amount of bytes to use for hashing in the NetworkConfig or changing the name of one of the conflicting methods.");
-                    }
-                    else if (!HashResults.ContainsKey(nameHash))
-                    {
-                        HashResults.Add(nameHash, methods[i].Name);
-                    }
-                    CachedClientRpcs[this].Add(nameHash, attributes[0]);
-
-
-                    if (methods[i].GetParameters().Length > 0)
-                    {
-                        // Alloc justification: This is done only when first created. We are still allocing a whole NetworkedBehaviour. Allocing a string extra is NOT BAD
-                        // As long as we dont alloc the string every RPC invoke. It's fine
-                        string hashableMethodSignature = GetHashableMethodSignature(methods[i]);
-
-                        ulong methodHash = HashMethodName(hashableMethodSignature);
-                    
-                        if (HashResults.ContainsKey(methodHash) && HashResults[methodHash] != hashableMethodSignature)
-                        {
-                            if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError($"Hash collision detected for RPC method. The method \"{hashableMethodSignature}\" collides with the method \"{HashResults[methodHash]}\". This can be solved by increasing the amount of bytes to use for hashing in the NetworkConfig or changing the name of one of the conflicting methods.");
-                        }
-                        else if (!HashResults.ContainsKey(methodHash))
-                        {
-                            HashResults.Add(methodHash, hashableMethodSignature);
-                        }
-                        CachedClientRpcs[this].Add(methodHash, attributes[0]);
-                    }
-                }     
-            }
-        }
-
         internal object OnRemoteServerRPC(ulong hash, ulong senderClientId, Stream stream)
         {
-            if (!CachedServerRpcs.ContainsKey(this) || !CachedServerRpcs[this].ContainsKey(hash))
+            if (!rpcDefinition.serverMethods.ContainsKey(hash))
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("ServerRPC request method not found");
                 return null;
+
             }
-            
+
             return InvokeServerRPCLocal(hash, senderClientId, stream);
         }
         
         internal object OnRemoteClientRPC(ulong hash, ulong senderClientId, Stream stream)
         {
-            if (!CachedClientRpcs.ContainsKey(this) || !CachedClientRpcs[this].ContainsKey(hash))
+            if (!rpcDefinition.clientMethods.ContainsKey(hash))
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("ClientRPC request method not found");
                 return null;
@@ -863,103 +705,22 @@ namespace MLAPI
 
         private object InvokeServerRPCLocal(ulong hash, ulong senderClientId, Stream stream)
         {
-            if (!CachedServerRpcs.ContainsKey(this) || !CachedServerRpcs[this].ContainsKey(hash))
-                return null;
-            
-            ServerRPCAttribute rpc = CachedServerRpcs[this][hash];
-
-            if (rpc.RequireOwnership && senderClientId != OwnerClientId)
+            if (rpcDefinition.serverMethods.ContainsKey(hash))
             {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Only owner can invoke ServerRPC that is marked to require ownership");
-                return null;
+                return rpcDefinition.serverMethods[hash].Invoke(this, senderClientId, stream);
             }
 
-            if (stream.Position != 0)
-            {
-                //Create a new stream so that the stream they get ONLY contains user data and not MLAPI headers
-                using (PooledBitStream userStream = PooledBitStream.Get())
-                {
-                    userStream.CopyUnreadFrom(stream);
-                    userStream.Position = 0;
-                    ExecutingRpcSender = senderClientId;
-
-                    if (rpc.reflectionMethod != null)
-                    {
-                        ExecutingRpcSender = senderClientId;
-                        
-                        return rpc.reflectionMethod.Invoke(this, userStream);
-                    }
-
-                    if (rpc.rpcDelegate != null)
-                    {
-                        rpc.rpcDelegate(senderClientId, userStream);
-                    }
-
-                    return null;
-                }
-            }
-            else
-            {
-                ExecutingRpcSender = senderClientId;
-
-                if (rpc.reflectionMethod != null)
-                {
-                    ExecutingRpcSender = senderClientId;
-                    
-                    return rpc.reflectionMethod.Invoke(this, stream);
-                }
-
-                if (rpc.rpcDelegate != null)
-                {
-                    rpc.rpcDelegate(senderClientId, stream);
-                }
-
-                return null;
-            }
+            return null;
         }
 
         private object InvokeClientRPCLocal(ulong hash, ulong senderClientId, Stream stream)
         {
-            if (!CachedClientRpcs.ContainsKey(this) || !CachedClientRpcs[this].ContainsKey(hash))
-                return null;
-            
-            ClientRPCAttribute rpc = CachedClientRpcs[this][hash];
-
-            if (stream.Position != 0)
+            if (rpcDefinition.clientMethods.ContainsKey(hash))
             {
-                //Create a new stream so that the stream they get ONLY contains user data and not MLAPI headers
-                using (PooledBitStream userStream = PooledBitStream.Get())
-                {
-                    userStream.CopyUnreadFrom(stream);
-                    userStream.Position = 0;
-
-                    if (rpc.reflectionMethod != null)
-                    {
-                        return rpc.reflectionMethod.Invoke(this, userStream);
-                    }
-
-                    if (rpc.rpcDelegate != null)
-                    {
-                        rpc.rpcDelegate(senderClientId, userStream);
-                    }
-
-                    return null;
-                }
+                return rpcDefinition.clientMethods[hash].Invoke(this, senderClientId, stream);
             }
-            else
-            {
-                if (rpc.reflectionMethod != null)
-                {
-                    return rpc.reflectionMethod.Invoke(this, stream);
-                }
 
-                if (rpc.rpcDelegate != null)
-                {
-                    rpc.rpcDelegate(senderClientId, stream);
-                }
-
-                return null;
-            }
+            return null;
         }
         
         //Technically boxed writes are not needed. But save LOC for the non performance sends.
