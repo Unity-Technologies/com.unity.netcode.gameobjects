@@ -36,7 +36,7 @@ namespace MLAPI.NetworkedVar
         /// The name of the channel to use for this variable.
         /// Variables with different channels will be split into different packets
         /// </summary>
-        public string SendChannel = "MLAPI_INTERNAL";
+        public string SendChannel = "MLAPI_DEFAULT_MESSAGE";
         
         /// <summary>
         /// Constructs a new NetworkedVarSettings instance
