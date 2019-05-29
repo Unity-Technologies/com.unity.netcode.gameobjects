@@ -236,13 +236,25 @@ namespace MLAPI.Spawning
         // Only ran on Client
         internal static NetworkedObject CreateLocalNetworkedObject(bool softCreate, ulong instanceId, ulong prefabHash, ulong? parentNetworkId, Vector3? position, Quaternion? rotation)
         {
+            NetworkedObject parent = null;
+
+            if (parentNetworkId != null && SpawnedObjects.ContainsKey(parentNetworkId.Value))
+            {
+                parent = SpawnedObjects[parentNetworkId.Value];
+            }
+
             if (NetworkingManager.Singleton.NetworkConfig.UsePrefabSync || !softCreate)
             {
                 // Create the object
                 if (customSpawnHandlers.ContainsKey(prefabHash))
                 {
                     NetworkedObject networkedObject = customSpawnHandlers[prefabHash](position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity));
-                    
+
+                    if (parent != null)
+                    {
+                        networkedObject.transform.SetParent(parent.transform, true);
+                    }
+
                     if (NetworkSceneManager.isSpawnedObjectsPendingInDontDestroyOnLoad)
                     {
                         GameObject.DontDestroyOnLoad(networkedObject.gameObject);
@@ -254,41 +266,13 @@ namespace MLAPI.Spawning
                 {
                     GameObject prefab = NetworkingManager.Singleton.NetworkConfig.NetworkedPrefabs[GetNetworkedPrefabIndexOfHash(prefabHash)].Prefab;
 
-                    GameObject instance;
-                    if (parentNetworkId == null)
-                    {
-                        if (position == null && rotation == null)
-                        {
-                            instance = UnityEngine.Object.Instantiate(prefab);
-                        }
-                        else
-                        {
-                            instance = UnityEngine.Object.Instantiate(prefab, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity));
-                        }
-                    }
-                    else
-                    {
-                        if (!SpawnedObjects.TryGetValue((ulong)parentNetworkId, out NetworkedObject parent))
-                        {
-                            if (LogHelper.CurrentLogLevel <= LogLevel.Normal)
-                                LogHelper.LogError($"Unable to spawn object, as parent hasn't been spawned yet");
-                        }
-                        if (position == null && rotation == null)
-                        {
-                            instance = UnityEngine.Object.Instantiate(prefab, parent.transform);
-                        }
-                        else
-                        {
-                            instance = UnityEngine.Object.Instantiate(prefab, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity), parent.transform);
-                        }
-                    }
-                    NetworkedObject networkedObject = instance.GetComponent<NetworkedObject>();
+                    NetworkedObject networkedObject = ((position == null && rotation == null) ? MonoBehaviour.Instantiate(prefab) : MonoBehaviour.Instantiate(prefab, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity))).GetComponent<NetworkedObject>();
 
                     if (NetworkSceneManager.isSpawnedObjectsPendingInDontDestroyOnLoad)
                     {
                         GameObject.DontDestroyOnLoad(networkedObject.gameObject);
                     }
-                    
+
                     return networkedObject;
                 }
             }
@@ -396,14 +380,21 @@ namespace MLAPI.Spawning
             }
         }
 
-        internal static void WriteSpawnCallForObject(MLAPI.Serialization.BitStream stream, ulong clientId, NetworkedObject netObject, Stream payload)
+        internal static void WriteSpawnCallForObject(Serialization.BitStream stream, ulong clientId, NetworkedObject netObject, Stream payload)
         {
             using (PooledBitWriter writer = PooledBitWriter.Get(stream))
             {
                 writer.WriteBool(netObject.IsPlayerObject);
                 writer.WriteUInt64Packed(netObject.NetworkId);
                 writer.WriteUInt64Packed(netObject.OwnerClientId);
-                NetworkedObject parent = netObject.transform.parent?.GetComponent<NetworkedObject>();
+
+                NetworkedObject parent = null;
+
+                if (netObject.transform.parent != null)
+                {
+                    parent = netObject.transform.parent.GetComponent<NetworkedObject>();
+                }
+
                 if (parent == null)
                 {
                     writer.WriteBool(false);

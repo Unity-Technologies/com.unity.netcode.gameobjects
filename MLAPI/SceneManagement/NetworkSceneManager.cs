@@ -248,7 +248,14 @@ namespace MLAPI.SceneManagement
                                     writer.WriteBool(newSceneObjects[i].IsPlayerObject);
                                     writer.WriteUInt64Packed(newSceneObjects[i].NetworkId);
                                     writer.WriteUInt64Packed(newSceneObjects[i].OwnerClientId);
-                                    NetworkedObject parent = newSceneObjects[i].transform.parent?.GetComponent<NetworkedObject>();
+
+                                    NetworkedObject parent = null;
+
+                                    if (newSceneObjects[i].transform.parent != null)
+                                    {
+                                        parent = newSceneObjects[i].transform.parent.GetComponent<NetworkedObject>();
+                                    }
+
                                     if (parent == null)
                                     {
                                         writer.WriteBool(false);
@@ -320,6 +327,7 @@ namespace MLAPI.SceneManagement
                         ulong owner = reader.ReadUInt64Packed();
                         bool hasParent = reader.ReadBool();
                         ulong? parentNetworkId = null;
+
                         if (hasParent)
                         {
                             parentNetworkId = reader.ReadUInt64Packed();
@@ -352,6 +360,7 @@ namespace MLAPI.SceneManagement
                         ulong owner = reader.ReadUInt64Packed();
                         bool hasParent = reader.ReadBool();
                         ulong? parentNetworkId = null;
+
                         if (hasParent)
                         {
                             parentNetworkId = reader.ReadUInt64Packed();

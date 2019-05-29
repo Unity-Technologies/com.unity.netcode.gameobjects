@@ -1080,7 +1080,14 @@ namespace MLAPI
                             writer.WriteBool(_observedObjects[i].IsPlayerObject);
                             writer.WriteUInt64Packed(_observedObjects[i].NetworkId);
                             writer.WriteUInt64Packed(_observedObjects[i].OwnerClientId);
-                            NetworkedObject parent = _observedObjects[i].transform.parent?.GetComponent<NetworkedObject>();
+
+                            NetworkedObject parent = null;
+
+                            if (_observedObjects[i].transform.parent != null)
+                            {
+                                parent = _observedObjects[i].transform.parent.GetComponent<NetworkedObject>();
+                            }
+
                             if (parent == null)
                             {
                                 writer.WriteBool(false);

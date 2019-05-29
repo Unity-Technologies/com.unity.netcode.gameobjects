@@ -233,8 +233,11 @@ namespace MLAPI.Messaging
                             ulong ownerId = continuationReader.ReadUInt64Packed();
                             bool hasParent = continuationReader.ReadBool();
                             ulong? parentNetworkId = null;
+
                             if (hasParent)
+                            {
                                 parentNetworkId = continuationReader.ReadUInt64Packed();
+                            }
 
                             ulong prefabHash;
                             ulong instanceId;
@@ -312,6 +315,7 @@ namespace MLAPI.Messaging
                 ulong ownerId = reader.ReadUInt64Packed();
                 bool hasParent = reader.ReadBool();
                 ulong? parentNetworkId = null;
+
                 if (hasParent)
                 {
                     parentNetworkId = reader.ReadUInt64Packed();
