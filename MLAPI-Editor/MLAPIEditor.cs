@@ -794,9 +794,7 @@ public class MLAPIEditor : EditorWindow
             if (!string.IsNullOrEmpty(www.error))
             {
                 //Some kind of error
-                statusMessage = "Failed to " +
-                                "fetch rel" +
-                                "eases. Error: " + www.error;
+                statusMessage = "Failed to fetch releases. Error: " + www.error;
                 double startTime = EditorApplication.timeSinceStartup;
                 //Basically = yield return new WaitForSeconds(5);
                 while (EditorApplication.timeSinceStartup - startTime <= 5f)
