@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -527,7 +527,7 @@ namespace MLAPI
             
             ConnectedClientsList.Add(ConnectedClients[hostClientId]);
 
-            NetworkedObject netObject = SpawnManager.CreateLocalNetworkedObject(false, 0, (prefabHash == null ? NetworkConfig.PlayerPrefabHash : prefabHash.Value), position, rotation);
+            NetworkedObject netObject = SpawnManager.CreateLocalNetworkedObject(false, 0, (prefabHash == null ? NetworkConfig.PlayerPrefabHash : prefabHash.Value), null, position, rotation);
             SpawnManager.SpawnNetworkedObjectLocally(netObject, SpawnManager.GetNetworkObjectId(), false, true, hostClientId, payloadStream, payloadStream != null, payloadStream == null ? 0 : (int)payloadStream.Length, false, false);
             
             if (netObject.CheckObjectVisibility == null || netObject.CheckObjectVisibility(hostClientId))
@@ -1045,7 +1045,7 @@ namespace MLAPI
                 ConnectedClients.Add(clientId, client);
                 ConnectedClientsList.Add(client);
                 
-                NetworkedObject netObject = SpawnManager.CreateLocalNetworkedObject(false, 0, (prefabHash == null ? NetworkConfig.PlayerPrefabHash : prefabHash.Value), position, rotation);
+                NetworkedObject netObject = SpawnManager.CreateLocalNetworkedObject(false, 0, (prefabHash == null ? NetworkConfig.PlayerPrefabHash : prefabHash.Value), null, position, rotation);
                 SpawnManager.SpawnNetworkedObjectLocally(netObject, SpawnManager.GetNetworkObjectId(), false, true, clientId, null, false, 0, false, false);
                 
                 ConnectedClients[clientId].PlayerObject = netObject;
@@ -1080,6 +1080,16 @@ namespace MLAPI
                             writer.WriteBool(_observedObjects[i].IsPlayerObject);
                             writer.WriteUInt64Packed(_observedObjects[i].NetworkId);
                             writer.WriteUInt64Packed(_observedObjects[i].OwnerClientId);
+                            NetworkedObject parent = _observedObjects[i].transform.parent?.GetComponent<NetworkedObject>();
+                            if (parent == null)
+                            {
+                                writer.WriteBool(false);
+                            }
+                            else
+                            {
+                                writer.WriteBool(true);
+                                writer.WriteUInt64Packed(parent.NetworkId);
+                            }
 
                             if (NetworkConfig.UsePrefabSync)
                             {

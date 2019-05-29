@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using MLAPI.Configuration;
@@ -234,7 +234,7 @@ namespace MLAPI.Spawning
         }
         
         // Only ran on Client
-        internal static NetworkedObject CreateLocalNetworkedObject(bool softCreate, ulong instanceId, ulong prefabHash, Vector3? position, Quaternion? rotation)
+        internal static NetworkedObject CreateLocalNetworkedObject(bool softCreate, ulong instanceId, ulong prefabHash, ulong? parentNetworkId, Vector3? position, Quaternion? rotation)
         {
             if (NetworkingManager.Singleton.NetworkConfig.UsePrefabSync || !softCreate)
             {
@@ -253,9 +253,37 @@ namespace MLAPI.Spawning
                 else
                 {
                     GameObject prefab = NetworkingManager.Singleton.NetworkConfig.NetworkedPrefabs[GetNetworkedPrefabIndexOfHash(prefabHash)].Prefab;
-                    
-                    NetworkedObject networkedObject = ((position == null && rotation == null) ? MonoBehaviour.Instantiate(prefab) : MonoBehaviour.Instantiate(prefab, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity))).GetComponent<NetworkedObject>();
-                    
+
+                    GameObject instance;
+                    if (parentNetworkId == null)
+                    {
+                        if (position == null && rotation == null)
+                        {
+                            instance = UnityEngine.Object.Instantiate(prefab);
+                        }
+                        else
+                        {
+                            instance = UnityEngine.Object.Instantiate(prefab, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity));
+                        }
+                    }
+                    else
+                    {
+                        if (!SpawnedObjects.TryGetValue((ulong)parentNetworkId, out NetworkedObject parent))
+                        {
+                            if (LogHelper.CurrentLogLevel <= LogLevel.Normal)
+                                LogHelper.LogError($"Unable to spawn object, as parent hasn't been spawned yet");
+                        }
+                        if (position == null && rotation == null)
+                        {
+                            instance = UnityEngine.Object.Instantiate(prefab, parent.transform);
+                        }
+                        else
+                        {
+                            instance = UnityEngine.Object.Instantiate(prefab, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity), parent.transform);
+                        }
+                    }
+                    NetworkedObject networkedObject = instance.GetComponent<NetworkedObject>();
+
                     if (NetworkSceneManager.isSpawnedObjectsPendingInDontDestroyOnLoad)
                     {
                         GameObject.DontDestroyOnLoad(networkedObject.gameObject);
@@ -375,6 +403,16 @@ namespace MLAPI.Spawning
                 writer.WriteBool(netObject.IsPlayerObject);
                 writer.WriteUInt64Packed(netObject.NetworkId);
                 writer.WriteUInt64Packed(netObject.OwnerClientId);
+                NetworkedObject parent = netObject.transform.parent?.GetComponent<NetworkedObject>();
+                if (parent == null)
+                {
+                    writer.WriteBool(false);
+                }
+                else
+                {
+                    writer.WriteBool(true);
+                    writer.WriteUInt64Packed(parent.NetworkId);
+                }
 
                 if (NetworkingManager.Singleton.NetworkConfig.UsePrefabSync)
                 {

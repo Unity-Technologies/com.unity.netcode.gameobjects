@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System;
 using System.IO;
 using MLAPI.Configuration;
@@ -245,12 +245,22 @@ namespace MLAPI.SceneManagement
                             {
                                 if (newSceneObjects[i].observers.Contains(NetworkingManager.Singleton.ConnectedClientsList[j].ClientId))
                                 {
+                                    writer.WriteBool(newSceneObjects[i].IsPlayerObject);
+                                    writer.WriteUInt64Packed(newSceneObjects[i].NetworkId);
+                                    writer.WriteUInt64Packed(newSceneObjects[i].OwnerClientId);
+                                    NetworkedObject parent = newSceneObjects[i].transform.parent?.GetComponent<NetworkedObject>();
+                                    if (parent == null)
+                                    {
+                                        writer.WriteBool(false);
+                                    }
+                                    else
+                                    {
+                                        writer.WriteBool(true);
+                                        writer.WriteUInt64Packed(parent.NetworkId);
+                                    }
+
                                     if (NetworkingManager.Singleton.NetworkConfig.UsePrefabSync)
                                     {
-                                        writer.WriteBool(newSceneObjects[i].IsPlayerObject);
-                                        writer.WriteUInt64Packed(newSceneObjects[i].NetworkId);
-                                        writer.WriteUInt64Packed(newSceneObjects[i].OwnerClientId);
-
                                         writer.WriteUInt64Packed(newSceneObjects[i].PrefabHash);
 
                                         writer.WriteSinglePacked(newSceneObjects[i].transform.position.x);
@@ -260,24 +270,15 @@ namespace MLAPI.SceneManagement
                                         writer.WriteSinglePacked(newSceneObjects[i].transform.rotation.eulerAngles.x);
                                         writer.WriteSinglePacked(newSceneObjects[i].transform.rotation.eulerAngles.y);
                                         writer.WriteSinglePacked(newSceneObjects[i].transform.rotation.eulerAngles.z);
-
-                                        if (NetworkingManager.Singleton.NetworkConfig.EnableNetworkedVar)
-                                        {
-                                            newSceneObjects[i].WriteNetworkedVarData(stream, NetworkingManager.Singleton.ConnectedClientsList[j].ClientId);
-                                        }
                                     }
                                     else
                                     {
-                                        writer.WriteBool(newSceneObjects[i].IsPlayerObject);
-                                        writer.WriteUInt64Packed(newSceneObjects[i].NetworkId);
-                                        writer.WriteUInt64Packed(newSceneObjects[i].OwnerClientId);
-
                                         writer.WriteUInt64Packed(newSceneObjects[i].NetworkedInstanceId);
+                                    }
 
-                                        if (NetworkingManager.Singleton.NetworkConfig.EnableNetworkedVar)
-                                        {
-                                            newSceneObjects[i].WriteNetworkedVarData(stream, NetworkingManager.Singleton.ConnectedClientsList[j].ClientId);
-                                        }
+                                    if (NetworkingManager.Singleton.NetworkConfig.EnableNetworkedVar)
+                                    {
+                                        newSceneObjects[i].WriteNetworkedVarData(stream, NetworkingManager.Singleton.ConnectedClientsList[j].ClientId);
                                     }
                                 }
                             }
@@ -317,13 +318,19 @@ namespace MLAPI.SceneManagement
                         bool isPlayerObject = reader.ReadBool();
                         ulong networkId = reader.ReadUInt64Packed();
                         ulong owner = reader.ReadUInt64Packed();
+                        bool hasParent = reader.ReadBool();
+                        ulong? parentNetworkId = null;
+                        if (hasParent)
+                        {
+                            parentNetworkId = reader.ReadUInt64Packed();
+                        }
 
                         ulong prefabHash = reader.ReadUInt64Packed();
 
                         Vector3 position = new Vector3(reader.ReadSinglePacked(), reader.ReadSinglePacked(), reader.ReadSinglePacked());
                         Quaternion rotation = Quaternion.Euler(reader.ReadSinglePacked(), reader.ReadSinglePacked(), reader.ReadSinglePacked());
                         
-                        NetworkedObject networkedObject = SpawnManager.CreateLocalNetworkedObject(false, 0, prefabHash, position, rotation);
+                        NetworkedObject networkedObject = SpawnManager.CreateLocalNetworkedObject(false, 0, prefabHash, parentNetworkId, position, rotation);
                         SpawnManager.SpawnNetworkedObjectLocally(networkedObject, networkId, true, isPlayerObject, owner, objectStream, false, 0, true, false);
                     }
                 }
@@ -343,10 +350,16 @@ namespace MLAPI.SceneManagement
                         bool isPlayerObject = reader.ReadBool();
                         ulong networkId = reader.ReadUInt64Packed();
                         ulong owner = reader.ReadUInt64Packed();
+                        bool hasParent = reader.ReadBool();
+                        ulong? parentNetworkId = null;
+                        if (hasParent)
+                        {
+                            parentNetworkId = reader.ReadUInt64Packed();
+                        }
 
                         ulong instanceId = reader.ReadUInt64Packed();
 
-                        NetworkedObject networkedObject = SpawnManager.CreateLocalNetworkedObject(true, instanceId, 0, null, null);
+                        NetworkedObject networkedObject = SpawnManager.CreateLocalNetworkedObject(true, instanceId, 0, parentNetworkId, null, null);
                         SpawnManager.SpawnNetworkedObjectLocally(networkedObject, networkId, true, isPlayerObject, owner, objectStream, false, 0, true, false);
                     }
                 }
