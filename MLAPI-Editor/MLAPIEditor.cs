@@ -42,7 +42,7 @@ public class VersionUpgradePopup : EditorWindow
 
         EditorGUILayout.LabelField("The version you are upgrading to has a greater major version. This means that there are non backwards compatibile changes. \n" +
             "For more information about the MLAPI versioning, please visit SemVer.org", warningStyle);
-        EditorGUILayout.LabelField("It's ALWAYS recommended to do a backup when upgrading major versions. If your project doesn't compile " +
+        EditorGUILayout.LabelField("It's ALWAYS recommended to do a backup AND reading all the breaking changes when upgrading major versions. If your project doesn't compile " +
             "There is good chance serialized data will be PERMANENTLY LOST. Don't be stupid.", errorStyle);
         EditorGUILayout.LabelField("Here are the versions with breaking changes you are skipping.", EditorStyles.wordWrappedLabel);
         GUILayout.Space(5);
@@ -195,13 +195,26 @@ public class GithubRelease
 }
 
 [Serializable]
+public class TransportArtifactDefinition
+{
+    public TransportArtifact[] artifacts;
+}
+
+[Serializable]
 public class TransportArtifact
 {
     public string id;
-    public string description;
     public string name;
+    public string description;
     public string path;
     public string credits;
+    public string licence;
+    public string platform_compatibility_description;
+    public bool net35;
+    public bool net45;
+    public bool preferNet45;
+    public bool experimental;
+    public int mlapi_major_version;
 }
 
 [Serializable]
@@ -227,7 +240,8 @@ public class MLAPIEditor : EditorWindow
     private const string TRANSPORT_ARTIFACT_PATH_URL = "https://api.github.com/repos/MidLevel/MLAPI.Transports/contents/artifact_paths.json";
     private const string TRANSPORT_ARTIFACT_DOWNLOAD_URL_TEMPLATE = "https://ci.appveyor.com/api/projects/MidLevel/MLAPI-Transports/artifacts/<path>?branch=master";
     private GithubRelease[] releases = new GithubRelease[0];
-    private TransportArtifact[] transportArtifacts = new TransportArtifact[0];
+    private TransportArtifactDefinition transportArtifacts = null;
+    private int[] transportVersionSelections = new int[0];
     private bool[] releaseFoldoutStatus = new bool[0];
     private bool[] transportFoldoutStatus = new bool[0];
 
@@ -361,28 +375,61 @@ public class MLAPIEditor : EditorWindow
         }
         else if (tab == 1)
         {
-            if (transportFoldoutStatus != null)
+            MLAPIVersion currentMLAPIVersion = MLAPIVersion.Parse(currentVersion);
+
+            if (transportArtifacts != null && transportArtifacts.artifacts != null && transportFoldoutStatus != null)
             {
-                for (int i = 0; i < transportFoldoutStatus.Length; i++)
+                for (int i = 0; i < transportArtifacts.artifacts.Length; i++)
                 {
-                    if (transportArtifacts[i] == null)
+                    if (transportArtifacts.artifacts[i] == null)
                         continue;
 
-                    transportFoldoutStatus[i] = EditorGUILayout.Foldout(transportFoldoutStatus[i], transportArtifacts[i].name);
+                    string transportDirectory = Path.Combine(Path.Combine(Path.Combine(Application.dataPath, "MLAPI"), "OfficialTransports"), transportArtifacts.artifacts[i].id);
+                    bool isInstalled = Directory.Exists(transportDirectory) && Directory.GetFiles(transportDirectory).Length > 0;
+
+                    transportFoldoutStatus[i] = EditorGUILayout.Foldout(transportFoldoutStatus[i], transportArtifacts.artifacts[i].name + ((isInstalled) ? " - [Installed]" : ""));
 
                     if (transportFoldoutStatus[i])
                     {
                         EditorGUI.indentLevel++;
 
-                        string transportDirectory = Path.Combine(Path.Combine(Path.Combine(Application.dataPath, "MLAPI"), "OfficialTransports"), transportArtifacts[i].id);
-
                         EditorGUILayout.LabelField("Description", EditorStyles.boldLabel);
-                        EditorGUILayout.LabelField(transportArtifacts[i].description, EditorStyles.wordWrappedLabel);
+                        EditorGUILayout.LabelField(transportArtifacts.artifacts[i].description, EditorStyles.wordWrappedLabel);
 
                         EditorGUILayout.LabelField("Credits", EditorStyles.boldLabel);
-                        EditorGUILayout.LabelField(transportArtifacts[i].credits, EditorStyles.wordWrappedLabel);
+                        EditorGUILayout.LabelField(transportArtifacts.artifacts[i].credits, EditorStyles.wordWrappedLabel);
 
-                        if (Directory.Exists(transportDirectory) && Directory.GetFiles(transportDirectory).Length > 0)
+                        EditorGUILayout.LabelField("Platform Compatibility", EditorStyles.boldLabel);
+                        EditorGUILayout.LabelField(transportArtifacts.artifacts[i].platform_compatibility_description, EditorStyles.wordWrappedLabel);
+
+                        EditorGUILayout.LabelField("Licence", EditorStyles.boldLabel);
+                        EditorGUILayout.LabelField(transportArtifacts.artifacts[i].licence, EditorStyles.wordWrappedLabel);
+
+                        if (currentMLAPIVersion.MAJOR != (byte)transportArtifacts.artifacts[i].mlapi_major_version)
+                        {
+                            EditorGUILayout.Space();
+                            GUIStyle style = new GUIStyle(EditorStyles.wordWrappedLabel);
+                            style.normal.textColor = new Color(1f, 0f, 0f);
+                            EditorGUILayout.LabelField("The MLAPI version you have installed through the installer has a different major version from the transports major version. You have version v" + currentMLAPIVersion.ToString() + " while this transport targets version v" + transportArtifacts.artifacts[i].mlapi_major_version + ".x.x. This means there could potentially be compatibility issues, but its not guaranteed. If you have installed the MLAPI manually and have version v" + transportArtifacts.artifacts[i].mlapi_major_version + ".x.x you can ignore this message.", style);
+                            EditorGUILayout.Space();
+                        }
+
+                        if (transportArtifacts.artifacts[i].experimental)
+                        {
+                            EditorGUILayout.Space();
+                            GUIStyle style = new GUIStyle(EditorStyles.boldLabel);
+                            style.normal.textColor = new Color(1f, 0.5f, 0f);
+                            EditorGUILayout.LabelField("Experimental", style);
+                        }
+                        else
+                        {
+                            EditorGUILayout.Space();
+                            GUIStyle style = new GUIStyle(EditorStyles.boldLabel);
+                            style.normal.textColor = new Color(0f, 1f, 0f);
+                            EditorGUILayout.LabelField("Stable", style);
+                        }
+
+                        if (isInstalled)
                         {
                             GUIStyle boldStyle = new GUIStyle(EditorStyles.boldLabel);
                             boldStyle.normal.textColor = new Color(0.3f, 1f, 0.3f);
@@ -397,6 +444,31 @@ public class MLAPIEditor : EditorWindow
                             if (GUILayout.Button("Remove"))
                             {
                                 Directory.Delete(transportDirectory, true);
+
+                                string metaFileName = transportDirectory;
+
+                                if (metaFileName.EndsWith(Path.DirectorySeparatorChar.ToString()) ||
+                                    metaFileName.EndsWith(Path.AltDirectorySeparatorChar.ToString()))
+                                {
+                                    metaFileName = metaFileName.Substring(metaFileName.Length, metaFileName.Length - 1);
+                                }
+
+                                metaFileName += ".meta";
+
+                                if (File.Exists(metaFileName))
+                                {
+                                    File.Delete(metaFileName);
+                                }
+
+                                try
+                                {
+                                    AssetDatabase.Refresh();
+                                }
+                                catch (Exception e)
+                                {
+                                    Debug.LogError(e.ToString());
+                                    Debug.LogError(e.GetType().FullName);
+                                }
                             }
                         }
                         else
@@ -421,7 +493,7 @@ public class MLAPIEditor : EditorWindow
         string lastUpdatedString = lastUpdated == 0 ? "Never" : new DateTime(lastUpdated).ToShortTimeString();
         GUILayout.Label("Last checked: " + lastUpdatedString, EditorStyles.centeredGreyMiniLabel);
 
-        if (canRefetch && GUILayout.Button("Fetch releases"))
+        if (canRefetch && GUILayout.Button("Fetch All"))
             EditorCoroutine.Start(FetchAll());
         if (!string.IsNullOrEmpty(statusMessage))
             GUILayout.Label(statusMessage, EditorStyles.centeredGreyMiniLabel);
@@ -582,7 +654,16 @@ public class MLAPIEditor : EditorWindow
             statusMessage = "";
             if (!downloadFail)
                 currentVersion = releases[index].tag_name; //Only set this if there was no fail. This is to allow them to still retry the download
-            AssetDatabase.Refresh();
+
+            try
+            {
+                AssetDatabase.Refresh();
+            }
+            catch (Exception e)
+            {
+                Debug.LogError(e.ToString());
+                Debug.LogError(e.GetType().FullName);
+            }
         }
         showProgressBar = false;
         statusMessage = "";
@@ -598,7 +679,11 @@ public class MLAPIEditor : EditorWindow
         statusMessage = "Cleaning transport folder";
         yield return null;
 
-        string transportDirectory = Path.Combine(Path.Combine(Path.Combine(Application.dataPath, "MLAPI"), "OfficialTransports"), transportArtifacts[index].id);
+        // Create the MLAPI directory if it doesnt exist, for example with manual installs.
+        if (!Directory.Exists(Application.dataPath + "/MLAPI/"))
+            Directory.CreateDirectory(Application.dataPath + "/MLAPI/");
+
+        string transportDirectory = Path.Combine(Path.Combine(Path.Combine(Application.dataPath, "MLAPI"), "OfficialTransports"), transportArtifacts.artifacts[index].id);
 
         if (Directory.Exists(transportDirectory))
             Directory.Delete(transportDirectory, true);
@@ -606,19 +691,19 @@ public class MLAPIEditor : EditorWindow
         Directory.CreateDirectory(transportDirectory);
 
 
-        using (UnityWebRequest www = UnityWebRequest.Get(TRANSPORT_ARTIFACT_DOWNLOAD_URL_TEMPLATE.Replace("<path>", transportArtifacts[index].path)))
+        using (UnityWebRequest www = UnityWebRequest.Get(TRANSPORT_ARTIFACT_DOWNLOAD_URL_TEMPLATE.Replace("<path>", transportArtifacts.artifacts[index].path)))
         {
             www.SendWebRequest();
             while (!www.isDone && string.IsNullOrEmpty(www.error))
             {
-                statusMessage = "Downloading " + transportArtifacts[index].name + " " + www.downloadProgress + "%";
+                statusMessage = "Downloading " + transportArtifacts.artifacts[index].name + " " + www.downloadProgress + "%";
                 yield return null;
             }
 
             if (!string.IsNullOrEmpty(www.error))
             {
                 //Some kind of error
-                statusMessage = "Failed to download asset " + transportArtifacts[index].name + ". Error: " + www.error;
+                statusMessage = "Failed to download asset " + transportArtifacts.artifacts[index].name + ". Error: " + www.error;
                 double startTime = EditorApplication.timeSinceStartup;
                 //Basically = yield return new WaitForSeconds(5);
                 while (EditorApplication.timeSinceStartup - startTime <= 5f)
@@ -627,25 +712,43 @@ public class MLAPIEditor : EditorWindow
             }
             else
             {
-                statusMessage = "Writing " + transportArtifacts[index].name + " to disk";
+                statusMessage = "Writing " + transportArtifacts.artifacts[index].name + " to disk";
                 yield return null;
 
-                File.WriteAllBytes(Path.Combine(transportDirectory, transportArtifacts[index].path), www.downloadHandler.data);
+                File.WriteAllBytes(Path.Combine(transportDirectory, transportArtifacts.artifacts[index].path), www.downloadHandler.data);
 
-                if (!transportArtifacts[index].path.EndsWith(".zip"))
+                if (!transportArtifacts.artifacts[index].path.EndsWith(".zip"))
                 {
-                    // TODO: Invalid extension
+                    Debug.LogError("Transport does not have a valid .zip extension. Is the editor outdated?");
                 }
                 else
                 {
-                    statusMessage = "Unzipping " + transportArtifacts[index].name;
+                    statusMessage = "Unzipping " + transportArtifacts.artifacts[index].name;
 
-                    ZipStorer zip = ZipStorer.Open(Path.Combine(transportDirectory, transportArtifacts[index].path), FileAccess.Read);
+                    ZipStorer zip = ZipStorer.Open(Path.Combine(transportDirectory, transportArtifacts.artifacts[index].path), FileAccess.Read);
                     List<ZipStorer.ZipFileEntry> dir = zip.ReadCentralDir();
+
+                    bool net35Exists = dir.Exists(x => x.FilenameInZip.Contains("net35"));
+                    bool net45Exists = dir.Exists(x => x.FilenameInZip.Contains("net45"));
+
+#if NET_4_6
+                    bool supportsNet45 = true;
+#else
+                    bool supportsNet45 = false;
+#endif
+
+                    bool useNet35 = (!supportsNet45 || !net45Exists || !transportArtifacts.artifacts[index].preferNet45) && net35Exists;
+                    bool useNet45 = net45Exists && supportsNet45 && !useNet35;
+
+                    if (!useNet35 && !useNet45)
+                    {
+                        Debug.LogError(("Could not download transport \"" + transportArtifacts.artifacts[index] + "\". There is no valid target for your platform."));
+                    }
 
                     foreach (ZipStorer.ZipFileEntry entry in dir)
                     {
-                        if (entry.FilenameInZip.Contains("net35"))
+                        if ((useNet35 && entry.FilenameInZip.Contains("net35")) ||
+                            (useNet45 && entry.FilenameInZip.Contains("net45")))
                         {
                             string fileName = Path.GetFileName(entry.FilenameInZip);
                             zip.ExtractFile(entry, Path.Combine(transportDirectory, fileName));
@@ -653,8 +756,6 @@ public class MLAPIEditor : EditorWindow
                     }
 
                     zip.Close();
-
-                    statusMessage = "";
                 }
 
                 yield return null;
@@ -664,7 +765,16 @@ public class MLAPIEditor : EditorWindow
         yield return null;
         statusMessage = "";
         showProgressBar = false;
-        AssetDatabase.Refresh();
+
+        try
+        {
+            AssetDatabase.Refresh();
+        }
+        catch (Exception e)
+        {
+            Debug.LogError(e.ToString());
+            Debug.LogError(e.GetType().FullName);
+        }
     }
 
     private IEnumerator FetchAll()
@@ -684,7 +794,9 @@ public class MLAPIEditor : EditorWindow
             if (!string.IsNullOrEmpty(www.error))
             {
                 //Some kind of error
-                statusMessage = "Failed to fetch releases. Error: " + www.error;
+                statusMessage = "Failed to " +
+                                "fetch rel" +
+                                "eases. Error: " + www.error;
                 double startTime = EditorApplication.timeSinceStartup;
                 //Basically = yield return new WaitForSeconds(5);
                 while (EditorApplication.timeSinceStartup - startTime <= 5f)
@@ -788,55 +900,23 @@ public class MLAPIEditor : EditorWindow
                 {
                     string decodedJson = Encoding.UTF8.GetString(Convert.FromBase64String(githubContent.content));
 
-                    //This makes it from a json array to the individual objects in the array. 
-                    //The JSON serializer cant take arrays. We have to split it up outselves.
-                    List<string> transportsJson = new List<string>();
-                    int depth = 0;
-                    StringBuilder builder = new StringBuilder();
-                    for (int i = 1; i < decodedJson.Length - 1; i++)
-                    {
-                        if (decodedJson[i] == '[')
-                            depth++;
-                        else if (decodedJson[i] == ']')
-                            depth--;
-                        else if (decodedJson[i] == '{')
-                            depth++;
-                        else if (decodedJson[i] == '}')
-                            depth--;
+                    transportArtifacts = JsonUtility.FromJson<TransportArtifactDefinition>(decodedJson);
 
-                        if ((depth == 0 && decodedJson[i] != ',') || depth > 0)
-                            builder.Append(decodedJson[i]);
-                        if (depth == 0 && (decodedJson[i] == ',' || i == decodedJson.Length - 2))
-                        {
-                            transportsJson.Add(builder.ToString());
-                            builder.Length = 0;
-                        }
-                        //Parse in smaller batches
-                        if (i % (decodedJson.Length / 100) == 0)
-                        {
-                            statusMessage = "Splitting JSON " + (i / (float)decodedJson.Length) * 100f + "%";
-                            yield return null;
-                        }
-                        statusMessage = "";
+                    if (transportArtifacts == null)
+                    {
+                        transportArtifacts = new TransportArtifactDefinition();
                     }
 
-                    transportArtifacts = new TransportArtifact[transportsJson.Count];
-                    transportFoldoutStatus = new bool[transportsJson.Count];
-                    for (int i = 0; i < transportsJson.Count; i++)
+                    if (transportArtifacts.artifacts == null)
                     {
-                        transportArtifacts[i] = JsonUtility.FromJson<TransportArtifact>(transportsJson[i]);
-                        transportFoldoutStatus[i] = false;
-
-                        if (i % (transportsJson.Count / 30f) == 0)
-                        {
-                            yield return null;
-                            statusMessage = "Parsing JSON " + (i / (float)transportsJson.Count) * 100f + "%";
-                        }
+                        transportArtifacts.artifacts = new TransportArtifact[0];
                     }
+
+                    transportFoldoutStatus = new bool[transportArtifacts.artifacts.Length];
                 }
                 else
                 {
-                    // TODO: Invalid format
+                    Debug.LogError("The artifact manifest had an unsupported encoding: " + githubContent.encoding + ". Supported encodings are base64");
                 }
 
 
