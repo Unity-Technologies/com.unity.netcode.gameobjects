@@ -268,6 +268,11 @@ namespace MLAPI.Spawning
 
                     NetworkedObject networkedObject = ((position == null && rotation == null) ? MonoBehaviour.Instantiate(prefab) : MonoBehaviour.Instantiate(prefab, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity))).GetComponent<NetworkedObject>();
 
+                    if (parent != null)
+                    {
+                        networkedObject.transform.SetParent(parent.transform, true);
+                    }
+
                     if (NetworkSceneManager.isSpawnedObjectsPendingInDontDestroyOnLoad)
                     {
                         GameObject.DontDestroyOnLoad(networkedObject.gameObject);
@@ -286,10 +291,15 @@ namespace MLAPI.Spawning
                     return null;
                 }
 
-                NetworkedObject netObject = pendingSoftSyncObjects[instanceId];
+                NetworkedObject networkedObject = pendingSoftSyncObjects[instanceId];
                 pendingSoftSyncObjects.Remove(instanceId);
 
-                return netObject;
+                if (parent != null)
+                {
+                    networkedObject.transform.SetParent(parent.transform, true);
+                }
+
+                return networkedObject;
             }
         }
 
