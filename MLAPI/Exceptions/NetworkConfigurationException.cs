@@ -5,31 +5,31 @@ namespace MLAPI.Exceptions
     /// <summary>
     /// Exception thrown when the operation can only be done on the server
     /// </summary>
-    public class NotServerException : Exception
+    public class NetworkConfigurationException : Exception
     {
         /// <summary>
-        /// Constructs a NotServerException
+        /// Constructs a NetworkConfigurationException
         /// </summary>
-        public NotServerException()
+        public NetworkConfigurationException()
         {
-            
+
         }
 
         /// <summary>
-        /// Constructs a NotServerException with a message
+        /// Constructs a NetworkConfigurationException with a message
         /// </summary>
         /// <param name="message">The exception message</param>
-        public NotServerException(string message) : base(message)
+        public NetworkConfigurationException(string message) : base(message)
         {
             
         }
 
         /// <summary>
-        /// Constructs a NotServerException with a message and a inner exception
+        /// Constructs a NetworkConfigurationException with a message and a inner exception
         /// </summary>
         /// <param name="message">The exception message</param>
         /// <param name="inner">The inner exception</param>
-        public NotServerException(string message, Exception inner) : base(message, inner)
+        public NetworkConfigurationException(string message, Exception inner) : base(message, inner)
         {
             
         }

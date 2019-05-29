@@ -53,6 +53,24 @@ namespace MLAPI.SceneManagement
         internal static uint CurrentActiveSceneIndex { get; private set; } = 0;
 
         /// <summary>
+        /// Adds a scene during runtime. 
+        /// The index is REQUIRED to be unique AND the same across all instances.
+        /// </summary>
+        /// <param name="sceneName">Scene name.</param>
+        /// <param name="index">Index.</param>
+        public static void AddRuntimeSceneName(string sceneName, uint index)
+        {
+            if (!NetworkingManager.Singleton.NetworkConfig.AllowRuntimeSceneChanges)
+            {
+                throw new NetworkConfigurationException("Cannot change the scene configuration when AllowRuntimeSceneChanges is false");
+            }
+
+            registeredSceneNames.Add(sceneName);
+            sceneIndexToString.Add(index, sceneName);
+            sceneNameToIndex.Add(sceneName, index);
+        }
+
+        /// <summary>
         /// Switches to a scene with a given name. Can only be called from Server
         /// </summary>
         /// <param name="sceneName">The name of the scene to switch to</param>

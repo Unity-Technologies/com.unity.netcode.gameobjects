@@ -8,9 +8,7 @@ namespace MLAPI.Messaging
     /// Remember that a host is a server and a client
     /// </summary>
     [AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = false)]
-    public class ClientRPCAttribute : Attribute
+    public class ClientRPCAttribute : RPCAttribute
     {
-        internal ReflectionMethod reflectionMethod;
-        internal RpcDelegate rpcDelegate;
     }
 }

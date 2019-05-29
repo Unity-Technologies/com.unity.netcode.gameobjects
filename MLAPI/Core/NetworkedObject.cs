@@ -5,15 +5,12 @@ using System.IO;
 using MLAPI.Configuration;
 using MLAPI.Exceptions;
 using MLAPI.Hashing;
-using MLAPI.Internal;
 using MLAPI.Logging;
 using MLAPI.Messaging;
 using MLAPI.Security;
-using MLAPI.Serialization;
 using MLAPI.Serialization.Pooled;
 using MLAPI.Spawning;
 using UnityEngine;
-using BitStream = MLAPI.Serialization.BitStream;
 
 namespace MLAPI
 {
@@ -365,12 +362,6 @@ namespace MLAPI
             if (NetworkingManager.Singleton != null)
             {
                 SpawnManager.OnDestroyObject(NetworkId, false);
-
-                for (int i = 0; i < childNetworkedBehaviours.Count; i++)
-                {
-                    childNetworkedBehaviours[i].CachedServerRpcs.Remove(childNetworkedBehaviours[i]);
-                    childNetworkedBehaviours[i].CachedClientRpcs.Remove(childNetworkedBehaviours[i]);
-                }
             }
         }
 
