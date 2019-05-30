@@ -231,6 +231,13 @@ namespace MLAPI.Messaging
                             bool isPlayerObject = continuationReader.ReadBool();
                             ulong networkId = continuationReader.ReadUInt64Packed();
                             ulong ownerId = continuationReader.ReadUInt64Packed();
+                            bool hasParent = continuationReader.ReadBool();
+                            ulong? parentNetworkId = null;
+
+                            if (hasParent)
+                            {
+                                parentNetworkId = continuationReader.ReadUInt64Packed();
+                            }
 
                             ulong prefabHash;
                             ulong instanceId;
@@ -261,7 +268,7 @@ namespace MLAPI.Messaging
                             Vector3 pos = new Vector3(continuationReader.ReadSinglePacked(), continuationReader.ReadSinglePacked(), continuationReader.ReadSinglePacked());
                             Quaternion rot = Quaternion.Euler(continuationReader.ReadSinglePacked(), continuationReader.ReadSinglePacked(), continuationReader.ReadSinglePacked());
 
-                            NetworkedObject netObject = SpawnManager.CreateLocalNetworkedObject(softSync, instanceId, prefabHash, pos, rot);
+                            NetworkedObject netObject = SpawnManager.CreateLocalNetworkedObject(softSync, instanceId, prefabHash, parentNetworkId, pos, rot);
                             SpawnManager.SpawnNetworkedObjectLocally(netObject, networkId, softSync, isPlayerObject, ownerId, continuationStream, false, 0, true, false);
                         }
 
@@ -306,6 +313,13 @@ namespace MLAPI.Messaging
                 bool isPlayerObject = reader.ReadBool();
                 ulong networkId = reader.ReadUInt64Packed();
                 ulong ownerId = reader.ReadUInt64Packed();
+                bool hasParent = reader.ReadBool();
+                ulong? parentNetworkId = null;
+
+                if (hasParent)
+                {
+                    parentNetworkId = reader.ReadUInt64Packed();
+                }
                 
                 ulong prefabHash;
                 ulong instanceId;
@@ -339,7 +353,7 @@ namespace MLAPI.Messaging
                 bool hasPayload = reader.ReadBool();
                 int payLoadLength = hasPayload ? reader.ReadInt32Packed() : 0;
                 
-                NetworkedObject netObject = SpawnManager.CreateLocalNetworkedObject(softSync, instanceId, prefabHash, pos, rot);
+                NetworkedObject netObject = SpawnManager.CreateLocalNetworkedObject(softSync, instanceId, prefabHash, parentNetworkId, pos, rot);
                 SpawnManager.SpawnNetworkedObjectLocally(netObject, networkId, softSync, isPlayerObject, ownerId, stream, hasPayload, payLoadLength, true, false);
             }
         }

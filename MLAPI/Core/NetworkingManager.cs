@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -70,7 +70,7 @@ namespace MLAPI
         /// <summary>
         /// The clientId the server calls the local client by, only valid for clients
         /// </summary>
-        public ulong LocalClientId 
+        public ulong LocalClientId
         {
             get
             {
@@ -248,13 +248,13 @@ namespace MLAPI
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The NetworkingManager cannot be a NetworkedObject. This will lead to weird side effects.");
             }
-            
+
             if (!NetworkConfig.RegisteredScenes.Contains(SceneManager.GetActiveScene().name))
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The active scene is not registered as a networked scene. The MLAPI has added it");
                 NetworkConfig.RegisteredScenes.Add(SceneManager.GetActiveScene().name);
             }
-            
+
             for (int i = 0; i < NetworkConfig.NetworkedPrefabs.Count; i++)
             {
                 if (NetworkConfig.NetworkedPrefabs[i] != null && NetworkConfig.NetworkedPrefabs[i].Prefab != null)
@@ -269,10 +269,10 @@ namespace MLAPI
                     }
                 }
             }
-            
+
             // TODO: Show which two prefab generators that collide
             HashSet<ulong> hashes = new HashSet<ulong>();
-            
+
             for (int i = 0; i < NetworkConfig.NetworkedPrefabs.Count; i++)
             {
                 if (hashes.Contains(NetworkConfig.NetworkedPrefabs[i].Hash))
@@ -298,7 +298,7 @@ namespace MLAPI
         private void Init(bool server)
         {
             if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Init()");
-            
+
             LocalClientId = 0;
             networkTimeOffset = 0f;
             currentNetworkTimeOffset = 0f;
@@ -328,11 +328,11 @@ namespace MLAPI
                 if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("No transport has been selected!");
                 return;
             }
-            
+
             try
             {
                 string pfx = NetworkConfig.ServerBase64PfxCertificate.Trim();
-                
+
                 if (server && NetworkConfig.EnableEncryption && NetworkConfig.SignKeyExchange && !string.IsNullOrEmpty(pfx))
                 {
                     try
@@ -358,7 +358,7 @@ namespace MLAPI
             }
 
             NetworkConfig.RegisteredScenes.Sort();
-            
+
             for (int i = 0; i < NetworkConfig.RegisteredScenes.Count; i++)
             {
                 NetworkSceneManager.registeredSceneNames.Add(NetworkConfig.RegisteredScenes[i]);
@@ -372,7 +372,7 @@ namespace MLAPI
             {
                 NetworkConfig.NetworkedPrefabs[i].Prefab.GetComponent<NetworkedObject>().ValidateHash();
             }
-            
+
             NetworkConfig.NetworkTransport.Init();
         }
 
@@ -423,7 +423,7 @@ namespace MLAPI
 
             Init(false);
             NetworkConfig.NetworkTransport.StartClient();
-            
+
             IsServer = false;
             IsClient = true;
             IsListening = true;
@@ -437,20 +437,20 @@ namespace MLAPI
             if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("StopServer()");
             HashSet<ulong> disconnectedIds = new HashSet<ulong>();
             //Don't know if I have to disconnect the clients. I'm assuming the NetworkTransport does all the cleaning on shtudown. But this way the clients get a disconnect message from server (so long it does't get lost)
-            
+
             foreach (KeyValuePair<ulong, NetworkedClient> pair in ConnectedClients)
             {
                 if (!disconnectedIds.Contains(pair.Key))
                 {
                     disconnectedIds.Add(pair.Key);
-                    
+
 					if (pair.Key == NetworkConfig.NetworkTransport.ServerClientId)
                         continue;
 
                     NetworkConfig.NetworkTransport.DisconnectRemoteClient(pair.Key);
                 }
             }
-            
+
             foreach (KeyValuePair<ulong, PendingClient> pair in PendingClients)
             {
                 if(!disconnectedIds.Contains(pair.Key))
@@ -462,7 +462,7 @@ namespace MLAPI
                     NetworkConfig.NetworkTransport.DisconnectRemoteClient(pair.Key);
                 }
             }
-            
+
             IsServer = false;
             Shutdown();
         }
@@ -510,7 +510,7 @@ namespace MLAPI
                     if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("No ConnectionApproval callback defined. Connection approval will timeout");
                 }
             }
-            
+
             Init(true);
             NetworkConfig.NetworkTransport.StartServer();
 
@@ -519,22 +519,22 @@ namespace MLAPI
             IsListening = true;
 
             ulong hostClientId = NetworkConfig.NetworkTransport.ServerClientId;
-            
+
             ConnectedClients.Add(hostClientId, new NetworkedClient()
             {
                 ClientId = hostClientId
             });
-            
+
             ConnectedClientsList.Add(ConnectedClients[hostClientId]);
 
-            NetworkedObject netObject = SpawnManager.CreateLocalNetworkedObject(false, 0, (prefabHash == null ? NetworkConfig.PlayerPrefabHash : prefabHash.Value), position, rotation);
+            NetworkedObject netObject = SpawnManager.CreateLocalNetworkedObject(false, 0, (prefabHash == null ? NetworkConfig.PlayerPrefabHash : prefabHash.Value), null, position, rotation);
             SpawnManager.SpawnNetworkedObjectLocally(netObject, SpawnManager.GetNetworkObjectId(), false, true, hostClientId, payloadStream, payloadStream != null, payloadStream == null ? 0 : (int)payloadStream.Length, false, false);
-            
+
             if (netObject.CheckObjectVisibility == null || netObject.CheckObjectVisibility(hostClientId))
             {
                 netObject.observers.Add(hostClientId);
             }
-            
+
             SpawnManager.ServerSpawnSceneObjectsOnStartSweep();
 
             if (OnServerStarted != null)
@@ -557,13 +557,13 @@ namespace MLAPI
                     Application.runInBackground = true;
             }
         }
-        
+
         private void OnDestroy()
         {
             if (Singleton != null && Singleton == this)
             {
                 Singleton = null;
-                Shutdown();  
+                Shutdown();
             }
         }
 
@@ -596,14 +596,14 @@ namespace MLAPI
                     {
                         NetworkedObject.NetworkedBehaviourUpdate();
                     }
-                    
+
                     foreach (KeyValuePair<ulong, NetworkedClient> pair in ConnectedClients)
                     {
                         NetworkConfig.NetworkTransport.FlushSendQueue(pair.Key);
-                        
+
                         if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Send Pending Queue: " + pair.Key);
                     }
-                    
+
                     lastSendTickTime = NetworkTime;
                 }
                 if ((NetworkTime - lastReceiveTickTime >= (1f / NetworkConfig.ReceiveTickrate)) || NetworkConfig.ReceiveTickrate <= 0)
@@ -791,7 +791,7 @@ namespace MLAPI
             {
                 yield return null;
             }
-            
+
             if (PendingClients.ContainsKey(clientId) && !ConnectedClients.ContainsKey(clientId))
             {
                 // Timeout
@@ -814,7 +814,7 @@ namespace MLAPI
             {
                 inputStream.SetLength(data.Count + data.Offset);
                 inputStream.Position = data.Offset;
-                
+
                 using (BitStream messageStream = MessagePacker.UnwrapMessage(inputStream, clientId, out byte messageType, out SecuritySendFlags security))
                 {
                     if (messageStream == null)
@@ -951,7 +951,7 @@ namespace MLAPI
         {
             if (PendingClients.ContainsKey(clientId))
                 PendingClients.Remove(clientId);
-            
+
             if (ConnectedClients.ContainsKey(clientId))
             {
                 if (IsServer)
@@ -968,7 +968,7 @@ namespace MLAPI
                             Destroy(ConnectedClients[clientId].PlayerObject.gameObject);
                         }
                     }
-                    
+
                     for (int i = 0; i < ConnectedClients[clientId].OwnedObjects.Count; i++)
                     {
                         if (ConnectedClients[clientId].OwnedObjects[i] != null)
@@ -1007,7 +1007,7 @@ namespace MLAPI
                         break;
                     }
                 }
-                
+
                 ConnectedClients.Remove(clientId);
             }
         }
@@ -1024,14 +1024,14 @@ namespace MLAPI
                 }
             }
         }
-        
+
         private readonly List<NetworkedObject> _observedObjects = new List<NetworkedObject>();
 
         internal void HandleApproval(ulong clientId, ulong? prefabHash, bool approved, Vector3? position, Quaternion? rotation)
         {
             if(approved)
             {
-                // Inform new client it got approved   
+                // Inform new client it got approved
                 byte[] aesKey = PendingClients.ContainsKey(clientId) ? PendingClients[clientId].AesKey : null;
                 if (PendingClients.ContainsKey(clientId))
                     PendingClients.Remove(clientId);
@@ -1044,14 +1044,14 @@ namespace MLAPI
                 };
                 ConnectedClients.Add(clientId, client);
                 ConnectedClientsList.Add(client);
-                
-                NetworkedObject netObject = SpawnManager.CreateLocalNetworkedObject(false, 0, (prefabHash == null ? NetworkConfig.PlayerPrefabHash : prefabHash.Value), position, rotation);
+
+                NetworkedObject netObject = SpawnManager.CreateLocalNetworkedObject(false, 0, (prefabHash == null ? NetworkConfig.PlayerPrefabHash : prefabHash.Value), null, position, rotation);
                 SpawnManager.SpawnNetworkedObjectLocally(netObject, SpawnManager.GetNetworkObjectId(), false, true, clientId, null, false, 0, false, false);
-                
+
                 ConnectedClients[clientId].PlayerObject = netObject;
 
                 _observedObjects.Clear();
-                
+
                 for (int i = 0; i < SpawnManager.SpawnedObjectsList.Count; i++)
                 {
                     if (clientId == ServerClientId || SpawnManager.SpawnedObjectsList[i].CheckObjectVisibility == null || SpawnManager.SpawnedObjectsList[i].CheckObjectVisibility(clientId))
@@ -1060,19 +1060,19 @@ namespace MLAPI
 
                         SpawnManager.SpawnedObjectsList[i].observers.Add(clientId);
                     }
-                } 
+                }
 
                 using (PooledBitStream stream = PooledBitStream.Get())
                 {
                     using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                     {
                         writer.WriteUInt64Packed(clientId);
-                        
+
                         writer.WriteUInt32Packed(NetworkSceneManager.currentSceneIndex);
                         writer.WriteByteArray(NetworkSceneManager.currentSceneSwitchProgressGuid.ToByteArray());
 
                         writer.WriteSinglePacked(Time.realtimeSinceStartup);
-                        
+
                         writer.WriteUInt32Packed((uint)_observedObjects.Count);
 
                         for (int i = 0; i < _observedObjects.Count; i++)
@@ -1080,6 +1080,23 @@ namespace MLAPI
                             writer.WriteBool(_observedObjects[i].IsPlayerObject);
                             writer.WriteUInt64Packed(_observedObjects[i].NetworkId);
                             writer.WriteUInt64Packed(_observedObjects[i].OwnerClientId);
+
+                            NetworkedObject parent = null;
+
+                            if (!_observedObjects[i].AlwaysReplicateAsRoot && _observedObjects[i].transform.parent != null)
+                            {
+                                parent = _observedObjects[i].transform.parent.GetComponent<NetworkedObject>();
+                            }
+
+                            if (parent == null)
+                            {
+                                writer.WriteBool(false);
+                            }
+                            else
+                            {
+                                writer.WriteBool(true);
+                                writer.WriteUInt64Packed(parent.NetworkId);
+                            }
 
                             if (NetworkConfig.UsePrefabSync)
                             {
@@ -1131,7 +1148,7 @@ namespace MLAPI
                     using (PooledBitStream stream = PooledBitStream.Get())
                     {
                         using (PooledBitWriter writer = PooledBitWriter.Get(stream))
-                        {    
+                        {
                             writer.WriteBool(true);
                             writer.WriteUInt64Packed(ConnectedClients[clientId].PlayerObject.GetComponent<NetworkedObject>().NetworkId);
                             writer.WriteUInt64Packed(clientId);
@@ -1163,7 +1180,7 @@ namespace MLAPI
                             {
                                 ConnectedClients[clientId].PlayerObject.WriteNetworkedVarData(stream, clientPair.Key);
                             }
-                            
+
                             InternalMessageSender.Send(clientPair.Key, MLAPIConstants.MLAPI_ADD_OBJECT, "MLAPI_INTERNAL", stream, SecuritySendFlags.None, null);
                         }
                     }

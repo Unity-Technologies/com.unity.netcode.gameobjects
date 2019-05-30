@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
@@ -32,7 +32,7 @@ namespace MLAPI
             {
                 PrefabHashGenerator = gameObject.name;
             }
-            
+
             PrefabHash = PrefabHashGenerator.GetStableHash64();
         }
 
@@ -60,9 +60,9 @@ namespace MLAPI
                     _ownerClientId = value;
             }
         }
-        
+
         internal ulong? _ownerClientId = null;
-        
+
         /// <summary>
         /// InstanceId is the id that is unique to the object and scene for a scene object when UsePrefabSync is false.
         /// If UsePrefabSync is true or if it's used on non scene objects, this has no effect.
@@ -84,6 +84,10 @@ namespace MLAPI
         /// </summary>
         [SerializeField]
         public string PrefabHashGenerator;
+        /// <summary>
+        /// If true, the object will always be replicated as root on clients and the parent will be ignored.
+        /// </summary>
+        public bool AlwaysReplicateAsRoot;
         /// <summary>
         /// Gets if this object is a player object
         /// </summary>
@@ -153,7 +157,7 @@ namespace MLAPI
         /// Delegate invoked when the MLAPI needs to know if the object should be visible to a client, if null it will assume true
         /// </summary>
         public VisibilityDelegate CheckObjectVisibility = null;
-        
+
         /// <summary>
         /// Whether or not to destroy this object if it's owner is destroyed.
         /// If false, the objects ownership will be given to the server.
@@ -172,7 +176,7 @@ namespace MLAPI
             {
                 throw new SpawnStateException("Object is not spawned");
             }
-            
+
             return observers.GetEnumerator();
         }
 
@@ -187,7 +191,7 @@ namespace MLAPI
             {
                 throw new SpawnStateException("Object is not spawned");
             }
-            
+
             return observers.Contains(clientId);
         }
 
@@ -202,7 +206,7 @@ namespace MLAPI
             {
                 throw new SpawnStateException("Object is not spawned");
             }
-            
+
             if (!NetworkingManager.Singleton.IsServer)
             {
                 throw new NotServerException("Only server can change visibility");
@@ -212,10 +216,10 @@ namespace MLAPI
             {
                 throw new VisibilityChangeException("The object is already visible");
             }
-            
+
             // Send spawn call
             observers.Add(clientId);
-                
+
             SpawnManager.SendSpawnCallForObject(clientId, this, payload);
         }
 
@@ -245,22 +249,22 @@ namespace MLAPI
                     throw new VisibilityChangeException("NetworkedObject with NetworkId: " + networkedObjects[i].NetworkId + " is already visible");
                 }
             }
-            
+
             using (PooledBitStream stream = PooledBitStream.Get())
             {
                 using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                 {
                     writer.WriteUInt16Packed((ushort)networkedObjects.Count);
                 }
-                
+
                 for (int i = 0; i < networkedObjects.Count; i++)
                 {
                     // Send spawn call
                     networkedObjects[i].observers.Add(clientId);
-                        
+
                     SpawnManager.WriteSpawnCallForObject(stream, clientId, networkedObjects[i], payload);
                 }
-                
+
                 InternalMessageSender.Send(MLAPIConstants.MLAPI_ADD_OBJECTS, "MLAPI_INTERNAL", stream, SecuritySendFlags.None, null);
             }
         }
@@ -275,7 +279,7 @@ namespace MLAPI
             {
                 throw new SpawnStateException("Object is not spawned");
             }
-            
+
             if (!NetworkingManager.Singleton.IsServer)
             {
                 throw new NotServerException("Only server can change visibility");
@@ -290,11 +294,11 @@ namespace MLAPI
             {
                 throw new VisibilityChangeException("Cannot hide an object from the server");
             }
-            
-            
+
+
             // Send destroy call
             observers.Remove(clientId);
-                
+
             using (PooledBitStream stream = PooledBitStream.Get())
             {
                 using (PooledBitWriter writer = PooledBitWriter.Get(stream))
@@ -305,7 +309,7 @@ namespace MLAPI
                 }
             }
         }
-        
+
         /// <summary>
         /// Hides a list of objects from a client
         /// </summary>
@@ -317,7 +321,7 @@ namespace MLAPI
             {
                 throw new NotServerException("Only server can change visibility");
             }
-            
+
             if (clientId == NetworkingManager.Singleton.ServerClientId)
             {
                 throw new VisibilityChangeException("Cannot hide an object from the server");
@@ -343,20 +347,20 @@ namespace MLAPI
                 using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                 {
                     writer.WriteUInt16Packed((ushort)networkedObjects.Count);
-                    
+
                     for (int i = 0; i < networkedObjects.Count; i++)
                     {
                         // Send destroy call
                         networkedObjects[i].observers.Remove(clientId);
-                        
+
                         writer.WriteUInt64Packed(networkedObjects[i].NetworkId);
                     }
                 }
-                
+
                 InternalMessageSender.Send(MLAPIConstants.MLAPI_DESTROY_OBJECTS, "MLAPI_INTERNAL", stream, SecuritySendFlags.None, null);
             }
         }
-        
+
         private void OnDestroy()
         {
             if (NetworkingManager.Singleton != null)
@@ -374,7 +378,7 @@ namespace MLAPI
         {
             if (spawnPayload != null)
                 spawnPayload.Position = 0;
-            
+
             SpawnManager.SpawnNetworkedObjectLocally(this, SpawnManager.GetNetworkObjectId(), false, false, null, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false, destroyWithScene);
 
             for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)
@@ -390,7 +394,7 @@ namespace MLAPI
         /// Unspawns this GameObject and destroys it for other clients. This should be used if the object should be kept on the server
         /// </summary>
         public void UnSpawn()
-        {            
+        {
             SpawnManager.UnSpawnObject(this);
         }
 
@@ -404,7 +408,7 @@ namespace MLAPI
         {
             if (spawnPayload != null)
                 spawnPayload.Position = 0;
-            
+
             SpawnManager.SpawnNetworkedObjectLocally(this, SpawnManager.GetNetworkObjectId(), false, false, clientId, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false, destroyWithScene);
 
             for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)
@@ -426,9 +430,9 @@ namespace MLAPI
         {
             if (spawnPayload != null)
                 spawnPayload.Position = 0;
-            
+
             SpawnManager.SpawnNetworkedObjectLocally(this, SpawnManager.GetNetworkObjectId(), false, true, clientId, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false, destroyWithScene);
-            
+
             for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)
             {
                 if (observers.Contains(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId))
@@ -470,7 +474,7 @@ namespace MLAPI
             }
         }
 
-        internal void ResetNetworkedStartInvoked() 
+        internal void ResetNetworkedStartInvoked()
         {
             for (int i = 0; i < childNetworkedBehaviours.Count; i++)
             {
@@ -527,15 +531,15 @@ namespace MLAPI
             {
                 if (_lastProcessedObject >= SpawnManager.SpawnedObjectsList.Count)
                     _lastProcessedObject = 0;
-                
+
                 // Sync all vars
                 for (int j = 0; j < SpawnManager.SpawnedObjectsList[_lastProcessedObject].childNetworkedBehaviours.Count; j++)
                     SpawnManager.SpawnedObjectsList[_lastProcessedObject].childNetworkedBehaviours[j].NetworkedVarUpdate();
-                
+
                 _lastProcessedObject++;
             }
         }
-        
+
         internal void WriteNetworkedVarData(Stream stream, ulong clientId)
         {
             for (int i = 0; i < childNetworkedBehaviours.Count; i++)
