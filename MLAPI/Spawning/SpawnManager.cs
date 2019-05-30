@@ -404,7 +404,7 @@ namespace MLAPI.Spawning
 
                 NetworkedObject parent = null;
 
-                if (netObject.transform.parent != null)
+                if (!netObject.AlwaysReplicateAsRoot && netObject.transform.parent != null)
                 {
                     parent = netObject.transform.parent.GetComponent<NetworkedObject>();
                 }
