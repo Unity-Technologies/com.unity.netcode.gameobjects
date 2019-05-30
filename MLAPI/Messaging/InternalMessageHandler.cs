@@ -206,7 +206,7 @@ namespace MLAPI.Messaging
                 Guid sceneSwitchProgressGuid = new Guid(reader.ReadByteArray());
 
                 float netTime = reader.ReadSinglePacked();
-                NetworkingManager.Singleton.UpdateNetworkTime(clientId, netTime, receiveTime, onlyIfNotInitialized: true);
+                NetworkingManager.Singleton.UpdateNetworkTime(clientId, netTime, receiveTime, true);
 
                 NetworkingManager.Singleton.ConnectedClients.Add(NetworkingManager.Singleton.LocalClientId, new NetworkedClient() { ClientId = NetworkingManager.Singleton.LocalClientId });
 
