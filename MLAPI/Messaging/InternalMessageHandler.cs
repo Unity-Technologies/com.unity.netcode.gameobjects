@@ -196,7 +196,7 @@ namespace MLAPI.Messaging
             }
         }
 
-        internal static void HandleConnectionApproved(ulong clientId, Stream stream)
+        internal static void HandleConnectionApproved(ulong clientId, Stream stream, float receiveTime)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
@@ -206,7 +206,7 @@ namespace MLAPI.Messaging
                 Guid sceneSwitchProgressGuid = new Guid(reader.ReadByteArray());
 
                 float netTime = reader.ReadSinglePacked();
-                NetworkingManager.Singleton.UpdateNetworkTime(clientId, netTime);
+                NetworkingManager.Singleton.UpdateNetworkTime(clientId, netTime, receiveTime, true);
 
                 NetworkingManager.Singleton.ConnectedClients.Add(NetworkingManager.Singleton.LocalClientId, new NetworkedClient() { ClientId = NetworkingManager.Singleton.LocalClientId });
 
@@ -437,12 +437,12 @@ namespace MLAPI.Messaging
             }
         }
 
-        internal static void HandleTimeSync(ulong clientId, Stream stream)
+        internal static void HandleTimeSync(ulong clientId, Stream stream, float receiveTime)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
                 float netTime = reader.ReadSinglePacked();
-                NetworkingManager.Singleton.UpdateNetworkTime(clientId, netTime);
+                NetworkingManager.Singleton.UpdateNetworkTime(clientId, netTime, receiveTime);
             }
         }
 

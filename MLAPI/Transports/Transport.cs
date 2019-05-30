@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using UnityEngine;
 
 namespace MLAPI.Transports
@@ -81,7 +81,22 @@ namespace MLAPI.Transports
         /// <param name="payload">The incoming data payload</param>
         /// <returns>Returns the event type</returns>
         public abstract NetEventType PollEvent(out ulong clientId, out string channelName, out ArraySegment<byte> payload);
-        
+
+        /// <summary>
+        /// Polls for incoming events, with an extra output parameter to report the precise time the event was received.
+        /// THIS METHOD IS OPTIONAL.  If you do implement in, you can just provide an empty stub implementation for the old PollEvent method.
+        /// </summary>
+        /// <param name="clientId">The clientId this event is for</param>
+        /// <param name="channelName">The channel the data arrived at. This is usually used when responding to things like RPCs</param>
+        /// <param name="payload">The incoming data payload</param>
+        /// <param name="receiveTime">The time the event was received, as reported by Time.realtimeSinceStartup.</param>
+        /// <returns>Returns the event type</returns>
+        public virtual NetEventType PollEvent(out ulong clientId, out string channelName, out ArraySegment<byte> payload, out float receiveTime)
+        {
+            receiveTime = Time.realtimeSinceStartup;
+            return PollEvent(out clientId, out channelName, out payload);
+        }
+
         /// <summary>
         /// Connects client to server
         /// </summary>
