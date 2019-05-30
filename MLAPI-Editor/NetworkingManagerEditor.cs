@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 using UnityEditor;
@@ -16,10 +16,10 @@ public class NetworkingManagerEditor : Editor
     private SerializedProperty dontDestroyOnLoadProperty;
     private SerializedProperty runInBackgroundProperty;
     private SerializedProperty logLevelProperty;
-    
+
     // NetworkConfig
     private SerializedProperty networkConfigProperty;
-    
+
     // NetworkConfig fields
     private SerializedProperty protocolVersionProperty;
     private SerializedProperty allowRuntimeSceneChanges;
@@ -51,10 +51,10 @@ public class NetworkingManagerEditor : Editor
 
     private NetworkingManager networkingManager;
     private bool initialized;
-    
+
     private readonly List<Type> transportTypes = new List<Type>();
-    private string[] transportNames = new string[] {"Select transport..."};
-    
+    private string[] transportNames = new string[] { "Select transport..." };
+
     private void ReloadTransports()
     {
         transportTypes.Clear();
@@ -75,7 +75,7 @@ public class NetworkingManagerEditor : Editor
         }
 
         transportNames = new string[transportTypes.Count + 1];
-        
+
         transportNames[0] = "Select transport...";
 
         for (int i = 0; i < transportTypes.Count; i++)
@@ -91,13 +91,13 @@ public class NetworkingManagerEditor : Editor
 
         initialized = true;
         networkingManager = (NetworkingManager)target;
-        
+
         // Base properties
         dontDestroyOnLoadProperty = serializedObject.FindProperty("DontDestroy");
         runInBackgroundProperty = serializedObject.FindProperty("RunInBackground");
         logLevelProperty = serializedObject.FindProperty("LogLevel");
         networkConfigProperty = serializedObject.FindProperty("NetworkConfig");
-        
+
         // NetworkConfig properties
         protocolVersionProperty = networkConfigProperty.FindPropertyRelative("ProtocolVersion");
         allowRuntimeSceneChanges = networkConfigProperty.FindPropertyRelative("AllowRuntimeSceneChanges");
@@ -123,7 +123,7 @@ public class NetworkingManagerEditor : Editor
         enableEncryptionProperty = networkConfigProperty.FindPropertyRelative("EnableEncryption");
         signKeyExchangeProperty = networkConfigProperty.FindPropertyRelative("SignKeyExchange");
         serverBase64PfxCertificateProperty = networkConfigProperty.FindPropertyRelative("ServerBase64PfxCertificate");
-        
+
 
         ReloadTransports();
     }
@@ -135,7 +135,7 @@ public class NetworkingManagerEditor : Editor
         runInBackgroundProperty = serializedObject.FindProperty("RunInBackground");
         logLevelProperty = serializedObject.FindProperty("LogLevel");
         networkConfigProperty = serializedObject.FindProperty("NetworkConfig");
-        
+
         // NetworkConfig properties
         protocolVersionProperty = networkConfigProperty.FindPropertyRelative("ProtocolVersion");
         allowRuntimeSceneChanges = networkConfigProperty.FindPropertyRelative("AllowRuntimeSceneChanges");
@@ -225,10 +225,10 @@ public class NetworkingManagerEditor : Editor
     {
         Init();
         CheckNullProperties();
-        
+
         {
             SerializedProperty iterator = serializedObject.GetIterator();
-            
+
             for (bool enterChildren = true; iterator.NextVisible(enterChildren); enterChildren = false)
             {
                 using (new EditorGUI.DisabledScope("m_Script" == iterator.propertyPath))
@@ -238,11 +238,11 @@ public class NetworkingManagerEditor : Editor
             }
         }
 
-        
+
         if (!networkingManager.IsServer && !networkingManager.IsClient)
         {
             serializedObject.Update();
-            
+
             EditorGUILayout.PropertyField(dontDestroyOnLoadProperty);
             EditorGUILayout.PropertyField(runInBackgroundProperty);
             EditorGUILayout.PropertyField(logLevelProperty);
@@ -252,15 +252,15 @@ public class NetworkingManagerEditor : Editor
 
             registeredScenesList.DoLayoutList();
             EditorGUILayout.Space();
-            
-            
+
+
             EditorGUILayout.LabelField("General", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(protocolVersionProperty);
-            
+
             EditorGUILayout.PropertyField(networkTransportProperty);
-            
+
             if (networkTransportProperty.objectReferenceValue == null)
-            {               
+            {
                 EditorGUILayout.HelpBox("You have no transport selected. A transport is required for the MLAPI to work. Which one do you want?", MessageType.Warning);
 
                 int selection = EditorGUILayout.Popup(0, transportNames);
@@ -268,20 +268,20 @@ public class NetworkingManagerEditor : Editor
                 if (selection > 0)
                 {
                     ReloadTransports();
-                    
+
                     Component transport = networkingManager.gameObject.GetComponent(transportTypes[selection - 1]);
-                    
+
                     if (transport == null)
                     {
                         transport = networkingManager.gameObject.AddComponent(transportTypes[selection - 1]);
                     }
-                    
+
                     networkTransportProperty.objectReferenceValue = transport;
-                    
+
                     Repaint();
                 }
             }
-            
+
             EditorGUILayout.PropertyField(enableTimeResyncProperty);
             EditorGUILayout.PropertyField(timeResyncIntervalProperty);
 
@@ -296,8 +296,8 @@ public class NetworkingManagerEditor : Editor
             {
                 EditorGUILayout.PropertyField(maxObjectUpdatesPerTickProperty);
                 EditorGUILayout.PropertyField(ensureNetworkedVarLengthSafetyProperty);
-            }            
-            
+            }
+
             EditorGUILayout.LabelField("Connection", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(connectionApprovalProperty);
 
@@ -305,43 +305,75 @@ public class NetworkingManagerEditor : Editor
             {
                 EditorGUILayout.PropertyField(clientConnectionBufferTimeoutProperty);
             }
-            
+
             EditorGUILayout.LabelField("Lag Compensation", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(secondsHistoryProperty);
-            
+
             EditorGUILayout.LabelField("Spawning", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(forceSamePrefabsProperty);
             EditorGUILayout.PropertyField(usePrefabSyncProperty);
-            
+
             EditorGUILayout.PropertyField(recycleNetworkIdsProperty);
-            
+
             using (new EditorGUI.DisabledScope(!networkingManager.NetworkConfig.RecycleNetworkIds))
             {
                 EditorGUILayout.PropertyField(networkIdRecycleDelayProperty);
             }
-            
+
             EditorGUILayout.LabelField("Bandwidth", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(rpcHashSizeProperty);
 
             EditorGUILayout.LabelField("Scene Management", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(loadSceneTimeOutProperty);
             EditorGUILayout.PropertyField(allowRuntimeSceneChanges);
-            
+
             EditorGUILayout.LabelField("Cryptography", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(enableEncryptionProperty);
 
             using (new EditorGUI.DisabledScope(!networkingManager.NetworkConfig.EnableEncryption))
             {
                 EditorGUILayout.PropertyField(signKeyExchangeProperty);
-                EditorGUILayout.PropertyField(serverBase64PfxCertificateProperty);   
+                EditorGUILayout.PropertyField(serverBase64PfxCertificateProperty);
             }
-            
+
             serializedObject.ApplyModifiedProperties();
+
+
+            // Start buttons below
+            {
+                string buttonDisabledReasonSuffix = "";
+
+                if (!EditorApplication.isPlaying)
+                {
+                    buttonDisabledReasonSuffix = ". This can only be done in play mode";
+                    GUI.enabled = false;
+                }
+
+                if (GUILayout.Button(new GUIContent("Start Host", "Starts a host instance" + buttonDisabledReasonSuffix)))
+                {
+                    networkingManager.StartHost();
+                }
+
+                if (GUILayout.Button(new GUIContent("Start Server", "Starts a server instance" + buttonDisabledReasonSuffix)))
+                {
+                    networkingManager.StartServer();
+                }
+
+                if (GUILayout.Button(new GUIContent("Start Client", "Starts a client instance" + buttonDisabledReasonSuffix)))
+                {
+                    networkingManager.StartClient();
+                }
+
+                if (!EditorApplication.isPlaying)
+                {
+                    GUI.enabled = true;
+                }
+            }
         }
         else
         {
             string instanceType = "";
-            
+
             if (networkingManager.IsHost)
                 instanceType = "Host";
             else if (networkingManager.IsServer)
@@ -350,8 +382,8 @@ public class NetworkingManagerEditor : Editor
                 instanceType = "Client";
 
             EditorGUILayout.HelpBox("You cannot edit the NetworkConfig when a " + instanceType + " is running.", MessageType.Info);
-            
-            if (GUILayout.Toggle(false, "Stop " + instanceType, EditorStyles.miniButtonMid))
+
+            if (GUILayout.Button(new GUIContent("Stop " + instanceType, "Stops the " + instanceType + " instance.")))
             {
                 if (networkingManager.IsHost)
                     networkingManager.StopHost();
