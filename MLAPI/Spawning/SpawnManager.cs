@@ -437,13 +437,20 @@ namespace MLAPI.Spawning
                     }
                 }
 
-                writer.WriteSinglePacked(netObject.transform.position.x);
-                writer.WriteSinglePacked(netObject.transform.position.y);
-                writer.WriteSinglePacked(netObject.transform.position.z);
+                if (netObject.IncludeTransformWhenSpawning == null || netObject.IncludeTransformWhenSpawning(clientId))
+                {
+                    writer.WriteBool(true);
+                    writer.WriteSinglePacked(netObject.transform.position.x);
+                    writer.WriteSinglePacked(netObject.transform.position.y);
+                    writer.WriteSinglePacked(netObject.transform.position.z);
 
-                writer.WriteSinglePacked(netObject.transform.rotation.eulerAngles.x);
-                writer.WriteSinglePacked(netObject.transform.rotation.eulerAngles.y);
-                writer.WriteSinglePacked(netObject.transform.rotation.eulerAngles.z);
+                    writer.WriteSinglePacked(netObject.transform.rotation.eulerAngles.x);
+                    writer.WriteSinglePacked(netObject.transform.rotation.eulerAngles.y);
+                    writer.WriteSinglePacked(netObject.transform.rotation.eulerAngles.z);
+                } else
+                {
+                    writer.WriteBool(false);
+                }
 
                 writer.WriteBool(payload != null);
 

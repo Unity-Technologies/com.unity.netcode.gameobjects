@@ -159,6 +159,17 @@ namespace MLAPI
         public VisibilityDelegate CheckObjectVisibility = null;
 
         /// <summary>
+        /// Delegate type for checking spawn options
+        /// </summary>
+        /// <param name="clientId">The clientId to check spawn options for</param>
+        public delegate bool SpawnDelegate(ulong clientId);
+
+        /// <summary>
+        /// Delegate invoked when the MLAPI needs to know if it should include the transform when spawning the object, if null it will assume true
+        /// </summary>
+        public SpawnDelegate IncludeTransformWhenSpawning = null;
+
+        /// <summary>
         /// Whether or not to destroy this object if it's owner is destroyed.
         /// If false, the objects ownership will be given to the server.
         /// </summary>

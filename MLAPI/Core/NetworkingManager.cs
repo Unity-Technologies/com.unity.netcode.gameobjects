@@ -1082,15 +1082,16 @@ namespace MLAPI
 
                         for (int i = 0; i < _observedObjects.Count; i++)
                         {
-                            writer.WriteBool(_observedObjects[i].IsPlayerObject);
-                            writer.WriteUInt64Packed(_observedObjects[i].NetworkId);
-                            writer.WriteUInt64Packed(_observedObjects[i].OwnerClientId);
+                            NetworkedObject observedObject = _observedObjects[i];
+                            writer.WriteBool(observedObject.IsPlayerObject);
+                            writer.WriteUInt64Packed(observedObject.NetworkId);
+                            writer.WriteUInt64Packed(observedObject.OwnerClientId);
 
                             NetworkedObject parent = null;
 
-                            if (!_observedObjects[i].AlwaysReplicateAsRoot && _observedObjects[i].transform.parent != null)
+                            if (!observedObject.AlwaysReplicateAsRoot && observedObject.transform.parent != null)
                             {
-                                parent = _observedObjects[i].transform.parent.GetComponent<NetworkedObject>();
+                                parent = observedObject.transform.parent.GetComponent<NetworkedObject>();
                             }
 
                             if (parent == null)
@@ -1105,34 +1106,42 @@ namespace MLAPI
 
                             if (NetworkConfig.UsePrefabSync)
                             {
-                                writer.WriteUInt64Packed(_observedObjects[i].PrefabHash);
+                                writer.WriteUInt64Packed(observedObject.PrefabHash);
                             }
                             else
                             {
                                 // Is this a scene object that we will soft map
-                                writer.WriteBool(_observedObjects[i].IsSceneObject == null ? true : _observedObjects[i].IsSceneObject.Value);
+                                writer.WriteBool(observedObject.IsSceneObject == null ? true : observedObject.IsSceneObject.Value);
 
-                                if (_observedObjects[i].IsSceneObject == null || _observedObjects[i].IsSceneObject.Value == true)
+                                if (observedObject.IsSceneObject == null || observedObject.IsSceneObject.Value == true)
                                 {
-                                    writer.WriteUInt64Packed(_observedObjects[i].NetworkedInstanceId);
+                                    writer.WriteUInt64Packed(observedObject.NetworkedInstanceId);
                                 }
                                 else
                                 {
-                                    writer.WriteUInt64Packed(_observedObjects[i].PrefabHash);
+                                    writer.WriteUInt64Packed(observedObject.PrefabHash);
                                 }
                             }
 
-                            writer.WriteSinglePacked(_observedObjects[i].transform.position.x);
-                            writer.WriteSinglePacked(_observedObjects[i].transform.position.y);
-                            writer.WriteSinglePacked(_observedObjects[i].transform.position.z);
+                            if (observedObject.IncludeTransformWhenSpawning == null || observedObject.IncludeTransformWhenSpawning(clientId))
+                            {
+                                writer.WriteBool(true);
+                                writer.WriteSinglePacked(observedObject.transform.position.x);
+                                writer.WriteSinglePacked(observedObject.transform.position.y);
+                                writer.WriteSinglePacked(observedObject.transform.position.z);
 
-                            writer.WriteSinglePacked(_observedObjects[i].transform.rotation.eulerAngles.x);
-                            writer.WriteSinglePacked(_observedObjects[i].transform.rotation.eulerAngles.y);
-                            writer.WriteSinglePacked(_observedObjects[i].transform.rotation.eulerAngles.z);
+                                writer.WriteSinglePacked(observedObject.transform.rotation.eulerAngles.x);
+                                writer.WriteSinglePacked(observedObject.transform.rotation.eulerAngles.y);
+                                writer.WriteSinglePacked(observedObject.transform.rotation.eulerAngles.z);
+                            }
+                            else
+                            {
+                                writer.WriteBool(false);
+                            }
 
                             if (NetworkConfig.EnableNetworkedVar)
                             {
-                                _observedObjects[i].WriteNetworkedVarData(stream, clientId);
+                                observedObject.WriteNetworkedVarData(stream, clientId);
                             }
                         }
 

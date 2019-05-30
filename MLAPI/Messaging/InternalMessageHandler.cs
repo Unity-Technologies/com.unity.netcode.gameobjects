@@ -265,8 +265,13 @@ namespace MLAPI.Messaging
                                 }
                             }
 
-                            Vector3 pos = new Vector3(continuationReader.ReadSinglePacked(), continuationReader.ReadSinglePacked(), continuationReader.ReadSinglePacked());
-                            Quaternion rot = Quaternion.Euler(continuationReader.ReadSinglePacked(), continuationReader.ReadSinglePacked(), continuationReader.ReadSinglePacked());
+                            Vector3? pos = null;
+                            Quaternion? rot = null;
+                            if (continuationReader.ReadBool())
+                            {
+                                pos = new Vector3(continuationReader.ReadSinglePacked(), continuationReader.ReadSinglePacked(), continuationReader.ReadSinglePacked());
+                                rot = Quaternion.Euler(continuationReader.ReadSinglePacked(), continuationReader.ReadSinglePacked(), continuationReader.ReadSinglePacked());
+                            }
 
                             NetworkedObject netObject = SpawnManager.CreateLocalNetworkedObject(softSync, instanceId, prefabHash, parentNetworkId, pos, rot);
                             SpawnManager.SpawnNetworkedObjectLocally(netObject, networkId, softSync, isPlayerObject, ownerId, continuationStream, false, 0, true, false);
@@ -320,11 +325,11 @@ namespace MLAPI.Messaging
                 {
                     parentNetworkId = reader.ReadUInt64Packed();
                 }
-                
+
                 ulong prefabHash;
                 ulong instanceId;
                 bool softSync;
-                    
+
                 if (NetworkingManager.Singleton.NetworkConfig.UsePrefabSync)
                 {
                     softSync = false;
@@ -347,8 +352,13 @@ namespace MLAPI.Messaging
                     }
                 }
 
-                Vector3 pos = new Vector3(reader.ReadSinglePacked(), reader.ReadSinglePacked(), reader.ReadSinglePacked());
-                Quaternion rot = Quaternion.Euler(reader.ReadSinglePacked(), reader.ReadSinglePacked(), reader.ReadSinglePacked());
+                Vector3? pos = null;
+                Quaternion? rot = null;
+                if (reader.ReadBool())
+                {
+                    pos = new Vector3(reader.ReadSinglePacked(), reader.ReadSinglePacked(), reader.ReadSinglePacked());
+                    rot = Quaternion.Euler(reader.ReadSinglePacked(), reader.ReadSinglePacked(), reader.ReadSinglePacked());
+                }
 
                 bool hasPayload = reader.ReadBool();
                 int payLoadLength = hasPayload ? reader.ReadInt32Packed() : 0;
