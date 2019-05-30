@@ -614,7 +614,7 @@ namespace MLAPI
                     do
                     {
                         processedEvents++;
-                        eventType = NetworkConfig.NetworkTransport.PollEvent(out ulong clientId, out string channelName, out ArraySegment<byte> payload);
+                        eventType = NetworkConfig.NetworkTransport.PollEvent(out ulong clientId, out string channelName, out ArraySegment<byte> payload, out float receiveTime);
 
                         switch (eventType)
                         {
@@ -696,7 +696,7 @@ namespace MLAPI
                             case NetEventType.Data:
                                 if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo($"Incoming Data From {clientId} : {payload.Count} bytes");
 
-                                HandleIncomingData(clientId, channelName, payload);
+                                HandleIncomingData(clientId, channelName, payload, receiveTime);
                                 break;
                             case NetEventType.Disconnect:
                                 NetworkProfiler.StartEvent(TickType.Receive, 0, "NONE", "TRANSPORT_DISCONNECT");
@@ -756,16 +756,18 @@ namespace MLAPI
             }
         }
 
-        internal void UpdateNetworkTime(ulong clientId, float netTime)
+        internal void UpdateNetworkTime(ulong clientId, float netTime, float receiveTime, bool onlyIfNotInitialized = false)
         {
+            if (onlyIfNotInitialized && networkTimeInitialized)
+                return;
             float rtt = NetworkConfig.NetworkTransport.GetCurrentRtt(clientId) / 1000f;
-            networkTimeOffset = netTime - Time.realtimeSinceStartup + rtt / 2f;
+            networkTimeOffset = netTime - receiveTime + rtt / 2f;
             if (!networkTimeInitialized) {
                 currentNetworkTimeOffset = networkTimeOffset;
                 networkTimeInitialized = true;
             }
             if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo($"Received network time {netTime}, RTT to server is {rtt}, setting offset to {networkTimeOffset} (delta {networkTimeOffset - currentNetworkTimeOffset})");
-    }
+        }
 
     internal void SendConnectionRequest()
         {
@@ -806,7 +808,7 @@ namespace MLAPI
             switchSceneProgress.SetTimedOut();
         }
 
-        private void HandleIncomingData(ulong clientId, string channelName, ArraySegment<byte> data)
+        private void HandleIncomingData(ulong clientId, string channelName, ArraySegment<byte> data, float receiveTime)
         {
             if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Unwrapping Data Header");
 
@@ -851,7 +853,7 @@ namespace MLAPI
                             break;
                         case MLAPIConstants.MLAPI_CONNECTION_APPROVED:
                             if (IsClient)
-                                InternalMessageHandler.HandleConnectionApproved(clientId, messageStream);
+                                InternalMessageHandler.HandleConnectionApproved(clientId, messageStream, receiveTime);
                             break;
                         case MLAPIConstants.MLAPI_ADD_OBJECT:
                             if (IsClient) InternalMessageHandler.HandleAddObject(clientId, messageStream);
@@ -872,7 +874,7 @@ namespace MLAPI
                             if (IsClient) InternalMessageHandler.HandleDestroyObjects(clientId, messageStream);
                             break;
                         case MLAPIConstants.MLAPI_TIME_SYNC:
-                            if (IsClient) InternalMessageHandler.HandleTimeSync(clientId, messageStream);
+                            if (IsClient) InternalMessageHandler.HandleTimeSync(clientId, messageStream, receiveTime);
                             break;
                         case MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA:
                             InternalMessageHandler.HandleNetworkedVarDelta(clientId, messageStream);
@@ -1045,6 +1047,9 @@ namespace MLAPI
                 ConnectedClients.Add(clientId, client);
                 ConnectedClientsList.Add(client);
 
+                // This packet is unreliable, but if it gets through it should provide a much better sync than the potentially huge approval message.
+                SyncTime();
+                
                 NetworkedObject netObject = SpawnManager.CreateLocalNetworkedObject(false, 0, (prefabHash == null ? NetworkConfig.PlayerPrefabHash : prefabHash.Value), null, position, rotation);
                 SpawnManager.SpawnNetworkedObjectLocally(netObject, SpawnManager.GetNetworkObjectId(), false, true, clientId, null, false, 0, false, false);
 
