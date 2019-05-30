@@ -197,6 +197,7 @@ public class GithubRelease
 [Serializable]
 public class TransportArtifactDefinition
 {
+    public int breaking_version;
     public TransportArtifact[] artifacts;
 }
 
@@ -236,12 +237,14 @@ public class GithubAsset
 [InitializeOnLoad]
 public class MLAPIEditor : EditorWindow
 {
+    private const int COMPATIBLE_ARTIFACT_PATH_VERSION = 1;
     private const string API_URL = "https://api.github.com/repos/MidLevel/MLAPI/releases";
     private const string TRANSPORT_ARTIFACT_PATH_URL = "https://api.github.com/repos/MidLevel/MLAPI.Transports/contents/artifact_paths.json";
     private const string TRANSPORT_ARTIFACT_DOWNLOAD_URL_TEMPLATE = "https://ci.appveyor.com/api/projects/MidLevel/MLAPI-Transports/artifacts/<path>?branch=master";
     private GithubRelease[] releases = new GithubRelease[0];
     private TransportArtifactDefinition transportArtifacts = null;
-    private int[] transportVersionSelections = new int[0];
+    private bool transportArtifactIncompatble = false;
+    private bool forceRenderAtrifacts = false;
     private bool[] releaseFoldoutStatus = new bool[0];
     private bool[] transportFoldoutStatus = new bool[0];
 
@@ -375,112 +378,124 @@ public class MLAPIEditor : EditorWindow
         }
         else if (tab == 1)
         {
-            MLAPIVersion currentMLAPIVersion = MLAPIVersion.Parse(currentVersion);
-
-            if (transportArtifacts != null && transportArtifacts.artifacts != null && transportFoldoutStatus != null)
+            if (transportArtifactIncompatble && !forceRenderAtrifacts)
             {
-                for (int i = 0; i < transportArtifacts.artifacts.Length; i++)
+                EditorGUILayout.HelpBox("The transport installer version you are using is incompatbile with the latest manifest. Please upgrade your installer by downloading the latest MLAPI version..", MessageType.Warning);
+
+                if (GUILayout.Button(new GUIContent("Ignore", "Ignore the version diff and try to render the content anyways. This might lead to render failures or other errors.")))
                 {
-                    if (transportArtifacts.artifacts[i] == null)
-                        continue;
+                    forceRenderAtrifacts = true;
+                }
+            }
+            else
+            {
+                MLAPIVersion currentMLAPIVersion = MLAPIVersion.Parse(currentVersion);
 
-                    string transportDirectory = Path.Combine(Path.Combine(Path.Combine(Application.dataPath, "MLAPI"), "OfficialTransports"), transportArtifacts.artifacts[i].id);
-                    bool isInstalled = Directory.Exists(transportDirectory) && Directory.GetFiles(transportDirectory).Length > 0;
-
-                    transportFoldoutStatus[i] = EditorGUILayout.Foldout(transportFoldoutStatus[i], transportArtifacts.artifacts[i].name + ((isInstalled) ? " - [Installed]" : ""));
-
-                    if (transportFoldoutStatus[i])
+                if (transportArtifacts != null && transportArtifacts.artifacts != null && transportFoldoutStatus != null)
+                {
+                    for (int i = 0; i < transportArtifacts.artifacts.Length; i++)
                     {
-                        EditorGUI.indentLevel++;
+                        if (transportArtifacts.artifacts[i] == null)
+                            continue;
 
-                        EditorGUILayout.LabelField("Description", EditorStyles.boldLabel);
-                        EditorGUILayout.LabelField(transportArtifacts.artifacts[i].description, EditorStyles.wordWrappedLabel);
+                        string transportDirectory = Path.Combine(Path.Combine(Path.Combine(Application.dataPath, "MLAPI"), "OfficialTransports"), transportArtifacts.artifacts[i].id);
+                        bool isInstalled = Directory.Exists(transportDirectory) && Directory.GetFiles(transportDirectory).Length > 0;
 
-                        EditorGUILayout.LabelField("Credits", EditorStyles.boldLabel);
-                        EditorGUILayout.LabelField(transportArtifacts.artifacts[i].credits, EditorStyles.wordWrappedLabel);
+                        transportFoldoutStatus[i] = EditorGUILayout.Foldout(transportFoldoutStatus[i], transportArtifacts.artifacts[i].name + ((isInstalled) ? " - [Installed]" : ""));
 
-                        EditorGUILayout.LabelField("Platform Compatibility", EditorStyles.boldLabel);
-                        EditorGUILayout.LabelField(transportArtifacts.artifacts[i].platform_compatibility_description, EditorStyles.wordWrappedLabel);
-
-                        EditorGUILayout.LabelField("Licence", EditorStyles.boldLabel);
-                        EditorGUILayout.LabelField(transportArtifacts.artifacts[i].licence, EditorStyles.wordWrappedLabel);
-
-                        if (currentMLAPIVersion.MAJOR != (byte)transportArtifacts.artifacts[i].mlapi_major_version)
+                        if (transportFoldoutStatus[i])
                         {
-                            EditorGUILayout.Space();
-                            GUIStyle style = new GUIStyle(EditorStyles.wordWrappedLabel);
-                            style.normal.textColor = new Color(1f, 0f, 0f);
-                            EditorGUILayout.LabelField("The MLAPI version you have installed through the installer has a different major version from the transports major version. You have version v" + currentMLAPIVersion.ToString() + " while this transport targets version v" + transportArtifacts.artifacts[i].mlapi_major_version + ".x.x. This means there could potentially be compatibility issues, but its not guaranteed. If you have installed the MLAPI manually and have version v" + transportArtifacts.artifacts[i].mlapi_major_version + ".x.x you can ignore this message.", style);
-                            EditorGUILayout.Space();
-                        }
+                            EditorGUI.indentLevel++;
 
-                        if (transportArtifacts.artifacts[i].experimental)
-                        {
-                            EditorGUILayout.Space();
-                            GUIStyle style = new GUIStyle(EditorStyles.boldLabel);
-                            style.normal.textColor = new Color(1f, 0.5f, 0f);
-                            EditorGUILayout.LabelField("Experimental", style);
-                        }
-                        else
-                        {
-                            EditorGUILayout.Space();
-                            GUIStyle style = new GUIStyle(EditorStyles.boldLabel);
-                            style.normal.textColor = new Color(0f, 1f, 0f);
-                            EditorGUILayout.LabelField("Stable", style);
-                        }
+                            EditorGUILayout.LabelField("Description", EditorStyles.boldLabel);
+                            EditorGUILayout.LabelField(transportArtifacts.artifacts[i].description, EditorStyles.wordWrappedLabel);
 
-                        if (isInstalled)
-                        {
-                            GUIStyle boldStyle = new GUIStyle(EditorStyles.boldLabel);
-                            boldStyle.normal.textColor = new Color(0.3f, 1f, 0.3f);
-                            EditorGUILayout.LabelField("Installed", boldStyle);
+                            EditorGUILayout.LabelField("Credits", EditorStyles.boldLabel);
+                            EditorGUILayout.LabelField(transportArtifacts.artifacts[i].credits, EditorStyles.wordWrappedLabel);
 
-                            // This is installed
-                            if (GUILayout.Button("Reinstall Latest"))
+                            EditorGUILayout.LabelField("Platform Compatibility", EditorStyles.boldLabel);
+                            EditorGUILayout.LabelField(transportArtifacts.artifacts[i].platform_compatibility_description, EditorStyles.wordWrappedLabel);
+
+                            EditorGUILayout.LabelField("Licence", EditorStyles.boldLabel);
+                            EditorGUILayout.LabelField(transportArtifacts.artifacts[i].licence, EditorStyles.wordWrappedLabel);
+
+                            if (currentMLAPIVersion.MAJOR != (byte)transportArtifacts.artifacts[i].mlapi_major_version)
                             {
-                                EditorCoroutine.Start(InstallTransport(i));
+                                EditorGUILayout.Space();
+                                GUIStyle style = new GUIStyle(EditorStyles.wordWrappedLabel);
+                                style.normal.textColor = new Color(1f, 0f, 0f);
+                                EditorGUILayout.LabelField("The MLAPI version you have installed through the installer has a different major version from the transports major version. You have version v" + currentMLAPIVersion.ToString() + " while this transport targets version v" + transportArtifacts.artifacts[i].mlapi_major_version + ".x.x. This means there could potentially be compatibility issues, but its not guaranteed. If you have installed the MLAPI manually and have version v" + transportArtifacts.artifacts[i].mlapi_major_version + ".x.x you can ignore this message.", style);
+                                EditorGUILayout.Space();
                             }
 
-                            if (GUILayout.Button("Remove"))
+                            if (transportArtifacts.artifacts[i].experimental)
                             {
-                                Directory.Delete(transportDirectory, true);
+                                EditorGUILayout.Space();
+                                GUIStyle style = new GUIStyle(EditorStyles.boldLabel);
+                                style.normal.textColor = new Color(1f, 0.5f, 0f);
+                                EditorGUILayout.LabelField("Experimental", style);
+                            }
+                            else
+                            {
+                                EditorGUILayout.Space();
+                                GUIStyle style = new GUIStyle(EditorStyles.boldLabel);
+                                style.normal.textColor = new Color(0f, 1f, 0f);
+                                EditorGUILayout.LabelField("Stable", style);
+                            }
 
-                                string metaFileName = transportDirectory;
+                            if (isInstalled)
+                            {
+                                GUIStyle boldStyle = new GUIStyle(EditorStyles.boldLabel);
+                                boldStyle.normal.textColor = new Color(0.3f, 1f, 0.3f);
+                                EditorGUILayout.LabelField("Installed", boldStyle);
 
-                                if (metaFileName.EndsWith(Path.DirectorySeparatorChar.ToString()) ||
-                                    metaFileName.EndsWith(Path.AltDirectorySeparatorChar.ToString()))
+                                // This is installed
+                                if (GUILayout.Button("Reinstall Latest"))
                                 {
-                                    metaFileName = metaFileName.Substring(metaFileName.Length, metaFileName.Length - 1);
+                                    EditorCoroutine.Start(InstallTransport(i));
                                 }
 
-                                metaFileName += ".meta";
+                                if (GUILayout.Button("Remove"))
+                                {
+                                    Directory.Delete(transportDirectory, true);
 
-                                if (File.Exists(metaFileName))
-                                {
-                                    File.Delete(metaFileName);
-                                }
+                                    string metaFileName = transportDirectory;
 
-                                try
-                                {
-                                    AssetDatabase.Refresh();
-                                }
-                                catch (Exception e)
-                                {
-                                    Debug.LogError(e.ToString());
-                                    Debug.LogError(e.GetType().FullName);
+                                    if (metaFileName.EndsWith(Path.DirectorySeparatorChar.ToString()) ||
+                                        metaFileName.EndsWith(Path.AltDirectorySeparatorChar.ToString()))
+                                    {
+                                        metaFileName = metaFileName.Substring(metaFileName.Length, metaFileName.Length - 1);
+                                    }
+
+                                    metaFileName += ".meta";
+
+                                    if (File.Exists(metaFileName))
+                                    {
+                                        File.Delete(metaFileName);
+                                    }
+
+                                    try
+                                    {
+                                        AssetDatabase.Refresh();
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        Debug.LogError(e.ToString());
+                                        Debug.LogError(e.GetType().FullName);
+                                    }
                                 }
                             }
-                        }
-                        else
-                        {
-                            if (GUILayout.Button("Install Latest"))
+                            else
                             {
-                                EditorCoroutine.Start(InstallTransport(i));
+                                if (GUILayout.Button("Install Latest"))
+                                {
+                                    EditorCoroutine.Start(InstallTransport(i));
+                                }
                             }
-                        }
 
-                        EditorGUILayout.Space();
-                        EditorGUI.indentLevel--;
+                            EditorGUILayout.Space();
+                            EditorGUI.indentLevel--;
+                        }
                     }
                 }
             }
@@ -742,16 +757,24 @@ public class MLAPIEditor : EditorWindow
 
                     if (!useNet35 && !useNet45)
                     {
-                        Debug.LogError(("Could not download transport \"" + transportArtifacts.artifacts[index] + "\". There is no valid target for your platform."));
+                        Debug.LogError(("Could not download transport \"" + transportArtifacts.artifacts[index].name + "\". There is no valid target for your platform."));
                     }
 
                     foreach (ZipStorer.ZipFileEntry entry in dir)
                     {
-                        if ((useNet35 && entry.FilenameInZip.Contains("net35")) ||
-                            (useNet45 && entry.FilenameInZip.Contains("net45")))
+                        if (useNet35 && entry.FilenameInZip.Contains("net35"))
                         {
-                            string fileName = Path.GetFileName(entry.FilenameInZip);
-                            zip.ExtractFile(entry, Path.Combine(transportDirectory, fileName));
+                            int lastIndexOfNet35 = entry.FilenameInZip.LastIndexOf("net35", StringComparison.Ordinal);
+                            string fileSubPath = entry.FilenameInZip.Substring(lastIndexOfNet35, entry.FilenameInZip.Length - lastIndexOfNet35);
+
+                            zip.ExtractFile(entry, Path.Combine(transportDirectory, fileSubPath));
+                        }
+                        else if (useNet45 && entry.FilenameInZip.Contains("net45"))
+                        {
+                            int lastIndexOfNet45 = entry.FilenameInZip.LastIndexOf("net45", StringComparison.Ordinal);
+                            string fileSubPath = entry.FilenameInZip.Substring(lastIndexOfNet45, entry.FilenameInZip.Length - lastIndexOfNet45);
+
+                            zip.ExtractFile(entry, Path.Combine(transportDirectory, fileSubPath));
                         }
                     }
 
@@ -899,6 +922,18 @@ public class MLAPIEditor : EditorWindow
                     string decodedJson = Encoding.UTF8.GetString(Convert.FromBase64String(githubContent.content));
 
                     transportArtifacts = JsonUtility.FromJson<TransportArtifactDefinition>(decodedJson);
+
+                    if (transportArtifacts != null && transportArtifacts.breaking_version != COMPATIBLE_ARTIFACT_PATH_VERSION)
+                    {
+                        // Incompatbile
+                        transportArtifactIncompatble = true;
+                    }
+                    else
+                    {
+                        transportArtifactIncompatble = false;
+                    }
+
+                    forceRenderAtrifacts = false;
 
                     if (transportArtifacts == null)
                     {
