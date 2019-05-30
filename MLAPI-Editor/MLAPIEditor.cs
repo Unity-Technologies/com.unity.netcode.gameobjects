@@ -474,6 +474,11 @@ public class MLAPIEditor : EditorWindow
                                 boldStyle.normal.textColor = new Color(0.3f, 1f, 0.3f);
                                 EditorGUILayout.LabelField("Installed", boldStyle);
 
+                                if (EditorApplication.isUpdating || EditorApplication.isCompiling)
+                                {
+                                    GUI.enabled = false;
+                                }
+
                                 // This is installed
                                 if (GUILayout.Button("Reinstall Latest"))
                                 {
@@ -509,12 +514,27 @@ public class MLAPIEditor : EditorWindow
                                         Debug.LogError(e.GetType().FullName);
                                     }
                                 }
+
+                                if (EditorApplication.isUpdating || EditorApplication.isCompiling)
+                                {
+                                    GUI.enabled = true;
+                                }
                             }
                             else
                             {
+                                if (EditorApplication.isUpdating || EditorApplication.isCompiling)
+                                {
+                                    GUI.enabled = false;
+                                }
+
                                 if (GUILayout.Button("Install Latest"))
                                 {
                                     EditorCoroutine.Start(InstallTransport(i));
+                                }
+
+                                if (EditorApplication.isUpdating || EditorApplication.isCompiling)
+                                {
+                                    GUI.enabled = true;
                                 }
                             }
 
