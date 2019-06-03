@@ -1158,6 +1158,9 @@ namespace MLAPI
                             writer.WriteUInt64Packed(ConnectedClients[clientId].PlayerObject.GetComponent<NetworkedObject>().NetworkId);
                             writer.WriteUInt64Packed(clientId);
 
+                            //Does not have a parrent
+                            writer.WriteBool(false);
+
                             if (NetworkConfig.UsePrefabSync)
                             {
                                 writer.WriteUInt64Packed(prefabHash == null ? NetworkConfig.PlayerPrefabHash : prefabHash.Value);
