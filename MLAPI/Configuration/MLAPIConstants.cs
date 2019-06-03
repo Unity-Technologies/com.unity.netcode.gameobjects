@@ -5,7 +5,7 @@
     /// </summary>
     internal static class MLAPIConstants
     {
-        internal const string MLAPI_PROTOCOL_VERSION = "9.0.0";
+        internal const string MLAPI_PROTOCOL_VERSION = "10.7.0";
 
         internal const byte MLAPI_CERTIFICATE_HAIL = 0;
         internal const byte MLAPI_CERTIFICATE_HAIL_RESPONSE = 1;
@@ -27,8 +27,9 @@
         internal const byte MLAPI_CLIENT_RPC = 17;
         internal const byte MLAPI_CLIENT_RPC_REQUEST = 18;
         internal const byte MLAPI_CLIENT_RPC_RESPONSE = 19;
-        internal const byte MLAPI_CUSTOM_MESSAGE = 20;
+        internal const byte MLAPI_UNNAMED_MESSAGE = 20;
         internal const byte MLAPI_DESTROY_OBJECTS = 21;
+        internal const byte MLAPI_NAMED_MESSAGE = 22;
         internal const byte INVALID = 32;
 
         internal static readonly string[] MESSAGE_NAMES = {
@@ -52,9 +53,9 @@
             "MLAPI_CLIENT_RPC",
             "MLAPI_CLIENT_RPC_REQUEST",
             "MLAPI_CLIENT_RPC_RESPONSE",
-            "MLAPI_CUSTOM_MESSAGE",
+            "MLAPI_UNNAMED_MESSAGE",
             "MLAPI_DESTROY_OBJECTS",
-            "",
+            "MLAPI_NAMED_MESSAGE",
             "",
             "",
             "",

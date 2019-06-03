@@ -3,7 +3,7 @@ title: Messaging System
 permalink: /wiki/messaging-system/
 ---
 
-The MLAPI has two parts to it's messaging system. RPC messages and Custom Messages.
+The MLAPI has two parts to it's messaging system. RPC messages and Custom Messages. Both types have sub types that change their behaviour, functionaliy and performance.
 
 ### RPC Messages
 RPC messages are the most common and easy to use type of message. There are two types of RPC messages. ServerRPC and ClientRPC. ServerRPC methods are invoked by clients (or host if there is no dedicated server) and runs on the Server and ClientRPC methods are invoked by the server but ran on one or more clients.
@@ -163,14 +163,19 @@ When the server has a local client (Host), ServerRPC's can be executed by that c
 ClientRPC's function the same way. When they are invoked, they are also invoked on the Host. This allows you to write the same code for the host and normal players.
 
 ### Custom Messages
-If you don't want to use the MLAPI's messaging. You don't have to. You can use a thin layer called "Custom Messages" (these can be used in combinaton with RPC messages aswell). Custom messages allows you to implement your own behaviour and add custom targeting etc.
+If you don't want to use the MLAPI's messaging. You don't have to. You can use a thin layer called "Custom Messages" (these can be used in combinaton with RPC messages aswell). Custom messages allows you to implement your own behaviour and add custom targeting etc. Custom messages are messages unbound to any game object.
 
-#### Usage
+Custom messages comes in two forms, named and unnamed. Unnamed messages can be though of as a single sending channel. A message sent has one receive handler, this is useful for building your own custom messaging **system**. If you want a completed messaging system, you can use named messages. The receiver registers one listen handler for each message type, and the sender can choose what type to send.
+
+
+#### Unnamed Messages
+
+##### Usage
 ```csharp
 private void Start()
 {
     //Receiving
-    NetworkingManager.Singleton.OnIncommingCustomMessage += ((clientId, stream) =>
+    CustomMessagingManager.OnUnnamedMessage += ((senderClientId, stream) =>
     {
         using (PooledBitReader reader = PooledBitReader.Get(stream))
         {
@@ -179,6 +184,26 @@ private void Start()
     });
 
     //Sending
-    NetworkingManager.Singleton.SendCustomMessage(clientId, myStream, "myCustomChannel"); //Channel is optional.
+    CustomMessagingManager.SendUnnamedMessage(clientId, myStream, "myCustomChannel"); //Channel is optional.
+}
+```
+
+#### Named Messages
+
+##### Usage
+```csharp
+private void Start()
+{
+    //Receiving
+    CustomMessagingManagerRegisterNamedMessageHandler("myMessageName", (senderClientId, stream)
+    {
+        using (PooledBitReader reader = PooledBitReader.Get(stream))
+        {
+            string message = reader.ReadString(); //Example
+        }
+    });
+
+    //Sending
+    CustomMessagingManager.SendNamedMessage("myMessageName", clientId, myStream, "myCustomChannel"); //Channel is optional.
 }
 ```

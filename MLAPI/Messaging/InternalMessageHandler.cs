@@ -660,10 +660,19 @@ namespace MLAPI.Messaging
             }
         }
         
-        internal static void HandleCustomMessage(ulong clientId, Stream stream)
+        internal static void HandleUnnamedMessage(ulong clientId, Stream stream)
         {
-            NetworkingManager.Singleton.InvokeOnIncomingCustomMessage(clientId, stream);
+            CustomMessagingManager.InvokeUnnamedMessage(clientId, stream);
         }
 
+        internal static void HandleNamedMessage(ulong clientId, Stream stream)
+        {
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
+            {
+                ulong hash = reader.ReadUInt64Packed();
+
+                CustomMessagingManager.InvokeNamedMessage(hash, clientId, stream);
+            }
+        }
     }
 }

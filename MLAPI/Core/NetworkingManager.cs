@@ -22,6 +22,8 @@ using MLAPI.Messaging;
 using MLAPI.SceneManagement;
 using MLAPI.Serialization.Pooled;
 using MLAPI.Spawning;
+using static MLAPI.Messaging.NamedMessageManager;
+using static MLAPI.Messaging.CustomMessagingManager;
 
 namespace MLAPI
 {
@@ -175,16 +177,8 @@ namespace MLAPI
         /// </summary>
         [HideInInspector]
         public NetworkConfig NetworkConfig;
-        /// <summary>
-        /// Delegate used for incoming custom messages
-        /// </summary>
-        /// <param name="clientId">The clientId that sent the message</param>
-        /// <param name="stream">The stream containing the message data</param>
-        public delegate void CustomMessageDelegete(ulong clientId, Stream stream);
-        /// <summary>
-        /// Event invoked when custom messages arrive
-        /// </summary>
-        public event CustomMessageDelegete OnIncomingCustomMessage;
+        [Obsolete("Use OnUnnamedMessage instead")]
+        public event UnnamedMessageDelegate OnIncomingCustomMessage;
         /// <summary>
         /// The current hostname we are connected to, used to validate certificate
         /// </summary>
@@ -194,49 +188,55 @@ namespace MLAPI
 
         internal void InvokeOnIncomingCustomMessage(ulong clientId, Stream stream)
         {
-            if (OnIncomingCustomMessage != null) OnIncomingCustomMessage(clientId, stream);
+            if (OnIncomingCustomMessage != null)
+            {
+                OnIncomingCustomMessage(clientId, stream);
+            }
         }
 
         /// <summary>
-        /// Sends custom message to a list of clients
+        /// Sends unnamed message to a list of clients
         /// </summary>
         /// <param name="clientIds">The clients to send to, sends to everyone if null</param>
         /// <param name="stream">The message stream containing the data</param>
         /// <param name="channel">The channel to send the data on</param>
         /// <param name="security">The security settings to apply to the message</param>
+        [Obsolete("Use CustomMessagingManager.SendUnnamedMessage instead")]
         public void SendCustomMessage(List<ulong> clientIds, BitStream stream, string channel = null, SecuritySendFlags security = SecuritySendFlags.None)
         {
             if (!IsServer)
             {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogWarning("Can not send custom message to multiple users as a client");
+                if (LogHelper.CurrentLogLevel <= LogLevel.Error)
+                    LogHelper.LogWarning("Can not send unnamed message to multiple users as a client");
                 return;
             }
             if (clientIds == null)
             {
                 for (int i = 0; i < ConnectedClientsList.Count; i++)
                 {
-                    InternalMessageSender.Send(ConnectedClientsList[i].ClientId, MLAPIConstants.MLAPI_CUSTOM_MESSAGE, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security, null);
+                    InternalMessageSender.Send(ConnectedClientsList[i].ClientId, MLAPIConstants.MLAPI_UNNAMED_MESSAGE, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security, null);
                 }
             }
             else
             {
                 for (int i = 0; i < clientIds.Count; i++)
                 {
-                    InternalMessageSender.Send(clientIds[i], MLAPIConstants.MLAPI_CUSTOM_MESSAGE, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security, null);
+                    InternalMessageSender.Send(clientIds[i], MLAPIConstants.MLAPI_UNNAMED_MESSAGE, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security, null);
                 }
             }
         }
 
         /// <summary>
-        /// Sends a custom message to a specific client
+        /// Sends a unnamed message to a specific client
         /// </summary>
         /// <param name="clientId">The client to send the message to</param>
         /// <param name="stream">The message stream containing the data</param>
         /// <param name="channel">The channel tos end the data on</param>
         /// <param name="security">The security settings to apply to the message</param>
+        [Obsolete("Use CustomMessagingManager.SendUnnamedMessage instead")]
         public void SendCustomMessage(ulong clientId, BitStream stream, string channel = null, SecuritySendFlags security = SecuritySendFlags.None)
         {
-            InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_CUSTOM_MESSAGE, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security, null);
+            InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_UNNAMED_MESSAGE, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security, null);
         }
 
         private void OnValidate()
@@ -900,8 +900,11 @@ namespace MLAPI
                         case MLAPIConstants.MLAPI_CLIENT_RPC_RESPONSE:
                             if (IsServer) InternalMessageHandler.HandleClientRPCResponse(clientId, messageStream);
                             break;
-                        case MLAPIConstants.MLAPI_CUSTOM_MESSAGE:
-                            InternalMessageHandler.HandleCustomMessage(clientId, messageStream);
+                        case MLAPIConstants.MLAPI_UNNAMED_MESSAGE:
+                            InternalMessageHandler.HandleUnnamedMessage(clientId, messageStream);
+                            break;
+                        case MLAPIConstants.MLAPI_NAMED_MESSAGE:
+                            InternalMessageHandler.HandleNamedMessage(clientId, messageStream);
                             break;
 #if !DISABLE_CRYPTOGRAPHY
                         case MLAPIConstants.MLAPI_CERTIFICATE_HAIL:
