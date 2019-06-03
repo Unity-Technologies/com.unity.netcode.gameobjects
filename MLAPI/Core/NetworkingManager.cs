@@ -22,7 +22,6 @@ using MLAPI.Messaging;
 using MLAPI.SceneManagement;
 using MLAPI.Serialization.Pooled;
 using MLAPI.Spawning;
-using static MLAPI.Messaging.NamedMessageManager;
 using static MLAPI.Messaging.CustomMessagingManager;
 
 namespace MLAPI
