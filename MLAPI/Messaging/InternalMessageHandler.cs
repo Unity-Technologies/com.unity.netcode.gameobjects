@@ -577,8 +577,6 @@ namespace MLAPI.Messaging
                 if (ResponseMessageManager.ContainsKey(responseId))
                 {
                     RpcResponseBase responseBase = ResponseMessageManager.GetByKey(responseId);
-
-                    if (responseBase.ClientId != clientId) return;
                     
                     ResponseMessageManager.Remove(responseId);
                     
