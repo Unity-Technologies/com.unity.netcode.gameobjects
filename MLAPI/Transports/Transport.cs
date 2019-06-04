@@ -15,6 +15,13 @@ namespace MLAPI.Transports
         public abstract ulong ServerClientId { get; }
 
         /// <summary>
+        /// Gets a value indicating whether this <see cref="T:MLAPI.Transports.Transport"/> is supported in the current runtime context.
+        /// This is used by multiplex adapters.
+        /// </summary>
+        /// <value><c>true</c> if is supported; otherwise, <c>false</c>.</value>
+        public virtual bool IsSupported => true;
+
+        /// <summary>
         /// The channels the MLAPI will use when sending internal messages.
         /// </summary>
         public static TransportChannel[] MLAPI_CHANNELS = new TransportChannel[]
