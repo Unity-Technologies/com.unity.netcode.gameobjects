@@ -3,13 +3,13 @@ title: Messaging System
 permalink: /wiki/messaging-system/
 ---
 
-The MLAPI has two parts to it's messaging system. RPC messages and Custom Messages. Both types have sub types that change their behaviour, functionaliy and performance.
+The MLAPI has two parts to it's messaging system. RPC messages and Custom Messages. Both types have sub types that change their behaviour, functionality and performance.
 
 ### RPC Messages
 RPC messages are the most common and easy to use type of message. There are two types of RPC messages. ServerRPC and ClientRPC. ServerRPC methods are invoked by clients (or host if there is no dedicated server) and runs on the Server and ClientRPC methods are invoked by the server but ran on one or more clients.
 
 #### Modes
-The RPC methods can be used in two "modes". One is a performance mode where the code is a bit larger but it offers better performance. The other mode is the convenience mode. **The only difference between the two is that the convenience mode boxes all the values on the sender and receiver. If you don't know what that means, use the convenience mode otherwise you are most likley wasting your time.** The performance mode is designed for 100% performance as the MLAPI's goal is to be a general purpose networking library that is not to limit the games capabilities.
+The RPC methods can be used in two "modes". One is a performance mode where the code is a bit larger but it offers better performance. The other mode is the convenience mode. **The only difference between the two is that the convenience mode boxes all the values on the sender and receiver. If you don't know what that means, use the convenience mode otherwise you are most likely wasting your time.** The performance mode is designed for 100% performance as the MLAPI's goal is to be a general purpose networking library that is not to limit the games capabilities.
 
 #### Ownership Checking
 By default, ServerRPC's can only be called if the local client owns the object the ServerRPC sits on. This can be disabled like this:
@@ -163,9 +163,9 @@ When the server has a local client (Host), ServerRPC's can be executed by that c
 ClientRPC's function the same way. When they are invoked, they are also invoked on the Host. This allows you to write the same code for the host and normal players.
 
 ### Custom Messages
-If you don't want to use the MLAPI's messaging. You don't have to. You can use a thin layer called "Custom Messages" (these can be used in combinaton with RPC messages aswell). Custom messages allows you to implement your own behaviour and add custom targeting etc. Custom messages are messages unbound to any game object.
+If you don't want to use the MLAPI's messaging. You don't have to. You can use a thin layer called "Custom Messages" (these can be used in combination with RPC messages as well). Custom messages allows you to implement your own behaviour and add custom targeting etc. Custom messages are messages unbound to any game object.
 
-Custom messages comes in two forms, named and unnamed. Unnamed messages can be though of as a single sending channel. A message sent has one receive handler, this is useful for building your own custom messaging **system**. If you want a completed messaging system, you can use named messages. The receiver registers one listen handler for each message type, and the sender can choose what type to send.
+Custom messages comes in two forms, named and unnamed. Unnamed messages can be thought of as a single sending channel. A message sent has one receive handler, this is useful for building your own custom messaging **system**. If you want a completed messaging system, you can use named messages. The receiver registers one listen handler for each message type, and the sender can choose what type to send.
 
 
 #### Unnamed Messages
@@ -195,11 +195,12 @@ private void Start()
 private void Start()
 {
     //Receiving
-    CustomMessagingManagerRegisterNamedMessageHandler("myMessageName", (senderClientId, stream)
+    CustomMessagingManager.RegisterNamedMessageHandler("myMessageName", (senderClientId, stream)
     {
         using (PooledBitReader reader = PooledBitReader.Get(stream))
         {
-            string message = reader.ReadString(); //Example
+            StringBuilder stringBuilder = reader.ReadString(); //Example
+            string message = stringBuilder.ToString();
         }
     });
 
