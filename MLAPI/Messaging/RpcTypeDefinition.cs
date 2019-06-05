@@ -52,7 +52,7 @@ namespace MLAPI.Messaging
 
             while (type != null && type != limitType)
             {
-                list.AddRange(type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly));
+                list.AddRange(type.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly | BindingFlags.Static));
 
                 type = type.BaseType;
             }
