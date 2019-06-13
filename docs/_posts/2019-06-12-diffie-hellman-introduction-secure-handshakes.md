@@ -79,7 +79,7 @@ public class Client
 
 ```
 
-But diffie hellman is not perfect, it can be attacked with a **M**an **I**n **T**he **M**iddle attack. A MITM attack is an attack where there is a party in the middle that is **actively** intercepting. Let's show how that would actually look when the evil attacker can intercept all messages. In this example the attacker gets all the traffic instead of the desired party.
+But Diffie Hellman is not perfect, it can be attacked with a **M**an **I**n **T**he **M**iddle attack. A MITM attack is an attack where there is a party in the middle that is **actively** intercepting. Let's show how that would actually look when the evil attacker can intercept all messages. In this example the attacker gets all the traffic instead of the desired party.
 
 ##### MITM Example
 ```csharp
@@ -138,18 +138,18 @@ Now that we can see what a MITM attack can do. How can we avoid it? This is wher
 Now let's look at common use cases for asymmetric encryption. There are two main usages, **encryption** and **signing**. But before we explain them, let's talk about how the keys are used. Usually, you make one of the keys your "private key", and the other one your "public key". That means that you keep one key for yourself while you tell everyone about your public key. Let's see what you can do using that setup.
 
 ##### Signing
-Signing is a way where you want to prove that you sent a message, but not have the message be secret. To do this, you encrypt the message with your private key. This means that anyone with the public key can decrypt it. But it also means that since only you have the private key, no one else could have sent it. This is called signing.
+Signing is used when you want to prove that you sent a message, but not have the message be secret. To do this, you encrypt the message with your private key. This means that anyone with the public key can decrypt it. But it also means that since only you have the private key, no one else could have sent it. This is called signing.
 
 ##### Encryption
-Encryption is the second common operation. If another party wants to send something encrypted to me. They could simply encrypt with my public key, which would mean that only I can read it.
+Encryption is the second common operation. If another party wants to send something encrypted to me, they could simply encrypt it with my public key, which would mean that only I can read it.
 
 These two operations can also be combined to ensure that only the receiver can read the message while also proving the sender.
 
 ### Protecting Against MITM Attacks
-Let's see how we can use these to secure a key exchange from MITM attacks. At first, you hard code the public key of the servers in all your clients, while only the server has the private key. When the server then sends its diffie hellman public part. It also includes the same public part but encrypted using its private key. On the client, it will read the public part, but before trusting it, it will decrypt the encrypted version with the servers public key and ensure the two are the same. Then, before the client sends its public part. It will encrypt it with the servers public key, meaning only the server can read it.  This prevents MITM attacks.
+Let's see how we can use these to secure a key exchange from MITM attacks. At first, you hard code the public key of the server in all your clients, while only the server has the private key. When the server then sends its Diffie Hellman public part, it also includes the same public part but encrypted using its private key. On the client, it will read the public part, but before trusting it, it will decrypt the encrypted version with the servers public key and ensure the two are the same. Then, before the client sends its public part, it will encrypt it with the servers public key, meaning that only the server can read it. This prevents MITM attacks.
 
 ### Certificates
-Instead of distributing the public key in the client. You would usually want to use certificates. Every modern operating system has a list of **C**ertificate **A**uthorities that it trusts. These are companies that issue certificates, a certificate is just a public-private key pair generated and signed by the CA. This means that if you say own the domain "example.com", you could get a certificate from a CA, which includes the key-pair and also says that those pairs are ONLY valid for the domain "example.com". This allows some neat things. Instead of now hard coding the server public key in the clients. When the client connects it will remember the domain used, after connecting. The first thing the server will do is to send its certificate (with the private key removed). The client will then look at the certificate, see who issued it and make sure that the operating system trusts that CA. If it does, it will also make sure that the correct domain it was issued for was the one it used to connect, this is to ensure that the server does not send someone else's certificate.
+Instead of distributing the public key in the client, you would usually want to use certificates. Every modern operating system has a list of **C**ertificate **A**uthorities that it trusts. These are companies that issue certificates, a certificate is just a public-private key pair generated and signed by the CA. This means that if you say own the domain "example.com", you could get a certificate from a CA, which includes the key-pair and also says that those pairs are ONLY valid for the domain "example.com". This allows some neat things. Instead of now hard coding the server public key in the clients. When the client connects it will remember the domain used, after connecting. The first thing the server will do is to send its certificate (with the private key removed). The client will then look at the certificate, see who issued it and make sure that the operating system trusts that CA. If it does, it will also make sure that the correct domain it was issued for was the one it used to connect, this is to ensure that the server does not send someone else's certificate.
 
 I hope this has helped you understand modern cryptography and how it can be used.
 
