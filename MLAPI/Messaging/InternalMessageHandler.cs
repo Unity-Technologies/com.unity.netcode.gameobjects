@@ -38,7 +38,7 @@ namespace MLAPI.Messaging
                         {
                             // The certificate is not valid :(
                             // Man in the middle.
-                            if (LogHelper.CurrentLogLevel <= LogLevel.Normal) if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid certificate. Disconnecting");
+                            if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid certificate. Disconnecting");
                             NetworkingManager.Singleton.StopClient();
                             return;
                         }
@@ -55,21 +55,61 @@ namespace MLAPI.Messaging
                     // Verify the key exchange
                     if (NetworkingManager.Singleton.NetworkConfig.SignKeyExchange)
                     {
+                        int signatureType = reader.ReadByte();
+
                         byte[] serverDiffieHellmanPublicPartSignature = reader.ReadByteArray();
 
-                        RSACryptoServiceProvider rsa = certificate.PublicKey.Key as RSACryptoServiceProvider;
-
-                        if (rsa != null)
+                        if (signatureType == 0)
                         {
-                            using (SHA256Managed sha = new SHA256Managed())
+                            RSACryptoServiceProvider rsa = certificate.PublicKey.Key as RSACryptoServiceProvider;
+
+                            if (rsa != null)
                             {
-                                if (!rsa.VerifyData(serverDiffieHellmanPublicPart, sha, serverDiffieHellmanPublicPartSignature))
+                                using (SHA256Managed sha = new SHA256Managed())
                                 {
-                                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid signature. Disconnecting");
-                                    NetworkingManager.Singleton.StopClient();
-                                    return;
-                                }   
+                                    if (!rsa.VerifyData(serverDiffieHellmanPublicPart, sha, serverDiffieHellmanPublicPartSignature))
+                                    {
+                                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid RSA signature. Disconnecting");
+                                        NetworkingManager.Singleton.StopClient();
+                                        return;
+                                    }
+                                }
                             }
+                            else
+                            {
+                                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("No RSA key found in certificate. Disconnecting");
+                                NetworkingManager.Singleton.StopClient();
+                                return;
+                            }
+                        }
+                        else if (signatureType == 1)
+                        {
+                            DSACryptoServiceProvider dsa = certificate.PublicKey.Key as DSACryptoServiceProvider;
+
+                            if (dsa != null)
+                            {
+                                using (SHA256Managed sha = new SHA256Managed())
+                                {
+                                    if (!dsa.VerifyData(sha.ComputeHash(serverDiffieHellmanPublicPart), serverDiffieHellmanPublicPartSignature))
+                                    {
+                                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid DSA signature. Disconnecting");
+                                        NetworkingManager.Singleton.StopClient();
+                                        return;
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("No DSA key found in certificate. Disconnecting");
+                                NetworkingManager.Singleton.StopClient();
+                                return;
+                            }
+                        }
+                        else
+                        {
+                            if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid signature type. Disconnecting");
+                            NetworkingManager.Singleton.StopClient();
+                            return;
                         }
                     }
                 }
@@ -86,24 +126,9 @@ namespace MLAPI.Messaging
                         NetworkingManager.Singleton.clientAesKey = diffieHellman.GetSharedSecret(serverDiffieHellmanPublicPart);
                         byte[] diffieHellmanPublicKey = diffieHellman.GetPublicKey();
                         writer.WriteByteArray(diffieHellmanPublicKey);
-                        if (NetworkingManager.Singleton.NetworkConfig.SignKeyExchange)
-                        {
-                            RSACryptoServiceProvider rsa = certificate.PublicKey.Key as RSACryptoServiceProvider;
-
-                            if (rsa != null)
-                            {
-                                using (SHA256CryptoServiceProvider sha = new SHA256CryptoServiceProvider())
-                                {
-                                    writer.WriteByteArray(rsa.Encrypt(sha.ComputeHash(diffieHellmanPublicKey), false));   
-                                }
-                            }
-                            else
-                            {
-                                throw new CryptographicException("[MLAPI] Only RSA certificates are supported. No valid RSA key was found");
-                            }
-                        }
                     }
                 }
+
                 // Send HailResponse
                 InternalMessageSender.Send(NetworkingManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_CERTIFICATE_HAIL_RESPONSE, "MLAPI_INTERNAL", outStream, SecuritySendFlags.None, null, true);
             }
@@ -121,33 +146,6 @@ namespace MLAPI.Messaging
                 {
                     byte[] diffieHellmanPublic = reader.ReadByteArray();
                     NetworkingManager.Singleton.PendingClients[clientId].AesKey = NetworkingManager.Singleton.PendingClients[clientId].KeyExchange.GetSharedSecret(diffieHellmanPublic);
-                    if (NetworkingManager.Singleton.NetworkConfig.SignKeyExchange)
-                    {
-                        byte[] diffieHellmanPublicSignature = reader.ReadByteArray();
-                        X509Certificate2 certificate = NetworkingManager.Singleton.NetworkConfig.ServerX509Certificate;
-                        RSACryptoServiceProvider rsa = certificate.PrivateKey as RSACryptoServiceProvider;
-
-                        if (rsa != null)
-                        {
-                            using (SHA256Managed sha = new SHA256Managed())
-                            {
-                                byte[] clientHash = rsa.Decrypt(diffieHellmanPublicSignature, false);
-                                byte[] serverHash = sha.ComputeHash(diffieHellmanPublic);
-                                
-                                if (!CryptographyHelper.ConstTimeArrayEqual(clientHash, serverHash))
-                                {
-                                    //Man in the middle.
-                                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Signature doesnt match for the key exchange public part. Disconnecting");
-                                    NetworkingManager.Singleton.DisconnectClient(clientId);
-                                    return;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            throw new CryptographicException("[MLAPI] Only RSA certificates are supported. No valid RSA key was found");
-                        }
-                    }
                 }
             }
 
@@ -161,6 +159,7 @@ namespace MLAPI.Messaging
                 {
                     writer.WriteInt64Packed(DateTime.Now.Ticks); // This serves no purpose.
                 }
+
                 InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_GREETINGS, "MLAPI_INTERNAL", outStream, SecuritySendFlags.None, null, true);
             }
         }

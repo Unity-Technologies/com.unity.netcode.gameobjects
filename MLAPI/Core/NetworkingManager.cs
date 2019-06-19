@@ -652,18 +652,33 @@ namespace MLAPI
                                                     // Write public part signature (signed by certificate private)
                                                     X509Certificate2 certificate = NetworkConfig.ServerX509Certificate;
                                                     if (!certificate.HasPrivateKey) throw new CryptographicException("[MLAPI] No private key was found in server certificate. Unable to sign key exchange");
+
                                                     RSACryptoServiceProvider rsa = certificate.PrivateKey as RSACryptoServiceProvider;
+                                                    DSACryptoServiceProvider dsa = certificate.PrivateKey as DSACryptoServiceProvider;
 
                                                     if (rsa != null)
                                                     {
+                                                        // RSA is 0
+                                                        hailWriter.WriteByte(0);
+
                                                         using (SHA256Managed sha = new SHA256Managed())
                                                         {
                                                             hailWriter.WriteByteArray(rsa.SignData(diffieHellmanPublicPart, sha));
                                                         }
                                                     }
+                                                    else if (dsa != null)
+                                                    {
+                                                        // DSA is 1
+                                                        hailWriter.WriteByte(1);
+
+                                                        using (SHA256Managed sha = new SHA256Managed())
+                                                        {
+                                                            hailWriter.WriteByteArray(dsa.SignData(sha.ComputeHash(diffieHellmanPublicPart)));
+                                                        }
+                                                    }
                                                     else
                                                     {
-                                                        throw new CryptographicException("[MLAPI] Only RSA certificates are supported. No valid RSA key was found");
+                                                        throw new CryptographicException("[MLAPI] Only RSA and DSA certificates are supported. No valid RSA or DSA key was found");
                                                     }
                                                 }
                                             }
