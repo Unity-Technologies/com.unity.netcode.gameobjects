@@ -43,6 +43,8 @@ namespace MLAPI.Transports.Multiplex
 
         private byte _lastProcessedTransportIndex;
 
+        public override bool IsSupported => true;
+
         public override void DisconnectLocalClient()
         {
             Transports[GetFirstSupportedTransportIndex()].DisconnectLocalClient();
@@ -80,33 +82,46 @@ namespace MLAPI.Transports.Multiplex
             }
         }
 
-        public override NetEventType PollEvent(out ulong clientId, out string channelName, out ArraySegment<byte> payload)
+        public override NetEventType PollEvent(out ulong clientId, out string channelName, out ArraySegment<byte> payload, out float receiveTime)
         {
-            if (_lastProcessedTransportIndex > Transports.Length)
+            if (_lastProcessedTransportIndex >= Transports.Length - 1)
                 _lastProcessedTransportIndex = 0;
 
             for (byte i = _lastProcessedTransportIndex; i < Transports.Length; i++)
             {
+                _lastProcessedTransportIndex = i;
+
                 if (Transports[i].IsSupported)
                 {
-                    _lastProcessedTransportIndex = i;
+                    NetEventType @eventType = Transports[i].PollEvent(out ulong connectionId, out channelName, out payload, out receiveTime);
 
-                    return Transports[i].PollEvent(out clientId, out channelName, out payload);
+                    if (@eventType != NetEventType.Nothing)
+                    {
+                        clientId = GetMLAPIClientId(i, connectionId, false);
+
+                        return @eventType;
+                    }
                 }
             }
 
             clientId = 0;
             channelName = null;
             payload = new ArraySegment<byte>();
+            receiveTime = 0;
 
             return NetEventType.Nothing;
+        }
+
+        public override NetEventType PollEvent(out ulong clientId, out string channelName, out ArraySegment<byte> payload)
+        {
+            return PollEvent(out clientId, out channelName, out payload, out float _);
         }
 
         public override void Send(ulong clientId, ArraySegment<byte> data, string channelName, bool skipQueue)
         {
             GetMultiplexTransportDetails(clientId, out byte transportId, out ulong connectionId);
 
-            Transports[transportId].Send(clientId, data, channelName, skipQueue);
+            Transports[transportId].Send(connectionId, data, channelName, skipQueue);
         }
 
         public override void Shutdown()
@@ -151,9 +166,6 @@ namespace MLAPI.Transports.Multiplex
             }
             else
             {
-                // 0 Is reserved.
-                connectionId += 1;
-
                 switch (SpreadMethod)
                 {
                     case ConnectionIdSpreadMethod.ReplaceFirstBits:
@@ -167,7 +179,7 @@ namespace MLAPI.Transports.Multiplex
                             // Place transportId there
                             ulong shiftedTransportId = (ulong)transportId << ((sizeof(ulong) * 8) - bits);
 
-                            return clientId | shiftedTransportId;
+                            return (clientId | shiftedTransportId) + 1;
                         }
                     case ConnectionIdSpreadMethod.MakeRoomFirstBits:
                         {
@@ -180,7 +192,7 @@ namespace MLAPI.Transports.Multiplex
                             // Place transportId there
                             ulong shiftedTransportId = (ulong)transportId << ((sizeof(ulong) * 8) - bits);
 
-                            return clientId | shiftedTransportId;
+                            return (clientId | shiftedTransportId) + 1;
                         }
                     case ConnectionIdSpreadMethod.ReplaceLastBits:
                         {
@@ -191,7 +203,7 @@ namespace MLAPI.Transports.Multiplex
                             ulong clientId = ((connectionId >> bits) << bits);
 
                             // Return the transport inserted at the end
-                            return clientId | transportId;
+                            return (clientId | transportId) + 1;
                         }
                     case ConnectionIdSpreadMethod.MakeRoomLastBits:
                         {
@@ -202,11 +214,11 @@ namespace MLAPI.Transports.Multiplex
                             ulong clientId = (connectionId << bits);
 
                             // Return the transport inserted at the end
-                            return clientId | transportId;
+                            return (clientId | transportId) + 1;
                         }
                     case ConnectionIdSpreadMethod.Spread:
                         {
-                            return connectionId * (ulong)Transports.Length + (ulong)transportId;
+                            return (connectionId * (ulong)Transports.Length + (ulong)transportId) + 1;
                         }
                     default:
                         {
@@ -229,44 +241,59 @@ namespace MLAPI.Transports.Multiplex
                 {
                     case ConnectionIdSpreadMethod.ReplaceFirstBits:
                         {
+                            // The first clientId is reserved. Thus every clientId is always offset by 1
+                            clientId--;
+
                             // Calculate bits to store transportId
                             byte bits = (byte)UnityEngine.Mathf.CeilToInt(UnityEngine.Mathf.Log(Transports.Length, 2));
 
                             transportId = (byte)(clientId >> ((sizeof(ulong) * 8) - bits));
-                            connectionId = ((clientId << bits) >> bits) + 1;
+                            connectionId = ((clientId << bits) >> bits);
                             break;
                         }
                     case ConnectionIdSpreadMethod.MakeRoomFirstBits:
                         {
+                            // The first clientId is reserved. Thus every clientId is always offset by 1
+                            clientId--;
+
                             // Calculate bits to store transportId
                             byte bits = (byte)UnityEngine.Mathf.CeilToInt(UnityEngine.Mathf.Log(Transports.Length, 2));
 
                             transportId = (byte)(clientId >> ((sizeof(ulong) * 8) - bits));
-                            connectionId = (clientId << bits) + 1;
+                            connectionId = (clientId << bits);
                             break;
                         }
                     case ConnectionIdSpreadMethod.ReplaceLastBits:
                         {
+                            // The first clientId is reserved. Thus every clientId is always offset by 1
+                            clientId--;
+
                             // Calculate bits to store transportId
                             byte bits = (byte)UnityEngine.Mathf.CeilToInt(UnityEngine.Mathf.Log(Transports.Length, 2));
 
                             transportId = (byte)((clientId << ((sizeof(ulong) * 8) - bits)) >> ((sizeof(ulong) * 8) - bits));
-                            connectionId = ((clientId >> bits) << bits) + 1;
+                            connectionId = ((clientId >> bits) << bits);
                             break;
                         }
                     case ConnectionIdSpreadMethod.MakeRoomLastBits:
                         {
+                            // The first clientId is reserved. Thus every clientId is always offset by 1
+                            clientId--;
+
                             // Calculate bits to store transportId
                             byte bits = (byte)UnityEngine.Mathf.CeilToInt(UnityEngine.Mathf.Log(Transports.Length, 2));
 
                             transportId = (byte)((clientId << ((sizeof(ulong) * 8) - bits)) >> ((sizeof(ulong) * 8) - bits));
-                            connectionId = (clientId >> bits) + 1;
+                            connectionId = (clientId >> bits);
                             break;
                         }
                     case ConnectionIdSpreadMethod.Spread:
                         {
+                            // The first clientId is reserved. Thus every clientId is always offset by 1
+                            clientId--;
+
                             transportId = (byte)(clientId % (ulong)Transports.Length);
-                            connectionId = (clientId / (ulong)Transports.Length) + 1;
+                            connectionId = (clientId / (ulong)Transports.Length);
                             break;
                         }
                     default:
