@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using MLAPI.Collections;
@@ -91,7 +91,7 @@ namespace MLAPI.Profiling
             CurrentTick = null; //leave to GC
             IsRunning = false;
 
-            return iteration; 
+            return iteration;
         }
 
         internal static void StartTick(TickType type)
@@ -120,15 +120,15 @@ namespace MLAPI.Profiling
                 return;
             CurrentTick = null;
         }
-        
+
         internal static void StartEvent(TickType eventType, uint bytes, string channelName, byte messageType)
         {
             if (!IsRunning)
                 return;
             if (CurrentTick == null)
                 return;
-            
-            string messageName = MLAPIConstants.MESSAGE_NAMES.Length < messageType ? MLAPIConstants.MESSAGE_NAMES[messageType] : "INVALID_MESSAGE_TYPE";
+
+            string messageName = messageType < MLAPIConstants.MESSAGE_NAMES.Length ? MLAPIConstants.MESSAGE_NAMES[messageType] : "INVALID_MESSAGE_TYPE";
 
             CurrentTick.StartEvent(eventType, bytes, channelName, messageName);
         }
@@ -139,7 +139,7 @@ namespace MLAPI.Profiling
                 return;
             if (CurrentTick == null)
                 return;
-            
+
             CurrentTick.StartEvent(eventType, bytes, channelName, messageName);
         }
 
