@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.IO;
 using MLAPI.Messaging;
 using MLAPI.Serialization.Pooled;
@@ -61,6 +61,11 @@ namespace MLAPI.Prototyping
         /// A higher value will result in continued extrapolation after an object has stopped moving
         /// </summary>
         public float MaxSendsToExtrapolate = 5;
+        /// <summary>
+        /// The channel to send the data on
+        /// </summary>
+        [Tooltip("The channel to send the data on. Uses the default channel if left unspecified")]
+        public string Channel = null;
 
         private float lerpT;
         private Vector3 lerpStartPos;
@@ -156,9 +161,9 @@ namespace MLAPI.Prototyping
                             writer.WriteSinglePacked(transform.rotation.eulerAngles.z);
 
                             if (IsServer)
-                                InvokeClientRpcOnEveryoneExceptPerformance(ApplyTransform, OwnerClientId, stream);
+                                InvokeClientRpcOnEveryoneExceptPerformance(ApplyTransform, OwnerClientId, stream, string.IsNullOrEmpty(Channel) ? "MLAPI_DEFAULT_MESSAGE" : Channel);
                             else
-                                InvokeServerRpcPerformance(SubmitTransform, stream);
+                                InvokeServerRpcPerformance(SubmitTransform, stream, string.IsNullOrEmpty(Channel) ? "MLAPI_DEFAULT_MESSAGE" : Channel);
                         }
                     }
 
@@ -283,7 +288,7 @@ namespace MLAPI.Prototyping
                                     info.lastMissedPosition = null;
                                     info.lastMissedRotation = null;
 
-                                    InvokeClientRpcOnClientPerformance(ApplyTransform, NetworkingManager.Singleton.ConnectedClientsList[i].ClientId, writeStream);
+                                    InvokeClientRpcOnClientPerformance(ApplyTransform, NetworkingManager.Singleton.ConnectedClientsList[i].ClientId, writeStream, string.IsNullOrEmpty(Channel) ? "MLAPI_DEFAULT_MESSAGE" : Channel);
                                 }
                                 else
                                 {
@@ -294,7 +299,7 @@ namespace MLAPI.Prototyping
                         }
                         else
                         {
-                            InvokeClientRpcOnEveryoneExceptPerformance(ApplyTransform, OwnerClientId, writeStream);
+                            InvokeClientRpcOnEveryoneExceptPerformance(ApplyTransform, OwnerClientId, writeStream, string.IsNullOrEmpty(Channel) ? "MLAPI_DEFAULT_MESSAGE" : Channel);
                         }
                     }
                 }
@@ -340,7 +345,7 @@ namespace MLAPI.Prototyping
                             writer.WriteSinglePacked(rot.y);
                             writer.WriteSinglePacked(rot.z);
 
-                            InvokeClientRpcOnClientPerformance(ApplyTransform, NetworkingManager.Singleton.ConnectedClientsList[i].ClientId, stream);
+                            InvokeClientRpcOnClientPerformance(ApplyTransform, NetworkingManager.Singleton.ConnectedClientsList[i].ClientId, stream, string.IsNullOrEmpty(Channel) ? "MLAPI_DEFAULT_MESSAGE" : Channel);
                         }
                     }
                 }
