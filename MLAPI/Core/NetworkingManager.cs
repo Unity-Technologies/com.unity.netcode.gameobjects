@@ -1066,7 +1066,7 @@ namespace MLAPI
 
                 // This packet is unreliable, but if it gets through it should provide a much better sync than the potentially huge approval message.
                 SyncTime();
-                
+
                 NetworkedObject netObject = SpawnManager.CreateLocalNetworkedObject(false, 0, (prefabHash == null ? NetworkConfig.PlayerPrefabHash : prefabHash.Value), null, position, rotation);
                 SpawnManager.SpawnNetworkedObjectLocally(netObject, SpawnManager.GetNetworkObjectId(), false, true, clientId, null, false, 0, false, false);
 
@@ -1171,7 +1171,7 @@ namespace MLAPI
 
                 //Inform old clients of the new player
 
-                foreach (var clientPair in ConnectedClients)
+                foreach (KeyValuePair<ulong, NetworkedClient> clientPair in ConnectedClients)
                 {
                     if (clientPair.Key == clientId || !ConnectedClients[clientId].PlayerObject.observers.Contains(clientPair.Key))
                         continue; //The new client.
@@ -1198,15 +1198,21 @@ namespace MLAPI
                                 writer.WriteUInt64Packed(prefabHash == null ? NetworkConfig.PlayerPrefabHash : prefabHash.Value);
                             }
 
-                            writer.WriteBool(false); //Object won't have DestroyWithScene enabled.
+                            if (ConnectedClients[clientId].PlayerObject.IncludeTransformWhenSpawning == null || ConnectedClients[clientId].PlayerObject.IncludeTransformWhenSpawning(clientId))
+                            {
+                                writer.WriteBool(true);
+                                writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.position.x);
+                                writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.position.y);
+                                writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.position.z);
 
-                            writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.position.x);
-                            writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.position.y);
-                            writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.position.z);
-
-                            writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.x);
-                            writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.y);
-                            writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.z);
+                                writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.x);
+                                writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.y);
+                                writer.WriteSinglePacked(ConnectedClients[clientId].PlayerObject.transform.rotation.eulerAngles.z);
+                            }
+                            else
+                            {
+                                writer.WriteBool(false);
+                            }
 
                             writer.WriteBool(false); //No payload data
 
