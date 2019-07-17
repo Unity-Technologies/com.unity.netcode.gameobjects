@@ -599,8 +599,6 @@ namespace MLAPI
                     foreach (KeyValuePair<ulong, NetworkedClient> pair in ConnectedClients)
                     {
                         NetworkConfig.NetworkTransport.FlushSendQueue(pair.Key);
-
-                        if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Send Pending Queue: " + pair.Key);
                     }
 
                     lastSendTickTime = NetworkTime;
