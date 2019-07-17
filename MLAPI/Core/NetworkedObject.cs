@@ -387,6 +387,11 @@ namespace MLAPI
         /// <param name="destroyWithScene">Should the object be destroyd when the scene is changed</param>
         public void Spawn(Stream spawnPayload = null, bool destroyWithScene = false)
         {
+            if (!NetworkingManager.Singleton.IsListening)
+            {
+                throw new NotListeningException("NetworkingManager isn't listening, start a server, client or host before spawning objects.");
+            }
+
             if (spawnPayload != null)
                 spawnPayload.Position = 0;
 
