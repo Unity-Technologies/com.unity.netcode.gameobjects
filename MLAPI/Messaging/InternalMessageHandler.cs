@@ -455,7 +455,7 @@ namespace MLAPI.Messaging
             }
         }
 
-        internal static void HandleNetworkedVarDelta(ulong clientId, Stream stream)
+        internal static void HandleNetworkedVarDelta(ulong clientId, Stream stream, Action<ulong> bufferCallback)
         {
             if (!NetworkingManager.Singleton.NetworkConfig.EnableNetworkedVar)
             {
@@ -478,6 +478,10 @@ namespace MLAPI.Messaging
                     }
                     NetworkedBehaviour.HandleNetworkedVarDeltas(instance.networkedVarFields, stream, clientId, instance);
                 }
+                else if (NetworkSceneManager.sceneBufferedNetworkIds.ContainsKey(networkId))
+                {
+                    bufferCallback(networkId);
+                }
                 else
                 {
                     if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkedVar message recieved for a non existant object with id: " + networkId);
@@ -486,7 +490,7 @@ namespace MLAPI.Messaging
             }
         }
 
-        internal static void HandleNetworkedVarUpdate(ulong clientId, Stream stream)
+        internal static void HandleNetworkedVarUpdate(ulong clientId, Stream stream, Action<ulong> bufferCallback)
         {
             if (!NetworkingManager.Singleton.NetworkConfig.EnableNetworkedVar)
             {
@@ -509,6 +513,10 @@ namespace MLAPI.Messaging
                     }
                     NetworkedBehaviour.HandleNetworkedVarUpdate(instance.networkedVarFields, stream, clientId, instance);
                 }
+                else if (NetworkSceneManager.sceneBufferedNetworkIds.ContainsKey(networkId))
+                {
+                    bufferCallback(networkId);
+                }
                 else
                 {
                     if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkedVar message recieved for a non existant object with id: " + networkId);
@@ -517,7 +525,7 @@ namespace MLAPI.Messaging
             }
         }
         
-        internal static void HandleServerRPC(ulong clientId, Stream stream)
+        internal static void HandleServerRPC(ulong clientId, Stream stream, Action<ulong> bufferCallback)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
@@ -533,10 +541,14 @@ namespace MLAPI.Messaging
                         behaviour.OnRemoteServerRPC(hash, clientId, stream);
                     }
                 }
+                else if (NetworkSceneManager.sceneBufferedNetworkIds.ContainsKey(networkId))
+                {
+                    bufferCallback(networkId);
+                }
             }
         }
         
-        internal static void HandleServerRPCRequest(ulong clientId, Stream stream, string channelName, SecuritySendFlags security)
+        internal static void HandleServerRPCRequest(ulong clientId, Stream stream, string channelName, SecuritySendFlags security, Action<ulong> bufferCallback)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
@@ -546,7 +558,7 @@ namespace MLAPI.Messaging
                 ulong responseId = reader.ReadUInt64Packed();
 
                 if (SpawnManager.SpawnedObjects.ContainsKey(networkId)) 
-                { 
+                {
                     NetworkedBehaviour behaviour = SpawnManager.SpawnedObjects[networkId].GetBehaviourAtOrderIndex(behaviourId);
                     if (behaviour != null)
                     {
@@ -563,6 +575,10 @@ namespace MLAPI.Messaging
                             InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_SERVER_RPC_RESPONSE, channelName, responseStream, security, SpawnManager.SpawnedObjects[networkId]);
                         }
                     }
+                }
+                else if (NetworkSceneManager.sceneBufferedNetworkIds.ContainsKey(networkId))
+                {
+                    bufferCallback(networkId);
                 }
             }
         }
@@ -586,7 +602,7 @@ namespace MLAPI.Messaging
             }
         }
         
-        internal static void HandleClientRPC(ulong clientId, Stream stream)
+        internal static void HandleClientRPC(ulong clientId, Stream stream, Action<ulong> bufferCallback)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
@@ -602,10 +618,14 @@ namespace MLAPI.Messaging
                         behaviour.OnRemoteClientRPC(hash, clientId, stream);
                     }
                 }
+                else if (NetworkSceneManager.sceneBufferedNetworkIds.ContainsKey(networkId))
+                {
+                    bufferCallback(networkId);
+                }
             }
         }
         
-        internal static void HandleClientRPCRequest(ulong clientId, Stream stream, string channelName, SecuritySendFlags security)
+        internal static void HandleClientRPCRequest(ulong clientId, Stream stream, string channelName, SecuritySendFlags security, Action<ulong> bufferCallback)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
@@ -632,6 +652,10 @@ namespace MLAPI.Messaging
                             InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_CLIENT_RPC_RESPONSE, channelName, responseStream, security, null);
                         }
                     }
+                }
+                else if (NetworkSceneManager.sceneBufferedNetworkIds.ContainsKey(networkId))
+                {
+                    bufferCallback(networkId);
                 }
             }
         }
