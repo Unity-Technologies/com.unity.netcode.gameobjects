@@ -127,7 +127,6 @@ namespace MLAPI.SceneManagement
         // Called on client
         internal static void OnSceneSwitch(uint sceneIndex, Guid switchSceneGuid, Stream objectStream)
         {
-            // HERE1
             if (!sceneIndexToString.ContainsKey(sceneIndex) || !registeredSceneNames.Contains(sceneIndexToString[sceneIndex]))
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Server requested a scene switch to a non registered scene");
