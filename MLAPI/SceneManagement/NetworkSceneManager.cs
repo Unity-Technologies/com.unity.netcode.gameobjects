@@ -3,7 +3,6 @@ using System;
 using System.IO;
 using MLAPI.Configuration;
 using MLAPI.Exceptions;
-using MLAPI.Internal;
 using MLAPI.Logging;
 using MLAPI.Messaging;
 using MLAPI.Security;
@@ -266,7 +265,7 @@ namespace MLAPI.SceneManagement
                                         writer.WriteUInt64Packed(parent.NetworkId);
                                     }
 
-                                    if (NetworkingManager.Singleton.NetworkConfig.UsePrefabSync)
+                                    if (!NetworkingManager.Singleton.NetworkConfig.EnableSceneManagement || NetworkingManager.Singleton.NetworkConfig.UsePrefabSync)
                                     {
                                         writer.WriteUInt64Packed(newSceneObjects[i].PrefabHash);
 
@@ -312,7 +311,7 @@ namespace MLAPI.SceneManagement
 
         private static void OnSceneUnloadClient(Guid switchSceneGuid, Stream objectStream)
         {
-            if (NetworkingManager.Singleton.NetworkConfig.UsePrefabSync)
+            if (!NetworkingManager.Singleton.NetworkConfig.EnableSceneManagement || NetworkingManager.Singleton.NetworkConfig.UsePrefabSync)
             {
                 SpawnManager.DestroySceneObjects();
 

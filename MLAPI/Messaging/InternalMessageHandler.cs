@@ -200,22 +200,29 @@ namespace MLAPI.Messaging
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
                 NetworkingManager.Singleton.LocalClientId = reader.ReadUInt64Packed();
-                
-                uint sceneIndex = reader.ReadUInt32Packed();
-                Guid sceneSwitchProgressGuid = new Guid(reader.ReadByteArray());
+
+                uint sceneIndex = 0;
+                Guid sceneSwitchProgressGuid;
+
+                if (NetworkingManager.Singleton.NetworkConfig.EnableSceneManagement)
+                {
+                    sceneIndex = reader.ReadUInt32Packed();
+                    sceneSwitchProgressGuid = new Guid(reader.ReadByteArray());
+                }
+
+                bool sceneSwitch = NetworkingManager.Singleton.NetworkConfig.EnableSceneManagement && NetworkSceneManager.HasSceneMismatch(sceneIndex);
 
                 float netTime = reader.ReadSinglePacked();
                 NetworkingManager.Singleton.UpdateNetworkTime(clientId, netTime, receiveTime, true);
 
                 NetworkingManager.Singleton.ConnectedClients.Add(NetworkingManager.Singleton.LocalClientId, new NetworkedClient() { ClientId = NetworkingManager.Singleton.LocalClientId });
 
-                bool sceneSwitch = NetworkSceneManager.HasSceneMismatch(sceneIndex);
 
                 void DelayedSpawnAction(Stream continuationStream)
                 {
                     using (PooledBitReader continuationReader = PooledBitReader.Get(continuationStream))
                     {
-                        if (NetworkingManager.Singleton.NetworkConfig.UsePrefabSync)
+                        if (!NetworkingManager.Singleton.NetworkConfig.EnableSceneManagement || NetworkingManager.Singleton.NetworkConfig.UsePrefabSync)
                         {
                             SpawnManager.DestroySceneObjects();
                         }
@@ -242,7 +249,7 @@ namespace MLAPI.Messaging
                             ulong instanceId;
                             bool softSync;
 
-                            if (NetworkingManager.Singleton.NetworkConfig.UsePrefabSync)
+                            if (!NetworkingManager.Singleton.NetworkConfig.EnableSceneManagement || NetworkingManager.Singleton.NetworkConfig.UsePrefabSync)
                             {
                                 softSync = false;
                                 instanceId = 0;
@@ -329,7 +336,7 @@ namespace MLAPI.Messaging
                 ulong instanceId;
                 bool softSync;
 
-                if (NetworkingManager.Singleton.NetworkConfig.UsePrefabSync)
+                if (!NetworkingManager.Singleton.NetworkConfig.EnableSceneManagement || NetworkingManager.Singleton.NetworkConfig.UsePrefabSync)
                 {
                     softSync = false;
                     instanceId = 0;
