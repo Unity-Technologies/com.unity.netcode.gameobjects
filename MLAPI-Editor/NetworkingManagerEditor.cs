@@ -283,7 +283,11 @@ public class NetworkingManagerEditor : Editor
             }
 
             EditorGUILayout.PropertyField(enableTimeResyncProperty);
-            EditorGUILayout.PropertyField(timeResyncIntervalProperty);
+
+            using (new EditorGUI.DisabledScope(!networkingManager.NetworkConfig.EnableTimeResync))
+            {
+                EditorGUILayout.PropertyField(timeResyncIntervalProperty);
+            }
 
             EditorGUILayout.LabelField("Performance", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(receiveTickrateProperty);
