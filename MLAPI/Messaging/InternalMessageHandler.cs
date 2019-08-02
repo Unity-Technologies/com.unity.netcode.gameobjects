@@ -205,7 +205,7 @@ namespace MLAPI.Messaging
                 NetworkingManager.Singleton.LocalClientId = reader.ReadUInt64Packed();
 
                 uint sceneIndex = 0;
-                Guid sceneSwitchProgressGuid;
+                Guid sceneSwitchProgressGuid = new Guid();
 
                 if (NetworkingManager.Singleton.NetworkConfig.EnableSceneManagement)
                 {
