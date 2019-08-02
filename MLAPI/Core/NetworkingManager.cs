@@ -368,16 +368,19 @@ namespace MLAPI
                 if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Importing of certificate failed: " + ex.ToString());
             }
 
-            NetworkConfig.RegisteredScenes.Sort();
-
-            for (int i = 0; i < NetworkConfig.RegisteredScenes.Count; i++)
+            if (NetworkConfig.EnableSceneManagement)
             {
-                NetworkSceneManager.registeredSceneNames.Add(NetworkConfig.RegisteredScenes[i]);
-                NetworkSceneManager.sceneIndexToString.Add((uint) i, NetworkConfig.RegisteredScenes[i]);
-                NetworkSceneManager.sceneNameToIndex.Add(NetworkConfig.RegisteredScenes[i], (uint) i);
-            }
+                NetworkConfig.RegisteredScenes.Sort();
 
-            NetworkSceneManager.SetCurrentSceneIndex();
+                for (int i = 0; i < NetworkConfig.RegisteredScenes.Count; i++)
+                {
+                    NetworkSceneManager.registeredSceneNames.Add(NetworkConfig.RegisteredScenes[i]);
+                    NetworkSceneManager.sceneIndexToString.Add((uint)i, NetworkConfig.RegisteredScenes[i]);
+                    NetworkSceneManager.sceneNameToIndex.Add(NetworkConfig.RegisteredScenes[i], (uint)i);
+                }
+
+                NetworkSceneManager.SetCurrentSceneIndex();
+            }
 
             for (int i = 0; i < NetworkConfig.NetworkedPrefabs.Count; i++)
             {
@@ -905,7 +908,7 @@ namespace MLAPI
                             if (IsClient) InternalMessageHandler.HandleDestroyObject(clientId, messageStream);
                             break;
                         case MLAPIConstants.MLAPI_SWITCH_SCENE:
-                            if (IsClient) InternalMessageHandler.HandleSwitchScene(clientId, messageStream);
+                            if (IsClient && NetworkConfig.EnableSceneManagement) InternalMessageHandler.HandleSwitchScene(clientId, messageStream);
                             break;
                         case MLAPIConstants.MLAPI_CHANGE_OWNER:
                             if (IsClient) InternalMessageHandler.HandleChangeOwner(clientId, messageStream);
@@ -961,7 +964,7 @@ namespace MLAPI
                             break;
     #endif
                         case MLAPIConstants.MLAPI_CLIENT_SWITCH_SCENE_COMPLETED:
-                            if (IsServer) InternalMessageHandler.HandleClientSwitchSceneCompleted(clientId, messageStream);
+                            if (IsServer && NetworkConfig.EnableSceneManagement) InternalMessageHandler.HandleClientSwitchSceneCompleted(clientId, messageStream);
                             break;
                         default:
                             if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Read unrecognized messageType " + messageType);
@@ -1129,8 +1132,11 @@ namespace MLAPI
                     {
                         writer.WriteUInt64Packed(clientId);
 
-                        writer.WriteUInt32Packed(NetworkSceneManager.currentSceneIndex);
-                        writer.WriteByteArray(NetworkSceneManager.currentSceneSwitchProgressGuid.ToByteArray());
+                        if (NetworkConfig.EnableSceneManagement)
+                        {
+                            writer.WriteUInt32Packed(NetworkSceneManager.currentSceneIndex);
+                            writer.WriteByteArray(NetworkSceneManager.currentSceneSwitchProgressGuid.ToByteArray());
+                        }
 
                         writer.WriteSinglePacked(Time.realtimeSinceStartup);
 
@@ -1160,7 +1166,7 @@ namespace MLAPI
                                 writer.WriteUInt64Packed(parent.NetworkId);
                             }
 
-                            if (NetworkConfig.UsePrefabSync)
+                            if (!NetworkConfig.EnableSceneManagement || NetworkConfig.UsePrefabSync)
                             {
                                 writer.WriteUInt64Packed(observedObject.PrefabHash);
                             }
@@ -1226,7 +1232,7 @@ namespace MLAPI
                             //Does not have a parent
                             writer.WriteBool(false);
 
-                            if (NetworkConfig.UsePrefabSync)
+                            if (!NetworkConfig.EnableSceneManagement || NetworkConfig.UsePrefabSync)
                             {
                                 writer.WriteUInt64Packed(playerPrefabHash == null ? NetworkConfig.PlayerPrefabHash.Value : playerPrefabHash.Value);
                             }
