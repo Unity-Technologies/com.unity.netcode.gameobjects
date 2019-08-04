@@ -208,7 +208,14 @@ namespace MLAPI.Serialization
                 ((IBitWritable)instance).Read(this.source);
                 return instance;
             }
-          
+
+            Type nullableUnderlyingType = Nullable.GetUnderlyingType(type);
+
+            if (nullableUnderlyingType != null && SerializationManager.IsTypeSupported(nullableUnderlyingType))
+            {
+                return ReadObjectPacked(nullableUnderlyingType);
+            }
+
             throw new ArgumentException("BitReader cannot read type " + type.Name);
         }
 
