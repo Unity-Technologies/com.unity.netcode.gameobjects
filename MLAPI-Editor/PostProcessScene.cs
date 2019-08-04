@@ -16,7 +16,7 @@ namespace UnityEditor
             traverseSortedObjects.Sort((x, y) =>
             {
                 List<int> xSiblingIndex = x.TraversedSiblingIndex();
-                List<int> ySiblingIndex = x.TraversedSiblingIndex();
+                List<int> ySiblingIndex = y.TraversedSiblingIndex();
 
                 while (xSiblingIndex.Count > 0 && ySiblingIndex.Count > 0)
                 {
