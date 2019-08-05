@@ -64,6 +64,9 @@ namespace MLAPI.Transports
             }
         };
 
+        /// <summary>
+        /// Delegate for transport events.
+        /// </summary>
         public delegate void TransportEventDelegate(NetEventType type, ulong clientId, string channelName, ArraySegment<byte> payload, float receiveTime);
 
         /// <summary>
@@ -105,7 +108,7 @@ namespace MLAPI.Transports
         /// </summary>
         /// <param name="clientId">The clientId to disconnect</param>
         public abstract void DisconnectRemoteClient(ulong clientId);
-        
+
         /// <summary>
         /// Disconnects the local client from the server
         /// </summary>
@@ -117,7 +120,7 @@ namespace MLAPI.Transports
         /// <param name="clientId">The clientId to get the rtt from</param>
         /// <returns>Returns the round trip time in milliseconds </returns>
         public abstract ulong GetCurrentRtt(ulong clientId);
-        
+
         /// <summary>
         /// Shuts down the transport
         /// </summary>
