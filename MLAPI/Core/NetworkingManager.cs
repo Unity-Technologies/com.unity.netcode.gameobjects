@@ -162,12 +162,12 @@ namespace MLAPI
         /// <summary>
         /// Delegate type called when connection has been approved
         /// </summary>
-        /// <param name="clientId">The clientId of the approved client</param>
-        /// <param name="prefabHash">The prefabHash to use for the client</param>
+        /// <param name="createPlayerObject">If true, a player object will be created. Otherwise the client will have no object.</param>
+        /// <param name="playerPrefabHash">The prefabHash to use for the client. If createPlayerObject is false, this is ignored. If playerPrefabHash is null, the default player prefab is used.</param>
         /// <param name="approved">Whether or not the client was approved</param>
-        /// <param name="position">The position to spawn the client at</param>
-        /// <param name="rotation">The rotation to spawn the client with</param>
-        public delegate void ConnectionApprovedDelegate(ulong clientId, ulong? prefabHash, bool approved, Vector3? position, Quaternion? rotation);
+        /// <param name="position">The position to spawn the client at. If null, the prefab position is used.</param>
+        /// <param name="rotation">The rotation to spawn the client with. If null, the prefab position is used.</param>
+        public delegate void ConnectionApprovedDelegate(bool createPlayerObject, ulong? playerPrefabHash, bool approved, Vector3? position, Quaternion? rotation);
         /// <summary>
         /// The callback to invoke during connection approval
         /// </summary>
@@ -284,7 +284,13 @@ namespace MLAPI
             }
 
             int playerPrefabCount = NetworkConfig.NetworkedPrefabs.Count(x => x.PlayerPrefab == true);
+
             if (playerPrefabCount == 0)
+            {
+
+            }
+
+            if (playerPrefabCount == 0 && !NetworkConfig.ConnectionApproval && NetworkConfig.CreatePlayerPrefab)
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("There is no NetworkedPrefab marked as a PlayerPrefab");
             }
@@ -292,7 +298,17 @@ namespace MLAPI
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Only one networked prefab can be marked as a player prefab");
             }
-            else NetworkConfig.PlayerPrefabHash = NetworkConfig.NetworkedPrefabs.Find(x => x.PlayerPrefab == true).Hash;
+
+            NetworkedPrefab prefab = NetworkConfig.NetworkedPrefabs.FirstOrDefault(x => x.PlayerPrefab == true);
+
+            if (prefab == null)
+            {
+                NetworkConfig.PlayerPrefabHash = prefab.Hash;
+            }
+            else
+            {
+                NetworkConfig.PlayerPrefabHash = null;
+            }
         }
 
         private void Init(bool server)
@@ -494,7 +510,7 @@ namespace MLAPI
         /// <summary>
         /// Starts a Host
         /// </summary>
-        public void StartHost(Vector3? position = null, Quaternion? rotation = null, ulong? prefabHash = null, Stream payloadStream = null)
+        public void StartHost(Vector3? position = null, Quaternion? rotation = null, bool? createPlayerObject = null, ulong? prefabHash = null, Stream payloadStream = null)
         {
             if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("StartHost()");
             if (IsServer || IsClient)
@@ -527,12 +543,15 @@ namespace MLAPI
 
             ConnectedClientsList.Add(ConnectedClients[hostClientId]);
 
-            NetworkedObject netObject = SpawnManager.CreateLocalNetworkedObject(false, 0, (prefabHash == null ? NetworkConfig.PlayerPrefabHash : prefabHash.Value), null, position, rotation);
-            SpawnManager.SpawnNetworkedObjectLocally(netObject, SpawnManager.GetNetworkObjectId(), false, true, hostClientId, payloadStream, payloadStream != null, payloadStream == null ? 0 : (int)payloadStream.Length, false, false);
-
-            if (netObject.CheckObjectVisibility == null || netObject.CheckObjectVisibility(hostClientId))
+            if ((createPlayerObject == null && NetworkConfig.CreatePlayerPrefab) || (createPlayerObject != null && createPlayerObject.Value))
             {
-                netObject.observers.Add(hostClientId);
+                NetworkedObject netObject = SpawnManager.CreateLocalNetworkedObject(false, 0, (prefabHash == null ? NetworkConfig.PlayerPrefabHash.Value : prefabHash.Value), null, position, rotation);
+                SpawnManager.SpawnNetworkedObjectLocally(netObject, SpawnManager.GetNetworkObjectId(), false, true, hostClientId, payloadStream, payloadStream != null, payloadStream == null ? 0 : (int)payloadStream.Length, false, false);
+
+                if (netObject.CheckObjectVisibility == null || netObject.CheckObjectVisibility(hostClientId))
+                {
+                    netObject.observers.Add(hostClientId);
+                }
             }
 
             SpawnManager.ServerSpawnSceneObjectsOnStartSweep();
@@ -1051,9 +1070,9 @@ namespace MLAPI
 
         private readonly List<NetworkedObject> _observedObjects = new List<NetworkedObject>();
 
-        internal void HandleApproval(ulong clientId, ulong? prefabHash, bool approved, Vector3? position, Quaternion? rotation)
+        internal void HandleApproval(ulong clientId, bool createPlayerObject, ulong? playerPrefabHash, bool approved, Vector3? position, Quaternion? rotation)
         {
-            if(approved)
+            if (approved)
             {
                 // Inform new client it got approved
                 byte[] aesKey = PendingClients.ContainsKey(clientId) ? PendingClients[clientId].AesKey : null;
@@ -1072,10 +1091,14 @@ namespace MLAPI
                 // This packet is unreliable, but if it gets through it should provide a much better sync than the potentially huge approval message.
                 SyncTime();
 
-                NetworkedObject netObject = SpawnManager.CreateLocalNetworkedObject(false, 0, (prefabHash == null ? NetworkConfig.PlayerPrefabHash : prefabHash.Value), null, position, rotation);
-                SpawnManager.SpawnNetworkedObjectLocally(netObject, SpawnManager.GetNetworkObjectId(), false, true, clientId, null, false, 0, false, false);
 
-                ConnectedClients[clientId].PlayerObject = netObject;
+                if (createPlayerObject)
+                {
+                    NetworkedObject netObject = SpawnManager.CreateLocalNetworkedObject(false, 0, (playerPrefabHash == null ? NetworkConfig.PlayerPrefabHash.Value : playerPrefabHash.Value), null, position, rotation);
+                    SpawnManager.SpawnNetworkedObjectLocally(netObject, SpawnManager.GetNetworkObjectId(), false, true, clientId, null, false, 0, false, false);
+
+                    ConnectedClients[clientId].PlayerObject = netObject;
+                }
 
                 _observedObjects.Clear();
 
@@ -1178,7 +1201,7 @@ namespace MLAPI
 
                 foreach (KeyValuePair<ulong, NetworkedClient> clientPair in ConnectedClients)
                 {
-                    if (clientPair.Key == clientId || !ConnectedClients[clientId].PlayerObject.observers.Contains(clientPair.Key))
+                    if (clientPair.Key == clientId || ConnectedClients[clientId].PlayerObject == null || !ConnectedClients[clientId].PlayerObject.observers.Contains(clientPair.Key))
                         continue; //The new client.
 
                     using (PooledBitStream stream = PooledBitStream.Get())
@@ -1186,21 +1209,21 @@ namespace MLAPI
                         using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                         {
                             writer.WriteBool(true);
-                            writer.WriteUInt64Packed(ConnectedClients[clientId].PlayerObject.GetComponent<NetworkedObject>().NetworkId);
+                            writer.WriteUInt64Packed(ConnectedClients[clientId].PlayerObject.NetworkId);
                             writer.WriteUInt64Packed(clientId);
 
-                            //Does not have a parrent
+                            //Does not have a parent
                             writer.WriteBool(false);
 
                             if (NetworkConfig.UsePrefabSync)
                             {
-                                writer.WriteUInt64Packed(prefabHash == null ? NetworkConfig.PlayerPrefabHash : prefabHash.Value);
+                                writer.WriteUInt64Packed(playerPrefabHash == null ? NetworkConfig.PlayerPrefabHash.Value : playerPrefabHash.Value);
                             }
                             else
                             {
                                 // Not a softmap aka scene object
                                 writer.WriteBool(false);
-                                writer.WriteUInt64Packed(prefabHash == null ? NetworkConfig.PlayerPrefabHash : prefabHash.Value);
+                                writer.WriteUInt64Packed(playerPrefabHash == null ? NetworkConfig.PlayerPrefabHash.Value : playerPrefabHash.Value);
                             }
 
                             if (ConnectedClients[clientId].PlayerObject.IncludeTransformWhenSpawning == null || ConnectedClients[clientId].PlayerObject.IncludeTransformWhenSpawning(clientId))

@@ -80,7 +80,7 @@ namespace MLAPI.Prototyping
                             List<ulong> proximityClients = new List<ulong>();
                             foreach (KeyValuePair<ulong, NetworkedClient> client in NetworkingManager.Singleton.ConnectedClients)
                             {
-                                if (Vector3.Distance(client.Value.PlayerObject.transform.position, transform.position) <= ProximityRange)
+                                if (client.Value.PlayerObject == null || Vector3.Distance(client.Value.PlayerObject.transform.position, transform.position) <= ProximityRange)
                                     proximityClients.Add(client.Key);
                             }
                             InvokeClientRpcPerformance(OnNavMeshStateUpdate, proximityClients, stream);
@@ -113,7 +113,7 @@ namespace MLAPI.Prototyping
                             List<ulong> proximityClients = new List<ulong>();
                             foreach (KeyValuePair<ulong, NetworkedClient> client in NetworkingManager.Singleton.ConnectedClients)
                             {
-                                if (Vector3.Distance(client.Value.PlayerObject.transform.position, transform.position) <= ProximityRange)
+                                if (client.Value.PlayerObject == null || Vector3.Distance(client.Value.PlayerObject.transform.position, transform.position) <= ProximityRange)
                                     proximityClients.Add(client.Key);
                             }
                             InvokeClientRpcPerformance(OnNavMeshCorrectionUpdate, proximityClients, stream);

@@ -124,7 +124,7 @@ namespace MLAPI.Prototyping
                             List<ulong> clientsInProximity = new List<ulong>();
                             foreach (KeyValuePair<ulong, NetworkedClient> client in NetworkingManager.Singleton.ConnectedClients)
                             {
-                                if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
+                                if (client.Value.PlayerObject == null || Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
                                     clientsInProximity.Add(client.Key);
                             }
                             InvokeClientRpcPerformance(ApplyAnimParamMsg, clientsInProximity, stream);
@@ -196,7 +196,7 @@ namespace MLAPI.Prototyping
                                 List<ulong> clientsInProximity = new List<ulong>();
                                 foreach (KeyValuePair<ulong, NetworkedClient> client in NetworkingManager.Singleton.ConnectedClients)
                                 {
-                                    if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
+                                    if (client.Value.PlayerObject == null || Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
                                         clientsInProximity.Add(client.Key);
                                 }
                                 InvokeClientRpcPerformance(ApplyAnimParamMsg, clientsInProximity, stream);
@@ -249,7 +249,7 @@ namespace MLAPI.Prototyping
                 List<ulong> clientsInProximity = new List<ulong>();
                 foreach (KeyValuePair<ulong, NetworkedClient> client in NetworkingManager.Singleton.ConnectedClients)
                 {
-                    if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
+                    if (client.Value.PlayerObject == null || Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
                         clientsInProximity.Add(client.Key);
                 }
                 InvokeClientRpcPerformance(ApplyAnimMsg, clientsInProximity, stream);
@@ -283,7 +283,7 @@ namespace MLAPI.Prototyping
                 List<ulong> clientsInProximity = new List<ulong>();
                 foreach (KeyValuePair<ulong, NetworkedClient> client in NetworkingManager.Singleton.ConnectedClients)
                 {
-                    if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
+                    if (client.Value.PlayerObject == null || Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
                         clientsInProximity.Add(client.Key);
                 }
                 InvokeClientRpcPerformance(ApplyAnimParamMsg, clientsInProximity, stream);
@@ -308,7 +308,7 @@ namespace MLAPI.Prototyping
                 List<ulong> clientsInProximity = new List<ulong>();
                 foreach (KeyValuePair<ulong, NetworkedClient> client in NetworkingManager.Singleton.ConnectedClients)
                 {
-                    if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
+                    if (client.Value.PlayerObject == null || Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
                         clientsInProximity.Add(client.Key);
                 }
                 InvokeClientRpcPerformance(ApplyAnimTriggerMsg, clientsInProximity, stream);
@@ -435,7 +435,7 @@ namespace MLAPI.Prototyping
                                 List<ulong> clientsInProximity = new List<ulong>();
                                 foreach (KeyValuePair<ulong, NetworkedClient> client in NetworkingManager.Singleton.ConnectedClients)
                                 {
-                                    if (Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
+                                    if (client.Value.PlayerObject == null || Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
                                         clientsInProximity.Add(client.Key);
                                 }
                                 InvokeClientRpcPerformance(ApplyAnimTriggerMsg, clientsInProximity, stream);

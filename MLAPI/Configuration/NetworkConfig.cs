@@ -48,7 +48,12 @@ namespace MLAPI.Configuration
         /// The default player prefab
         /// </summary>
         [SerializeField]
-        internal ulong PlayerPrefabHash;
+        internal ulong? PlayerPrefabHash;
+        /// <summary>
+        /// Whether or not a player object should be created by default. This value can be overriden on a case by case basis with ConnectionApproval.
+        /// </summary>
+        [Tooltip("Whether or not a player object should be created by default. This value can be overriden on a case by case basis with ConnectionApproval.")]
+        public bool CreatePlayerPrefab;
         /// <summary>
         /// Amount of times per second the receive queue is emptied and all messages inside are processed.
         /// </summary>

@@ -180,7 +180,7 @@ namespace MLAPI.Prototyping
                         lerpT = 1f;
                     }
 
-                    float sendDelay = (IsServer || !EnableRange || !AssumeSyncedSends) ? (1f / FixedSendsPerSecond) : GetTimeForLerp(transform.position, NetworkingManager.Singleton.ConnectedClients[NetworkingManager.Singleton.LocalClientId].PlayerObject.transform.position);
+                    float sendDelay = (IsServer || !EnableRange || !AssumeSyncedSends || NetworkingManager.Singleton.ConnectedClients[NetworkingManager.Singleton.LocalClientId].PlayerObject == null) ? (1f / FixedSendsPerSecond) : GetTimeForLerp(transform.position, NetworkingManager.Singleton.ConnectedClients[NetworkingManager.Singleton.LocalClientId].PlayerObject.transform.position);
                     lerpT += Time.unscaledDeltaTime / sendDelay;
 
                     if (ExtrapolatePosition && Time.unscaledTime - lastRecieveTime < sendDelay * MaxSendsToExtrapolate)
@@ -279,10 +279,10 @@ namespace MLAPI.Prototyping
                                 }
 
                                 ClientSendInfo info = clientSendInfo[NetworkingManager.Singleton.ConnectedClientsList[i].ClientId];
-                                Vector3 receiverPosition = NetworkingManager.Singleton.ConnectedClientsList[i].PlayerObject.transform.position;
-                                Vector3 senderPosition = NetworkingManager.Singleton.ConnectedClients[OwnerClientId].PlayerObject.transform.position;
+                                Vector3? receiverPosition = NetworkingManager.Singleton.ConnectedClientsList[i].PlayerObject == null ? null : new Vector3?(NetworkingManager.Singleton.ConnectedClientsList[i].PlayerObject.transform.position);
+                                Vector3? senderPosition = NetworkingManager.Singleton.ConnectedClients[OwnerClientId].PlayerObject == null ? null : new Vector3?(NetworkingManager.Singleton.ConnectedClients[OwnerClientId].PlayerObject.transform.position);
 
-                                if (NetworkingManager.Singleton.NetworkTime - info.lastSent >= GetTimeForLerp(receiverPosition, senderPosition))
+                                if ((receiverPosition == null || senderPosition == null && NetworkingManager.Singleton.NetworkTime - info.lastSent >= (1f / FixedSendsPerSecond)) || NetworkingManager.Singleton.NetworkTime - info.lastSent >= GetTimeForLerp(receiverPosition.Value, senderPosition.Value))
                                 {
                                     info.lastSent = NetworkingManager.Singleton.NetworkTime;
                                     info.lastMissedPosition = null;
@@ -321,31 +321,34 @@ namespace MLAPI.Prototyping
                     });
                 }
                 ClientSendInfo info = clientSendInfo[NetworkingManager.Singleton.ConnectedClientsList[i].ClientId];
-                Vector3 receiverPosition = NetworkingManager.Singleton.ConnectedClientsList[i].PlayerObject.transform.position;
-                Vector3 senderPosition = NetworkingManager.Singleton.ConnectedClients[OwnerClientId].PlayerObject.transform.position;
+                Vector3? receiverPosition = NetworkingManager.Singleton.ConnectedClientsList[i].PlayerObject == null ? null : new Vector3?(NetworkingManager.Singleton.ConnectedClientsList[i].PlayerObject.transform.position);
+                Vector3? senderPosition = NetworkingManager.Singleton.ConnectedClients[OwnerClientId].PlayerObject == null ? null : new Vector3?(NetworkingManager.Singleton.ConnectedClients[OwnerClientId].PlayerObject.transform.position);
                                 
-                if (NetworkingManager.Singleton.NetworkTime - info.lastSent >= GetTimeForLerp(receiverPosition, senderPosition))
+                if ((receiverPosition == null || senderPosition == null && NetworkingManager.Singleton.NetworkTime - info.lastSent >= (1f / FixedSendsPerSecond)) || NetworkingManager.Singleton.NetworkTime - info.lastSent >= GetTimeForLerp(receiverPosition.Value, senderPosition.Value))
                 {
-                    Vector3 pos = NetworkingManager.Singleton.ConnectedClients[OwnerClientId].PlayerObject.transform.position;
-                    Vector3 rot = NetworkingManager.Singleton.ConnectedClients[OwnerClientId].PlayerObject.transform.rotation.eulerAngles;
-                    
-                    info.lastSent = NetworkingManager.Singleton.NetworkTime;
-                    info.lastMissedPosition = null;
-                    info.lastMissedRotation = null;
-                    
-                    using (PooledBitStream stream = PooledBitStream.Get())
+                    Vector3? pos = NetworkingManager.Singleton.ConnectedClients[OwnerClientId].PlayerObject == null ? null : new Vector3?(NetworkingManager.Singleton.ConnectedClients[OwnerClientId].PlayerObject.transform.position);
+                    Vector3? rot = NetworkingManager.Singleton.ConnectedClients[OwnerClientId].PlayerObject == null ? null : new Vector3?(NetworkingManager.Singleton.ConnectedClients[OwnerClientId].PlayerObject.transform.rotation.eulerAngles);
+
+                    if (pos != null && rot != null)
                     {
-                        using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                        info.lastSent = NetworkingManager.Singleton.NetworkTime;
+                        info.lastMissedPosition = null;
+                        info.lastMissedRotation = null;
+
+                        using (PooledBitStream stream = PooledBitStream.Get())
                         {
-                            writer.WriteSinglePacked(pos.x);
-                            writer.WriteSinglePacked(pos.y);
-                            writer.WriteSinglePacked(pos.z);
+                            using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                            {
+                                writer.WriteSinglePacked(pos.Value.x);
+                                writer.WriteSinglePacked(pos.Value.y);
+                                writer.WriteSinglePacked(pos.Value.z);
 
-                            writer.WriteSinglePacked(rot.x);
-                            writer.WriteSinglePacked(rot.y);
-                            writer.WriteSinglePacked(rot.z);
+                                writer.WriteSinglePacked(rot.Value.x);
+                                writer.WriteSinglePacked(rot.Value.y);
+                                writer.WriteSinglePacked(rot.Value.z);
 
-                            InvokeClientRpcOnClientPerformance(ApplyTransform, NetworkingManager.Singleton.ConnectedClientsList[i].ClientId, stream, string.IsNullOrEmpty(Channel) ? "MLAPI_DEFAULT_MESSAGE" : Channel);
+                                InvokeClientRpcOnClientPerformance(ApplyTransform, NetworkingManager.Singleton.ConnectedClientsList[i].ClientId, stream, string.IsNullOrEmpty(Channel) ? "MLAPI_DEFAULT_MESSAGE" : Channel);
+                            }
                         }
                     }
                 }

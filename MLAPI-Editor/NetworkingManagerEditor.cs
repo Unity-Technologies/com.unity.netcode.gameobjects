@@ -36,6 +36,7 @@ public class NetworkingManagerEditor : Editor
     private SerializedProperty timeResyncIntervalProperty;
     private SerializedProperty enableNetworkedVarProperty;
     private SerializedProperty ensureNetworkedVarLengthSafetyProperty;
+    private SerializedProperty createPlayerPrefabProperty;
     private SerializedProperty forceSamePrefabsProperty;
     private SerializedProperty usePrefabSyncProperty;
     private SerializedProperty recycleNetworkIdsProperty;
@@ -114,6 +115,7 @@ public class NetworkingManagerEditor : Editor
         timeResyncIntervalProperty = networkConfigProperty.FindPropertyRelative("TimeResyncInterval");
         enableNetworkedVarProperty = networkConfigProperty.FindPropertyRelative("EnableNetworkedVar");
         ensureNetworkedVarLengthSafetyProperty = networkConfigProperty.FindPropertyRelative("EnsureNetworkedVarLengthSafety");
+        createPlayerPrefabProperty = networkConfigProperty.FindPropertyRelative("CreatePlayerPrefab");
         forceSamePrefabsProperty = networkConfigProperty.FindPropertyRelative("ForceSamePrefabs");
         usePrefabSyncProperty = networkConfigProperty.FindPropertyRelative("UsePrefabSync");
         recycleNetworkIdsProperty = networkConfigProperty.FindPropertyRelative("RecycleNetworkIds");
@@ -152,6 +154,7 @@ public class NetworkingManagerEditor : Editor
         timeResyncIntervalProperty = networkConfigProperty.FindPropertyRelative("TimeResyncInterval");
         enableNetworkedVarProperty = networkConfigProperty.FindPropertyRelative("EnableNetworkedVar");
         ensureNetworkedVarLengthSafetyProperty = networkConfigProperty.FindPropertyRelative("EnsureNetworkedVarLengthSafety");
+        createPlayerPrefabProperty = networkConfigProperty.FindPropertyRelative("CreatePlayerPrefab");
         forceSamePrefabsProperty = networkConfigProperty.FindPropertyRelative("ForceSamePrefabs");
         usePrefabSyncProperty = networkConfigProperty.FindPropertyRelative("UsePrefabSync");
         recycleNetworkIdsProperty = networkConfigProperty.FindPropertyRelative("RecycleNetworkIds");
@@ -314,6 +317,7 @@ public class NetworkingManagerEditor : Editor
             EditorGUILayout.PropertyField(secondsHistoryProperty);
 
             EditorGUILayout.LabelField("Spawning", EditorStyles.boldLabel);
+            EditorGUILayout.PropertyField(createPlayerPrefabProperty);
             EditorGUILayout.PropertyField(forceSamePrefabsProperty);
             EditorGUILayout.PropertyField(usePrefabSyncProperty);
 
