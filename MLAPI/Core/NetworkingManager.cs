@@ -23,6 +23,7 @@ using MLAPI.SceneManagement;
 using MLAPI.Serialization.Pooled;
 using MLAPI.Spawning;
 using static MLAPI.Messaging.CustomMessagingManager;
+using MLAPI.Exceptions;
 
 namespace MLAPI
 {
@@ -781,7 +782,7 @@ namespace MLAPI
             if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo($"Received network time {netTime}, RTT to server is {rtt}, setting offset to {networkTimeOffset} (delta {networkTimeOffset - currentNetworkTimeOffset})");
         }
 
-    internal void SendConnectionRequest()
+        internal void SendConnectionRequest()
         {
             using (PooledBitStream stream = PooledBitStream.Get())
             {
@@ -944,10 +945,16 @@ namespace MLAPI
             }
         }
 
-        internal void DisconnectClient(ulong clientId)
+        /// <summary>
+        /// Disconnects the remote client.
+        /// </summary>
+        /// <param name="clientId">The ClientId to disconnect</param>
+        public void DisconnectClient(ulong clientId)
         {
             if (!IsServer)
-                return;
+            {
+                throw new NotServerException("Only server can disconnect remote clients. Use StopClient instead.");
+            }
 
             if (ConnectedClients.ContainsKey(clientId))
                 ConnectedClients.Remove(clientId);
