@@ -299,11 +299,11 @@ namespace MLAPI
 
             if (prefab == null)
             {
-                NetworkConfig.PlayerPrefabHash = prefab.Hash;
+                NetworkConfig.PlayerPrefabHash = null;
             }
             else
             {
-                NetworkConfig.PlayerPrefabHash = null;
+                NetworkConfig.PlayerPrefabHash = prefab.Hash;
             }
         }
 
