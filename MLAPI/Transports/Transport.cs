@@ -64,6 +64,14 @@ namespace MLAPI.Transports
             }
         };
 
+        public delegate void TransportEventDelegate(NetEventType type, ulong clientId, string channelName, ArraySegment<byte> payload, float receiveTime);
+
+        /// <summary>
+        /// Occurs when the transport has a new transport event. Can be used to make an event based transport instead of a poll based.
+        /// Invokation has to occur on the Unity thread in the Update loop.
+        /// </summary>
+        public event TransportEventDelegate OnTransportEvent;
+
         /// <summary>
         /// Send a payload to the specified clientId, data and channelName.
         /// </summary>

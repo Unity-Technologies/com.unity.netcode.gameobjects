@@ -286,11 +286,6 @@ namespace MLAPI
 
             int playerPrefabCount = NetworkConfig.NetworkedPrefabs.Count(x => x.PlayerPrefab == true);
 
-            if (playerPrefabCount == 0)
-            {
-
-            }
-
             if (playerPrefabCount == 0 && !NetworkConfig.ConnectionApproval && NetworkConfig.CreatePlayerPrefab)
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("There is no NetworkedPrefab marked as a PlayerPrefab");
@@ -388,6 +383,8 @@ namespace MLAPI
             {
                 NetworkConfig.NetworkedPrefabs[i].Prefab.GetComponent<NetworkedObject>().ValidateHash();
             }
+
+            NetworkConfig.NetworkTransport.OnTransportEvent += HandleRawTransportPoll;
 
             NetworkConfig.NetworkTransport.Init();
         }
@@ -604,6 +601,7 @@ namespace MLAPI
             IsListening = false;
             IsServer = false;
             IsClient = false;
+            NetworkConfig.NetworkTransport.OnTransportEvent -= HandleRawTransportPoll;
             SpawnManager.DestroyNonSceneObjects();
             SpawnManager.ServerResetShudownStateForSceneObjects();
 
@@ -628,121 +626,8 @@ namespace MLAPI
                     {
                         processedEvents++;
                         eventType = NetworkConfig.NetworkTransport.PollEvent(out ulong clientId, out string channelName, out ArraySegment<byte> payload, out float receiveTime);
+                        HandleRawTransportPoll(eventType, clientId, channelName, payload, receiveTime);
 
-                        switch (eventType)
-                        {
-                            case NetEventType.Connect:
-                                NetworkProfiler.StartEvent(TickType.Receive, (uint)payload.Count, channelName, "TRANSPORT_CONNECT");
-                                if (IsServer)
-                                {
-                                    if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Client Connected");
-#if !DISABLE_CRYPTOGRAPHY
-                                    if (NetworkConfig.EnableEncryption)
-                                    {
-                                        // This client is required to complete the crypto-hail exchange.
-                                        using (PooledBitStream hailStream = PooledBitStream.Get())
-                                        {
-                                            using (PooledBitWriter hailWriter = PooledBitWriter.Get(hailStream))
-                                            {
-                                                if (NetworkConfig.SignKeyExchange)
-                                                {
-                                                    // Write certificate
-                                                    hailWriter.WriteByteArray(NetworkConfig.ServerX509CertificateBytes);
-                                                }
-
-                                                // Write key exchange public part
-                                                EllipticDiffieHellman diffieHellman = new EllipticDiffieHellman(EllipticDiffieHellman.DEFAULT_CURVE, EllipticDiffieHellman.DEFAULT_GENERATOR, EllipticDiffieHellman.DEFAULT_ORDER);
-                                                byte[] diffieHellmanPublicPart = diffieHellman.GetPublicKey();
-                                                hailWriter.WriteByteArray(diffieHellmanPublicPart);
-                                                PendingClients.Add(clientId, new PendingClient()
-                                                {
-                                                    ClientId = clientId,
-                                                    ConnectionState = PendingClient.State.PendingHail,
-                                                    KeyExchange = diffieHellman
-                                                });
-
-                                                if (NetworkConfig.SignKeyExchange)
-                                                {
-                                                    // Write public part signature (signed by certificate private)
-                                                    X509Certificate2 certificate = NetworkConfig.ServerX509Certificate;
-                                                    if (!certificate.HasPrivateKey) throw new CryptographicException("[MLAPI] No private key was found in server certificate. Unable to sign key exchange");
-
-                                                    RSACryptoServiceProvider rsa = certificate.PrivateKey as RSACryptoServiceProvider;
-                                                    DSACryptoServiceProvider dsa = certificate.PrivateKey as DSACryptoServiceProvider;
-
-                                                    if (rsa != null)
-                                                    {
-                                                        // RSA is 0
-                                                        hailWriter.WriteByte(0);
-
-                                                        using (SHA256Managed sha = new SHA256Managed())
-                                                        {
-                                                            hailWriter.WriteByteArray(rsa.SignData(diffieHellmanPublicPart, sha));
-                                                        }
-                                                    }
-                                                    else if (dsa != null)
-                                                    {
-                                                        // DSA is 1
-                                                        hailWriter.WriteByte(1);
-
-                                                        using (SHA256Managed sha = new SHA256Managed())
-                                                        {
-                                                            hailWriter.WriteByteArray(dsa.SignData(sha.ComputeHash(diffieHellmanPublicPart)));
-                                                        }
-                                                    }
-                                                    else
-                                                    {
-                                                        throw new CryptographicException("[MLAPI] Only RSA and DSA certificates are supported. No valid RSA or DSA key was found");
-                                                    }
-                                                }
-                                            }
-                                            // Send the hail
-                                            InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_CERTIFICATE_HAIL, "MLAPI_INTERNAL", hailStream, SecuritySendFlags.None, null);
-                                        }
-                                    }
-                                    else
-                                    {
-#endif
-                                        PendingClients.Add(clientId, new PendingClient()
-                                        {
-                                            ClientId = clientId,
-                                            ConnectionState = PendingClient.State.PendingConnection
-                                        });
-#if !DISABLE_CRYPTOGRAPHY
-                                    }
-#endif
-                                    StartCoroutine(ApprovalTimeout(clientId));
-                                }
-                                else
-                                {
-                                    if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Connected");
-                                    if (!NetworkConfig.EnableEncryption) SendConnectionRequest();
-                                    StartCoroutine(ApprovalTimeout(clientId));
-                                }
-                                NetworkProfiler.EndEvent();
-                                break;
-                            case NetEventType.Data:
-                                if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo($"Incoming Data From {clientId} : {payload.Count} bytes");
-
-                                HandleIncomingData(clientId, channelName, payload, receiveTime);
-                                break;
-                            case NetEventType.Disconnect:
-                                NetworkProfiler.StartEvent(TickType.Receive, 0, "NONE", "TRANSPORT_DISCONNECT");
-                                if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Disconnect Event From " + clientId);
-
-                                if (IsServer)
-                                    OnClientDisconnectFromServer(clientId);
-                                else
-                                {
-                                    IsConnectedClient = false;
-                                    StopClient();
-                                }
-
-                                if (OnClientDisconnectCallback != null)
-                                    OnClientDisconnectCallback.Invoke(clientId);
-                                NetworkProfiler.EndEvent();
-                                break;
-                        }
                         // Only do another iteration if: there are no more messages AND (there is no limit to max events or we have processed less than the maximum)
                     } while (IsListening && (eventType != NetEventType.Nothing && (NetworkConfig.MaxReceiveEventsPerTickRate <= 0 || processedEvents < NetworkConfig.MaxReceiveEventsPerTickRate)));
                     lastReceiveTickTime = NetworkTime;
@@ -841,6 +726,129 @@ namespace MLAPI
         {
             yield return new WaitForSecondsRealtime(NetworkConfig.LoadSceneTimeOut);
             switchSceneProgress.SetTimedOut();
+        }
+
+        private void HandleRawTransportPoll(NetEventType eventType, ulong clientId, string channelName, ArraySegment<byte> payload, float receiveTime)
+        {
+            switch (eventType)
+            {
+                case NetEventType.Connect:
+                    NetworkProfiler.StartEvent(TickType.Receive, (uint)payload.Count, channelName, "TRANSPORT_CONNECT");
+                    if (IsServer)
+                    {
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Client Connected");
+#if !DISABLE_CRYPTOGRAPHY
+                        if (NetworkConfig.EnableEncryption)
+                        {
+                            // This client is required to complete the crypto-hail exchange.
+                            using (PooledBitStream hailStream = PooledBitStream.Get())
+                            {
+                                using (PooledBitWriter hailWriter = PooledBitWriter.Get(hailStream))
+                                {
+                                    if (NetworkConfig.SignKeyExchange)
+                                    {
+                                        // Write certificate
+                                        hailWriter.WriteByteArray(NetworkConfig.ServerX509CertificateBytes);
+                                    }
+
+                                    // Write key exchange public part
+                                    EllipticDiffieHellman diffieHellman = new EllipticDiffieHellman(EllipticDiffieHellman.DEFAULT_CURVE, EllipticDiffieHellman.DEFAULT_GENERATOR, EllipticDiffieHellman.DEFAULT_ORDER);
+                                    byte[] diffieHellmanPublicPart = diffieHellman.GetPublicKey();
+                                    hailWriter.WriteByteArray(diffieHellmanPublicPart);
+                                    PendingClients.Add(clientId, new PendingClient()
+                                    {
+                                        ClientId = clientId,
+                                        ConnectionState = PendingClient.State.PendingHail,
+                                        KeyExchange = diffieHellman
+                                    });
+
+                                    if (NetworkConfig.SignKeyExchange)
+                                    {
+                                        // Write public part signature (signed by certificate private)
+                                        X509Certificate2 certificate = NetworkConfig.ServerX509Certificate;
+
+                                        if (!certificate.HasPrivateKey)
+                                            throw new CryptographicException("[MLAPI] No private key was found in server certificate. Unable to sign key exchange");
+
+                                        RSACryptoServiceProvider rsa = certificate.PrivateKey as RSACryptoServiceProvider;
+                                        DSACryptoServiceProvider dsa = certificate.PrivateKey as DSACryptoServiceProvider;
+
+                                        if (rsa != null)
+                                        {
+                                            // RSA is 0
+                                            hailWriter.WriteByte(0);
+
+                                            using (SHA256Managed sha = new SHA256Managed())
+                                            {
+                                                hailWriter.WriteByteArray(rsa.SignData(diffieHellmanPublicPart, sha));
+                                            }
+                                        }
+                                        else if (dsa != null)
+                                        {
+                                            // DSA is 1
+                                            hailWriter.WriteByte(1);
+
+                                            using (SHA256Managed sha = new SHA256Managed())
+                                            {
+                                                hailWriter.WriteByteArray(dsa.SignData(sha.ComputeHash(diffieHellmanPublicPart)));
+                                            }
+                                        }
+                                        else
+                                        {
+                                            throw new CryptographicException("[MLAPI] Only RSA and DSA certificates are supported. No valid RSA or DSA key was found");
+                                        }
+                                    }
+                                }
+                                // Send the hail
+                                InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_CERTIFICATE_HAIL, "MLAPI_INTERNAL", hailStream, SecuritySendFlags.None, null);
+                            }
+                        }
+                        else
+                        {
+#endif
+                            PendingClients.Add(clientId, new PendingClient()
+                            {
+                                ClientId = clientId,
+                                ConnectionState = PendingClient.State.PendingConnection
+                            });
+#if !DISABLE_CRYPTOGRAPHY
+                        }
+#endif
+                        StartCoroutine(ApprovalTimeout(clientId));
+                    }
+                    else
+                    {
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Connected");
+
+                        if (!NetworkConfig.EnableEncryption)
+                            SendConnectionRequest();
+                        StartCoroutine(ApprovalTimeout(clientId));
+                    }
+                    NetworkProfiler.EndEvent();
+                    break;
+                case NetEventType.Data:
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo($"Incoming Data From {clientId} : {payload.Count} bytes");
+
+                    HandleIncomingData(clientId, channelName, payload, receiveTime);
+                    break;
+                case NetEventType.Disconnect:
+                    NetworkProfiler.StartEvent(TickType.Receive, 0, "NONE", "TRANSPORT_DISCONNECT");
+
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Disconnect Event From " + clientId);
+
+                    if (IsServer)
+                        OnClientDisconnectFromServer(clientId);
+                    else
+                    {
+                        IsConnectedClient = false;
+                        StopClient();
+                    }
+
+                    if (OnClientDisconnectCallback != null)
+                        OnClientDisconnectCallback.Invoke(clientId);
+                    NetworkProfiler.EndEvent();
+                    break;
+            }
         }
 
         private void HandleIncomingData(ulong clientId, string channelName, ArraySegment<byte> data, float receiveTime)
