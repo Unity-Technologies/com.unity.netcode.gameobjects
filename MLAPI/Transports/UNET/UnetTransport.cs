@@ -19,12 +19,12 @@ namespace MLAPI.Transports.UNET
         public int ServerWebsocketListenPort = 8887;
         public bool SupportWebsocket = false;
         public List<UnetChannel> Channels = new List<UnetChannel>();
-        
+
         // Relay
         public bool UseMLAPIRelay = false;
         public string MLAPIRelayAddress = "184.72.104.138";
         public int MLAPIRelayPort = 8888;
-        
+
         // Runtime / state
         private byte[] messageBuffer;
         private WeakReference temporaryBufferReference;
@@ -38,11 +38,11 @@ namespace MLAPI.Transports.UNET
         private SocketTask connectTask;
 
         public override ulong ServerClientId => GetMLAPIClientId(0, 0, true);
-        
+
         public override void Send(ulong clientId, ArraySegment<byte> data, string channelName)
-        {            
+        {
             GetUnetConnectionDetails(clientId, out byte hostId, out ushort connectionId);
-            
+
             int channelId = channelNameToId[channelName];
 
             byte[] buffer;
@@ -67,7 +67,7 @@ namespace MLAPI.Transports.UNET
                         temporaryBufferReference = new WeakReference(buffer);
                     }
                 }
-                
+
                 Buffer.BlockCopy(data.Array, data.Offset, buffer, 0, data.Count);
             }
             else
@@ -81,17 +81,17 @@ namespace MLAPI.Transports.UNET
         public override NetEventType PollEvent(out ulong clientId, out string channelName, out ArraySegment<byte> payload, out float receiveTime)
         {
             NetworkEventType eventType = RelayTransport.Receive(out int hostId, out int connectionId, out int channelId, messageBuffer, messageBuffer.Length, out int receivedSize, out byte error);
-            
+
             clientId = GetMLAPIClientId((byte) hostId, (ushort) connectionId, false);
 
             receiveTime = UnityEngine.Time.realtimeSinceStartup;
 
             NetworkError networkError = (NetworkError) error;
-            
+
             if (networkError == NetworkError.MessageToLong)
             {
                 byte[] tempBuffer;
-                
+
                 if (temporaryBufferReference != null && temporaryBufferReference.IsAlive && ((byte[]) temporaryBufferReference.Target).Length >= receivedSize)
                 {
                     tempBuffer = (byte[])temporaryBufferReference.Target;
@@ -101,7 +101,7 @@ namespace MLAPI.Transports.UNET
                     tempBuffer = new byte[receivedSize];
                     temporaryBufferReference = new WeakReference(tempBuffer);
                 }
-                
+
                 eventType = RelayTransport.Receive(out hostId, out connectionId, out channelId, tempBuffer, tempBuffer.Length, out receivedSize, out error);
                 payload = new ArraySegment<byte>(tempBuffer, 0, receivedSize);
             }
@@ -162,7 +162,7 @@ namespace MLAPI.Transports.UNET
                 case NetworkEventType.BroadcastEvent:
                     return NetEventType.Nothing;
             }
-            
+
             return NetEventType.Nothing;
         }
 
@@ -190,7 +190,7 @@ namespace MLAPI.Transports.UNET
                     task.Success = false;
                     task.TransportCode = error;
                     task.SocketError = System.Net.Sockets.SocketError.SocketError;
-                    task.IsDone = false;
+                    task.IsDone = true;
                     break;
             }
 
@@ -200,7 +200,7 @@ namespace MLAPI.Transports.UNET
         public override SocketTasks StartServer()
         {
             HostTopology topology = new HostTopology(GetConfig(), MaxConnections);
-            
+
             if (SupportWebsocket)
             {
                 if (!UseMLAPIRelay)
@@ -211,9 +211,9 @@ namespace MLAPI.Transports.UNET
                 {
                     if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Cannot create websocket host when using MLAPI relay");
                 }
-                    
+
             }
-            
+
             int normalHostId = RelayTransport.AddHost(topology, ServerListenPort, true);
 
             return SocketTask.Done.AsTasks();
@@ -255,12 +255,12 @@ namespace MLAPI.Transports.UNET
         public override void Init()
         {
             UpdateRelay();
-            
+
             messageBuffer = new byte[MessageBufferSize];
-            
+
             NetworkTransport.Init();
         }
-        
+
         public ulong GetMLAPIClientId(byte hostId, ushort connectionId, bool isServer)
         {
             if (isServer)
@@ -290,11 +290,11 @@ namespace MLAPI.Transports.UNET
         public ConnectionConfig GetConfig()
         {
             ConnectionConfig config = new ConnectionConfig();
-            
+
             for (int i = 0; i < MLAPI_CHANNELS.Length; i++)
             {
                 int channelId = AddMLAPIChannel(MLAPI_CHANNELS[i].Type, config);
-                
+
                 channelIdToName.Add(channelId, MLAPI_CHANNELS[i].Name);
                 channelNameToId.Add(MLAPI_CHANNELS[i].Name, channelId);
             }
@@ -302,14 +302,14 @@ namespace MLAPI.Transports.UNET
             for (int i = 0; i < Channels.Count; i++)
             {
                 int channelId = AddUNETChannel(Channels[i].Type, config);
-                
+
                 channelIdToName.Add(channelId, Channels[i].Name);
                 channelNameToId.Add(Channels[i].Name, channelId);
             }
 
             return config;
         }
-        
+
         public int AddMLAPIChannel(ChannelType type, ConnectionConfig config)
         {
             switch (type)
@@ -328,7 +328,7 @@ namespace MLAPI.Transports.UNET
 
             return 0;
         }
-        
+
         public int AddUNETChannel(QosType type, ConnectionConfig config)
         {
             switch (type)
