@@ -130,7 +130,7 @@ namespace MLAPI.Messaging
                 }
 
                 // Send HailResponse
-                InternalMessageSender.Send(NetworkingManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_CERTIFICATE_HAIL_RESPONSE, "MLAPI_INTERNAL", outStream, SecuritySendFlags.None, null, true);
+                InternalMessageSender.Send(NetworkingManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_CERTIFICATE_HAIL_RESPONSE, "MLAPI_INTERNAL", outStream, SecuritySendFlags.None, null);
             }
         }
 
@@ -160,7 +160,7 @@ namespace MLAPI.Messaging
                     writer.WriteInt64Packed(DateTime.Now.Ticks); // This serves no purpose.
                 }
 
-                InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_GREETINGS, "MLAPI_INTERNAL", outStream, SecuritySendFlags.None, null, true);
+                InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_GREETINGS, "MLAPI_INTERNAL", outStream, SecuritySendFlags.None, null);
             }
         }
 

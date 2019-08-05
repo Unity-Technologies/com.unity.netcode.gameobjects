@@ -26,7 +26,6 @@ public class NetworkingManagerEditor : Editor
     private SerializedProperty networkTransportProperty;
     private SerializedProperty receiveTickrateProperty;
     private SerializedProperty maxReceiveEventsPerTickRateProperty;
-    private SerializedProperty sendTickrateProperty;
     private SerializedProperty eventTickrateProperty;
     private SerializedProperty maxObjectUpdatesPerTickProperty;
     private SerializedProperty clientConnectionBufferTimeoutProperty;
@@ -105,7 +104,6 @@ public class NetworkingManagerEditor : Editor
         networkTransportProperty = networkConfigProperty.FindPropertyRelative("NetworkTransport");
         receiveTickrateProperty = networkConfigProperty.FindPropertyRelative("ReceiveTickrate");
         maxReceiveEventsPerTickRateProperty = networkConfigProperty.FindPropertyRelative("MaxReceiveEventsPerTickRate");
-        sendTickrateProperty = networkConfigProperty.FindPropertyRelative("SendTickrate");
         eventTickrateProperty = networkConfigProperty.FindPropertyRelative("EventTickrate");
         maxObjectUpdatesPerTickProperty = networkConfigProperty.FindPropertyRelative("MaxObjectUpdatesPerTick");
         clientConnectionBufferTimeoutProperty = networkConfigProperty.FindPropertyRelative("ClientConnectionBufferTimeout");
@@ -144,7 +142,6 @@ public class NetworkingManagerEditor : Editor
         networkTransportProperty = networkConfigProperty.FindPropertyRelative("NetworkTransport");
         receiveTickrateProperty = networkConfigProperty.FindPropertyRelative("ReceiveTickrate");
         maxReceiveEventsPerTickRateProperty = networkConfigProperty.FindPropertyRelative("MaxReceiveEventsPerTickRate");
-        sendTickrateProperty = networkConfigProperty.FindPropertyRelative("SendTickrate");
         eventTickrateProperty = networkConfigProperty.FindPropertyRelative("EventTickrate");
         maxObjectUpdatesPerTickProperty = networkConfigProperty.FindPropertyRelative("MaxObjectUpdatesPerTick");
         clientConnectionBufferTimeoutProperty = networkConfigProperty.FindPropertyRelative("ClientConnectionBufferTimeout");
@@ -295,7 +292,6 @@ public class NetworkingManagerEditor : Editor
             EditorGUILayout.LabelField("Performance", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(receiveTickrateProperty);
             EditorGUILayout.PropertyField(maxReceiveEventsPerTickRateProperty);
-            EditorGUILayout.PropertyField(sendTickrateProperty);
             EditorGUILayout.PropertyField(eventTickrateProperty);
             EditorGUILayout.PropertyField(enableNetworkedVarProperty);
 

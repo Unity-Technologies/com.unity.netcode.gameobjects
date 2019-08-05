@@ -65,14 +65,9 @@ namespace MLAPI.Configuration
         [Tooltip("The maximum amount of Receive events to poll per Receive tick. This is to prevent flooding and freezing on the server")]
         public int MaxReceiveEventsPerTickRate = 500;
         /// <summary>
-        /// The amount of times per second every pending message will be sent away.
-        /// </summary>
-        [Tooltip("The amount of times per second the pending messages are sent")]
-        public int SendTickrate = 64;
-        /// <summary>
         /// The amount of times per second internal frame events will occur, examples include SyncedVar send checking.
         /// </summary>
-        [Tooltip("The amount of times per second the internal event loop will run. This includes for example SyncedVar checking and LagCompensation tracking")]
+        [Tooltip("The amount of times per second the internal event loop will run. This includes for example NetworkedVar checking and LagCompensation tracking")]
         public int EventTickrate = 64;
         /// <summary>
         /// The maximum amount of NetworkedObject's to process per tick.
@@ -229,7 +224,6 @@ namespace MLAPI.Configuration
 
                     writer.WriteInt32Packed(config.ReceiveTickrate);
                     writer.WriteInt32Packed(config.MaxReceiveEventsPerTickRate);
-                    writer.WriteInt32Packed(config.SendTickrate);
                     writer.WriteInt32Packed(config.EventTickrate);
                     writer.WriteInt32Packed(config.ClientConnectionBufferTimeout);
                     writer.WriteBool(config.ConnectionApproval);
@@ -277,7 +271,6 @@ namespace MLAPI.Configuration
 
                     config.ReceiveTickrate = reader.ReadInt32Packed();
                     config.MaxReceiveEventsPerTickRate = reader.ReadInt32Packed();
-                    config.SendTickrate = reader.ReadInt32Packed();
                     config.EventTickrate = reader.ReadInt32Packed();
                     config.ClientConnectionBufferTimeout = reader.ReadInt32Packed();
                     config.ConnectionApproval = reader.ReadBool();

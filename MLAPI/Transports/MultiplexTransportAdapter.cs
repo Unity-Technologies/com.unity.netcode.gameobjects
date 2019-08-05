@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using MLAPI.Transports.Tasks;
 
 namespace MLAPI.Transports.Multiplex
 {
@@ -57,13 +59,6 @@ namespace MLAPI.Transports.Multiplex
             Transports[transportId].DisconnectRemoteClient(connectionId);
         }
 
-        public override void FlushSendQueue(ulong clientId)
-        {
-            GetMultiplexTransportDetails(clientId, out byte transportId, out ulong connectionId);
-
-            Transports[transportId].FlushSendQueue(connectionId);
-        }
-
         public override ulong GetCurrentRtt(ulong clientId)
         {
             GetMultiplexTransportDetails(clientId, out byte transportId, out ulong connectionId);
@@ -112,16 +107,11 @@ namespace MLAPI.Transports.Multiplex
             return NetEventType.Nothing;
         }
 
-        public override NetEventType PollEvent(out ulong clientId, out string channelName, out ArraySegment<byte> payload)
-        {
-            return PollEvent(out clientId, out channelName, out payload, out float _);
-        }
-
-        public override void Send(ulong clientId, ArraySegment<byte> data, string channelName, bool skipQueue)
+        public override void Send(ulong clientId, ArraySegment<byte> data, string channelName)
         {
             GetMultiplexTransportDetails(clientId, out byte transportId, out ulong connectionId);
 
-            Transports[transportId].Send(connectionId, data, channelName, skipQueue);
+            Transports[transportId].Send(connectionId, data, channelName);
         }
 
         public override void Shutdown()
@@ -135,26 +125,40 @@ namespace MLAPI.Transports.Multiplex
             }
         }
 
-        public override void StartClient()
+        public override SocketTasks StartClient()
         {
+            List<SocketTask> socketTasks = new List<SocketTask>();
+
             for (int i = 0; i < Transports.Length; i++)
             {
                 if (Transports[i].IsSupported)
                 {
-                    Transports[i].StartClient();
+                    socketTasks.AddRange(Transports[i].StartClient().Tasks);
                 }
             }
+
+            return new SocketTasks()
+            {
+                Tasks = socketTasks.ToArray()
+            };
         }
 
-        public override void StartServer()
+        public override SocketTasks StartServer()
         {
+            List<SocketTask> socketTasks = new List<SocketTask>();
+
             for (int i = 0; i < Transports.Length; i++)
             {
                 if (Transports[i].IsSupported)
                 {
-                    Transports[i].StartServer();
+                    socketTasks.AddRange(Transports[i].StartServer().Tasks);
                 }
             }
+
+            return new SocketTasks()
+            {
+                Tasks = socketTasks.ToArray()
+            };
         }
 
 

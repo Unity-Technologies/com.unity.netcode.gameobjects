@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using MLAPI.Logging;
+using MLAPI.Transports.Tasks;
 using UnityEngine.Networking;
 
 namespace MLAPI.Transports.UNET
@@ -34,9 +35,11 @@ namespace MLAPI.Transports.UNET
         private int serverConnectionId;
         private int serverHostId;
 
+        private SocketTask connectTask;
+
         public override ulong ServerClientId => GetMLAPIClientId(0, 0, true);
         
-        public override void Send(ulong clientId, ArraySegment<byte> data, string channelName, bool skipQueue)
+        public override void Send(ulong clientId, ArraySegment<byte> data, string channelName)
         {            
             GetUnetConnectionDetails(clientId, out byte hostId, out ushort connectionId);
             
@@ -75,16 +78,13 @@ namespace MLAPI.Transports.UNET
             RelayTransport.Send(hostId, connectionId, channelId, buffer, data.Count, out byte error);
         }
 
-        public override void FlushSendQueue(ulong clientId)
+        public override NetEventType PollEvent(out ulong clientId, out string channelName, out ArraySegment<byte> payload, out float receiveTime)
         {
-            // This is broken in UNET.
-        }
-
-        public override NetEventType PollEvent(out ulong clientId, out string channelName, out ArraySegment<byte> payload)
-        {            
             NetworkEventType eventType = RelayTransport.Receive(out int hostId, out int connectionId, out int channelId, messageBuffer, messageBuffer.Length, out int receivedSize, out byte error);
             
             clientId = GetMLAPIClientId((byte) hostId, (ushort) connectionId, false);
+
+            receiveTime = UnityEngine.Time.realtimeSinceStartup;
 
             NetworkError networkError = (NetworkError) error;
             
@@ -112,6 +112,36 @@ namespace MLAPI.Transports.UNET
 
             channelName = channelIdToName[channelId];
 
+            if (connectTask != null && hostId == serverHostId && connectionId == serverConnectionId)
+            {
+                if (eventType == NetworkEventType.ConnectEvent)
+                {
+                    // We just got a response to our connect request.
+                    connectTask.Message = null;
+                    connectTask.SocketError = networkError == NetworkError.Ok ? System.Net.Sockets.SocketError.Success : System.Net.Sockets.SocketError.SocketError;
+                    connectTask.State = null;
+                    connectTask.Success = networkError == NetworkError.Ok;
+                    connectTask.TransportCode = (byte)networkError;
+                    connectTask.TransportException = null;
+                    connectTask.IsDone = true;
+
+                    connectTask = null;
+                }
+                else if (eventType == NetworkEventType.DisconnectEvent)
+                {
+                    // We just got a response to our connect request.
+                    connectTask.Message = null;
+                    connectTask.SocketError = System.Net.Sockets.SocketError.SocketError;
+                    connectTask.State = null;
+                    connectTask.Success = false;
+                    connectTask.TransportCode = (byte)networkError;
+                    connectTask.TransportException = null;
+                    connectTask.IsDone = true;
+
+                    connectTask = null;
+                }
+            }
+
             if (networkError == NetworkError.Timeout)
             {
                 // In UNET. Timeouts are not disconnects. We have to translate that here.
@@ -136,14 +166,38 @@ namespace MLAPI.Transports.UNET
             return NetEventType.Nothing;
         }
 
-        public override void StartClient()
-        {   
+        public override SocketTasks StartClient()
+        {
+            SocketTask task = SocketTask.Working;
+
             serverHostId = RelayTransport.AddHost(new HostTopology(GetConfig(), 1), false);
-            
             serverConnectionId = RelayTransport.Connect(serverHostId, ConnectAddress, ConnectPort, 0, out byte error);
+
+            NetworkError connectError = (NetworkError)error;
+
+            switch (connectError)
+            {
+                case NetworkError.Ok:
+                    task.Success = true;
+                    task.TransportCode = error;
+                    task.SocketError = System.Net.Sockets.SocketError.Success;
+                    task.IsDone = false;
+
+                    // We want to continue to wait for the successful connect
+                    connectTask = task;
+                    break;
+                default:
+                    task.Success = false;
+                    task.TransportCode = error;
+                    task.SocketError = System.Net.Sockets.SocketError.SocketError;
+                    task.IsDone = false;
+                    break;
+            }
+
+            return task.AsTasks();
         }
 
-        public override void StartServer()
+        public override SocketTasks StartServer()
         {
             HostTopology topology = new HostTopology(GetConfig(), MaxConnections);
             
@@ -161,6 +215,8 @@ namespace MLAPI.Transports.UNET
             }
             
             int normalHostId = RelayTransport.AddHost(topology, ServerListenPort, true);
+
+            return SocketTask.Done.AsTasks();
         }
 
         public override void DisconnectRemoteClient(ulong clientId)

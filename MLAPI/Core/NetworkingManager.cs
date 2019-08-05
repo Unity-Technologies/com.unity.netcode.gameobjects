@@ -24,6 +24,7 @@ using MLAPI.Serialization.Pooled;
 using MLAPI.Spawning;
 using static MLAPI.Messaging.CustomMessagingManager;
 using MLAPI.Exceptions;
+using MLAPI.Transports.Tasks;
 
 namespace MLAPI
 {
@@ -319,7 +320,6 @@ namespace MLAPI
             networkTimeOffset = 0f;
             currentNetworkTimeOffset = 0f;
             networkTimeInitialized = false;
-            lastSendTickTime = 0f;
             lastEventTickTime = 0f;
             lastReceiveTickTime = 0f;
             eventOvershootCounter = 0f;
@@ -395,13 +395,13 @@ namespace MLAPI
         /// <summary>
         /// Starts a server
         /// </summary>
-        public void StartServer()
+        public SocketTasks StartServer()
         {
             if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("StartServer()");
             if (IsServer || IsClient)
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot start server while an instance is already running");
-                return;
+                return SocketTask.Fault.AsTasks();
             }
 
             if (NetworkConfig.ConnectionApproval)
@@ -413,7 +413,8 @@ namespace MLAPI
             }
 
             Init(true);
-            NetworkConfig.NetworkTransport.StartServer();
+
+            SocketTasks tasks = NetworkConfig.NetworkTransport.StartServer();
 
             IsServer = true;
             IsClient = false;
@@ -423,26 +424,32 @@ namespace MLAPI
 
             if (OnServerStarted != null)
                 OnServerStarted.Invoke();
+
+            return tasks;
         }
 
         /// <summary>
         /// Starts a client
         /// </summary>
-        public void StartClient()
+        public SocketTasks StartClient()
         {
             if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("StartClient()");
+
             if (IsServer || IsClient)
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot start client while an instance is already running");
-                return;
+                return SocketTask.Fault.AsTasks();
             }
 
             Init(false);
-            NetworkConfig.NetworkTransport.StartClient();
+
+            SocketTasks tasks = NetworkConfig.NetworkTransport.StartClient();
 
             IsServer = false;
             IsClient = true;
             IsListening = true;
+
+            return tasks;
         }
 
         /// <summary>
@@ -510,13 +517,14 @@ namespace MLAPI
         /// <summary>
         /// Starts a Host
         /// </summary>
-        public void StartHost(Vector3? position = null, Quaternion? rotation = null, bool? createPlayerObject = null, ulong? prefabHash = null, Stream payloadStream = null)
+        public SocketTasks StartHost(Vector3? position = null, Quaternion? rotation = null, bool? createPlayerObject = null, ulong? prefabHash = null, Stream payloadStream = null)
         {
             if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("StartHost()");
+
             if (IsServer || IsClient)
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot start host while an instance is already running");
-                return;
+                return SocketTask.Fault.AsTasks();
             }
 
             if (NetworkConfig.ConnectionApproval)
@@ -528,7 +536,8 @@ namespace MLAPI
             }
 
             Init(true);
-            NetworkConfig.NetworkTransport.StartServer();
+
+            SocketTasks tasks = NetworkConfig.NetworkTransport.StartServer();
 
             IsServer = true;
             IsClient = true;
@@ -558,6 +567,8 @@ namespace MLAPI
 
             if (OnServerStarted != null)
                 OnServerStarted.Invoke();
+
+            return tasks;
         }
 
         private void OnEnable()
@@ -601,7 +612,6 @@ namespace MLAPI
         }
 
         private float lastReceiveTickTime;
-        private float lastSendTickTime;
         private float lastEventTickTime;
         private float eventOvershootCounter;
         private float lastTimeSyncTime;
@@ -609,20 +619,6 @@ namespace MLAPI
         {
             if(IsListening)
             {
-                if ((NetworkTime - lastSendTickTime >= (1f / NetworkConfig.SendTickrate)) || NetworkConfig.SendTickrate <= 0)
-                {
-                    if (NetworkConfig.EnableNetworkedVar)
-                    {
-                        NetworkedObject.NetworkedBehaviourUpdate();
-                    }
-
-                    foreach (KeyValuePair<ulong, NetworkedClient> pair in ConnectedClients)
-                    {
-                        NetworkConfig.NetworkTransport.FlushSendQueue(pair.Key);
-                    }
-
-                    lastSendTickTime = NetworkTime;
-                }
                 if ((NetworkTime - lastReceiveTickTime >= (1f / NetworkConfig.ReceiveTickrate)) || NetworkConfig.ReceiveTickrate <= 0)
                 {
                     NetworkProfiler.StartTick(TickType.Receive);
@@ -701,7 +697,7 @@ namespace MLAPI
                                                 }
                                             }
                                             // Send the hail
-                                            InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_CERTIFICATE_HAIL, "MLAPI_INTERNAL", hailStream, SecuritySendFlags.None, null, true);
+                                            InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_CERTIFICATE_HAIL, "MLAPI_INTERNAL", hailStream, SecuritySendFlags.None, null);
                                         }
                                     }
                                     else
@@ -759,6 +755,13 @@ namespace MLAPI
                     eventOvershootCounter += ((NetworkTime - lastEventTickTime) - (1f / NetworkConfig.EventTickrate));
                     LagCompensationManager.AddFrames();
                     ResponseMessageManager.CheckTimeouts();
+
+                    if (NetworkConfig.EnableNetworkedVar)
+                    {
+                        // Do NetworkedVar updates
+                        NetworkedObject.NetworkedBehaviourUpdate();
+                    }
+
                     lastEventTickTime = NetworkTime;
                     NetworkProfiler.EndTick();
                 }
@@ -813,7 +816,7 @@ namespace MLAPI
                         writer.WriteByteArray(NetworkConfig.ConnectionData);
                 }
 
-                InternalMessageSender.Send(ServerClientId, MLAPIConstants.MLAPI_CONNECTION_REQUEST, "MLAPI_INTERNAL", stream, SecuritySendFlags.Authenticated | SecuritySendFlags.Encrypted, null, true);
+                InternalMessageSender.Send(ServerClientId, MLAPIConstants.MLAPI_CONNECTION_REQUEST, "MLAPI_INTERNAL", stream, SecuritySendFlags.Authenticated | SecuritySendFlags.Encrypted, null);
             }
         }
 
@@ -1063,7 +1066,7 @@ namespace MLAPI
                 using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                 {
                     writer.WriteSinglePacked(Time.realtimeSinceStartup);
-                    InternalMessageSender.Send(MLAPIConstants.MLAPI_TIME_SYNC, "MLAPI_TIME_SYNC", stream, SecuritySendFlags.None, null, true);
+                    InternalMessageSender.Send(MLAPIConstants.MLAPI_TIME_SYNC, "MLAPI_TIME_SYNC", stream, SecuritySendFlags.None, null);
                 }
             }
         }
@@ -1190,7 +1193,7 @@ namespace MLAPI
                             }
                         }
 
-                        InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_CONNECTION_APPROVED, "MLAPI_INTERNAL", stream, SecuritySendFlags.Encrypted | SecuritySendFlags.Authenticated, null, true);
+                        InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_CONNECTION_APPROVED, "MLAPI_INTERNAL", stream, SecuritySendFlags.Encrypted | SecuritySendFlags.Authenticated, null);
 
                         if (OnClientConnectedCallback != null)
                             OnClientConnectedCallback.Invoke(clientId);
