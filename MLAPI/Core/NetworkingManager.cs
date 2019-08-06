@@ -634,12 +634,16 @@ namespace MLAPI
                     NetworkProfiler.EndTick();
                 }
 
-                if (IsServer && ((NetworkTime - lastEventTickTime >= (1f / NetworkConfig.EventTickrate))))
+                if (((NetworkTime - lastEventTickTime >= (1f / NetworkConfig.EventTickrate))))
                 {
                     NetworkProfiler.StartTick(TickType.Event);
-                    eventOvershootCounter += ((NetworkTime - lastEventTickTime) - (1f / NetworkConfig.EventTickrate));
-                    LagCompensationManager.AddFrames();
-                    ResponseMessageManager.CheckTimeouts();
+
+                    if (IsServer)
+                    {
+                        eventOvershootCounter += ((NetworkTime - lastEventTickTime) - (1f / NetworkConfig.EventTickrate));
+                        LagCompensationManager.AddFrames();
+                        ResponseMessageManager.CheckTimeouts();
+                    }
 
                     if (NetworkConfig.EnableNetworkedVar)
                     {
@@ -647,7 +651,11 @@ namespace MLAPI
                         NetworkedObject.NetworkedBehaviourUpdate();
                     }
 
-                    lastEventTickTime = NetworkTime;
+                    if (IsServer)
+                    {
+                        lastEventTickTime = NetworkTime;
+                    }
+
                     NetworkProfiler.EndTick();
                 }
                 else if (IsServer && eventOvershootCounter >= ((1f / NetworkConfig.EventTickrate)))
