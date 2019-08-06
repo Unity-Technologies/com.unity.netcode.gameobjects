@@ -303,7 +303,7 @@ namespace MLAPI
             }
             else
             {
-                NetworkConfig.PlayerPrefabHash = prefab.Hash;
+                NetworkConfig.PlayerPrefabHash.Value = prefab.Hash;
             }
         }
 
