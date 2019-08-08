@@ -39,7 +39,7 @@ for:
   artifacts:
   - path: 'MLAPI\bin\Debug\*\*MLAPI*'
   after_build:
-  - cp MLAPI/bin/Debug/net35/*MLAPI* MLAPI/bin
+  - cp MLAPI/bin/Debug/net35/MLAPI.* MLAPI/bin
   test:
     assemblies:
       - 'MLAPI-Tests\bin\Debug\*\MLAPI-Tests.dll'
