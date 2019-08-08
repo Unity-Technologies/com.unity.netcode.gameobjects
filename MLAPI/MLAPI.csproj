@@ -5,8 +5,6 @@
     <DisableHandlePackageFileConflicts>true</DisableHandlePackageFileConflicts>
     <AssemblyTitle>MLAPI</AssemblyTitle>
     <Product>MLAPI</Product>
-    <Description>Game networking stack for Unity.</Description>
-    <Version>6.0.0</Version>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <TargetFrameworks>net35;net471;net45;netstandard2.0</TargetFrameworks>
   </PropertyGroup>
