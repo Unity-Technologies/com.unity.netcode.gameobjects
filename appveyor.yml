@@ -78,7 +78,7 @@ for:
   artifacts:
   - path: 'MLAPI\bin\Lite\Release\*\*MLAPI*'
   after_build:
-  - cp .\MLAPI\bin\Lite\Release\*\*MLAPI* .\MLAPI\bin\
+  - cp MLAPI\bin\Lite\Release\*\*MLAPI* MLAPI\bin\
   test:
     assemblies:
       - 'MLAPI-Tests\bin\Lite\Release\*\MLAPI-Tests.dll'
