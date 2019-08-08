@@ -43,7 +43,16 @@ namespace MLAPI.Transports.UNET
         {
             GetUnetConnectionDetails(clientId, out byte hostId, out ushort connectionId);
 
-            int channelId = channelNameToId[channelName];
+            int channelId = 0;
+
+            if (channelNameToId.ContainsKey(channelName))
+            {
+                channelId = channelNameToId[channelName];
+            }
+            else
+            {
+                channelId = channelNameToId["MLAPI_INTERNAL"];
+            }
 
             byte[] buffer;
 
@@ -110,7 +119,14 @@ namespace MLAPI.Transports.UNET
                 payload = new ArraySegment<byte>(messageBuffer, 0, receivedSize);
             }
 
-            channelName = channelIdToName[channelId];
+            if (channelIdToName.ContainsKey(channelId))
+            {
+                channelName = channelIdToName[channelId];
+            }
+            else
+            {
+                channelName = "MLAPI_INTERNAL";
+            }
 
             if (connectTask != null && hostId == serverHostId && connectionId == serverConnectionId)
             {
