@@ -39,7 +39,7 @@ for:
   artifacts:
   - path: 'MLAPI\bin\Debug\*\*MLAPI*'
   after_build:
-  - cp MLAPI/bin/Debug/net35/*MLAPI* C:\projects\mlapi\MLAPI\bin
+  - cp MLAPI/bin/Debug/net35/*MLAPI* MLAPI/bin
   test:
     assemblies:
       - 'MLAPI-Tests\bin\Debug\*\MLAPI-Tests.dll'
@@ -50,7 +50,7 @@ for:
   artifacts:
   - path: 'MLAPI\bin\Lite\Debug\*\*MLAPI*'
   after_build:
-  - cp MLAPI/bin/Lite/Debug/net35/*MLAPI* C:\projects\mlapi\MLAPI\bin
+  - cp MLAPI/bin/Lite/Debug/net35/*MLAPI* MLAPI/bin
   test:
     assemblies:
       - 'MLAPI-Tests\bin\Lite\Debug\*\MLAPI-Tests.dll'
@@ -61,7 +61,7 @@ for:
   artifacts:
   - path: 'MLAPI\bin\Release\*\*MLAPI*'
   after_build:
-  - cp MLAPI/bin/Release/net35/*MLAPI* C:\projects\mlapi\MLAPI\bin
+  - cp MLAPI/bin/Release/net35/*MLAPI* MLAPI/bin
   test:
     assemblies:
       - 'MLAPI-Tests\bin\Release\*\MLAPI-Tests.dll'
@@ -78,7 +78,7 @@ for:
   artifacts:
   - path: 'MLAPI\bin\Lite\Release\*\*MLAPI*'
   after_build:
-  - cp MLAPI/bin/Lite/Release/net35/*MLAPI* C:\projects\mlapi\MLAPI\bin
+  - cp MLAPI/bin/Lite/Release/net35/*MLAPI* MLAPI/bin
   test:
     assemblies:
       - 'MLAPI-Tests\bin\Lite\Release\*\MLAPI-Tests.dll'
