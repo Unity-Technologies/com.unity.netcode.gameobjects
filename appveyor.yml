@@ -38,6 +38,8 @@ for:
       - configuration: Debug
   artifacts:
   - path: 'MLAPI\bin\Debug\*\*MLAPI*'
+  after_build:
+  - cp .\MLAPI\bin\Debug\*\*MLAPI* .\MLAPI\bin\
   test:
     assemblies:
       - 'MLAPI-Tests\bin\Debug\*\MLAPI-Tests.dll'
@@ -47,6 +49,8 @@ for:
       - configuration: Debug_Lite
   artifacts:
   - path: 'MLAPI\bin\Lite\Debug\*\*MLAPI*'
+  after_build:
+  - cp .\MLAPI\bin\Lite\Debug\*\*MLAPI* .\MLAPI\bin\
   test:
     assemblies:
       - 'MLAPI-Tests\bin\Lite\Debug\*\MLAPI-Tests.dll'
@@ -56,6 +60,8 @@ for:
       - configuration: Release
   artifacts:
   - path: 'MLAPI\bin\Release\*\*MLAPI*'
+  after_build:
+  - cp .\MLAPI\bin\Release\*\*MLAPI* .\MLAPI\bin\
   test:
     assemblies:
       - 'MLAPI-Tests\bin\Release\*\MLAPI-Tests.dll'
@@ -71,6 +77,8 @@ for:
       - configuration: Release_Lite
   artifacts:
   - path: 'MLAPI\bin\Lite\Release\*\*MLAPI*'
+  after_build:
+  - cp .\MLAPI\bin\Lite\Release\*\*MLAPI* .\MLAPI\bin\
   test:
     assemblies:
       - 'MLAPI-Tests\bin\Lite\Release\*\MLAPI-Tests.dll'
