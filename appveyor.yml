@@ -16,7 +16,7 @@ build:
   project: MLAPI.sln
   verbosity: minimal
 
-before_package:
+after_build:
   - cd C:\projects\mlapi
   - powershell "& "".\BuildUnityPackages.ps1"""
 
@@ -38,7 +38,7 @@ for:
       - configuration: Debug
   artifacts:
   - path: 'MLAPI\bin\Debug\*\*MLAPI*'
-  after_build:
+  before_package:
   - cp MLAPI/bin/Debug/net35/MLAPI.* MLAPI/bin
   test:
     assemblies:
@@ -49,8 +49,8 @@ for:
       - configuration: Debug_Lite
   artifacts:
   - path: 'MLAPI\bin\Lite\Debug\*\*MLAPI*'
-  after_build:
-  - cp MLAPI/bin/Lite/Debug/net35/*MLAPI* MLAPI/bin
+  before_package:
+  - cp MLAPI/bin/Lite/Debug/net35/MLAPI.* MLAPI/bin
   test:
     assemblies:
       - 'MLAPI-Tests\bin\Lite\Debug\*\MLAPI-Tests.dll'
@@ -60,8 +60,8 @@ for:
       - configuration: Release
   artifacts:
   - path: 'MLAPI\bin\Release\*\*MLAPI*'
-  after_build:
-  - cp MLAPI/bin/Release/net35/*MLAPI* MLAPI/bin
+  before_package:
+  - cp MLAPI/bin/Release/net35/MLAPI.* MLAPI/bin
   test:
     assemblies:
       - 'MLAPI-Tests\bin\Release\*\MLAPI-Tests.dll'
@@ -77,8 +77,8 @@ for:
       - configuration: Release_Lite
   artifacts:
   - path: 'MLAPI\bin\Lite\Release\*\*MLAPI*'
-  after_build:
-  - cp MLAPI/bin/Lite/Release/net35/*MLAPI* MLAPI/bin
+  before_package:
+  - cp MLAPI/bin/Lite/Release/net35/MLAPI.* MLAPI/bin
   test:
     assemblies:
       - 'MLAPI-Tests\bin\Lite\Release\*\MLAPI-Tests.dll'
