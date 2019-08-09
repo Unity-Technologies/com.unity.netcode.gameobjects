@@ -73,8 +73,12 @@
   - response-rpc-method%3C-tresult,-t1,-t2,-t3,-t4,-t5,-t6,-t7,-t8,-t9,-t10,-t11,-t12,-t13,-t14,-t15,-t16,-t17,-t18,-t19,-t20,-t21,-t22,-t23,-t24,-t25,-t26,-t27,-t28,-t29,-t30,-t31%3E
   - response-rpc-method%3C-tresult,-t1,-t2,-t3,-t4,-t5,-t6,-t7,-t8,-t9,-t10,-t11,-t12,-t13,-t14,-t15,-t16,-t17,-t18,-t19,-t20,-t21,-t22,-t23,-t24,-t25,-t26,-t27,-t28,-t29,-t30,-t31,-t32%3E
   - visibility-delegate
+  - spawn-delegate
   - connection-approved-delegate
-  - custom-message-delegete
+- title: MLAPI.Relay.Transports
+  api:
+  - relay-transport
+  - invalid-config-exception
 - title: MLAPI.Transports
   api:
   - channel-type
@@ -82,12 +86,18 @@
   - transport
   - transport-channel
   - unet-channel
+  - transport-event-delegate
 - title: MLAPI.Transports.UNET
   api:
-  - relay-transport
-  - helpers
-  - invalid-config-exception
   - unet-transport
+- title: MLAPI.Transports.Tasks
+  api:
+  - socket-tasks
+  - socket-task
+- title: MLAPI.Transports.Multiplex
+  api:
+  - multiplex-transport-adapter
+  - connection-id-spread-method
 - title: MLAPI.Spawning
   api:
   - spawn-manager
@@ -175,10 +185,14 @@
 - title: MLAPI.Messaging
   api:
   - client-rpcattribute
+  - custom-messaging-manager
+  - rpcattribute
   - rpc-delegate
   - rpc-response%3C-t%3E
   - rpc-response-base
   - server-rpcattribute
+  - unnamed-message-delegate
+  - handle-named-message-delegate
 - title: MLAPI.Logging
   api:
   - log-helper
@@ -189,6 +203,8 @@
   - tracked-object
 - title: MLAPI.Exceptions
   api:
+  - network-configuration-exception
+  - not-listening-exception
   - not-server-exception
   - spawn-state-exception
   - visibility-change-exception

@@ -198,8 +198,16 @@ permalink: /api/networked-object/
             It has to be unique in relation to other prefabs</p>
 	</div>
 	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``bool`` AlwaysReplicateAsRoot;</b></h4>
+		<p>If true, the object will always be replicated as root on clients and the parent will be ignored.</p>
+	</div>
+	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public [``VisibilityDelegate``](/MLAPI/api/visibility-delegate/) CheckObjectVisibility;</b></h4>
 		<p>Delegate invoked when the MLAPI needs to know if the object should be visible to a client, if null it will assume true</p>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public [``SpawnDelegate``](/MLAPI/api/spawn-delegate/) IncludeTransformWhenSpawning;</b></h4>
+		<p>Delegate invoked when the MLAPI needs to know if it should include the transform when spawning the object, if null it will assume true</p>
 	</div>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``bool`` DontDestroyWithOwner;</b></h4>

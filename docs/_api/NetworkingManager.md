@@ -245,8 +245,8 @@ permalink: /api/networking-manager/
 <div>
 	<h3 markdown="1">Public Methods</h3>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` SendCustomMessage(``List<ulong>`` clientIds, [``BitStream``](/MLAPI/api/bit-stream/) stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
-		<p>Sends custom message to a list of clients</p>
+		<h4 markdown="1"><b>public ``void`` SendCustomMessage(``List<ulong>`` clientIds, [``BitStream``](/MLAPI/api/bit-stream/) stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b> <small><span class="label label-warning" title="Use CustomMessagingManager.SendUnnamedMessage instead">Obsolete</span></small></h4>
+		<p>Sends unnamed message to a list of clients</p>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``List<ulong>`` clientIds</p>
@@ -267,8 +267,8 @@ permalink: /api/networking-manager/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` SendCustomMessage(``ulong`` clientId, [``BitStream``](/MLAPI/api/bit-stream/) stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
-		<p>Sends a custom message to a specific client</p>
+		<h4 markdown="1"><b>public ``void`` SendCustomMessage(``ulong`` clientId, [``BitStream``](/MLAPI/api/bit-stream/) stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b> <small><span class="label label-warning" title="Use CustomMessagingManager.SendUnnamedMessage instead">Obsolete</span></small></h4>
+		<p>Sends a unnamed message to a specific client</p>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``ulong`` clientId</p>
@@ -289,12 +289,12 @@ permalink: /api/networking-manager/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` StartServer();</b></h4>
+		<h4 markdown="1"><b>public [``SocketTasks``](/MLAPI/api/socket-tasks/) StartServer();</b></h4>
 		<p>Starts a server</p>
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` StartClient();</b></h4>
+		<h4 markdown="1"><b>public [``SocketTasks``](/MLAPI/api/socket-tasks/) StartClient();</b></h4>
 		<p>Starts a client</p>
 	</div>
 	<br>
@@ -314,7 +314,7 @@ permalink: /api/networking-manager/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` StartHost(``Nullable<Vector3>`` position, ``Nullable<Quaternion>`` rotation, ``Nullable<ulong>`` prefabHash, ``Stream`` payloadStream);</b></h4>
+		<h4 markdown="1"><b>public [``SocketTasks``](/MLAPI/api/socket-tasks/) StartHost(``Nullable<Vector3>`` position, ``Nullable<Quaternion>`` rotation, ``Nullable<bool>`` createPlayerObject, ``Nullable<ulong>`` prefabHash, ``Stream`` payloadStream);</b></h4>
 		<p>Starts a Host</p>
 		<h5><b>Parameters</b></h5>
 		<div>
@@ -324,10 +324,23 @@ permalink: /api/networking-manager/
 			<p style="font-size: 20px; color: #444;" markdown="1">``Nullable<Quaternion>`` rotation</p>
 		</div>
 		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Nullable<bool>`` createPlayerObject</p>
+		</div>
+		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``Nullable<ulong>`` prefabHash</p>
 		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``Stream`` payloadStream</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` DisconnectClient(``ulong`` clientId);</b></h4>
+		<p>Disconnects the remote client.</p>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``ulong`` clientId</p>
+			<p>The ClientId to disconnect</p>
 		</div>
 	</div>
 	<br>

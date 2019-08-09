@@ -569,13 +569,45 @@ permalink: /api/bit-stream/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``object`` GetLifetimeService();</b></h4>
-		<h5 markdown="1">Inherited from: ``MarshalByRefObject``</h5>
+		<h4 markdown="1"><b>public ``int`` Read(``Span<byte>`` destination);</b></h4>
+		<h5 markdown="1">Inherited from: ``Stream``</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Span<byte>`` destination</p>
+		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``object`` InitializeLifetimeService();</b></h4>
-		<h5 markdown="1">Inherited from: ``MarshalByRefObject``</h5>
+		<h4 markdown="1"><b>public ``void`` Write(``ReadOnlySpan<byte>`` source);</b></h4>
+		<h5 markdown="1">Inherited from: ``Stream``</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``ReadOnlySpan<byte>`` source</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``ValueTask<int>`` ReadAsync(``Memory<byte>`` destination, ``CancellationToken`` cancellationToken);</b></h4>
+		<h5 markdown="1">Inherited from: ``Stream``</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Memory<byte>`` destination</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``CancellationToken`` cancellationToken</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``ValueTask`` WriteAsync(``ReadOnlyMemory<byte>`` source, ``CancellationToken`` cancellationToken);</b></h4>
+		<h5 markdown="1">Inherited from: ``Stream``</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``ReadOnlyMemory<byte>`` source</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``CancellationToken`` cancellationToken</p>
+		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
@@ -585,6 +617,16 @@ permalink: /api/bit-stream/
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``Type`` requestedType</p>
 		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``object`` GetLifetimeService();</b></h4>
+		<h5 markdown="1">Inherited from: ``MarshalByRefObject``</h5>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``object`` InitializeLifetimeService();</b></h4>
+		<h5 markdown="1">Inherited from: ``MarshalByRefObject``</h5>
 	</div>
 	<br>
 	<div style="line-height: 1;">

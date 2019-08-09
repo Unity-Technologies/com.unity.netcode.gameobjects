@@ -95,12 +95,12 @@ permalink: /api/custom-deserialization-delegate%3C-t%3E/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Delegate[]`` GetInvocationList();</b></h4>
+		<h4 markdown="1"><b>public ``int`` GetHashCode();</b></h4>
 		<h5 markdown="1">Inherited from: ``MulticastDelegate``</h5>
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``int`` GetHashCode();</b></h4>
+		<h4 markdown="1"><b>public ``Delegate[]`` GetInvocationList();</b></h4>
 		<h5 markdown="1">Inherited from: ``MulticastDelegate``</h5>
 	</div>
 	<br>
@@ -119,12 +119,12 @@ permalink: /api/custom-deserialization-delegate%3C-t%3E/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``string`` ToString();</b></h4>
+		<h4 markdown="1"><b>public ``Type`` GetType();</b></h4>
 		<h5 markdown="1">Inherited from: ``object``</h5>
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Type`` GetType();</b></h4>
+		<h4 markdown="1"><b>public ``string`` ToString();</b></h4>
 		<h5 markdown="1">Inherited from: ``object``</h5>
 	</div>
 </div>
