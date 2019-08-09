@@ -31,7 +31,7 @@ permalink: /api/networked-list%3C-t%3E/
 <div>
 	<h3 markdown="1">Public Fields</h3>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public [``NetworkedVarSettings``](/MLAPI/api/networked-var-settings/) Settings;</b></h4>
+		<h4 markdown="1"><b>public [``NetworkedVarSettings``](/api/networked-var-settings/) Settings;</b></h4>
 		<p>The settings for this container</p>
 	</div>
 </div>
@@ -39,30 +39,30 @@ permalink: /api/networked-list%3C-t%3E/
 <div>
 	<h3>Public Constructors</h3>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``NetworkedList<T>``](/MLAPI/api/networked-list%3C-t%3E/)();</b></h4>
+		<h4 markdown="1"><b>public [``NetworkedList<T>``](/api/networked-list%3C-t%3E/)();</b></h4>
 		<p>Creates a NetworkedList with the default value and settings</p>
 	</div>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``NetworkedList<T>``](/MLAPI/api/networked-list%3C-t%3E/)([``NetworkedVarSettings``](/MLAPI/api/networked-var-settings/) settings);</b></h4>
+		<h4 markdown="1"><b>public [``NetworkedList<T>``](/api/networked-list%3C-t%3E/)([``NetworkedVarSettings``](/api/networked-var-settings/) settings);</b></h4>
 		<p>Creates a NetworkedList with the default value and custom settings</p>
 	</div>
 		<h5><b>Parameters</b></h5>
 		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">[``NetworkedVarSettings``](/MLAPI/api/networked-var-settings/) settings</p>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``NetworkedVarSettings``](/api/networked-var-settings/) settings</p>
 			<p>The settings to use for the NetworkedList</p>
 		</div>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``NetworkedList<T>``](/MLAPI/api/networked-list%3C-t%3E/)([``NetworkedVarSettings``](/MLAPI/api/networked-var-settings/) settings, ``IList<T>`` value);</b></h4>
+		<h4 markdown="1"><b>public [``NetworkedList<T>``](/api/networked-list%3C-t%3E/)([``NetworkedVarSettings``](/api/networked-var-settings/) settings, ``IList<T>`` value);</b></h4>
 	</div>
 		<h5><b>Parameters</b></h5>
 		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">[``NetworkedVarSettings``](/MLAPI/api/networked-var-settings/) settings</p>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``NetworkedVarSettings``](/api/networked-var-settings/) settings</p>
 		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``IList<T>`` value</p>
 		</div>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``NetworkedList<T>``](/MLAPI/api/networked-list%3C-t%3E/)(``IList<T>`` value);</b></h4>
+		<h4 markdown="1"><b>public [``NetworkedList<T>``](/api/networked-list%3C-t%3E/)(``IList<T>`` value);</b></h4>
 	</div>
 		<h5><b>Parameters</b></h5>
 		<div>
@@ -136,10 +136,10 @@ permalink: /api/networked-list%3C-t%3E/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` SetNetworkedBehaviour([``NetworkedBehaviour``](/MLAPI/api/networked-behaviour/) behaviour);</b></h4>
+		<h4 markdown="1"><b>public ``void`` SetNetworkedBehaviour([``NetworkedBehaviour``](/api/networked-behaviour/) behaviour);</b></h4>
 		<h5><b>Parameters</b></h5>
 		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">[``NetworkedBehaviour``](/MLAPI/api/networked-behaviour/) behaviour</p>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``NetworkedBehaviour``](/api/networked-behaviour/) behaviour</p>
 		</div>
 	</div>
 	<br>

@@ -26,7 +26,7 @@ permalink: /api/profiler-tick/
 		<p>The events that occured during this tick</p>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public [``TickType``](/MLAPI/api/tick-type/) Type;</b></h4>
+		<h4 markdown="1"><b>public [``TickType``](/api/tick-type/) Type;</b></h4>
 		<p>The type of tick</p>
 	</div>
 	<div style="line-height: 1;">
@@ -42,7 +42,7 @@ permalink: /api/profiler-tick/
 <div>
 	<h3>Public Constructors</h3>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``ProfilerTick``](/MLAPI/api/profiler-tick/)();</b></h4>
+		<h4 markdown="1"><b>public [``ProfilerTick``](/api/profiler-tick/)();</b></h4>
 	</div>
 </div>
 <br>
@@ -63,14 +63,14 @@ permalink: /api/profiler-tick/
 <div>
 	<h3 markdown="1">Public Static Methods</h3>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public static [``ProfilerTick``](/MLAPI/api/profiler-tick/) FromStream(``Stream`` stream);</b></h4>
+		<h4 markdown="1"><b>public static [``ProfilerTick``](/api/profiler-tick/) FromStream(``Stream`` stream);</b></h4>
 		<p>Creates a ProfilerTick from data in the provided stream</p>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``Stream`` stream</p>
 			<p>The stream containing the ProfilerTick data</p>
 		</div>
-		<h5 markdown="1"><b>Returns [``ProfilerTick``](/MLAPI/api/profiler-tick/)</b></h5>
+		<h5 markdown="1"><b>Returns [``ProfilerTick``](/api/profiler-tick/)</b></h5>
 		<div>
 			<p>The ProfilerTick with data read from the stream</p>
 		</div>

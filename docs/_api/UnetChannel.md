@@ -26,7 +26,7 @@ permalink: /api/unet-channel/
 <div>
 	<h3>Public Constructors</h3>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``UnetChannel``](/MLAPI/api/unet-channel/)();</b></h4>
+		<h4 markdown="1"><b>public [``UnetChannel``](/api/unet-channel/)();</b></h4>
 	</div>
 </div>
 <br>

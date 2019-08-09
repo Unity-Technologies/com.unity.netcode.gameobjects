@@ -48,10 +48,10 @@ permalink: /api/invalid-config-exception/
 <div>
 	<h3>Public Constructors</h3>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``InvalidConfigException``](/MLAPI/api/invalid-config-exception/)();</b></h4>
+		<h4 markdown="1"><b>public [``InvalidConfigException``](/api/invalid-config-exception/)();</b></h4>
 	</div>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``InvalidConfigException``](/MLAPI/api/invalid-config-exception/)(``string`` issue);</b></h4>
+		<h4 markdown="1"><b>public [``InvalidConfigException``](/api/invalid-config-exception/)(``string`` issue);</b></h4>
 	</div>
 		<h5><b>Parameters</b></h5>
 		<div>

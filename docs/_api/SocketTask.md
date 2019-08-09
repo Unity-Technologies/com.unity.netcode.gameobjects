@@ -42,15 +42,15 @@ permalink: /api/socket-task/
 		<p>Gets or sets the state.</p>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public [``SocketTask``](/MLAPI/api/socket-task/) Done { get; }</b></h4>
+		<h4 markdown="1"><b>public [``SocketTask``](/api/socket-task/) Done { get; }</b></h4>
 		<p>Gets a done task.</p>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public [``SocketTask``](/MLAPI/api/socket-task/) Fault { get; }</b></h4>
+		<h4 markdown="1"><b>public [``SocketTask``](/api/socket-task/) Fault { get; }</b></h4>
 		<p>Gets a faulty task.</p>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public [``SocketTask``](/MLAPI/api/socket-task/) Working { get; }</b></h4>
+		<h4 markdown="1"><b>public [``SocketTask``](/api/socket-task/) Working { get; }</b></h4>
 		<p>Gets a working task.</p>
 	</div>
 </div>
@@ -58,16 +58,16 @@ permalink: /api/socket-task/
 <div>
 	<h3>Public Constructors</h3>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``SocketTask``](/MLAPI/api/socket-task/)();</b></h4>
+		<h4 markdown="1"><b>public [``SocketTask``](/api/socket-task/)();</b></h4>
 	</div>
 </div>
 <br>
 <div>
 	<h3 markdown="1">Public Methods</h3>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public [``SocketTasks``](/MLAPI/api/socket-tasks/) AsTasks();</b></h4>
+		<h4 markdown="1"><b>public [``SocketTasks``](/api/socket-tasks/) AsTasks();</b></h4>
 		<p>Converts to a SocketTasks.</p>
-		<h5 markdown="1"><b>Returns [``SocketTasks``](/MLAPI/api/socket-tasks/)</b></h5>
+		<h5 markdown="1"><b>Returns [``SocketTasks``](/api/socket-tasks/)</b></h5>
 		<div>
 			<p>The tasks.</p>
 		</div>

@@ -14,7 +14,7 @@ permalink: /api/bit-writer/
 <div>
 	<h3>Public Constructors</h3>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``BitWriter``](/MLAPI/api/bit-writer/)(``Stream`` stream);</b></h4>
+		<h4 markdown="1"><b>public [``BitWriter``](/api/bit-writer/)(``Stream`` stream);</b></h4>
 		<p>Creates a new BitWriter backed by a given stream</p>
 	</div>
 		<h5><b>Parameters</b></h5>

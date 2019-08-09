@@ -18,7 +18,7 @@ permalink: /api/transport-channel/
 		<p>The name of the channel</p>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public [``ChannelType``](/MLAPI/api/channel-type/) Type;</b></h4>
+		<h4 markdown="1"><b>public [``ChannelType``](/api/channel-type/) Type;</b></h4>
 		<p>The type of channel</p>
 	</div>
 </div>
@@ -26,7 +26,7 @@ permalink: /api/transport-channel/
 <div>
 	<h3>Public Constructors</h3>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``TransportChannel``](/MLAPI/api/transport-channel/)();</b></h4>
+		<h4 markdown="1"><b>public [``TransportChannel``](/api/transport-channel/)();</b></h4>
 	</div>
 </div>
 <br>

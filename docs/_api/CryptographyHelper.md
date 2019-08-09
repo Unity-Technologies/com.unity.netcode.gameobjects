@@ -14,7 +14,7 @@ permalink: /api/cryptography-helper/
 <div>
 	<h3 markdown="1">Public Fields</h3>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public [``VerifyCertificateDelegate``](/MLAPI/api/verify-certificate-delegate/) OnValidateCertificateCallback;</b></h4>
+		<h4 markdown="1"><b>public [``VerifyCertificateDelegate``](/api/verify-certificate-delegate/) OnValidateCertificateCallback;</b></h4>
 		<p>The delegate to invoke to validate the certificates</p>
 	</div>
 </div>

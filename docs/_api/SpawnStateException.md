@@ -50,11 +50,11 @@ permalink: /api/spawn-state-exception/
 <div>
 	<h3>Public Constructors</h3>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``SpawnStateException``](/MLAPI/api/spawn-state-exception/)();</b></h4>
+		<h4 markdown="1"><b>public [``SpawnStateException``](/api/spawn-state-exception/)();</b></h4>
 		<p>Constructs a SpawnStateException</p>
 	</div>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``SpawnStateException``](/MLAPI/api/spawn-state-exception/)(``string`` message);</b></h4>
+		<h4 markdown="1"><b>public [``SpawnStateException``](/api/spawn-state-exception/)(``string`` message);</b></h4>
 		<p>Constructs a SpawnStateException with a message</p>
 	</div>
 		<h5><b>Parameters</b></h5>
@@ -63,7 +63,7 @@ permalink: /api/spawn-state-exception/
 			<p>The exception message</p>
 		</div>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``SpawnStateException``](/MLAPI/api/spawn-state-exception/)(``string`` message, ``Exception`` inner);</b></h4>
+		<h4 markdown="1"><b>public [``SpawnStateException``](/api/spawn-state-exception/)(``string`` message, ``Exception`` inner);</b></h4>
 		<p>Constructs a SpawnStateException with a message and a inner exception</p>
 	</div>
 		<h5><b>Parameters</b></h5>

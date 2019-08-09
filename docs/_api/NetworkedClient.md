@@ -18,7 +18,7 @@ permalink: /api/networked-client/
 		<p>The Id of the NetworkedClient</p>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public [``NetworkedObject``](/MLAPI/api/networked-object/) PlayerObject;</b></h4>
+		<h4 markdown="1"><b>public [``NetworkedObject``](/api/networked-object/) PlayerObject;</b></h4>
 		<p>The PlayerObject of the Client</p>
 	</div>
 	<div style="line-height: 1;">
@@ -34,7 +34,7 @@ permalink: /api/networked-client/
 <div>
 	<h3>Public Constructors</h3>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``NetworkedClient``](/MLAPI/api/networked-client/)();</b></h4>
+		<h4 markdown="1"><b>public [``NetworkedClient``](/api/networked-client/)();</b></h4>
 	</div>
 </div>
 <br>

@@ -25,7 +25,7 @@ permalink: /api/fixed-queue%3C-t%3E/
 <div>
 	<h3>Public Constructors</h3>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``FixedQueue<T>``](/MLAPI/api/fixed-queue%3C-t%3E/)(``int`` maxSize);</b></h4>
+		<h4 markdown="1"><b>public [``FixedQueue<T>``](/api/fixed-queue%3C-t%3E/)(``int`` maxSize);</b></h4>
 		<p>Creates a new FixedQueue with a given size</p>
 	</div>
 		<h5><b>Parameters</b></h5>

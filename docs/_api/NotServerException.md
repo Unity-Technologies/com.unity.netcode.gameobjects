@@ -50,11 +50,11 @@ permalink: /api/not-server-exception/
 <div>
 	<h3>Public Constructors</h3>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``NotServerException``](/MLAPI/api/not-server-exception/)();</b></h4>
+		<h4 markdown="1"><b>public [``NotServerException``](/api/not-server-exception/)();</b></h4>
 		<p>Constructs a NotServerException</p>
 	</div>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``NotServerException``](/MLAPI/api/not-server-exception/)(``string`` message);</b></h4>
+		<h4 markdown="1"><b>public [``NotServerException``](/api/not-server-exception/)(``string`` message);</b></h4>
 		<p>Constructs a NotServerException with a message</p>
 	</div>
 		<h5><b>Parameters</b></h5>
@@ -63,7 +63,7 @@ permalink: /api/not-server-exception/
 			<p>The exception message</p>
 		</div>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``NotServerException``](/MLAPI/api/not-server-exception/)(``string`` message, ``Exception`` inner);</b></h4>
+		<h4 markdown="1"><b>public [``NotServerException``](/api/not-server-exception/)(``string`` message, ``Exception`` inner);</b></h4>
 		<p>Constructs a NotServerException with a message and a inner exception</p>
 	</div>
 		<h5><b>Parameters</b></h5>

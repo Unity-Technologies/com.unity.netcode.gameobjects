@@ -20,7 +20,7 @@ permalink: /api/unet-transport/
 	<h3 markdown="1">Inherited Properties</h3>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``bool`` IsSupported { get; }</b></h4>
-		<h5 markdown="1">Inherited from: [``Transport``](/MLAPI/api/transport/)</h5>
+		<h5 markdown="1">Inherited from: [``Transport``](/api/transport/)</h5>
 		<p>Gets a value indicating whether this  is supported in the current runtime context.
             This is used by multiplex adapters.</p>
 	</div>
@@ -170,7 +170,7 @@ permalink: /api/unet-transport/
 <div>
 	<h3>Public Constructors</h3>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``UnetTransport``](/MLAPI/api/unet-transport/)();</b></h4>
+		<h4 markdown="1"><b>public [``UnetTransport``](/api/unet-transport/)();</b></h4>
 	</div>
 </div>
 <br>
@@ -191,7 +191,7 @@ permalink: /api/unet-transport/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public [``NetEventType``](/MLAPI/api/net-event-type/) PollEvent(``UInt64&`` clientId, ``String&`` channelName, ``ArraySegment`1&`` payload, ``Single&`` receiveTime);</b></h4>
+		<h4 markdown="1"><b>public [``NetEventType``](/api/net-event-type/) PollEvent(``UInt64&`` clientId, ``String&`` channelName, ``ArraySegment`1&`` payload, ``Single&`` receiveTime);</b></h4>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``UInt64&`` clientId</p>
@@ -208,11 +208,11 @@ permalink: /api/unet-transport/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public [``SocketTasks``](/MLAPI/api/socket-tasks/) StartClient();</b></h4>
+		<h4 markdown="1"><b>public [``SocketTasks``](/api/socket-tasks/) StartClient();</b></h4>
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public [``SocketTasks``](/MLAPI/api/socket-tasks/) StartServer();</b></h4>
+		<h4 markdown="1"><b>public [``SocketTasks``](/api/socket-tasks/) StartServer();</b></h4>
 	</div>
 	<br>
 	<div style="line-height: 1;">
@@ -276,10 +276,10 @@ permalink: /api/unet-transport/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``int`` AddMLAPIChannel([``ChannelType``](/MLAPI/api/channel-type/) type, ``ConnectionConfig`` config);</b></h4>
+		<h4 markdown="1"><b>public ``int`` AddMLAPIChannel([``ChannelType``](/api/channel-type/) type, ``ConnectionConfig`` config);</b></h4>
 		<h5><b>Parameters</b></h5>
 		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">[``ChannelType``](/MLAPI/api/channel-type/) type</p>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``ChannelType``](/api/channel-type/) type</p>
 		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``ConnectionConfig`` config</p>

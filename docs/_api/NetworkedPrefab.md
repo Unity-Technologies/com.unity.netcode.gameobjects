@@ -26,7 +26,7 @@ permalink: /api/networked-prefab/
 <div>
 	<h3>Public Constructors</h3>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``NetworkedPrefab``](/MLAPI/api/networked-prefab/)();</b></h4>
+		<h4 markdown="1"><b>public [``NetworkedPrefab``](/api/networked-prefab/)();</b></h4>
 	</div>
 </div>
 <br>

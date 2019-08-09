@@ -26,7 +26,7 @@ permalink: /api/on-value-changed-delegate%3C-t%3E/
 <div>
 	<h3>Public Constructors</h3>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``OnValueChangedDelegate<T>``](/MLAPI/api/on-value-changed-delegate%3C-t%3E/)(``object`` object, ``IntPtr`` method);</b></h4>
+		<h4 markdown="1"><b>public [``OnValueChangedDelegate<T>``](/api/on-value-changed-delegate%3C-t%3E/)(``object`` object, ``IntPtr`` method);</b></h4>
 	</div>
 		<h5><b>Parameters</b></h5>
 		<div>

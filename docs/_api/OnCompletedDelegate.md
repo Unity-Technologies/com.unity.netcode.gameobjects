@@ -26,7 +26,7 @@ permalink: /api/on-completed-delegate/
 <div>
 	<h3>Public Constructors</h3>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``OnCompletedDelegate``](/MLAPI/api/on-completed-delegate/)(``object`` object, ``IntPtr`` method);</b></h4>
+		<h4 markdown="1"><b>public [``OnCompletedDelegate``](/api/on-completed-delegate/)(``object`` object, ``IntPtr`` method);</b></h4>
 	</div>
 		<h5><b>Parameters</b></h5>
 		<div>

@@ -30,7 +30,7 @@ permalink: /api/network-config/
 		<p>The protocol version. Different versions doesn't talk to each other.</p>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public [``Transport``](/MLAPI/api/transport/) NetworkTransport;</b></h4>
+		<h4 markdown="1"><b>public [``Transport``](/api/transport/) NetworkTransport;</b></h4>
 		<p>The transport hosts the sever uses</p>
 	</div>
 	<div style="line-height: 1;">
@@ -120,7 +120,7 @@ permalink: /api/network-config/
 		<p>The amount of seconds a NetworkId has to be unused in order for it to be reused.</p>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public [``HashSize``](/MLAPI/api/hash-size/) RpcHashSize;</b></h4>
+		<h4 markdown="1"><b>public [``HashSize``](/api/hash-size/) RpcHashSize;</b></h4>
 		<p>Decides how many bytes to use for Rpc messaging. Leave this to 2 bytes unless you are facing hash collisions</p>
 	</div>
 	<div style="line-height: 1;">
@@ -144,7 +144,7 @@ permalink: /api/network-config/
 <div>
 	<h3>Public Constructors</h3>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``NetworkConfig``](/MLAPI/api/network-config/)();</b></h4>
+		<h4 markdown="1"><b>public [``NetworkConfig``](/api/network-config/)();</b></h4>
 	</div>
 </div>
 <br>

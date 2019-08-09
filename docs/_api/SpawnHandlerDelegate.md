@@ -26,7 +26,7 @@ permalink: /api/spawn-handler-delegate/
 <div>
 	<h3>Public Constructors</h3>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``SpawnHandlerDelegate``](/MLAPI/api/spawn-handler-delegate/)(``object`` object, ``IntPtr`` method);</b></h4>
+		<h4 markdown="1"><b>public [``SpawnHandlerDelegate``](/api/spawn-handler-delegate/)(``object`` object, ``IntPtr`` method);</b></h4>
 	</div>
 		<h5><b>Parameters</b></h5>
 		<div>
@@ -40,7 +40,7 @@ permalink: /api/spawn-handler-delegate/
 <div>
 	<h3 markdown="1">Public Methods</h3>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public [``NetworkedObject``](/MLAPI/api/networked-object/) Invoke(``Vector3`` position, ``Quaternion`` rotation);</b></h4>
+		<h4 markdown="1"><b>public [``NetworkedObject``](/api/networked-object/) Invoke(``Vector3`` position, ``Quaternion`` rotation);</b></h4>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``Vector3`` position</p>
@@ -68,7 +68,7 @@ permalink: /api/spawn-handler-delegate/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public [``NetworkedObject``](/MLAPI/api/networked-object/) EndInvoke(``IAsyncResult`` result);</b></h4>
+		<h4 markdown="1"><b>public [``NetworkedObject``](/api/networked-object/) EndInvoke(``IAsyncResult`` result);</b></h4>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``IAsyncResult`` result</p>

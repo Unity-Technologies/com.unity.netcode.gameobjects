@@ -14,7 +14,7 @@ permalink: /api/log-helper/
 <div>
 	<h3 markdown="1">Public Properties</h3>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public [``LogLevel``](/MLAPI/api/log-level/) CurrentLogLevel { get; }</b></h4>
+		<h4 markdown="1"><b>public [``LogLevel``](/api/log-level/) CurrentLogLevel { get; }</b></h4>
 		<p>Gets the current log level.</p>
 	</div>
 </div>

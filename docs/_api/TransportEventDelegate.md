@@ -26,7 +26,7 @@ permalink: /api/transport-event-delegate/
 <div>
 	<h3>Public Constructors</h3>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``TransportEventDelegate``](/MLAPI/api/transport-event-delegate/)(``object`` object, ``IntPtr`` method);</b></h4>
+		<h4 markdown="1"><b>public [``TransportEventDelegate``](/api/transport-event-delegate/)(``object`` object, ``IntPtr`` method);</b></h4>
 	</div>
 		<h5><b>Parameters</b></h5>
 		<div>
@@ -40,10 +40,10 @@ permalink: /api/transport-event-delegate/
 <div>
 	<h3 markdown="1">Public Methods</h3>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` Invoke([``NetEventType``](/MLAPI/api/net-event-type/) type, ``ulong`` clientId, ``string`` channelName, ``ArraySegment<byte>`` payload, ``float`` receiveTime);</b></h4>
+		<h4 markdown="1"><b>public ``void`` Invoke([``NetEventType``](/api/net-event-type/) type, ``ulong`` clientId, ``string`` channelName, ``ArraySegment<byte>`` payload, ``float`` receiveTime);</b></h4>
 		<h5><b>Parameters</b></h5>
 		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">[``NetEventType``](/MLAPI/api/net-event-type/) type</p>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``NetEventType``](/api/net-event-type/) type</p>
 		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``ulong`` clientId</p>
@@ -60,10 +60,10 @@ permalink: /api/transport-event-delegate/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``IAsyncResult`` BeginInvoke([``NetEventType``](/MLAPI/api/net-event-type/) type, ``ulong`` clientId, ``string`` channelName, ``ArraySegment<byte>`` payload, ``float`` receiveTime, ``AsyncCallback`` callback, ``object`` object);</b></h4>
+		<h4 markdown="1"><b>public ``IAsyncResult`` BeginInvoke([``NetEventType``](/api/net-event-type/) type, ``ulong`` clientId, ``string`` channelName, ``ArraySegment<byte>`` payload, ``float`` receiveTime, ``AsyncCallback`` callback, ``object`` object);</b></h4>
 		<h5><b>Parameters</b></h5>
 		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">[``NetEventType``](/MLAPI/api/net-event-type/) type</p>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``NetEventType``](/api/net-event-type/) type</p>
 		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``ulong`` clientId</p>

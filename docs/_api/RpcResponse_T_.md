@@ -23,28 +23,28 @@ permalink: /api/rpc-response%3C-t%3E/
 	<h3 markdown="1">Inherited Properties</h3>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``ulong`` Id { get; set; }</b></h4>
-		<h5 markdown="1">Inherited from: [``RpcResponseBase``](/MLAPI/api/rpc-response-base/)</h5>
+		<h5 markdown="1">Inherited from: [``RpcResponseBase``](/api/rpc-response-base/)</h5>
 		<p>Unique ID for the Rpc Request and Response pair</p>
 	</div>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``bool`` IsDone { get; set; }</b></h4>
-		<h5 markdown="1">Inherited from: [``RpcResponseBase``](/MLAPI/api/rpc-response-base/)</h5>
+		<h5 markdown="1">Inherited from: [``RpcResponseBase``](/api/rpc-response-base/)</h5>
 		<p>Whether or not the operation is done. This does not mean it was successful. Check IsSuccessful for that
             This will be true both when the operation was successful and when a timeout occured</p>
 	</div>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``bool`` IsSuccessful { get; set; }</b></h4>
-		<h5 markdown="1">Inherited from: [``RpcResponseBase``](/MLAPI/api/rpc-response-base/)</h5>
+		<h5 markdown="1">Inherited from: [``RpcResponseBase``](/api/rpc-response-base/)</h5>
 		<p>Whether or not a valid result was received</p>
 	</div>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``ulong`` ClientId { get; set; }</b></h4>
-		<h5 markdown="1">Inherited from: [``RpcResponseBase``](/MLAPI/api/rpc-response-base/)</h5>
+		<h5 markdown="1">Inherited from: [``RpcResponseBase``](/api/rpc-response-base/)</h5>
 		<p>The clientId which the Request/Response was done wit</p>
 	</div>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``float`` Timeout { get; set; }</b></h4>
-		<h5 markdown="1">Inherited from: [``RpcResponseBase``](/MLAPI/api/rpc-response-base/)</h5>
+		<h5 markdown="1">Inherited from: [``RpcResponseBase``](/api/rpc-response-base/)</h5>
 		<p>The amount of time to wait for the operation to complete</p>
 	</div>
 </div>
@@ -52,7 +52,7 @@ permalink: /api/rpc-response%3C-t%3E/
 <div>
 	<h3>Public Constructors</h3>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``RpcResponse<T>``](/MLAPI/api/rpc-response%3C-t%3E/)();</b></h4>
+		<h4 markdown="1"><b>public [``RpcResponse<T>``](/api/rpc-response%3C-t%3E/)();</b></h4>
 	</div>
 </div>
 <br>

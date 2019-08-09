@@ -24,7 +24,7 @@ permalink: /api/response-rpc-method%3C-tresult,-t1,-t2%3E/
 <div>
 	<h3>Public Constructors</h3>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``ResponseRpcMethod<TResult,T1,T2>``](/MLAPI/api/response-rpc-method%3C-tresult,-t1,-t2%3E/)(``object`` object, ``IntPtr`` method);</b></h4>
+		<h4 markdown="1"><b>public [``ResponseRpcMethod<TResult,T1,T2>``](/api/response-rpc-method%3C-tresult,-t1,-t2%3E/)(``object`` object, ``IntPtr`` method);</b></h4>
 	</div>
 		<h5><b>Parameters</b></h5>
 		<div>

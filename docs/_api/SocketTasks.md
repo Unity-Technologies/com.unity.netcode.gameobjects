@@ -38,7 +38,7 @@ permalink: /api/socket-tasks/
 <div>
 	<h3>Public Constructors</h3>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``SocketTasks``](/MLAPI/api/socket-tasks/)();</b></h4>
+		<h4 markdown="1"><b>public [``SocketTasks``](/api/socket-tasks/)();</b></h4>
 	</div>
 </div>
 <br>

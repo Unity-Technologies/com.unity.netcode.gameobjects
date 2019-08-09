@@ -132,7 +132,7 @@ permalink: /api/multiplex-transport-adapter/
 <div>
 	<h3 markdown="1">Public Fields</h3>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public [``ConnectionIdSpreadMethod``](/MLAPI/api/connection-id-spread-method/) SpreadMethod;</b></h4>
+		<h4 markdown="1"><b>public [``ConnectionIdSpreadMethod``](/api/connection-id-spread-method/) SpreadMethod;</b></h4>
 	</div>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``Transport[]`` Transports;</b></h4>
@@ -142,7 +142,7 @@ permalink: /api/multiplex-transport-adapter/
 <div>
 	<h3>Public Constructors</h3>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``MultiplexTransportAdapter``](/MLAPI/api/multiplex-transport-adapter/)();</b></h4>
+		<h4 markdown="1"><b>public [``MultiplexTransportAdapter``](/api/multiplex-transport-adapter/)();</b></h4>
 	</div>
 </div>
 <br>
@@ -173,7 +173,7 @@ permalink: /api/multiplex-transport-adapter/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public [``NetEventType``](/MLAPI/api/net-event-type/) PollEvent(``UInt64&`` clientId, ``String&`` channelName, ``ArraySegment`1&`` payload, ``Single&`` receiveTime);</b></h4>
+		<h4 markdown="1"><b>public [``NetEventType``](/api/net-event-type/) PollEvent(``UInt64&`` clientId, ``String&`` channelName, ``ArraySegment`1&`` payload, ``Single&`` receiveTime);</b></h4>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``UInt64&`` clientId</p>
@@ -208,11 +208,11 @@ permalink: /api/multiplex-transport-adapter/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public [``SocketTasks``](/MLAPI/api/socket-tasks/) StartClient();</b></h4>
+		<h4 markdown="1"><b>public [``SocketTasks``](/api/socket-tasks/) StartClient();</b></h4>
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public [``SocketTasks``](/MLAPI/api/socket-tasks/) StartServer();</b></h4>
+		<h4 markdown="1"><b>public [``SocketTasks``](/api/socket-tasks/) StartServer();</b></h4>
 	</div>
 	<br>
 	<div style="line-height: 1;">

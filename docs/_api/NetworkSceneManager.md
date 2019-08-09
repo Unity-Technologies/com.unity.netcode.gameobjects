@@ -29,7 +29,7 @@ permalink: /api/network-scene-manager/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public static [``SceneSwitchProgress``](/MLAPI/api/scene-switch-progress/) SwitchScene(``string`` sceneName);</b></h4>
+		<h4 markdown="1"><b>public static [``SceneSwitchProgress``](/api/scene-switch-progress/) SwitchScene(``string`` sceneName);</b></h4>
 		<p>Switches to a scene with a given name. Can only be called from Server</p>
 		<h5><b>Parameters</b></h5>
 		<div>

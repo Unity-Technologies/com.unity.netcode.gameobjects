@@ -14,19 +14,19 @@ permalink: /api/networked-var-settings/
 <div>
 	<h3 markdown="1">Public Fields</h3>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public [``NetworkedVarPermission``](/MLAPI/api/networked-var-permission/) WritePermission;</b></h4>
+		<h4 markdown="1"><b>public [``NetworkedVarPermission``](/api/networked-var-permission/) WritePermission;</b></h4>
 		<p>Defines the read permissions for this var</p>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public [``NetworkedVarPermission``](/MLAPI/api/networked-var-permission/) ReadPermission;</b></h4>
+		<h4 markdown="1"><b>public [``NetworkedVarPermission``](/api/networked-var-permission/) ReadPermission;</b></h4>
 		<p>Defines the write permissions for this var</p>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public [``NetworkedVarPermissionsDelegate``](/MLAPI/api/networked-var-permissions-delegate/) WritePermissionCallback;</b></h4>
+		<h4 markdown="1"><b>public [``NetworkedVarPermissionsDelegate``](/api/networked-var-permissions-delegate/) WritePermissionCallback;</b></h4>
 		<p>The delegate used to evaluate write permission when the "Custom" mode is used</p>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public [``NetworkedVarPermissionsDelegate``](/MLAPI/api/networked-var-permissions-delegate/) ReadPermissionCallback;</b></h4>
+		<h4 markdown="1"><b>public [``NetworkedVarPermissionsDelegate``](/api/networked-var-permissions-delegate/) ReadPermissionCallback;</b></h4>
 		<p>The delegate used to evaluate read permission when the "Custom" mode is used</p>
 	</div>
 	<div style="line-height: 1;">
@@ -44,7 +44,7 @@ permalink: /api/networked-var-settings/
 <div>
 	<h3>Public Constructors</h3>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``NetworkedVarSettings``](/MLAPI/api/networked-var-settings/)();</b></h4>
+		<h4 markdown="1"><b>public [``NetworkedVarSettings``](/api/networked-var-settings/)();</b></h4>
 		<p>Constructs a new NetworkedVarSettings instance</p>
 	</div>
 </div>

@@ -14,7 +14,7 @@ permalink: /api/bit-reader/
 <div>
 	<h3>Public Constructors</h3>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``BitReader``](/MLAPI/api/bit-reader/)(``Stream`` stream);</b></h4>
+		<h4 markdown="1"><b>public [``BitReader``](/api/bit-reader/)(``Stream`` stream);</b></h4>
 		<p>Creates a new BitReader backed by a given stream</p>
 	</div>
 		<h5><b>Parameters</b></h5>

@@ -32,7 +32,7 @@ permalink: /api/server-rpcattribute/
 <div>
 	<h3>Public Constructors</h3>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``ServerRPCAttribute``](/MLAPI/api/server-rpcattribute/)();</b></h4>
+		<h4 markdown="1"><b>public [``ServerRPCAttribute``](/api/server-rpcattribute/)();</b></h4>
 	</div>
 </div>
 <br>

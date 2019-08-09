@@ -26,7 +26,7 @@ permalink: /api/networked-var-permissions-delegate/
 <div>
 	<h3>Public Constructors</h3>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``NetworkedVarPermissionsDelegate``](/MLAPI/api/networked-var-permissions-delegate/)(``object`` object, ``IntPtr`` method);</b></h4>
+		<h4 markdown="1"><b>public [``NetworkedVarPermissionsDelegate``](/api/networked-var-permissions-delegate/)(``object`` object, ``IntPtr`` method);</b></h4>
 	</div>
 		<h5><b>Parameters</b></h5>
 		<div>

@@ -26,7 +26,7 @@ permalink: /api/destroy-handler-delegate/
 <div>
 	<h3>Public Constructors</h3>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``DestroyHandlerDelegate``](/MLAPI/api/destroy-handler-delegate/)(``object`` object, ``IntPtr`` method);</b></h4>
+		<h4 markdown="1"><b>public [``DestroyHandlerDelegate``](/api/destroy-handler-delegate/)(``object`` object, ``IntPtr`` method);</b></h4>
 	</div>
 		<h5><b>Parameters</b></h5>
 		<div>
@@ -40,18 +40,18 @@ permalink: /api/destroy-handler-delegate/
 <div>
 	<h3 markdown="1">Public Methods</h3>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` Invoke([``NetworkedObject``](/MLAPI/api/networked-object/) networkedObject);</b></h4>
+		<h4 markdown="1"><b>public ``void`` Invoke([``NetworkedObject``](/api/networked-object/) networkedObject);</b></h4>
 		<h5><b>Parameters</b></h5>
 		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">[``NetworkedObject``](/MLAPI/api/networked-object/) networkedObject</p>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``NetworkedObject``](/api/networked-object/) networkedObject</p>
 		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``IAsyncResult`` BeginInvoke([``NetworkedObject``](/MLAPI/api/networked-object/) networkedObject, ``AsyncCallback`` callback, ``object`` object);</b></h4>
+		<h4 markdown="1"><b>public ``IAsyncResult`` BeginInvoke([``NetworkedObject``](/api/networked-object/) networkedObject, ``AsyncCallback`` callback, ``object`` object);</b></h4>
 		<h5><b>Parameters</b></h5>
 		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">[``NetworkedObject``](/MLAPI/api/networked-object/) networkedObject</p>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``NetworkedObject``](/api/networked-object/) networkedObject</p>
 		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``AsyncCallback`` callback</p>

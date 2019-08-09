@@ -30,7 +30,7 @@ permalink: /api/networked-var-byte/
 <div>
 	<h3 markdown="1">Inherited Fields</h3>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public [``NetworkedVarSettings``](/MLAPI/api/networked-var-settings/) Settings;</b></h4>
+		<h4 markdown="1"><b>public [``NetworkedVarSettings``](/api/networked-var-settings/) Settings;</b></h4>
 		<h5 markdown="1">Inherited from: ``NetworkedVar<byte>``</h5>
 	</div>
 	<div style="line-height: 1;">
@@ -42,28 +42,28 @@ permalink: /api/networked-var-byte/
 <div>
 	<h3>Public Constructors</h3>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``NetworkedVarByte``](/MLAPI/api/networked-var-byte/)();</b></h4>
+		<h4 markdown="1"><b>public [``NetworkedVarByte``](/api/networked-var-byte/)();</b></h4>
 	</div>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``NetworkedVarByte``](/MLAPI/api/networked-var-byte/)([``NetworkedVarSettings``](/MLAPI/api/networked-var-settings/) settings);</b></h4>
+		<h4 markdown="1"><b>public [``NetworkedVarByte``](/api/networked-var-byte/)([``NetworkedVarSettings``](/api/networked-var-settings/) settings);</b></h4>
 	</div>
 		<h5><b>Parameters</b></h5>
 		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">[``NetworkedVarSettings``](/MLAPI/api/networked-var-settings/) settings</p>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``NetworkedVarSettings``](/api/networked-var-settings/) settings</p>
 		</div>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``NetworkedVarByte``](/MLAPI/api/networked-var-byte/)(``byte`` value);</b></h4>
+		<h4 markdown="1"><b>public [``NetworkedVarByte``](/api/networked-var-byte/)(``byte`` value);</b></h4>
 	</div>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``byte`` value</p>
 		</div>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``NetworkedVarByte``](/MLAPI/api/networked-var-byte/)([``NetworkedVarSettings``](/MLAPI/api/networked-var-settings/) settings, ``byte`` value);</b></h4>
+		<h4 markdown="1"><b>public [``NetworkedVarByte``](/api/networked-var-byte/)([``NetworkedVarSettings``](/api/networked-var-settings/) settings, ``byte`` value);</b></h4>
 	</div>
 		<h5><b>Parameters</b></h5>
 		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">[``NetworkedVarSettings``](/MLAPI/api/networked-var-settings/) settings</p>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``NetworkedVarSettings``](/api/networked-var-settings/) settings</p>
 		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``byte`` value</p>
@@ -122,11 +122,11 @@ permalink: /api/networked-var-byte/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` SetNetworkedBehaviour([``NetworkedBehaviour``](/MLAPI/api/networked-behaviour/) behaviour);</b></h4>
+		<h4 markdown="1"><b>public ``void`` SetNetworkedBehaviour([``NetworkedBehaviour``](/api/networked-behaviour/) behaviour);</b></h4>
 		<h5 markdown="1">Inherited from: ``NetworkedVar<byte>``</h5>
 		<h5><b>Parameters</b></h5>
 		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">[``NetworkedBehaviour``](/MLAPI/api/networked-behaviour/) behaviour</p>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``NetworkedBehaviour``](/api/networked-behaviour/) behaviour</p>
 		</div>
 	</div>
 	<br>

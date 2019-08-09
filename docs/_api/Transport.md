@@ -162,7 +162,7 @@ permalink: /api/transport/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public [``NetEventType``](/MLAPI/api/net-event-type/) PollEvent(``UInt64&`` clientId, ``String&`` channelName, ``ArraySegment`1&`` payload, ``Single&`` receiveTime);</b></h4>
+		<h4 markdown="1"><b>public [``NetEventType``](/api/net-event-type/) PollEvent(``UInt64&`` clientId, ``String&`` channelName, ``ArraySegment`1&`` payload, ``Single&`` receiveTime);</b></h4>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``UInt64&`` clientId</p>
@@ -179,12 +179,12 @@ permalink: /api/transport/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public [``SocketTasks``](/MLAPI/api/socket-tasks/) StartClient();</b></h4>
+		<h4 markdown="1"><b>public [``SocketTasks``](/api/socket-tasks/) StartClient();</b></h4>
 		<p>Connects client to server</p>
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public [``SocketTasks``](/MLAPI/api/socket-tasks/) StartServer();</b></h4>
+		<h4 markdown="1"><b>public [``SocketTasks``](/api/socket-tasks/) StartServer();</b></h4>
 		<p>Starts to listen for incoming clients.</p>
 	</div>
 	<br>

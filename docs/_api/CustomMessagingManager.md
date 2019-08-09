@@ -15,7 +15,7 @@ permalink: /api/custom-messaging-manager/
 <div>
 	<h3 markdown="1">Public Static Methods</h3>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public static ``void`` SendUnnamedMessage(``List<ulong>`` clientIds, [``BitStream``](/MLAPI/api/bit-stream/) stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h4 markdown="1"><b>public static ``void`` SendUnnamedMessage(``List<ulong>`` clientIds, [``BitStream``](/api/bit-stream/) stream, ``string`` channel, [``SecuritySendFlags``](/api/security-send-flags/) security);</b></h4>
 		<p>Sends unnamed message to a list of clients</p>
 		<h5><b>Parameters</b></h5>
 		<div>
@@ -23,7 +23,7 @@ permalink: /api/custom-messaging-manager/
 			<p>The clients to send to, sends to everyone if null</p>
 		</div>
 		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">[``BitStream``](/MLAPI/api/bit-stream/) stream</p>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``BitStream``](/api/bit-stream/) stream</p>
 			<p>The message stream containing the data</p>
 		</div>
 		<div>
@@ -31,13 +31,13 @@ permalink: /api/custom-messaging-manager/
 			<p>The channel to send the data on</p>
 		</div>
 		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/api/security-send-flags/) security</p>
 			<p>The security settings to apply to the message</p>
 		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public static ``void`` SendUnnamedMessage(``ulong`` clientId, [``BitStream``](/MLAPI/api/bit-stream/) stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h4 markdown="1"><b>public static ``void`` SendUnnamedMessage(``ulong`` clientId, [``BitStream``](/api/bit-stream/) stream, ``string`` channel, [``SecuritySendFlags``](/api/security-send-flags/) security);</b></h4>
 		<p>Sends a unnamed message to a specific client</p>
 		<h5><b>Parameters</b></h5>
 		<div>
@@ -45,7 +45,7 @@ permalink: /api/custom-messaging-manager/
 			<p>The client to send the message to</p>
 		</div>
 		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">[``BitStream``](/MLAPI/api/bit-stream/) stream</p>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``BitStream``](/api/bit-stream/) stream</p>
 			<p>The message stream containing the data</p>
 		</div>
 		<div>
@@ -53,13 +53,13 @@ permalink: /api/custom-messaging-manager/
 			<p>The channel tos end the data on</p>
 		</div>
 		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/api/security-send-flags/) security</p>
 			<p>The security settings to apply to the message</p>
 		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public static ``void`` RegisterNamedMessageHandler(``string`` name, [``HandleNamedMessageDelegate``](/MLAPI/api/handle-named-message-delegate/) callback);</b></h4>
+		<h4 markdown="1"><b>public static ``void`` RegisterNamedMessageHandler(``string`` name, [``HandleNamedMessageDelegate``](/api/handle-named-message-delegate/) callback);</b></h4>
 		<p>Registers a named message handler delegate.</p>
 		<h5><b>Parameters</b></h5>
 		<div>
@@ -67,13 +67,13 @@ permalink: /api/custom-messaging-manager/
 			<p>Name of the message.</p>
 		</div>
 		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">[``HandleNamedMessageDelegate``](/MLAPI/api/handle-named-message-delegate/) callback</p>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``HandleNamedMessageDelegate``](/api/handle-named-message-delegate/) callback</p>
 			<p>The callback to run when a named message is received.</p>
 		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public static ``void`` SendNamedMessage(``string`` name, ``ulong`` clientId, ``Stream`` stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h4 markdown="1"><b>public static ``void`` SendNamedMessage(``string`` name, ``ulong`` clientId, ``Stream`` stream, ``string`` channel, [``SecuritySendFlags``](/api/security-send-flags/) security);</b></h4>
 		<p>Sends a named message</p>
 		<h5><b>Parameters</b></h5>
 		<div>
@@ -93,13 +93,13 @@ permalink: /api/custom-messaging-manager/
 			<p>The channel tos end the data on</p>
 		</div>
 		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/api/security-send-flags/) security</p>
 			<p>The security settings to apply to the message</p>
 		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public static ``void`` SendNamedMessage(``string`` name, ``List<ulong>`` clientIds, ``Stream`` stream, ``string`` channel, [``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security);</b></h4>
+		<h4 markdown="1"><b>public static ``void`` SendNamedMessage(``string`` name, ``List<ulong>`` clientIds, ``Stream`` stream, ``string`` channel, [``SecuritySendFlags``](/api/security-send-flags/) security);</b></h4>
 		<p>Sends the named message</p>
 		<h5><b>Parameters</b></h5>
 		<div>
@@ -119,7 +119,7 @@ permalink: /api/custom-messaging-manager/
 			<p>The channel to send the data on</p>
 		</div>
 		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/MLAPI/api/security-send-flags/) security</p>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SecuritySendFlags``](/api/security-send-flags/) security</p>
 			<p>The security settings to apply to the message</p>
 		</div>
 	</div>

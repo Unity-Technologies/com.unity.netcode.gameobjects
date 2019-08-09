@@ -50,11 +50,11 @@ permalink: /api/not-listening-exception/
 <div>
 	<h3>Public Constructors</h3>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``NotListeningException``](/MLAPI/api/not-listening-exception/)();</b></h4>
+		<h4 markdown="1"><b>public [``NotListeningException``](/api/not-listening-exception/)();</b></h4>
 		<p>Constructs a NotListeningException</p>
 	</div>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``NotListeningException``](/MLAPI/api/not-listening-exception/)(``string`` message);</b></h4>
+		<h4 markdown="1"><b>public [``NotListeningException``](/api/not-listening-exception/)(``string`` message);</b></h4>
 		<p>Constructs a NotListeningException with a message</p>
 	</div>
 		<h5><b>Parameters</b></h5>
@@ -63,7 +63,7 @@ permalink: /api/not-listening-exception/
 			<p>The exception message</p>
 		</div>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``NotListeningException``](/MLAPI/api/not-listening-exception/)(``string`` message, ``Exception`` inner);</b></h4>
+		<h4 markdown="1"><b>public [``NotListeningException``](/api/not-listening-exception/)(``string`` message, ``Exception`` inner);</b></h4>
 		<p>Constructs a NotListeningException with a message and a inner exception</p>
 	</div>
 		<h5><b>Parameters</b></h5>
