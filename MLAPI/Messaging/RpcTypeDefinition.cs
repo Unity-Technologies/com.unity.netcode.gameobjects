@@ -80,11 +80,21 @@ namespace MLAPI.Messaging
 
                 Dictionary<ulong, ReflectionMethod> lookupTarget = rpcMethod.serverTarget ? serverMethods : clientMethods;
 
-                lookupTarget.Add(HashMethodNameAndValidate(method.Name), rpcMethod);
+                ulong nameHash = HashMethodNameAndValidate(method.Name);
+
+                if (!lookupTarget.ContainsKey(nameHash))
+                {
+                    lookupTarget.Add(nameHash, rpcMethod);
+                }
 
                 if (parameters.Length > 0)
                 {
-                    lookupTarget.Add(HashMethodNameAndValidate(NetworkedBehaviour.GetHashableMethodSignature(method)), rpcMethod);
+                    ulong signatureHash = HashMethodNameAndValidate(NetworkedBehaviour.GetHashableMethodSignature(method));
+
+                    if (!lookupTarget.ContainsKey(signatureHash))
+                    {
+                        lookupTarget.Add(signatureHash, rpcMethod);
+                    }
                 }
 
                 if (rpcMethod.useDelegate)
