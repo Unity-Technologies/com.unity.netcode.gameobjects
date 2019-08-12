@@ -615,7 +615,7 @@ namespace MLAPI
         private float lastTimeSyncTime;
         private void Update()
         {
-            if(IsListening)
+            if (IsListening)
             {
                 if ((NetworkTime - lastReceiveTickTime >= (1f / NetworkConfig.ReceiveTickrate)) || NetworkConfig.ReceiveTickrate <= 0)
                 {
@@ -632,6 +632,12 @@ namespace MLAPI
                     } while (IsListening && (eventType != NetEventType.Nothing && (NetworkConfig.MaxReceiveEventsPerTickRate <= 0 || processedEvents < NetworkConfig.MaxReceiveEventsPerTickRate)));
                     lastReceiveTickTime = NetworkTime;
                     NetworkProfiler.EndTick();
+                }
+
+                if (!IsListening)
+                {
+                    // If we get disconnected in the previous poll. IsListening will be set to false.
+                    return;
                 }
 
                 if (((NetworkTime - lastEventTickTime >= (1f / NetworkConfig.EventTickrate))))
