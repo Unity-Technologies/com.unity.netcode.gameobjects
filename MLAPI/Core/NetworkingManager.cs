@@ -333,6 +333,7 @@ namespace MLAPI
             NetworkSceneManager.sceneIndexToString.Clear();
             NetworkSceneManager.sceneNameToIndex.Clear();
             NetworkSceneManager.sceneSwitchProgresses.Clear();
+            NetworkSceneManager.sceneBufferedNetworkIds.Clear();
 
             if (NetworkConfig.NetworkTransport == null)
             {
@@ -865,7 +866,7 @@ namespace MLAPI
             }
         }
 
-        private void HandleIncomingData(ulong clientId, string channelName, ArraySegment<byte> data, float receiveTime)
+        internal void HandleIncomingData(ulong clientId, string channelName, ArraySegment<byte> data, float receiveTime)
         {
             if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Unwrapping Data Header");
 
@@ -902,6 +903,27 @@ namespace MLAPI
 
                     #region INTERNAL MESSAGE
 
+                    void bufferCallback(ulong networkId)
+                    {
+                        // Alloc some memory
+                        PooledBitStream pooledData = PooledBitStream.Get();
+
+                        // Copy the data
+                        pooledData.Write(data.Array, data.Offset, data.Count);
+
+                        NetworkSceneManager.BufferedMessage message = new NetworkSceneManager.BufferedMessage()
+                        {
+                            channelName = channelName,
+                            pool = pooledData,
+                            payload = new ArraySegment<byte>(pooledData.GetBuffer(), 0, data.Count),
+                            receiveTime = receiveTime,
+                            sender = clientId
+                        };
+
+                        NetworkSceneManager.sceneBufferedNetworkIds[networkId].Enqueue(message);
+                    }
+
+
                     switch (messageType)
                     {
                         case MLAPIConstants.MLAPI_CONNECTION_REQUEST:
@@ -934,25 +956,25 @@ namespace MLAPI
                             if (IsClient) InternalMessageHandler.HandleTimeSync(clientId, messageStream, receiveTime);
                             break;
                         case MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA:
-                            InternalMessageHandler.HandleNetworkedVarDelta(clientId, messageStream);
+                            InternalMessageHandler.HandleNetworkedVarDelta(clientId, messageStream, bufferCallback);
                             break;
                         case MLAPIConstants.MLAPI_NETWORKED_VAR_UPDATE:
-                            InternalMessageHandler.HandleNetworkedVarUpdate(clientId, messageStream);
+                            InternalMessageHandler.HandleNetworkedVarUpdate(clientId, messageStream, bufferCallback);
                             break;
                         case MLAPIConstants.MLAPI_SERVER_RPC:
-                            if (IsServer) InternalMessageHandler.HandleServerRPC(clientId, messageStream);
+                            if (IsServer) InternalMessageHandler.HandleServerRPC(clientId, messageStream, bufferCallback);
                             break;
                         case MLAPIConstants.MLAPI_SERVER_RPC_REQUEST:
-                            if (IsServer) InternalMessageHandler.HandleServerRPCRequest(clientId, messageStream, channelName, security);
+                            if (IsServer) InternalMessageHandler.HandleServerRPCRequest(clientId, messageStream, channelName, security, bufferCallback);
                             break;
                         case MLAPIConstants.MLAPI_SERVER_RPC_RESPONSE:
                             if (IsClient) InternalMessageHandler.HandleServerRPCResponse(clientId, messageStream);
                             break;
                         case MLAPIConstants.MLAPI_CLIENT_RPC:
-                            if (IsClient) InternalMessageHandler.HandleClientRPC(clientId, messageStream);
+                            if (IsClient) InternalMessageHandler.HandleClientRPC(clientId, messageStream, bufferCallback);
                             break;
                         case MLAPIConstants.MLAPI_CLIENT_RPC_REQUEST:
-                            if (IsClient) InternalMessageHandler.HandleClientRPCRequest(clientId, messageStream, channelName, security);
+                            if (IsClient) InternalMessageHandler.HandleClientRPCRequest(clientId, messageStream, channelName, security, bufferCallback);
                             break;
                         case MLAPIConstants.MLAPI_CLIENT_RPC_RESPONSE:
                             if (IsServer) InternalMessageHandler.HandleClientRPCResponse(clientId, messageStream);
