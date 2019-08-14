@@ -25,6 +25,7 @@ using MLAPI.Spawning;
 using static MLAPI.Messaging.CustomMessagingManager;
 using MLAPI.Exceptions;
 using MLAPI.Transports.Tasks;
+using MLAPI.Messaging.Buffering;
 
 namespace MLAPI
 {
@@ -333,7 +334,6 @@ namespace MLAPI
             NetworkSceneManager.sceneIndexToString.Clear();
             NetworkSceneManager.sceneNameToIndex.Clear();
             NetworkSceneManager.sceneSwitchProgresses.Clear();
-            NetworkSceneManager.sceneBufferedNetworkIds.Clear();
 
             if (NetworkConfig.NetworkTransport == null)
             {
@@ -658,6 +658,11 @@ namespace MLAPI
                         NetworkedObject.NetworkedBehaviourUpdate();
                     }
 
+                    if (!IsServer && NetworkConfig.EnableMessageBuffering)
+                    {
+                        BufferManager.CleanBuffer();
+                    }
+
                     if (IsServer)
                     {
                         lastEventTickTime = NetworkTime;
@@ -905,22 +910,17 @@ namespace MLAPI
 
                     void bufferCallback(ulong networkId)
                     {
-                        // Alloc some memory
-                        PooledBitStream pooledData = PooledBitStream.Get();
-
-                        // Copy the data
-                        pooledData.Write(data.Array, data.Offset, data.Count);
-
-                        NetworkSceneManager.BufferedMessage message = new NetworkSceneManager.BufferedMessage()
+                        if (!NetworkConfig.EnableMessageBuffering)
                         {
-                            channelName = channelName,
-                            pool = pooledData,
-                            payload = new ArraySegment<byte>(pooledData.GetBuffer(), 0, data.Count),
-                            receiveTime = receiveTime,
-                            sender = clientId
-                        };
+                            throw new InvalidOperationException("Cannot buffer with buffering disabled.");
+                        }
 
-                        NetworkSceneManager.sceneBufferedNetworkIds[networkId].Enqueue(message);
+                        if (IsServer)
+                        {
+                            throw new InvalidOperationException("Cannot buffer on server.");
+                        }
+
+                        BufferManager.BufferMessageForNetworkId(networkId, clientId, channelName, receiveTime, data);
                     }
 
 
@@ -962,10 +962,10 @@ namespace MLAPI
                             InternalMessageHandler.HandleNetworkedVarUpdate(clientId, messageStream, bufferCallback);
                             break;
                         case MLAPIConstants.MLAPI_SERVER_RPC:
-                            if (IsServer) InternalMessageHandler.HandleServerRPC(clientId, messageStream, bufferCallback);
+                            if (IsServer) InternalMessageHandler.HandleServerRPC(clientId, messageStream);
                             break;
                         case MLAPIConstants.MLAPI_SERVER_RPC_REQUEST:
-                            if (IsServer) InternalMessageHandler.HandleServerRPCRequest(clientId, messageStream, channelName, security, bufferCallback);
+                            if (IsServer) InternalMessageHandler.HandleServerRPCRequest(clientId, messageStream, channelName, security);
                             break;
                         case MLAPIConstants.MLAPI_SERVER_RPC_RESPONSE:
                             if (IsClient) InternalMessageHandler.HandleServerRPCResponse(clientId, messageStream);

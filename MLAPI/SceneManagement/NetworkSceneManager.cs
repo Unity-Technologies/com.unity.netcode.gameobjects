@@ -11,6 +11,7 @@ using MLAPI.Serialization.Pooled;
 using MLAPI.Spawning;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using MLAPI.Messaging.Buffering;
 
 namespace MLAPI.SceneManagement
 {
@@ -38,17 +39,6 @@ namespace MLAPI.SceneManagement
         internal static uint currentSceneIndex = 0;
         internal static Guid currentSceneSwitchProgressGuid = new Guid();
         internal static bool isSpawnedObjectsPendingInDontDestroyOnLoad = false;
-
-        internal static Dictionary<ulong, Queue<BufferedMessage>> sceneBufferedNetworkIds = new Dictionary<ulong, Queue<BufferedMessage>>();
-
-        internal struct BufferedMessage
-        {
-            internal ulong sender;
-            internal string channelName;
-            internal ArraySegment<byte> payload;
-            internal PooledBitStream pool;
-            internal float receiveTime;
-        }
 
         internal static void SetCurrentSceneIndex()
         {
@@ -147,23 +137,6 @@ namespace MLAPI.SceneManagement
             isSpawnedObjectsPendingInDontDestroyOnLoad = true;
 
             string sceneName = sceneIndexToString[sceneIndex];
-
-            // Buffering pos
-            long startPos = objectStream.Position;
-
-            // Buffering reader
-            using (PooledBitReader reader = PooledBitReader.Get(objectStream))
-            {
-                uint newObjectsCount = reader.ReadUInt32Packed();
-
-                for (int i = 0; i < newObjectsCount; i++)
-                {
-                    sceneBufferedNetworkIds.Add(reader.ReadUInt64Packed(), new Queue<BufferedMessage>());
-                }
-            }
-
-            // Restore pos
-            objectStream.Position = startPos;
 
             AsyncOperation sceneLoad = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Single);
             nextSceneName = sceneName;
@@ -269,15 +242,6 @@ namespace MLAPI.SceneManagement
 
                             writer.WriteUInt32Packed(sceneObjectsToSpawn);
 
-                            // Prefix with all the networkIds
-                            for (int i = 0; i < newSceneObjects.Count; i++)
-                            {
-                                if (newSceneObjects[i].observers.Contains(NetworkingManager.Singleton.ConnectedClientsList[j].ClientId))
-                                {
-                                    writer.WriteUInt64Packed(newSceneObjects[i].NetworkId);
-                                }
-                            }
-
                             for (int i = 0; i < newSceneObjects.Count; i++)
                             {
                                 if (newSceneObjects[i].observers.Contains(NetworkingManager.Singleton.ConnectedClientsList[j].ClientId))
@@ -357,12 +321,6 @@ namespace MLAPI.SceneManagement
                 {
                     uint newObjectsCount = reader.ReadUInt32Packed();
 
-                    // Read the prefixes
-                    for (int i = 0; i < newObjectsCount; i++)
-                    {
-                        reader.ReadUInt64Packed();
-                    }
-
                     for (int i = 0; i < newObjectsCount; i++)
                     {
                         bool isPlayerObject = reader.ReadBool();
@@ -389,19 +347,18 @@ namespace MLAPI.SceneManagement
                         NetworkedObject networkedObject = SpawnManager.CreateLocalNetworkedObject(false, 0, prefabHash, parentNetworkId, position, rotation);
                         SpawnManager.SpawnNetworkedObjectLocally(networkedObject, networkId, true, isPlayerObject, owner, objectStream, false, 0, true, false);
 
+                        Queue<BufferManager.BufferedMessage> bufferQueue = BufferManager.ConsumeBuffersForNetworkId(networkId);
+
                         // Apply buffered messages
-                        if (sceneBufferedNetworkIds.ContainsKey(networkId))
+                        if (bufferQueue != null)
                         {
-                            Queue<BufferedMessage> bufferedMessages = sceneBufferedNetworkIds[networkId];
-                            sceneBufferedNetworkIds.Remove(networkId);
-
-                            while (bufferedMessages.Count > 0)
+                            while (bufferQueue.Count > 0)
                             {
-                                BufferedMessage message = bufferedMessages.Dequeue();
+                                BufferManager.BufferedMessage message = bufferQueue.Dequeue();
 
-                                NetworkingManager.Singleton.HandleIncomingData(message.sender, message.channelName, message.payload, message.receiveTime);
+                                NetworkingManager.Singleton.HandleIncomingData(message.sender, message.channelName, new ArraySegment<byte>(message.payload.GetBuffer(), (int)message.payload.Position, (int)message.payload.Length), message.receiveTime);
 
-                                message.pool.Dispose();
+                                BufferManager.RecycleConsumedBufferedMessage(message);
                             }
                         }
                     }
@@ -416,12 +373,6 @@ namespace MLAPI.SceneManagement
                 using (PooledBitReader reader = PooledBitReader.Get(objectStream))
                 {
                     uint newObjectsCount = reader.ReadUInt32Packed();
-
-                    // Read the prefixes
-                    for (int i = 0; i < newObjectsCount; i++)
-                    {
-                        reader.ReadUInt64Packed();
-                    }
 
                     for (int i = 0; i < newObjectsCount; i++)
                     {
@@ -441,19 +392,18 @@ namespace MLAPI.SceneManagement
                         NetworkedObject networkedObject = SpawnManager.CreateLocalNetworkedObject(true, instanceId, 0, parentNetworkId, null, null);
                         SpawnManager.SpawnNetworkedObjectLocally(networkedObject, networkId, true, isPlayerObject, owner, objectStream, false, 0, true, false);
 
+                        Queue<BufferManager.BufferedMessage> bufferQueue = BufferManager.ConsumeBuffersForNetworkId(networkId);
+
                         // Apply buffered messages
-                        if (sceneBufferedNetworkIds.ContainsKey(networkId))
+                        if (bufferQueue != null)
                         {
-                            Queue<BufferedMessage> bufferedMessages = sceneBufferedNetworkIds[networkId];
-                            sceneBufferedNetworkIds.Remove(networkId);
-
-                            while (bufferedMessages.Count > 0)
+                            while (bufferQueue.Count > 0)
                             {
-                                BufferedMessage message = bufferedMessages.Dequeue();
+                                BufferManager.BufferedMessage message = bufferQueue.Dequeue();
 
-                                NetworkingManager.Singleton.HandleIncomingData(message.sender, message.channelName, message.payload, message.receiveTime);
+                                NetworkingManager.Singleton.HandleIncomingData(message.sender, message.channelName, new ArraySegment<byte>(message.payload.GetBuffer(), (int)message.payload.Position, (int)message.payload.Length), message.receiveTime);
 
-                                message.pool.Dispose();
+                                BufferManager.RecycleConsumedBufferedMessage(message);
                             }
                         }
                     }
