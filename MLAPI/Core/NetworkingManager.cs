@@ -1209,10 +1209,19 @@ namespace MLAPI
                                 writer.WriteBool(false);
                             }
 
+                            writer.WriteBool(observedObject._spawnPayload != null);
+
+                            if (observedObject._spawnPayload != null)
+                            {
+                                writer.WriteInt32Packed((int)observedObject._spawnPayload.Length);
+                            }
+
                             if (NetworkConfig.EnableNetworkedVar)
                             {
                                 observedObject.WriteNetworkedVarData(stream, clientId);
                             }
+
+                            if (observedObject._spawnPayload != null) stream.CopyFrom(observedObject._spawnPayload);
                         }
 
                         InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_CONNECTION_APPROVED, "MLAPI_INTERNAL", stream, SecuritySendFlags.Encrypted | SecuritySendFlags.Authenticated, null);

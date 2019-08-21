@@ -275,8 +275,11 @@ namespace MLAPI.Messaging
                                 rot = Quaternion.Euler(continuationReader.ReadSinglePacked(), continuationReader.ReadSinglePacked(), continuationReader.ReadSinglePacked());
                             }
 
+                            bool hasPayload = reader.ReadBool();
+                            int payLoadLength = hasPayload ? reader.ReadInt32Packed() : 0;
+
                             NetworkedObject netObject = SpawnManager.CreateLocalNetworkedObject(softSync, instanceId, prefabHash, parentNetworkId, pos, rot);
-                            SpawnManager.SpawnNetworkedObjectLocally(netObject, networkId, softSync, isPlayerObject, ownerId, continuationStream, false, 0, true, false);
+                            SpawnManager.SpawnNetworkedObjectLocally(netObject, networkId, softSync, isPlayerObject, ownerId, continuationStream, hasPayload, payLoadLength, true, false);
                         }
 
                         NetworkingManager.Singleton.IsConnectedClient = true;

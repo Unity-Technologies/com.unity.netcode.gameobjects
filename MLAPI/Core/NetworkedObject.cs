@@ -380,6 +380,8 @@ namespace MLAPI
             }
         }
 
+        internal Serialization.BitStream _spawnPayload = null;
+
         /// <summary>
         /// Spawns this GameObject across the network. Can only be called from the Server
         /// </summary>
@@ -392,8 +394,13 @@ namespace MLAPI
                 throw new NotListeningException("NetworkingManager isn't listening, start a server, client or host before spawning objects.");
             }
 
+            // Buffer spawn payload for delayed spawn
             if (spawnPayload != null)
+            {
+                _spawnPayload = new Serialization.BitStream();
+                _spawnPayload.CopyFrom(spawnPayload);
                 spawnPayload.Position = 0;
+            }
 
             SpawnManager.SpawnNetworkedObjectLocally(this, SpawnManager.GetNetworkObjectId(), false, false, null, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false, destroyWithScene);
 
