@@ -356,7 +356,7 @@ namespace MLAPI.SceneManagement
                             {
                                 BufferManager.BufferedMessage message = bufferQueue.Dequeue();
 
-                                NetworkingManager.Singleton.HandleIncomingData(message.sender, message.channelName, new ArraySegment<byte>(message.payload.GetBuffer(), (int)message.payload.Position, (int)message.payload.Length), message.receiveTime);
+                                NetworkingManager.Singleton.HandleIncomingData(message.sender, message.channelName, new ArraySegment<byte>(message.payload.GetBuffer(), (int)message.payload.Position, (int)message.payload.Length), message.receiveTime, false);
 
                                 BufferManager.RecycleConsumedBufferedMessage(message);
                             }
@@ -401,7 +401,7 @@ namespace MLAPI.SceneManagement
                             {
                                 BufferManager.BufferedMessage message = bufferQueue.Dequeue();
 
-                                NetworkingManager.Singleton.HandleIncomingData(message.sender, message.channelName, new ArraySegment<byte>(message.payload.GetBuffer(), (int)message.payload.Position, (int)message.payload.Length), message.receiveTime);
+                                NetworkingManager.Singleton.HandleIncomingData(message.sender, message.channelName, new ArraySegment<byte>(message.payload.GetBuffer(), (int)message.payload.Position, (int)message.payload.Length), message.receiveTime, false);
 
                                 BufferManager.RecycleConsumedBufferedMessage(message);
                             }
