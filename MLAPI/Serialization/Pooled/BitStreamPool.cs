@@ -22,8 +22,11 @@ namespace MLAPI.Serialization.Pooled
             if (overflowStreams.Count > 0)
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Retrieving PooledBitStream from overflow pool. Recent burst?");
-                WeakReference weakStream;
-                while (!(weakStream = overflowStreams.Dequeue()).IsAlive) ;
+
+                WeakReference weakStream = null;
+
+                while (overflowStreams.Count > 0 && ((weakStream = overflowStreams.Dequeue()) == null || !weakStream.IsAlive)) ;
+
                 if (weakStream.IsAlive) return (PooledBitStream)weakStream.Target;
             }
 
