@@ -28,3 +28,4 @@ NullReferenceException: Object reference not set to an instance of an object
 
 #### Solution
 You most likely forgot to add the `NetworkingManager` component to a game object in your scene.
+You most likely forgot to add the `NetworkedObject` component on your Default player prefab.
