@@ -381,7 +381,18 @@ namespace MLAPI
 
             for (int i = 0; i < NetworkConfig.NetworkedPrefabs.Count; i++)
             {
-                NetworkConfig.NetworkedPrefabs[i].Prefab.GetComponent<NetworkedObject>().ValidateHash();
+                if (NetworkConfig.NetworkedPrefabs[i] == null || NetworkConfig.NetworkedPrefabs[i].Prefab == null)
+                {
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Networked prefab cannot be null");
+                }
+                else if (NetworkConfig.NetworkedPrefabs[i].Prefab.GetComponent<NetworkedObject>() == null)
+                {
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Networked prefab is missing a NetworkedObject component");
+                }
+                else
+                {
+                    NetworkConfig.NetworkedPrefabs[i].Prefab.GetComponent<NetworkedObject>().ValidateHash();
+                }
             }
 
             NetworkConfig.NetworkTransport.OnTransportEvent += HandleRawTransportPoll;
