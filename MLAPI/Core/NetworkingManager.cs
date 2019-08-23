@@ -381,7 +381,18 @@ namespace MLAPI
 
             for (int i = 0; i < NetworkConfig.NetworkedPrefabs.Count; i++)
             {
-                NetworkConfig.NetworkedPrefabs[i].Prefab.GetComponent<NetworkedObject>().ValidateHash();
+                if (NetworkConfig.NetworkedPrefabs[i] == null || NetworkConfig.NetworkedPrefabs[i].Prefab == null)
+                {
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Networked prefab cannot be null");
+                }
+                else if (NetworkConfig.NetworkedPrefabs[i].Prefab.GetComponent<NetworkedObject>() == null)
+                {
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Networked prefab is missing a NetworkedObject component");
+                }
+                else
+                {
+                    NetworkConfig.NetworkedPrefabs[i].Prefab.GetComponent<NetworkedObject>().ValidateHash();
+                }
             }
 
             NetworkConfig.NetworkTransport.OnTransportEvent += HandleRawTransportPoll;
@@ -615,7 +626,7 @@ namespace MLAPI
         private float lastTimeSyncTime;
         private void Update()
         {
-            if(IsListening)
+            if (IsListening)
             {
                 if ((NetworkTime - lastReceiveTickTime >= (1f / NetworkConfig.ReceiveTickrate)) || NetworkConfig.ReceiveTickrate <= 0)
                 {
@@ -632,6 +643,12 @@ namespace MLAPI
                     } while (IsListening && (eventType != NetEventType.Nothing && (NetworkConfig.MaxReceiveEventsPerTickRate <= 0 || processedEvents < NetworkConfig.MaxReceiveEventsPerTickRate)));
                     lastReceiveTickTime = NetworkTime;
                     NetworkProfiler.EndTick();
+                }
+
+                if (!IsListening)
+                {
+                    // If we get disconnected in the previous poll. IsListening will be set to false.
+                    return;
                 }
 
                 if (((NetworkTime - lastEventTickTime >= (1f / NetworkConfig.EventTickrate))))
