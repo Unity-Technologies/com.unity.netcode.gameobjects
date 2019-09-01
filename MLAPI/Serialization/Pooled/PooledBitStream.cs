@@ -8,6 +8,11 @@ namespace MLAPI.Serialization.Pooled
     public sealed class PooledBitStream : BitStream, IDisposable
     {
         private bool isDisposed = false;
+
+        internal PooledBitStream()
+        {
+        }
+
         /// <summary>
         /// Gets a PooledBitStream from the static BitStreamPool
         /// </summary>
