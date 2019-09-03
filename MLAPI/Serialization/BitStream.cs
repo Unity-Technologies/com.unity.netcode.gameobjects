@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using static MLAPI.Serialization.Arithmetic;
 
@@ -9,7 +9,7 @@ namespace MLAPI.Serialization
     /// A stream that can be used at the bit level
     /// </summary>
     public class BitStream : Stream
-    {     
+    {
         const int initialCapacity = 16;
         const float initialGrowthFactor = 2.0f;
         private byte[] target;
@@ -52,6 +52,13 @@ namespace MLAPI.Serialization
             this.target = target;
             Resizable = false;
             BitLength = (ulong)(target.Length << 3);
+        }
+
+        internal void SetTarget(byte[] target)
+        {
+            this.target = target;
+            BitLength = (ulong)(target.Length << 3);
+            Position = 0;
         }
 
         /// <summary>
@@ -299,12 +306,12 @@ namespace MLAPI.Serialization
         public override void WriteByte(byte value)
         {
             // Check bit alignment. If misaligned, each byte written has to be misaligned
-            if (BitAligned) 
+            if (BitAligned)
             {
                 if (Position + 1 >= target.Length) Grow(1);
                 target[Position] = value;
                 Position += 1;
-            } 
+            }
             else
             {
                 if (Position + 1 + 1 >= target.Length) Grow(1);
@@ -386,7 +393,7 @@ namespace MLAPI.Serialization
             {
                 long currentPosition = s.Position;
                 s.Position = 0;
-                
+
                 int read;
                 bool readToEnd = count < 0;
                 while ((readToEnd || count-- > 0) && (read = s.ReadByte()) != -1)
@@ -485,7 +492,7 @@ namespace MLAPI.Serialization
                 WriteBit(false);
             }
         }
-        
+
         /// <summary>
         /// Reads zeros until the the stream is byte aligned
         /// </summary>
