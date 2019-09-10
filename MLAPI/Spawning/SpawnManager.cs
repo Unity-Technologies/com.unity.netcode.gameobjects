@@ -247,7 +247,7 @@ namespace MLAPI.Spawning
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot find parent. Parent objects always have to be spawned and replicated BEFORE the child");
             }
 
-            if (NetworkingManager.Singleton.NetworkConfig.UsePrefabSync || !softCreate)
+            if (!NetworkingManager.Singleton.NetworkConfig.EnableSceneManagement || NetworkingManager.Singleton.NetworkConfig.UsePrefabSync || !softCreate)
             {
                 // Create the object
                 if (customSpawnHandlers.ContainsKey(prefabHash))
@@ -419,7 +419,7 @@ namespace MLAPI.Spawning
                     writer.WriteUInt64Packed(parent.NetworkId);
                 }
 
-                if (NetworkingManager.Singleton.NetworkConfig.UsePrefabSync)
+                if (!NetworkingManager.Singleton.NetworkConfig.EnableSceneManagement || NetworkingManager.Singleton.NetworkConfig.UsePrefabSync)
                 {
                     writer.WriteUInt64Packed(netObject.PrefabHash);
                 }

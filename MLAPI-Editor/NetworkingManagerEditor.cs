@@ -6,7 +6,6 @@ using UnityEngine;
 using UnityEditorInternal;
 using MLAPI;
 using MLAPI.Transports;
-using UnityEditor.Callbacks;
 
 [CustomEditor(typeof(NetworkingManager), true)]
 [CanEditMultipleObjects]
@@ -22,7 +21,7 @@ public class NetworkingManagerEditor : Editor
 
     // NetworkConfig fields
     private SerializedProperty protocolVersionProperty;
-    private SerializedProperty allowRuntimeSceneChanges;
+    private SerializedProperty allowRuntimeSceneChangesProperty;
     private SerializedProperty networkTransportProperty;
     private SerializedProperty receiveTickrateProperty;
     private SerializedProperty maxReceiveEventsPerTickRateProperty;
@@ -38,6 +37,7 @@ public class NetworkingManagerEditor : Editor
     private SerializedProperty createPlayerPrefabProperty;
     private SerializedProperty forceSamePrefabsProperty;
     private SerializedProperty usePrefabSyncProperty;
+    private SerializedProperty enableSceneManagementProperty;
     private SerializedProperty recycleNetworkIdsProperty;
     private SerializedProperty networkIdRecycleDelayProperty;
     private SerializedProperty rpcHashSizeProperty;
@@ -100,7 +100,7 @@ public class NetworkingManagerEditor : Editor
 
         // NetworkConfig properties
         protocolVersionProperty = networkConfigProperty.FindPropertyRelative("ProtocolVersion");
-        allowRuntimeSceneChanges = networkConfigProperty.FindPropertyRelative("AllowRuntimeSceneChanges");
+        allowRuntimeSceneChangesProperty = networkConfigProperty.FindPropertyRelative("AllowRuntimeSceneChanges");
         networkTransportProperty = networkConfigProperty.FindPropertyRelative("NetworkTransport");
         receiveTickrateProperty = networkConfigProperty.FindPropertyRelative("ReceiveTickrate");
         maxReceiveEventsPerTickRateProperty = networkConfigProperty.FindPropertyRelative("MaxReceiveEventsPerTickRate");
@@ -116,6 +116,7 @@ public class NetworkingManagerEditor : Editor
         createPlayerPrefabProperty = networkConfigProperty.FindPropertyRelative("CreatePlayerPrefab");
         forceSamePrefabsProperty = networkConfigProperty.FindPropertyRelative("ForceSamePrefabs");
         usePrefabSyncProperty = networkConfigProperty.FindPropertyRelative("UsePrefabSync");
+        enableSceneManagementProperty = networkConfigProperty.FindPropertyRelative("EnableSceneManagement");
         recycleNetworkIdsProperty = networkConfigProperty.FindPropertyRelative("RecycleNetworkIds");
         networkIdRecycleDelayProperty = networkConfigProperty.FindPropertyRelative("NetworkIdRecycleDelay");
         rpcHashSizeProperty = networkConfigProperty.FindPropertyRelative("RpcHashSize");
@@ -138,7 +139,7 @@ public class NetworkingManagerEditor : Editor
 
         // NetworkConfig properties
         protocolVersionProperty = networkConfigProperty.FindPropertyRelative("ProtocolVersion");
-        allowRuntimeSceneChanges = networkConfigProperty.FindPropertyRelative("AllowRuntimeSceneChanges");
+        allowRuntimeSceneChangesProperty = networkConfigProperty.FindPropertyRelative("AllowRuntimeSceneChanges");
         networkTransportProperty = networkConfigProperty.FindPropertyRelative("NetworkTransport");
         receiveTickrateProperty = networkConfigProperty.FindPropertyRelative("ReceiveTickrate");
         maxReceiveEventsPerTickRateProperty = networkConfigProperty.FindPropertyRelative("MaxReceiveEventsPerTickRate");
@@ -154,6 +155,7 @@ public class NetworkingManagerEditor : Editor
         createPlayerPrefabProperty = networkConfigProperty.FindPropertyRelative("CreatePlayerPrefab");
         forceSamePrefabsProperty = networkConfigProperty.FindPropertyRelative("ForceSamePrefabs");
         usePrefabSyncProperty = networkConfigProperty.FindPropertyRelative("UsePrefabSync");
+        enableSceneManagementProperty = networkConfigProperty.FindPropertyRelative("EnableSceneManagement");
         recycleNetworkIdsProperty = networkConfigProperty.FindPropertyRelative("RecycleNetworkIds");
         networkIdRecycleDelayProperty = networkConfigProperty.FindPropertyRelative("NetworkIdRecycleDelay");
         rpcHashSizeProperty = networkConfigProperty.FindPropertyRelative("RpcHashSize");
@@ -250,8 +252,11 @@ public class NetworkingManagerEditor : Editor
             EditorGUILayout.Space();
             networkPrefabsList.DoLayoutList();
 
-            registeredScenesList.DoLayoutList();
-            EditorGUILayout.Space();
+            using (new EditorGUI.DisabledScope(!networkingManager.NetworkConfig.EnableSceneManagement))
+            {
+                registeredScenesList.DoLayoutList();
+                EditorGUILayout.Space();
+            }
 
 
             EditorGUILayout.LabelField("General", EditorStyles.boldLabel);
@@ -315,7 +320,23 @@ public class NetworkingManagerEditor : Editor
             EditorGUILayout.LabelField("Spawning", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(createPlayerPrefabProperty);
             EditorGUILayout.PropertyField(forceSamePrefabsProperty);
-            EditorGUILayout.PropertyField(usePrefabSyncProperty);
+
+            using (new EditorGUI.DisabledScope(!networkingManager.NetworkConfig.EnableSceneManagement))
+            {
+                bool value = networkingManager.NetworkConfig.UsePrefabSync;
+
+                if (!networkingManager.NetworkConfig.EnableSceneManagement)
+                {
+                    usePrefabSyncProperty.boolValue = true;
+                }
+
+                EditorGUILayout.PropertyField(usePrefabSyncProperty);
+
+                if (!networkingManager.NetworkConfig.EnableSceneManagement)
+                {
+                    usePrefabSyncProperty.boolValue = value;
+                }
+            }
 
             EditorGUILayout.PropertyField(recycleNetworkIdsProperty);
 
@@ -328,8 +349,13 @@ public class NetworkingManagerEditor : Editor
             EditorGUILayout.PropertyField(rpcHashSizeProperty);
 
             EditorGUILayout.LabelField("Scene Management", EditorStyles.boldLabel);
-            EditorGUILayout.PropertyField(loadSceneTimeOutProperty);
-            EditorGUILayout.PropertyField(allowRuntimeSceneChanges);
+            EditorGUILayout.PropertyField(enableSceneManagementProperty);
+
+            using (new EditorGUI.DisabledScope(!networkingManager.NetworkConfig.EnableSceneManagement))
+            {
+                EditorGUILayout.PropertyField(loadSceneTimeOutProperty);
+                EditorGUILayout.PropertyField(allowRuntimeSceneChangesProperty);
+            }
 
             EditorGUILayout.LabelField("Cryptography", EditorStyles.boldLabel);
             EditorGUILayout.PropertyField(enableEncryptionProperty);

@@ -126,6 +126,13 @@ namespace MLAPI.Configuration
         [Tooltip("Ensures that NetworkedVars can be read even if a client accidental writes where its not allowed to. This will cost some CPU time and bandwidth")]
         public bool EnsureNetworkedVarLengthSafety = false;
         /// <summary>
+        /// Enables scene management. This will allow network scene switches and automatic scene diff corrections upon connect.
+        /// SoftSynced scene objects wont work with this disabled. That means that disabling SceneManagement also enables PrefabSync.
+        /// </summary>
+        [Tooltip("Enables scene management. This will allow network scene switches and automatic scene diff corrections upon connect.\n" +
+                 "SoftSynced scene objects wont work with this disabled. That means that disabling SceneManagement also enables PrefabSync.")]
+        public bool EnableSceneManagement = true;
+        /// <summary>
         /// Whether or not the MLAPI should check for differences in the prefabs at connection.
         /// If you dynamically add prefabs at runtime, turn this OFF
         /// </summary>
@@ -243,6 +250,7 @@ namespace MLAPI.Configuration
                     writer.WriteBits((byte)config.RpcHashSize, 3);
                     writer.WriteBool(ForceSamePrefabs);
                     writer.WriteBool(UsePrefabSync);
+                    writer.WriteBool(EnableSceneManagement);
                     writer.WriteBool(RecycleNetworkIds);
                     writer.WriteSinglePacked(NetworkIdRecycleDelay);
                     writer.WriteBool(EnableNetworkedVar);
@@ -290,6 +298,7 @@ namespace MLAPI.Configuration
                     config.RpcHashSize = (HashSize)reader.ReadBits(3);
                     config.ForceSamePrefabs = reader.ReadBool();
                     config.UsePrefabSync = reader.ReadBool();
+                    config.EnableSceneManagement = reader.ReadBool();
                     config.RecycleNetworkIds = reader.ReadBool();
                     config.NetworkIdRecycleDelay = reader.ReadSinglePacked();
                     config.EnableNetworkedVar = reader.ReadBool();
@@ -339,6 +348,7 @@ namespace MLAPI.Configuration
                     writer.WriteBool(EnableNetworkedVar);
                     writer.WriteBool(ForceSamePrefabs);
                     writer.WriteBool(UsePrefabSync);
+                    writer.WriteBool(EnableSceneManagement);
                     writer.WriteBool(EnsureNetworkedVarLengthSafety);
                     writer.WriteBool(EnableEncryption);
                     writer.WriteBool(SignKeyExchange);
