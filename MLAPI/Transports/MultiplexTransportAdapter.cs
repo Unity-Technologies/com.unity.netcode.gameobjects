@@ -4,6 +4,9 @@ using MLAPI.Transports.Tasks;
 
 namespace MLAPI.Transports.Multiplex
 {
+    /// <summary>
+    /// Multiplex transport adapter.
+    /// </summary>
     public class MultiplexTransportAdapter : Transport
     {
         /// <summary>
@@ -39,6 +42,7 @@ namespace MLAPI.Transports.Multiplex
             Spread
         }
 
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
         public ConnectionIdSpreadMethod SpreadMethod = ConnectionIdSpreadMethod.MakeRoomLastBits;
         public Transport[] Transports = new Transport[0];
         public override ulong ServerClientId => 0;
@@ -322,5 +326,7 @@ namespace MLAPI.Transports.Multiplex
 
             return 0;
         }
+
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
     }
 }

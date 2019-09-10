@@ -1,50 +1,43 @@
 $editorFiles = @("MLAPIProfiler.cs", "NetworkedAnimatorEditor.cs", "NetworkedBehaviourEditor.cs", "NetworkedObjectEditor.cs", "NetworkingManagerEditor.cs", "TrackedObjectEditor.cs", "PostProcessScene.cs")
+$libraryFiles = @("MLAPI.dll", "MLAPI.xml", "MLAPI.pdb")
 $installerFiles = @("MLAPIEditor.cs")
 
 $myPath = (Get-Item -Path ".\").FullName;
 $myPath = $myPath.Replace("\", "/")
-$basePath = -join ($myPath, "/MLAPI-Editor/")
+
+$libraryBasePath = -join ($myPath, "/MLAPI/bin/")
+$editorBasePath = -join ($myPath, "/MLAPI-Editor/")
 $builderPath = -join ($myPath, "/Libraries/Internal/UnityPackager/UnityPackager.exe")
 
-$editorOutPath = -join ($myPath, "/MLAPI-Editor.unitypackage")
+$packageOutPath = -join ($myPath, "/MLAPI.unitypackage")
 $installerOutPath = -join ($myPath, "/MLAPI-Installer.unitypackage")
 
-$windows = "true"
+# Args for library generation
+$libraryBuildArgs = -join ("null", " ", $packageOutPath, " ")
 
-$editorBuildArgs = ""
-if ($windows -ne @("true")) {
-    $editorBuildArgs += -join ($builderPath, " ")
-}
+# Args for installer generation
+$installerBuildArgs = -join ("null", " ", $installerOutPath, " ")
 
-
-$editorBuildArgs += -join ($basePath, " ", $editorOutPath, " ")
-
+# Add editor files to library package
 For ($i=0; $i -lt $editorFiles.Count; $i++)  
 {
-    $editorBuildArgs += -join ($basePath, $editorFiles.Get($i), " ")
-    $editorBuildArgs += -join ("Assets/Editor/MLAPI/", $editorFiles.Get($i), " ")
+    $libraryBuildArgs += -join ($editorBasePath, $editorFiles.Get($i), " ", "Assets/Editor/MLAPI/", $editorFiles.Get($i), " ")
 }
 
-$installerBuildArgs = ""
-if ($windows -ne "true") {
-    $installerBuildArgs += -join ($builderPath, " ")
+# Add library files to library package
+For ($i=0; $i -lt $libraryFiles.Count; $i++)  
+{
+    $libraryBuildArgs += -join ($libraryBasePath, $libraryFiles.Get($i), " ", "Assets/MLAPI/Lib/", $libraryFiles.Get($i), " ")
 }
-$installerBuildArgs += -join ($basePath, " ", $installerOutPath, " ")
 
+# Add installer files to installer package
 For ($i=0; $i -lt $installerFiles.Count; $i++)  
 {
-    $installerBuildArgs += -join ($basePath, $installerFiles.Get($i), " ")
-    $installerBuildArgs += -join ("Assets/Editor/MLAPI/", $installerFiles.Get($i), " ")
+    $installerBuildArgs += -join ($editorBasePath, $installerFiles.Get($i), " ", "Assets/Editor/MLAPI/", $installerFiles.Get($i), " ")
 }
 
-$myBuilderPath = "";
-if ($windows -ne "true") {
-    $myBuilderPath = "mono"
-} else {
-    $myBuilderPath = $builderPath
-}
+Write-Host $builderPath
+Write-Host $libraryBuildArgs
 
-Write-Host $myBuilderPath
-
-Start-Process -FilePath $myBuilderPath -ArgumentList $editorBuildArgs
-Start-Process -FilePath $myBuilderPath -ArgumentList $installerBuildArgs
+Start-Process -FilePath $builderPath -ArgumentList $libraryBuildArgs
+Start-Process -FilePath $builderPath -ArgumentList $installerBuildArgs

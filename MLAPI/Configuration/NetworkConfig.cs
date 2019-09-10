@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
@@ -11,6 +11,13 @@ using UnityEngine.Serialization;
 
 namespace MLAPI.Configuration
 {
+    [Serializable]
+    internal class NullableBoolSerializable
+    {
+        [SerializeField]
+        public ulong Value;
+    }
+
     /// <summary>
     /// The configuration object used to start server, client and hosts
     /// </summary>
@@ -48,12 +55,12 @@ namespace MLAPI.Configuration
         /// The default player prefab
         /// </summary>
         [SerializeField]
-        internal ulong? PlayerPrefabHash;
+        internal NullableBoolSerializable PlayerPrefabHash;
         /// <summary>
         /// Whether or not a player object should be created by default. This value can be overriden on a case by case basis with ConnectionApproval.
         /// </summary>
         [Tooltip("Whether or not a player object should be created by default. This value can be overriden on a case by case basis with ConnectionApproval.")]
-        public bool CreatePlayerPrefab;
+        public bool CreatePlayerPrefab = true;
         /// <summary>
         /// Amount of times per second the receive queue is emptied and all messages inside are processed.
         /// </summary>
@@ -74,7 +81,7 @@ namespace MLAPI.Configuration
         /// This is useful to prevent the MLAPI from hanging a frame
         /// Set this to less than or equal to 0 for unlimited
         /// </summary>
-        [FormerlySerializedAs("MaxBehaviourUpdatesPerTick")] 
+        [FormerlySerializedAs("MaxBehaviourUpdatesPerTick")]
         [Tooltip("The maximum amount of NetworkedObject SyncedVars to process per Event tick. This is to prevent freezing")]
         public int MaxObjectUpdatesPerTick = -1;
         /// <summary>
@@ -122,11 +129,11 @@ namespace MLAPI.Configuration
         /// Enables scene management. This will allow network scene switches and automatic scene diff corrections upon connect.
         /// SoftSynced scene objects wont work with this disabled. That means that disabling SceneManagement also enables PrefabSync.
         /// </summary>
-        [Tooltip("Enables scene management. This will allow network scene switches and automatic scene diff corrections upon connect.\n" + 
+        [Tooltip("Enables scene management. This will allow network scene switches and automatic scene diff corrections upon connect.\n" +
                  "SoftSynced scene objects wont work with this disabled. That means that disabling SceneManagement also enables PrefabSync.")]
         public bool EnableSceneManagement = true;
         /// <summary>
-        /// Whether or not the MLAPI should check for differences in the prefabs at connection. 
+        /// Whether or not the MLAPI should check for differences in the prefabs at connection.
         /// If you dynamically add prefabs at runtime, turn this OFF
         /// </summary>
         [Tooltip("Whether or not the MLAPI should check for differences in the prefab lists at connection")]
@@ -223,7 +230,7 @@ namespace MLAPI.Configuration
                     writer.WriteUInt16Packed(config.ProtocolVersion);
 
                     writer.WriteUInt16Packed((ushort)config.RegisteredScenes.Count);
-                    
+
                     for (int i = 0; i < config.RegisteredScenes.Count; i++)
                     {
                         writer.WriteString(config.RegisteredScenes[i]);
@@ -254,7 +261,7 @@ namespace MLAPI.Configuration
                 }
             }
         }
-        
+
         /// <summary>
         /// Sets the NetworkConfig data with that from a base64 encoded version
         /// </summary>
@@ -271,7 +278,7 @@ namespace MLAPI.Configuration
 
                     ushort sceneCount = reader.ReadUInt16Packed();
                     config.RegisteredScenes.Clear();
-                    
+
                     for (int i = 0; i < sceneCount; i++)
                     {
                         config.RegisteredScenes.Add(reader.ReadString().ToString());
@@ -299,7 +306,7 @@ namespace MLAPI.Configuration
                 }
             }
         }
-        
+
 
         private ulong? ConfigHash = null;
         /// <summary>

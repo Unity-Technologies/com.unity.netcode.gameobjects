@@ -299,11 +299,11 @@ namespace MLAPI
 
             if (prefab == null)
             {
-                NetworkConfig.PlayerPrefabHash = prefab.Hash;
+                NetworkConfig.PlayerPrefabHash = null;
             }
             else
             {
-                NetworkConfig.PlayerPrefabHash = null;
+                NetworkConfig.PlayerPrefabHash.Value = prefab.Hash;
             }
         }
 
@@ -384,7 +384,18 @@ namespace MLAPI
 
             for (int i = 0; i < NetworkConfig.NetworkedPrefabs.Count; i++)
             {
-                NetworkConfig.NetworkedPrefabs[i].Prefab.GetComponent<NetworkedObject>().ValidateHash();
+                if (NetworkConfig.NetworkedPrefabs[i] == null || NetworkConfig.NetworkedPrefabs[i].Prefab == null)
+                {
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Networked prefab cannot be null");
+                }
+                else if (NetworkConfig.NetworkedPrefabs[i].Prefab.GetComponent<NetworkedObject>() == null)
+                {
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Networked prefab is missing a NetworkedObject component");
+                }
+                else
+                {
+                    NetworkConfig.NetworkedPrefabs[i].Prefab.GetComponent<NetworkedObject>().ValidateHash();
+                }
             }
 
             NetworkConfig.NetworkTransport.OnTransportEvent += HandleRawTransportPoll;
@@ -618,7 +629,7 @@ namespace MLAPI
         private float lastTimeSyncTime;
         private void Update()
         {
-            if(IsListening)
+            if (IsListening)
             {
                 if ((NetworkTime - lastReceiveTickTime >= (1f / NetworkConfig.ReceiveTickrate)) || NetworkConfig.ReceiveTickrate <= 0)
                 {
@@ -637,12 +648,22 @@ namespace MLAPI
                     NetworkProfiler.EndTick();
                 }
 
-                if (IsServer && ((NetworkTime - lastEventTickTime >= (1f / NetworkConfig.EventTickrate))))
+                if (!IsListening)
+                {
+                    // If we get disconnected in the previous poll. IsListening will be set to false.
+                    return;
+                }
+
+                if (((NetworkTime - lastEventTickTime >= (1f / NetworkConfig.EventTickrate))))
                 {
                     NetworkProfiler.StartTick(TickType.Event);
-                    eventOvershootCounter += ((NetworkTime - lastEventTickTime) - (1f / NetworkConfig.EventTickrate));
-                    LagCompensationManager.AddFrames();
-                    ResponseMessageManager.CheckTimeouts();
+
+                    if (IsServer)
+                    {
+                        eventOvershootCounter += ((NetworkTime - lastEventTickTime) - (1f / NetworkConfig.EventTickrate));
+                        LagCompensationManager.AddFrames();
+                        ResponseMessageManager.CheckTimeouts();
+                    }
 
                     if (NetworkConfig.EnableNetworkedVar)
                     {
@@ -650,7 +671,11 @@ namespace MLAPI
                         NetworkedObject.NetworkedBehaviourUpdate();
                     }
 
-                    lastEventTickTime = NetworkTime;
+                    if (IsServer)
+                    {
+                        lastEventTickTime = NetworkTime;
+                    }
+
                     NetworkProfiler.EndTick();
                 }
                 else if (IsServer && eventOvershootCounter >= ((1f / NetworkConfig.EventTickrate)))
@@ -854,127 +879,123 @@ namespace MLAPI
             }
         }
 
+        private readonly BitStream inputStreamWrapper = new BitStream(new byte[0]);
+
         private void HandleIncomingData(ulong clientId, string channelName, ArraySegment<byte> data, float receiveTime)
         {
             if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Unwrapping Data Header");
 
-            using (BitStream inputStream = new BitStream(data.Array))
+            inputStreamWrapper.SetTarget(data.Array);
+            inputStreamWrapper.SetLength(data.Count + data.Offset);
+            inputStreamWrapper.Position = data.Offset;
+
+            using (BitStream messageStream = MessagePacker.UnwrapMessage(inputStreamWrapper, clientId, out byte messageType, out SecuritySendFlags security))
             {
-                inputStream.SetLength(data.Count + data.Offset);
-                inputStream.Position = data.Offset;
-
-                using (BitStream messageStream = MessagePacker.UnwrapMessage(inputStream, clientId, out byte messageType, out SecuritySendFlags security))
+                if (messageStream == null)
                 {
-                    if (messageStream == null)
-                    {
-                        if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Message unwrap could not be completed. Was the header corrupt? Crypto error?");
-                        return;
-                    }
-                    else if (messageType == MLAPIConstants.INVALID)
-                    {
-                        if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Message unwrap read an invalid messageType");
-                        return;
-                    }
-
-                    uint headerByteSize = (uint)Arithmetic.VarIntSize(messageType);
-                    NetworkProfiler.StartEvent(TickType.Receive, (uint)(data.Count - headerByteSize), channelName, messageType);
-
-                    if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Data Header: messageType=" + messageType);
-
-                    // Client tried to send a network message that was not the connection request before he was accepted.
-                    if (IsServer && (NetworkConfig.EnableEncryption && PendingClients.ContainsKey(clientId) && PendingClients[clientId].ConnectionState == PendingClient.State.PendingHail && messageType != MLAPIConstants.MLAPI_CERTIFICATE_HAIL_RESPONSE) ||
-                        (PendingClients.ContainsKey(clientId) && PendingClients[clientId].ConnectionState == PendingClient.State.PendingConnection && messageType != MLAPIConstants.MLAPI_CONNECTION_REQUEST))
-                    {
-                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Message recieved from clientId " + clientId + " before it has been accepted");
-                        return;
-                    }
-
-                    #region INTERNAL MESSAGE
-
-                    switch (messageType)
-                    {
-                        case MLAPIConstants.MLAPI_CONNECTION_REQUEST:
-                            if (IsServer)
-                                InternalMessageHandler.HandleConnectionRequest(clientId, messageStream);
-                            break;
-                        case MLAPIConstants.MLAPI_CONNECTION_APPROVED:
-                            if (IsClient)
-                                InternalMessageHandler.HandleConnectionApproved(clientId, messageStream, receiveTime);
-                            break;
-                        case MLAPIConstants.MLAPI_ADD_OBJECT:
-                            if (IsClient) InternalMessageHandler.HandleAddObject(clientId, messageStream);
-                            break;
-                        case MLAPIConstants.MLAPI_DESTROY_OBJECT:
-                            if (IsClient) InternalMessageHandler.HandleDestroyObject(clientId, messageStream);
-                            break;
-                        case MLAPIConstants.MLAPI_SWITCH_SCENE:
-                            if (IsClient && NetworkConfig.EnableSceneManagement) InternalMessageHandler.HandleSwitchScene(clientId, messageStream);
-                            break;
-                        case MLAPIConstants.MLAPI_CHANGE_OWNER:
-                            if (IsClient) InternalMessageHandler.HandleChangeOwner(clientId, messageStream);
-                            break;
-                        case MLAPIConstants.MLAPI_ADD_OBJECTS:
-                            if (IsClient) InternalMessageHandler.HandleAddObjects(clientId, messageStream);
-                            break;
-                        case MLAPIConstants.MLAPI_DESTROY_OBJECTS:
-                            if (IsClient) InternalMessageHandler.HandleDestroyObjects(clientId, messageStream);
-                            break;
-                        case MLAPIConstants.MLAPI_TIME_SYNC:
-                            if (IsClient) InternalMessageHandler.HandleTimeSync(clientId, messageStream, receiveTime);
-                            break;
-                        case MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA:
-                            InternalMessageHandler.HandleNetworkedVarDelta(clientId, messageStream);
-                            break;
-                        case MLAPIConstants.MLAPI_NETWORKED_VAR_UPDATE:
-                            InternalMessageHandler.HandleNetworkedVarUpdate(clientId, messageStream);
-                            break;
-                        case MLAPIConstants.MLAPI_SERVER_RPC:
-                            if (IsServer) InternalMessageHandler.HandleServerRPC(clientId, messageStream);
-                            break;
-                        case MLAPIConstants.MLAPI_SERVER_RPC_REQUEST:
-                            if (IsServer) InternalMessageHandler.HandleServerRPCRequest(clientId, messageStream, channelName, security);
-                            break;
-                        case MLAPIConstants.MLAPI_SERVER_RPC_RESPONSE:
-                            if (IsClient) InternalMessageHandler.HandleServerRPCResponse(clientId, messageStream);
-                            break;
-                        case MLAPIConstants.MLAPI_CLIENT_RPC:
-                            if (IsClient) InternalMessageHandler.HandleClientRPC(clientId, messageStream);
-                            break;
-                        case MLAPIConstants.MLAPI_CLIENT_RPC_REQUEST:
-                            if (IsClient) InternalMessageHandler.HandleClientRPCRequest(clientId, messageStream, channelName, security);
-                            break;
-                        case MLAPIConstants.MLAPI_CLIENT_RPC_RESPONSE:
-                            if (IsServer) InternalMessageHandler.HandleClientRPCResponse(clientId, messageStream);
-                            break;
-                        case MLAPIConstants.MLAPI_UNNAMED_MESSAGE:
-                            InternalMessageHandler.HandleUnnamedMessage(clientId, messageStream);
-                            break;
-                        case MLAPIConstants.MLAPI_NAMED_MESSAGE:
-                            InternalMessageHandler.HandleNamedMessage(clientId, messageStream);
-                            break;
-#if !DISABLE_CRYPTOGRAPHY
-                        case MLAPIConstants.MLAPI_CERTIFICATE_HAIL:
-                            if (IsClient) InternalMessageHandler.HandleHailRequest(clientId, messageStream);
-                            break;
-                        case MLAPIConstants.MLAPI_CERTIFICATE_HAIL_RESPONSE:
-                            if (IsServer) InternalMessageHandler.HandleHailResponse(clientId, messageStream);
-                            break;
-                        case MLAPIConstants.MLAPI_GREETINGS:
-                            if (IsClient) InternalMessageHandler.HandleGreetings(clientId, messageStream);
-                            break;
-    #endif
-                        case MLAPIConstants.MLAPI_CLIENT_SWITCH_SCENE_COMPLETED:
-                            if (IsServer && NetworkConfig.EnableSceneManagement) InternalMessageHandler.HandleClientSwitchSceneCompleted(clientId, messageStream);
-                            break;
-                        default:
-                            if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Read unrecognized messageType " + messageType);
-                            break;
-                    }
-
-                    #endregion
-
-                    NetworkProfiler.EndEvent();
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Message unwrap could not be completed. Was the header corrupt? Crypto error?");
+                    return;
                 }
+                else if (messageType == MLAPIConstants.INVALID)
+                {
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Message unwrap read an invalid messageType");
+                    return;
+                }
+
+                uint headerByteSize = (uint)Arithmetic.VarIntSize(messageType);
+                NetworkProfiler.StartEvent(TickType.Receive, (uint)(data.Count - headerByteSize), channelName, messageType);
+
+                if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Data Header: messageType=" + messageType);
+
+                // Client tried to send a network message that was not the connection request before he was accepted.
+                if (IsServer && (NetworkConfig.EnableEncryption && PendingClients.ContainsKey(clientId) && PendingClients[clientId].ConnectionState == PendingClient.State.PendingHail && messageType != MLAPIConstants.MLAPI_CERTIFICATE_HAIL_RESPONSE) ||
+                    (PendingClients.ContainsKey(clientId) && PendingClients[clientId].ConnectionState == PendingClient.State.PendingConnection && messageType != MLAPIConstants.MLAPI_CONNECTION_REQUEST))
+                {
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Message recieved from clientId " + clientId + " before it has been accepted");
+                    return;
+                }
+
+                #region INTERNAL MESSAGE
+                switch (messageType)
+                {
+                    case MLAPIConstants.MLAPI_CONNECTION_REQUEST:
+                        if (IsServer) InternalMessageHandler.HandleConnectionRequest(clientId, messageStream);
+                        break;
+                    case MLAPIConstants.MLAPI_CONNECTION_APPROVED:
+                        if (IsClient) InternalMessageHandler.HandleConnectionApproved(clientId, messageStream, receiveTime);
+                        break;
+                    case MLAPIConstants.MLAPI_ADD_OBJECT:
+                        if (IsClient) InternalMessageHandler.HandleAddObject(clientId, messageStream);
+                        break;
+                    case MLAPIConstants.MLAPI_DESTROY_OBJECT:
+                        if (IsClient) InternalMessageHandler.HandleDestroyObject(clientId, messageStream);
+                        break;
+                    case MLAPIConstants.MLAPI_SWITCH_SCENE:
+                        if (IsClient && NetworkConfig.EnableSceneManagement) InternalMessageHandler.HandleSwitchScene(clientId, messageStream);
+                        break;
+                    case MLAPIConstants.MLAPI_CHANGE_OWNER:
+                        if (IsClient) InternalMessageHandler.HandleChangeOwner(clientId, messageStream);
+                        break;
+                    case MLAPIConstants.MLAPI_ADD_OBJECTS:
+                        if (IsClient) InternalMessageHandler.HandleAddObjects(clientId, messageStream);
+                        break;
+                    case MLAPIConstants.MLAPI_DESTROY_OBJECTS:
+                        if (IsClient) InternalMessageHandler.HandleDestroyObjects(clientId, messageStream);
+                        break;
+                    case MLAPIConstants.MLAPI_TIME_SYNC:
+                        if (IsClient) InternalMessageHandler.HandleTimeSync(clientId, messageStream, receiveTime);
+                        break;
+                    case MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA:
+                        InternalMessageHandler.HandleNetworkedVarDelta(clientId, messageStream);
+                        break;
+                    case MLAPIConstants.MLAPI_NETWORKED_VAR_UPDATE:
+                        InternalMessageHandler.HandleNetworkedVarUpdate(clientId, messageStream);
+                        break;
+                    case MLAPIConstants.MLAPI_SERVER_RPC:
+                        if (IsServer) InternalMessageHandler.HandleServerRPC(clientId, messageStream);
+                        break;
+                    case MLAPIConstants.MLAPI_SERVER_RPC_REQUEST:
+                        if (IsServer) InternalMessageHandler.HandleServerRPCRequest(clientId, messageStream, channelName, security);
+                        break;
+                    case MLAPIConstants.MLAPI_SERVER_RPC_RESPONSE:
+                        if (IsClient) InternalMessageHandler.HandleServerRPCResponse(clientId, messageStream);
+                        break;
+                    case MLAPIConstants.MLAPI_CLIENT_RPC:
+                        if (IsClient) InternalMessageHandler.HandleClientRPC(clientId, messageStream);
+                        break;
+                    case MLAPIConstants.MLAPI_CLIENT_RPC_REQUEST:
+                        if (IsClient) InternalMessageHandler.HandleClientRPCRequest(clientId, messageStream, channelName, security);
+                        break;
+                    case MLAPIConstants.MLAPI_CLIENT_RPC_RESPONSE:
+                        if (IsServer) InternalMessageHandler.HandleClientRPCResponse(clientId, messageStream);
+                        break;
+                    case MLAPIConstants.MLAPI_UNNAMED_MESSAGE:
+                        InternalMessageHandler.HandleUnnamedMessage(clientId, messageStream);
+                        break;
+                    case MLAPIConstants.MLAPI_NAMED_MESSAGE:
+                        InternalMessageHandler.HandleNamedMessage(clientId, messageStream);
+                        break;
+#if !DISABLE_CRYPTOGRAPHY
+                    case MLAPIConstants.MLAPI_CERTIFICATE_HAIL:
+                        if (IsClient) InternalMessageHandler.HandleHailRequest(clientId, messageStream);
+                        break;
+                    case MLAPIConstants.MLAPI_CERTIFICATE_HAIL_RESPONSE:
+                        if (IsServer) InternalMessageHandler.HandleHailResponse(clientId, messageStream);
+                        break;
+                    case MLAPIConstants.MLAPI_GREETINGS:
+                        if (IsClient) InternalMessageHandler.HandleGreetings(clientId, messageStream);
+                        break;
+#endif
+                    case MLAPIConstants.MLAPI_CLIENT_SWITCH_SCENE_COMPLETED:
+                        if (IsServer && NetworkConfig.EnableSceneManagement) InternalMessageHandler.HandleClientSwitchSceneCompleted(clientId, messageStream);
+                        break;
+                    default:
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Read unrecognized messageType " + messageType);
+                        break;
+                }
+                #endregion
+
+                NetworkProfiler.EndEvent();
             }
         }
 

@@ -24,7 +24,7 @@ permalink: /api/rpc-method%3C-t1,-t2,-t3,-t4%3E/
 <div>
 	<h3>Public Constructors</h3>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``RpcMethod<T1,T2,T3,T4>``](/MLAPI/api/rpc-method%3C-t1,-t2,-t3,-t4%3E/)(``object`` object, ``IntPtr`` method);</b></h4>
+		<h4 markdown="1"><b>public [``RpcMethod<T1,T2,T3,T4>``](/api/rpc-method%3C-t1,-t2,-t3,-t4%3E/)(``object`` object, ``IntPtr`` method);</b></h4>
 	</div>
 		<h5><b>Parameters</b></h5>
 		<div>
@@ -111,12 +111,12 @@ permalink: /api/rpc-method%3C-t1,-t2,-t3,-t4%3E/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Delegate[]`` GetInvocationList();</b></h4>
+		<h4 markdown="1"><b>public ``int`` GetHashCode();</b></h4>
 		<h5 markdown="1">Inherited from: ``MulticastDelegate``</h5>
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``int`` GetHashCode();</b></h4>
+		<h4 markdown="1"><b>public ``Delegate[]`` GetInvocationList();</b></h4>
 		<h5 markdown="1">Inherited from: ``MulticastDelegate``</h5>
 	</div>
 	<br>
@@ -135,12 +135,12 @@ permalink: /api/rpc-method%3C-t1,-t2,-t3,-t4%3E/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``string`` ToString();</b></h4>
+		<h4 markdown="1"><b>public ``Type`` GetType();</b></h4>
 		<h5 markdown="1">Inherited from: ``object``</h5>
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Type`` GetType();</b></h4>
+		<h4 markdown="1"><b>public ``string`` ToString();</b></h4>
 		<h5 markdown="1">Inherited from: ``object``</h5>
 	</div>
 </div>

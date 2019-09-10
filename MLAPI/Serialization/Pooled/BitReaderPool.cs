@@ -21,9 +21,12 @@ namespace MLAPI.Serialization.Pooled
         {
             if (readers.Count == 0)
             {
-                if (createdReaders == 254) if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("255 readers have been created. Did you forget to dispose?");
-                    else if (createdReaders < 255) createdReaders++;
-                
+                if (createdReaders == 254)
+                {
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("255 readers have been created. Did you forget to dispose?");
+                }
+                else if (createdReaders < 255) createdReaders++;
+
                 return new PooledBitReader(stream);
             }
 

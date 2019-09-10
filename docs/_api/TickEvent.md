@@ -14,7 +14,7 @@ permalink: /api/tick-event/
 <div>
 	<h3 markdown="1">Public Fields</h3>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public [``TickType``](/MLAPI/api/tick-type/) EventType;</b></h4>
+		<h4 markdown="1"><b>public [``TickType``](/api/tick-type/) EventType;</b></h4>
 		<p>The type of evenmt</p>
 	</div>
 	<div style="line-height: 1;">
@@ -38,7 +38,7 @@ permalink: /api/tick-event/
 <div>
 	<h3>Public Constructors</h3>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``TickEvent``](/MLAPI/api/tick-event/)();</b></h4>
+		<h4 markdown="1"><b>public [``TickEvent``](/api/tick-event/)();</b></h4>
 	</div>
 </div>
 <br>
@@ -59,14 +59,14 @@ permalink: /api/tick-event/
 <div>
 	<h3 markdown="1">Public Static Methods</h3>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public static [``TickEvent``](/MLAPI/api/tick-event/) FromStream(``Stream`` stream);</b></h4>
+		<h4 markdown="1"><b>public static [``TickEvent``](/api/tick-event/) FromStream(``Stream`` stream);</b></h4>
 		<p>Creates a TickEvent from data in the provided stream</p>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``Stream`` stream</p>
 			<p>The stream containing the TickEvent data</p>
 		</div>
-		<h5 markdown="1"><b>Returns [``TickEvent``](/MLAPI/api/tick-event/)</b></h5>
+		<h5 markdown="1"><b>Returns [``TickEvent``](/api/tick-event/)</b></h5>
 		<div>
 			<p>The TickEvent with data read from the stream</p>
 		</div>
@@ -76,11 +76,6 @@ permalink: /api/tick-event/
 <br>
 <div>
 	<h3 markdown="1">Inherited Methods</h3>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``string`` ToString();</b></h4>
-		<h5 markdown="1">Inherited from: ``object``</h5>
-	</div>
-	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``bool`` Equals(``object`` obj);</b></h4>
 		<h5 markdown="1">Inherited from: ``object``</h5>
@@ -97,6 +92,11 @@ permalink: /api/tick-event/
 	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``Type`` GetType();</b></h4>
+		<h5 markdown="1">Inherited from: ``object``</h5>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``string`` ToString();</b></h4>
 		<h5 markdown="1">Inherited from: ``object``</h5>
 	</div>
 </div>

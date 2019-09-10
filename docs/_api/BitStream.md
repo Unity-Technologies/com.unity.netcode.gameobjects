@@ -82,7 +82,7 @@ permalink: /api/bit-stream/
 <div>
 	<h3>Public Constructors</h3>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``BitStream``](/MLAPI/api/bit-stream/)(``int`` capacity, ``float`` growthFactor);</b></h4>
+		<h4 markdown="1"><b>public [``BitStream``](/api/bit-stream/)(``int`` capacity, ``float`` growthFactor);</b></h4>
 		<p>A stream that supports writing data smaller than a single byte. This stream also has a built-in compression algorithm that can (optionally) be used to write compressed data.</p>
 	</div>
 		<h5><b>Parameters</b></h5>
@@ -95,7 +95,7 @@ permalink: /api/bit-stream/
 			<p>Factor by which buffer should grow when necessary.</p>
 		</div>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``BitStream``](/MLAPI/api/bit-stream/)(``float`` growthFactor);</b></h4>
+		<h4 markdown="1"><b>public [``BitStream``](/api/bit-stream/)(``float`` growthFactor);</b></h4>
 		<p>A stream that supports writing data smaller than a single byte. This stream also has a built-in compression algorithm that can (optionally) be used to write compressed data.</p>
 	</div>
 		<h5><b>Parameters</b></h5>
@@ -104,7 +104,7 @@ permalink: /api/bit-stream/
 			<p>Factor by which buffer should grow when necessary.</p>
 		</div>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``BitStream``](/MLAPI/api/bit-stream/)(``int`` capacity);</b></h4>
+		<h4 markdown="1"><b>public [``BitStream``](/api/bit-stream/)(``int`` capacity);</b></h4>
 		<p>A stream that supports writing data smaller than a single byte. This stream also has a built-in compression algorithm that can (optionally) be used to write compressed data.</p>
 	</div>
 		<h5><b>Parameters</b></h5>
@@ -113,11 +113,11 @@ permalink: /api/bit-stream/
 			<p></p>
 		</div>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``BitStream``](/MLAPI/api/bit-stream/)();</b></h4>
+		<h4 markdown="1"><b>public [``BitStream``](/api/bit-stream/)();</b></h4>
 		<p>A stream that supports writing data smaller than a single byte. This stream also has a built-in compression algorithm that can (optionally) be used to write compressed data.</p>
 	</div>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``BitStream``](/MLAPI/api/bit-stream/)(``byte[]`` target);</b></h4>
+		<h4 markdown="1"><b>public [``BitStream``](/api/bit-stream/)(``byte[]`` target);</b></h4>
 		<p>A stream that supports writing data smaller than a single byte. This stream also has a built-in compression algorithm that can (optionally) be used to write compressed data.
             NOTE: when using a pre-allocated buffer, the stream will not grow!</p>
 	</div>
@@ -303,11 +303,11 @@ permalink: /api/bit-stream/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` CopyFrom([``BitStream``](/MLAPI/api/bit-stream/) stream, ``int`` dataCount, ``bool`` copyBits);</b></h4>
+		<h4 markdown="1"><b>public ``void`` CopyFrom([``BitStream``](/api/bit-stream/) stream, ``int`` dataCount, ``bool`` copyBits);</b></h4>
 		<p>Copys the bits from the provided BitStream</p>
 		<h5><b>Parameters</b></h5>
 		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">[``BitStream``](/MLAPI/api/bit-stream/) stream</p>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``BitStream``](/api/bit-stream/) stream</p>
 			<p>The stream to copy from</p>
 		</div>
 		<div>
@@ -569,13 +569,45 @@ permalink: /api/bit-stream/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``object`` GetLifetimeService();</b></h4>
-		<h5 markdown="1">Inherited from: ``MarshalByRefObject``</h5>
+		<h4 markdown="1"><b>public ``int`` Read(``Span<byte>`` destination);</b></h4>
+		<h5 markdown="1">Inherited from: ``Stream``</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Span<byte>`` destination</p>
+		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``object`` InitializeLifetimeService();</b></h4>
-		<h5 markdown="1">Inherited from: ``MarshalByRefObject``</h5>
+		<h4 markdown="1"><b>public ``void`` Write(``ReadOnlySpan<byte>`` source);</b></h4>
+		<h5 markdown="1">Inherited from: ``Stream``</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``ReadOnlySpan<byte>`` source</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``ValueTask<int>`` ReadAsync(``Memory<byte>`` destination, ``CancellationToken`` cancellationToken);</b></h4>
+		<h5 markdown="1">Inherited from: ``Stream``</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Memory<byte>`` destination</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``CancellationToken`` cancellationToken</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``ValueTask`` WriteAsync(``ReadOnlyMemory<byte>`` source, ``CancellationToken`` cancellationToken);</b></h4>
+		<h5 markdown="1">Inherited from: ``Stream``</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``ReadOnlyMemory<byte>`` source</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``CancellationToken`` cancellationToken</p>
+		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
@@ -585,6 +617,16 @@ permalink: /api/bit-stream/
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``Type`` requestedType</p>
 		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``object`` GetLifetimeService();</b></h4>
+		<h5 markdown="1">Inherited from: ``MarshalByRefObject``</h5>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``object`` InitializeLifetimeService();</b></h4>
+		<h5 markdown="1">Inherited from: ``MarshalByRefObject``</h5>
 	</div>
 	<br>
 	<div style="line-height: 1;">

@@ -22,7 +22,7 @@ permalink: /api/pending-client/
 		<p>The current AesKey</p>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public [``State``](/MLAPI/api/state/) ConnectionState;</b></h4>
+		<h4 markdown="1"><b>public [``State``](/api/state/) ConnectionState;</b></h4>
 		<p>The state of the connection process for the client</p>
 	</div>
 </div>
@@ -30,17 +30,12 @@ permalink: /api/pending-client/
 <div>
 	<h3>Public Constructors</h3>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``PendingClient``](/MLAPI/api/pending-client/)();</b></h4>
+		<h4 markdown="1"><b>public [``PendingClient``](/api/pending-client/)();</b></h4>
 	</div>
 </div>
 <br>
 <div>
 	<h3 markdown="1">Inherited Methods</h3>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``string`` ToString();</b></h4>
-		<h5 markdown="1">Inherited from: ``object``</h5>
-	</div>
-	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``bool`` Equals(``object`` obj);</b></h4>
 		<h5 markdown="1">Inherited from: ``object``</h5>
@@ -57,6 +52,11 @@ permalink: /api/pending-client/
 	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``Type`` GetType();</b></h4>
+		<h5 markdown="1">Inherited from: ``object``</h5>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``string`` ToString();</b></h4>
 		<h5 markdown="1">Inherited from: ``object``</h5>
 	</div>
 </div>

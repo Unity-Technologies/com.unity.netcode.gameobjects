@@ -18,6 +18,11 @@ permalink: /api/transport/
 		<p>A constant clientId that represents the server.
             When this value is found in methods such as Send, it should be treated as a placeholder that means "the server"</p>
 	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``bool`` IsSupported { get; }</b></h4>
+		<p>Gets a value indicating whether this  is supported in the current runtime context.
+            This is used by multiplex adapters.</p>
+	</div>
 </div>
 <br>
 <div>
@@ -139,9 +144,8 @@ permalink: /api/transport/
 <div>
 	<h3 markdown="1">Public Methods</h3>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` Send(``ulong`` clientId, ``ArraySegment<byte>`` data, ``string`` channelName, ``bool`` skipQueue);</b></h4>
-		<p>Queues a message for sending if the transports supports manual queueing and you want to use the MLAPIs tick system.
-            If the transport does not support queueing, you can ignore the FlushSendQueue method and do all sending here.</p>
+		<h4 markdown="1"><b>public ``void`` Send(``ulong`` clientId, ``ArraySegment<byte>`` data, ``string`` channelName);</b></h4>
+		<p>Send a payload to the specified clientId, data and channelName.</p>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``ulong`` clientId</p>
@@ -155,25 +159,10 @@ permalink: /api/transport/
 			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channelName</p>
 			<p>The channel to send data to</p>
 		</div>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``bool`` skipQueue</p>
-			<p>Whether or not Send will have to be called for this message to be sent</p>
-		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` FlushSendQueue(``ulong`` clientId);</b></h4>
-		<p>Sends queued messages for a specific clientId if queueing is supported.
-            THIS METHOD IS OPTIONAL. IF THE TRANSPORT DOESNT SUPPORT QUEUEING, YOU CAN DO ALL SENDING IN THE QUEUE METHOD.</p>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``ulong`` clientId</p>
-			<p>The clientId to send</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public [``NetEventType``](/MLAPI/api/net-event-type/) PollEvent(``UInt64&`` clientId, ``String&`` channelName, ``ArraySegment`1&`` payload);</b></h4>
+		<h4 markdown="1"><b>public [``NetEventType``](/api/net-event-type/) PollEvent(``UInt64&`` clientId, ``String&`` channelName, ``ArraySegment`1&`` payload, ``Single&`` receiveTime);</b></h4>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``UInt64&`` clientId</p>
@@ -184,15 +173,18 @@ permalink: /api/transport/
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``ArraySegment`1&`` payload</p>
 		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Single&`` receiveTime</p>
+		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` StartClient();</b></h4>
+		<h4 markdown="1"><b>public [``SocketTasks``](/api/socket-tasks/) StartClient();</b></h4>
 		<p>Connects client to server</p>
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` StartServer();</b></h4>
+		<h4 markdown="1"><b>public [``SocketTasks``](/api/socket-tasks/) StartServer();</b></h4>
 		<p>Starts to listen for incoming clients.</p>
 	</div>
 	<br>

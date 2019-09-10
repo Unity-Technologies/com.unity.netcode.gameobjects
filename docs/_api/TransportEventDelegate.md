@@ -1,15 +1,15 @@
 ---
-title: CustomMessageDelegete
-name: CustomMessageDelegete
-permalink: /api/custom-message-delegete/
+title: TransportEventDelegate
+name: TransportEventDelegate
+permalink: /api/transport-event-delegate/
 ---
 
 <div style="line-height: 1;">
-	<h2 markdown="1">CustomMessageDelegete ``class``</h2>
-	<p style="font-size: 20px;"><b>Namespace:</b> MLAPI</p>
+	<h2 markdown="1">TransportEventDelegate ``class``</h2>
+	<p style="font-size: 20px;"><b>Namespace:</b> MLAPI.Transports</p>
 	<p style="font-size: 20px;"><b>Assembly:</b> MLAPI.dll</p>
 </div>
-<p>Delegate used for incoming custom messages</p>
+<p>Delegate for transport events.</p>
 
 <div>
 	<h3 markdown="1">Inherited Properties</h3>
@@ -26,7 +26,7 @@ permalink: /api/custom-message-delegete/
 <div>
 	<h3>Public Constructors</h3>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``CustomMessageDelegete``](/MLAPI/api/custom-message-delegete/)(``object`` object, ``IntPtr`` method);</b></h4>
+		<h4 markdown="1"><b>public [``TransportEventDelegate``](/api/transport-event-delegate/)(``object`` object, ``IntPtr`` method);</b></h4>
 	</div>
 		<h5><b>Parameters</b></h5>
 		<div>
@@ -40,24 +40,42 @@ permalink: /api/custom-message-delegete/
 <div>
 	<h3 markdown="1">Public Methods</h3>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` Invoke(``ulong`` clientId, ``Stream`` stream);</b></h4>
+		<h4 markdown="1"><b>public ``void`` Invoke([``NetEventType``](/api/net-event-type/) type, ``ulong`` clientId, ``string`` channelName, ``ArraySegment<byte>`` payload, ``float`` receiveTime);</b></h4>
 		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``NetEventType``](/api/net-event-type/) type</p>
+		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``ulong`` clientId</p>
 		</div>
 		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``Stream`` stream</p>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channelName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``ArraySegment<byte>`` payload</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``float`` receiveTime</p>
 		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``IAsyncResult`` BeginInvoke(``ulong`` clientId, ``Stream`` stream, ``AsyncCallback`` callback, ``object`` object);</b></h4>
+		<h4 markdown="1"><b>public ``IAsyncResult`` BeginInvoke([``NetEventType``](/api/net-event-type/) type, ``ulong`` clientId, ``string`` channelName, ``ArraySegment<byte>`` payload, ``float`` receiveTime, ``AsyncCallback`` callback, ``object`` object);</b></h4>
 		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``NetEventType``](/api/net-event-type/) type</p>
+		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``ulong`` clientId</p>
 		</div>
 		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``Stream`` stream</p>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` channelName</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``ArraySegment<byte>`` payload</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``float`` receiveTime</p>
 		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``AsyncCallback`` callback</p>
@@ -101,12 +119,12 @@ permalink: /api/custom-message-delegete/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Delegate[]`` GetInvocationList();</b></h4>
+		<h4 markdown="1"><b>public ``int`` GetHashCode();</b></h4>
 		<h5 markdown="1">Inherited from: ``MulticastDelegate``</h5>
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``int`` GetHashCode();</b></h4>
+		<h4 markdown="1"><b>public ``Delegate[]`` GetInvocationList();</b></h4>
 		<h5 markdown="1">Inherited from: ``MulticastDelegate``</h5>
 	</div>
 	<br>
@@ -125,12 +143,12 @@ permalink: /api/custom-message-delegete/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``string`` ToString();</b></h4>
+		<h4 markdown="1"><b>public ``Type`` GetType();</b></h4>
 		<h5 markdown="1">Inherited from: ``object``</h5>
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Type`` GetType();</b></h4>
+		<h4 markdown="1"><b>public ``string`` ToString();</b></h4>
 		<h5 markdown="1">Inherited from: ``object``</h5>
 	</div>
 </div>

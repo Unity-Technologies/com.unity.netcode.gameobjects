@@ -30,7 +30,7 @@ permalink: /api/network-config/
 		<p>The protocol version. Different versions doesn't talk to each other.</p>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public [``Transport``](/MLAPI/api/transport/) NetworkTransport;</b></h4>
+		<h4 markdown="1"><b>public [``Transport``](/api/transport/) NetworkTransport;</b></h4>
 		<p>The transport hosts the sever uses</p>
 	</div>
 	<div style="line-height: 1;">
@@ -38,8 +38,17 @@ permalink: /api/network-config/
 		<p>A list of SceneNames that can be used during networked games.</p>
 	</div>
 	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``bool`` AllowRuntimeSceneChanges;</b></h4>
+		<p>Whether or not runtime scene changes should be allowed and expected.
+            If this is true, clients with different initial configurations will not work together.</p>
+	</div>
+	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``List<NetworkedPrefab>`` NetworkedPrefabs;</b></h4>
 		<p>A list of spawnable prefabs</p>
+	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``bool`` CreatePlayerPrefab;</b></h4>
+		<p>Whether or not a player object should be created by default. This value can be overriden on a case by case basis with ConnectionApproval.</p>
 	</div>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``int`` ReceiveTickrate;</b></h4>
@@ -48,10 +57,6 @@ permalink: /api/network-config/
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``int`` MaxReceiveEventsPerTickRate;</b></h4>
 		<p>The max amount of messages to process per ReceiveTickrate. This is to prevent flooding.</p>
-	</div>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``int`` SendTickrate;</b></h4>
-		<p>The amount of times per second every pending message will be sent away.</p>
 	</div>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``int`` EventTickrate;</b></h4>
@@ -98,7 +103,7 @@ permalink: /api/network-config/
 	</div>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``bool`` ForceSamePrefabs;</b></h4>
-		<p>Whether or not the MLAPI should check for differences in the prefabs at connection. 
+		<p>Whether or not the MLAPI should check for differences in the prefabs at connection.
             If you dynamically add prefabs at runtime, turn this OFF</p>
 	</div>
 	<div style="line-height: 1;">
@@ -115,7 +120,7 @@ permalink: /api/network-config/
 		<p>The amount of seconds a NetworkId has to be unused in order for it to be reused.</p>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public [``HashSize``](/MLAPI/api/hash-size/) RpcHashSize;</b></h4>
+		<h4 markdown="1"><b>public [``HashSize``](/api/hash-size/) RpcHashSize;</b></h4>
 		<p>Decides how many bytes to use for Rpc messaging. Leave this to 2 bytes unless you are facing hash collisions</p>
 	</div>
 	<div style="line-height: 1;">
@@ -139,7 +144,7 @@ permalink: /api/network-config/
 <div>
 	<h3>Public Constructors</h3>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``NetworkConfig``](/MLAPI/api/network-config/)();</b></h4>
+		<h4 markdown="1"><b>public [``NetworkConfig``](/api/network-config/)();</b></h4>
 	</div>
 </div>
 <br>
@@ -197,11 +202,6 @@ permalink: /api/network-config/
 <div>
 	<h3 markdown="1">Inherited Methods</h3>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``string`` ToString();</b></h4>
-		<h5 markdown="1">Inherited from: ``object``</h5>
-	</div>
-	<br>
-	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``bool`` Equals(``object`` obj);</b></h4>
 		<h5 markdown="1">Inherited from: ``object``</h5>
 		<h5><b>Parameters</b></h5>
@@ -217,6 +217,11 @@ permalink: /api/network-config/
 	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``Type`` GetType();</b></h4>
+		<h5 markdown="1">Inherited from: ``object``</h5>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``string`` ToString();</b></h4>
 		<h5 markdown="1">Inherited from: ``object``</h5>
 	</div>
 </div>

@@ -26,7 +26,7 @@ permalink: /api/spawn-manager/
 <div>
 	<h3 markdown="1">Public Static Methods</h3>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public static ``void`` RegisterSpawnHandler(``ulong`` prefabHash, [``SpawnHandlerDelegate``](/MLAPI/api/spawn-handler-delegate/) handler);</b></h4>
+		<h4 markdown="1"><b>public static ``void`` RegisterSpawnHandler(``ulong`` prefabHash, [``SpawnHandlerDelegate``](/api/spawn-handler-delegate/) handler);</b></h4>
 		<p>Registers a delegate for spawning networked prefabs, useful for object pooling</p>
 		<h5><b>Parameters</b></h5>
 		<div>
@@ -34,13 +34,13 @@ permalink: /api/spawn-manager/
 			<p>The prefab hash to spawn</p>
 		</div>
 		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">[``SpawnHandlerDelegate``](/MLAPI/api/spawn-handler-delegate/) handler</p>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``SpawnHandlerDelegate``](/api/spawn-handler-delegate/) handler</p>
 			<p>The delegate handler</p>
 		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public static ``void`` RegisterCustomDestroyHandler(``ulong`` prefabHash, [``DestroyHandlerDelegate``](/MLAPI/api/destroy-handler-delegate/) handler);</b></h4>
+		<h4 markdown="1"><b>public static ``void`` RegisterCustomDestroyHandler(``ulong`` prefabHash, [``DestroyHandlerDelegate``](/api/destroy-handler-delegate/) handler);</b></h4>
 		<p>Registers a delegate for destroying networked objects, useful for object pooling</p>
 		<h5><b>Parameters</b></h5>
 		<div>
@@ -48,7 +48,7 @@ permalink: /api/spawn-manager/
 			<p>The prefab hash to destroy</p>
 		</div>
 		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">[``DestroyHandlerDelegate``](/MLAPI/api/destroy-handler-delegate/) handler</p>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``DestroyHandlerDelegate``](/api/destroy-handler-delegate/) handler</p>
 			<p>The delegate handler</p>
 		</div>
 	</div>
@@ -116,22 +116,22 @@ permalink: /api/spawn-manager/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public static [``NetworkedObject``](/MLAPI/api/networked-object/) GetLocalPlayerObject();</b></h4>
+		<h4 markdown="1"><b>public static [``NetworkedObject``](/api/networked-object/) GetLocalPlayerObject();</b></h4>
 		<p>Returns the local player object or null if one does not exist</p>
-		<h5 markdown="1"><b>Returns [``NetworkedObject``](/MLAPI/api/networked-object/)</b></h5>
+		<h5 markdown="1"><b>Returns [``NetworkedObject``](/api/networked-object/)</b></h5>
 		<div>
 			<p>The local player object or null if one does not exist</p>
 		</div>
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public static [``NetworkedObject``](/MLAPI/api/networked-object/) GetPlayerObject(``ulong`` clientId);</b></h4>
+		<h4 markdown="1"><b>public static [``NetworkedObject``](/api/networked-object/) GetPlayerObject(``ulong`` clientId);</b></h4>
 		<p>Returns the player object with a given clientId or null if one does not exist</p>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``ulong`` clientId</p>
 		</div>
-		<h5 markdown="1"><b>Returns [``NetworkedObject``](/MLAPI/api/networked-object/)</b></h5>
+		<h5 markdown="1"><b>Returns [``NetworkedObject``](/api/networked-object/)</b></h5>
 		<div>
 			<p>The player object with a given clientId or null if one does not exist</p>
 		</div>
@@ -141,11 +141,6 @@ permalink: /api/spawn-manager/
 <br>
 <div>
 	<h3 markdown="1">Inherited Methods</h3>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``string`` ToString();</b></h4>
-		<h5 markdown="1">Inherited from: ``object``</h5>
-	</div>
-	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``bool`` Equals(``object`` obj);</b></h4>
 		<h5 markdown="1">Inherited from: ``object``</h5>
@@ -162,6 +157,11 @@ permalink: /api/spawn-manager/
 	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``Type`` GetType();</b></h4>
+		<h5 markdown="1">Inherited from: ``object``</h5>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``string`` ToString();</b></h4>
 		<h5 markdown="1">Inherited from: ``object``</h5>
 	</div>
 </div>

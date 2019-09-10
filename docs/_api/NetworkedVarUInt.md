@@ -30,7 +30,7 @@ permalink: /api/networked-var-uint/
 <div>
 	<h3 markdown="1">Inherited Fields</h3>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public [``NetworkedVarSettings``](/MLAPI/api/networked-var-settings/) Settings;</b></h4>
+		<h4 markdown="1"><b>public [``NetworkedVarSettings``](/api/networked-var-settings/) Settings;</b></h4>
 		<h5 markdown="1">Inherited from: ``NetworkedVar<uint>``</h5>
 	</div>
 	<div style="line-height: 1;">
@@ -42,28 +42,28 @@ permalink: /api/networked-var-uint/
 <div>
 	<h3>Public Constructors</h3>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``NetworkedVarUInt``](/MLAPI/api/networked-var-uint/)();</b></h4>
+		<h4 markdown="1"><b>public [``NetworkedVarUInt``](/api/networked-var-uint/)();</b></h4>
 	</div>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``NetworkedVarUInt``](/MLAPI/api/networked-var-uint/)([``NetworkedVarSettings``](/MLAPI/api/networked-var-settings/) settings);</b></h4>
+		<h4 markdown="1"><b>public [``NetworkedVarUInt``](/api/networked-var-uint/)([``NetworkedVarSettings``](/api/networked-var-settings/) settings);</b></h4>
 	</div>
 		<h5><b>Parameters</b></h5>
 		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">[``NetworkedVarSettings``](/MLAPI/api/networked-var-settings/) settings</p>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``NetworkedVarSettings``](/api/networked-var-settings/) settings</p>
 		</div>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``NetworkedVarUInt``](/MLAPI/api/networked-var-uint/)(``uint`` value);</b></h4>
+		<h4 markdown="1"><b>public [``NetworkedVarUInt``](/api/networked-var-uint/)(``uint`` value);</b></h4>
 	</div>
 		<h5><b>Parameters</b></h5>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` value</p>
 		</div>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``NetworkedVarUInt``](/MLAPI/api/networked-var-uint/)([``NetworkedVarSettings``](/MLAPI/api/networked-var-settings/) settings, ``uint`` value);</b></h4>
+		<h4 markdown="1"><b>public [``NetworkedVarUInt``](/api/networked-var-uint/)([``NetworkedVarSettings``](/api/networked-var-settings/) settings, ``uint`` value);</b></h4>
 	</div>
 		<h5><b>Parameters</b></h5>
 		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">[``NetworkedVarSettings``](/MLAPI/api/networked-var-settings/) settings</p>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``NetworkedVarSettings``](/api/networked-var-settings/) settings</p>
 		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``uint`` value</p>
@@ -122,11 +122,11 @@ permalink: /api/networked-var-uint/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` SetNetworkedBehaviour([``NetworkedBehaviour``](/MLAPI/api/networked-behaviour/) behaviour);</b></h4>
+		<h4 markdown="1"><b>public ``void`` SetNetworkedBehaviour([``NetworkedBehaviour``](/api/networked-behaviour/) behaviour);</b></h4>
 		<h5 markdown="1">Inherited from: ``NetworkedVar<uint>``</h5>
 		<h5><b>Parameters</b></h5>
 		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">[``NetworkedBehaviour``](/MLAPI/api/networked-behaviour/) behaviour</p>
+			<p style="font-size: 20px; color: #444;" markdown="1">[``NetworkedBehaviour``](/api/networked-behaviour/) behaviour</p>
 		</div>
 	</div>
 	<br>
@@ -154,11 +154,6 @@ permalink: /api/networked-var-uint/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``string`` ToString();</b></h4>
-		<h5 markdown="1">Inherited from: ``object``</h5>
-	</div>
-	<br>
-	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``bool`` Equals(``object`` obj);</b></h4>
 		<h5 markdown="1">Inherited from: ``object``</h5>
 		<h5><b>Parameters</b></h5>
@@ -174,6 +169,11 @@ permalink: /api/networked-var-uint/
 	<br>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``Type`` GetType();</b></h4>
+		<h5 markdown="1">Inherited from: ``object``</h5>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``string`` ToString();</b></h4>
 		<h5 markdown="1">Inherited from: ``object``</h5>
 	</div>
 </div>

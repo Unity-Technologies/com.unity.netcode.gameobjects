@@ -21,15 +21,18 @@ namespace MLAPI.Serialization.Pooled
         {
             if (writers.Count == 0)
             {
-                if (createdWriters == 254) if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("255 writers have been created. Did you forget to dispose?");
-                    else if (createdWriters < 255) createdWriters++;
-                
+                if (createdWriters == 254)
+                {
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("255 writers have been created. Did you forget to dispose?");
+                }
+                else if (createdWriters < 255) createdWriters++;
+
                 return new PooledBitWriter(stream);
             }
 
             PooledBitWriter writer = writers.Dequeue();
             writer.SetStream(stream);
-            
+
             return writer;
         }
 

@@ -22,16 +22,19 @@ namespace MLAPI.Serialization.Pooled
             if (overflowStreams.Count > 0)
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Retrieving PooledBitStream from overflow pool. Recent burst?");
-                WeakReference weakStream;
-                while (!(weakStream = overflowStreams.Dequeue()).IsAlive) ;
+                WeakReference weakStream = null;
+                while (overflowStreams.Count > 0 && ((weakStream = overflowStreams.Dequeue()) == null || !weakStream.IsAlive)) ;
                 if (weakStream.IsAlive) return (PooledBitStream)weakStream.Target;
             }
 
             if (streams.Count == 0)
             {
-                if (createdStreams == 254) if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("255 streams have been created. Did you forget to dispose?");
+                if (createdStreams == 254)
+                {
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("255 streams have been created. Did you forget to dispose?");
+                }
                 else if (createdStreams < 255) createdStreams++;
-                
+
                 return new PooledBitStream();
             }
 

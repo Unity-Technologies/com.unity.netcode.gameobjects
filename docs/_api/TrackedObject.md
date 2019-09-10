@@ -138,7 +138,7 @@ permalink: /api/tracked-object/
 <div>
 	<h3>Public Constructors</h3>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``TrackedObject``](/MLAPI/api/tracked-object/)();</b></h4>
+		<h4 markdown="1"><b>public [``TrackedObject``](/api/tracked-object/)();</b></h4>
 	</div>
 </div>
 <br>

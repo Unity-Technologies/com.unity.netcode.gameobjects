@@ -50,11 +50,11 @@ permalink: /api/visibility-change-exception/
 <div>
 	<h3>Public Constructors</h3>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``VisibilityChangeException``](/MLAPI/api/visibility-change-exception/)();</b></h4>
+		<h4 markdown="1"><b>public [``VisibilityChangeException``](/api/visibility-change-exception/)();</b></h4>
 		<p>Constructs a VisibilityChangeException</p>
 	</div>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``VisibilityChangeException``](/MLAPI/api/visibility-change-exception/)(``string`` message);</b></h4>
+		<h4 markdown="1"><b>public [``VisibilityChangeException``](/api/visibility-change-exception/)(``string`` message);</b></h4>
 		<p>Constructs a VisibilityChangeException with a message</p>
 	</div>
 		<h5><b>Parameters</b></h5>
@@ -63,7 +63,7 @@ permalink: /api/visibility-change-exception/
 			<p>The exception message</p>
 		</div>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``VisibilityChangeException``](/MLAPI/api/visibility-change-exception/)(``string`` message, ``Exception`` inner);</b></h4>
+		<h4 markdown="1"><b>public [``VisibilityChangeException``](/api/visibility-change-exception/)(``string`` message, ``Exception`` inner);</b></h4>
 		<p>Constructs a VisibilityChangeException with a message and a inner exception</p>
 	</div>
 		<h5><b>Parameters</b></h5>

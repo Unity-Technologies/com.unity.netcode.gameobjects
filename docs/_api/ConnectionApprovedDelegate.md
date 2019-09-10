@@ -26,7 +26,7 @@ permalink: /api/connection-approved-delegate/
 <div>
 	<h3>Public Constructors</h3>
 	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``ConnectionApprovedDelegate``](/MLAPI/api/connection-approved-delegate/)(``object`` object, ``IntPtr`` method);</b></h4>
+		<h4 markdown="1"><b>public [``ConnectionApprovedDelegate``](/api/connection-approved-delegate/)(``object`` object, ``IntPtr`` method);</b></h4>
 	</div>
 		<h5><b>Parameters</b></h5>
 		<div>
@@ -40,13 +40,13 @@ permalink: /api/connection-approved-delegate/
 <div>
 	<h3 markdown="1">Public Methods</h3>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` Invoke(``ulong`` clientId, ``Nullable<ulong>`` prefabHash, ``bool`` approved, ``Nullable<Vector3>`` position, ``Nullable<Quaternion>`` rotation);</b></h4>
+		<h4 markdown="1"><b>public ``void`` Invoke(``bool`` createPlayerObject, ``Nullable<ulong>`` playerPrefabHash, ``bool`` approved, ``Nullable<Vector3>`` position, ``Nullable<Quaternion>`` rotation);</b></h4>
 		<h5><b>Parameters</b></h5>
 		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``ulong`` clientId</p>
+			<p style="font-size: 20px; color: #444;" markdown="1">``bool`` createPlayerObject</p>
 		</div>
 		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``Nullable<ulong>`` prefabHash</p>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Nullable<ulong>`` playerPrefabHash</p>
 		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``bool`` approved</p>
@@ -60,13 +60,13 @@ permalink: /api/connection-approved-delegate/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``IAsyncResult`` BeginInvoke(``ulong`` clientId, ``Nullable<ulong>`` prefabHash, ``bool`` approved, ``Nullable<Vector3>`` position, ``Nullable<Quaternion>`` rotation, ``AsyncCallback`` callback, ``object`` object);</b></h4>
+		<h4 markdown="1"><b>public ``IAsyncResult`` BeginInvoke(``bool`` createPlayerObject, ``Nullable<ulong>`` playerPrefabHash, ``bool`` approved, ``Nullable<Vector3>`` position, ``Nullable<Quaternion>`` rotation, ``AsyncCallback`` callback, ``object`` object);</b></h4>
 		<h5><b>Parameters</b></h5>
 		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``ulong`` clientId</p>
+			<p style="font-size: 20px; color: #444;" markdown="1">``bool`` createPlayerObject</p>
 		</div>
 		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``Nullable<ulong>`` prefabHash</p>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Nullable<ulong>`` playerPrefabHash</p>
 		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``bool`` approved</p>
@@ -119,12 +119,12 @@ permalink: /api/connection-approved-delegate/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Delegate[]`` GetInvocationList();</b></h4>
+		<h4 markdown="1"><b>public ``int`` GetHashCode();</b></h4>
 		<h5 markdown="1">Inherited from: ``MulticastDelegate``</h5>
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``int`` GetHashCode();</b></h4>
+		<h4 markdown="1"><b>public ``Delegate[]`` GetInvocationList();</b></h4>
 		<h5 markdown="1">Inherited from: ``MulticastDelegate``</h5>
 	</div>
 	<br>
@@ -143,12 +143,12 @@ permalink: /api/connection-approved-delegate/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``string`` ToString();</b></h4>
+		<h4 markdown="1"><b>public ``Type`` GetType();</b></h4>
 		<h5 markdown="1">Inherited from: ``object``</h5>
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Type`` GetType();</b></h4>
+		<h4 markdown="1"><b>public ``string`` ToString();</b></h4>
 		<h5 markdown="1">Inherited from: ``object``</h5>
 	</div>
 </div>
