@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace MLAPI.Collections
 {
@@ -9,13 +9,12 @@ namespace MLAPI.Collections
     public sealed class FixedQueue<T>
     {
         private readonly T[] queue;
-        private int queueCount = 0;
         private int queueStart;
 
         /// <summary>
         /// The amount of enqueued objects
         /// </summary>
-        public int Count { get => queueCount; }
+        public int Count { get; private set; } = 0;
 
         /// <summary>
         /// Gets the element at a given virtual index
@@ -47,10 +46,10 @@ namespace MLAPI.Collections
         /// <returns></returns>
         public bool Enqueue(T t)
         {
-            queue[(queueStart + queueCount) % queue.Length] = t;
-            if (++queueCount > queue.Length)
+            queue[(queueStart + Count) % queue.Length] = t;
+            if (++Count > queue.Length)
             {
-                --queueCount;
+                --Count;
                 return true;
             }
             return false;
@@ -62,7 +61,7 @@ namespace MLAPI.Collections
         /// <returns></returns>
         public T Dequeue()
         {
-            if (--queueCount == -1) throw new IndexOutOfRangeException("Cannot dequeue empty queue!");
+            if (--Count == -1) throw new IndexOutOfRangeException("Cannot dequeue empty queue!");
             T res = queue[queueStart];
             queueStart = (queueStart + 1) % queue.Length;
             return res;

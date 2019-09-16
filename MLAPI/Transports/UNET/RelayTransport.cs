@@ -1,4 +1,4 @@
-﻿#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -84,7 +84,9 @@ namespace MLAPI.Transports.UNET
 
             int ret = NetworkTransport.AddHost(topology);
 
-            if (createServer) relayConnectionId = NetworkTransport.Connect(ret, RelayAddress, RelayPort, 0, out byte b);
+            byte b;
+
+            if (createServer) relayConnectionId = NetworkTransport.Connect(ret, RelayAddress, RelayPort, 0, out b);
 
             return ret;
         }
@@ -100,7 +102,9 @@ namespace MLAPI.Transports.UNET
 
             int ret = NetworkTransport.AddHost(topology, port);
 
-            if (createServer) relayConnectionId = NetworkTransport.Connect(ret, RelayAddress, RelayPort, 0, out byte b);
+            byte b;
+
+            if (createServer) relayConnectionId = NetworkTransport.Connect(ret, RelayAddress, RelayPort, 0, out b);
 
             return ret;
         }
@@ -116,7 +120,9 @@ namespace MLAPI.Transports.UNET
 
             int ret = NetworkTransport.AddHost(topology, port, ip);
 
-            if (createServer) relayConnectionId = NetworkTransport.Connect(ret, RelayAddress, RelayPort, 0, out byte b);
+            byte b;
+
+            if (createServer) relayConnectionId = NetworkTransport.Connect(ret, RelayAddress, RelayPort, 0, out b);
 
             return ret;
         }
@@ -133,7 +139,9 @@ namespace MLAPI.Transports.UNET
 
             int ret = NetworkTransport.AddHostWithSimulator(topology, minTimeout, maxTimeout, port, ip);
 
-            if (createServer) relayConnectionId = NetworkTransport.Connect(ret, RelayAddress, RelayPort, 0, out byte b);
+            byte b;
+
+            if (createServer) relayConnectionId = NetworkTransport.Connect(ret, RelayAddress, RelayPort, 0, out b);
 
             return ret;
         }
@@ -150,7 +158,9 @@ namespace MLAPI.Transports.UNET
 
             int ret = NetworkTransport.AddHostWithSimulator(topology, minTimeout, maxTimeout);
 
-            if (createServer) relayConnectionId = NetworkTransport.Connect(ret, RelayAddress, RelayPort, 0, out byte b);
+            byte b;
+
+            if (createServer) relayConnectionId = NetworkTransport.Connect(ret, RelayAddress, RelayPort, 0, out b);
 
             return ret;
         }
@@ -165,7 +175,9 @@ namespace MLAPI.Transports.UNET
 
             int ret = NetworkTransport.AddHostWithSimulator(topology, minTimeout, maxTimeout, port);
 
-            if (createServer) relayConnectionId = NetworkTransport.Connect(ret, RelayAddress, RelayPort, 0, out byte b);
+            byte b;
+
+            if (createServer) relayConnectionId = NetworkTransport.Connect(ret, RelayAddress, RelayPort, 0, out b);
 
             return ret;
         }
@@ -182,7 +194,9 @@ namespace MLAPI.Transports.UNET
 
             int ret = NetworkTransport.AddWebsocketHost(topology, port);
 
-            if (createServer) relayConnectionId = NetworkTransport.Connect(ret, RelayAddress, RelayPort, 0, out byte b);
+            byte b;
+
+            if (createServer) relayConnectionId = NetworkTransport.Connect(ret, RelayAddress, RelayPort, 0, out b);
 
             return ret;
         }
@@ -199,7 +213,9 @@ namespace MLAPI.Transports.UNET
 
             int ret = NetworkTransport.AddWebsocketHost(topology, port, ip);
 
-            if (createServer) relayConnectionId = NetworkTransport.Connect(ret, RelayAddress, RelayPort, 0, out byte b);
+            byte b;
+
+            if (createServer) relayConnectionId = NetworkTransport.Connect(ret, RelayAddress, RelayPort, 0, out b);
 
             return ret;
         }

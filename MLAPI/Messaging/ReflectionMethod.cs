@@ -42,9 +42,9 @@ namespace MLAPI.Messaging
             this.method = method;
             this.index = index;
 
-            if (attribute is ServerRPCAttribute serverRpcAttribute)
+            if (attribute is ServerRPCAttribute)
             {
-                requireOwnership = serverRpcAttribute.RequireOwnership;
+                requireOwnership = ((ServerRPCAttribute)attribute).RequireOwnership;
                 serverTarget = true;
             }
             else
@@ -92,7 +92,7 @@ namespace MLAPI.Messaging
                 {
                     return InvokeReflected(target, stream);
                 }
-            } 
+            }
             else
             {
                 // Create a new stream so that the stream they get ONLY contains user data and not MLAPI headers

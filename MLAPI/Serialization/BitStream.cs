@@ -97,10 +97,17 @@ namespace MLAPI.Serialization
         /// </summary>
         public long Capacity
         {
-            get => target.LongLength; // Optimized CeilingExact
+            get
+            {
+                return target.LongLength; // Optimized CeilingExact
+            }
             set
             {
-                if (value < Length) throw new ArgumentOutOfRangeException("New capcity too small!");
+                if (value < Length)
+                {
+                    throw new ArgumentOutOfRangeException("New capcity too small!");
+                }
+
                 SetCapacity(value);
             }
         }
@@ -108,12 +115,22 @@ namespace MLAPI.Serialization
         /// <summary>
         /// The current length of data considered to be "written" to the buffer.
         /// </summary>
-        public override long Length { get => Div8Ceil(BitLength); }
+        public override long Length => Div8Ceil(BitLength);
 
         /// <summary>
         /// The index that will be written to when any call to write data is made to this stream.
         /// </summary>
-        public override long Position { get => (long)(BitPosition >> 3); set => BitPosition = (ulong)value << 3; }
+        public override long Position
+        {
+            get
+            {
+                return (long)(BitPosition >> 3);
+            }
+            set
+            {
+                BitPosition = (ulong)value << 3;
+            }
+        }
 
         /// <summary>
         /// Bit offset into the buffer that new data will be written to.
@@ -128,7 +145,7 @@ namespace MLAPI.Serialization
         /// <summary>
         /// Whether or not the current BitPosition is evenly divisible by 8. I.e. whether or not the BitPosition is at a byte boundary.
         /// </summary>
-        public bool BitAligned { get => (BitPosition & 7) == 0; }
+        public bool BitAligned => (BitPosition & 7) == 0;
 
         /// <summary>
         /// Flush stream. This does nothing since data is written directly to a byte buffer.
@@ -388,7 +405,7 @@ namespace MLAPI.Serialization
         /// <param name="count">How many bytes to read. Set to value less than one to read until ReadByte returns -1</param>
         public void CopyFrom(Stream s, int count = -1)
         {
-            if (s is BitStream b) Write(b.target, 0, count < 0 ? (int)b.Length : count);
+            if (s is BitStream) Write(((BitStream)s).target, 0, count < 0 ? (int)((BitStream)s).Length : count);
             else
             {
                 long currentPosition = s.Position;

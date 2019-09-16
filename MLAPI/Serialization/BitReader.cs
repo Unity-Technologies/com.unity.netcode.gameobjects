@@ -1,4 +1,4 @@
-﻿#define ARRAY_WRITE_PERMISSIVE  // Allow attempt to write "packed" byte array (calls WriteByteArray())
+#define ARRAY_WRITE_PERMISSIVE  // Allow attempt to write "packed" byte array (calls WriteByteArray())
 #define ARRAY_RESOLVE_IMPLICIT  // Include WriteArray() method with automatic type resolution
 #define ARRAY_WRITE_PREMAP      // Create a prefixed array diff mapping
 #define ARRAY_DIFF_ALLOW_RESIZE // Whether or not to permit writing diffs of differently sized arrays
@@ -99,9 +99,12 @@ namespace MLAPI.Serialization
                     return null;
                 }
             }
-            
-            if (SerializationManager.TryDeserialize(source, type, out object obj))
+
+            object obj;
+
+            if (SerializationManager.TryDeserialize(source, type, out obj))
                 return obj;
+
             if (type.IsArray && type.HasElementType)
             {
                 int size = ReadInt32Packed();
@@ -160,12 +163,12 @@ namespace MLAPI.Serialization
             if (type == typeof(GameObject))
             {
                 ulong networkId = ReadUInt64Packed();
-                
-                if (SpawnManager.SpawnedObjects.ContainsKey(networkId)) 
+
+                if (SpawnManager.SpawnedObjects.ContainsKey(networkId))
                 {
                     return SpawnManager.SpawnedObjects[networkId].gameObject;
                 }
-                else 
+                else
                 {
                     if (LogHelper.CurrentLogLevel <= LogLevel.Normal)
                         LogHelper.LogWarning("BitReader cannot find the GameObject sent in the SpawnedObjects list, it may have been destroyed. NetworkId: " + networkId.ToString());
@@ -175,12 +178,12 @@ namespace MLAPI.Serialization
             if (type == typeof(NetworkedObject))
             {
                 ulong networkId = ReadUInt64Packed();
-                
-                if (SpawnManager.SpawnedObjects.ContainsKey(networkId)) 
+
+                if (SpawnManager.SpawnedObjects.ContainsKey(networkId))
                 {
                     return SpawnManager.SpawnedObjects[networkId];
                 }
-                else 
+                else
                 {
                     if (LogHelper.CurrentLogLevel <= LogLevel.Normal)
                         LogHelper.LogWarning("BitReader cannot find the NetworkedObject sent in the SpawnedObjects list, it may have been destroyed. NetworkId: " + networkId.ToString());
@@ -191,11 +194,11 @@ namespace MLAPI.Serialization
             {
                 ulong networkId = ReadUInt64Packed();
                 ushort behaviourId = ReadUInt16Packed();
-                if (SpawnManager.SpawnedObjects.ContainsKey(networkId)) 
+                if (SpawnManager.SpawnedObjects.ContainsKey(networkId))
                 {
                     return SpawnManager.SpawnedObjects[networkId].GetBehaviourAtOrderIndex(behaviourId);
                 }
-                else 
+                else
                 {
                     if (LogHelper.CurrentLogLevel <= LogLevel.Normal)
                         LogHelper.LogWarning("BitReader cannot find the NetworkedBehaviour sent in the SpawnedObjects list, it may have been destroyed. NetworkId: " + networkId.ToString());
@@ -430,7 +433,7 @@ namespace MLAPI.Serialization
             if (bitSource == null) throw new InvalidOperationException("Cannot read bits on a non BitStream stream");
             if (bitCount > 8) throw new ArgumentOutOfRangeException("Cannot read more than 8 bits into an 8-bit value!");
             if (bitCount < 0) throw new ArgumentOutOfRangeException("Cannot read fewer than 0 bits!");
-            
+
             int result = 0;
             ByteBool convert = new ByteBool();
             for (int i = 0; i < bitCount; ++i)
@@ -447,7 +450,7 @@ namespace MLAPI.Serialization
         {
             if (bitSource == null) throw new InvalidOperationException("Cannot read bits on a non BitStream stream");
             ByteBool convert = new ByteBool();
-            
+
             byte result = (byte) (
                 convert.Collapse(ReadBit()) |
                 (convert.Collapse(ReadBit()) << 1) |

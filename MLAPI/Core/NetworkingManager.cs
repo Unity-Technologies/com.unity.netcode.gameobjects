@@ -69,7 +69,19 @@ namespace MLAPI
         /// <summary>
         /// Gets the networkId of the server
         /// </summary>
-		public ulong ServerClientId => NetworkConfig.NetworkTransport != null ? NetworkConfig.NetworkTransport.ServerClientId : throw new NullReferenceException("The transport in the active NetworkConfig is null");
+		public ulong ServerClientId
+        {
+            get
+            {
+                if (NetworkConfig.NetworkTransport == null)
+                {
+                    throw new NullReferenceException("The transport in the active NetworkConfig is null");
+                }
+
+                return NetworkConfig.NetworkTransport.ServerClientId;
+            }
+        }
+
         /// <summary>
         /// The clientId the server calls the local client by, only valid for clients
         /// </summary>
@@ -639,7 +651,11 @@ namespace MLAPI
                     do
                     {
                         processedEvents++;
-                        eventType = NetworkConfig.NetworkTransport.PollEvent(out ulong clientId, out string channelName, out ArraySegment<byte> payload, out float receiveTime);
+                        ulong clientId;
+                        string channelName;
+                        ArraySegment<byte> payload;
+                        float receiveTime;
+                        eventType = NetworkConfig.NetworkTransport.PollEvent(out clientId, out channelName, out payload, out receiveTime);
                         HandleRawTransportPoll(eventType, clientId, channelName, payload, receiveTime);
 
                         // Only do another iteration if: there are no more messages AND (there is no limit to max events or we have processed less than the maximum)
@@ -889,7 +905,10 @@ namespace MLAPI
             inputStreamWrapper.SetLength(data.Count + data.Offset);
             inputStreamWrapper.Position = data.Offset;
 
-            using (BitStream messageStream = MessagePacker.UnwrapMessage(inputStreamWrapper, clientId, out byte messageType, out SecuritySendFlags security))
+            byte messageType;
+            SecuritySendFlags security;
+
+            using (BitStream messageStream = MessagePacker.UnwrapMessage(inputStreamWrapper, clientId, out messageType, out security))
             {
                 if (messageStream == null)
                 {

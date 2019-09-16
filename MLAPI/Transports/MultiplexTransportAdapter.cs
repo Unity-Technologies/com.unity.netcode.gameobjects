@@ -58,14 +58,20 @@ namespace MLAPI.Transports.Multiplex
 
         public override void DisconnectRemoteClient(ulong clientId)
         {
-            GetMultiplexTransportDetails(clientId, out byte transportId, out ulong connectionId);
+            byte transportId;
+            ulong connectionId;
+
+            GetMultiplexTransportDetails(clientId, out transportId, out connectionId);
 
             Transports[transportId].DisconnectRemoteClient(connectionId);
         }
 
         public override ulong GetCurrentRtt(ulong clientId)
         {
-            GetMultiplexTransportDetails(clientId, out byte transportId, out ulong connectionId);
+            byte transportId;
+            ulong connectionId;
+
+            GetMultiplexTransportDetails(clientId, out transportId, out connectionId);
 
             return Transports[transportId].GetCurrentRtt(connectionId);
         }
@@ -92,7 +98,9 @@ namespace MLAPI.Transports.Multiplex
 
                 if (Transports[i].IsSupported)
                 {
-                    NetEventType @eventType = Transports[i].PollEvent(out ulong connectionId, out channelName, out payload, out receiveTime);
+                    ulong connectionId;
+
+                    NetEventType @eventType = Transports[i].PollEvent(out connectionId, out channelName, out payload, out receiveTime);
 
                     if (@eventType != NetEventType.Nothing)
                     {
@@ -113,7 +121,10 @@ namespace MLAPI.Transports.Multiplex
 
         public override void Send(ulong clientId, ArraySegment<byte> data, string channelName)
         {
-            GetMultiplexTransportDetails(clientId, out byte transportId, out ulong connectionId);
+            byte transportId;
+            ulong connectionId;
+
+            GetMultiplexTransportDetails(clientId, out transportId, out connectionId);
 
             Transports[transportId].Send(connectionId, data, channelName);
         }

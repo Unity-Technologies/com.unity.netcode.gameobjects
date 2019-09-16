@@ -1,4 +1,4 @@
-﻿#define ARRAY_WRITE_PERMISSIVE  // Allow attempt to write "packed" byte array (calls WriteByteArray())
+#define ARRAY_WRITE_PERMISSIVE  // Allow attempt to write "packed" byte array (calls WriteByteArray())
 #define ARRAY_RESOLVE_IMPLICIT  // Include WriteArray() method with automatic type resolution
 #define ARRAY_WRITE_PREMAP      // Create a prefixed array diff mapping
 #define ARRAY_DIFF_ALLOW_RESIZE // Whether or not to permit writing diffs of differently sized arrays
@@ -61,17 +61,17 @@ namespace MLAPI.Serialization
             {
                 return;
             }
-            else if (value is Array array)
+            else if (value is Array)
             {
                 Type elementType = value.GetType().GetElementType();
 
                 if (SerializationManager.IsTypeSupported(elementType))
                 {
-                    WriteInt32Packed(array.Length);
+                    WriteInt32Packed(((Array)value).Length);
 
-                    for (int i = 0; i < array.Length; i++)
+                    for (int i = 0; i < ((Array)value).Length; i++)
                     {
-                        WriteObjectPacked(array.GetValue(i));
+                        WriteObjectPacked(((Array)value).GetValue(i));
                     }
 
                     return;
@@ -642,7 +642,7 @@ namespace MLAPI.Serialization
             else
             {
                 ulong header = 255;
-                ulong match = 0x00FF_FFFF_FFFF_FFFFUL;
+                ulong match = 0x00FFFFFFFFFFFFFFUL;
                 while (value <= match)
                 {
                     --header;

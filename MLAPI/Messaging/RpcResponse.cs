@@ -13,7 +13,10 @@ namespace MLAPI.Messaging
 
         internal override object Result
         {
-            set => Value = (T) value;
+            set
+            {
+                Value = (T)value;
+            }
         }
     }
 }
