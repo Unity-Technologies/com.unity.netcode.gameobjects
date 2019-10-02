@@ -1,4 +1,4 @@
-﻿#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -74,7 +74,7 @@ namespace MLAPI.Transports.UNET
 
         public static int AddHost(HostTopology topology, bool createServer)
         {
-            if (!Enabled) return NetworkTransport.AddHost(topology);
+            if (!Enabled) return NetworkTransport.AddHost(topology, 0, null);
 
             isClient = !createServer;
 
@@ -82,7 +82,7 @@ namespace MLAPI.Transports.UNET
 
             SetChannelsFromTopology(topology);
 
-            int ret = NetworkTransport.AddHost(topology);
+            int ret = NetworkTransport.AddHost(topology, 0, null);
 
             if (createServer) relayConnectionId = NetworkTransport.Connect(ret, RelayAddress, RelayPort, 0, out byte b);
 
