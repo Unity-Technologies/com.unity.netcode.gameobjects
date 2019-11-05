@@ -304,8 +304,8 @@ namespace MLAPI.Transports.UNET
                                     for (int i = 0; i < addressBytes.Length; i++)
                                         addressBytes[i] = buffer[i];
 
-                                    ushort remotePort = (ushort)(((ushort)buffer[17]) |
-                                                            ((ushort)buffer[18] << 8));
+                                    ushort remotePort = (ushort)(((ushort)buffer[16]) |
+                                                            ((ushort)buffer[17] << 8));
 
                                     IPEndPoint remoteEndPoint = new IPEndPoint(new IPAddress(addressBytes), remotePort);
 
