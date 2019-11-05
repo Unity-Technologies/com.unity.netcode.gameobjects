@@ -15,6 +15,18 @@ namespace MLAPI.Messaging
     /// </summary>
     public static class CustomMessagingManager
     {
+        private enum HandlerChange
+        {
+            Add,
+            Remove
+        }
+        private struct PendingHandlerChange
+        {
+            public HandlerChange change;
+            public string name;
+            public HandleNamedMessageDelegate method;
+        }
+
         #region Unnamed
         /// <summary>
         /// Delegate used for incoming unnamed messages
@@ -27,6 +39,23 @@ namespace MLAPI.Messaging
         /// Event invoked when unnamed messages arrive
         /// </summary>
         public static event UnnamedMessageDelegate OnUnnamedMessage;
+
+        internal static void OnGainedSingleton()
+        {
+            while (pendingRegistrations.Count > 0)
+            {
+                PendingHandlerChange change = pendingRegistrations.Dequeue();
+
+                if (change.change == HandlerChange.Add)
+                {
+                    RegisterNamedMessageHandler(change.name, change.method);
+                }
+                else if (change.change == HandlerChange.Remove)
+                {
+                    UnregisterNamedMessageHandler(change.name);
+                }
+            }
+        }
 
         internal static void InvokeUnnamedMessage(ulong clientId, Stream stream)
         {
@@ -89,6 +118,7 @@ namespace MLAPI.Messaging
         /// </summary>
         public delegate void HandleNamedMessageDelegate(ulong sender, Stream payload);
 
+        private static readonly Queue<PendingHandlerChange> pendingRegistrations = new Queue<PendingHandlerChange>();
         private static readonly Dictionary<ulong, HandleNamedMessageDelegate> namedMessageHandlers = new Dictionary<ulong, HandleNamedMessageDelegate>();
 
         internal static void InvokeNamedMessage(ulong hash, ulong sender, Stream stream)
@@ -106,9 +136,47 @@ namespace MLAPI.Messaging
         /// <param name="callback">The callback to run when a named message is received.</param>
         public static void RegisterNamedMessageHandler(string name, HandleNamedMessageDelegate callback)
         {
-            ulong hash = NetworkedBehaviour.HashMethodName(name);
+            if (NetworkingManager.Singleton != null)
+            {
+                ulong hash = NetworkedBehaviour.HashMethodName(name);
 
-            namedMessageHandlers[hash] = callback;
+                namedMessageHandlers[hash] = callback;
+            }
+            else
+            {
+                pendingRegistrations.Enqueue(new PendingHandlerChange()
+                {
+                    change = HandlerChange.Add,
+                    method = callback,
+                    name = name
+                });
+            }
+        }
+
+        /// <summary>
+        /// Unregisters a named message handler.
+        /// </summary>
+        /// <param name="name">The name of the message.</param>
+        public static void UnregisterNamedMessageHandler(string name)
+        {
+            if (NetworkingManager.Singleton != null)
+            {
+                ulong hash = NetworkedBehaviour.HashMethodName(name);
+
+                if (namedMessageHandlers.ContainsKey(hash))
+                {
+                    namedMessageHandlers.Remove(hash);
+                }
+            }
+            else
+            {
+                pendingRegistrations.Enqueue(new PendingHandlerChange()
+                {
+                    change = HandlerChange.Remove,
+                    method = null,
+                    name = name
+                });
+            }
         }
 
         /// <summary>

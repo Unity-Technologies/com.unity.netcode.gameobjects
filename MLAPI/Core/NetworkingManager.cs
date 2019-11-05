@@ -591,11 +591,14 @@ namespace MLAPI
             else
             {
                 Singleton = this;
-                if (OnSingletonReady != null) OnSingletonReady();
+                if (OnSingletonReady != null) 
+                    OnSingletonReady();
                 if (DontDestroy)
                     DontDestroyOnLoad(gameObject);
                 if (RunInBackground)
                     Application.runInBackground = true;
+
+                CustomMessagingManager.OnGainedSingleton();
             }
         }
 
