@@ -597,8 +597,6 @@ namespace MLAPI
                     DontDestroyOnLoad(gameObject);
                 if (RunInBackground)
                     Application.runInBackground = true;
-
-                CustomMessagingManager.OnGainedSingleton();
             }
         }
 
