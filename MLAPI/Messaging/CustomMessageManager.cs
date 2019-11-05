@@ -6,6 +6,7 @@ using MLAPI.Logging;
 using MLAPI.Security;
 using MLAPI.Serialization;
 using MLAPI.Serialization.Pooled;
+using MLAPI.Hashing;
 
 namespace MLAPI.Messaging
 {
@@ -15,18 +16,6 @@ namespace MLAPI.Messaging
     /// </summary>
     public static class CustomMessagingManager
     {
-        private enum HandlerChange
-        {
-            Add,
-            Remove
-        }
-        private struct PendingHandlerChange
-        {
-            public HandlerChange change;
-            public string name;
-            public HandleNamedMessageDelegate method;
-        }
-
         #region Unnamed
         /// <summary>
         /// Delegate used for incoming unnamed messages
@@ -39,23 +28,6 @@ namespace MLAPI.Messaging
         /// Event invoked when unnamed messages arrive
         /// </summary>
         public static event UnnamedMessageDelegate OnUnnamedMessage;
-
-        internal static void OnGainedSingleton()
-        {
-            while (pendingRegistrations.Count > 0)
-            {
-                PendingHandlerChange change = pendingRegistrations.Dequeue();
-
-                if (change.change == HandlerChange.Add)
-                {
-                    RegisterNamedMessageHandler(change.name, change.method);
-                }
-                else if (change.change == HandlerChange.Remove)
-                {
-                    UnregisterNamedMessageHandler(change.name);
-                }
-            }
-        }
 
         internal static void InvokeUnnamedMessage(ulong clientId, Stream stream)
         {
@@ -112,20 +84,60 @@ namespace MLAPI.Messaging
         }
         #endregion
         #region Named
-
         /// <summary>
         /// Delegate used to handle named messages
         /// </summary>
         public delegate void HandleNamedMessageDelegate(ulong sender, Stream payload);
 
-        private static readonly Queue<PendingHandlerChange> pendingRegistrations = new Queue<PendingHandlerChange>();
-        private static readonly Dictionary<ulong, HandleNamedMessageDelegate> namedMessageHandlers = new Dictionary<ulong, HandleNamedMessageDelegate>();
+        private static readonly Dictionary<ulong, HandleNamedMessageDelegate> namedMessageHandlers16 = new Dictionary<ulong, HandleNamedMessageDelegate>();
+        private static readonly Dictionary<ulong, HandleNamedMessageDelegate> namedMessageHandlers32 = new Dictionary<ulong, HandleNamedMessageDelegate>();
+        private static readonly Dictionary<ulong, HandleNamedMessageDelegate> namedMessageHandlers64 = new Dictionary<ulong, HandleNamedMessageDelegate>();
+
 
         internal static void InvokeNamedMessage(ulong hash, ulong sender, Stream stream)
         {
-            if (namedMessageHandlers.ContainsKey(hash))
+            if (NetworkingManager.Singleton == null)
             {
-                namedMessageHandlers[hash](sender, stream);
+                // We dont know what size to use. Try every (more collision prone)
+                if (namedMessageHandlers16.ContainsKey(hash))
+                {
+                    namedMessageHandlers16[hash](sender, stream);
+                }
+
+                if (namedMessageHandlers32.ContainsKey(hash))
+                {
+                    namedMessageHandlers32[hash](sender, stream);
+                }
+
+                if (namedMessageHandlers64.ContainsKey(hash))
+                {
+                    namedMessageHandlers64[hash](sender, stream);
+                }
+            }
+            else
+            {
+                // Only check the right size.
+                if (NetworkingManager.Singleton.NetworkConfig.RpcHashSize == HashSize.VarIntTwoBytes)
+                {
+                    if (namedMessageHandlers16.ContainsKey(hash))
+                    {
+                        namedMessageHandlers16[hash](sender, stream);
+                    }
+                }
+                else if (NetworkingManager.Singleton.NetworkConfig.RpcHashSize == HashSize.VarIntFourBytes)
+                {
+                    if (namedMessageHandlers32.ContainsKey(hash))
+                    {
+                        namedMessageHandlers32[hash](sender, stream);
+                    }
+                }
+                else if (NetworkingManager.Singleton.NetworkConfig.RpcHashSize == HashSize.VarIntEightBytes)
+                {
+                    if (namedMessageHandlers64.ContainsKey(hash))
+                    {
+                        namedMessageHandlers64[hash](sender, stream);
+                    }
+                }
             }
         }
 
@@ -136,21 +148,9 @@ namespace MLAPI.Messaging
         /// <param name="callback">The callback to run when a named message is received.</param>
         public static void RegisterNamedMessageHandler(string name, HandleNamedMessageDelegate callback)
         {
-            if (NetworkingManager.Singleton != null)
-            {
-                ulong hash = NetworkedBehaviour.HashMethodName(name);
-
-                namedMessageHandlers[hash] = callback;
-            }
-            else
-            {
-                pendingRegistrations.Enqueue(new PendingHandlerChange()
-                {
-                    change = HandlerChange.Add,
-                    method = callback,
-                    name = name
-                });
-            }
+            namedMessageHandlers16[name.GetStableHash16()] = callback;
+            namedMessageHandlers32[name.GetStableHash32()] = callback;
+            namedMessageHandlers64[name.GetStableHash64()] = callback;
         }
 
         /// <summary>
@@ -159,24 +159,9 @@ namespace MLAPI.Messaging
         /// <param name="name">The name of the message.</param>
         public static void UnregisterNamedMessageHandler(string name)
         {
-            if (NetworkingManager.Singleton != null)
-            {
-                ulong hash = NetworkedBehaviour.HashMethodName(name);
-
-                if (namedMessageHandlers.ContainsKey(hash))
-                {
-                    namedMessageHandlers.Remove(hash);
-                }
-            }
-            else
-            {
-                pendingRegistrations.Enqueue(new PendingHandlerChange()
-                {
-                    change = HandlerChange.Remove,
-                    method = null,
-                    name = name
-                });
-            }
+            namedMessageHandlers16.Remove(name.GetStableHash16());
+            namedMessageHandlers32.Remove(name.GetStableHash32());
+            namedMessageHandlers64.Remove(name.GetStableHash64());
         }
 
         /// <summary>
