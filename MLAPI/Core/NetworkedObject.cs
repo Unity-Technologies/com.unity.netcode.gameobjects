@@ -546,13 +546,35 @@ namespace MLAPI
             for (int i = 0; i < amountToProcess; i++)
             {
                 if (_lastProcessedObject >= SpawnManager.SpawnedObjectsList.Count)
+                {
                     _lastProcessedObject = 0;
+                }
 
                 // Sync all vars
                 for (int j = 0; j < SpawnManager.SpawnedObjectsList[_lastProcessedObject].childNetworkedBehaviours.Count; j++)
-                    SpawnManager.SpawnedObjectsList[_lastProcessedObject].childNetworkedBehaviours[j].NetworkedVarUpdate();
+                {
+                    SpawnManager.SpawnedObjectsList[_lastProcessedObject].childNetworkedBehaviours[j].VarUpdate();
+                }
 
                 _lastProcessedObject++;
+            }
+        }
+
+        internal void WriteSyncedVarData(Stream stream, ulong clientId)
+        {
+            for (int i = 0; i < childNetworkedBehaviours.Count; i++)
+            {
+                childNetworkedBehaviours[i].InitializeVars();
+                NetworkedBehaviour.WriteSyncedVarData(childNetworkedBehaviours[i].syncedVars, stream, clientId);
+            }
+        }
+
+        internal void SetSyncedVarData(Stream stream)
+        {
+            for (int i = 0; i < childNetworkedBehaviours.Count; i++)
+            {
+                childNetworkedBehaviours[i].InitializeVars();
+                NetworkedBehaviour.SetSyncedVarData(childNetworkedBehaviours[i].syncedVars, stream);
             }
         }
 
@@ -560,7 +582,7 @@ namespace MLAPI
         {
             for (int i = 0; i < childNetworkedBehaviours.Count; i++)
             {
-                childNetworkedBehaviours[i].NetworkedVarInit();
+                childNetworkedBehaviours[i].InitializeVars();
                 NetworkedBehaviour.WriteNetworkedVarData(childNetworkedBehaviours[i].networkedVarFields, stream, clientId);
             }
         }
@@ -569,7 +591,7 @@ namespace MLAPI
         {
             for (int i = 0; i < childNetworkedBehaviours.Count; i++)
             {
-                childNetworkedBehaviours[i].NetworkedVarInit();
+                childNetworkedBehaviours[i].InitializeVars();
                 NetworkedBehaviour.SetNetworkedVarData(childNetworkedBehaviours[i].networkedVarFields, stream);
             }
         }

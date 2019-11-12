@@ -323,8 +323,11 @@ namespace MLAPI.Spawning
                 throw new SpawnStateException("Object is already spawned");
             }
 
-
-            if (readNetworkedVar && NetworkingManager.Singleton.NetworkConfig.EnableNetworkedVar) netObject.SetNetworkedVarData(dataStream);
+            if (readNetworkedVar && NetworkingManager.Singleton.NetworkConfig.EnableNetworkedVar)
+            {
+                netObject.SetNetworkedVarData(dataStream);
+                netObject.SetSyncedVarData(dataStream);
+            }
 
             netObject.IsSpawned = true;
 
@@ -465,6 +468,7 @@ namespace MLAPI.Spawning
                 if (NetworkingManager.Singleton.NetworkConfig.EnableNetworkedVar)
                 {
                     netObject.WriteNetworkedVarData(stream, clientId);
+                    netObject.WriteSyncedVarData(stream, clientId);
                 }
 
                 if (payload != null) stream.CopyFrom(payload);
