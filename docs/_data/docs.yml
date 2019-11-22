@@ -13,6 +13,7 @@
   - object-behaviour-relation
   - modularity
   - networkedvar
+  - syncedvar
   - scene-management
   - object-ownership
   - object-visibility

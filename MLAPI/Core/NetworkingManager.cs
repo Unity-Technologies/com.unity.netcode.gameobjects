@@ -593,7 +593,7 @@ namespace MLAPI
             else
             {
                 Singleton = this;
-                if (OnSingletonReady != null) 
+                if (OnSingletonReady != null)
                     OnSingletonReady();
                 if (DontDestroy)
                     DontDestroyOnLoad(gameObject);
@@ -992,6 +992,9 @@ namespace MLAPI
                     case MLAPIConstants.MLAPI_CLIENT_SWITCH_SCENE_COMPLETED:
                         if (IsServer && NetworkConfig.EnableSceneManagement) InternalMessageHandler.HandleClientSwitchSceneCompleted(clientId, messageStream);
                         break;
+                    case MLAPIConstants.MLAPI_SYNCED_VAR:
+                        if (IsClient) InternalMessageHandler.HandleSyncedVar(clientId, messageStream);
+                        break;
                     default:
                         if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Read unrecognized messageType " + messageType);
                         break;
@@ -1228,6 +1231,7 @@ namespace MLAPI
                             if (NetworkConfig.EnableNetworkedVar)
                             {
                                 observedObject.WriteNetworkedVarData(stream, clientId);
+                                observedObject.WriteSyncedVarData(stream, clientId);
                             }
                         }
 
@@ -1288,6 +1292,7 @@ namespace MLAPI
                             if (NetworkConfig.EnableNetworkedVar)
                             {
                                 ConnectedClients[clientId].PlayerObject.WriteNetworkedVarData(stream, clientPair.Key);
+                                ConnectedClients[clientId].PlayerObject.WriteSyncedVarData(stream, clientPair.Key);
                             }
 
                             InternalMessageSender.Send(clientPair.Key, MLAPIConstants.MLAPI_ADD_OBJECT, "MLAPI_INTERNAL", stream, SecuritySendFlags.None, null);
