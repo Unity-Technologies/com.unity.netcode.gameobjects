@@ -107,6 +107,12 @@ namespace MLAPI
                 {
                     _networkedObject = GetComponentInParent<NetworkedObject>();
                 }
+
+                if (_networkedObject == null)
+                {
+                    throw new NullReferenceException("Could not get NetworkedObject for the NetworkedBehaviour. Are you missing a NetworkedObject component?");
+                }
+
                 return _networkedObject;
             }
         }
