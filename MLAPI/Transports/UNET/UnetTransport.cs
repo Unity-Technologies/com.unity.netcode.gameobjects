@@ -305,7 +305,7 @@ namespace MLAPI.Transports.UNET
 
         public ConnectionConfig GetConfig()
         {
-            ConnectionConfig config = new ConnectionConfig();
+            ConnectionConfig config = GetConnectionConfig();
 
             for (int i = 0; i < MLAPI_CHANNELS.Length; i++)
             {
@@ -324,6 +324,11 @@ namespace MLAPI.Transports.UNET
             }
 
             return config;
+        }
+        
+        public virtual ConnectionConfig GetConnectionConfig() // you can override this method to set your own unet config
+        {
+            return new ConnectionConfig();
         }
 
         public int AddMLAPIChannel(ChannelType type, ConnectionConfig config)
