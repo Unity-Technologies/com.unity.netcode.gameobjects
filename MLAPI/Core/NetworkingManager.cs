@@ -400,6 +400,8 @@ namespace MLAPI
 
             NetworkConfig.NetworkTransport.OnTransportEvent += HandleRawTransportPoll;
 
+            NetworkConfig.NetworkTransport.ResetChannelCache();
+
             NetworkConfig.NetworkTransport.Init();
         }
 
