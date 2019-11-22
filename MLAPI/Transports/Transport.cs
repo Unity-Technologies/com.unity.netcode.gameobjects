@@ -40,7 +40,7 @@ namespace MLAPI.Transports
             _channelsCache = null;
         }
 
-        public TransportChannel[] MLAPI_CHANNELS 
+        public TransportChannel[] MLAPI_CHANNELS
         {
             get
             {
@@ -48,7 +48,10 @@ namespace MLAPI.Transports
                 {
                     List<TransportChannel> channels = new List<TransportChannel>();
 
-                    OnChannelRegistration(channels);
+                    if (OnChannelRegistration != null)
+                    {
+                        OnChannelRegistration(channels);
+                    }
 
                     _channelsCache = new TransportChannel[MLAPI_INTERNAL_CHANNELS.Length + channels.Count];
 
