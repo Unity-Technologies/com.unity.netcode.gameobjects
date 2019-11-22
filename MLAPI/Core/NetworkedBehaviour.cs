@@ -357,16 +357,16 @@ namespace MLAPI
 
         private void SyncedVarUpdate()
         {
-            if (!CouldHaveDirtySyncedVars())
+            if (!IsServer || !CouldHaveDirtySyncedVars())
                 return;
 
             syncedVarIndexesToReset.Clear();
             syncedVarIndexesToResetSet.Clear();
 
-            for (int i = 0; i < (IsServer ? NetworkingManager.Singleton.ConnectedClientsList.Count : 1); i++)
+            for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)
             {
                 // Do this check here to prevent doing all the expensive dirty checks
-                if (!IsServer || this.NetworkedObject.observers.Contains(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId))
+                if (this.NetworkedObject.observers.Contains(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId))
                 {
                     // This iterates over every "channel group".
                     for (int j = 0; j < channelMappedSyncedVarIndexes.Count; j++)
@@ -378,7 +378,7 @@ namespace MLAPI
                                 writer.WriteUInt64Packed(NetworkId);
                                 writer.WriteUInt16Packed(NetworkedObject.GetOrderIndex(this));
 
-                                ulong clientId = IsServer ? NetworkingManager.Singleton.ConnectedClientsList[i].ClientId : NetworkingManager.Singleton.ServerClientId;
+                                ulong clientId = NetworkingManager.Singleton.ConnectedClientsList[i].ClientId;
                                 bool writtenAny = false;
                                 for (int k = 0; k < syncedVars.Count; k++)
                                 {
@@ -397,21 +397,20 @@ namespace MLAPI
                                     }
 
                                     bool isDirty = syncedVars[k].IsDirty(); // cache this here. You never know what operations users will do in the dirty methods
-                                    bool shouldWrite = isDirty && IsServer;
 
                                     if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
                                     {
-                                        if (!shouldWrite)
+                                        if (!isDirty)
                                         {
                                             writer.WriteUInt16Packed(0);
                                         }
                                     }
                                     else
                                     {
-                                        writer.WriteBool(shouldWrite);
+                                        writer.WriteBool(isDirty);
                                     }
 
-                                    if (shouldWrite)
+                                    if (isDirty)
                                     {
                                         writtenAny = true;
 
@@ -441,10 +440,7 @@ namespace MLAPI
 
                                 if (writtenAny)
                                 {
-                                    if (IsServer)
-                                        InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_SYNCED_VAR, channelsForSyncedVarGroups[j], stream, SecuritySendFlags.None, this.NetworkedObject);
-                                    else
-                                        InternalMessageSender.Send(NetworkingManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_SYNCED_VAR, channelsForSyncedVarGroups[j], stream, SecuritySendFlags.None, null);
+                                    InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_SYNCED_VAR, channelsForSyncedVarGroups[j], stream, SecuritySendFlags.None, this.NetworkedObject);
                                 }
                             }
                         }
