@@ -11,19 +11,25 @@ namespace MLAPI.NetworkedVar
         internal object fieldInstance;
         internal object value;
         internal bool isDirty;
+        internal float lastSyncedTime;
 
         internal bool IsDirty()
         {
-            object newValue = field.GetValue(fieldInstance);
-            object oldValue = value;
-
-            if (newValue != oldValue || isDirty)
+            if (attribute.SendTickrate >= 0 && (attribute.SendTickrate == 0 || NetworkingManager.Singleton.NetworkTime - lastSyncedTime >= (1f / attribute.SendTickrate)))
             {
-                isDirty = true;
+                lastSyncedTime = NetworkingManager.Singleton.NetworkTime;
 
-                value = newValue;
+                object newValue = field.GetValue(fieldInstance);
+                object oldValue = value;
 
-                return true;
+                if (newValue != oldValue || isDirty)
+                {
+                    isDirty = true;
+
+                    value = newValue;
+
+                    return true;
+                }
             }
 
             return false;
