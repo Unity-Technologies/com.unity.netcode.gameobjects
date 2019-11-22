@@ -103,11 +103,11 @@ namespace MLAPI.Messaging
 
                     if (useDelegate)
                     {
-                        return InvokeDelegate(target, senderClientId, stream);
+                        return InvokeDelegate(target, senderClientId, userStream);
                     }
                     else
                     {
-                        return InvokeReflected(target, stream);
+                        return InvokeReflected(target, userStream);
                     }
                 }
             }
