@@ -309,7 +309,10 @@ namespace MLAPI.Transports.UNET
 
                                     IPEndPoint remoteEndPoint = new IPEndPoint(new IPAddress(addressBytes), remotePort);
 
-                                    OnRemoteEndpointReported(remoteEndPoint);
+                                    if (OnRemoteEndpointReported != null)
+                                    {
+                                        OnRemoteEndpointReported(remoteEndPoint);
+                                    }
                                     break;
                                 }
                             case MessageType.ConnectToServer: // Connection approved
