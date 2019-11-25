@@ -17,14 +17,14 @@ private void ApprovalCheck(byte[] connectionData, ulong clientId, MLAPI.Networki
 {
     //Your logic here
     bool approve = true;
+    bool createPlayerObject = true;
 
     ulong? prefabHash = SpawnManager.GetPrefabHashFromGenerator("MyPrefabHashGenerator"); // The prefab hash. Use null to use the default player prefab
     
     //If approve is true, the connection gets added. If it's false. The client gets disconnected
-    callback(clientId, prefabHash, approve, positionToSpawnAt, rotationToSpawnWith);
+    callback(createPlayerObject, prefabHash, approve, positionToSpawnAt, rotationToSpawnWith);
 }
 ```
-
 
 ### Connection data
 The connectionData parameter is any custom data of your choice that the client should send to the server. Usually, this should be some sort of ticket, room password or similar that will decide if a connection should be approved or not. The connectionData is specified on the Client side in the NetworkingConfig supplied when connecting. Example:
