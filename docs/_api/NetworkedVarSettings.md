@@ -32,7 +32,8 @@ permalink: /api/networked-var-settings/
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``float`` SendTickrate;</b></h4>
 		<p>The maximum times per second this var will be synced.
-            Less than or equal to 0 will cause the variable to sync as soon as possible after being changed.</p>
+            A value of 0 will cause the variable to sync as soon as possible after being changed.
+            A value of less than 0 will cause the variable to sync only at once at spawn and not update again.</p>
 	</div>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``string`` SendChannel;</b></h4>

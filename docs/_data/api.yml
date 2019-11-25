@@ -75,10 +75,6 @@
   - visibility-delegate
   - spawn-delegate
   - connection-approved-delegate
-- title: MLAPI.Relay.Transports
-  api:
-  - relay-transport
-  - invalid-config-exception
 - title: MLAPI.Transports
   api:
   - channel-type
@@ -86,9 +82,12 @@
   - transport
   - transport-channel
   - unet-channel
+  - request-channels-delegate
   - transport-event-delegate
 - title: MLAPI.Transports.UNET
   api:
+  - relay-transport
+  - invalid-config-exception
   - unet-transport
 - title: MLAPI.Transports.Tasks
   api:
@@ -132,6 +131,7 @@
   - network-scene-manager
   - scene-switch-progress
   - scene-switched-delegate
+  - scene-switch-started-delegate
   - on-completed-delegate
   - on-client-loaded-scene-delegate
 - title: MLAPI.Prototyping
@@ -171,6 +171,7 @@
   - networked-var-permission
   - networked-var-permissions-delegate
   - networked-var-settings
+  - synced-var-attribute
   - on-value-changed-delegate%3C-t%3E
 - title: MLAPI.NetworkedVar.Collections
   api:

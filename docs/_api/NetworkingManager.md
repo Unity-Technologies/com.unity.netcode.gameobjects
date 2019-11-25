@@ -214,22 +214,6 @@ permalink: /api/networking-manager/
 		<p>Gets a dictionary of the clients that have been accepted by the transport but are still pending by the MLAPI.</p>
 	</div>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Action<ulong>`` OnClientConnectedCallback;</b></h4>
-		<p>The callback to invoke once a client connects</p>
-	</div>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Action<ulong>`` OnClientDisconnectCallback;</b></h4>
-		<p>The callback to invoke when a client disconnects</p>
-	</div>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Action`` OnServerStarted;</b></h4>
-		<p>The callback to invoke once the server is ready</p>
-	</div>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``Action<byte[],ulong,ConnectionApprovedDelegate>`` ConnectionApprovalCallback;</b></h4>
-		<p>The callback to invoke during connection approval</p>
-	</div>
-	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public [``NetworkConfig``](/api/network-config/) NetworkConfig;</b></h4>
 		<p>The current NetworkingConfiguration</p>
 	</div>
