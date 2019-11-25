@@ -23,9 +23,17 @@ namespace MLAPI.SceneManagement
         /// </summary>
         public delegate void SceneSwitchedDelegate();
         /// <summary>
+        /// Delegate for when a scene switch has been initiated
+        /// </summary>
+        public delegate void SceneSwitchStartedDelegate(AsyncOperation operation);
+        /// <summary>
         /// Event that is invoked when the scene is switched
         /// </summary>
         public static event SceneSwitchedDelegate OnSceneSwitched;
+        /// <summary>
+        /// Event that is invoked when a local scene switch has started
+        /// </summary>
+        public static event SceneSwitchStartedDelegate OnSceneSwitchStarted;
 
         internal static readonly HashSet<string> registeredSceneNames = new HashSet<string>();
         internal static readonly Dictionary<string, uint> sceneNameToIndex = new Dictionary<string, uint>();
@@ -105,11 +113,17 @@ namespace MLAPI.SceneManagement
 
             // Switch scene
             AsyncOperation sceneLoad = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Single);
+
             nextSceneName = sceneName;
 
             sceneLoad.completed += (AsyncOperation asyncOp2) => { OnSceneLoaded(switchSceneProgress.guid, null); };
 
             switchSceneProgress.SetSceneLoadOperation(sceneLoad);
+
+            if (OnSceneSwitchStarted != null)
+            {
+                OnSceneSwitchStarted(sceneLoad);
+            }
 
             return switchSceneProgress;
         }
@@ -137,12 +151,18 @@ namespace MLAPI.SceneManagement
             string sceneName = sceneIndexToString[sceneIndex];
 
             AsyncOperation sceneLoad = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Single);
+
             nextSceneName = sceneName;
 
             sceneLoad.completed += (AsyncOperation asyncOp2) =>
             {
                 OnSceneLoaded(switchSceneGuid, objectStream);
             };
+
+            if (OnSceneSwitchStarted != null)
+            {
+                OnSceneSwitchStarted(sceneLoad);
+            }
         }
 
         internal static void OnFirstSceneSwitchSync(uint sceneIndex, Guid switchSceneGuid)
