@@ -152,10 +152,24 @@ namespace MLAPI
         /// The callback to invoke once a client connects
         /// </summary>
         public event Action<ulong> OnClientConnectedCallback = null;
+        internal void InvokeOnClientConnectedCallback(ulong clientId)
+        {
+            if (OnClientConnectedCallback != null)
+            {
+                OnClientConnectedCallback(clientId);
+            }
+        }
         /// <summary>
         /// The callback to invoke when a client disconnects
         /// </summary>
         public event Action<ulong> OnClientDisconnectCallback = null;
+        internal void InvokeOnClientDisconnectCallback(ulong clientId)
+        {
+            if (OnClientDisconnectCallback != null)
+            {
+                OnClientDisconnectCallback(clientId);
+            }
+        }
         /// <summary>
         /// The callback to invoke once the server is ready
         /// </summary>
@@ -173,6 +187,13 @@ namespace MLAPI
         /// The callback to invoke during connection approval
         /// </summary>
         public event Action<byte[], ulong, ConnectionApprovedDelegate> ConnectionApprovalCallback = null;
+        internal void InvokeConnectionApproval(byte[] payload, ulong clientId, ConnectionApprovedDelegate action)
+        {
+            if (ConnectionApprovalCallback != null)
+            {
+                ConnectionApprovalCallback(payload, clientId, action);
+            }
+        }
         /// <summary>
         /// The current NetworkingConfiguration
         /// </summary>
