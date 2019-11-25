@@ -151,15 +151,15 @@ namespace MLAPI
         /// <summary>
         /// The callback to invoke once a client connects
         /// </summary>
-        public Action<ulong> OnClientConnectedCallback = null;
+        public event Action<ulong> OnClientConnectedCallback = null;
         /// <summary>
         /// The callback to invoke when a client disconnects
         /// </summary>
-        public Action<ulong> OnClientDisconnectCallback = null;
+        public event Action<ulong> OnClientDisconnectCallback = null;
         /// <summary>
         /// The callback to invoke once the server is ready
         /// </summary>
-        public Action OnServerStarted = null;
+        public event Action OnServerStarted = null;
         /// <summary>
         /// Delegate type called when connection has been approved
         /// </summary>
@@ -172,7 +172,7 @@ namespace MLAPI
         /// <summary>
         /// The callback to invoke during connection approval
         /// </summary>
-        public Action<byte[], ulong, ConnectionApprovedDelegate> ConnectionApprovalCallback = null;
+        public event Action<byte[], ulong, ConnectionApprovedDelegate> ConnectionApprovalCallback = null;
         /// <summary>
         /// The current NetworkingConfiguration
         /// </summary>
