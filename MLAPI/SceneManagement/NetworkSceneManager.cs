@@ -136,10 +136,6 @@ namespace MLAPI.SceneManagement
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Server requested a scene switch to a non registered scene");
                 return;
             }
-            else if (SceneManager.GetActiveScene().name == sceneIndexToString[sceneIndex])
-            {
-                return; //This scene is already loaded. This usually happends at first load
-            }
 
             lastScene = SceneManager.GetActiveScene();
 
