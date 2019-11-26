@@ -87,15 +87,15 @@ namespace MLAPI
         }
         private ulong localClientId;
         /// <summary>
-        /// Gets a dictionary of connected clients and their clientId keys
+        /// Gets a dictionary of connected clients and their clientId keys. This is only populated on the server.
         /// </summary>
         public readonly Dictionary<ulong, NetworkedClient> ConnectedClients = new Dictionary<ulong, NetworkedClient>();
         /// <summary>
-        /// Gets a list of connected clients
+        /// Gets a list of connected clients. This is only populated on the server.
         /// </summary>
         public readonly List<NetworkedClient> ConnectedClientsList = new List<NetworkedClient>();
         /// <summary>
-        /// Gets a dictionary of the clients that have been accepted by the transport but are still pending by the MLAPI.
+        /// Gets a dictionary of the clients that have been accepted by the transport but are still pending by the MLAPI. This is only populated on the server.
         /// </summary>
         public readonly Dictionary<ulong, PendingClient> PendingClients = new Dictionary<ulong, PendingClient>();
         /// <summary>
@@ -149,7 +149,7 @@ namespace MLAPI
         /// </summary>
         public bool IsConnectedClient { get; internal set; }
         /// <summary>
-        /// The callback to invoke once a client connects
+        /// The callback to invoke once a client connects. This callback is only ran on the server and on the local client that connects.
         /// </summary>
         public event Action<ulong> OnClientConnectedCallback = null;
         internal void InvokeOnClientConnectedCallback(ulong clientId)
@@ -160,7 +160,7 @@ namespace MLAPI
             }
         }
         /// <summary>
-        /// The callback to invoke when a client disconnects
+        /// The callback to invoke when a client disconnects. This callback is only ran on the server and on the local client that disconnects.
         /// </summary>
         public event Action<ulong> OnClientDisconnectCallback = null;
         internal void InvokeOnClientDisconnectCallback(ulong clientId)
@@ -175,7 +175,7 @@ namespace MLAPI
         /// </summary>
         public event Action OnServerStarted = null;
         /// <summary>
-        /// Delegate type called when connection has been approved
+        /// Delegate type called when connection has been approved. This only has to be set on the server.
         /// </summary>
         /// <param name="createPlayerObject">If true, a player object will be created. Otherwise the client will have no object.</param>
         /// <param name="playerPrefabHash">The prefabHash to use for the client. If createPlayerObject is false, this is ignored. If playerPrefabHash is null, the default player prefab is used.</param>
