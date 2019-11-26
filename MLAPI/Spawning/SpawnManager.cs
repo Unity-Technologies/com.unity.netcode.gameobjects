@@ -271,21 +271,32 @@ namespace MLAPI.Spawning
                 }
                 else
                 {
-                    GameObject prefab = NetworkingManager.Singleton.NetworkConfig.NetworkedPrefabs[GetNetworkedPrefabIndexOfHash(prefabHash)].Prefab;
+                    int prefabIndex = GetNetworkedPrefabIndexOfHash(prefabHash);
 
-                    NetworkedObject networkedObject = ((position == null && rotation == null) ? MonoBehaviour.Instantiate(prefab) : MonoBehaviour.Instantiate(prefab, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity))).GetComponent<NetworkedObject>();
-
-                    if (parent != null)
+                    if (prefabIndex < 0)
                     {
-                        networkedObject.transform.SetParent(parent.transform, true);
-                    }
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Failed to create object locally. [PrefabHash=" + prefabHash + "]. Hash could not be found. Is the prefab registered?");
 
-                    if (NetworkSceneManager.isSpawnedObjectsPendingInDontDestroyOnLoad)
+                        return null;
+                    }
+                    else
                     {
-                        GameObject.DontDestroyOnLoad(networkedObject.gameObject);
-                    }
+                        GameObject prefab = NetworkingManager.Singleton.NetworkConfig.NetworkedPrefabs[prefabIndex].Prefab;
 
-                    return networkedObject;
+                        NetworkedObject networkedObject = ((position == null && rotation == null) ? MonoBehaviour.Instantiate(prefab) : MonoBehaviour.Instantiate(prefab, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity))).GetComponent<NetworkedObject>();
+
+                        if (parent != null)
+                        {
+                            networkedObject.transform.SetParent(parent.transform, true);
+                        }
+
+                        if (NetworkSceneManager.isSpawnedObjectsPendingInDontDestroyOnLoad)
+                        {
+                            GameObject.DontDestroyOnLoad(networkedObject.gameObject);
+                        }
+
+                        return networkedObject;
+                    }
                 }
             }
             else
