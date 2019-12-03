@@ -73,6 +73,16 @@ permalink: /api/custom-messaging-manager/
 	</div>
 	<br>
 	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public static ``void`` UnregisterNamedMessageHandler(``string`` name);</b></h4>
+		<p>Unregisters a named message handler.</p>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``string`` name</p>
+			<p>The name of the message.</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public static ``void`` SendNamedMessage(``string`` name, ``ulong`` clientId, ``Stream`` stream, ``string`` channel, [``SecuritySendFlags``](/api/security-send-flags/) security);</b></h4>
 		<p>Sends a named message</p>
 		<h5><b>Parameters</b></h5>

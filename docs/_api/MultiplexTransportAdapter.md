@@ -24,6 +24,10 @@ permalink: /api/multiplex-transport-adapter/
 <div>
 	<h3 markdown="1">Inherited Properties</h3>
 	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``TransportChannel[]`` MLAPI_CHANNELS { get; }</b></h4>
+		<h5 markdown="1">Inherited from: [``Transport``](/api/transport/)</h5>
+	</div>
+	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``bool`` useGUILayout { get; set; }</b></h4>
 		<h5 markdown="1">Inherited from: ``MonoBehaviour``</h5>
 	</div>

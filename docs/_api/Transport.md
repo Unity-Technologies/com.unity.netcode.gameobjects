@@ -23,6 +23,9 @@ permalink: /api/transport/
 		<p>Gets a value indicating whether this  is supported in the current runtime context.
             This is used by multiplex adapters.</p>
 	</div>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``TransportChannel[]`` MLAPI_CHANNELS { get; }</b></h4>
+	</div>
 </div>
 <br>
 <div>
@@ -130,14 +133,6 @@ permalink: /api/transport/
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``HideFlags`` hideFlags { get; set; }</b></h4>
 		<h5 markdown="1">Inherited from: ``Object``</h5>
-	</div>
-</div>
-<br>
-<div>
-	<h3 markdown="1">Public Fields</h3>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``TransportChannel[]`` MLAPI_CHANNELS;</b></h4>
-		<p>The channels the MLAPI will use when sending internal messages.</p>
 	</div>
 </div>
 <br>
