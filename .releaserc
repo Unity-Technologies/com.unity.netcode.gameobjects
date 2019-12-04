@@ -9,7 +9,8 @@
         ["@semantic-release/github", {
             "assets": [
                 {"path": "*.unitypackage"}
-            ]
+            ],
+            "successComment": "**This ${issue.pull_request ? 'pull request is included' : 'issue is resolved'} in version ${nextRelease.version}**\n\nThe release is available to download on [GitHub release](https://github.com/MidLevel/MLAPI/releases) or in the MLAPI Installer."
         }]
     ]
 }
