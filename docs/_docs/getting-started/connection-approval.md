@@ -3,7 +3,7 @@ title: Connection Approval
 permalink: /wiki/connection-approval/
 ---
 
-During every new connection the MLAPI performs a handshake on top of the one(s) done by the transport. This is to ensure that the NetworkConfig's match up between the Client and Server. In the NetworkConfig you can specify to enable ConnectionApproval. Connection approval will let you decide on a per connection basis if the connection should be allowed.
+During every new connection the MLAPI performs a handshake on top of the one(s) done by the transport. This is to ensure that the NetworkConfig's match up between the Client and Server. In the NetworkConfig you can specify to enable ConnectionApproval. Connection approval will let you decide on a per connection basis if the connection should be allowed. Connection approval also lets you specify the player prefab to be created, allowing you to override the default behaviour on a per player basis.
 
 However, when ConnectionApproval is true you are also required to provide a callback where you put your approval logic inside. (Server only) Example:
 ```csharp
