@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using MLAPI;
 using UnityEngine;
 
@@ -23,8 +23,6 @@ namespace UnityEditor
         public override void OnInspectorGUI()
         {
             Init();
-            if (NetworkingManager.Singleton == null || (!NetworkingManager.Singleton.IsServer && !NetworkingManager.Singleton.IsClient))
-                base.OnInspectorGUI(); //Only run this if we are NOT running server. This is where the ServerOnly box is drawn
 
             if (!networkedObject.IsSpawned && NetworkingManager.Singleton != null && NetworkingManager.Singleton.IsServer)
             {
@@ -58,9 +56,9 @@ namespace UnityEditor
                     if (showObservers)
                     {
                         HashSet<ulong>.Enumerator observerClientIds = networkedObject.GetObservers();
-                    
+
                         EditorGUI.indentLevel += 1;
-                        
+
                         while (observerClientIds.MoveNext())
                         {
                             if (NetworkingManager.Singleton.ConnectedClients[observerClientIds.Current].PlayerObject != null)
@@ -68,10 +66,16 @@ namespace UnityEditor
                             else
                                 EditorGUILayout.TextField("ClientId: " + observerClientIds.Current, EditorStyles.label);
                         }
-                        
+
                         EditorGUI.indentLevel -= 1;
                     }
                 }
+            }
+            else
+            {
+                base.OnInspectorGUI();
+                EditorGUILayout.LabelField("PrefabHash: ", networkedObject.PrefabHash.ToString(), EditorStyles.label);
+                EditorGUILayout.LabelField("InstanceId: ", networkedObject.NetworkedInstanceId.ToString(), EditorStyles.label);
             }
         }
     }
