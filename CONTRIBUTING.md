@@ -74,4 +74,4 @@ Always write a clear log message for your commits. One-line messages are fine fo
     > A paragraph describing what changed and its impact."
 
 Thanks,
-Albin Coŕen
+Albin Corén
