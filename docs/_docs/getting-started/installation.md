@@ -21,8 +21,3 @@ This DLL's is the runtime portion. The actual library. This file is thus **requi
 This unitypackage includes the source files for all the Editor scripts. The UnityPackage will automatically place these source files in the Editor folder to avoid it being included in a build. **This is required**.
 ##### MLAPI-Installer.unitypackage
 This unitypackage includes the source file for the installer. This component is totally optional. The Installer can help you manage versions. If you don't want to use the installer, you can simply place the MLAPI.dll and the Editor source files in your project and it will work just as well.
-
-
-
-### Important note
-_The wiki, API references, readme and other documentation like information is not updated on a per commit basis. They are being updated on a per release basis. Thus using in development features on the master branch is not discouraged but there might not be any documentation except the commit messages._
