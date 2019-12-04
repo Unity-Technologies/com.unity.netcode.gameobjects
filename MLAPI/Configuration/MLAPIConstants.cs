@@ -1,4 +1,4 @@
-﻿namespace MLAPI.Configuration
+namespace MLAPI.Configuration
 {
     /// <summary>
     /// A static class containing MLAPI constants
@@ -30,6 +30,7 @@
         internal const byte MLAPI_UNNAMED_MESSAGE = 20;
         internal const byte MLAPI_DESTROY_OBJECTS = 21;
         internal const byte MLAPI_NAMED_MESSAGE = 22;
+        internal const byte MLAPI_SYNCED_VAR = 23;
         internal const byte INVALID = 32;
 
         internal static readonly string[] MESSAGE_NAMES = {
@@ -56,7 +57,7 @@
             "MLAPI_UNNAMED_MESSAGE",
             "MLAPI_DESTROY_OBJECTS",
             "MLAPI_NAMED_MESSAGE",
-            "",
+            "MLAPI_SYNCED_VAR",
             "",
             "",
             "",

@@ -88,13 +88,6 @@ permalink: /api/pooled-bit-stream/
 </div>
 <br>
 <div>
-	<h3>Public Constructors</h3>
-	<div style="line-height: 1; ">
-		<h4 markdown="1"><b>public [``PooledBitStream``](/api/pooled-bit-stream/)();</b></h4>
-	</div>
-</div>
-<br>
-<div>
 	<h3 markdown="1">Public Methods</h3>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``void`` Dispose();</b></h4>
@@ -387,6 +380,18 @@ permalink: /api/pooled-bit-stream/
 	</div>
 	<br>
 	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``Task`` CopyToAsync(``Stream`` destination, ``CancellationToken`` cancellationToken);</b></h4>
+		<h5 markdown="1">Inherited from: ``Stream``</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Stream`` destination</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``CancellationToken`` cancellationToken</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``Task`` CopyToAsync(``Stream`` destination, ``int`` bufferSize, ``CancellationToken`` cancellationToken);</b></h4>
 		<h5 markdown="1">Inherited from: ``Stream``</h5>
 		<h5><b>Parameters</b></h5>
@@ -510,6 +515,18 @@ permalink: /api/pooled-bit-stream/
 	</div>
 	<br>
 	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``ValueTask<int>`` ReadAsync(``Memory<byte>`` buffer, ``CancellationToken`` cancellationToken);</b></h4>
+		<h5 markdown="1">Inherited from: ``Stream``</h5>
+		<h5><b>Parameters</b></h5>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Memory<byte>`` buffer</p>
+		</div>
+		<div>
+			<p style="font-size: 20px; color: #444;" markdown="1">``CancellationToken`` cancellationToken</p>
+		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``IAsyncResult`` BeginWrite(``byte[]`` buffer, ``int`` offset, ``int`` count, ``AsyncCallback`` callback, ``object`` state);</b></h4>
 		<h5 markdown="1">Inherited from: ``Stream``</h5>
 		<h5><b>Parameters</b></h5>
@@ -573,29 +590,11 @@ permalink: /api/pooled-bit-stream/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``int`` Read(``Span<byte>`` destination);</b></h4>
+		<h4 markdown="1"><b>public ``ValueTask`` WriteAsync(``ReadOnlyMemory<byte>`` buffer, ``CancellationToken`` cancellationToken);</b></h4>
 		<h5 markdown="1">Inherited from: ``Stream``</h5>
 		<h5><b>Parameters</b></h5>
 		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``Span<byte>`` destination</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``void`` Write(``ReadOnlySpan<byte>`` source);</b></h4>
-		<h5 markdown="1">Inherited from: ``Stream``</h5>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``ReadOnlySpan<byte>`` source</p>
-		</div>
-	</div>
-	<br>
-	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``ValueTask<int>`` ReadAsync(``Memory<byte>`` destination, ``CancellationToken`` cancellationToken);</b></h4>
-		<h5 markdown="1">Inherited from: ``Stream``</h5>
-		<h5><b>Parameters</b></h5>
-		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``Memory<byte>`` destination</p>
+			<p style="font-size: 20px; color: #444;" markdown="1">``ReadOnlyMemory<byte>`` buffer</p>
 		</div>
 		<div>
 			<p style="font-size: 20px; color: #444;" markdown="1">``CancellationToken`` cancellationToken</p>
@@ -603,14 +602,20 @@ permalink: /api/pooled-bit-stream/
 	</div>
 	<br>
 	<div style="line-height: 1;">
-		<h4 markdown="1"><b>public ``ValueTask`` WriteAsync(``ReadOnlyMemory<byte>`` source, ``CancellationToken`` cancellationToken);</b></h4>
+		<h4 markdown="1"><b>public ``int`` Read(``Span<byte>`` buffer);</b></h4>
 		<h5 markdown="1">Inherited from: ``Stream``</h5>
 		<h5><b>Parameters</b></h5>
 		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``ReadOnlyMemory<byte>`` source</p>
+			<p style="font-size: 20px; color: #444;" markdown="1">``Span<byte>`` buffer</p>
 		</div>
+	</div>
+	<br>
+	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``void`` Write(``ReadOnlySpan<byte>`` buffer);</b></h4>
+		<h5 markdown="1">Inherited from: ``Stream``</h5>
+		<h5><b>Parameters</b></h5>
 		<div>
-			<p style="font-size: 20px; color: #444;" markdown="1">``CancellationToken`` cancellationToken</p>
+			<p style="font-size: 20px; color: #444;" markdown="1">``ReadOnlySpan<byte>`` buffer</p>
 		</div>
 	</div>
 	<br>

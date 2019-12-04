@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using MLAPI.Transports.Tasks;
 using UnityEngine;
 
@@ -9,6 +10,16 @@ namespace MLAPI.Transports
     /// </summary>
     public abstract class Transport : MonoBehaviour
     {
+        /// <summary>
+        /// Delegate used to request channels on the underlying transport.
+        /// </summary>
+        public delegate void RequestChannelsDelegate(List<TransportChannel> channels);
+
+        /// <summary>
+        /// Delegate called when the transport wants to know what channels to register.
+        /// </summary>
+        public event RequestChannelsDelegate OnChannelRegistration;
+
         /// <summary>
         /// A constant clientId that represents the server.
         /// When this value is found in methods such as Send, it should be treated as a placeholder that means "the server"
@@ -22,10 +33,47 @@ namespace MLAPI.Transports
         /// <value><c>true</c> if is supported; otherwise, <c>false</c>.</value>
         public virtual bool IsSupported => true;
 
+        private TransportChannel[] _channelsCache = null;
+
+        internal void ResetChannelCache()
+        {
+            _channelsCache = null;
+        }
+
+        public TransportChannel[] MLAPI_CHANNELS
+        {
+            get
+            {
+                if (_channelsCache == null)
+                {
+                    List<TransportChannel> channels = new List<TransportChannel>();
+
+                    if (OnChannelRegistration != null)
+                    {
+                        OnChannelRegistration(channels);
+                    }
+
+                    _channelsCache = new TransportChannel[MLAPI_INTERNAL_CHANNELS.Length + channels.Count];
+
+                    for (int i = 0; i < MLAPI_INTERNAL_CHANNELS.Length; i++)
+                    {
+                        _channelsCache[i] = MLAPI_INTERNAL_CHANNELS[i];
+                    }
+
+                    for (int i = 0; i < channels.Count; i++)
+                    {
+                        _channelsCache[i + MLAPI_INTERNAL_CHANNELS.Length] = channels[i];
+                    }
+                }
+
+                return _channelsCache;
+            }
+        }
+
         /// <summary>
         /// The channels the MLAPI will use when sending internal messages.
         /// </summary>
-        public static TransportChannel[] MLAPI_CHANNELS = new TransportChannel[]
+        private TransportChannel[] MLAPI_INTERNAL_CHANNELS = new TransportChannel[]
         {
             new TransportChannel()
             {

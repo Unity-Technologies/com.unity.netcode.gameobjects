@@ -9,10 +9,9 @@ namespace MLAPI.Serialization.Pooled
     public sealed class PooledBitWriter : BitWriter, IDisposable
     {
         private bool isDisposed = false;
-        
+
         internal PooledBitWriter(Stream stream) : base(stream)
         {
-
         }
 
         /// <summary>

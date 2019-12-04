@@ -6,7 +6,7 @@ permalink: /api/invalid-config-exception/
 
 <div style="line-height: 1;">
 	<h2 markdown="1">InvalidConfigException ``class``</h2>
-	<p style="font-size: 20px;"><b>Namespace:</b> MLAPI.Relay.Transports</p>
+	<p style="font-size: 20px;"><b>Namespace:</b> MLAPI.Transports.UNET</p>
 	<p style="font-size: 20px;"><b>Assembly:</b> MLAPI.dll</p>
 </div>
 <div>

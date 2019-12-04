@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using UnityEngine;
@@ -16,6 +16,7 @@ using MLAPI.Security;
 using MLAPI.Serialization.Pooled;
 using MLAPI.Spawning;
 using BitStream = MLAPI.Serialization.BitStream;
+using MLAPI.Serialization;
 
 namespace MLAPI
 {
@@ -107,6 +108,12 @@ namespace MLAPI
                 {
                     _networkedObject = GetComponentInParent<NetworkedObject>();
                 }
+
+                if (_networkedObject == null)
+                {
+                    throw new NullReferenceException("Could not get NetworkedObject for the NetworkedBehaviour. Are you missing a NetworkedObject component?");
+                }
+
                 return _networkedObject;
             }
         }
@@ -151,23 +158,23 @@ namespace MLAPI
             rpcDefinition = RpcTypeDefinition.Get(GetType());
             rpcDelegates = rpcDefinition.CreateTargetedDelegates(this);
 
-            NetworkedVarInit();
+            InitializeVars();
         }
-        
-        /// <summary>                                                                               
-        /// Gets called when SyncedVars gets updated                                                
-        /// </summary>                                                                              
+
+        /// <summary>
+        /// Gets called when SyncedVars gets updated
+        /// </summary>
         public virtual void OnSyncVarUpdate()
-        {                                                                                                  
-            
-        }                                                                                                  
-        /// <summary>                                                                                      
-        /// Gets called when the local client gains ownership of this object                               
-        /// </summary>                                                                                     
-        public virtual void OnGainedOwnership()                                                            
-        {                                                                                                 
-            
-        }                                                                                                  
+        {
+
+        }
+        /// <summary>
+        /// Gets called when the local client gains ownership of this object
+        /// </summary>
+        public virtual void OnGainedOwnership()
+        {
+
+        }
         /// <summary>
         /// Gets called when we loose ownership of this object
         /// </summary>
@@ -197,25 +204,30 @@ namespace MLAPI
 
         #region NetworkedVar
 
-        private bool networkedVarInit = false;
-        private readonly List<HashSet<int>> channelMappedVarIndexes = new List<HashSet<int>>();
-        private readonly List<string> channelsForVarGroups = new List<string>();
+        private bool varInit = false;
+
+        private readonly List<HashSet<int>> channelMappedNetworkedVarIndexes = new List<HashSet<int>>();
+        private readonly List<string> channelsForNetworkedVarGroups = new List<string>();
         internal readonly List<INetworkedVar> networkedVarFields = new List<INetworkedVar>();
+
         private static readonly Dictionary<Type, FieldInfo[]> fieldTypes = new Dictionary<Type, FieldInfo[]>();
 
-        
+        private readonly List<HashSet<int>> channelMappedSyncedVarIndexes = new List<HashSet<int>>();
+        private readonly List<string> channelsForSyncedVarGroups = new List<string>();
+        internal readonly List<SyncedVarContainer> syncedVars = new List<SyncedVarContainer>();
+
+
         private static FieldInfo[] GetFieldInfoForType(Type type)
         {
             if (!fieldTypes.ContainsKey(type))
                 fieldTypes.Add(type, GetFieldInfoForTypeRecursive(type));
-            
+
             return fieldTypes[type];
         }
-        
-        
-        private static FieldInfo[] GetFieldInfoForTypeRecursive(Type type, List<FieldInfo> list = null) 
+
+        private static FieldInfo[] GetFieldInfoForTypeRecursive(Type type, List<FieldInfo> list = null)
         {
-            if (list == null) 
+            if (list == null)
             {
                 list = new List<FieldInfo>();
                 list.AddRange(type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance));
@@ -235,68 +247,237 @@ namespace MLAPI
             }
         }
 
-        internal void NetworkedVarInit()
+        internal void InitializeVars()
         {
-            if (networkedVarInit)
+            if (varInit)
                 return;
-            networkedVarInit = true;
+            varInit = true;
 
             FieldInfo[] sortedFields = GetFieldInfoForType(GetType());
+
             for (int i = 0; i < sortedFields.Length; i++)
             {
                 Type fieldType = sortedFields[i].FieldType;
+
+                // Simple syncedVar attributes
+                SyncedVarAttribute[] attributes = (SyncedVarAttribute[])sortedFields[i].GetCustomAttributes(typeof(SyncedVarAttribute), true);
+
+                if (attributes.Length == 1)
+                {
+                    if (SerializationManager.IsTypeSupported(fieldType))
+                    {
+                        // This is a supported simple var type.
+                        syncedVars.Add(new SyncedVarContainer()
+                        {
+                            field = sortedFields[i],
+                            fieldInstance = this,
+                            isDirty = false,
+                            value = sortedFields[i].GetValue(this),
+                            attribute = attributes[0]
+                        });
+                    }
+                    else
+                    {
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("SyncedVar has unsupported type");
+                    }
+                }
+
                 if (fieldType.HasInterface(typeof(INetworkedVar)))
                 {
                     INetworkedVar instance = (INetworkedVar)sortedFields[i].GetValue(this);
+
                     if (instance == null)
                     {
                         instance = (INetworkedVar)Activator.CreateInstance(fieldType, true);
                         sortedFields[i].SetValue(this, instance);
                     }
-                    
+
                     instance.SetNetworkedBehaviour(this);
                     networkedVarFields.Add(instance);
                 }
             }
 
-            //Create index map for channels
-            Dictionary<string, int> firstLevelIndex = new Dictionary<string, int>();
-            int secondLevelCounter = 0;
-            for (int i = 0; i < networkedVarFields.Count; i++)
+
             {
-                string channel = networkedVarFields[i].GetChannel(); //Cache this here. Some developers are stupid. You don't know what shit they will do in their methods
-                if (!firstLevelIndex.ContainsKey(channel))
+                // Create index map for channels
+                Dictionary<string, int> firstLevelIndex = new Dictionary<string, int>();
+                int secondLevelCounter = 0;
+
+                for (int i = 0; i < syncedVars.Count; i++)
                 {
-                    firstLevelIndex.Add(channel, secondLevelCounter);
-                    channelsForVarGroups.Add(channel);
-                    secondLevelCounter++;
+                    string channel = syncedVars[i].attribute.Channel;
+
+                    if (!firstLevelIndex.ContainsKey(channel))
+                    {
+                        firstLevelIndex.Add(channel, secondLevelCounter);
+                        channelsForSyncedVarGroups.Add(channel);
+                        secondLevelCounter++;
+                    }
+
+                    if (firstLevelIndex[channel] >= channelMappedSyncedVarIndexes.Count)
+                    {
+                        channelMappedSyncedVarIndexes.Add(new HashSet<int>());
+                    }
+
+                    channelMappedSyncedVarIndexes[firstLevelIndex[channel]].Add(i);
                 }
-                if (firstLevelIndex[channel] >= channelMappedVarIndexes.Count)
-                    channelMappedVarIndexes.Add(new HashSet<int>());
-                channelMappedVarIndexes[firstLevelIndex[channel]].Add(i);
+            }
+
+            {
+                // Create index map for channels
+                Dictionary<string, int> firstLevelIndex = new Dictionary<string, int>();
+                int secondLevelCounter = 0;
+
+                for (int i = 0; i < networkedVarFields.Count; i++)
+                {
+                    string channel = networkedVarFields[i].GetChannel(); // Cache this here. Some developers are stupid. You don't know what shit they will do in their methods
+
+                    if (!firstLevelIndex.ContainsKey(channel))
+                    {
+                        firstLevelIndex.Add(channel, secondLevelCounter);
+                        channelsForNetworkedVarGroups.Add(channel);
+                        secondLevelCounter++;
+                    }
+
+                    if (firstLevelIndex[channel] >= channelMappedNetworkedVarIndexes.Count)
+                    {
+                        channelMappedNetworkedVarIndexes.Add(new HashSet<int>());
+                    }
+
+                    channelMappedNetworkedVarIndexes[firstLevelIndex[channel]].Add(i);
+                }
             }
         }
-        
+
+        internal void VarUpdate()
+        {
+            if (!varInit)
+                InitializeVars();
+
+            SyncedVarUpdate();
+            NetworkedVarUpdate();
+        }
+
+        private readonly List<int> syncedVarIndexesToReset = new List<int>();
+        private readonly HashSet<int> syncedVarIndexesToResetSet = new HashSet<int>();
+
+        private void SyncedVarUpdate()
+        {
+            if (!IsServer || !CouldHaveDirtySyncedVars())
+                return;
+
+            syncedVarIndexesToReset.Clear();
+            syncedVarIndexesToResetSet.Clear();
+
+            for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)
+            {
+                // Do this check here to prevent doing all the expensive dirty checks
+                if (this.NetworkedObject.observers.Contains(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId))
+                {
+                    // This iterates over every "channel group".
+                    for (int j = 0; j < channelMappedSyncedVarIndexes.Count; j++)
+                    {
+                        using (PooledBitStream stream = PooledBitStream.Get())
+                        {
+                            using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                            {
+                                writer.WriteUInt64Packed(NetworkId);
+                                writer.WriteUInt16Packed(NetworkedObject.GetOrderIndex(this));
+
+                                ulong clientId = NetworkingManager.Singleton.ConnectedClientsList[i].ClientId;
+                                bool writtenAny = false;
+                                for (int k = 0; k < syncedVars.Count; k++)
+                                {
+                                    if (!channelMappedSyncedVarIndexes[j].Contains(k))
+                                    {
+                                        // This var does not belong to the currently iterating channel group.
+                                        if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
+                                        {
+                                            writer.WriteUInt16Packed(0);
+                                        }
+                                        else
+                                        {
+                                            writer.WriteBool(false);
+                                        }
+                                        continue;
+                                    }
+
+                                    bool isDirty = syncedVars[k].IsDirty(); // cache this here. You never know what operations users will do in the dirty methods
+
+                                    if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
+                                    {
+                                        if (!isDirty)
+                                        {
+                                            writer.WriteUInt16Packed(0);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        writer.WriteBool(isDirty);
+                                    }
+
+                                    if (isDirty)
+                                    {
+                                        writtenAny = true;
+
+                                        if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
+                                        {
+                                            using (PooledBitStream varStream = PooledBitStream.Get())
+                                            {
+                                                syncedVars[k].WriteValue(varStream, false);
+                                                varStream.PadStream();
+
+                                                writer.WriteUInt16Packed((ushort)varStream.Length);
+                                                stream.CopyFrom(varStream);
+                                            }
+                                        }
+                                        else
+                                        {
+                                            syncedVars[k].WriteValue(stream, false);
+                                        }
+
+                                        if (!syncedVarIndexesToResetSet.Contains(k))
+                                        {
+                                            syncedVarIndexesToResetSet.Add(k);
+                                            syncedVarIndexesToReset.Add(k);
+                                        }
+                                    }
+                                }
+
+                                if (writtenAny)
+                                {
+                                    InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_SYNCED_VAR, channelsForSyncedVarGroups[j], stream, SecuritySendFlags.None, this.NetworkedObject);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            for (int i = 0; i < syncedVarIndexesToReset.Count; i++)
+            {
+                syncedVars[syncedVarIndexesToReset[i]].ResetDirty();
+            }
+        }
+
         private readonly List<int> networkedVarIndexesToReset = new List<int>();
         private readonly HashSet<int> networkedVarIndexesToResetSet = new HashSet<int>();
-        internal void NetworkedVarUpdate()
-        {
-            if (!networkedVarInit)
-                NetworkedVarInit();
 
-            if (!CouldHaveDirtyVars()) 
+        private void NetworkedVarUpdate()
+        {
+            if (!CouldHaveDirtyNetworkedVars())
                 return;
 
             networkedVarIndexesToReset.Clear();
             networkedVarIndexesToResetSet.Clear();
-            
+
             for (int i = 0; i < (IsServer ? NetworkingManager.Singleton.ConnectedClientsList.Count : 1); i++)
             {
                 // Do this check here to prevent doing all the expensive dirty checks
                 if (!IsServer || this.NetworkedObject.observers.Contains(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId))
                 {
-                    //This iterates over every "channel group".
-                    for (int j = 0; j < channelMappedVarIndexes.Count; j++)
+                    // This iterates over every "channel group".
+                    for (int j = 0; j < channelMappedNetworkedVarIndexes.Count; j++)
                     {
                         using (PooledBitStream stream = PooledBitStream.Get())
                         {
@@ -309,9 +490,9 @@ namespace MLAPI
                                 bool writtenAny = false;
                                 for (int k = 0; k < networkedVarFields.Count; k++)
                                 {
-                                    if (!channelMappedVarIndexes[j].Contains(k))
+                                    if (!channelMappedNetworkedVarIndexes[j].Contains(k))
                                     {
-                                        //This var does not belong to the currently iterating channel group.
+                                        // This var does not belong to the currently iterating channel group.
                                         if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
                                         {
                                             writer.WriteUInt16Packed(0);
@@ -323,10 +504,9 @@ namespace MLAPI
                                         continue;
                                     }
 
-                                    bool isDirty = networkedVarFields[k].IsDirty(); //cache this here. You never know what operations users will do in the dirty methods
+                                    bool isDirty = networkedVarFields[k].IsDirty(); // cache this here. You never know what operations users will do in the dirty methods
                                     bool shouldWrite = isDirty && (!IsServer || networkedVarFields[k].CanClientRead(clientId));
-                                    
-                                    
+
                                     if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
                                     {
                                         if (!shouldWrite)
@@ -349,7 +529,7 @@ namespace MLAPI
                                             {
                                                 networkedVarFields[k].WriteDelta(varStream);
                                                 varStream.PadStream();
-                                                
+
                                                 writer.WriteUInt16Packed((ushort)varStream.Length);
                                                 stream.CopyFrom(varStream);
                                             }
@@ -370,9 +550,9 @@ namespace MLAPI
                                 if (writtenAny)
                                 {
                                     if (IsServer)
-                                        InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA, channelsForVarGroups[j], stream, SecuritySendFlags.None, this.NetworkedObject);
+                                        InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA, channelsForNetworkedVarGroups[j], stream, SecuritySendFlags.None, this.NetworkedObject);
                                     else
-                                        InternalMessageSender.Send(NetworkingManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA, channelsForVarGroups[j], stream, SecuritySendFlags.None, null);
+                                        InternalMessageSender.Send(NetworkingManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA, channelsForNetworkedVarGroups[j], stream, SecuritySendFlags.None, null);
                                 }
                             }
                         }
@@ -386,17 +566,71 @@ namespace MLAPI
             }
         }
 
-        private bool CouldHaveDirtyVars()
+        private bool CouldHaveDirtyNetworkedVars()
         {
             for (int i = 0; i < networkedVarFields.Count; i++)
             {
-                if (networkedVarFields[i].IsDirty()) 
+                if (networkedVarFields[i].IsDirty())
                     return true;
             }
 
             return false;
         }
 
+        private bool CouldHaveDirtySyncedVars()
+        {
+            for (int i = 0; i < syncedVars.Count; i++)
+            {
+                if (syncedVars[i].IsDirty())
+                    return true;
+            }
+
+            return false;
+        }
+
+        internal static void HandleSyncedVarValue(List<SyncedVarContainer> syncedVarList, Stream stream, ulong clientId, NetworkedBehaviour logInstance)
+        {
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
+            {
+                for (int i = 0; i < syncedVarList.Count; i++)
+                {
+                    ushort varSize = 0;
+
+                    if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
+                    {
+                        varSize = reader.ReadUInt16Packed();
+
+                        if (varSize == 0)
+                            continue;
+                    }
+                    else
+                    {
+                        if (!reader.ReadBool())
+                            continue;
+                    }
+
+                    long readStartPos = stream.Position;
+
+                    syncedVarList[i].ReadValue(stream);
+
+                    if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
+                    {
+                        (stream as BitStream).SkipPadBits();
+
+                        if (stream.Position > (readStartPos + varSize))
+                        {
+                            if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("SyncedVar read too far. " + (stream.Position - (readStartPos + varSize)) + " bytes." + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
+                            stream.Position = readStartPos + varSize;
+                        }
+                        else if (stream.Position < (readStartPos + varSize))
+                        {
+                            if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("SyncedVar read too little. " + ((readStartPos + varSize) - stream.Position) + " bytes." + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
+                            stream.Position = readStartPos + varSize;
+                        }
+                    }
+                }
+            }
+        }
 
         internal static void HandleNetworkedVarDeltas(List<INetworkedVar> networkedVarList, Stream stream, ulong clientId, NetworkedBehaviour logInstance)
         {
@@ -405,18 +639,18 @@ namespace MLAPI
                 for (int i = 0; i < networkedVarList.Count; i++)
                 {
                     ushort varSize = 0;
-                    
+
                     if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
                     {
                         varSize = reader.ReadUInt16Packed();
-                        
+
                         if (varSize == 0)
                             continue;
                     }
                     else
                     {
                         if (!reader.ReadBool())
-                            continue;   
+                            continue;
                     }
 
                     if (NetworkingManager.Singleton.IsServer && !networkedVarList[i].CanClientWrite(clientId))
@@ -431,25 +665,25 @@ namespace MLAPI
                         {
                             //This client wrote somewhere they are not allowed. This is critical
                             //We can't just skip this field. Because we don't actually know how to dummy read
-                            //That is, we don't know how many bytes to skip. Because the interface doesn't have a 
+                            //That is, we don't know how many bytes to skip. Because the interface doesn't have a
                             //Read that gives us the value. Only a Read that applies the value straight away
                             //A dummy read COULD be added to the interface for this situation, but it's just being too nice.
                             //This is after all a developer fault. A critical error should be fine.
                             // - TwoTen
 
                             if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Client wrote to NetworkedVar without permission. No more variables can be read. This is critical. " + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
-                            return;   
+                            return;
                         }
                     }
 
                     long readStartPos = stream.Position;
-                    
+
                     networkedVarList[i].ReadDelta(stream, NetworkingManager.Singleton.IsServer);
 
                     if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
                     {
                         (stream as BitStream).SkipPadBits();
-                        
+
                         if (stream.Position > (readStartPos + varSize))
                         {
                             if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Var delta read too far. " + (stream.Position - (readStartPos + varSize)) + " bytes." + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
@@ -472,20 +706,20 @@ namespace MLAPI
                 for (int i = 0; i < networkedVarList.Count; i++)
                 {
                     ushort varSize = 0;
-                    
+
                     if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
                     {
                         varSize = reader.ReadUInt16Packed();
-                        
+
                         if (varSize == 0)
                             continue;
                     }
                     else
                     {
                         if (!reader.ReadBool())
-                            continue;   
+                            continue;
                     }
-                    
+
                     if (NetworkingManager.Singleton.IsServer && !networkedVarList[i].CanClientWrite(clientId))
                     {
                         if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
@@ -498,27 +732,27 @@ namespace MLAPI
                         {
                             //This client wrote somewhere they are not allowed. This is critical
                             //We can't just skip this field. Because we don't actually know how to dummy read
-                            //That is, we don't know how many bytes to skip. Because the interface doesn't have a 
+                            //That is, we don't know how many bytes to skip. Because the interface doesn't have a
                             //Read that gives us the value. Only a Read that applies the value straight away
                             //A dummy read COULD be added to the interface for this situation, but it's just being too nice.
                             //This is after all a developer fault. A critical error should be fine.
                             // - TwoTen
                             if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Client wrote to NetworkedVar without permission. No more variables can be read. This is critical. " + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
-                            return;   
+                            return;
                         }
                     }
 
                     long readStartPos = stream.Position;
-                    
+
                     networkedVarList[i].ReadField(stream);
-                    
+
                     if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
                     {
                         if (stream is BitStream bitStream)
                         {
                             bitStream.SkipPadBits();
                         }
-                        
+
                         if (stream.Position > (readStartPos + varSize))
                         {
                             if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Var update read too far. " + (stream.Position - (readStartPos + varSize)) + " bytes." + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
@@ -527,6 +761,89 @@ namespace MLAPI
                         else if (stream.Position < (readStartPos + varSize))
                         {
                             if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Var update read too little. " + ((readStartPos + varSize) - stream.Position) + " bytes." + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
+                            stream.Position = readStartPos + varSize;
+                        }
+                    }
+                }
+            }
+        }
+
+        internal static void WriteSyncedVarData(List<SyncedVarContainer> syncedVarList, Stream stream, ulong clientId)
+        {
+            if (syncedVarList.Count == 0)
+                return;
+
+            using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+            {
+                for (int j = 0; j < syncedVarList.Count; j++)
+                {
+                    if (!NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
+                    {
+                        writer.WriteBool(true);
+                    }
+
+                    if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
+                    {
+                        using (PooledBitStream varStream = PooledBitStream.Get())
+                        {
+                            syncedVarList[j].WriteValue(varStream);
+                            varStream.PadStream();
+
+                            writer.WriteUInt16Packed((ushort)varStream.Length);
+                            varStream.CopyTo(stream);
+                        }
+                    }
+                    else
+                    {
+                        syncedVarList[j].WriteValue(stream);
+                    }
+                }
+            }
+        }
+
+        internal static void SetSyncedVarData(List<SyncedVarContainer> syncedVarList, Stream stream)
+        {
+            if (syncedVarList.Count == 0)
+                return;
+
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
+            {
+                for (int j = 0; j < syncedVarList.Count; j++)
+                {
+                    ushort varSize = 0;
+
+                    if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
+                    {
+                        varSize = reader.ReadUInt16Packed();
+
+                        if (varSize == 0)
+                            continue;
+                    }
+                    else
+                    {
+                        if (!reader.ReadBool())
+                            continue;
+                    }
+
+                    long readStartPos = stream.Position;
+
+                    syncedVarList[j].ReadValue(stream);
+
+                    if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
+                    {
+                        if (stream is BitStream bitStream)
+                        {
+                            bitStream.SkipPadBits();
+                        }
+
+                        if (stream.Position > (readStartPos + varSize))
+                        {
+                            if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("SyncedVar data read too far. " + (stream.Position - (readStartPos + varSize)) + " bytes.");
+                            stream.Position = readStartPos + varSize;
+                        }
+                        else if (stream.Position < (readStartPos + varSize))
+                        {
+                            if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("SyncedVar data read too little. " + ((readStartPos + varSize) - stream.Position) + " bytes.");
                             stream.Position = readStartPos + varSize;
                         }
                     }
@@ -565,7 +882,7 @@ namespace MLAPI
                             {
                                 networkedVarList[j].WriteField(varStream);
                                 varStream.PadStream();
-                                                
+
                                 writer.WriteUInt16Packed((ushort)varStream.Length);
                                 varStream.CopyTo(stream);
                             }
@@ -575,7 +892,7 @@ namespace MLAPI
                             networkedVarList[j].WriteField(stream);
                         }
                     }
-                }   
+                }
             }
         }
 
@@ -589,31 +906,31 @@ namespace MLAPI
                 for (int j = 0; j < networkedVarList.Count; j++)
                 {
                     ushort varSize = 0;
-                    
+
                     if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
                     {
                         varSize = reader.ReadUInt16Packed();
-                        
+
                         if (varSize == 0)
                             continue;
                     }
                     else
                     {
                         if (!reader.ReadBool())
-                            continue;   
+                            continue;
                     }
 
                     long readStartPos = stream.Position;
-                    
+
                     networkedVarList[j].ReadField(stream);
-                    
+
                     if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
                     {
                         if (stream is BitStream bitStream)
                         {
                             bitStream.SkipPadBits();
                         }
-                        
+
                         if (stream.Position > (readStartPos + varSize))
                         {
                             if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Var data read too far. " + (stream.Position - (readStartPos + varSize)) + " bytes.");
@@ -625,11 +942,9 @@ namespace MLAPI
                             stream.Position = readStartPos + varSize;
                         }
                     }
-                }   
+                }
             }
         }
-
-
         #endregion
 
         #region MESSAGING_SYSTEM
@@ -691,7 +1006,7 @@ namespace MLAPI
 
             return InvokeServerRPCLocal(hash, senderClientId, stream);
         }
-        
+
         internal object OnRemoteClientRPC(ulong hash, ulong senderClientId, Stream stream)
         {
             if (!rpcDefinition.clientMethods.ContainsKey(hash))
@@ -699,7 +1014,7 @@ namespace MLAPI
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("ClientRPC request method not found");
                 return null;
             }
-            
+
             return InvokeClientRPCLocal(hash, senderClientId, stream);
         }
 
@@ -722,7 +1037,7 @@ namespace MLAPI
 
             return null;
         }
-        
+
         //Technically boxed writes are not needed. But save LOC for the non performance sends.
         internal void SendServerRPCBoxed(ulong hash, string channel, SecuritySendFlags security, params object[] parameters)
         {
@@ -735,12 +1050,12 @@ namespace MLAPI
                     {
                         writer.WriteObjectPacked(parameters[i]);
                     }
-                    
+
                     SendServerRPCPerformance(hash, stream, channel, security);
                 }
             }
         }
-        
+
         internal RpcResponse<T> SendServerRPCBoxedResponse<T>(ulong hash, string channel, SecuritySendFlags security, params object[] parameters)
         {
             using (PooledBitStream stream = PooledBitStream.Get())
@@ -751,12 +1066,12 @@ namespace MLAPI
                     {
                         writer.WriteObjectPacked(parameters[i]);
                     }
-                    
+
                     return SendServerRPCPerformanceResponse<T>(hash, stream, channel, security);
                 }
             }
         }
-        
+
         internal void SendClientRPCBoxedToClient(ulong hash, ulong clientId, string channel, SecuritySendFlags security, params object[] parameters)
         {
             using (PooledBitStream stream = PooledBitStream.Get())
@@ -771,7 +1086,7 @@ namespace MLAPI
                 }
             }
         }
-        
+
         internal RpcResponse<T> SendClientRPCBoxedResponse<T>(ulong hash, ulong clientId, string channel, SecuritySendFlags security, params object[] parameters)
         {
             using (PooledBitStream stream = PooledBitStream.Get())
@@ -782,12 +1097,12 @@ namespace MLAPI
                     {
                         writer.WriteObjectPacked(parameters[i]);
                     }
-                    
+
                     return SendClientRPCPerformanceResponse<T>(hash, clientId, stream, channel, security);
                 }
             }
         }
-        
+
         internal void SendClientRPCBoxed(ulong hash, List<ulong> clientIds, string channel, SecuritySendFlags security, params object[] parameters)
         {
             using (PooledBitStream stream = PooledBitStream.Get())
@@ -849,7 +1164,7 @@ namespace MLAPI
                 }
             }
         }
-        
+
         internal RpcResponse<T> SendServerRPCPerformanceResponse<T>(ulong hash, Stream messageStream, string channel, SecuritySendFlags security)
         {
             if (!IsClient && IsRunning)
@@ -868,7 +1183,7 @@ namespace MLAPI
                     writer.WriteUInt64Packed(NetworkId);
                     writer.WriteUInt16Packed(NetworkedObject.GetOrderIndex(this));
                     writer.WriteUInt64Packed(hash);
-                    
+
                     if (!IsHost) writer.WriteUInt64Packed(responseId);
 
                     stream.CopyFrom(messageStream);
@@ -877,7 +1192,7 @@ namespace MLAPI
                     {
                         messageStream.Position = 0;
                         object result = InvokeServerRPCLocal(hash, NetworkingManager.Singleton.LocalClientId, messageStream);
-                        
+
                         return new RpcResponse<T>()
                         {
                             Id = responseId,
@@ -889,7 +1204,7 @@ namespace MLAPI
                         };
                     }
                     else
-                    {                        
+                    {
                         RpcResponse<T> response = new RpcResponse<T>()
                         {
                             Id = responseId,
@@ -898,9 +1213,9 @@ namespace MLAPI
                             Type = typeof(T),
                             ClientId = NetworkingManager.Singleton.ServerClientId
                         };
-            
+
                         ResponseMessageManager.Add(response.Id, response);
-                        
+
                         InternalMessageSender.Send(NetworkingManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_SERVER_RPC_REQUEST, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security, null);
 
                         return response;
@@ -910,7 +1225,7 @@ namespace MLAPI
         }
 
         internal void SendClientRPCPerformance(ulong hash,  List<ulong> clientIds, Stream messageStream, string channel, SecuritySendFlags security)
-        {            
+        {
             if (!IsServer && IsRunning)
             {
                 //We are NOT a server.
@@ -937,7 +1252,7 @@ namespace MLAPI
                                 if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogWarning("Silently suppressed ClientRPC because a target in the bulk list was not an observer");
                                 continue;
                             }
-                            
+
                             if (IsHost && NetworkingManager.Singleton.ConnectedClientsList[i].ClientId == NetworkingManager.Singleton.LocalClientId)
                             {
                                 messageStream.Position = 0;
@@ -958,7 +1273,7 @@ namespace MLAPI
                                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot send ClientRPC to client without visibility to the object");
                                 continue;
                             }
-                            
+
                             if (IsHost && clientIds[i] == NetworkingManager.Singleton.LocalClientId)
                             {
                                 messageStream.Position = 0;
@@ -1028,7 +1343,7 @@ namespace MLAPI
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Only clients and host can invoke ClientRPC");
                 return;
             }
-            
+
             if (!this.NetworkedObject.observers.Contains(clientId))
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot send ClientRPC to client without visibility to the object");
@@ -1057,7 +1372,7 @@ namespace MLAPI
                 }
             }
         }
-        
+
         internal RpcResponse<T> SendClientRPCPerformanceResponse<T>(ulong hash, ulong clientId, Stream messageStream, string channel, SecuritySendFlags security)
         {
             if (!IsServer && IsRunning)
@@ -1072,9 +1387,9 @@ namespace MLAPI
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot send ClientRPC to client without visibility to the object");
                 return null;
             }
-            
+
             ulong responseId = ResponseMessageManager.GenerateMessageId();
-            
+
             using (PooledBitStream stream = PooledBitStream.Get())
             {
                 using (PooledBitWriter writer = PooledBitWriter.Get(stream))
@@ -1082,7 +1397,7 @@ namespace MLAPI
                     writer.WriteUInt64Packed(NetworkId);
                     writer.WriteUInt16Packed(NetworkedObject.GetOrderIndex(this));
                     writer.WriteUInt64Packed(hash);
-                    
+
                     if (!(IsHost && clientId == NetworkingManager.Singleton.LocalClientId)) writer.WriteUInt64Packed(responseId);
 
                     stream.CopyFrom(messageStream);
@@ -1091,7 +1406,7 @@ namespace MLAPI
                     {
                         messageStream.Position = 0;
                         object result = InvokeClientRPCLocal(hash, NetworkingManager.Singleton.LocalClientId, messageStream);
-                        
+
                         return new RpcResponse<T>()
                         {
                             Id = responseId,
@@ -1112,11 +1427,11 @@ namespace MLAPI
                             Type = typeof(T),
                             ClientId = clientId
                         };
-            
+
                         ResponseMessageManager.Add(response.Id, response);
-                        
+
                         InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_CLIENT_RPC_REQUEST, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security, null);
-                        
+
                         return response;
                     }
                 }

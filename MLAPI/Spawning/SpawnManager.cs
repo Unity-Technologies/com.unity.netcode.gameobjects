@@ -212,10 +212,13 @@ namespace MLAPI.Spawning
                 throw new SpawnStateException("Object is not spawned");
             }
 
-            for (int i = NetworkingManager.Singleton.ConnectedClients[netObject.OwnerClientId].OwnedObjects.Count - 1; i > -1; i--)
+            if (NetworkingManager.Singleton.ConnectedClients.ContainsKey(netObject.OwnerClientId))
             {
-                if (NetworkingManager.Singleton.ConnectedClients[netObject.OwnerClientId].OwnedObjects[i] == netObject)
-                    NetworkingManager.Singleton.ConnectedClients[netObject.OwnerClientId].OwnedObjects.RemoveAt(i);
+                for (int i = NetworkingManager.Singleton.ConnectedClients[netObject.OwnerClientId].OwnedObjects.Count - 1; i >= 0; i--)
+                {
+                    if (NetworkingManager.Singleton.ConnectedClients[netObject.OwnerClientId].OwnedObjects[i] == netObject)
+                        NetworkingManager.Singleton.ConnectedClients[netObject.OwnerClientId].OwnedObjects.RemoveAt(i);
+                }
             }
 
             NetworkingManager.Singleton.ConnectedClients[clientId].OwnedObjects.Add(netObject);
@@ -247,7 +250,7 @@ namespace MLAPI.Spawning
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot find parent. Parent objects always have to be spawned and replicated BEFORE the child");
             }
 
-            if (NetworkingManager.Singleton.NetworkConfig.UsePrefabSync || !softCreate)
+            if (!NetworkingManager.Singleton.NetworkConfig.EnableSceneManagement || NetworkingManager.Singleton.NetworkConfig.UsePrefabSync || !softCreate)
             {
                 // Create the object
                 if (customSpawnHandlers.ContainsKey(prefabHash))
@@ -268,21 +271,32 @@ namespace MLAPI.Spawning
                 }
                 else
                 {
-                    GameObject prefab = NetworkingManager.Singleton.NetworkConfig.NetworkedPrefabs[GetNetworkedPrefabIndexOfHash(prefabHash)].Prefab;
+                    int prefabIndex = GetNetworkedPrefabIndexOfHash(prefabHash);
 
-                    NetworkedObject networkedObject = ((position == null && rotation == null) ? MonoBehaviour.Instantiate(prefab) : MonoBehaviour.Instantiate(prefab, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity))).GetComponent<NetworkedObject>();
-
-                    if (parent != null)
+                    if (prefabIndex < 0)
                     {
-                        networkedObject.transform.SetParent(parent.transform, true);
-                    }
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Failed to create object locally. [PrefabHash=" + prefabHash + "]. Hash could not be found. Is the prefab registered?");
 
-                    if (NetworkSceneManager.isSpawnedObjectsPendingInDontDestroyOnLoad)
+                        return null;
+                    }
+                    else
                     {
-                        GameObject.DontDestroyOnLoad(networkedObject.gameObject);
-                    }
+                        GameObject prefab = NetworkingManager.Singleton.NetworkConfig.NetworkedPrefabs[prefabIndex].Prefab;
 
-                    return networkedObject;
+                        NetworkedObject networkedObject = ((position == null && rotation == null) ? MonoBehaviour.Instantiate(prefab) : MonoBehaviour.Instantiate(prefab, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity))).GetComponent<NetworkedObject>();
+
+                        if (parent != null)
+                        {
+                            networkedObject.transform.SetParent(parent.transform, true);
+                        }
+
+                        if (NetworkSceneManager.isSpawnedObjectsPendingInDontDestroyOnLoad)
+                        {
+                            GameObject.DontDestroyOnLoad(networkedObject.gameObject);
+                        }
+
+                        return networkedObject;
+                    }
                 }
             }
             else
@@ -320,8 +334,11 @@ namespace MLAPI.Spawning
                 throw new SpawnStateException("Object is already spawned");
             }
 
-
-            if (readNetworkedVar && NetworkingManager.Singleton.NetworkConfig.EnableNetworkedVar) netObject.SetNetworkedVarData(dataStream);
+            if (readNetworkedVar && NetworkingManager.Singleton.NetworkConfig.EnableNetworkedVar)
+            {
+                netObject.SetNetworkedVarData(dataStream);
+                netObject.SetSyncedVarData(dataStream);
+            }
 
             netObject.IsSpawned = true;
 
@@ -419,7 +436,7 @@ namespace MLAPI.Spawning
                     writer.WriteUInt64Packed(parent.NetworkId);
                 }
 
-                if (NetworkingManager.Singleton.NetworkConfig.UsePrefabSync)
+                if (!NetworkingManager.Singleton.NetworkConfig.EnableSceneManagement || NetworkingManager.Singleton.NetworkConfig.UsePrefabSync)
                 {
                     writer.WriteUInt64Packed(netObject.PrefabHash);
                 }
@@ -462,6 +479,7 @@ namespace MLAPI.Spawning
                 if (NetworkingManager.Singleton.NetworkConfig.EnableNetworkedVar)
                 {
                     netObject.WriteNetworkedVarData(stream, clientId);
+                    netObject.WriteSyncedVarData(stream, clientId);
                 }
 
                 if (payload != null) stream.CopyFrom(payload);

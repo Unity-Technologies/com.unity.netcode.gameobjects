@@ -12,11 +12,11 @@ namespace MLAPI.NetworkedVar
     public class NetworkedVarSettings
     {
         /// <summary>
-        /// Defines the read permissions for this var
+        /// Defines the write permissions for this var
         /// </summary>
         public NetworkedVarPermission WritePermission = NetworkedVarPermission.ServerOnly;
         /// <summary>
-        /// Defines the write permissions for this var
+        /// Defines the read permissions for this var
         /// </summary>
         public NetworkedVarPermission ReadPermission = NetworkedVarPermission.Everyone;
         /// <summary>

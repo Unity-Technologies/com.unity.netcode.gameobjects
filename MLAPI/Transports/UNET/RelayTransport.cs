@@ -1,4 +1,4 @@
-﻿#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -14,7 +14,8 @@ namespace MLAPI.Transports.UNET
             StartServer,
             ConnectToServer,
             Data,
-            ClientDisconnect
+            ClientDisconnect,
+            AddressReport
         }
 
         private static byte defaultChannelId;
@@ -27,6 +28,8 @@ namespace MLAPI.Transports.UNET
         public static bool Enabled { get; set; } = true;
         public static string RelayAddress { get; set; } = "127.0.0.1";
         public static ushort RelayPort { get; set; } = 8888;
+
+        public static event Action<IPEndPoint> OnRemoteEndpointReported;
 
         public static int Connect(int hostId, string serverAddress, int serverPort, int exceptionConnectionId, out byte error)
         {
@@ -74,7 +77,7 @@ namespace MLAPI.Transports.UNET
 
         public static int AddHost(HostTopology topology, bool createServer)
         {
-            if (!Enabled) return NetworkTransport.AddHost(topology);
+            if (!Enabled) return NetworkTransport.AddHost(topology, 0, null);
 
             isClient = !createServer;
 
@@ -82,7 +85,7 @@ namespace MLAPI.Transports.UNET
 
             SetChannelsFromTopology(topology);
 
-            int ret = NetworkTransport.AddHost(topology);
+            int ret = NetworkTransport.AddHost(topology, 0, null);
 
             if (createServer) relayConnectionId = NetworkTransport.Connect(ret, RelayAddress, RelayPort, 0, out byte b);
 
@@ -294,6 +297,24 @@ namespace MLAPI.Transports.UNET
 
                         switch (messageType)
                         {
+                            case MessageType.AddressReport:
+                                {
+                                    byte[] addressBytes = new byte[16];
+
+                                    for (int i = 0; i < addressBytes.Length; i++)
+                                        addressBytes[i] = buffer[i];
+
+                                    ushort remotePort = (ushort)(((ushort)buffer[16]) |
+                                                            ((ushort)buffer[17] << 8));
+
+                                    IPEndPoint remoteEndPoint = new IPEndPoint(new IPAddress(addressBytes), remotePort);
+
+                                    if (OnRemoteEndpointReported != null)
+                                    {
+                                        OnRemoteEndpointReported(remoteEndPoint);
+                                    }
+                                    break;
+                                }
                             case MessageType.ConnectToServer: // Connection approved
                                 {
                                     if (!isClient)

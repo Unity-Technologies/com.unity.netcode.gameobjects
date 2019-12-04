@@ -102,6 +102,11 @@ permalink: /api/network-config/
 		<p>Whether or not to ensure that NetworkedVars can be read even if a client accidentally writes where its not allowed to. This costs some CPU and bandwdith.</p>
 	</div>
 	<div style="line-height: 1;">
+		<h4 markdown="1"><b>public ``bool`` EnableSceneManagement;</b></h4>
+		<p>Enables scene management. This will allow network scene switches and automatic scene diff corrections upon connect.
+            SoftSynced scene objects wont work with this disabled. That means that disabling SceneManagement also enables PrefabSync.</p>
+	</div>
+	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``bool`` ForceSamePrefabs;</b></h4>
 		<p>Whether or not the MLAPI should check for differences in the prefabs at connection.
             If you dynamically add prefabs at runtime, turn this OFF</p>
