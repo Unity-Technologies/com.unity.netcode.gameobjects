@@ -42,6 +42,8 @@ public class NetworkingManagerEditor : Editor
     private SerializedProperty networkIdRecycleDelayProperty;
     private SerializedProperty rpcHashSizeProperty;
     private SerializedProperty loadSceneTimeOutProperty;
+    private SerializedProperty enableMessageBufferingProperty;
+    private SerializedProperty messageBufferTimeoutProperty;
     private SerializedProperty enableEncryptionProperty;
     private SerializedProperty signKeyExchangeProperty;
     private SerializedProperty serverBase64PfxCertificateProperty;
@@ -121,6 +123,8 @@ public class NetworkingManagerEditor : Editor
         networkIdRecycleDelayProperty = networkConfigProperty.FindPropertyRelative("NetworkIdRecycleDelay");
         rpcHashSizeProperty = networkConfigProperty.FindPropertyRelative("RpcHashSize");
         loadSceneTimeOutProperty = networkConfigProperty.FindPropertyRelative("LoadSceneTimeOut");
+        enableMessageBufferingProperty = networkConfigProperty.FindPropertyRelative("EnableMessageBuffering");
+        messageBufferTimeoutProperty = networkConfigProperty.FindPropertyRelative("MessageBufferTimeout");
         enableEncryptionProperty = networkConfigProperty.FindPropertyRelative("EnableEncryption");
         signKeyExchangeProperty = networkConfigProperty.FindPropertyRelative("SignKeyExchange");
         serverBase64PfxCertificateProperty = networkConfigProperty.FindPropertyRelative("ServerBase64PfxCertificate");
@@ -160,6 +164,8 @@ public class NetworkingManagerEditor : Editor
         networkIdRecycleDelayProperty = networkConfigProperty.FindPropertyRelative("NetworkIdRecycleDelay");
         rpcHashSizeProperty = networkConfigProperty.FindPropertyRelative("RpcHashSize");
         loadSceneTimeOutProperty = networkConfigProperty.FindPropertyRelative("LoadSceneTimeOut");
+        enableMessageBufferingProperty = networkConfigProperty.FindPropertyRelative("EnableMessageBuffering");
+        messageBufferTimeoutProperty = networkConfigProperty.FindPropertyRelative("MessageBufferTimeout");
         enableEncryptionProperty = networkConfigProperty.FindPropertyRelative("EnableEncryption");
         signKeyExchangeProperty = networkConfigProperty.FindPropertyRelative("SignKeyExchange");
         serverBase64PfxCertificateProperty = networkConfigProperty.FindPropertyRelative("ServerBase64PfxCertificate");
@@ -343,6 +349,13 @@ public class NetworkingManagerEditor : Editor
             using (new EditorGUI.DisabledScope(!networkingManager.NetworkConfig.RecycleNetworkIds))
             {
                 EditorGUILayout.PropertyField(networkIdRecycleDelayProperty);
+            }
+
+            EditorGUILayout.PropertyField(enableMessageBufferingProperty);
+
+            using (new EditorGUI.DisabledScope(!networkingManager.NetworkConfig.EnableMessageBuffering))
+            {
+                EditorGUILayout.PropertyField(messageBufferTimeoutProperty);
             }
 
             EditorGUILayout.LabelField("Bandwidth", EditorStyles.boldLabel);

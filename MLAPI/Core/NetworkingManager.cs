@@ -25,6 +25,7 @@ using MLAPI.Spawning;
 using static MLAPI.Messaging.CustomMessagingManager;
 using MLAPI.Exceptions;
 using MLAPI.Transports.Tasks;
+using MLAPI.Messaging.Buffering;
 
 namespace MLAPI
 {
@@ -695,6 +696,11 @@ namespace MLAPI
                         NetworkedObject.NetworkedBehaviourUpdate();
                     }
 
+                    if (!IsServer && NetworkConfig.EnableMessageBuffering)
+                    {
+                        BufferManager.CleanBuffer();
+                    }
+
                     if (IsServer)
                     {
                         lastEventTickTime = NetworkTime;
@@ -881,7 +887,7 @@ namespace MLAPI
                 case NetEventType.Data:
                     if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo($"Incoming Data From {clientId} : {payload.Count} bytes");
 
-                    HandleIncomingData(clientId, channelName, payload, receiveTime);
+                    HandleIncomingData(clientId, channelName, payload, receiveTime, true);
                     break;
                 case NetEventType.Disconnect:
                     NetworkProfiler.StartEvent(TickType.Receive, 0, "NONE", "TRANSPORT_DISCONNECT");
@@ -905,7 +911,7 @@ namespace MLAPI
 
         private readonly BitStream inputStreamWrapper = new BitStream(new byte[0]);
 
-        private void HandleIncomingData(ulong clientId, string channelName, ArraySegment<byte> data, float receiveTime)
+        internal void HandleIncomingData(ulong clientId, string channelName, ArraySegment<byte> data, float receiveTime, bool allowBuffer)
         {
             if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Unwrapping Data Header");
 
@@ -939,7 +945,31 @@ namespace MLAPI
                     return;
                 }
 
+
+                void bufferCallback(ulong networkId)
+                {
+                    if (!allowBuffer)
+                    {
+                        // This is to prevent recursive buffering
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("A message of type " + MLAPIConstants.MESSAGE_NAMES[messageType] + " was recursivley buffered. It has been dropped.");
+                        return;
+                    }
+
+                    if (!NetworkConfig.EnableMessageBuffering)
+                    {
+                        throw new InvalidOperationException("Cannot buffer with buffering disabled.");
+                    }
+
+                    if (IsServer)
+                    {
+                        throw new InvalidOperationException("Cannot buffer on server.");
+                    }
+
+                    BufferManager.BufferMessageForNetworkId(networkId, clientId, channelName, receiveTime, data);
+                }
+
                 #region INTERNAL MESSAGE
+
                 switch (messageType)
                 {
                     case MLAPIConstants.MLAPI_CONNECTION_REQUEST:
@@ -955,7 +985,7 @@ namespace MLAPI
                         if (IsClient) InternalMessageHandler.HandleDestroyObject(clientId, messageStream);
                         break;
                     case MLAPIConstants.MLAPI_SWITCH_SCENE:
-                        if (IsClient && NetworkConfig.EnableSceneManagement) InternalMessageHandler.HandleSwitchScene(clientId, messageStream);
+                        if (IsClient) InternalMessageHandler.HandleSwitchScene(clientId, messageStream);
                         break;
                     case MLAPIConstants.MLAPI_CHANGE_OWNER:
                         if (IsClient) InternalMessageHandler.HandleChangeOwner(clientId, messageStream);
@@ -970,10 +1000,10 @@ namespace MLAPI
                         if (IsClient) InternalMessageHandler.HandleTimeSync(clientId, messageStream, receiveTime);
                         break;
                     case MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA:
-                        InternalMessageHandler.HandleNetworkedVarDelta(clientId, messageStream);
+                        InternalMessageHandler.HandleNetworkedVarDelta(clientId, messageStream, bufferCallback);
                         break;
                     case MLAPIConstants.MLAPI_NETWORKED_VAR_UPDATE:
-                        InternalMessageHandler.HandleNetworkedVarUpdate(clientId, messageStream);
+                        InternalMessageHandler.HandleNetworkedVarUpdate(clientId, messageStream, bufferCallback);
                         break;
                     case MLAPIConstants.MLAPI_SERVER_RPC:
                         if (IsServer) InternalMessageHandler.HandleServerRPC(clientId, messageStream);
@@ -985,10 +1015,10 @@ namespace MLAPI
                         if (IsClient) InternalMessageHandler.HandleServerRPCResponse(clientId, messageStream);
                         break;
                     case MLAPIConstants.MLAPI_CLIENT_RPC:
-                        if (IsClient) InternalMessageHandler.HandleClientRPC(clientId, messageStream);
+                        if (IsClient) InternalMessageHandler.HandleClientRPC(clientId, messageStream, bufferCallback);
                         break;
                     case MLAPIConstants.MLAPI_CLIENT_RPC_REQUEST:
-                        if (IsClient) InternalMessageHandler.HandleClientRPCRequest(clientId, messageStream, channelName, security);
+                        if (IsClient) InternalMessageHandler.HandleClientRPCRequest(clientId, messageStream, channelName, security, bufferCallback);
                         break;
                     case MLAPIConstants.MLAPI_CLIENT_RPC_RESPONSE:
                         if (IsServer) InternalMessageHandler.HandleClientRPCResponse(clientId, messageStream);

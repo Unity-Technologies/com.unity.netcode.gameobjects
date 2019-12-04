@@ -10,6 +10,7 @@ using MLAPI.Serialization.Pooled;
 using MLAPI.Spawning;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using MLAPI.Messaging.Buffering;
 
 namespace MLAPI.SceneManagement
 {
@@ -361,6 +362,21 @@ namespace MLAPI.SceneManagement
 
                         NetworkedObject networkedObject = SpawnManager.CreateLocalNetworkedObject(false, 0, prefabHash, parentNetworkId, position, rotation);
                         SpawnManager.SpawnNetworkedObjectLocally(networkedObject, networkId, true, isPlayerObject, owner, objectStream, false, 0, true, false);
+
+                        Queue<BufferManager.BufferedMessage> bufferQueue = BufferManager.ConsumeBuffersForNetworkId(networkId);
+
+                        // Apply buffered messages
+                        if (bufferQueue != null)
+                        {
+                            while (bufferQueue.Count > 0)
+                            {
+                                BufferManager.BufferedMessage message = bufferQueue.Dequeue();
+
+                                NetworkingManager.Singleton.HandleIncomingData(message.sender, message.channelName, new ArraySegment<byte>(message.payload.GetBuffer(), (int)message.payload.Position, (int)message.payload.Length), message.receiveTime, false);
+
+                                BufferManager.RecycleConsumedBufferedMessage(message);
+                            }
+                        }
                     }
                 }
             }
@@ -391,6 +407,21 @@ namespace MLAPI.SceneManagement
 
                         NetworkedObject networkedObject = SpawnManager.CreateLocalNetworkedObject(true, instanceId, 0, parentNetworkId, null, null);
                         SpawnManager.SpawnNetworkedObjectLocally(networkedObject, networkId, true, isPlayerObject, owner, objectStream, false, 0, true, false);
+
+                        Queue<BufferManager.BufferedMessage> bufferQueue = BufferManager.ConsumeBuffersForNetworkId(networkId);
+
+                        // Apply buffered messages
+                        if (bufferQueue != null)
+                        {
+                            while (bufferQueue.Count > 0)
+                            {
+                                BufferManager.BufferedMessage message = bufferQueue.Dequeue();
+
+                                NetworkingManager.Singleton.HandleIncomingData(message.sender, message.channelName, new ArraySegment<byte>(message.payload.GetBuffer(), (int)message.payload.Position, (int)message.payload.Length), message.receiveTime, false);
+
+                                BufferManager.RecycleConsumedBufferedMessage(message);
+                            }
+                        }
                     }
                 }
             }

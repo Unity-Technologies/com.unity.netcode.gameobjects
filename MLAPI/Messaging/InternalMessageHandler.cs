@@ -14,6 +14,8 @@ using MLAPI.Spawning;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
+using System.Collections.Generic;
+using MLAPI.Messaging.Buffering;
 
 namespace MLAPI.Messaging
 {
@@ -374,6 +376,21 @@ namespace MLAPI.Messaging
 
                 NetworkedObject netObject = SpawnManager.CreateLocalNetworkedObject(softSync, instanceId, prefabHash, parentNetworkId, pos, rot);
                 SpawnManager.SpawnNetworkedObjectLocally(netObject, networkId, softSync, isPlayerObject, ownerId, stream, hasPayload, payLoadLength, true, false);
+
+                Queue<BufferManager.BufferedMessage> bufferQueue = BufferManager.ConsumeBuffersForNetworkId(networkId);
+
+                // Apply buffered messages
+                if (bufferQueue != null)
+                {
+                    while (bufferQueue.Count > 0)
+                    {
+                        BufferManager.BufferedMessage message = bufferQueue.Dequeue();
+
+                        NetworkingManager.Singleton.HandleIncomingData(message.sender, message.channelName, new ArraySegment<byte>(message.payload.GetBuffer(), (int)message.payload.Position, (int)message.payload.Length), message.receiveTime, false);
+
+                        BufferManager.RecycleConsumedBufferedMessage(message);
+                    }
+                }
             }
         }
 
@@ -465,7 +482,7 @@ namespace MLAPI.Messaging
             }
         }
 
-        internal static void HandleNetworkedVarDelta(ulong clientId, Stream stream)
+        internal static void HandleNetworkedVarDelta(ulong clientId, Stream stream, Action<ulong> bufferCallback)
         {
             if (!NetworkingManager.Singleton.NetworkConfig.EnableNetworkedVar)
             {
@@ -481,22 +498,29 @@ namespace MLAPI.Messaging
                 if (SpawnManager.SpawnedObjects.ContainsKey(networkId))
                 {
                     NetworkedBehaviour instance = SpawnManager.SpawnedObjects[networkId].GetBehaviourAtOrderIndex(orderIndex);
+
                     if (instance == null)
                     {
-                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkedVar message recieved for a non existant behaviour");
-                        return;
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkedVarDelta message recieved for a non existant behaviour. NetworkId: " + networkId + ", behaviourIndex: " + orderIndex);
                     }
-                    NetworkedBehaviour.HandleNetworkedVarDeltas(instance.networkedVarFields, stream, clientId, instance);
+                    else
+                    {
+                        NetworkedBehaviour.HandleNetworkedVarDeltas(instance.networkedVarFields, stream, clientId, instance);
+                    }
+                }
+                else if (NetworkingManager.Singleton.IsServer || !NetworkingManager.Singleton.NetworkConfig.EnableMessageBuffering)
+                {
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkedVarDelta message recieved for a non existant object with id: " + networkId + ". This delta was lost.");
                 }
                 else
                 {
-                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkedVar message recieved for a non existant object with id: " + networkId);
-                    return;
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkedVarDelta message recieved for a non existant object with id: " + networkId + ". This delta will be buffered and might be recovered.");
+                    bufferCallback(networkId);
                 }
             }
         }
 
-        internal static void HandleNetworkedVarUpdate(ulong clientId, Stream stream)
+        internal static void HandleNetworkedVarUpdate(ulong clientId, Stream stream, Action<ulong> bufferCallback)
         {
             if (!NetworkingManager.Singleton.NetworkConfig.EnableNetworkedVar)
             {
@@ -512,17 +536,24 @@ namespace MLAPI.Messaging
                 if (SpawnManager.SpawnedObjects.ContainsKey(networkId))
                 {
                     NetworkedBehaviour instance = SpawnManager.SpawnedObjects[networkId].GetBehaviourAtOrderIndex(orderIndex);
+
                     if (instance == null)
                     {
-                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkedVar message recieved for a non existant behaviour");
-                        return;
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkedVarUpdate message recieved for a non existant behaviour. NetworkId: " + networkId + ", behaviourIndex: " + orderIndex);
                     }
-                    NetworkedBehaviour.HandleNetworkedVarUpdate(instance.networkedVarFields, stream, clientId, instance);
+                    else
+                    {
+                        NetworkedBehaviour.HandleNetworkedVarUpdate(instance.networkedVarFields, stream, clientId, instance);
+                    }
+                }
+                else if (NetworkingManager.Singleton.IsServer || !NetworkingManager.Singleton.NetworkConfig.EnableMessageBuffering)
+                {
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkedVarUpdate message recieved for a non existant object with id: " + networkId + ". This delta was lost.");
                 }
                 else
                 {
-                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkedVar message recieved for a non existant object with id: " + networkId);
-                    return;
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkedVarUpdate message recieved for a non existant object with id: " + networkId + ". This delta will be buffered and might be recovered.");
+                    bufferCallback(networkId);
                 }
             }
         }
@@ -563,10 +594,19 @@ namespace MLAPI.Messaging
                 if (SpawnManager.SpawnedObjects.ContainsKey(networkId))
                 {
                     NetworkedBehaviour behaviour = SpawnManager.SpawnedObjects[networkId].GetBehaviourAtOrderIndex(behaviourId);
-                    if (behaviour != null)
+
+                    if (behaviour == null)
+                    {
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("ServerRPC message recieved for a non existant behaviour. NetworkId: " + networkId + ", behaviourIndex: " + behaviourId);
+                    }
+                    else
                     {
                         behaviour.OnRemoteServerRPC(hash, clientId, stream);
                     }
+                }
+                else if (NetworkingManager.Singleton.IsServer || !NetworkingManager.Singleton.NetworkConfig.EnableMessageBuffering)
+                {
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("ServerRPC message recieved for a non existant object with id: " + networkId + ". This message is lost.");
                 }
             }
         }
@@ -583,7 +623,12 @@ namespace MLAPI.Messaging
                 if (SpawnManager.SpawnedObjects.ContainsKey(networkId))
                 {
                     NetworkedBehaviour behaviour = SpawnManager.SpawnedObjects[networkId].GetBehaviourAtOrderIndex(behaviourId);
-                    if (behaviour != null)
+
+                    if (behaviour == null)
+                    {
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("ServerRPCRequest message recieved for a non existant behaviour. NetworkId: " + networkId + ", behaviourIndex: " + behaviourId);
+                    }
+                    else
                     {
                         object result = behaviour.OnRemoteServerRPC(hash, clientId, stream);
 
@@ -598,6 +643,10 @@ namespace MLAPI.Messaging
                             InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_SERVER_RPC_RESPONSE, channelName, responseStream, security, SpawnManager.SpawnedObjects[networkId]);
                         }
                     }
+                }
+                else
+                {
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("ServerRPCRequest message recieved for a non existant object with id: " + networkId + ". This message is lost.");
                 }
             }
         }
@@ -618,10 +667,14 @@ namespace MLAPI.Messaging
                     responseBase.Result = reader.ReadObjectPacked(responseBase.Type);
                     responseBase.IsSuccessful = true;
                 }
+                else
+                {
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("ServerRPCResponse message recieved for a non existant responseId: " + responseId + ". This response is lost.");
+                }
             }
         }
-
-        internal static void HandleClientRPC(ulong clientId, Stream stream)
+        
+        internal static void HandleClientRPC(ulong clientId, Stream stream, Action<ulong> bufferCallback)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
@@ -632,15 +685,29 @@ namespace MLAPI.Messaging
                 if (SpawnManager.SpawnedObjects.ContainsKey(networkId))
                 {
                     NetworkedBehaviour behaviour = SpawnManager.SpawnedObjects[networkId].GetBehaviourAtOrderIndex(behaviourId);
-                    if (behaviour != null)
+
+                    if (behaviour == null)
+                    {
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("ClientRPC message recieved for a non existant behaviour. NetworkId: " + networkId + ", behaviourIndex: " + behaviourId);
+                    }
+                    else
                     {
                         behaviour.OnRemoteClientRPC(hash, clientId, stream);
                     }
                 }
+                else if (NetworkingManager.Singleton.IsServer || !NetworkingManager.Singleton.NetworkConfig.EnableMessageBuffering)
+                {
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("ClientRPC message recieved for a non existant object with id: " + networkId + ". This message is lost.");
+                }
+                else
+                {
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("ClientRPC message recieved for a non existant object with id: " + networkId + ". This message will be buffered and might be recovered.");
+                    bufferCallback(networkId);
+                }
             }
         }
-
-        internal static void HandleClientRPCRequest(ulong clientId, Stream stream, string channelName, SecuritySendFlags security)
+        
+        internal static void HandleClientRPCRequest(ulong clientId, Stream stream, string channelName, SecuritySendFlags security, Action<ulong> bufferCallback)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
@@ -652,7 +719,12 @@ namespace MLAPI.Messaging
                 if (SpawnManager.SpawnedObjects.ContainsKey(networkId))
                 {
                     NetworkedBehaviour behaviour = SpawnManager.SpawnedObjects[networkId].GetBehaviourAtOrderIndex(behaviourId);
-                    if (behaviour != null)
+
+                    if (behaviour == null)
+                    {
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("ClientRPCRequest message recieved for a non existant behaviour. NetworkId: " + networkId + ", behaviourIndex: " + behaviourId);
+                    }
+                    else
                     {
                         object result = behaviour.OnRemoteClientRPC(hash, clientId, stream);
 
@@ -667,6 +739,15 @@ namespace MLAPI.Messaging
                             InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_CLIENT_RPC_RESPONSE, channelName, responseStream, security, null);
                         }
                     }
+                }
+                else if (NetworkingManager.Singleton.IsServer || !NetworkingManager.Singleton.NetworkConfig.EnableMessageBuffering)
+                {
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("ClientRPCRequest message recieved for a non existant object with id: " + networkId + ". This message is lost.");
+                }
+                else
+                {
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("ClientRPCRequest message recieved for a non existant object with id: " + networkId + ". This message will be buffered and might be recovered.");
+                    bufferCallback(networkId);
                 }
             }
         }
