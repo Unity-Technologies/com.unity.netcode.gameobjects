@@ -117,6 +117,19 @@ namespace MLAPI
                 return _networkedObject;
             }
         }
+        /// <summary>
+        /// Gets whether or not this NetworkedBehaviour instance has a NetworkedObject owner.
+        /// </summary>
+        public bool HasNetworkedObject
+        {
+            get
+            {
+                if (_networkedObject == null) {
+                    _networkedObject = GetComponentInParent<NetworkedObject>();
+                }
+                return _networkedObject != null;
+            }
+        }
 
         private NetworkedObject _networkedObject = null;
         /// <summary>
