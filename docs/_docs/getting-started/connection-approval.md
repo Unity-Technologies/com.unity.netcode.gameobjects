@@ -9,7 +9,7 @@ However, when ConnectionApproval is true you are also required to provide a call
 ```csharp
 private void Setup() 
 {
-    NetworkingManager.Singleton.ConnectionApprovalCallback = ApprovalCheck;
+    NetworkingManager.Singleton.ConnectionApprovalCallback += ApprovalCheck;
     NetworkingManager.Singleton.StartHost();
 }
 
