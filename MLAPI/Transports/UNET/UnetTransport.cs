@@ -66,9 +66,10 @@ namespace MLAPI.Transports.UNET
                 }
                 else
                 {
-                    if (temporaryBufferReference != null && temporaryBufferReference.IsAlive && ((byte[]) temporaryBufferReference.Target).Length >= data.Count)
+                    object bufferRef = null;
+                    if (temporaryBufferReference != null && ((bufferRef = temporaryBufferReference.Target) != null) && ((byte[])bufferRef).Length >= data.Count)
                     {
-                        buffer = (byte[])temporaryBufferReference.Target;
+                        buffer = (byte[])bufferRef;
                     }
                     else
                     {
