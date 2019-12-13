@@ -28,7 +28,12 @@ namespace MLAPI.Serialization.Pooled
 
                 if (weakStream != null)
                 {
-                    return (PooledBitStream)weakStream;
+                    PooledBitStream strongStream = (PooledBitStream)weakStream;
+
+                    strongStream.SetLength(0);
+                    strongStream.Position = 0;
+
+                    return strongStream;
                 }
             }
 
@@ -44,6 +49,7 @@ namespace MLAPI.Serialization.Pooled
             }
 
             PooledBitStream stream = streams.Dequeue();
+
             stream.SetLength(0);
             stream.Position = 0;
 
@@ -58,10 +64,10 @@ namespace MLAPI.Serialization.Pooled
         {
             if (streams.Count > 16)
             {
-                //The user just created lots of streams without returning them in between.
-                //Streams are essentially byte array wrappers. This is valuable memory.
-                //Thus we put this stream as a weak reference incase of another burst
-                //But still leave it to GC
+                // The user just created lots of streams without returning them in between.
+                // Streams are essentially byte array wrappers. This is valuable memory.
+                // Thus we put this stream as a weak reference incase of another burst
+                // But still leave it to GC
                 if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Putting PooledBitStream into overflow pool. Did you forget to dispose?");
                 overflowStreams.Enqueue(new WeakReference(stream));
             }
