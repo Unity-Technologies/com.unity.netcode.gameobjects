@@ -1046,6 +1046,9 @@ namespace MLAPI
                     case MLAPIConstants.MLAPI_SYNCED_VAR:
                         if (IsClient) InternalMessageHandler.HandleSyncedVar(clientId, messageStream);
                         break;
+                    case MLAPIConstants.MLAPI_PASSTHROUGH_CLIENT_RPC:
+                        InternalMessageHandler.HandlePassthroughClientRPC(clientId, messageStream, channelName, security, bufferCallback);
+                        break;
                     default:
                         if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Read unrecognized messageType " + messageType);
                         break;

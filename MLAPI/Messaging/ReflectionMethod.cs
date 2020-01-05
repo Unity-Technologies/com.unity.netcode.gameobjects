@@ -13,6 +13,7 @@ namespace MLAPI.Messaging
         internal readonly bool useDelegate;
         internal readonly bool serverTarget;
         private readonly bool requireOwnership;
+        private readonly bool allowPassthrough;
         private readonly int index;
         private readonly Type[] parameterTypes;
         private readonly object[] parameterRefs;
@@ -46,11 +47,13 @@ namespace MLAPI.Messaging
             {
                 requireOwnership = serverRpcAttribute.RequireOwnership;
                 serverTarget = true;
+                allowPassthrough = false;
             }
-            else
+            else if (attribute is ClientRPCAttribute clientRpcAttribute)
             {
                 requireOwnership = false;
                 serverTarget = false;
+                allowPassthrough = clientRpcAttribute.AllowPassthrough;
             }
 
             if (parameters.Length == 2 && method.ReturnType == typeof(void) && parameters[0].ParameterType == typeof(ulong) && parameters[1].ParameterType == typeof(Stream))
@@ -76,6 +79,13 @@ namespace MLAPI.Messaging
             if (requireOwnership == true && senderClientId != target.OwnerClientId)
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Only owner can invoke ServerRPC that is marked to require ownership");
+
+                return null;
+            }
+
+            if (!allowPassthrough && !serverTarget && senderClientId != NetworkingManager.Singleton.ServerClientId)
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot passthrough message for ClientRPC that is not marked as allowPassthrough");
 
                 return null;
             }

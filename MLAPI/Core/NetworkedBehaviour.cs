@@ -1224,14 +1224,16 @@ namespace MLAPI
             }
         }
 
-        internal void SendClientRPCPerformance(ulong hash,  List<ulong> clientIds, Stream messageStream, string channel, SecuritySendFlags security)
+        internal void SendClientRPCPerformance(ulong hash, List<ulong> clientIds, Stream messageStream, string channel, SecuritySendFlags security)
         {
-            if (!IsServer && IsRunning)
+            if (!IsServer && IsRunning && !NetworkingManager.Singleton.NetworkConfig.AllowPassthrough)
             {
-                //We are NOT a server.
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Only clients and host can invoke ClientRPC");
+                // We are NOT a server and we dont allow passthrough.
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Only clients and host can invoke ClientRPC when passthrough is disabled");
                 return;
             }
+
+            bool isPassthrough = !IsServer && NetworkingManager.Singleton.NetworkConfig.AllowPassthrough;
 
             using (PooledBitStream stream = PooledBitStream.Get())
             {
@@ -1241,9 +1243,28 @@ namespace MLAPI
                     writer.WriteUInt16Packed(NetworkedObject.GetOrderIndex(this));
                     writer.WriteUInt64Packed(hash);
 
+                    if (isPassthrough)
+                    {
+                        writer.WriteByte(clientIds == null ? (byte)MessageTargetingMode.Everyone : (byte)MessageTargetingMode.MultiClients);
+
+                        if (clientIds != null)
+                        {
+                            writer.WriteUInt32Packed((uint)clientIds.Count);
+
+                            for (int i = 0; i < clientIds.Count; i++)
+                            {
+                                writer.WriteUInt64Packed(clientIds[i]);
+                            }
+                        }
+                    }
+
                     stream.CopyFrom(messageStream);
 
-                    if (clientIds == null)
+                    if (isPassthrough)
+                    {
+                        InternalMessageSender.Send(NetworkingManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_PASSTHROUGH_CLIENT_RPC, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security, null);
+                    }
+                    else if (clientIds == null)
                     {
                         for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)
                         {
@@ -1291,12 +1312,14 @@ namespace MLAPI
 
         internal void SendClientRPCPerformance(ulong hash, Stream messageStream, ulong clientIdToIgnore, string channel, SecuritySendFlags security)
         {
-            if (!IsServer && IsRunning)
+            if (!IsServer && IsRunning && !NetworkingManager.Singleton.NetworkConfig.AllowPassthrough)
             {
-                //We are NOT a server.
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Only clients and host can invoke ClientRPC");
+                // We are NOT a server and we dont allow passthrough.
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Only clients and host can invoke ClientRPC when passthrough is disabled");
                 return;
             }
+
+            bool isPassthrough = !IsServer && NetworkingManager.Singleton.NetworkConfig.AllowPassthrough;
 
             using (PooledBitStream stream = PooledBitStream.Get())
             {
@@ -1306,29 +1329,41 @@ namespace MLAPI
                     writer.WriteUInt16Packed(NetworkedObject.GetOrderIndex(this));
                     writer.WriteUInt64Packed(hash);
 
+                    if (isPassthrough)
+                    {
+                        writer.WriteByte((byte)MessageTargetingMode.ExcludedClient);
+                        writer.WriteUInt64Packed(clientIdToIgnore);
+                    }
+
                     stream.CopyFrom(messageStream);
 
-
-                    for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)
+                    if (isPassthrough)
                     {
-                        if (NetworkingManager.Singleton.ConnectedClientsList[i].ClientId == clientIdToIgnore)
-                            continue;
-
-                        if (!this.NetworkedObject.observers.Contains(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId))
+                        InternalMessageSender.Send(NetworkingManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_PASSTHROUGH_CLIENT_RPC, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security, null);
+                    }
+                    else
+                    {
+                        for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)
                         {
-                            if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogWarning("Silently suppressed ClientRPC because a connected client was not an observer");
-                            continue;
-                        }
+                            if (NetworkingManager.Singleton.ConnectedClientsList[i].ClientId == clientIdToIgnore)
+                                continue;
+
+                            if (!this.NetworkedObject.observers.Contains(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId))
+                            {
+                                if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogWarning("Silently suppressed ClientRPC because a connected client was not an observer");
+                                continue;
+                            }
 
 
-                        if (IsHost && NetworkingManager.Singleton.ConnectedClientsList[i].ClientId == NetworkingManager.Singleton.LocalClientId)
-                        {
-                            messageStream.Position = 0;
-                            InvokeClientRPCLocal(hash, NetworkingManager.Singleton.LocalClientId, messageStream);
-                        }
-                        else
-                        {
-                            InternalMessageSender.Send(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId, MLAPIConstants.MLAPI_CLIENT_RPC, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security, null);
+                            if (IsHost && NetworkingManager.Singleton.ConnectedClientsList[i].ClientId == NetworkingManager.Singleton.LocalClientId)
+                            {
+                                messageStream.Position = 0;
+                                InvokeClientRPCLocal(hash, NetworkingManager.Singleton.LocalClientId, messageStream);
+                            }
+                            else
+                            {
+                                InternalMessageSender.Send(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId, MLAPIConstants.MLAPI_CLIENT_RPC, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security, null);
+                            }
                         }
                     }
                 }
@@ -1337,14 +1372,16 @@ namespace MLAPI
 
         internal void SendClientRPCPerformance(ulong hash, ulong clientId, Stream messageStream, string channel, SecuritySendFlags security)
         {
-            if (!IsServer && IsRunning)
+            if (!IsServer && IsRunning && !NetworkingManager.Singleton.NetworkConfig.AllowPassthrough)
             {
-                //We are NOT a server.
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Only clients and host can invoke ClientRPC");
+                // We are NOT a server and we dont allow passthrough.
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Only clients and host can invoke ClientRPC when passthrough is disabled");
                 return;
             }
 
-            if (!this.NetworkedObject.observers.Contains(clientId))
+            bool isPassthrough = !IsServer && NetworkingManager.Singleton.NetworkConfig.AllowPassthrough;
+
+            if (!isPassthrough && !this.NetworkedObject.observers.Contains(clientId))
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot send ClientRPC to client without visibility to the object");
                 return;
@@ -1358,16 +1395,29 @@ namespace MLAPI
                     writer.WriteUInt16Packed(NetworkedObject.GetOrderIndex(this));
                     writer.WriteUInt64Packed(hash);
 
+                    if (isPassthrough)
+                    {
+                        writer.WriteByte((byte)MessageTargetingMode.SingleClient);
+                        writer.WriteUInt64Packed(clientId);
+                    }
+
                     stream.CopyFrom(messageStream);
 
-                    if (IsHost && clientId == NetworkingManager.Singleton.LocalClientId)
+                    if (isPassthrough)
                     {
-                        messageStream.Position = 0;
-                        InvokeClientRPCLocal(hash, NetworkingManager.Singleton.LocalClientId, messageStream);
+                        InternalMessageSender.Send(NetworkingManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_PASSTHROUGH_CLIENT_RPC, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security, null);
                     }
                     else
                     {
-                        InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_CLIENT_RPC, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security, null);
+                        if (IsHost && clientId == NetworkingManager.Singleton.LocalClientId)
+                        {
+                            messageStream.Position = 0;
+                            InvokeClientRPCLocal(hash, NetworkingManager.Singleton.LocalClientId, messageStream);
+                        }
+                        else
+                        {
+                            InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_CLIENT_RPC, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security, null);
+                        }
                     }
                 }
             }

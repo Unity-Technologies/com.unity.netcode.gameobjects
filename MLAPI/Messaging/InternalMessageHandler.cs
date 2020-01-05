@@ -706,7 +706,130 @@ namespace MLAPI.Messaging
                 }
             }
         }
-        
+
+        internal static void HandlePassthroughClientRPC(ulong clientId, Stream stream, string channelName, SecuritySendFlags security, Action<ulong> bufferCallback)
+        {
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
+            {
+                ulong networkId = reader.ReadUInt64Packed();
+                ushort behaviourId = reader.ReadUInt16Packed();
+                ulong hash = reader.ReadUInt64Packed();
+
+                // Read the send mode
+                MessageTargetingMode mode = (MessageTargetingMode)reader.ReadByte();
+
+                if (SpawnManager.SpawnedObjects.ContainsKey(networkId))
+                {
+                    NetworkedBehaviour behaviour = SpawnManager.SpawnedObjects[networkId].GetBehaviourAtOrderIndex(behaviourId);
+
+                    if (behaviour == null)
+                    {
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("PassthroughClientRPC message recieved for a non existant behaviour. NetworkId: " + networkId + ", behaviourIndex: " + behaviourId);
+                    }
+                    else
+                    {
+                        if (NetworkingManager.Singleton.IsServer)
+                        {
+                            // We are server. We are ment to pass this along.
+
+                            using (PooledBitStream sendStream = PooledBitStream.Get())
+                            {
+                                using (PooledBitWriter sendWriter = PooledBitWriter.Get(sendStream))
+                                {
+                                    sendWriter.WriteUInt64Packed(networkId);
+                                    sendWriter.WriteUInt16Packed(behaviourId);
+                                    sendWriter.WriteUInt64Packed(hash);
+
+                                    // Write the real sender
+                                    sendWriter.WriteUInt64Packed(clientId);
+
+                                    // Copy payload
+                                    sendStream.CopyUnreadFrom(stream);
+
+                                    if (mode == MessageTargetingMode.SingleClient)
+                                    {
+                                        ulong targetClientId = reader.ReadUInt64Packed();
+
+                                        if (NetworkingManager.Singleton.IsClient && targetClientId == NetworkingManager.Singleton.LocalClientId)
+                                        {
+                                            // They want to run a server RPC essentially.
+                                            behaviour.OnRemoteClientRPC(hash, clientId, stream);
+                                        }
+                                        else
+                                        {
+                                            // Send the packet along
+                                            InternalMessageSender.Send(targetClientId, MLAPIConstants.MLAPI_PASSTHROUGH_CLIENT_RPC, channelName, sendStream, security, SpawnManager.SpawnedObjects[networkId]);
+                                        }
+                                    }
+                                    else if (mode == MessageTargetingMode.ExcludedClient)
+                                    {
+                                        ulong ignoredClientId = reader.ReadUInt64Packed();
+
+                                        // Send the packet along
+                                        InternalMessageSender.Send(MLAPIConstants.MLAPI_PASSTHROUGH_CLIENT_RPC, channelName, ignoredClientId, sendStream, security, SpawnManager.SpawnedObjects[networkId]);
+
+                                        // Invoke as host
+                                        if (NetworkingManager.Singleton.IsClient && ignoredClientId != NetworkingManager.Singleton.LocalClientId)
+                                        {
+                                            // We are a server AND client, and they didnt want to ignore the server. Invoke this locally
+                                            behaviour.OnRemoteClientRPC(hash, clientId, stream);
+                                        }
+                                    }
+                                    else if (mode == MessageTargetingMode.MultiClients)
+                                    {
+                                        // ClientId count
+                                        uint count = reader.ReadUInt32Packed();
+
+                                        for (int i = 0; i < count; i++)
+                                        {
+                                            ulong targetClientId = reader.ReadUInt64Packed();
+
+                                            if (NetworkingManager.Singleton.IsClient && targetClientId == NetworkingManager.Singleton.LocalClientId)
+                                            {
+                                                behaviour.OnRemoteClientRPC(hash, clientId, stream);
+                                            }
+                                            else
+                                            {
+                                                // Send the packet along
+                                                InternalMessageSender.Send(targetClientId, MLAPIConstants.MLAPI_PASSTHROUGH_CLIENT_RPC, channelName, sendStream, security, SpawnManager.SpawnedObjects[networkId]);
+                                            }
+                                        }
+                                    }
+                                    else if (mode == MessageTargetingMode.Everyone)
+                                    {
+                                        if (NetworkingManager.Singleton.IsClient)
+                                        {
+                                            // We have a client aswell. Run local
+                                            behaviour.OnRemoteClientRPC(hash, clientId, stream);
+                                        }
+
+                                        // Send the packet along
+                                        InternalMessageSender.Send(MLAPIConstants.MLAPI_PASSTHROUGH_CLIENT_RPC, channelName, sendStream, security, SpawnManager.SpawnedObjects[networkId]);
+                                    }
+                                }
+                            }
+                        }
+                        else
+                        {
+                            ulong senderClientId = reader.ReadUInt64Packed();
+
+                            // We are a client and just got a passthrough packet. Apply it with the modified sender.
+                            behaviour.OnRemoteClientRPC(hash, senderClientId, stream);
+                       }
+                    }
+                }
+                else if (NetworkingManager.Singleton.IsServer || !NetworkingManager.Singleton.NetworkConfig.EnableMessageBuffering)
+                {
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("PassthroughClientRPC message recieved for a non existant object with id: " + networkId + ". This message is lost.");
+                }
+                else
+                {
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("PassthroughClientRPC message recieved for a non existant object with id: " + networkId + ". This message will be buffered and might be recovered.");
+                    bufferCallback(networkId);
+                }
+            }
+        }
+
         internal static void HandleClientRPCRequest(ulong clientId, Stream stream, string channelName, SecuritySendFlags security, Action<ulong> bufferCallback)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))

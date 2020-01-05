@@ -10,5 +10,9 @@ namespace MLAPI.Messaging
     [AttributeUsage(AttributeTargets.Method, Inherited = true, AllowMultiple = false)]
     public class ClientRPCAttribute : RPCAttribute
     {
+        /// <summary>
+        /// Whether or not the ClientRPC should only be run if the request comes straight from the server
+        /// </summary>
+        public bool AllowPassthrough = true;
     }
 }

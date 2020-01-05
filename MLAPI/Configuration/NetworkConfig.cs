@@ -126,6 +126,11 @@ namespace MLAPI.Configuration
         [Tooltip("Ensures that NetworkedVars can be read even if a client accidental writes where its not allowed to. This will cost some CPU time and bandwidth")]
         public bool EnsureNetworkedVarLengthSafety = false;
         /// <summary>
+        /// Whether or not to allow passthrough of ClientRPC messages.
+        /// </summary>
+        [Tooltip("Whether or not to enable passthrough messages")]
+        public bool AllowPassthrough = true;
+        /// <summary>
         /// Enables scene management. This will allow network scene switches and automatic scene diff corrections upon connect.
         /// SoftSynced scene objects wont work with this disabled. That means that disabling SceneManagement also enables PrefabSync.
         /// </summary>

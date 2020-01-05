@@ -31,6 +31,9 @@ namespace MLAPI.Configuration
         internal const byte MLAPI_DESTROY_OBJECTS = 21;
         internal const byte MLAPI_NAMED_MESSAGE = 22;
         internal const byte MLAPI_SYNCED_VAR = 23;
+        internal const byte MLAPI_PASSTHROUGH_CLIENT_RPC = 24;
+        internal const byte MLAPI_PASSTHROUGH_CLIENT_RPC_REQUEST = 25;
+        internal const byte MLAPI_PASSTHROUGH_CLIENT_RPC_RESPONSE = 26;
         internal const byte INVALID = 32;
 
         internal static readonly string[] MESSAGE_NAMES = {
