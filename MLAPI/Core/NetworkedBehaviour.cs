@@ -124,9 +124,11 @@ namespace MLAPI
         {
             get
             {
-                if (_networkedObject == null) {
+                if (_networkedObject == null)
+                {
                     _networkedObject = GetComponentInParent<NetworkedObject>();
                 }
+                
                 return _networkedObject != null;
             }
         }
