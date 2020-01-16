@@ -339,7 +339,7 @@ namespace MLAPI.NetworkedVar.Collections
                 case NetworkedVarPermission.Custom:
                 {
                     if (Settings.WritePermissionCallback == null) return false;
-                    return Settings.WritePermissionCallback(clientId);
+                    return Settings.WritePermissionCallback(clientId, networkedBehaviour);
                 }
             }
 
@@ -360,7 +360,7 @@ namespace MLAPI.NetworkedVar.Collections
                 case NetworkedVarPermission.Custom:
                 {
                     if (Settings.ReadPermissionCallback == null) return false;
-                    return Settings.ReadPermissionCallback(clientId);
+                    return Settings.ReadPermissionCallback(clientId, networkedBehaviour);
                 }
             }
 
