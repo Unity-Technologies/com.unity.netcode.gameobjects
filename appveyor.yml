@@ -1,5 +1,8 @@
 version: '{branch}-{build}'
 
+environment:
+  nodejs_version: "12"
+
 configuration:
   - Debug
   - Debug_Lite
