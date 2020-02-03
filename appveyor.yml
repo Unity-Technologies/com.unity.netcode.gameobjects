@@ -3,6 +3,9 @@ version: '{branch}-{build}'
 environment:
   nodejs_version: "12"
 
+install:
+  - ps: Install-Product node $env:nodejs_version
+
 configuration:
   - Debug
   - Debug_Lite
