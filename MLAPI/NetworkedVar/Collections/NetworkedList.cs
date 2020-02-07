@@ -10,11 +10,10 @@ namespace MLAPI.NetworkedVar.Collections
     /// Event based networkedVar container for syncing Lists
     /// </summary>
     /// <typeparam name="T">The type for the list</typeparam>
-    public class NetworkedList<T> : IList<T>, INetworkedVar
+    public class NetworkedList<T> : NetworkedVarBase, IList<T>
     {
         private readonly IList<T> list = new List<T>();
         private readonly List<NetworkedListEvent<T>> dirtyEvents = new List<NetworkedListEvent<T>>();
-        private NetworkedBehaviour networkedBehaviour;
 
         /// <summary>
         /// Gets the last time the variable was synced
@@ -75,14 +74,14 @@ namespace MLAPI.NetworkedVar.Collections
         }
 
         /// <inheritdoc />
-        public void ResetDirty()
+        public override void ResetDirty()
         {
             dirtyEvents.Clear();
             LastSyncedTime = NetworkingManager.Singleton.NetworkTime;
         }
 
         /// <inheritdoc />
-        public bool IsDirty()
+        public override bool IsDirty()
         {
             if (dirtyEvents.Count == 0) return false;
             if (Settings.SendTickrate == 0) return true;
@@ -92,13 +91,13 @@ namespace MLAPI.NetworkedVar.Collections
         }
 
         /// <inheritdoc />
-        public string GetChannel()
+        public override string GetChannel()
         {
             return Settings.SendChannel;
         }
 
         /// <inheritdoc />
-        public bool CanClientWrite(ulong clientId)
+        public override bool CanClientWrite(ulong clientId)
         {
             switch (Settings.WritePermission)
             {
@@ -111,7 +110,7 @@ namespace MLAPI.NetworkedVar.Collections
                 case NetworkedVarPermission.Custom:
                 {
                     if (Settings.WritePermissionCallback == null) return false;
-                    return Settings.WritePermissionCallback(clientId, networkedBehaviour);
+                    return Settings.WritePermissionCallback(clientId, this);
                 }
             }
 
@@ -119,7 +118,7 @@ namespace MLAPI.NetworkedVar.Collections
         }
 
         /// <inheritdoc />
-        public bool CanClientRead(ulong clientId)
+        public override bool CanClientRead(ulong clientId)
         {
             switch (Settings.ReadPermission)
             {
@@ -132,7 +131,7 @@ namespace MLAPI.NetworkedVar.Collections
                 case NetworkedVarPermission.Custom:
                 {
                     if (Settings.ReadPermissionCallback == null) return false;
-                    return Settings.ReadPermissionCallback(clientId, networkedBehaviour);
+                    return Settings.ReadPermissionCallback(clientId, this);
                 }
             }
 
@@ -140,7 +139,7 @@ namespace MLAPI.NetworkedVar.Collections
         }
 
         /// <inheritdoc />
-        public void WriteDelta(Stream stream)
+        public override void WriteDelta(Stream stream)
         {
             using (PooledBitWriter writer = PooledBitWriter.Get(stream))
             {
@@ -189,7 +188,7 @@ namespace MLAPI.NetworkedVar.Collections
         }
 
         /// <inheritdoc />
-        public void WriteField(Stream stream)
+        public override void WriteField(Stream stream)
         {
             using (PooledBitWriter writer = PooledBitWriter.Get(stream))
             {
@@ -202,7 +201,7 @@ namespace MLAPI.NetworkedVar.Collections
         }
 
         /// <inheritdoc />
-        public void ReadField(Stream stream)
+        public override void ReadField(Stream stream)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
@@ -216,7 +215,7 @@ namespace MLAPI.NetworkedVar.Collections
         }
 
         /// <inheritdoc />
-        public void ReadDelta(Stream stream, bool keepDirtyDelta)
+        public override void ReadDelta(Stream stream, bool keepDirtyDelta)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
@@ -383,12 +382,6 @@ namespace MLAPI.NetworkedVar.Collections
                     }
                 }
             }
-        }
-
-        /// <inheritdoc />
-        public void SetNetworkedBehaviour(NetworkedBehaviour behaviour)
-        {
-            networkedBehaviour = behaviour;
         }
 
         /// <inheritdoc />

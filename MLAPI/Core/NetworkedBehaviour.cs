@@ -223,7 +223,7 @@ namespace MLAPI
 
         private readonly List<HashSet<int>> channelMappedNetworkedVarIndexes = new List<HashSet<int>>();
         private readonly List<string> channelsForNetworkedVarGroups = new List<string>();
-        internal readonly List<INetworkedVar> networkedVarFields = new List<INetworkedVar>();
+        internal readonly List<NetworkedVarBase> networkedVarFields = new List<NetworkedVarBase>();
 
         private static readonly Dictionary<Type, FieldInfo[]> fieldTypes = new Dictionary<Type, FieldInfo[]>();
 
@@ -297,17 +297,17 @@ namespace MLAPI
                     }
                 }
 
-                if (fieldType.HasInterface(typeof(INetworkedVar)))
+                if (fieldType.HasAncestorType(typeof(NetworkedVarBase)))
                 {
-                    INetworkedVar instance = (INetworkedVar)sortedFields[i].GetValue(this);
+                    NetworkedVarBase instance = (NetworkedVarBase)sortedFields[i].GetValue(this);
 
                     if (instance == null)
                     {
-                        instance = (INetworkedVar)Activator.CreateInstance(fieldType, true);
+                        instance = (NetworkedVarBase)Activator.CreateInstance(fieldType, true);
                         sortedFields[i].SetValue(this, instance);
                     }
 
-                    instance.SetNetworkedBehaviour(this);
+                    instance.networkedBehaviour = this;
                     networkedVarFields.Add(instance);
                 }
             }
@@ -647,7 +647,7 @@ namespace MLAPI
             }
         }
 
-        internal static void HandleNetworkedVarDeltas(List<INetworkedVar> networkedVarList, Stream stream, ulong clientId, NetworkedBehaviour logInstance)
+        internal static void HandleNetworkedVarDeltas(List<NetworkedVarBase> networkedVarList, Stream stream, ulong clientId, NetworkedBehaviour logInstance)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
@@ -714,7 +714,7 @@ namespace MLAPI
             }
         }
 
-        internal static void HandleNetworkedVarUpdate(List<INetworkedVar> networkedVarList, Stream stream, ulong clientId, NetworkedBehaviour logInstance)
+        internal static void HandleNetworkedVarUpdate(List<NetworkedVarBase> networkedVarList, Stream stream, ulong clientId, NetworkedBehaviour logInstance)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
@@ -866,7 +866,7 @@ namespace MLAPI
             }
         }
 
-        internal static void WriteNetworkedVarData(List<INetworkedVar> networkedVarList, Stream stream, ulong clientId)
+        internal static void WriteNetworkedVarData(List<NetworkedVarBase> networkedVarList, Stream stream, ulong clientId)
         {
             if (networkedVarList.Count == 0)
                 return;
@@ -911,7 +911,7 @@ namespace MLAPI
             }
         }
 
-        internal static void SetNetworkedVarData(List<INetworkedVar> networkedVarList, Stream stream)
+        internal static void SetNetworkedVarData(List<NetworkedVarBase> networkedVarList, Stream stream)
         {
             if (networkedVarList.Count == 0)
                 return;

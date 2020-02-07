@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace MLAPI.Reflection
 {
@@ -14,7 +14,17 @@ namespace MLAPI.Reflection
             }
             return false;
         }
-        
+
+        internal static bool HasAncestorType(this Type type, Type baseType)
+        {
+            for (Type currentType = type; currentType != null; currentType = currentType.BaseType)
+            {
+                if (currentType == baseType)
+                    return true;
+            }
+            return false;
+        }
+
         internal static bool IsNullable(this Type type)
         {
             if (!type.IsValueType) return true; // ref-type

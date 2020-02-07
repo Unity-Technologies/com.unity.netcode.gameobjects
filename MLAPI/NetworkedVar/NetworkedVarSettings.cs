@@ -4,8 +4,8 @@ namespace MLAPI.NetworkedVar
     /// Delegate type for permission checking
     /// </summary>
     /// <param name="clientId">The clientId whose permissions to check</param>
-    /// <param name="networkedBehaviour">The NetworkedBehaviour on which the var is defined</param>
-    public delegate bool NetworkedVarPermissionsDelegate(ulong clientId, NetworkedBehaviour networkedBehaviour);
+    /// <param name="networkedVar">The networked var whose permissions to check</param>
+    public delegate bool NetworkedVarPermissionsDelegate(ulong clientId, NetworkedVarBase networkedVar);
 
     /// <summary>
     /// The settings class used by the build in NetworkVar implementations

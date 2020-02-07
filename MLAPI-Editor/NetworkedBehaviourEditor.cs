@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 using MLAPI;
@@ -57,7 +57,7 @@ namespace UnityEditor
             if (value == null)
             {
                 Type fieldType = networkedVarFields[networkedVarNames[index]].FieldType;
-                INetworkedVar var = (INetworkedVar) Activator.CreateInstance(fieldType, true);
+                NetworkedVarBase var = (NetworkedVarBase) Activator.CreateInstance(fieldType, true);
                 networkedVarFields[networkedVarNames[index]].SetValue(target, var);
             }
             
