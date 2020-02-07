@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using MLAPI.Exceptions;
@@ -29,21 +29,32 @@ namespace MLAPI.LagCompensation
         /// <param name="action">The action to invoke when time is turned back</param>
         public static void Simulate(float secondsAgo, Action action)
         {
+            Simulate(secondsAgo, SimulationObjects, action);
+        }
+
+        /// <summary>
+        /// Turns time back a given amount of second on the given objects, invokes an action and turns it back
+        /// </summary>
+        /// <param name="secondsAgo">The amount of seconds</param>
+        /// <param name="simulatedObjects">The object to simulate back in time</param>
+        /// <param name="action">The action to invoke when time is turned back</param>
+        public static void Simulate(float secondsAgo, IList<TrackedObject> simulatedObjects, Action action)
+        {
             if (!NetworkingManager.Singleton.IsServer)
             {
                 throw new NotServerException("Only the server can perform lag compensation");
             }
-            
-            for (int i = 0; i < SimulationObjects.Count; i++)
+
+            for (int i = 0; i < simulatedObjects.Count; i++)
             {
-                SimulationObjects[i].ReverseTransform(secondsAgo);
+                simulatedObjects[i].ReverseTransform(secondsAgo);
             }
 
             action.Invoke();
 
-            for (int i = 0; i < SimulationObjects.Count; i++)
+            for (int i = 0; i < simulatedObjects.Count; i++)
             {
-                SimulationObjects[i].ResetStateTransform();
+                simulatedObjects[i].ResetStateTransform();
             }
         }
 
