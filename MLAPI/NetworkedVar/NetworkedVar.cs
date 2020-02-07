@@ -10,7 +10,7 @@ namespace MLAPI.NetworkedVar
     /// A variable that can be synchronized over the network.
     /// </summary>
     [Serializable]
-    public class NetworkedVar<T> : INetworkedVar
+    public class NetworkedVar<T> : NetworkedVarBase
     {
         /// <summary>
         /// Gets or sets Whether or not the variable needs to be delta synced
@@ -34,7 +34,6 @@ namespace MLAPI.NetworkedVar
         /// The callback to be invoked when the value gets changed
         /// </summary>
         public OnValueChangedDelegate OnValueChanged;
-        private NetworkedBehaviour networkedBehaviour;
      
         /// <summary>
         /// Creates a NetworkedVar with the default value and settings
@@ -98,14 +97,14 @@ namespace MLAPI.NetworkedVar
         }
 
         /// <inheritdoc />
-        public void ResetDirty()
+        public override void ResetDirty()
         {
             isDirty = false;
             LastSyncedTime = NetworkingManager.Singleton.NetworkTime;
         }
 
         /// <inheritdoc />
-        public bool IsDirty()
+        public override bool IsDirty()
         {
             if (!isDirty) return false;
             if (Settings.SendTickrate == 0) return true;
@@ -115,7 +114,7 @@ namespace MLAPI.NetworkedVar
         }
 
         /// <inheritdoc />
-        public bool CanClientRead(ulong clientId)
+        public override bool CanClientRead(ulong clientId)
         {
             switch (Settings.ReadPermission)
             {
@@ -128,7 +127,7 @@ namespace MLAPI.NetworkedVar
                 case NetworkedVarPermission.Custom:
                 {
                     if (Settings.ReadPermissionCallback == null) return false;
-                    return Settings.ReadPermissionCallback(clientId, networkedBehaviour);
+                    return Settings.ReadPermissionCallback(clientId, this);
                 }
             }
             return true;
@@ -138,10 +137,10 @@ namespace MLAPI.NetworkedVar
         /// Writes the variable to the writer
         /// </summary>
         /// <param name="stream">The stream to write the value to</param>
-        public void WriteDelta(Stream stream) => WriteField(stream); //The NetworkedVar is built for simple data types and has no delta.
+        public override void WriteDelta(Stream stream) => WriteField(stream); //The NetworkedVar is built for simple data types and has no delta.
 
         /// <inheritdoc />
-        public bool CanClientWrite(ulong clientId)
+        public override bool CanClientWrite(ulong clientId)
         {
             switch (Settings.WritePermission)
             {
@@ -154,7 +153,7 @@ namespace MLAPI.NetworkedVar
                 case NetworkedVarPermission.Custom:
                 {
                     if (Settings.WritePermissionCallback == null) return false;
-                    return Settings.WritePermissionCallback(clientId, networkedBehaviour);
+                    return Settings.WritePermissionCallback(clientId, this);
                 }
             }
 
@@ -166,7 +165,7 @@ namespace MLAPI.NetworkedVar
         /// </summary>
         /// <param name="stream">The stream to read the value from</param>
         /// <param name="keepDirtyDelta">Whether or not the container should keep the dirty delta, or mark the delta as consumed</param>
-        public void ReadDelta(Stream stream, bool keepDirtyDelta)
+        public override void ReadDelta(Stream stream, bool keepDirtyDelta)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
@@ -181,19 +180,13 @@ namespace MLAPI.NetworkedVar
         }
 
         /// <inheritdoc />
-        public void SetNetworkedBehaviour(NetworkedBehaviour behaviour)
-        {
-            networkedBehaviour = behaviour;
-        }
-
-        /// <inheritdoc />
-        public void ReadField(Stream stream)
+        public override void ReadField(Stream stream)
         {
             ReadDelta(stream, false);
         }
         
         /// <inheritdoc />
-        public void WriteField(Stream stream)
+        public override void WriteField(Stream stream)
         {
             using (PooledBitWriter writer = PooledBitWriter.Get(stream))
             {
@@ -202,7 +195,7 @@ namespace MLAPI.NetworkedVar
         }
 
         /// <inheritdoc />
-        public string GetChannel()
+        public override string GetChannel()
         {
             return Settings.SendChannel;
         }

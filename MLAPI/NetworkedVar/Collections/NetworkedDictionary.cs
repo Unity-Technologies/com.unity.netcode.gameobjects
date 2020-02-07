@@ -11,7 +11,7 @@ namespace MLAPI.NetworkedVar.Collections
     /// </summary>
     /// <typeparam name="TKey">The type for the dictionary keys</typeparam>
     /// <typeparam name="TValue">The type for the dictionary values</typeparam>
-    public class NetworkedDictionary<TKey, TValue> : IDictionary<TKey, TValue>, INetworkedVar
+    public class NetworkedDictionary<TKey, TValue> : NetworkedVarBase, IDictionary<TKey, TValue>
     {
         /// <summary>
         /// Gets the last time the variable was synced
@@ -24,7 +24,6 @@ namespace MLAPI.NetworkedVar.Collections
         public readonly NetworkedVarSettings Settings = new NetworkedVarSettings();
 
         private readonly IDictionary<TKey, TValue> dictionary = new Dictionary<TKey, TValue>();
-        private NetworkedBehaviour networkedBehaviour;
         private readonly List<NetworkedDictionaryEvent<TKey, TValue>> dirtyEvents = new List<NetworkedDictionaryEvent<TKey, TValue>>();
 
         /// <summary>
@@ -77,20 +76,20 @@ namespace MLAPI.NetworkedVar.Collections
         }
 
         /// <inheritdoc />
-        public void ResetDirty()
+        public override void ResetDirty()
         {
             dirtyEvents.Clear();
             LastSyncedTime = NetworkingManager.Singleton.NetworkTime;
         }
 
         /// <inheritdoc />
-        public string GetChannel()
+        public override string GetChannel()
         {
             return Settings.SendChannel;
         }
 
         /// <inheritdoc />
-        public void ReadDelta(Stream stream, bool keepDirtyDelta)
+        public override void ReadDelta(Stream stream, bool keepDirtyDelta)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
@@ -238,7 +237,7 @@ namespace MLAPI.NetworkedVar.Collections
         }
 
         /// <inheritdoc />
-        public void ReadField(Stream stream)
+        public override void ReadField(Stream stream)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
@@ -254,19 +253,13 @@ namespace MLAPI.NetworkedVar.Collections
         }
 
         /// <inheritdoc />
-        public void SetNetworkedBehaviour(NetworkedBehaviour behaviour)
-        {
-            networkedBehaviour = behaviour;
-        }
-
-        /// <inheritdoc />
         public bool TryGetValue(TKey key, out TValue value)
         {
             return dictionary.TryGetValue(key, out value);
         }
 
         /// <inheritdoc />
-        public void WriteDelta(Stream stream)
+        public override void WriteDelta(Stream stream)
         {
             using (PooledBitWriter writer = PooledBitWriter.Get(stream))
             {
@@ -312,7 +305,7 @@ namespace MLAPI.NetworkedVar.Collections
         }
 
         /// <inheritdoc />
-        public void WriteField(Stream stream)
+        public override void WriteField(Stream stream)
         {
             using (PooledBitWriter writer = PooledBitWriter.Get(stream))
             {
@@ -326,7 +319,7 @@ namespace MLAPI.NetworkedVar.Collections
         }
 
         /// <inheritdoc />
-        public bool CanClientWrite(ulong clientId)
+        public override bool CanClientWrite(ulong clientId)
         {
             switch (Settings.WritePermission)
             {
@@ -339,7 +332,7 @@ namespace MLAPI.NetworkedVar.Collections
                 case NetworkedVarPermission.Custom:
                 {
                     if (Settings.WritePermissionCallback == null) return false;
-                    return Settings.WritePermissionCallback(clientId, networkedBehaviour);
+                    return Settings.WritePermissionCallback(clientId, this);
                 }
             }
 
@@ -347,7 +340,7 @@ namespace MLAPI.NetworkedVar.Collections
         }
 
         /// <inheritdoc />
-        public bool CanClientRead(ulong clientId)
+        public override bool CanClientRead(ulong clientId)
         {
             switch (Settings.ReadPermission)
             {
@@ -360,7 +353,7 @@ namespace MLAPI.NetworkedVar.Collections
                 case NetworkedVarPermission.Custom:
                 {
                     if (Settings.ReadPermissionCallback == null) return false;
-                    return Settings.ReadPermissionCallback(clientId, networkedBehaviour);
+                    return Settings.ReadPermissionCallback(clientId, this);
                 }
             }
 
@@ -368,7 +361,7 @@ namespace MLAPI.NetworkedVar.Collections
         }
 
         /// <inheritdoc />
-        public bool IsDirty()
+        public override bool IsDirty()
         {
             if (dirtyEvents.Count == 0) return false;
             if (Settings.SendTickrate == 0) return true;
