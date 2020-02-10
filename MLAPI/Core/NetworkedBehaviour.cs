@@ -1243,6 +1243,8 @@ namespace MLAPI
                     writer.WriteUInt16Packed(NetworkedObject.GetOrderIndex(this));
                     writer.WriteUInt64Packed(hash);
 
+                    bool passthroughLocalInvoke = false;
+
                     if (isPassthrough)
                     {
                         writer.WriteByte(clientIds == null ? (byte)MessageTargetingMode.Everyone : (byte)MessageTargetingMode.MultiClients);
@@ -1254,6 +1256,11 @@ namespace MLAPI
                             for (int i = 0; i < clientIds.Count; i++)
                             {
                                 writer.WriteUInt64Packed(clientIds[i]);
+
+                                if (!passthroughLocalInvoke && clientIds[i] == NetworkingManager.Singleton.LocalClientId)
+                                {
+                                    passthroughLocalInvoke = true;
+                                }
                             }
                         }
                     }
@@ -1262,6 +1269,14 @@ namespace MLAPI
 
                     if (isPassthrough)
                     {
+                        if (clientIds == null || passthroughLocalInvoke)
+                        {
+                            messageStream.Position = 0;
+                            InvokeClientRPCLocal(hash, NetworkingManager.Singleton.LocalClientId, messageStream);
+                        }
+
+                        // TODO: Dont send if we only want to send to local
+
                         InternalMessageSender.Send(NetworkingManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_PASSTHROUGH_CLIENT_RPC, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security, null);
                     }
                     else if (clientIds == null)
@@ -1339,6 +1354,14 @@ namespace MLAPI
 
                     if (isPassthrough)
                     {
+                        if (NetworkingManager.Singleton.LocalClientId != clientIdToIgnore)
+                        {
+                            messageStream.Position = 0;
+                            InvokeClientRPCLocal(hash, NetworkingManager.Singleton.LocalClientId, messageStream);
+                        }
+
+                        // TODO: Should we still send here if there are no known connected? Sohuld we only send to observed? Currently we send to non observed
+
                         InternalMessageSender.Send(NetworkingManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_PASSTHROUGH_CLIENT_RPC, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security, null);
                     }
                     else
@@ -1405,7 +1428,15 @@ namespace MLAPI
 
                     if (isPassthrough)
                     {
-                        InternalMessageSender.Send(NetworkingManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_PASSTHROUGH_CLIENT_RPC, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security, null);
+                        if (clientId == NetworkingManager.Singleton.LocalClientId)
+                        {
+                            messageStream.Position = 0;
+                            InvokeClientRPCLocal(hash, NetworkingManager.Singleton.LocalClientId, messageStream);
+                        }
+                        else
+                        {
+                            InternalMessageSender.Send(NetworkingManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_PASSTHROUGH_CLIENT_RPC, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security, null);
+                        }
                     }
                     else
                     {
