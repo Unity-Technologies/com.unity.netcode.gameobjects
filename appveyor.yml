@@ -1,5 +1,8 @@
 version: '{branch}-{build}'
 
+environment:
+  nodejs_version: "12"
+
 configuration:
   - Debug
   - Debug_Lite
@@ -68,6 +71,7 @@ for:
   cache:
   - '%APPDATA%\npm'
   install:
+  - ps: Install-Product node $env:nodejs_version
   - npm install -g semantic-release
   deploy_script:
   - semantic-release
