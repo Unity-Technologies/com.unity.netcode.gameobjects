@@ -45,7 +45,7 @@ MyEnum value = (Myenum)reader.ReadBits(3);
 ```
 
 #### Performance concideration
-When the stream is not aligned, (BitAlgiend == false, this occurs when writing bits that does fill the whole byte, or when writing bools as they are written as bits), performance is decreased for each write and read. This is only a big concern if you are about to write a large amount of data after not being aligned. To solve this, the BitWriter allows you to "WritePadBits" and the BitReader then lets you skip those bits with "SkipPadBits" to align the stream to the nearest byte.
+When the stream is not aligned, (BitAligned == false, this occurs when writing bits that does fill the whole byte, or when writing bools as they are written as bits), performance is decreased for each write and read. This is only a big concern if you are about to write a large amount of data after not being aligned. To solve this, the BitWriter allows you to "WritePadBits" and the BitReader then lets you skip those bits with "SkipPadBits" to align the stream to the nearest byte.
 
 ```csharp
 writer.WriteBool(true); //Now the stream is no longer aligned. Every byte has to be offset by 1 bit.
