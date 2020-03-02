@@ -4,7 +4,7 @@ permalink: /wiki/object-visibility/
 ---
 
 Starting with MLAPI version 6.0.0, clients have no explicit knowledge of all objects or clients that are connected to the server.
-This allows you to only show a subset of objects to any client and any given time. To allow this, a visibility API was introduced
+This allows you to only show a subset of objects to any client at any given time. To allow this, a visibility API was introduced
 to the NetworkedObject component and consists of 4 parts.
 
 
