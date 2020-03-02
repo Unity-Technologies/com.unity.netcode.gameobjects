@@ -276,7 +276,7 @@ namespace MLAPI
                     SpawnManager.WriteSpawnCallForObject(stream, clientId, networkedObjects[i], payload);
                 }
 
-                InternalMessageSender.Send(MLAPIConstants.MLAPI_ADD_OBJECTS, "MLAPI_INTERNAL", stream, SecuritySendFlags.None, null);
+                InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_ADD_OBJECTS, "MLAPI_INTERNAL", stream, SecuritySendFlags.None, null);
             }
         }
 
@@ -316,7 +316,7 @@ namespace MLAPI
                 {
                     writer.WriteUInt64Packed(NetworkId);
 
-                    InternalMessageSender.Send(MLAPIConstants.MLAPI_DESTROY_OBJECT, "MLAPI_INTERNAL", stream, SecuritySendFlags.None, null);
+                    InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_DESTROY_OBJECT, "MLAPI_INTERNAL", stream, SecuritySendFlags.None, null);
                 }
             }
         }
@@ -368,7 +368,7 @@ namespace MLAPI
                     }
                 }
 
-                InternalMessageSender.Send(MLAPIConstants.MLAPI_DESTROY_OBJECTS, "MLAPI_INTERNAL", stream, SecuritySendFlags.None, null);
+                InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_DESTROY_OBJECTS, "MLAPI_INTERNAL", stream, SecuritySendFlags.None, null);
             }
         }
 
