@@ -41,7 +41,6 @@ namespace MLAPI
         public float NetworkTime => Time.unscaledTime + currentNetworkTimeOffset;
         private float networkTimeOffset;
         private float currentNetworkTimeOffset;
-        private bool networkTimeInitialized;
         /// <summary>
         /// Gets or sets if the NetworkingManager should be marked as DontDestroyOnLoad
         /// </summary>
@@ -336,7 +335,6 @@ namespace MLAPI
             LocalClientId = 0;
             networkTimeOffset = 0f;
             currentNetworkTimeOffset = 0f;
-            networkTimeInitialized = false;
             lastEventTickTime = 0f;
             lastReceiveTickTime = 0f;
             eventOvershootCounter = 0f;
@@ -734,17 +732,14 @@ namespace MLAPI
             }
         }
 
-        internal void UpdateNetworkTime(ulong clientId, float netTime, float receiveTime, bool onlyIfNotInitialized = false)
+        internal void UpdateNetworkTime(ulong clientId, float netTime, float receiveTime, bool warp = false)
         {
-            if (onlyIfNotInitialized && networkTimeInitialized)
-                return;
             float rtt = NetworkConfig.NetworkTransport.GetCurrentRtt(clientId) / 1000f;
             networkTimeOffset = netTime - receiveTime + rtt / 2f;
-            if (!networkTimeInitialized) {
+            if (warp) {
                 currentNetworkTimeOffset = networkTimeOffset;
-                networkTimeInitialized = true;
             }
-            if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo($"Received network time {netTime}, RTT to server is {rtt}, setting offset to {networkTimeOffset} (delta {networkTimeOffset - currentNetworkTimeOffset})");
+            if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo($"Received network time {netTime}, RTT to server is {rtt}, {(warp ? "setting" : "smearing")} offset to {networkTimeOffset} (delta {networkTimeOffset - currentNetworkTimeOffset})");
         }
 
         internal void SendConnectionRequest()
