@@ -525,6 +525,7 @@ namespace MLAPI.Spawning
                     {
                         customDestroyHandlers[SpawnedObjectsList[i].PrefabHash](SpawnedObjectsList[i]);
                         SpawnManager.OnDestroyObject(SpawnedObjectsList[i].NetworkId, false);
+                        i--;
                     }
                     else
                     {
