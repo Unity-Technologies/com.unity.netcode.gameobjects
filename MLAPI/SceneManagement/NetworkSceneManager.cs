@@ -192,6 +192,7 @@ namespace MLAPI.SceneManagement
             }
 
             isSwitching = false;
+            currentSceneIndex = CurrentActiveSceneIndex;
         }
 
         private static void OnSceneLoaded(Guid switchSceneGuid, Stream objectStream)

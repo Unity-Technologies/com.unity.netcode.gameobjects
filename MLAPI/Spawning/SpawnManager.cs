@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using MLAPI.Configuration;
+using MLAPI.Connection;
 using MLAPI.Exceptions;
 using MLAPI.Hashing;
 using MLAPI.Internal;
@@ -98,7 +99,7 @@ namespace MLAPI.Spawning
         }
 
         internal static readonly Queue<ReleasedNetworkId> releasedNetworkObjectIds = new Queue<ReleasedNetworkId>();
-        private static ulong networkObjectIdCounter;
+        internal static ulong networkObjectIdCounter;
         internal static ulong GetNetworkObjectId()
         {
             if (releasedNetworkObjectIds.Count > 0 && NetworkingManager.Singleton.NetworkConfig.RecycleNetworkIds && (Time.unscaledTime - releasedNetworkObjectIds.Peek().ReleaseTime) >= NetworkingManager.Singleton.NetworkConfig.NetworkIdRecycleDelay)
@@ -108,6 +109,25 @@ namespace MLAPI.Spawning
             else
             {
                 networkObjectIdCounter++;
+
+                if (NetworkingManager.Singleton.IsHostMigrationEnabled)
+                {
+                    foreach (KeyValuePair<ulong, NetworkedClient> clientPair in NetworkingManager.Singleton.ConnectedClients)
+                    {
+                        if (clientPair.Key != NetworkingManager.Singleton.ServerClientId)
+                        {
+                            using (PooledBitStream stream = PooledBitStream.Get())
+                            {
+                                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                                {
+                                    writer.WriteUInt64Packed(networkObjectIdCounter);
+                                    InternalMessageSender.Send(clientPair.Key, MLAPIConstants.MLAPI_CLIENT_NETWORKID, "MLAPI_INTERNAL", stream, SecuritySendFlags.None, null);
+                                }
+                            }
+                        }
+                    }
+                }
+
                 return networkObjectIdCounter;
             }
         }
@@ -355,7 +375,7 @@ namespace MLAPI.Spawning
 
             if (ownerClientId != null)
             {
-                if (NetworkingManager.Singleton.IsServer)
+                if (NetworkingManager.Singleton.IsServer || NetworkingManager.Singleton.IsHostMigrationEnabled)
                 {
                     if (playerObject)
                     {
@@ -372,7 +392,7 @@ namespace MLAPI.Spawning
                 }
             }
 
-            if (NetworkingManager.Singleton.IsServer)
+            if (NetworkingManager.Singleton.IsServer || NetworkingManager.Singleton.IsHostMigrationEnabled)
             {
                 for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)
                 {

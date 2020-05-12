@@ -1,4 +1,4 @@
-﻿namespace MLAPI.Transports
+namespace MLAPI.Transports
 {
     /// <summary>
     /// Represents a netEvent when polling
@@ -17,6 +17,10 @@
         /// A client disconnected, or client disconnected from server
         /// </summary>
         Disconnect,
+        /// <summary>
+        /// A host migrated
+        /// </summary>
+        HostMigrate,
         /// <summary>
         /// No new event
         /// </summary>

@@ -30,6 +30,7 @@ public class NetworkingManagerEditor : Editor
     private SerializedProperty clientConnectionBufferTimeoutProperty;
     private SerializedProperty connectionApprovalProperty;
     private SerializedProperty secondsHistoryProperty;
+    private SerializedProperty enableHostMigrationProperty;
     private SerializedProperty enableTimeResyncProperty;
     private SerializedProperty timeResyncIntervalProperty;
     private SerializedProperty enableNetworkedVarProperty;
@@ -111,6 +112,7 @@ public class NetworkingManagerEditor : Editor
         clientConnectionBufferTimeoutProperty = networkConfigProperty.FindPropertyRelative("ClientConnectionBufferTimeout");
         connectionApprovalProperty = networkConfigProperty.FindPropertyRelative("ConnectionApproval");
         secondsHistoryProperty = networkConfigProperty.FindPropertyRelative("SecondsHistory");
+        enableHostMigrationProperty = networkConfigProperty.FindPropertyRelative("EnableHostMigration");
         enableTimeResyncProperty = networkConfigProperty.FindPropertyRelative("EnableTimeResync");
         timeResyncIntervalProperty = networkConfigProperty.FindPropertyRelative("TimeResyncInterval");
         enableNetworkedVarProperty = networkConfigProperty.FindPropertyRelative("EnableNetworkedVar");
@@ -152,6 +154,7 @@ public class NetworkingManagerEditor : Editor
         clientConnectionBufferTimeoutProperty = networkConfigProperty.FindPropertyRelative("ClientConnectionBufferTimeout");
         connectionApprovalProperty = networkConfigProperty.FindPropertyRelative("ConnectionApproval");
         secondsHistoryProperty = networkConfigProperty.FindPropertyRelative("SecondsHistory");
+        enableHostMigrationProperty = networkConfigProperty.FindPropertyRelative("EnableHostMigration");
         enableTimeResyncProperty = networkConfigProperty.FindPropertyRelative("EnableTimeResync");
         timeResyncIntervalProperty = networkConfigProperty.FindPropertyRelative("TimeResyncInterval");
         enableNetworkedVarProperty = networkConfigProperty.FindPropertyRelative("EnableNetworkedVar");
@@ -293,6 +296,7 @@ public class NetworkingManagerEditor : Editor
                 }
             }
 
+            EditorGUILayout.PropertyField(enableHostMigrationProperty);
             EditorGUILayout.PropertyField(enableTimeResyncProperty);
 
             using (new EditorGUI.DisabledScope(!networkingManager.NetworkConfig.EnableTimeResync))

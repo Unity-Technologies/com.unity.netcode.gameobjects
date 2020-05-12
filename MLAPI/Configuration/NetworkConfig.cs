@@ -176,6 +176,11 @@ namespace MLAPI.Configuration
         [Tooltip("The amount of time a message should be buffered for without being consumed. If it is not consumed within this time, it will be dropped")]
         public float MessageBufferTimeout = 20f;
         /// <summary>
+        /// Whether or not host migration should be enabled. This will synchronize states over all clients so the host can be migrated.
+        /// </summary>
+        [Tooltip("Whether or not host migration should be enabled. This will synchronize states over clients so the host can be migrated.")]
+        public bool EnableHostMigration = false;
+        /// <summary>
         /// Whether or not to enable the ECDHE key exchange to allow for encryption and authentication of messages
         /// </summary>
         [Tooltip("Whether or not to enable the ECDHE key exchange to allow for encryption and authentication of messages")]

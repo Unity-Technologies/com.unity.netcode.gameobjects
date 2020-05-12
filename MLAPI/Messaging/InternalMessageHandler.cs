@@ -220,7 +220,20 @@ namespace MLAPI.Messaging
                 float netTime = reader.ReadSinglePacked();
                 NetworkingManager.Singleton.UpdateNetworkTime(clientId, netTime, receiveTime, true);
 
-                NetworkingManager.Singleton.ConnectedClients.Add(NetworkingManager.Singleton.LocalClientId, new NetworkedClient() { ClientId = NetworkingManager.Singleton.LocalClientId });
+                if (NetworkingManager.Singleton.IsHostMigrationEnabled)
+                {
+                    uint clientsCount = reader.ReadUInt32Packed();
+
+                    for (int i = 0; i < clientsCount; i++)
+                    {
+                        ulong otherClientId = reader.ReadUInt64Packed();
+                        NetworkedClient otherClient = new NetworkedClient() { ClientId = otherClientId };
+                        NetworkingManager.Singleton.ConnectedClients.Add(otherClientId, otherClient);
+                        NetworkingManager.Singleton.ConnectedClientsList.Add(otherClient);
+                    }
+                }
+
+                else NetworkingManager.Singleton.ConnectedClients.Add(NetworkingManager.Singleton.LocalClientId, new NetworkedClient() { ClientId = NetworkingManager.Singleton.LocalClientId });
 
 
                 void DelayedSpawnAction(Stream continuationStream)
@@ -595,6 +608,47 @@ namespace MLAPI.Messaging
                     if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("SyncedVar message recieved for a non existant object with id: " + networkId);
                     return;
                 }
+            }
+        }
+
+        internal static void HandleClientConnected(ulong clientId, Stream stream)
+        {
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
+            {
+                ulong newClientId = reader.ReadUInt64Packed();
+                NetworkedClient newClient = new NetworkedClient() { ClientId = newClientId };
+                NetworkingManager.Singleton.ConnectedClients.Add(newClientId, newClient);
+                NetworkingManager.Singleton.ConnectedClientsList.Add(newClient);
+            }
+        }
+
+        internal static void HandleClientDisconnected(ulong clientId, Stream stream)
+        {
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
+            {
+                ulong disconnectedClientId = reader.ReadUInt64Packed();
+
+                for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)
+                {
+                    if (NetworkingManager.Singleton.ConnectedClientsList[i].ClientId == disconnectedClientId)
+                    {
+                        NetworkingManager.Singleton.ConnectedClientsList.RemoveAt(i);
+                        break;
+                    }
+                }
+
+                NetworkingManager.Singleton.ConnectedClients.Remove(disconnectedClientId);
+            }
+        }
+
+        internal static void HandleClientNetworkId(ulong clientId, Stream stream)
+        {
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
+            {
+                ulong networkId = reader.ReadUInt64Packed();
+
+                // Keep a buffer of 5 inbetween
+                SpawnManager.networkObjectIdCounter = networkId + 5;
             }
         }
 

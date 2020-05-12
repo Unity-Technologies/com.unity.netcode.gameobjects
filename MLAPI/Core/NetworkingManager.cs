@@ -38,9 +38,17 @@ namespace MLAPI
         /// <summary>
         /// A synchronized time, represents the time in seconds since the server application started. Is replicated across all clients
         /// </summary>
-        public float NetworkTime => Time.unscaledTime + currentNetworkTimeOffset;
+        public float NetworkTime => Time.realtimeSinceStartup + currentNetworkTimeOffset;
         private float networkTimeOffset;
         private float currentNetworkTimeOffset;
+        /// <summary>
+        /// The time it takes to send a message to the connected server and back
+        /// </summary>
+        public float RTT() => IsClient ? RTT(ServerClientId) : 0f;
+        /// <summary>
+        /// The time it takes to send a message to the connected peer and back
+        /// </summary>
+        public float RTT(ulong clientId) => NetworkConfig.NetworkTransport != null ? NetworkConfig.NetworkTransport.GetCurrentRtt(clientId) : 0f;
         /// <summary>
         /// Gets or sets if the NetworkingManager should be marked as DontDestroyOnLoad
         /// </summary>
@@ -70,6 +78,7 @@ namespace MLAPI
         /// Gets the networkId of the server
         /// </summary>
 		public ulong ServerClientId => NetworkConfig.NetworkTransport != null ? NetworkConfig.NetworkTransport.ServerClientId : throw new NullReferenceException("The transport in the active NetworkConfig is null");
+		private ulong SavedServerClientId { get; set; }
         /// <summary>
         /// The clientId the server calls the local client by, only valid for clients
         /// </summary>
@@ -207,6 +216,11 @@ namespace MLAPI
         public string ConnectedHostname { get; private set; }
         internal byte[] clientAesKey;
         internal static event Action OnSingletonReady;
+
+        /// <summary>
+        /// Gets Whether or not we are syncing for host migration.
+        /// </summary>
+        public bool IsHostMigrationEnabled { get; internal set; }
 
         internal void InvokeOnIncomingCustomMessage(ulong clientId, Stream stream)
         {
@@ -474,6 +488,19 @@ namespace MLAPI
                 return SocketTask.Fault.AsTasks();
             }
 
+            IsHostMigrationEnabled = false;
+
+            if (NetworkConfig.EnableHostMigration)
+            {
+                if (!NetworkConfig.NetworkTransport.IsHostMigrationSupported)
+                {
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Error)
+                        LogHelper.LogError($"{nameof(NetworkConfig.NetworkTransport)} does not support host migration.");
+                }
+
+                else IsHostMigrationEnabled = true;
+            }
+
             Init(false);
 
             SocketTasks tasks = NetworkConfig.NetworkTransport.StartClient();
@@ -481,6 +508,7 @@ namespace MLAPI
             IsServer = false;
             IsClient = true;
             IsListening = true;
+            SavedServerClientId = NetworkConfig.NetworkTransport.ServerClientId;
 
             return tasks;
         }
@@ -494,28 +522,31 @@ namespace MLAPI
             HashSet<ulong> disconnectedIds = new HashSet<ulong>();
             //Don't know if I have to disconnect the clients. I'm assuming the NetworkTransport does all the cleaning on shtudown. But this way the clients get a disconnect message from server (so long it does't get lost)
 
-            foreach (KeyValuePair<ulong, NetworkedClient> pair in ConnectedClients)
+            if (!IsHostMigrationEnabled)
             {
-                if (!disconnectedIds.Contains(pair.Key))
+                foreach (KeyValuePair<ulong, NetworkedClient> pair in ConnectedClients)
                 {
-                    disconnectedIds.Add(pair.Key);
+                    if (!disconnectedIds.Contains(pair.Key))
+                    {
+                        disconnectedIds.Add(pair.Key);
 
-					if (pair.Key == NetworkConfig.NetworkTransport.ServerClientId)
-                        continue;
+                        if (pair.Key == NetworkConfig.NetworkTransport.ServerClientId)
+                            continue;
 
-                    NetworkConfig.NetworkTransport.DisconnectRemoteClient(pair.Key);
+                        NetworkConfig.NetworkTransport.DisconnectRemoteClient(pair.Key);
+                    }
                 }
-            }
 
-            foreach (KeyValuePair<ulong, PendingClient> pair in PendingClients)
-            {
-                if(!disconnectedIds.Contains(pair.Key))
+                foreach (KeyValuePair<ulong, PendingClient> pair in PendingClients)
                 {
-                    disconnectedIds.Add(pair.Key);
-                    if (pair.Key == NetworkConfig.NetworkTransport.ServerClientId)
-                        continue;
+                    if (!disconnectedIds.Contains(pair.Key))
+                    {
+                        disconnectedIds.Add(pair.Key);
+                        if (pair.Key == NetworkConfig.NetworkTransport.ServerClientId)
+                            continue;
 
-                    NetworkConfig.NetworkTransport.DisconnectRemoteClient(pair.Key);
+                        NetworkConfig.NetworkTransport.DisconnectRemoteClient(pair.Key);
+                    }
                 }
             }
 
@@ -568,6 +599,19 @@ namespace MLAPI
                 }
             }
 
+            IsHostMigrationEnabled = false;
+
+            if (NetworkConfig.EnableHostMigration)
+            {
+                if (!NetworkConfig.NetworkTransport.IsHostMigrationSupported)
+                {
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Error)
+                        LogHelper.LogError($"{nameof(NetworkConfig.NetworkTransport)} does not support host migration.");
+                }
+
+                else IsHostMigrationEnabled = true;
+            }
+
             Init(true);
 
             SocketTasks tasks = NetworkConfig.NetworkTransport.StartServer();
@@ -576,23 +620,23 @@ namespace MLAPI
             IsClient = true;
             IsListening = true;
 
-            ulong hostClientId = NetworkConfig.NetworkTransport.ServerClientId;
+            SavedServerClientId = NetworkConfig.NetworkTransport.ServerClientId;
 
-            ConnectedClients.Add(hostClientId, new NetworkedClient()
+            ConnectedClients.Add(SavedServerClientId, new NetworkedClient()
             {
-                ClientId = hostClientId
+                ClientId = SavedServerClientId
             });
 
-            ConnectedClientsList.Add(ConnectedClients[hostClientId]);
+            ConnectedClientsList.Add(ConnectedClients[SavedServerClientId]);
 
             if ((createPlayerObject == null && NetworkConfig.CreatePlayerPrefab) || (createPlayerObject != null && createPlayerObject.Value))
             {
                 NetworkedObject netObject = SpawnManager.CreateLocalNetworkedObject(false, 0, (prefabHash == null ? NetworkConfig.PlayerPrefabHash.Value : prefabHash.Value), null, position, rotation);
-                SpawnManager.SpawnNetworkedObjectLocally(netObject, SpawnManager.GetNetworkObjectId(), false, true, hostClientId, payloadStream, payloadStream != null, payloadStream == null ? 0 : (int)payloadStream.Length, false, false);
+                SpawnManager.SpawnNetworkedObjectLocally(netObject, SpawnManager.GetNetworkObjectId(), false, true, SavedServerClientId, payloadStream, payloadStream != null, payloadStream == null ? 0 : (int)payloadStream.Length, false, false);
 
-                if (netObject.CheckObjectVisibility == null || netObject.CheckObjectVisibility(hostClientId))
+                if (netObject.CheckObjectVisibility == null || netObject.CheckObjectVisibility(SavedServerClientId))
                 {
-                    netObject.observers.Add(hostClientId);
+                    netObject.observers.Add(SavedServerClientId);
                 }
             }
 
@@ -602,6 +646,46 @@ namespace MLAPI
                 OnServerStarted.Invoke();
 
             return tasks;
+        }
+
+        /// <summary>
+        /// Migrates to new Host
+        /// </summary>
+        internal void MigrateHost()
+        {
+            if (!IsHostMigrationEnabled)
+                if (LogHelper.CurrentLogLevel <= LogLevel.Error)
+                    LogHelper.LogError("Host Migration is not enabled.");
+
+            if (!IsClient)
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal)
+                    LogHelper.LogWarning("Cannot migrate host while not connected");
+                return;
+            }
+
+            if (NetworkConfig.NetworkTransport.ServerClientId == localClientId)
+            {
+                IsServer = true;
+
+                // Observers
+                for (int i = 0; i < SpawnManager.SpawnedObjectsList.Count; i++)
+                {
+                    for (int j = 0; j < ConnectedClientsList.Count; j++)
+                    {
+                        ulong clientId = ConnectedClientsList[j].ClientId;
+
+                        if (clientId == ServerClientId || SpawnManager.SpawnedObjectsList[i].CheckObjectVisibility == null || SpawnManager.SpawnedObjectsList[i].CheckObjectVisibility(clientId))
+                        {
+                            SpawnManager.SpawnedObjectsList[i].observers.Add(clientId);
+                        }
+                    }
+                }
+
+                OnClientDisconnectFromServer(SavedServerClientId);
+            }
+
+            SavedServerClientId = NetworkConfig.NetworkTransport.ServerClientId;
         }
 
         private void OnEnable()
@@ -890,7 +974,28 @@ namespace MLAPI
                     if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Disconnect Event From " + clientId);
 
                     if (IsServer)
+                    {
                         OnClientDisconnectFromServer(clientId);
+
+                        if (IsHostMigrationEnabled)
+                        {
+                            foreach (KeyValuePair<ulong, NetworkedClient> clientPair in ConnectedClients)
+                            {
+                                if (clientPair.Key != ServerClientId)
+                                {
+                                    using (PooledBitStream stream = PooledBitStream.Get())
+                                    {
+                                        using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                                        {
+                                            writer.WriteUInt64Packed(clientId);
+                                            InternalMessageSender.Send(clientPair.Key, MLAPIConstants.MLAPI_CLIENT_DISCONNECTED, "MLAPI_INTERNAL", stream, SecuritySendFlags.None, null);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     else
                     {
                         IsConnectedClient = false;
@@ -900,6 +1005,9 @@ namespace MLAPI
                     if (OnClientDisconnectCallback != null)
                         OnClientDisconnectCallback.Invoke(clientId);
                     NetworkProfiler.EndEvent();
+                    break;
+                case NetEventType.HostMigrate:
+                    MigrateHost();
                     break;
             }
         }
@@ -1041,6 +1149,18 @@ namespace MLAPI
                     case MLAPIConstants.MLAPI_SYNCED_VAR:
                         if (IsClient) InternalMessageHandler.HandleSyncedVar(clientId, messageStream);
                         break;
+                    case MLAPIConstants.MLAPI_CLIENT_CONNECTED:
+                        if (IsClient && IsHostMigrationEnabled)
+                            InternalMessageHandler.HandleClientConnected(clientId, messageStream);
+                        break;
+                    case MLAPIConstants.MLAPI_CLIENT_DISCONNECTED:
+                        if (IsClient && IsHostMigrationEnabled)
+                            InternalMessageHandler.HandleClientDisconnected(clientId, messageStream);
+                        break;
+                    case MLAPIConstants.MLAPI_CLIENT_NETWORKID:
+                        if (IsClient && IsHostMigrationEnabled)
+                            InternalMessageHandler.HandleClientNetworkId(clientId, messageStream);
+                        break;
                     default:
                         if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Read unrecognized messageType " + messageType);
                         break;
@@ -1149,7 +1269,7 @@ namespace MLAPI
             {
                 using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                 {
-                    writer.WriteSinglePacked(Time.realtimeSinceStartup);
+                    writer.WriteSinglePacked(NetworkTime);
                     InternalMessageSender.Send(MLAPIConstants.MLAPI_TIME_SYNC, "MLAPI_TIME_SYNC", stream, SecuritySendFlags.None, null);
                 }
             }
@@ -1211,7 +1331,17 @@ namespace MLAPI
                             writer.WriteByteArray(NetworkSceneManager.currentSceneSwitchProgressGuid.ToByteArray());
                         }
 
-                        writer.WriteSinglePacked(Time.realtimeSinceStartup);
+                        writer.WriteSinglePacked(NetworkTime);
+
+                        if (IsHostMigrationEnabled)
+                        {
+                            writer.WriteUInt32Packed((uint)ConnectedClients.Count);
+
+                            foreach (ulong otherClientId in ConnectedClients.Keys)
+                            {
+                                writer.WriteUInt64Packed(otherClientId);
+                            }
+                        }
 
                         writer.WriteUInt32Packed((uint)_observedObjects.Count);
 
@@ -1292,8 +1422,23 @@ namespace MLAPI
 
                 foreach (KeyValuePair<ulong, NetworkedClient> clientPair in ConnectedClients)
                 {
-                    if (clientPair.Key == clientId || ConnectedClients[clientId].PlayerObject == null || !ConnectedClients[clientId].PlayerObject.observers.Contains(clientPair.Key))
+                    if (clientPair.Key == clientId)
                         continue; //The new client.
+
+                    if (clientPair.Key != ServerClientId)
+                    {
+                        using (PooledBitStream stream = PooledBitStream.Get())
+                        {
+                            using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                            {
+                                writer.WriteUInt64Packed(clientId);
+                                InternalMessageSender.Send(clientPair.Key, MLAPIConstants.MLAPI_CLIENT_CONNECTED, "MLAPI_INTERNAL", stream, SecuritySendFlags.None, null);
+                            }
+                        }
+                    }
+
+                    if (ConnectedClients[clientId].PlayerObject == null || (!ConnectedClients[clientId].PlayerObject.observers.Contains(clientPair.Key)) && !IsHostMigrationEnabled)
+                        continue; //The new client object.
 
                     using (PooledBitStream stream = PooledBitStream.Get())
                     {

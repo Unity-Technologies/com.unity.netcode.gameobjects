@@ -33,6 +33,12 @@ namespace MLAPI.Transports
         /// <value><c>true</c> if is supported; otherwise, <c>false</c>.</value>
         public virtual bool IsSupported => true;
 
+        /// <summary>
+        /// Gets a value indicating whether this <see cref="T:MLAPI.Transports.Transport"/> supports HostMigration.
+        /// </summary>
+        /// <value><c>true</c> if is supported; otherwise, <c>false</c>.</value>
+        public virtual bool IsHostMigrationSupported => false;
+
         private TransportChannel[] _channelsCache = null;
 
         internal void ResetChannelCache()
@@ -178,5 +184,13 @@ namespace MLAPI.Transports
         /// Initializes the transport
         /// </summary>
         public abstract void Init();
+
+        /// <summary>
+        /// Raises a transport event
+        /// </summary>
+        protected virtual void RaiseTransportEvent(NetEventType type, ulong clientId, string channelName, ArraySegment<byte> payload, float receiveTime)
+        {
+            OnTransportEvent(type, clientId, channelName, payload, receiveTime);
+        }
     }
 }
