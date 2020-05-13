@@ -6,6 +6,7 @@ permalink: /wiki/common-mistakes/
 This is a collection of common mistakes:
 
 - [`NullReferenceException` when trying to start a server/host/client](#err-001)
+- [`NullReferenceException` when trying to send an RPC to the server](#err-002)
 
 ---
 
@@ -28,3 +29,19 @@ NullReferenceException: Object reference not set to an instance of an object
 
 #### Solution
 You most likely forgot to add the `NetworkingManager` component to a game object in your scene.
+
+---
+
+### <a name="err-002"></a>`NullReferenceException` when trying to send an RPC to the server
+
+#### Problem
+When the client tries to run `InvokeServerRpc`, the following exception is thrown:
+
+```csharp
+NullReferenceException: Object reference not set to an instance of an object
+```
+
+#### Solution
+You most likely forgot to `Spawn()` your object.
+
+Run `Spawn()` on your `NetworkedObject` component as the server to fix this issue.
