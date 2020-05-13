@@ -388,7 +388,7 @@ namespace MLAPI
 
             if (NetworkConfig.EnableSceneManagement)
             {
-                NetworkConfig.RegisteredScenes.Sort();
+                NetworkConfig.RegisteredScenes.Sort(StringComparer.Ordinal);
 
                 for (int i = 0; i < NetworkConfig.RegisteredScenes.Count; i++)
                 {

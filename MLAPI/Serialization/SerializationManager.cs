@@ -98,7 +98,7 @@ namespace MLAPI.Serialization
                 FieldInfo[] fields = type
                     .GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
                     .Where(x => (x.IsPublic || x.GetCustomAttributes(typeof(SerializeField), true).Length > 0) && IsTypeSupported(x.FieldType))
-                    .OrderBy(x => x.Name).ToArray();
+                    .OrderBy(x => x.Name, StringComparer.Ordinal).ToArray();
                 
                 fieldCache.Add(type, fields);
 
