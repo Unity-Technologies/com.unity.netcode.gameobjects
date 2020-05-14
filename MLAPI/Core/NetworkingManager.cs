@@ -27,6 +27,10 @@ using MLAPI.Exceptions;
 using MLAPI.Transports.Tasks;
 using MLAPI.Messaging.Buffering;
 
+// TODO:
+// OnDisconnect
+
+
 namespace MLAPI
 {
     /// <summary>
@@ -994,6 +998,11 @@ namespace MLAPI
                         }
                     }
 
+                    else if (IsHostMigrationEnabled)
+                    {
+
+                    }
+
                     else
                     {
                         IsConnectedClient = false;
@@ -1144,6 +1153,10 @@ namespace MLAPI
                         break;
                     case MLAPIConstants.MLAPI_SYNCED_VAR:
                         if (IsClient) InternalMessageHandler.HandleSyncedVar(clientId, messageStream);
+                        break;
+                    case MLAPIConstants.MLAPI_CLIENT_CONNECTED:
+                        if (IsClient && IsHostMigrationEnabled)
+                            InternalMessageHandler.HandleClientConnected(clientId, messageStream);
                         break;
                     case MLAPIConstants.MLAPI_CLIENT_DISCONNECTED:
                         if (IsClient && IsHostMigrationEnabled)
@@ -1311,7 +1324,6 @@ namespace MLAPI
                 {
                     using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                     {
-                        writer.WriteBit(true);
                         writer.WriteUInt64Packed(clientId);
 
                         if (NetworkConfig.EnableSceneManagement)
@@ -1420,9 +1432,8 @@ namespace MLAPI
                         {
                             using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                             {
-                                writer.WriteBit(false);
                                 writer.WriteUInt64Packed(clientId);
-                                InternalMessageSender.Send(clientPair.Key, MLAPIConstants.MLAPI_CONNECTION_APPROVED, "MLAPI_INTERNAL", stream, SecuritySendFlags.None, null);
+                                InternalMessageSender.Send(clientPair.Key, MLAPIConstants.MLAPI_CLIENT_CONNECTED, "MLAPI_INTERNAL", stream, SecuritySendFlags.None, null);
                             }
                         }
                     }

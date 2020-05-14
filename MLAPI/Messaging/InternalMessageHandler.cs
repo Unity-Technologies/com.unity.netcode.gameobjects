@@ -204,21 +204,6 @@ namespace MLAPI.Messaging
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
-                bool initialConnection = reader.ReadBit();
-
-                if (!initialConnection)
-                {
-                    if (NetworkingManager.Singleton.IsHostMigrationEnabled)
-                    {
-                        ulong newClientId = reader.ReadUInt64Packed();
-                        NetworkedClient newClient = new NetworkedClient() { ClientId = newClientId };
-                        NetworkingManager.Singleton.ConnectedClients.Add(newClientId, newClient);
-                        NetworkingManager.Singleton.ConnectedClientsList.Add(newClient);
-                    }
-
-                    return;
-                }
-
                 NetworkingManager.Singleton.LocalClientId = reader.ReadUInt64Packed();
 
                 uint sceneIndex = 0;
@@ -362,6 +347,17 @@ namespace MLAPI.Messaging
                 {
                     DelayedSpawnAction(stream);
                 }
+            }
+        }
+
+        internal static void HandleClientConnected(ulong clientId, Stream stream)
+        {
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
+            {
+                ulong newClientId = reader.ReadUInt64Packed();
+                NetworkedClient newClient = new NetworkedClient() { ClientId = newClientId };
+                NetworkingManager.Singleton.ConnectedClients.Add(newClientId, newClient);
+                NetworkingManager.Singleton.ConnectedClientsList.Add(newClient);
             }
         }
 
