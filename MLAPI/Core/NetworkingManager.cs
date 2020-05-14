@@ -78,7 +78,6 @@ namespace MLAPI
         /// Gets the networkId of the server
         /// </summary>
 		public ulong ServerClientId => NetworkConfig.NetworkTransport != null ? NetworkConfig.NetworkTransport.ServerClientId : throw new NullReferenceException("The transport in the active NetworkConfig is null");
-		private ulong SavedServerClientId { get; set; }
         /// <summary>
         /// The clientId the server calls the local client by, only valid for clients
         /// </summary>
@@ -203,6 +202,10 @@ namespace MLAPI
                 ConnectionApprovalCallback(payload, clientId, action);
             }
         }
+        /// <summary>
+        /// The callback to invoke once the local client disconnects. This callback is only ran when host migration is possible.
+        /// </summary>
+        public Func<DisconnectAction> OnDisconnectedHostCallback = null;
         /// <summary>
         /// The current NetworkingConfiguration
         /// </summary>
@@ -508,7 +511,6 @@ namespace MLAPI
             IsServer = false;
             IsClient = true;
             IsListening = true;
-            SavedServerClientId = NetworkConfig.NetworkTransport.ServerClientId;
 
             return tasks;
         }
@@ -620,23 +622,23 @@ namespace MLAPI
             IsClient = true;
             IsListening = true;
 
-            SavedServerClientId = NetworkConfig.NetworkTransport.ServerClientId;
+            ulong serverClientId = NetworkConfig.NetworkTransport.ServerClientId;
 
-            ConnectedClients.Add(SavedServerClientId, new NetworkedClient()
+            ConnectedClients.Add(serverClientId, new NetworkedClient()
             {
-                ClientId = SavedServerClientId
+                ClientId = serverClientId
             });
 
-            ConnectedClientsList.Add(ConnectedClients[SavedServerClientId]);
+            ConnectedClientsList.Add(ConnectedClients[serverClientId]);
 
             if ((createPlayerObject == null && NetworkConfig.CreatePlayerPrefab) || (createPlayerObject != null && createPlayerObject.Value))
             {
                 NetworkedObject netObject = SpawnManager.CreateLocalNetworkedObject(false, 0, (prefabHash == null ? NetworkConfig.PlayerPrefabHash.Value : prefabHash.Value), null, position, rotation);
-                SpawnManager.SpawnNetworkedObjectLocally(netObject, SpawnManager.GetNetworkObjectId(), false, true, SavedServerClientId, payloadStream, payloadStream != null, payloadStream == null ? 0 : (int)payloadStream.Length, false, false);
+                SpawnManager.SpawnNetworkedObjectLocally(netObject, SpawnManager.GetNetworkObjectId(), false, true, serverClientId, payloadStream, payloadStream != null, payloadStream == null ? 0 : (int)payloadStream.Length, false, false);
 
-                if (netObject.CheckObjectVisibility == null || netObject.CheckObjectVisibility(SavedServerClientId))
+                if (netObject.CheckObjectVisibility == null || netObject.CheckObjectVisibility(serverClientId))
                 {
-                    netObject.observers.Add(SavedServerClientId);
+                    netObject.observers.Add(serverClientId);
                 }
             }
 
@@ -649,41 +651,54 @@ namespace MLAPI
         }
 
         /// <summary>
-        /// Migrates to new Host
+        /// Become new Host
         /// </summary>
-        internal void MigrateHost()
+        internal SocketTasks BecomeHost()
         {
-            if (!IsHostMigrationEnabled)
-                if (LogHelper.CurrentLogLevel <= LogLevel.Error)
-                    LogHelper.LogError("Host Migration is not enabled.");
-
             if (!IsClient)
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal)
-                    LogHelper.LogWarning("Cannot migrate host while not connected");
-                return;
+                    LogHelper.LogWarning("Cannot become host when we weren't connected");
+                return SocketTask.Fault.AsTasks();
             }
 
-            if (NetworkConfig.NetworkTransport.ServerClientId == localClientId)
+            // Observers
+            for (int i = 0; i < SpawnManager.SpawnedObjectsList.Count; i++)
             {
-                IsServer = true;
-
-                // Observers
-                for (int i = 0; i < SpawnManager.SpawnedObjectsList.Count; i++)
+                for (int j = 0; j < ConnectedClientsList.Count; j++)
                 {
-                    for (int j = 0; j < ConnectedClientsList.Count; j++)
-                    {
-                        ulong clientId = ConnectedClientsList[j].ClientId;
+                    ulong clientId = ConnectedClientsList[j].ClientId;
 
-                        if (clientId == ServerClientId || SpawnManager.SpawnedObjectsList[i].CheckObjectVisibility == null || SpawnManager.SpawnedObjectsList[i].CheckObjectVisibility(clientId))
-                        {
-                            SpawnManager.SpawnedObjectsList[i].observers.Add(clientId);
-                        }
+                    if (clientId == ServerClientId || SpawnManager.SpawnedObjectsList[i].CheckObjectVisibility == null || SpawnManager.SpawnedObjectsList[i].CheckObjectVisibility(clientId))
+                    {
+                        SpawnManager.SpawnedObjectsList[i].observers.Add(clientId);
                     }
                 }
             }
 
-            SavedServerClientId = NetworkConfig.NetworkTransport.ServerClientId;
+            // Renew transport as host
+            NetworkConfig.NetworkTransport.DisconnectLocalClient();
+            SocketTasks tasks = NetworkConfig.NetworkTransport.StartServer();
+            IsServer = true;
+            return tasks;
+        }
+
+        /// <summary>
+        /// Migrates to new Host
+        /// </summary>
+        internal SocketTasks MigrateToHost()
+        {
+            if (!IsClient)
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal)
+                    LogHelper.LogWarning("Cannot migrate to a new host when we weren't connected");
+                return SocketTask.Fault.AsTasks();
+            }
+
+            // TODO: Renew transport as client (PR2)
+            NetworkConfig.NetworkTransport.DisconnectLocalClient();
+            SocketTasks tasks = NetworkConfig.NetworkTransport.StartClient();
+            return tasks;
         }
 
         private void OnEnable()
@@ -994,9 +1009,24 @@ namespace MLAPI
                         }
                     }
 
-                    else if (IsHostMigrationEnabled)
+                    else if (IsHostMigrationEnabled && OnDisconnectedHostCallback != null)
                     {
+                        DisconnectAction action = OnDisconnectedHostCallback();
 
+                        switch (action)
+                        {
+                            default:
+                            case DisconnectAction.Shutdown:
+                                IsConnectedClient = false;
+                                StopClient();
+                                break;
+                            case DisconnectAction.Migrate:
+                                MigrateToHost();
+                                break;
+                            case DisconnectAction.Host:
+                                BecomeHost();
+                                break;
+                        }
                     }
 
                     else
