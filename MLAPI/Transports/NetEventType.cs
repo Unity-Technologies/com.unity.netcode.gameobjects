@@ -18,10 +18,6 @@ namespace MLAPI.Transports
         /// </summary>
         Disconnect,
         /// <summary>
-        /// A host migrated
-        /// </summary>
-        HostMigrate,
-        /// <summary>
         /// No new event
         /// </summary>
         Nothing

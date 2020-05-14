@@ -31,12 +31,10 @@ namespace MLAPI.Configuration
         internal const byte MLAPI_DESTROY_OBJECTS = 21;
         internal const byte MLAPI_NAMED_MESSAGE = 22;
         internal const byte MLAPI_SYNCED_VAR = 23;
-        internal const byte MLAPI_CLIENT_CONNECTED = 24;
-        internal const byte MLAPI_CLIENT_DISCONNECTED = 25;
-        internal const byte MLAPI_CLIENT_NETWORKID = 26;
+        internal const byte MLAPI_CLIENT_DISCONNECTED = 24;
         internal const byte INVALID = 32;
 
-        internal static readonly string[] MESSAGE_NAMES = {
+        internal static readonly string[] MESSAGE_NAMES = new string[33] {
             "MLAPI_CERTIFICATE_HAIL", // 0
             "MLAPI_CERTIFICATE_HAIL_RESPONSE",
             "MLAPI_GREETINGS",
@@ -61,9 +59,9 @@ namespace MLAPI.Configuration
             "MLAPI_DESTROY_OBJECTS",
             "MLAPI_NAMED_MESSAGE",
             "MLAPI_SYNCED_VAR",
-            "MLAPI_CLIENT_CONNECTED",
             "MLAPI_CLIENT_DISCONNECTED",
-            "MLAPI_CLIENT_NETWORKID",
+            "",
+            "",
             "",
             "",
             "",

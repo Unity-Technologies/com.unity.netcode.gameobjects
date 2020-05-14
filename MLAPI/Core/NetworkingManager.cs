@@ -681,8 +681,6 @@ namespace MLAPI
                         }
                     }
                 }
-
-                OnClientDisconnectFromServer(SavedServerClientId);
             }
 
             SavedServerClientId = NetworkConfig.NetworkTransport.ServerClientId;
@@ -955,7 +953,7 @@ namespace MLAPI
                     }
                     else
                     {
-                        if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("Connected");
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo(clientId + " connected");
 
                         if (!NetworkConfig.EnableEncryption)
                             SendConnectionRequest();
@@ -1004,10 +1002,8 @@ namespace MLAPI
 
                     if (OnClientDisconnectCallback != null)
                         OnClientDisconnectCallback.Invoke(clientId);
+
                     NetworkProfiler.EndEvent();
-                    break;
-                case NetEventType.HostMigrate:
-                    MigrateHost();
                     break;
             }
         }
@@ -1149,17 +1145,9 @@ namespace MLAPI
                     case MLAPIConstants.MLAPI_SYNCED_VAR:
                         if (IsClient) InternalMessageHandler.HandleSyncedVar(clientId, messageStream);
                         break;
-                    case MLAPIConstants.MLAPI_CLIENT_CONNECTED:
-                        if (IsClient && IsHostMigrationEnabled)
-                            InternalMessageHandler.HandleClientConnected(clientId, messageStream);
-                        break;
                     case MLAPIConstants.MLAPI_CLIENT_DISCONNECTED:
                         if (IsClient && IsHostMigrationEnabled)
                             InternalMessageHandler.HandleClientDisconnected(clientId, messageStream);
-                        break;
-                    case MLAPIConstants.MLAPI_CLIENT_NETWORKID:
-                        if (IsClient && IsHostMigrationEnabled)
-                            InternalMessageHandler.HandleClientNetworkId(clientId, messageStream);
                         break;
                     default:
                         if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Read unrecognized messageType " + messageType);
@@ -1323,6 +1311,7 @@ namespace MLAPI
                 {
                     using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                     {
+                        writer.WriteBit(true);
                         writer.WriteUInt64Packed(clientId);
 
                         if (NetworkConfig.EnableSceneManagement)
@@ -1431,8 +1420,9 @@ namespace MLAPI
                         {
                             using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                             {
+                                writer.WriteBit(false);
                                 writer.WriteUInt64Packed(clientId);
-                                InternalMessageSender.Send(clientPair.Key, MLAPIConstants.MLAPI_CLIENT_CONNECTED, "MLAPI_INTERNAL", stream, SecuritySendFlags.None, null);
+                                InternalMessageSender.Send(clientPair.Key, MLAPIConstants.MLAPI_CONNECTION_APPROVED, "MLAPI_INTERNAL", stream, SecuritySendFlags.None, null);
                             }
                         }
                     }

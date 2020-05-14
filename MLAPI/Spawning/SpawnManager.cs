@@ -108,28 +108,13 @@ namespace MLAPI.Spawning
             }
             else
             {
-                networkObjectIdCounter++;
-
-                if (NetworkingManager.Singleton.IsHostMigrationEnabled)
-                {
-                    foreach (KeyValuePair<ulong, NetworkedClient> clientPair in NetworkingManager.Singleton.ConnectedClients)
-                    {
-                        if (clientPair.Key != NetworkingManager.Singleton.ServerClientId)
-                        {
-                            using (PooledBitStream stream = PooledBitStream.Get())
-                            {
-                                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
-                                {
-                                    writer.WriteUInt64Packed(networkObjectIdCounter);
-                                    InternalMessageSender.Send(clientPair.Key, MLAPIConstants.MLAPI_CLIENT_NETWORKID, "MLAPI_INTERNAL", stream, SecuritySendFlags.None, null);
-                                }
-                            }
-                        }
-                    }
-                }
-
-                return networkObjectIdCounter;
+                return ++networkObjectIdCounter;
             }
+        }
+
+        internal static void SetNetworkObjectIdCounter(ulong counter)
+        {
+            networkObjectIdCounter = counter + 5;
         }
 
         /// <summary>
