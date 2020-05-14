@@ -27,10 +27,6 @@ using MLAPI.Exceptions;
 using MLAPI.Transports.Tasks;
 using MLAPI.Messaging.Buffering;
 
-// TODO:
-// OnDisconnect
-
-
 namespace MLAPI
 {
     /// <summary>
