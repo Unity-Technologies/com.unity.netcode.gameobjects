@@ -203,9 +203,14 @@ namespace MLAPI
             }
         }
         /// <summary>
+        /// Delegate type called for handling with disconnection from host.
+        /// </summary>
+        /// <param name="newHost">The new host information for connecting, usually an id.</param>
+        public delegate DisconnectAction DisconnectedHostDelegate(out object newHost);
+        /// <summary>
         /// The callback to invoke once the local client disconnects. This callback is only ran when host migration is possible.
         /// </summary>
-        public Func<DisconnectAction> OnDisconnectedHostCallback = null;
+        public DisconnectedHostDelegate OnDisconnectedHostCallback = null;
         /// <summary>
         /// The current NetworkingConfiguration
         /// </summary>
@@ -1011,7 +1016,7 @@ namespace MLAPI
 
                     else if (IsHostMigrationEnabled && OnDisconnectedHostCallback != null)
                     {
-                        DisconnectAction action = OnDisconnectedHostCallback();
+                        DisconnectAction action = OnDisconnectedHostCallback(out object clientid);
 
                         switch (action)
                         {
