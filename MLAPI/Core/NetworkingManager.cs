@@ -690,6 +690,9 @@ namespace MLAPI
                 }
             }
 
+            // Setup the networkId counter
+            SpawnManager.SyncronizeNetworkIdCounters();
+
             // Renew transport as host
             SocketTasks tasks = NetworkConfig.NetworkTransport.StartServer();
 

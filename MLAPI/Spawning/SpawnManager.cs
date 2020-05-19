@@ -114,6 +114,36 @@ namespace MLAPI.Spawning
             }
         }
 
+        internal static void SyncronizeNetworkIdCounters()
+        {
+            networkObjectIdCounter = 0;
+            releasedNetworkObjectIds.Clear();
+
+            ulong highestNetworkId = 0;
+
+            for (int i = 0; i < SpawnedObjectsList.Count; i++)
+            {
+                if (SpawnedObjectsList[i].NetworkId > highestNetworkId)
+                {
+                    highestNetworkId = SpawnedObjectsList[i].NetworkId;
+                }
+            }
+
+            for (ulong i = 0; i < highestNetworkId; i++)
+            {
+                if (!SpawnedObjects.ContainsKey(i))
+                {
+                    releasedNetworkObjectIds.Enqueue(new ReleasedNetworkId()
+                    {
+                        NetworkId = i,
+                        ReleaseTime = Time.unscaledTime
+                    });
+                }
+            }
+
+            networkObjectIdCounter = highestNetworkId + 1;
+        }
+
         /// <summary>
         /// Gets the prefab index of a given prefab hash
         /// </summary>
