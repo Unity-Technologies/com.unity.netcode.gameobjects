@@ -42,14 +42,6 @@ namespace MLAPI
         private float networkTimeOffset;
         private float currentNetworkTimeOffset;
         /// <summary>
-        /// The time it takes to send a message to the connected server and back
-        /// </summary>
-        public float RTT() => IsClient ? RTT(ServerClientId) : 0f;
-        /// <summary>
-        /// The time it takes to send a message to the connected peer and back
-        /// </summary>
-        public float RTT(ulong clientId) => NetworkConfig.NetworkTransport != null ? NetworkConfig.NetworkTransport.GetCurrentRtt(clientId) : 0f;
-        /// <summary>
         /// Gets or sets if the NetworkingManager should be marked as DontDestroyOnLoad
         /// </summary>
         [HideInInspector]
