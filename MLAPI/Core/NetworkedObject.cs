@@ -383,6 +383,19 @@ namespace MLAPI
             }
         }
 
+        internal void SpawnWithCurrentState()
+        {
+            SpawnManager.SpawnNetworkedObjectLocally(this, SpawnManager.GetNetworkObjectId(), false, IsPlayerObject, OwnerClientId, null, false, 0, false, DestroyWithScene);
+
+            for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)
+            {
+                if (observers.Contains(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId))
+                {
+                    SpawnManager.SendSpawnCallForObject(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId, this, null);
+                }
+            }
+        }
+
         /// <summary>
         /// Spawns this GameObject across the network. Can only be called from the Server
         /// </summary>
@@ -415,6 +428,11 @@ namespace MLAPI
         public void UnSpawn()
         {
             SpawnManager.UnSpawnObject(this);
+        }
+
+        internal void SetPendingMigration()
+        {
+            SpawnManager.SetPendingMigration(this);
         }
 
         /// <summary>

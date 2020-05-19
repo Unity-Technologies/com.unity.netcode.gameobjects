@@ -184,13 +184,5 @@ namespace MLAPI.Transports
         /// Initializes the transport
         /// </summary>
         public abstract void Init();
-
-        /// <summary>
-        /// Raises a transport event
-        /// </summary>
-        protected virtual void RaiseTransportEvent(NetEventType type, ulong clientId, string channelName, ArraySegment<byte> payload, float receiveTime)
-        {
-            OnTransportEvent(type, clientId, channelName, payload, receiveTime);
-        }
     }
 }

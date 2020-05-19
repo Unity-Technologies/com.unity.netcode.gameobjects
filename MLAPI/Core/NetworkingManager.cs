@@ -26,6 +26,7 @@ using static MLAPI.Messaging.CustomMessagingManager;
 using MLAPI.Exceptions;
 using MLAPI.Transports.Tasks;
 using MLAPI.Messaging.Buffering;
+using MLAPI.HostMigration;
 
 namespace MLAPI
 {
@@ -195,15 +196,6 @@ namespace MLAPI
             }
         }
         /// <summary>
-        /// Delegate type called for handling with disconnection from host.
-        /// </summary>
-        /// <param name="newHost">The new host information for connecting, usually an id.</param>
-        public delegate DisconnectAction DisconnectedHostDelegate(out object newHost);
-        /// <summary>
-        /// The callback to invoke once the local client disconnects. This callback is only ran when host migration is possible.
-        /// </summary>
-        public DisconnectedHostDelegate OnDisconnectedHostCallback = null;
-        /// <summary>
         /// The current NetworkingConfiguration
         /// </summary>
         [HideInInspector]
@@ -221,6 +213,8 @@ namespace MLAPI
         /// Gets Whether or not we are syncing for host migration.
         /// </summary>
         public bool IsHostMigrationEnabled { get; internal set; }
+
+        internal readonly HostMigrationManager HostMigrationManager = new HostMigrationManager();
 
         internal void InvokeOnIncomingCustomMessage(ulong clientId, Stream stream)
         {
@@ -644,7 +638,7 @@ namespace MLAPI
         /// <summary>
         /// Become new Host
         /// </summary>
-        internal SocketTasks BecomeHost()
+        public SocketTasks BecomeHost()
         {
             if (!IsClient)
             {
@@ -661,10 +655,10 @@ namespace MLAPI
             // Get the old server clientId
             ulong oldServerClientId = ServerClientId;
 
+            // TODO: Cleanup all collections. Basically do a shutdown
+
             // Set server as true
             IsServer = true;
-
-            // TODO: Cleanup all collections. Basically do a shutdown
 
             ulong serverClientId = NetworkConfig.NetworkTransport.ServerClientId;
 
@@ -674,7 +668,6 @@ namespace MLAPI
             });
 
             ConnectedClientsList.Add(ConnectedClients[serverClientId]);
-
 
             // Mark all objects not owned by server or self as sleeping and unspawn them
             for (int i = SpawnManager.SpawnedObjectsList.Count - 1; i >= 0; i--)
@@ -693,34 +686,13 @@ namespace MLAPI
                 else
                 {
                     // This object is not owned by us, but by another client. It should be unspawned and set to sleep, waiting to be reclaimed
-                    SpawnManager.SpawnedObjectsList[i].PendingClaim = true;
-
-                    // Unspawn the object
-                    SpawnManager.SpawnedObjectsList[i].UnSpawn();
+                    SpawnManager.SpawnedObjectsList[i].SetPendingMigration();
                 }
             }
 
             // Renew transport as host
             SocketTasks tasks = NetworkConfig.NetworkTransport.StartServer();
 
-            return tasks;
-        }
-
-        /// <summary>
-        /// Migrates to new Host
-        /// </summary>
-        internal SocketTasks MigrateToHost()
-        {
-            if (!IsClient)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal)
-                    LogHelper.LogWarning("Cannot migrate to a new host when we weren't connected");
-                return SocketTask.Fault.AsTasks();
-            }
-
-            // TODO: Renew transport as client (PR2)
-            NetworkConfig.NetworkTransport.DisconnectLocalClient();
-            SocketTasks tasks = NetworkConfig.NetworkTransport.StartClient();
             return tasks;
         }
 
@@ -1031,27 +1003,6 @@ namespace MLAPI
                             }
                         }
                     }
-
-                    else if (IsHostMigrationEnabled && OnDisconnectedHostCallback != null)
-                    {
-                        DisconnectAction action = OnDisconnectedHostCallback(out object clientid);
-
-                        switch (action)
-                        {
-                            default:
-                            case DisconnectAction.Shutdown:
-                                IsConnectedClient = false;
-                                StopClient();
-                                break;
-                            case DisconnectAction.Migrate:
-                                MigrateToHost();
-                                break;
-                            case DisconnectAction.Host:
-                                BecomeHost();
-                                break;
-                        }
-                    }
-
                     else
                     {
                         IsConnectedClient = false;
@@ -1333,8 +1284,12 @@ namespace MLAPI
             {
                 // Inform new client it got approved
                 byte[] aesKey = PendingClients.ContainsKey(clientId) ? PendingClients[clientId].AesKey : null;
+
                 if (PendingClients.ContainsKey(clientId))
+                {
                     PendingClients.Remove(clientId);
+                }
+
                 NetworkedClient client = new NetworkedClient()
                 {
                     ClientId = clientId,
@@ -1342,15 +1297,17 @@ namespace MLAPI
                     AesKey = aesKey
 #endif
                 };
+
                 ConnectedClients.Add(clientId, client);
                 ConnectedClientsList.Add(client);
 
                 // This packet is unreliable, but if it gets through it should provide a much better sync than the potentially huge approval message.
                 SyncTime();
 
-
                 if (createPlayerObject)
                 {
+                    // Only create player object if they are not migrated and if createPlayerObject is true.
+
                     NetworkedObject netObject = SpawnManager.CreateLocalNetworkedObject(false, 0, (playerPrefabHash == null ? NetworkConfig.PlayerPrefabHash.Value : playerPrefabHash.Value), null, position, rotation);
                     SpawnManager.SpawnNetworkedObjectLocally(netObject, SpawnManager.GetNetworkObjectId(), false, true, clientId, null, false, 0, false, false);
 
@@ -1487,7 +1444,7 @@ namespace MLAPI
                         }
                     }
 
-                    if (ConnectedClients[clientId].PlayerObject == null || (!ConnectedClients[clientId].PlayerObject.observers.Contains(clientPair.Key)) && !IsHostMigrationEnabled)
+                    if (ConnectedClients[clientId].PlayerObject == null || (!ConnectedClients[clientId].PlayerObject.observers.Contains(clientPair.Key)))
                         continue; //The new client object.
 
                     using (PooledBitStream stream = PooledBitStream.Get())

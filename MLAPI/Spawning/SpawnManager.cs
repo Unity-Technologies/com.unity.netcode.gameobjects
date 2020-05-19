@@ -31,6 +31,8 @@ namespace MLAPI.Spawning
         /// A list of the spawned objects
         /// </summary>
         public static readonly List<NetworkedObject> SpawnedObjectsList = new List<NetworkedObject>();
+
+        internal static readonly List<NetworkedObject> PendingClaimObjects = new List<NetworkedObject>();
         /// <summary>
         /// The delegate used when spawning a networked object
         /// </summary>
@@ -99,7 +101,7 @@ namespace MLAPI.Spawning
         }
 
         internal static readonly Queue<ReleasedNetworkId> releasedNetworkObjectIds = new Queue<ReleasedNetworkId>();
-        internal static ulong networkObjectIdCounter;
+        private static ulong networkObjectIdCounter;
         internal static ulong GetNetworkObjectId()
         {
             if (releasedNetworkObjectIds.Count > 0 && NetworkingManager.Singleton.NetworkConfig.RecycleNetworkIds && (Time.unscaledTime - releasedNetworkObjectIds.Peek().ReleaseTime) >= NetworkingManager.Singleton.NetworkConfig.NetworkIdRecycleDelay)
@@ -110,11 +112,6 @@ namespace MLAPI.Spawning
             {
                 return ++networkObjectIdCounter;
             }
-        }
-
-        internal static void SetNetworkObjectIdCounter(ulong counter)
-        {
-            networkObjectIdCounter = counter + 5;
         }
 
         /// <summary>
@@ -360,7 +357,7 @@ namespace MLAPI.Spawning
 
             if (ownerClientId != null)
             {
-                if (NetworkingManager.Singleton.IsServer || NetworkingManager.Singleton.IsHostMigrationEnabled)
+                if (NetworkingManager.Singleton.IsServer)
                 {
                     if (playerObject)
                     {
@@ -377,7 +374,7 @@ namespace MLAPI.Spawning
                 }
             }
 
-            if (NetworkingManager.Singleton.IsServer || NetworkingManager.Singleton.IsHostMigrationEnabled)
+            if (NetworkingManager.Singleton.IsServer)
             {
                 for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)
                 {
@@ -506,6 +503,20 @@ namespace MLAPI.Spawning
             OnDestroyObject(netObject.NetworkId, false);
         }
 
+        internal static void SetPendingMigration(NetworkedObject netObject)
+        {
+            if (!netObject.IsSpawned)
+            {
+                throw new SpawnStateException("Object is not spawned");
+            }
+
+            OnDestroyObject(netObject.NetworkId, false);
+
+            PendingClaimObjects.Add(netObject);
+
+            netObject.PendingClaim = true;
+        }
+
         // Makes scene objects ready to be reused
         internal static void ServerResetShudownStateForSceneObjects()
         {
@@ -627,6 +638,7 @@ namespace MLAPI.Spawning
                         NetworkingManager.Singleton.ConnectedClients[SpawnedObjects[networkId].OwnerClientId].OwnedObjects.RemoveAt(i);
                 }
             }
+
             SpawnedObjects[networkId].IsSpawned = false;
 
             if (NetworkingManager.Singleton != null && NetworkingManager.Singleton.IsServer)

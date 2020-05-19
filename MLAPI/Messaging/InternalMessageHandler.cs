@@ -16,6 +16,7 @@ using UnityEngine.Events;
 using UnityEngine.SceneManagement;
 using System.Collections.Generic;
 using MLAPI.Messaging.Buffering;
+using MLAPI.HostMigration;
 
 namespace MLAPI.Messaging
 {
@@ -232,8 +233,10 @@ namespace MLAPI.Messaging
                         NetworkingManager.Singleton.ConnectedClientsList.Add(otherClient);
                     }
                 }
-
-                else NetworkingManager.Singleton.ConnectedClients.Add(NetworkingManager.Singleton.LocalClientId, new NetworkedClient() { ClientId = NetworkingManager.Singleton.LocalClientId });
+                else
+                {
+                    NetworkingManager.Singleton.ConnectedClients.Add(NetworkingManager.Singleton.LocalClientId, new NetworkedClient() { ClientId = NetworkingManager.Singleton.LocalClientId });
+                }
 
 
                 void DelayedSpawnAction(Stream continuationStream)
@@ -299,7 +302,6 @@ namespace MLAPI.Messaging
 
                             NetworkedObject netObject = SpawnManager.CreateLocalNetworkedObject(softSync, instanceId, prefabHash, parentNetworkId, pos, rot);
                             SpawnManager.SpawnNetworkedObjectLocally(netObject, networkId, softSync, isPlayerObject, ownerId, continuationStream, false, 0, true, false);
-                            if (NetworkingManager.Singleton.IsHostMigrationEnabled) SpawnManager.SetNetworkObjectIdCounter(networkId);
                             Queue<BufferManager.BufferedMessage> bufferQueue = BufferManager.ConsumeBuffersForNetworkId(networkId);
 
                             // Apply buffered messages
@@ -355,9 +357,11 @@ namespace MLAPI.Messaging
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
                 ulong newClientId = reader.ReadUInt64Packed();
-                NetworkedClient newClient = new NetworkedClient() { ClientId = newClientId };
-                NetworkingManager.Singleton.ConnectedClients.Add(newClientId, newClient);
-                NetworkingManager.Singleton.ConnectedClientsList.Add(newClient);
+
+                HostMigrationManager.Singleton.MigratableHosts.Add(new MigratableHost()
+                {
+                    ClientId = newClientId
+                });
             }
         }
 
@@ -367,16 +371,14 @@ namespace MLAPI.Messaging
             {
                 ulong disconnectedClientId = reader.ReadUInt64Packed();
 
-                for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)
+                for (int i = 0; i < HostMigrationManager.Singleton.MigratableHosts.Count; i++)
                 {
-                    if (NetworkingManager.Singleton.ConnectedClientsList[i].ClientId == disconnectedClientId)
+                    if (HostMigrationManager.Singleton.MigratableHosts[i].ClientId == disconnectedClientId)
                     {
-                        NetworkingManager.Singleton.ConnectedClientsList.RemoveAt(i);
+                        HostMigrationManager.Singleton.MigratableHosts.RemoveAt(i);
                         break;
                     }
                 }
-
-                NetworkingManager.Singleton.ConnectedClients.Remove(disconnectedClientId);
             }
         }
 
@@ -434,7 +436,6 @@ namespace MLAPI.Messaging
 
                 NetworkedObject netObject = SpawnManager.CreateLocalNetworkedObject(softSync, instanceId, prefabHash, parentNetworkId, pos, rot);
                 SpawnManager.SpawnNetworkedObjectLocally(netObject, networkId, softSync, isPlayerObject, ownerId, stream, hasPayload, payLoadLength, true, false);
-                if (NetworkingManager.Singleton.IsHostMigrationEnabled) SpawnManager.SetNetworkObjectIdCounter(networkId);
                 Queue<BufferManager.BufferedMessage> bufferQueue = BufferManager.ConsumeBuffersForNetworkId(networkId);
 
                 // Apply buffered messages
@@ -731,7 +732,7 @@ namespace MLAPI.Messaging
                 }
             }
         }
-        
+
         internal static void HandleClientRPC(ulong clientId, Stream stream, Action<ulong> bufferCallback)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
@@ -764,7 +765,7 @@ namespace MLAPI.Messaging
                 }
             }
         }
-        
+
         internal static void HandleClientRPCRequest(ulong clientId, Stream stream, string channelName, SecuritySendFlags security, Action<ulong> bufferCallback)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))

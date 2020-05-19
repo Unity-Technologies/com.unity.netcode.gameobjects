@@ -363,7 +363,6 @@ namespace MLAPI.SceneManagement
 
                         NetworkedObject networkedObject = SpawnManager.CreateLocalNetworkedObject(false, 0, prefabHash, parentNetworkId, position, rotation);
                         SpawnManager.SpawnNetworkedObjectLocally(networkedObject, networkId, true, isPlayerObject, owner, objectStream, false, 0, true, false);
-                        if (NetworkingManager.Singleton.IsHostMigrationEnabled) SpawnManager.SetNetworkObjectIdCounter(networkId);
                         Queue<BufferManager.BufferedMessage> bufferQueue = BufferManager.ConsumeBuffersForNetworkId(networkId);
 
                         // Apply buffered messages
@@ -408,7 +407,6 @@ namespace MLAPI.SceneManagement
 
                         NetworkedObject networkedObject = SpawnManager.CreateLocalNetworkedObject(true, instanceId, 0, parentNetworkId, null, null);
                         SpawnManager.SpawnNetworkedObjectLocally(networkedObject, networkId, true, isPlayerObject, owner, objectStream, false, 0, true, false);
-                        if (NetworkingManager.Singleton.IsHostMigrationEnabled) SpawnManager.SetNetworkObjectIdCounter(networkId);
                         Queue<BufferManager.BufferedMessage> bufferQueue = BufferManager.ConsumeBuffersForNetworkId(networkId);
 
                         // Apply buffered messages
