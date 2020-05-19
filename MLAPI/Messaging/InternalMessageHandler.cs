@@ -189,14 +189,23 @@ namespace MLAPI.Messaging
                 if (NetworkingManager.Singleton.NetworkConfig.ConnectionApproval)
                 {
                     byte[] connectionBuffer = reader.ReadByteArray();
+
+                    bool migrating = reader.ReadBool();
+
+                    ulong? oldClientId = migrating ? new ulong?(reader.ReadUInt64Packed()) : null;
+
                     NetworkingManager.Singleton.InvokeConnectionApproval(connectionBuffer, clientId, (createPlayerObject, playerPrefabHash, approved, position, rotation) =>
                     {
-                        NetworkingManager.Singleton.HandleApproval(clientId, createPlayerObject, playerPrefabHash, approved, position, rotation);
+                        NetworkingManager.Singleton.HandleApproval(clientId, createPlayerObject, playerPrefabHash, approved, position, rotation, oldClientId);
                     });
                 }
                 else
                 {
-                    NetworkingManager.Singleton.HandleApproval(clientId, NetworkingManager.Singleton.NetworkConfig.CreatePlayerPrefab, null, true, null, null);
+                    bool migrating = reader.ReadBool();
+
+                    ulong? oldClientId = migrating ? new ulong?(reader.ReadUInt64Packed()) : null;
+
+                    NetworkingManager.Singleton.HandleApproval(clientId, NetworkingManager.Singleton.NetworkConfig.CreatePlayerPrefab, null, true, null, null, oldClientId);
                 }
             }
         }

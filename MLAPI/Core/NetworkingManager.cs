@@ -209,11 +209,6 @@ namespace MLAPI
         internal byte[] clientAesKey;
         internal static event Action OnSingletonReady;
 
-        /// <summary>
-        /// Gets Whether or not we are syncing for host migration.
-        /// </summary>
-        public bool IsHostMigrationEnabled { get; internal set; }
-
         internal readonly HostMigrationManager HostMigrationManager = new HostMigrationManager();
 
         internal void InvokeOnIncomingCustomMessage(ulong clientId, Stream stream)
@@ -403,7 +398,7 @@ namespace MLAPI
                 }
             }
 
-            IsHostMigrationEnabled = false;
+            HostMigrationManager.Singleton.IsHostMigrationEnabled = false;
 
             if (NetworkConfig.EnableHostMigration)
             {
@@ -413,7 +408,7 @@ namespace MLAPI
                 }
                 else
                 {
-                    IsHostMigrationEnabled = true;
+                    HostMigrationManager.Singleton.IsHostMigrationEnabled = true;
                 }
             }
 
@@ -846,7 +841,20 @@ namespace MLAPI
                     writer.WriteUInt64Packed(NetworkConfig.GetConfig());
 
                     if (NetworkConfig.ConnectionApproval)
+                    {
                         writer.WriteByteArray(NetworkConfig.ConnectionData);
+                    }
+
+                    if (HostMigrationManager.Singleton.IsHostMigrationEnabled && HostMigrationManager.Singleton.IsMigratingFromClientId != null)
+                    {
+                        // We are migrating from an old clientId. Let the server know
+                        writer.WriteBool(true);
+                        writer.WriteUInt64Packed(HostMigrationManager.Singleton.IsMigratingFromClientId.Value);
+                    }
+                    else
+                    {
+                        writer.WriteBool(false);
+                    }
                 }
 
                 InternalMessageSender.Send(ServerClientId, MLAPIConstants.MLAPI_CONNECTION_REQUEST, "MLAPI_INTERNAL", stream, SecuritySendFlags.Authenticated | SecuritySendFlags.Encrypted, null);
@@ -987,24 +995,6 @@ namespace MLAPI
                     if (IsServer)
                     {
                         OnClientDisconnectFromServer(clientId);
-
-                        if (IsHostMigrationEnabled)
-                        {
-                            foreach (KeyValuePair<ulong, NetworkedClient> clientPair in ConnectedClients)
-                            {
-                                if (clientPair.Key != ServerClientId)
-                                {
-                                    using (PooledBitStream stream = PooledBitStream.Get())
-                                    {
-                                        using (PooledBitWriter writer = PooledBitWriter.Get(stream))
-                                        {
-                                            writer.WriteUInt64Packed(clientId);
-                                            InternalMessageSender.Send(clientPair.Key, MLAPIConstants.MLAPI_CLIENT_DISCONNECTED, "MLAPI_INTERNAL", stream, SecuritySendFlags.None, null);
-                                        }
-                                    }
-                                }
-                            }
-                        }
                     }
                     else
                     {
@@ -1210,6 +1200,24 @@ namespace MLAPI
             {
                 if (IsServer)
                 {
+                    if (HostMigrationManager.Singleton.IsHostMigrationEnabled)
+                    {
+                        foreach (KeyValuePair<ulong, NetworkedClient> clientPair in ConnectedClients)
+                        {
+                            if (clientPair.Key != ServerClientId)
+                            {
+                                using (PooledBitStream stream = PooledBitStream.Get())
+                                {
+                                    using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                                    {
+                                        writer.WriteUInt64Packed(clientId);
+                                        InternalMessageSender.Send(clientPair.Key, MLAPIConstants.MLAPI_CLIENT_DISCONNECTED, "MLAPI_INTERNAL", stream, SecuritySendFlags.None, null);
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     if (ConnectedClients[clientId].PlayerObject != null)
                     {
                         if (SpawnManager.customDestroyHandlers.ContainsKey(ConnectedClients[clientId].PlayerObject.PrefabHash))
@@ -1281,7 +1289,7 @@ namespace MLAPI
 
         private readonly List<NetworkedObject> _observedObjects = new List<NetworkedObject>();
 
-        internal void HandleApproval(ulong clientId, bool createPlayerObject, ulong? playerPrefabHash, bool approved, Vector3? position, Quaternion? rotation)
+        internal void HandleApproval(ulong clientId, bool createPlayerObject, ulong? playerPrefabHash, bool approved, Vector3? position, Quaternion? rotation, ulong? migratingFromOldClientId)
         {
             if (approved)
             {
@@ -1306,6 +1314,8 @@ namespace MLAPI
 
                 // This packet is unreliable, but if it gets through it should provide a much better sync than the potentially huge approval message.
                 SyncTime();
+
+                // TODO: Respawn all the objects that were put to sleep
 
                 if (createPlayerObject)
                 {
@@ -1343,7 +1353,7 @@ namespace MLAPI
 
                         writer.WriteSinglePacked(NetworkTime);
 
-                        if (IsHostMigrationEnabled)
+                        if (HostMigrationManager.Singleton.IsHostMigrationEnabled)
                         {
                             writer.WriteUInt32Packed((uint)ConnectedClients.Count);
 
@@ -1435,7 +1445,7 @@ namespace MLAPI
                     if (clientPair.Key == clientId)
                         continue; //The new client.
 
-                    if (clientPair.Key != ServerClientId)
+                    if (HostMigrationManager.Singleton.IsHostMigrationEnabled && clientPair.Key != ServerClientId)
                     {
                         using (PooledBitStream stream = PooledBitStream.Get())
                         {
