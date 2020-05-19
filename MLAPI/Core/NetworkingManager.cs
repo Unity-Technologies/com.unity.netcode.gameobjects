@@ -374,32 +374,9 @@ namespace MLAPI
                 return;
             }
 
-            try
+            if (server)
             {
-                string pfx = NetworkConfig.ServerBase64PfxCertificate.Trim();
-
-                if (server && NetworkConfig.EnableEncryption && NetworkConfig.SignKeyExchange && !string.IsNullOrEmpty(pfx))
-                {
-                    try
-                    {
-                        byte[] decodedPfx = Convert.FromBase64String(pfx);
-
-                        NetworkConfig.ServerX509Certificate = new X509Certificate2(decodedPfx);
-
-                        if (!NetworkConfig.ServerX509Certificate.HasPrivateKey)
-                        {
-                            if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The imported PFX file did not have a private key");
-                        }
-                    }
-                    catch (FormatException ex)
-                    {
-                        if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Parsing PFX failed: " + ex.ToString());
-                    }
-                }
-            }
-            catch (CryptographicException ex)
-            {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Importing of certificate failed: " + ex.ToString());
+                ImportServerCertificate();
             }
 
             if (NetworkConfig.EnableSceneManagement)
@@ -432,11 +409,56 @@ namespace MLAPI
                 }
             }
 
+            IsHostMigrationEnabled = false;
+
+            if (NetworkConfig.EnableHostMigration)
+            {
+                if (!NetworkConfig.NetworkTransport.IsHostMigrationSupported)
+                {
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError($"{nameof(NetworkConfig.NetworkTransport)} does not support host migration.");
+                }
+                else
+                {
+                    IsHostMigrationEnabled = true;
+                }
+            }
+
             NetworkConfig.NetworkTransport.OnTransportEvent += HandleRawTransportPoll;
 
             NetworkConfig.NetworkTransport.ResetChannelCache();
 
             NetworkConfig.NetworkTransport.Init();
+        }
+
+        private void ImportServerCertificate()
+        {
+            try
+            {
+                string pfx = NetworkConfig.ServerBase64PfxCertificate.Trim();
+
+                if (NetworkConfig.EnableEncryption && NetworkConfig.SignKeyExchange && !string.IsNullOrEmpty(pfx))
+                {
+                    try
+                    {
+                        byte[] decodedPfx = Convert.FromBase64String(pfx);
+
+                        NetworkConfig.ServerX509Certificate = new X509Certificate2(decodedPfx);
+
+                        if (!NetworkConfig.ServerX509Certificate.HasPrivateKey)
+                        {
+                            if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The imported PFX file did not have a private key");
+                        }
+                    }
+                    catch (FormatException ex)
+                    {
+                        if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Parsing PFX failed: " + ex.ToString());
+                    }
+                }
+            }
+            catch (CryptographicException ex)
+            {
+                if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Importing of certificate failed: " + ex.ToString());
+            }
         }
 
         /// <summary>
@@ -486,19 +508,6 @@ namespace MLAPI
             {
                 if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot start client while an instance is already running");
                 return SocketTask.Fault.AsTasks();
-            }
-
-            IsHostMigrationEnabled = false;
-
-            if (NetworkConfig.EnableHostMigration)
-            {
-                if (!NetworkConfig.NetworkTransport.IsHostMigrationSupported)
-                {
-                    if (LogHelper.CurrentLogLevel <= LogLevel.Error)
-                        LogHelper.LogError($"{nameof(NetworkConfig.NetworkTransport)} does not support host migration.");
-                }
-
-                else IsHostMigrationEnabled = true;
             }
 
             Init(false);
@@ -596,19 +605,6 @@ namespace MLAPI
                 {
                     if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("No ConnectionApproval callback defined. Connection approval will timeout");
                 }
-            }
-
-            IsHostMigrationEnabled = false;
-
-            if (NetworkConfig.EnableHostMigration)
-            {
-                if (!NetworkConfig.NetworkTransport.IsHostMigrationSupported)
-                {
-                    if (LogHelper.CurrentLogLevel <= LogLevel.Error)
-                        LogHelper.LogError($"{nameof(NetworkConfig.NetworkTransport)} does not support host migration.");
-                }
-
-                else IsHostMigrationEnabled = true;
             }
 
             Init(true);
