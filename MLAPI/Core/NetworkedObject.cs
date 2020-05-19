@@ -63,6 +63,9 @@ namespace MLAPI
 
         internal ulong? _ownerClientId = null;
 
+        // Represents if this object is pending to be reclaimed
+        public bool PendingClaim { get; internal set; }
+
         /// <summary>
         /// InstanceId is the id that is unique to the object and scene for a scene object when UsePrefabSync is false.
         /// If UsePrefabSync is true or if it's used on non scene objects, this has no effect.

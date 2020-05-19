@@ -648,29 +648,61 @@ namespace MLAPI
         {
             if (!IsClient)
             {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal)
-                    LogHelper.LogWarning("Cannot become host when we weren't connected");
+                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot become host when we weren't connected");
                 return SocketTask.Fault.AsTasks();
             }
 
-            // Observers
-            for (int i = 0; i < SpawnManager.SpawnedObjectsList.Count; i++)
-            {
-                for (int j = 0; j < ConnectedClientsList.Count; j++)
-                {
-                    ulong clientId = ConnectedClientsList[j].ClientId;
+            // Close client
+            NetworkConfig.NetworkTransport.DisconnectLocalClient();
 
-                    if (clientId == ServerClientId || SpawnManager.SpawnedObjectsList[i].CheckObjectVisibility == null || SpawnManager.SpawnedObjectsList[i].CheckObjectVisibility(clientId))
-                    {
-                        SpawnManager.SpawnedObjectsList[i].observers.Add(clientId);
-                    }
+            // Get the old clientId
+            ulong oldClientId = LocalClientId;
+
+            // Get the old server clientId
+            ulong oldServerClientId = ServerClientId;
+
+            // Set server as true
+            IsServer = true;
+
+            // TODO: Cleanup all collections. Basically do a shutdown
+
+            ulong serverClientId = NetworkConfig.NetworkTransport.ServerClientId;
+
+            ConnectedClients.Add(serverClientId, new NetworkedClient()
+            {
+                ClientId = serverClientId
+            });
+
+            ConnectedClientsList.Add(ConnectedClients[serverClientId]);
+
+
+            // Mark all objects not owned by server or self as sleeping and unspawn them
+            for (int i = SpawnManager.SpawnedObjectsList.Count - 1; i >= 0; i--)
+            {
+                // Setup observers for the host
+                if (SpawnManager.SpawnedObjectsList[i].CheckObjectVisibility == null || SpawnManager.SpawnedObjectsList[i].CheckObjectVisibility(serverClientId))
+                {
+                    SpawnManager.SpawnedObjectsList[i].observers.Add(serverClientId);
+                }
+
+                if (SpawnManager.SpawnedObjectsList[i].OwnerClientId == ServerClientId || SpawnManager.SpawnedObjectsList[i].OwnerClientId == LocalClientId)
+                {
+                    // The object is either owned by the server, or us. It should be kept spawned but the owner should be replaced with servers
+                    SpawnManager.SpawnedObjectsList[i].ChangeOwnership(NetworkConfig.NetworkTransport.ServerClientId);
+                }
+                else
+                {
+                    // This object is not owned by us, but by another client. It should be unspawned and set to sleep, waiting to be reclaimed
+                    SpawnManager.SpawnedObjectsList[i].PendingClaim = true;
+
+                    // Unspawn the object
+                    SpawnManager.SpawnedObjectsList[i].UnSpawn();
                 }
             }
 
             // Renew transport as host
-            NetworkConfig.NetworkTransport.DisconnectLocalClient();
             SocketTasks tasks = NetworkConfig.NetworkTransport.StartServer();
-            IsServer = true;
+
             return tasks;
         }
 
