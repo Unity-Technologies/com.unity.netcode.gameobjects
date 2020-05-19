@@ -406,9 +406,13 @@ namespace MLAPI
                 {
                     if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Networked prefab cannot be null");
                 }
-                else if (NetworkConfig.NetworkedPrefabs[i].Prefab.GetComponent<NetworkedObject>() == null)
+                 else if (NetworkConfig.NetworkedPrefabs[i].Prefab.GetComponent<NetworkedObject>() == null)
                 {
-                    if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Networked prefab is missing a NetworkedObject component");
+                    if (LogHelper.CurrentLogLevel <= LogLevel.Error)
+                    {
+                        LogHelper.LogError("Networked prefab " + NetworkConfig.NetworkedPrefabs[i].Prefab.name +
+                                           " is missing a NetworkedObject component");
+                    }
                 }
                 else
                 {
