@@ -530,31 +530,29 @@ namespace MLAPI
             HashSet<ulong> disconnectedIds = new HashSet<ulong>();
             //Don't know if I have to disconnect the clients. I'm assuming the NetworkTransport does all the cleaning on shtudown. But this way the clients get a disconnect message from server (so long it does't get lost)
 
-            if (!IsHostMigrationEnabled)
+            foreach (KeyValuePair<ulong, NetworkedClient> pair in ConnectedClients)
             {
-                foreach (KeyValuePair<ulong, NetworkedClient> pair in ConnectedClients)
+                if (!disconnectedIds.Contains(pair.Key))
                 {
-                    if (!disconnectedIds.Contains(pair.Key))
-                    {
-                        disconnectedIds.Add(pair.Key);
+                    disconnectedIds.Add(pair.Key);
 
-                        if (pair.Key == NetworkConfig.NetworkTransport.ServerClientId)
-                            continue;
+                    if (pair.Key == NetworkConfig.NetworkTransport.ServerClientId)
+                        continue;
 
-                        NetworkConfig.NetworkTransport.DisconnectRemoteClient(pair.Key);
-                    }
+                    NetworkConfig.NetworkTransport.DisconnectRemoteClient(pair.Key);
                 }
+            }
 
-                foreach (KeyValuePair<ulong, PendingClient> pair in PendingClients)
+            foreach (KeyValuePair<ulong, PendingClient> pair in PendingClients)
+            {
+                if (!disconnectedIds.Contains(pair.Key))
                 {
-                    if (!disconnectedIds.Contains(pair.Key))
-                    {
-                        disconnectedIds.Add(pair.Key);
-                        if (pair.Key == NetworkConfig.NetworkTransport.ServerClientId)
-                            continue;
+                    disconnectedIds.Add(pair.Key);
 
-                        NetworkConfig.NetworkTransport.DisconnectRemoteClient(pair.Key);
-                    }
+                    if (pair.Key == NetworkConfig.NetworkTransport.ServerClientId)
+                        continue;
+
+                    NetworkConfig.NetworkTransport.DisconnectRemoteClient(pair.Key);
                 }
             }
 
