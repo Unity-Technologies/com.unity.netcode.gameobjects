@@ -9,8 +9,8 @@ namespace MLAPI.Prototyping
     /// <summary>
     /// A prototype component for syncing transforms
     /// </summary>
-    [AddComponentMenu("MLAPI/NetworkedTransform")]
-    public class NetworkedTransform : NetworkedBehaviour
+    [AddComponentMenu("MLAPI/ExampleNetworkedTransform")]
+    public class ExampleNetworkedTransform : NetworkedBehaviour
     {
         internal class ClientSendInfo
         {
