@@ -453,12 +453,13 @@ namespace MLAPI.Messaging
                     //We are current owner.
                     SpawnManager.SpawnedObjects[networkId].InvokeBehaviourOnLostOwnership();
                 }
+                // set new owner before notifying NetworkedObjects to ensure that IsOwner is true
+                SpawnManager.SpawnedObjects[networkId].OwnerClientId = ownerClientId;
                 if (ownerClientId == NetworkingManager.Singleton.LocalClientId)
                 {
                     //We are new owner.
                     SpawnManager.SpawnedObjects[networkId].InvokeBehaviourOnGainedOwnership();
                 }
-                SpawnManager.SpawnedObjects[networkId].OwnerClientId = ownerClientId;
             }
         }
 
