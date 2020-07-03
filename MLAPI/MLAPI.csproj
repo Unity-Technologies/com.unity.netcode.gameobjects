@@ -8,6 +8,10 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <TargetFrameworks>net35;net471;net45;netstandard2.0</TargetFrameworks>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net35|AnyCPU'">
+    <DebugType>portable</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
 
   <ItemGroup>
     <Reference Include="System.Security" Condition="$(TargetFramework) != 'netstandard2.0'" />
@@ -18,4 +22,8 @@
       <Private>false</Private>
     </Reference>
   </ItemGroup>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="copy /Y $(TargetDir)\$(TargetName).dll  H:\Projects\notruf2019_new\programming\n2019Plugins\BuildSolution\Plugins&#xD;&#xA;copy /Y $(TargetDir)\$(TargetName).pdb  H:\Projects\notruf2019_new\programming\n2019Plugins\BuildSolution\Plugins" />
+  </Target>
 </Project>
