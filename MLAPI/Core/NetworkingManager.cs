@@ -347,8 +347,6 @@ namespace MLAPI
             SpawnManager.SpawnedObjectsList.Clear();
             SpawnManager.releasedNetworkObjectIds.Clear();
             SpawnManager.pendingSoftSyncObjects.Clear();
-            SpawnManager.customSpawnHandlers.Clear();
-            SpawnManager.customDestroyHandlers.Clear();
             NetworkSceneManager.registeredSceneNames.Clear();
             NetworkSceneManager.sceneIndexToString.Clear();
             NetworkSceneManager.sceneNameToIndex.Clear();
@@ -390,7 +388,7 @@ namespace MLAPI
 
             if (NetworkConfig.EnableSceneManagement)
             {
-                NetworkConfig.RegisteredScenes.Sort();
+                NetworkConfig.RegisteredScenes.Sort(StringComparer.Ordinal);
 
                 for (int i = 0; i < NetworkConfig.RegisteredScenes.Count; i++)
                 {

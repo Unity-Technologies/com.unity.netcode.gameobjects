@@ -223,7 +223,7 @@ namespace MLAPI.Configuration
 
         private void Sort()
         {
-            RegisteredScenes.Sort();
+            RegisteredScenes.Sort(StringComparer.Ordinal);
         }
 
         /// <summary>

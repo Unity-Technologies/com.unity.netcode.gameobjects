@@ -195,7 +195,7 @@ private void Start()
 private void Start()
 {
     //Receiving
-    CustomMessagingManager.RegisterNamedMessageHandler("myMessageName", (senderClientId, stream)
+    CustomMessagingManager.RegisterNamedMessageHandler("myMessageName", (senderClientId, stream) =>
     {
         using (PooledBitReader reader = PooledBitReader.Get(stream))
         {

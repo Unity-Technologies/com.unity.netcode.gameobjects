@@ -258,7 +258,7 @@ namespace MLAPI
             }
             else
             {
-                return list.OrderBy(x => x.Name).ToArray();
+                return list.OrderBy(x => x.Name, StringComparer.Ordinal).ToArray();
             }
         }
 

@@ -517,7 +517,7 @@ namespace MLAPI.Spawning
 
         internal static void ServerDestroySpawnedSceneObjects()
         {
-            for (int i = 0; i < SpawnedObjectsList.Count; i++)
+            for (int i = SpawnedObjectsList.Count - 1; i >= 0; i--)
             {
                 if ((SpawnedObjectsList[i].IsSceneObject != null && SpawnedObjectsList[i].IsSceneObject == true) || SpawnedObjectsList[i].DestroyWithScene)
                 {
