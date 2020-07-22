@@ -22,7 +22,7 @@ namespace MLAPI.NetworkedVar
                 object newValue = field.GetValue(fieldInstance);
                 object oldValue = value;
 
-                if (newValue != oldValue || isDirty)
+                if (!Equals(newValue, oldValue) || isDirty)
                 {
                     isDirty = true;
 
