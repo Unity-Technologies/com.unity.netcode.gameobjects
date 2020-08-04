@@ -16,12 +16,12 @@ namespace MLAPI.Configuration
             {
                 if (Prefab == null)
                 {
-                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkedPrefab is not assigned");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkedPrefab is not assigned");
                     return 0;
                 }
                 else if (Prefab.GetComponent<NetworkedObject>() == null)
                 {
-                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The NetworkedPrefab " + Prefab.name + " does not have a NetworkedObject");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("The NetworkedPrefab " + Prefab.name + " does not have a NetworkedObject");
                     return 0;
                 }
                 else return Prefab.GetComponent<NetworkedObject>().PrefabHash;

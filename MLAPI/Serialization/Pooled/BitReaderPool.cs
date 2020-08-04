@@ -23,7 +23,7 @@ namespace MLAPI.Serialization.Pooled
             {
                 if (createdReaders == 254)
                 {
-                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("255 readers have been created. Did you forget to dispose?");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("255 readers have been created. Did you forget to dispose?");
                 }
                 else if (createdReaders < 255) createdReaders++;
 
@@ -43,7 +43,7 @@ namespace MLAPI.Serialization.Pooled
         public static void PutBackInPool(PooledBitReader reader)
         {
             if (readers.Count < 64) readers.Enqueue(reader);
-            else if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogInfo("BitReaderPool already has 64 queued. Throwing to GC. Did you forget to dispose?");
+            else if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo("BitReaderPool already has 64 queued. Throwing to GC. Did you forget to dispose?");
         }
     }
 }

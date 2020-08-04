@@ -167,8 +167,8 @@ namespace MLAPI.Serialization
                 }
                 else 
                 {
-                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal)
-                        LogHelper.LogWarning("BitReader cannot find the GameObject sent in the SpawnedObjects list, it may have been destroyed. NetworkId: " + networkId.ToString());
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                        NetworkLog.LogWarning("BitReader cannot find the GameObject sent in the SpawnedObjects list, it may have been destroyed. NetworkId: " + networkId.ToString());
                     return null;
                 }
             }
@@ -182,8 +182,8 @@ namespace MLAPI.Serialization
                 }
                 else 
                 {
-                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal)
-                        LogHelper.LogWarning("BitReader cannot find the NetworkedObject sent in the SpawnedObjects list, it may have been destroyed. NetworkId: " + networkId.ToString());
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                        NetworkLog.LogWarning("BitReader cannot find the NetworkedObject sent in the SpawnedObjects list, it may have been destroyed. NetworkId: " + networkId.ToString());
                     return null;
                 }
             }
@@ -197,8 +197,8 @@ namespace MLAPI.Serialization
                 }
                 else 
                 {
-                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal)
-                        LogHelper.LogWarning("BitReader cannot find the NetworkedBehaviour sent in the SpawnedObjects list, it may have been destroyed. NetworkId: " + networkId.ToString());
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                        NetworkLog.LogWarning("BitReader cannot find the NetworkedBehaviour sent in the SpawnedObjects list, it may have been destroyed. NetworkId: " + networkId.ToString());
                     return null;
                 }
             }

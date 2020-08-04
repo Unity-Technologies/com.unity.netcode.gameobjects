@@ -18,6 +18,7 @@
   - object-ownership
   - object-visibility
   - ways-to-syncronize
+  - logging
 
 - title: Core Components
   docs:

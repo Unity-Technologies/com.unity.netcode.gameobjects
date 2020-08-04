@@ -51,7 +51,7 @@ namespace MLAPI.SceneManagement
         {
             if (!sceneNameToIndex.ContainsKey(SceneManager.GetActiveScene().name))
             {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The current scene (" + SceneManager.GetActiveScene().name + ") is not regisered as a network scene.");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("The current scene (" + SceneManager.GetActiveScene().name + ") is not regisered as a network scene.");
                 return;
             }
             currentSceneIndex = sceneNameToIndex[SceneManager.GetActiveScene().name];
@@ -90,12 +90,12 @@ namespace MLAPI.SceneManagement
             }
             else if (isSwitching)
             {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Scene switch already in progress");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Scene switch already in progress");
                 return null;
             }
             else if (!registeredSceneNames.Contains(sceneName))
             {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("The scene " + sceneName + " is not registered as a switchable scene.");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("The scene " + sceneName + " is not registered as a switchable scene.");
                 return null;
             }
 
@@ -134,7 +134,7 @@ namespace MLAPI.SceneManagement
         {
             if (!sceneIndexToString.ContainsKey(sceneIndex) || !registeredSceneNames.Contains(sceneIndexToString[sceneIndex]))
             {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Server requested a scene switch to a non registered scene");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Server requested a scene switch to a non registered scene");
                 return;
             }
 
@@ -166,7 +166,7 @@ namespace MLAPI.SceneManagement
         {
             if (!sceneIndexToString.ContainsKey(sceneIndex) || !registeredSceneNames.Contains(sceneIndexToString[sceneIndex]))
             {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Server requested a scene switch to a non registered scene");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Server requested a scene switch to a non registered scene");
                 return;
             }
             else if (SceneManager.GetActiveScene().name == sceneIndexToString[sceneIndex])

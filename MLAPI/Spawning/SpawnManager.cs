@@ -247,7 +247,7 @@ namespace MLAPI.Spawning
             }
             else if (parentNetworkId != null)
             {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot find parent. Parent objects always have to be spawned and replicated BEFORE the child");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Cannot find parent. Parent objects always have to be spawned and replicated BEFORE the child");
             }
 
             if (!NetworkingManager.Singleton.NetworkConfig.EnableSceneManagement || NetworkingManager.Singleton.NetworkConfig.UsePrefabSync || !softCreate)
@@ -275,7 +275,7 @@ namespace MLAPI.Spawning
 
                     if (prefabIndex < 0)
                     {
-                        if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Failed to create object locally. [PrefabHash=" + prefabHash + "]. Hash could not be found. Is the prefab registered?");
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError("Failed to create object locally. [PrefabHash=" + prefabHash + "]. Hash could not be found. Is the prefab registered?");
 
                         return null;
                     }
@@ -305,7 +305,7 @@ namespace MLAPI.Spawning
                 if (!pendingSoftSyncObjects.ContainsKey(instanceId))
                 {
                     // TODO: Fix this message
-                    if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Cannot find pending soft sync object. Is the projects the same?");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError("Cannot find pending soft sync object. Is the projects the same?");
                     return null;
                 }
 

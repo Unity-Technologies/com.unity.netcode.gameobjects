@@ -176,6 +176,10 @@ namespace MLAPI.Configuration
         [Tooltip("The amount of time a message should be buffered for without being consumed. If it is not consumed within this time, it will be dropped")]
         public float MessageBufferTimeout = 20f;
         /// <summary>
+        /// Whether or not to enable network logs.
+        /// </summary>
+        public bool EnableNetworkLogs = true;
+        /// <summary>
         /// Whether or not to enable the ECDHE key exchange to allow for encryption and authentication of messages
         /// </summary>
         [Tooltip("Whether or not to enable the ECDHE key exchange to allow for encryption and authentication of messages")]
@@ -257,7 +261,7 @@ namespace MLAPI.Configuration
                     writer.WriteInt32Packed(config.LoadSceneTimeOut);
                     writer.WriteBool(config.EnableTimeResync);
                     writer.WriteBool(config.EnsureNetworkedVarLengthSafety);
-                    writer.WriteBits((byte)config.RpcHashSize, 3);
+                    writer.WriteBits((byte)config.RpcHashSize, 2);
                     writer.WriteBool(ForceSamePrefabs);
                     writer.WriteBool(UsePrefabSync);
                     writer.WriteBool(EnableSceneManagement);
@@ -265,6 +269,7 @@ namespace MLAPI.Configuration
                     writer.WriteSinglePacked(NetworkIdRecycleDelay);
                     writer.WriteBool(EnableNetworkedVar);
                     writer.WriteBool(AllowRuntimeSceneChanges);
+                    writer.WriteBool(EnableNetworkLogs);
                     stream.PadStream();
 
                     return Convert.ToBase64String(stream.ToArray());
@@ -305,7 +310,7 @@ namespace MLAPI.Configuration
                     config.LoadSceneTimeOut = reader.ReadInt32Packed();
                     config.EnableTimeResync = reader.ReadBool();
                     config.EnsureNetworkedVarLengthSafety = reader.ReadBool();
-                    config.RpcHashSize = (HashSize)reader.ReadBits(3);
+                    config.RpcHashSize = (HashSize)reader.ReadBits(2);
                     config.ForceSamePrefabs = reader.ReadBool();
                     config.UsePrefabSync = reader.ReadBool();
                     config.EnableSceneManagement = reader.ReadBool();
@@ -313,6 +318,7 @@ namespace MLAPI.Configuration
                     config.NetworkIdRecycleDelay = reader.ReadSinglePacked();
                     config.EnableNetworkedVar = reader.ReadBool();
                     config.AllowRuntimeSceneChanges = reader.ReadBool();
+                    config.EnableNetworkLogs = reader.ReadBool();
                 }
             }
         }
@@ -362,7 +368,7 @@ namespace MLAPI.Configuration
                     writer.WriteBool(EnsureNetworkedVarLengthSafety);
                     writer.WriteBool(EnableEncryption);
                     writer.WriteBool(SignKeyExchange);
-                    writer.WriteBits((byte)RpcHashSize, 3);
+                    writer.WriteBits((byte)RpcHashSize, 2);
                     stream.PadStream();
 
                     if (cache)

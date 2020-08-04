@@ -40,7 +40,7 @@ namespace MLAPI.Messaging
                         {
                             // The certificate is not valid :(
                             // Man in the middle.
-                            if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid certificate. Disconnecting");
+                            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Invalid certificate. Disconnecting");
                             NetworkingManager.Singleton.StopClient();
                             return;
                         }
@@ -71,7 +71,7 @@ namespace MLAPI.Messaging
                                 {
                                     if (!rsa.VerifyData(serverDiffieHellmanPublicPart, sha, serverDiffieHellmanPublicPartSignature))
                                     {
-                                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid RSA signature. Disconnecting");
+                                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Invalid RSA signature. Disconnecting");
                                         NetworkingManager.Singleton.StopClient();
                                         return;
                                     }
@@ -79,7 +79,7 @@ namespace MLAPI.Messaging
                             }
                             else
                             {
-                                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("No RSA key found in certificate. Disconnecting");
+                                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("No RSA key found in certificate. Disconnecting");
                                 NetworkingManager.Singleton.StopClient();
                                 return;
                             }
@@ -94,7 +94,7 @@ namespace MLAPI.Messaging
                                 {
                                     if (!dsa.VerifyData(sha.ComputeHash(serverDiffieHellmanPublicPart), serverDiffieHellmanPublicPartSignature))
                                     {
-                                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid DSA signature. Disconnecting");
+                                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Invalid DSA signature. Disconnecting");
                                         NetworkingManager.Singleton.StopClient();
                                         return;
                                     }
@@ -102,14 +102,14 @@ namespace MLAPI.Messaging
                             }
                             else
                             {
-                                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("No DSA key found in certificate. Disconnecting");
+                                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("No DSA key found in certificate. Disconnecting");
                                 NetworkingManager.Singleton.StopClient();
                                 return;
                             }
                         }
                         else
                         {
-                            if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Invalid signature type. Disconnecting");
+                            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Invalid signature type. Disconnecting");
                             NetworkingManager.Singleton.StopClient();
                             return;
                         }
@@ -180,7 +180,7 @@ namespace MLAPI.Messaging
                 ulong configHash = reader.ReadUInt64Packed();
                 if (!NetworkingManager.Singleton.NetworkConfig.CompareConfig(configHash))
                 {
-                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkConfiguration mismatch. The configuration between the server and client does not match");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkConfiguration mismatch. The configuration between the server and client does not match");
                     NetworkingManager.Singleton.DisconnectClient(clientId);
                     return;
                 }
@@ -501,7 +501,7 @@ namespace MLAPI.Messaging
         {
             if (!NetworkingManager.Singleton.NetworkConfig.EnableNetworkedVar)
             {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkedVar delta received but EnableNetworkedVar is false");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkedVar delta received but EnableNetworkedVar is false");
                 return;
             }
 
@@ -516,7 +516,7 @@ namespace MLAPI.Messaging
 
                     if (instance == null)
                     {
-                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkedVarDelta message recieved for a non existant behaviour. NetworkId: " + networkId + ", behaviourIndex: " + orderIndex);
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkedVarDelta message recieved for a non existant behaviour. NetworkId: " + networkId + ", behaviourIndex: " + orderIndex);
                     }
                     else
                     {
@@ -525,11 +525,11 @@ namespace MLAPI.Messaging
                 }
                 else if (NetworkingManager.Singleton.IsServer || !NetworkingManager.Singleton.NetworkConfig.EnableMessageBuffering)
                 {
-                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkedVarDelta message recieved for a non existant object with id: " + networkId + ". This delta was lost.");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkedVarDelta message recieved for a non existant object with id: " + networkId + ". This delta was lost.");
                 }
                 else
                 {
-                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkedVarDelta message recieved for a non existant object with id: " + networkId + ". This delta will be buffered and might be recovered.");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkedVarDelta message recieved for a non existant object with id: " + networkId + ". This delta will be buffered and might be recovered.");
                     bufferCallback(networkId);
                 }
             }
@@ -539,7 +539,7 @@ namespace MLAPI.Messaging
         {
             if (!NetworkingManager.Singleton.NetworkConfig.EnableNetworkedVar)
             {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkedVar update received but EnableNetworkedVar is false");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkedVar update received but EnableNetworkedVar is false");
                 return;
             }
 
@@ -554,7 +554,7 @@ namespace MLAPI.Messaging
 
                     if (instance == null)
                     {
-                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkedVarUpdate message recieved for a non existant behaviour. NetworkId: " + networkId + ", behaviourIndex: " + orderIndex);
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkedVarUpdate message recieved for a non existant behaviour. NetworkId: " + networkId + ", behaviourIndex: " + orderIndex);
                     }
                     else
                     {
@@ -563,11 +563,11 @@ namespace MLAPI.Messaging
                 }
                 else if (NetworkingManager.Singleton.IsServer || !NetworkingManager.Singleton.NetworkConfig.EnableMessageBuffering)
                 {
-                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkedVarUpdate message recieved for a non existant object with id: " + networkId + ". This delta was lost.");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkedVarUpdate message recieved for a non existant object with id: " + networkId + ". This delta was lost.");
                 }
                 else
                 {
-                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("NetworkedVarUpdate message recieved for a non existant object with id: " + networkId + ". This delta will be buffered and might be recovered.");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkedVarUpdate message recieved for a non existant object with id: " + networkId + ". This delta will be buffered and might be recovered.");
                     bufferCallback(networkId);
                 }
             }
@@ -585,14 +585,14 @@ namespace MLAPI.Messaging
                     NetworkedBehaviour instance = SpawnManager.SpawnedObjects[networkId].GetBehaviourAtOrderIndex(orderIndex);
                     if (instance == null)
                     {
-                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("SyncedVar message recieved for a non existant behaviour");
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("SyncedVar message recieved for a non existant behaviour");
                         return;
                     }
                     NetworkedBehaviour.HandleSyncedVarValue(instance.syncedVars, stream, clientId, instance);
                 }
                 else
                 {
-                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("SyncedVar message recieved for a non existant object with id: " + networkId);
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("SyncedVar message recieved for a non existant object with id: " + networkId);
                     return;
                 }
             }
@@ -612,7 +612,7 @@ namespace MLAPI.Messaging
 
                     if (behaviour == null)
                     {
-                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("ServerRPC message recieved for a non existant behaviour. NetworkId: " + networkId + ", behaviourIndex: " + behaviourId);
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("ServerRPC message recieved for a non existant behaviour. NetworkId: " + networkId + ", behaviourIndex: " + behaviourId);
                     }
                     else
                     {
@@ -621,7 +621,7 @@ namespace MLAPI.Messaging
                 }
                 else if (NetworkingManager.Singleton.IsServer || !NetworkingManager.Singleton.NetworkConfig.EnableMessageBuffering)
                 {
-                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("ServerRPC message recieved for a non existant object with id: " + networkId + ". This message is lost.");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("ServerRPC message recieved for a non existant object with id: " + networkId + ". This message is lost.");
                 }
             }
         }
@@ -641,7 +641,7 @@ namespace MLAPI.Messaging
 
                     if (behaviour == null)
                     {
-                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("ServerRPCRequest message recieved for a non existant behaviour. NetworkId: " + networkId + ", behaviourIndex: " + behaviourId);
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("ServerRPCRequest message recieved for a non existant behaviour. NetworkId: " + networkId + ", behaviourIndex: " + behaviourId);
                     }
                     else
                     {
@@ -661,7 +661,7 @@ namespace MLAPI.Messaging
                 }
                 else
                 {
-                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("ServerRPCRequest message recieved for a non existant object with id: " + networkId + ". This message is lost.");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("ServerRPCRequest message recieved for a non existant object with id: " + networkId + ". This message is lost.");
                 }
             }
         }
@@ -684,11 +684,11 @@ namespace MLAPI.Messaging
                 }
                 else
                 {
-                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("ServerRPCResponse message recieved for a non existant responseId: " + responseId + ". This response is lost.");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("ServerRPCResponse message recieved for a non existant responseId: " + responseId + ". This response is lost.");
                 }
             }
         }
-        
+
         internal static void HandleClientRPC(ulong clientId, Stream stream, Action<ulong> bufferCallback)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
@@ -703,7 +703,7 @@ namespace MLAPI.Messaging
 
                     if (behaviour == null)
                     {
-                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("ClientRPC message recieved for a non existant behaviour. NetworkId: " + networkId + ", behaviourIndex: " + behaviourId);
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("ClientRPC message recieved for a non existant behaviour. NetworkId: " + networkId + ", behaviourIndex: " + behaviourId);
                     }
                     else
                     {
@@ -712,16 +712,16 @@ namespace MLAPI.Messaging
                 }
                 else if (NetworkingManager.Singleton.IsServer || !NetworkingManager.Singleton.NetworkConfig.EnableMessageBuffering)
                 {
-                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("ClientRPC message recieved for a non existant object with id: " + networkId + ". This message is lost.");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("ClientRPC message recieved for a non existant object with id: " + networkId + ". This message is lost.");
                 }
                 else
                 {
-                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("ClientRPC message recieved for a non existant object with id: " + networkId + ". This message will be buffered and might be recovered.");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("ClientRPC message recieved for a non existant object with id: " + networkId + ". This message will be buffered and might be recovered.");
                     bufferCallback(networkId);
                 }
             }
         }
-        
+
         internal static void HandleClientRPCRequest(ulong clientId, Stream stream, string channelName, SecuritySendFlags security, Action<ulong> bufferCallback)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
@@ -737,7 +737,7 @@ namespace MLAPI.Messaging
 
                     if (behaviour == null)
                     {
-                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("ClientRPCRequest message recieved for a non existant behaviour. NetworkId: " + networkId + ", behaviourIndex: " + behaviourId);
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("ClientRPCRequest message recieved for a non existant behaviour. NetworkId: " + networkId + ", behaviourIndex: " + behaviourId);
                     }
                     else
                     {
@@ -757,11 +757,11 @@ namespace MLAPI.Messaging
                 }
                 else if (NetworkingManager.Singleton.IsServer || !NetworkingManager.Singleton.NetworkConfig.EnableMessageBuffering)
                 {
-                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("ClientRPCRequest message recieved for a non existant object with id: " + networkId + ". This message is lost.");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("ClientRPCRequest message recieved for a non existant object with id: " + networkId + ". This message is lost.");
                 }
                 else
                 {
-                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("ClientRPCRequest message recieved for a non existant object with id: " + networkId + ". This message will be buffered and might be recovered.");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("ClientRPCRequest message recieved for a non existant object with id: " + networkId + ". This message will be buffered and might be recovered.");
                     bufferCallback(networkId);
                 }
             }
@@ -800,6 +800,28 @@ namespace MLAPI.Messaging
                 ulong hash = reader.ReadUInt64Packed();
 
                 CustomMessagingManager.InvokeNamedMessage(hash, clientId, stream);
+            }
+        }
+
+        internal static void HandleNetworkLog(ulong clientId, Stream stream)
+        {
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
+            {
+                NetworkLog.LogType logType = (NetworkLog.LogType)reader.ReadByte();
+                string message = reader.ReadStringPacked().ToString();
+
+                switch (logType)
+                {
+                    case NetworkLog.LogType.Info:
+                        NetworkLog.LogInfoServerLocal(message, clientId);
+                        break;
+                    case NetworkLog.LogType.Warning:
+                        NetworkLog.LogWarningServerLocal(message, clientId);
+                        break;
+                    case NetworkLog.LogType.Error:
+                        NetworkLog.LogErrorServerLocal(message, clientId);
+                        break;
+                }
             }
         }
     }

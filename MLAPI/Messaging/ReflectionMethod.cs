@@ -26,12 +26,12 @@ namespace MLAPI.Messaging
 
             if (attributes.Length > 1)
             {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Having more than one ServerRPC or ClientRPC attribute per method is not supported.");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Having more than one ServerRPC or ClientRPC attribute per method is not supported.");
             }
 
             if (method.ReturnType != typeof(void) && !SerializationManager.IsTypeSupported(method.ReturnType))
             {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogWarning("Invalid return type of RPC. Has to be either void or RpcResponse<T> with a serializable type");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogWarning("Invalid return type of RPC. Has to be either void or RpcResponse<T> with a serializable type");
             }
 
             return new ReflectionMethod(method, parameters, attributes[0], index);
@@ -75,7 +75,7 @@ namespace MLAPI.Messaging
         {
             if (requireOwnership == true && senderClientId != target.OwnerClientId)
             {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Only owner can invoke ServerRPC that is marked to require ownership");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Only owner can invoke ServerRPC that is marked to require ownership");
 
                 return null;
             }

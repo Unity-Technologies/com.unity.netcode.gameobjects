@@ -19,7 +19,7 @@ namespace MLAPI.Messaging
 
             if (targetObject != null && !targetObject.observers.Contains(clientId))
             {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogWarning("Silently suppressed send call because it was directed to an object without visibility");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogWarning("Silently suppressed send call because it was directed to an object without visibility");
                 return;
             }
             
@@ -59,7 +59,7 @@ namespace MLAPI.Messaging
 
                         if (targetObject != null && !targetObject.observers.Contains(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId))
                         {
-                            if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogWarning("Silently suppressed send(all) call because it was directed to an object without visibility");
+                            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogWarning("Silently suppressed send(all) call because it was directed to an object without visibility");
                             continue;
                         }
                         
@@ -100,7 +100,7 @@ namespace MLAPI.Messaging
 
                         if (targetObject != null && !targetObject.observers.Contains(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId))
                         {
-                            if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogWarning("Silently suppressed send(ignore) call because it was directed to an object without visibility");
+                            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogWarning("Silently suppressed send(ignore) call because it was directed to an object without visibility");
                             continue;
                         }
 

@@ -35,7 +35,7 @@ namespace MLAPI.Messaging
 
                 if (hashResult != name)
                 {
-                    if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Hash collision detected for RPC method. The method \"" + name + "\" collides with the method \"" + hashResult + "\". This can be solved by increasing the amount of bytes to use for hashing in the NetworkConfig or changing the name of one of the conflicting methods.");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError("Hash collision detected for RPC method. The method \"" + name + "\" collides with the method \"" + hashResult + "\". This can be solved by increasing the amount of bytes to use for hashing in the NetworkConfig or changing the name of one of the conflicting methods.");
                 }
             } 
             else

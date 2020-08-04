@@ -51,7 +51,7 @@ namespace MLAPI.Messaging
         {
             if (!NetworkingManager.Singleton.IsServer)
             {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogWarning("Can not send unnamed messages to multiple users as a client");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogWarning("Can not send unnamed messages to multiple users as a client");
                 return;
             }
 
@@ -212,7 +212,7 @@ namespace MLAPI.Messaging
 
                 if (!NetworkingManager.Singleton.IsServer)
                 {
-                    if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogWarning("Can not send named messages to multiple users as a client");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogWarning("Can not send named messages to multiple users as a client");
                     return;
                 }
                 if (clientIds == null)

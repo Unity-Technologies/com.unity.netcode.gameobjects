@@ -90,7 +90,7 @@ namespace MLAPI.Prototyping
         /// </summary>
         public void ResetParameterOptions()
         {
-            if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogInfo("ResetParameterOptions");
+            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogInfo("ResetParameterOptions");
             parameterSendBits = 0;
             animatorParameters = null;
         }

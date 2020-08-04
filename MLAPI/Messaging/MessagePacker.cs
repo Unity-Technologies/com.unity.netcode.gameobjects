@@ -26,7 +26,7 @@ namespace MLAPI.Internal
                 {
                     if (inputStream.Length < 1)
                     {
-                        if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogError("The incoming message was too small");
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogError("The incoming message was too small");
                         messageType = MLAPIConstants.INVALID;
                         security = SecuritySendFlags.None;
                         return null;
@@ -46,7 +46,7 @@ namespace MLAPI.Internal
                     {
                         if (!NetworkingManager.Singleton.NetworkConfig.EnableEncryption)
                         {
-                            if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Got a encrypted and/or authenticated message but key exchange (\"encryption\") was not enabled");
+                            if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError("Got a encrypted and/or authenticated message but key exchange (\"encryption\") was not enabled");
                             messageType = MLAPIConstants.INVALID;
                             return null;
                         }
@@ -62,7 +62,7 @@ namespace MLAPI.Internal
 
                             if (readHmacLength != HMAC_BUFFER.Length)
                             {
-                                if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("HMAC length was invalid");
+                                if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError("HMAC length was invalid");
                                 messageType = MLAPIConstants.INVALID;
                                 return null;
                             }
@@ -75,7 +75,7 @@ namespace MLAPI.Internal
 
                             if (key == null)
                             {
-                                if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Failed to grab key");
+                                if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError("Failed to grab key");
                                 messageType = MLAPIConstants.INVALID;
                                 return null;
                             }
@@ -87,7 +87,7 @@ namespace MLAPI.Internal
 
                                 if (!CryptographyHelper.ConstTimeArrayEqual(computedHmac, HMAC_BUFFER))
                                 {
-                                    if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Received HMAC did not match the computed HMAC");
+                                    if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError("Received HMAC did not match the computed HMAC");
                                     messageType = MLAPIConstants.INVALID;
                                     return null;
                                 }
@@ -100,7 +100,7 @@ namespace MLAPI.Internal
 
                             if (ivRead != IV_BUFFER.Length)
                             {
-                                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogError("Invalid IV size");
+                                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogError("Invalid IV size");
                                 messageType = MLAPIConstants.INVALID;
                                 return null;
                             }
@@ -116,7 +116,7 @@ namespace MLAPI.Internal
 
                                 if (key == null)
                                 {
-                                    if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Failed to grab key");
+                                    if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError("Failed to grab key");
                                     messageType = MLAPIConstants.INVALID;
                                     return null;
                                 }
@@ -132,7 +132,7 @@ namespace MLAPI.Internal
 
                                 if (outputStream.Length == 0)
                                 {
-                                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogError("The incoming message was too small");
+                                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogError("The incoming message was too small");
                                     messageType = MLAPIConstants.INVALID;
                                     return null;
                                 }
@@ -147,7 +147,7 @@ namespace MLAPI.Internal
                         {
                             if (inputStream.Length - inputStream.Position <= 0)
                             {
-                                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogError("The incoming message was too small");
+                                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogError("The incoming message was too small");
                                 messageType = MLAPIConstants.INVALID;
                                 return null;
                             }
@@ -169,8 +169,8 @@ namespace MLAPI.Internal
                 }
                 catch (Exception e)
                 {
-                    if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogError("Error while unwrapping headers");
-                    if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError(e.ToString());
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogError("Error while unwrapping headers");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError(e.ToString());
 
                     security = SecuritySendFlags.None;
                     messageType = MLAPIConstants.INVALID;
@@ -212,7 +212,7 @@ namespace MLAPI.Internal
 
                                 if (key == null)
                                 {
-                                    if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Failed to grab key");
+                                    if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError("Failed to grab key");
                                     return null;
                                 }
 
@@ -239,7 +239,7 @@ namespace MLAPI.Internal
 
                             if (key == null)
                             {
-                                if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Failed to grab key");
+                                if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError("Failed to grab key");
                                 return null;
                             }
 
@@ -266,8 +266,8 @@ namespace MLAPI.Internal
             }
             catch (Exception e)
             {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogError("Error while wrapping headers");
-                if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError(e.ToString());
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogError("Error while wrapping headers");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError(e.ToString());
 
                 return null;
             }

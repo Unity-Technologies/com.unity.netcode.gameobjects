@@ -293,7 +293,7 @@ namespace MLAPI
                     }
                     else
                     {
-                        if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("SyncedVar has unsupported type");
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError("SyncedVar has unsupported type");
                     }
                 }
 
@@ -634,12 +634,12 @@ namespace MLAPI
 
                         if (stream.Position > (readStartPos + varSize))
                         {
-                            if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("SyncedVar read too far. " + (stream.Position - (readStartPos + varSize)) + " bytes." + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
+                            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("SyncedVar read too far. " + (stream.Position - (readStartPos + varSize)) + " bytes." + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
                             stream.Position = readStartPos + varSize;
                         }
                         else if (stream.Position < (readStartPos + varSize))
                         {
-                            if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("SyncedVar read too little. " + ((readStartPos + varSize) - stream.Position) + " bytes." + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
+                            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("SyncedVar read too little. " + ((readStartPos + varSize) - stream.Position) + " bytes." + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
                             stream.Position = readStartPos + varSize;
                         }
                     }
@@ -672,7 +672,7 @@ namespace MLAPI
                     {
                         if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
                         {
-                            if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Client wrote to NetworkedVar without permission. " + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
+                            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Client wrote to NetworkedVar without permission. " + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
                             stream.Position += varSize;
                             continue;
                         }
@@ -686,7 +686,7 @@ namespace MLAPI
                             //This is after all a developer fault. A critical error should be fine.
                             // - TwoTen
 
-                            if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Client wrote to NetworkedVar without permission. No more variables can be read. This is critical. " + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
+                            if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError("Client wrote to NetworkedVar without permission. No more variables can be read. This is critical. " + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
                             return;
                         }
                     }
@@ -701,12 +701,12 @@ namespace MLAPI
 
                         if (stream.Position > (readStartPos + varSize))
                         {
-                            if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Var delta read too far. " + (stream.Position - (readStartPos + varSize)) + " bytes." + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
+                            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Var delta read too far. " + (stream.Position - (readStartPos + varSize)) + " bytes." + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
                             stream.Position = readStartPos + varSize;
                         }
                         else if (stream.Position < (readStartPos + varSize))
                         {
-                            if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Var delta read too little. " + ((readStartPos + varSize) - stream.Position) + " bytes." + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
+                            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Var delta read too little. " + ((readStartPos + varSize) - stream.Position) + " bytes." + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
                             stream.Position = readStartPos + varSize;
                         }
                     }
@@ -739,7 +739,7 @@ namespace MLAPI
                     {
                         if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
                         {
-                            if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Client wrote to NetworkedVar without permission. " + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
+                            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Client wrote to NetworkedVar without permission. " + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
                             stream.Position += varSize;
                             continue;
                         }
@@ -752,7 +752,7 @@ namespace MLAPI
                             //A dummy read COULD be added to the interface for this situation, but it's just being too nice.
                             //This is after all a developer fault. A critical error should be fine.
                             // - TwoTen
-                            if (LogHelper.CurrentLogLevel <= LogLevel.Error) LogHelper.LogError("Client wrote to NetworkedVar without permission. No more variables can be read. This is critical. " + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
+                            if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError("Client wrote to NetworkedVar without permission. No more variables can be read. This is critical. " + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
                             return;
                         }
                     }
@@ -770,12 +770,12 @@ namespace MLAPI
 
                         if (stream.Position > (readStartPos + varSize))
                         {
-                            if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Var update read too far. " + (stream.Position - (readStartPos + varSize)) + " bytes." + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
+                            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Var update read too far. " + (stream.Position - (readStartPos + varSize)) + " bytes." + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
                             stream.Position = readStartPos + varSize;
                         }
                         else if (stream.Position < (readStartPos + varSize))
                         {
-                            if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Var update read too little. " + ((readStartPos + varSize) - stream.Position) + " bytes." + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
+                            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Var update read too little. " + ((readStartPos + varSize) - stream.Position) + " bytes." + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
                             stream.Position = readStartPos + varSize;
                         }
                     }
@@ -853,12 +853,12 @@ namespace MLAPI
 
                         if (stream.Position > (readStartPos + varSize))
                         {
-                            if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("SyncedVar data read too far. " + (stream.Position - (readStartPos + varSize)) + " bytes.");
+                            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("SyncedVar data read too far. " + (stream.Position - (readStartPos + varSize)) + " bytes.");
                             stream.Position = readStartPos + varSize;
                         }
                         else if (stream.Position < (readStartPos + varSize))
                         {
-                            if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("SyncedVar data read too little. " + ((readStartPos + varSize) - stream.Position) + " bytes.");
+                            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("SyncedVar data read too little. " + ((readStartPos + varSize) - stream.Position) + " bytes.");
                             stream.Position = readStartPos + varSize;
                         }
                     }
@@ -948,12 +948,12 @@ namespace MLAPI
 
                         if (stream.Position > (readStartPos + varSize))
                         {
-                            if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Var data read too far. " + (stream.Position - (readStartPos + varSize)) + " bytes.");
+                            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Var data read too far. " + (stream.Position - (readStartPos + varSize)) + " bytes.");
                             stream.Position = readStartPos + varSize;
                         }
                         else if (stream.Position < (readStartPos + varSize))
                         {
-                            if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Var data read too little. " + ((readStartPos + varSize) - stream.Position) + " bytes.");
+                            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Var data read too little. " + ((readStartPos + varSize) - stream.Position) + " bytes.");
                             stream.Position = readStartPos + varSize;
                         }
                     }
@@ -1014,7 +1014,7 @@ namespace MLAPI
         {
             if (!rpcDefinition.serverMethods.ContainsKey(hash))
             {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("ServerRPC request method not found");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("ServerRPC request method not found");
                 return null;
 
             }
@@ -1026,7 +1026,7 @@ namespace MLAPI
         {
             if (!rpcDefinition.clientMethods.ContainsKey(hash))
             {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("ClientRPC request method not found");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("ClientRPC request method not found");
                 return null;
             }
 
@@ -1153,7 +1153,7 @@ namespace MLAPI
             if (!IsClient && IsRunning)
             {
                 //We are ONLY a server.
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Only client and host can invoke ServerRPC");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Only client and host can invoke ServerRPC");
                 return;
             }
 
@@ -1185,7 +1185,7 @@ namespace MLAPI
             if (!IsClient && IsRunning)
             {
                 //We are ONLY a server.
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Only client and host can invoke ServerRPC");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Only client and host can invoke ServerRPC");
                 return null;
             }
 
@@ -1244,7 +1244,7 @@ namespace MLAPI
             if (!IsServer && IsRunning)
             {
                 //We are NOT a server.
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Only clients and host can invoke ClientRPC");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Only clients and host can invoke ClientRPC");
                 return;
             }
 
@@ -1264,7 +1264,7 @@ namespace MLAPI
                         {
                             if (!this.NetworkedObject.observers.Contains(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId))
                             {
-                                if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogWarning("Silently suppressed ClientRPC because a target in the bulk list was not an observer");
+                                if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogWarning("Silently suppressed ClientRPC because a target in the bulk list was not an observer");
                                 continue;
                             }
 
@@ -1285,7 +1285,7 @@ namespace MLAPI
                         {
                             if (!this.NetworkedObject.observers.Contains(clientIds[i]))
                             {
-                                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot send ClientRPC to client without visibility to the object");
+                                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Cannot send ClientRPC to client without visibility to the object");
                                 continue;
                             }
 
@@ -1309,7 +1309,7 @@ namespace MLAPI
             if (!IsServer && IsRunning)
             {
                 //We are NOT a server.
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Only clients and host can invoke ClientRPC");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Only clients and host can invoke ClientRPC");
                 return;
             }
 
@@ -1331,7 +1331,7 @@ namespace MLAPI
 
                         if (!this.NetworkedObject.observers.Contains(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId))
                         {
-                            if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogWarning("Silently suppressed ClientRPC because a connected client was not an observer");
+                            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogWarning("Silently suppressed ClientRPC because a connected client was not an observer");
                             continue;
                         }
 
@@ -1355,13 +1355,13 @@ namespace MLAPI
             if (!IsServer && IsRunning)
             {
                 //We are NOT a server.
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Only clients and host can invoke ClientRPC");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Only clients and host can invoke ClientRPC");
                 return;
             }
 
             if (!this.NetworkedObject.observers.Contains(clientId))
             {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot send ClientRPC to client without visibility to the object");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Cannot send ClientRPC to client without visibility to the object");
                 return;
             }
 
@@ -1393,13 +1393,13 @@ namespace MLAPI
             if (!IsServer && IsRunning)
             {
                 //We are NOT a server.
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Only clients and host can invoke ClientRPC");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Only clients and host can invoke ClientRPC");
                 return null;
             }
 
             if (!this.NetworkedObject.observers.Contains(clientId))
             {
-                if (LogHelper.CurrentLogLevel <= LogLevel.Normal) LogHelper.LogWarning("Cannot send ClientRPC to client without visibility to the object");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Cannot send ClientRPC to client without visibility to the object");
                 return null;
             }
 
