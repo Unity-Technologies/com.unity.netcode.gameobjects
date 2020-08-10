@@ -12,10 +12,8 @@ using UnityEngine;
 using MLAPI;
 using MLAPI.Transports.UNET;
 
-[RequireComponent(typeof(NetworkingManager))]
 public class NetworkManagerHud : MonoBehaviour
 {
-    NetworkingManager netManager;
     UnetTransport unetTransport;
 
     /// <summary>
@@ -35,7 +33,6 @@ public class NetworkManagerHud : MonoBehaviour
 
     private void Start()
     {
-        netManager = GetComponent<NetworkingManager>();
         unetTransport = GetComponent<UnetTransport>();
     }
 
@@ -47,7 +44,7 @@ public class NetworkManagerHud : MonoBehaviour
                 return;
 
             GUILayout.BeginArea(new Rect(10 + offsetX, 40 + offsetY, 215, 9999));
-            if (!netManager.IsConnectedClient && !netManager.IsServer)
+            if (!NetworkingManager.Singleton.IsConnectedClient && !NetworkingManager.Singleton.IsServer)
             {
                 StartButtons();
             }
@@ -63,14 +60,14 @@ public class NetworkManagerHud : MonoBehaviour
 
         void StartButtons()
         {
-            if (!netManager.IsClient)
+            if (!NetworkingManager.Singleton.IsClient)
             {
                 // Server + Client
                 if (Application.platform != RuntimePlatform.WebGLPlayer)
                 {
                     if (GUILayout.Button("Host (Server + Client)"))
                     {
-                        netManager.StartHost();
+                        NetworkingManager.Singleton.StartHost();
                     }
                 }
 
@@ -78,7 +75,7 @@ public class NetworkManagerHud : MonoBehaviour
                 GUILayout.BeginHorizontal();
                 if (GUILayout.Button("Client"))
                 {
-                    netManager.StartClient();
+                    NetworkingManager.Singleton.StartClient();
                 }
                 unetTransport.ConnectAddress = GUILayout.TextField(unetTransport.ConnectAddress);
                 GUILayout.EndHorizontal();
@@ -91,7 +88,7 @@ public class NetworkManagerHud : MonoBehaviour
                 }
                 else
                 {
-                    if (GUILayout.Button("Server Only")) netManager.StartServer();
+                    if (GUILayout.Button("Server Only")) NetworkingManager.Singleton.StartServer();
                 }
             }
             else
@@ -100,7 +97,7 @@ public class NetworkManagerHud : MonoBehaviour
                 GUILayout.Label("Connecting to " + unetTransport.ConnectAddress + "..");
                 if (GUILayout.Button("Cancel Connection Attempt"))
                 {
-                    netManager.StopClient();
+                NetworkingManager.Singleton.StopClient();
                 }
             }
     }
@@ -108,11 +105,11 @@ public class NetworkManagerHud : MonoBehaviour
     void StatusLabels()
     {
         // server / client status message
-        if (netManager.IsServer)
+        if (NetworkingManager.Singleton.IsServer)
         {
-            GUILayout.Label("Server: active. Transport: " + unetTransport.name);
+            GUILayout.Label("Server: active. Transport: " + "UNET");
         }
-        if (netManager.IsConnectedClient)
+        if (NetworkingManager.Singleton.IsConnectedClient)
         {
             GUILayout.Label("Client: address=" + unetTransport.ConnectAddress);
         }
@@ -121,27 +118,27 @@ public class NetworkManagerHud : MonoBehaviour
     void StopButtons()
     {
         // stop host if host mode
-        if (netManager.IsHost && netManager.IsConnectedClient)
+        if (NetworkingManager.Singleton.IsHost && NetworkingManager.Singleton.IsConnectedClient)
         {
             if (GUILayout.Button("Stop Host"))
             {
-                netManager.StopHost();
+                NetworkingManager.Singleton.StopHost();
             }
         }
         // stop client if client-only
-        else if (netManager.IsConnectedClient)
+        else if (NetworkingManager.Singleton.IsConnectedClient)
         {
             if (GUILayout.Button("Stop Client"))
             {
-                netManager.StopClient();
+                NetworkingManager.Singleton.StopClient();
             }
         }
         // stop server if server-only
-        else if (netManager.IsServer)
+        else if (NetworkingManager.Singleton.IsServer)
         {
             if (GUILayout.Button("Stop Server"))
             {
-                netManager.StopServer();
+                NetworkingManager.Singleton.StopServer();
             }
         }
     }
