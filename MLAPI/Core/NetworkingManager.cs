@@ -17,6 +17,7 @@ using MLAPI.Serialization;
 using MLAPI.Transports;
 using BitStream = MLAPI.Serialization.BitStream;
 using MLAPI.Connection;
+using MLAPI.Context;
 using MLAPI.LagCompensation;
 using MLAPI.Messaging;
 using MLAPI.SceneManagement;
@@ -784,7 +785,7 @@ namespace MLAPI
             switch (eventType)
             {
                 case NetEventType.Connect:
-                    NetworkProfiler.StartEvent(TickType.Receive, (uint)payload.Count, channelName, "TRANSPORT_CONNECT");
+                    NetworkProfiler.StartEvent(TickType.Receive, (uint)payload.Count, channelName, "TRANSPORT_CONNECT", clientId);
                     if (IsServer)
                     {
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo("Client Connected");
@@ -883,7 +884,7 @@ namespace MLAPI
                     HandleIncomingData(clientId, channelName, payload, receiveTime, true);
                     break;
                 case NetEventType.Disconnect:
-                    NetworkProfiler.StartEvent(TickType.Receive, 0, "NONE", "TRANSPORT_DISCONNECT");
+                    NetworkProfiler.StartEvent(TickType.Receive, 0, "NONE", "TRANSPORT_DISCONNECT", clientId);
 
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo("Disconnect Event From " + clientId);
 
@@ -906,7 +907,11 @@ namespace MLAPI
 
         internal void HandleIncomingData(ulong clientId, string channelName, ArraySegment<byte> data, float receiveTime, bool allowBuffer)
         {
-            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo("Unwrapping Data Header");
+            var context = Context.Background();
+            context = ClientContext.NewContext(context, clientId);
+            var logger = new ContextLogger(context);
+            logger.WithFields(new Dictionary<string, object>(){{"channelName",channelName},{"receiveTime",receiveTime}, });
+            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) logger.LogInfo("Unwrapping Data Header");
 
             inputStreamWrapper.SetTarget(data.Array);
             inputStreamWrapper.SetLength(data.Count + data.Offset);
@@ -916,25 +921,25 @@ namespace MLAPI
             {
                 if (messageStream == null)
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError("Message unwrap could not be completed. Was the header corrupt? Crypto error?");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Error) logger.LogError("Message unwrap could not be completed. Was the header corrupt? Crypto error?");
                     return;
                 }
                 else if (messageType == MLAPIConstants.INVALID)
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError("Message unwrap read an invalid messageType");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Error) logger.LogError("Message unwrap read an invalid messageType");
                     return;
                 }
 
                 uint headerByteSize = (uint)Arithmetic.VarIntSize(messageType);
-                NetworkProfiler.StartEvent(TickType.Receive, (uint)(data.Count - headerByteSize), channelName, messageType);
+                NetworkProfiler.StartEvent(TickType.Receive, (uint)(data.Count - headerByteSize), channelName, messageType, clientId);
 
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo("Data Header: messageType=" + messageType);
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) logger.LogInfo("Data Header: messageType=" + messageType);
 
                 // Client tried to send a network message that was not the connection request before he was accepted.
                 if (IsServer && (NetworkConfig.EnableEncryption && PendingClients.ContainsKey(clientId) && PendingClients[clientId].ConnectionState == PendingClient.State.PendingHail && messageType != MLAPIConstants.MLAPI_CERTIFICATE_HAIL_RESPONSE) ||
                     (PendingClients.ContainsKey(clientId) && PendingClients[clientId].ConnectionState == PendingClient.State.PendingConnection && messageType != MLAPIConstants.MLAPI_CONNECTION_REQUEST))
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Message recieved from clientId " + clientId + " before it has been accepted");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) logger.LogWarning("Message received from clientId " + clientId + " before it has been accepted");
                     return;
                 }
 
@@ -944,7 +949,7 @@ namespace MLAPI
                     if (!allowBuffer)
                     {
                         // This is to prevent recursive buffering
-                        if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError("A message of type " + MLAPIConstants.MESSAGE_NAMES[messageType] + " was recursivley buffered. It has been dropped.");
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Error) logger.LogError("A message of type " + MLAPIConstants.MESSAGE_NAMES[messageType] + " was recursivley buffered. It has been dropped.");
                         return;
                     }
 
