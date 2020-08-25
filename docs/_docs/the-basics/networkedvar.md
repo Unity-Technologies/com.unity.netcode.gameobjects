@@ -29,7 +29,7 @@ private NetworkedVar<float> myFloat = new NetworkedVar(new NetworkedVarSettings 
 
 ### Example
 ```csharp
-private NetworkedVar<float> myFloat = new NetworkedVar(5);
+private NetworkedVar<float> myFloat = new NetworkedVar<float>(5.0f);
 
 void MyUpdate()
 {
