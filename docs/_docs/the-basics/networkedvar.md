@@ -19,6 +19,15 @@ Since the NetworkedVar container is a wrapper container around the value, the va
     </div>
 </div>
 
+<div class="panel panel-warning">
+    <div class="panel-heading">
+        <h3 class="panel-title">Note</h3>
+    </div>
+    <div class="panel-body">
+      You must remember to add the NetworkedObject component to the game object to which your script belongs
+    </div>
+</div>
+
 To create your own NetworkedVar container, simply create a class with the INetworkedVar interface and declare it as a field of a NetworkedBehaviour. To learn how to write your own containers for more complex structures, see the NetworkedVar implementation. To learn how to do custom delta encoding on complex structures. See the SyncedDictionary and SyncedLIst implementations.
 
 ### Permissions
