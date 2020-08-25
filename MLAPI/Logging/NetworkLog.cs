@@ -89,7 +89,8 @@ namespace MLAPI.Logging
         {
             Info,
             Warning,
-            Error
+            Error,
+            None
         }
     }
 }
