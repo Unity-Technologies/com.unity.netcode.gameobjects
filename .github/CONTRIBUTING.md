@@ -1,16 +1,16 @@
 # How to contribute
-
 I'm really glad you're reading this, because we need volunteer developers to help this project evolve.
 
 If you haven't already, come find us on [Discord](http://discord.mlapi.network).
 
-## Submitting changes
+## CLA
+Before any changes will be approved into the repository, you will have to read and sign the [CLA](https://cla-assistant.io/MidLevel/MLAPI).
 
+## Submitting changes
 Please send a [GitHub Pull Request to MLAPI](https://github.com/midlevel/MLAPI/pull/new/master) with a clear list of what you've done (read more about [pull requests](http://help.github.com/pull-requests/)).
 Please follow our commit message conventions (below) and make sure all of your commits are atomic (one feature per commit).
 
 ## Commit Message Guidelines
-
 We have very precise rules over how our git commit messages can be formatted.  This leads to **more
 readable messages** that are easy to follow when looking through the **project history**.  But also,
 we use the git commit messages to **generate the MLAPI change log**. We follow angular's message format.
