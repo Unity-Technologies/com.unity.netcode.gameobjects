@@ -202,20 +202,8 @@ namespace MLAPI.Messaging
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogWarning("Can not send named messages to multiple users as a client");
                     return;
                 }
-                if (clientIds == null)
-                {
-                    for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)
-                    {
-                        InternalMessageSender.Send(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId, MLAPIConstants.MLAPI_NAMED_MESSAGE, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, messageStream, security, null);
-                    }
-                }
-                else
-                {
-                    for (int i = 0; i < clientIds.Count; i++)
-                    {
-                        InternalMessageSender.Send(clientIds[i], MLAPIConstants.MLAPI_NAMED_MESSAGE, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, messageStream, security, null);
-                    }
-                }
+
+                InternalMessageSender.Send(MLAPIConstants.MLAPI_NAMED_MESSAGE, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, clientIds, messageStream, security, null);
             }
         }
         #endregion
