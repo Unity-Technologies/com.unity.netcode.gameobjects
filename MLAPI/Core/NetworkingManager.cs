@@ -228,24 +228,11 @@ namespace MLAPI
         {
             if (!IsServer)
             {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
-                    NetworkLog.LogWarning("Can not send unnamed message to multiple users as a client");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogWarning("Can not send unnamed message to multiple users as a client");
                 return;
             }
-            if (clientIds == null)
-            {
-                for (int i = 0; i < ConnectedClientsList.Count; i++)
-                {
-                    InternalMessageSender.Send(ConnectedClientsList[i].ClientId, MLAPIConstants.MLAPI_UNNAMED_MESSAGE, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security, null);
-                }
-            }
-            else
-            {
-                for (int i = 0; i < clientIds.Count; i++)
-                {
-                    InternalMessageSender.Send(clientIds[i], MLAPIConstants.MLAPI_UNNAMED_MESSAGE, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security, null);
-                }
-            }
+
+            InternalMessageSender.Send(MLAPIConstants.MLAPI_UNNAMED_MESSAGE, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, clientIds, stream, security, null);
         }
 
         /// <summary>
