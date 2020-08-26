@@ -497,7 +497,7 @@ namespace MLAPI.Messaging
             }
         }
 
-        internal static void HandleNetworkedVarDelta(ulong clientId, Stream stream, Action<ulong> bufferCallback)
+        internal static void HandleNetworkedVarDelta(ulong clientId, Stream stream, Action<ulong, PreBufferPreset> bufferCallback, PreBufferPreset bufferPreset)
         {
             if (!NetworkingManager.Singleton.NetworkConfig.EnableNetworkedVar)
             {
@@ -530,12 +530,12 @@ namespace MLAPI.Messaging
                 else
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkedVarDelta message recieved for a non existant object with id: " + networkId + ". This delta will be buffered and might be recovered.");
-                    bufferCallback(networkId);
+                    bufferCallback(networkId, bufferPreset);
                 }
             }
         }
 
-        internal static void HandleNetworkedVarUpdate(ulong clientId, Stream stream, Action<ulong> bufferCallback)
+        internal static void HandleNetworkedVarUpdate(ulong clientId, Stream stream, Action<ulong, PreBufferPreset> bufferCallback, PreBufferPreset bufferPreset)
         {
             if (!NetworkingManager.Singleton.NetworkConfig.EnableNetworkedVar)
             {
@@ -568,7 +568,7 @@ namespace MLAPI.Messaging
                 else
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkedVarUpdate message recieved for a non existant object with id: " + networkId + ". This delta will be buffered and might be recovered.");
-                    bufferCallback(networkId);
+                    bufferCallback(networkId, bufferPreset);
                 }
             }
         }
@@ -689,7 +689,7 @@ namespace MLAPI.Messaging
             }
         }
 
-        internal static void HandleClientRPC(ulong clientId, Stream stream, Action<ulong> bufferCallback)
+        internal static void HandleClientRPC(ulong clientId, Stream stream, Action<ulong, PreBufferPreset> bufferCallback, PreBufferPreset bufferPreset)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
@@ -717,12 +717,12 @@ namespace MLAPI.Messaging
                 else
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("ClientRPC message recieved for a non existant object with id: " + networkId + ". This message will be buffered and might be recovered.");
-                    bufferCallback(networkId);
+                    bufferCallback(networkId, bufferPreset);
                 }
             }
         }
 
-        internal static void HandleClientRPCRequest(ulong clientId, Stream stream, string channelName, SecuritySendFlags security, Action<ulong> bufferCallback)
+        internal static void HandleClientRPCRequest(ulong clientId, Stream stream, string channelName, SecuritySendFlags security, Action<ulong, PreBufferPreset> bufferCallback, PreBufferPreset bufferPreset)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
@@ -762,7 +762,7 @@ namespace MLAPI.Messaging
                 else
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("ClientRPCRequest message recieved for a non existant object with id: " + networkId + ". This message will be buffered and might be recovered.");
-                    bufferCallback(networkId);
+                    bufferCallback(networkId, bufferPreset);
                 }
             }
         }
