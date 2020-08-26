@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using MLAPI.Configuration;
 using MLAPI.Internal;
 using MLAPI.Logging;
@@ -64,6 +65,49 @@ namespace MLAPI.Messaging
                         }
                         
                         NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId, new ArraySegment<byte>(stream.GetBuffer(), 0, (int)stream.Length), channelName);
+                    }
+                    NetworkProfiler.EndEvent();
+                }
+            }
+        }
+
+        internal static void Send(byte messageType, string channelName, List<ulong> clientIds, BitStream messageStream, SecuritySendFlags flags, NetworkedObject targetObject)
+        {
+            if (clientIds == null)
+            {
+                Send(messageType, channelName, messageStream, flags, targetObject);
+                return;
+            }
+
+            bool encrypted = ((flags & SecuritySendFlags.Encrypted) == SecuritySendFlags.Encrypted) && NetworkingManager.Singleton.NetworkConfig.EnableEncryption;
+            bool authenticated = ((flags & SecuritySendFlags.Authenticated) == SecuritySendFlags.Authenticated) && NetworkingManager.Singleton.NetworkConfig.EnableEncryption;
+
+            if (authenticated || encrypted)
+            {
+                for (int i = 0; i < clientIds.Count; i++)
+                {
+                    Send(clientIds[i], messageType, channelName, messageStream, flags, targetObject);
+                }
+            }
+            else
+            {
+                messageStream.PadStream();
+
+                using (BitStream stream = MessagePacker.WrapMessage(messageType, 0, messageStream, flags))
+                {
+                    NetworkProfiler.StartEvent(TickType.Send, (uint)stream.Length, channelName, MLAPIConstants.MESSAGE_NAMES[messageType]);
+                    for (int i = 0; i < clientIds.Count; i++)
+                    {
+                        if (NetworkingManager.Singleton.IsServer && clientIds[i] == NetworkingManager.Singleton.ServerClientId)
+                            continue;
+
+                        if (targetObject != null && !targetObject.observers.Contains(clientIds[i]))
+                        {
+                            if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogWarning("Silently suppressed send(all) call because it was directed to an object without visibility");
+                            continue;
+                        }
+
+                        NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(clientIds[i], new ArraySegment<byte>(stream.GetBuffer(), 0, (int)stream.Length), channelName);
                     }
                     NetworkProfiler.EndEvent();
                 }

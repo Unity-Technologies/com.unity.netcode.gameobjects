@@ -1258,48 +1258,20 @@ namespace MLAPI
 
                     stream.CopyFrom(messageStream);
 
-                    if (clientIds == null)
+                    if (IsHost)
                     {
-                        for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)
+                        if (this.NetworkedObject.observers.Contains(NetworkingManager.Singleton.LocalClientId))
                         {
-                            if (!this.NetworkedObject.observers.Contains(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId))
-                            {
-                                if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogWarning("Silently suppressed ClientRPC because a target in the bulk list was not an observer");
-                                continue;
-                            }
-
-                            if (IsHost && NetworkingManager.Singleton.ConnectedClientsList[i].ClientId == NetworkingManager.Singleton.LocalClientId)
-                            {
-                                messageStream.Position = 0;
-                                InvokeClientRPCLocal(hash, NetworkingManager.Singleton.LocalClientId, messageStream);
-                            }
-                            else
-                            {
-                                InternalMessageSender.Send(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId, MLAPIConstants.MLAPI_CLIENT_RPC, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security, null);
-                            }
+                            messageStream.Position = 0;
+                            InvokeClientRPCLocal(hash, NetworkingManager.Singleton.LocalClientId, messageStream);
+                        }
+                        else
+                        {
+                            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogWarning("Silently suppressed ClientRPC because a connected client was not an observer");
                         }
                     }
-                    else
-                    {
-                        for (int i = 0; i < clientIds.Count; i++)
-                        {
-                            if (!this.NetworkedObject.observers.Contains(clientIds[i]))
-                            {
-                                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Cannot send ClientRPC to client without visibility to the object");
-                                continue;
-                            }
 
-                            if (IsHost && clientIds[i] == NetworkingManager.Singleton.LocalClientId)
-                            {
-                                messageStream.Position = 0;
-                                InvokeClientRPCLocal(hash, NetworkingManager.Singleton.LocalClientId, messageStream);
-                            }
-                            else
-                            {
-                                InternalMessageSender.Send(clientIds[i], MLAPIConstants.MLAPI_CLIENT_RPC, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security, null);
-                            }
-                        }
-                    }
+                    InternalMessageSender.Send(MLAPIConstants.MLAPI_CLIENT_RPC, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, clientIds, stream, security, this.NetworkedObject);
                 }
             }
         }
@@ -1324,28 +1296,20 @@ namespace MLAPI
                     stream.CopyFrom(messageStream);
 
 
-                    for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)
+                    if (IsHost && NetworkingManager.Singleton.LocalClientId != clientIdToIgnore)
                     {
-                        if (NetworkingManager.Singleton.ConnectedClientsList[i].ClientId == clientIdToIgnore)
-                            continue;
-
-                        if (!this.NetworkedObject.observers.Contains(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId))
-                        {
-                            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogWarning("Silently suppressed ClientRPC because a connected client was not an observer");
-                            continue;
-                        }
-
-
-                        if (IsHost && NetworkingManager.Singleton.ConnectedClientsList[i].ClientId == NetworkingManager.Singleton.LocalClientId)
+                        if (this.NetworkedObject.observers.Contains(NetworkingManager.Singleton.LocalClientId))
                         {
                             messageStream.Position = 0;
                             InvokeClientRPCLocal(hash, NetworkingManager.Singleton.LocalClientId, messageStream);
                         }
                         else
                         {
-                            InternalMessageSender.Send(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId, MLAPIConstants.MLAPI_CLIENT_RPC, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security, null);
+                            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogWarning("Silently suppressed ClientRPC because a connected client was not an observer");
                         }
                     }
+
+                    InternalMessageSender.Send(MLAPIConstants.MLAPI_CLIENT_RPC, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, clientIdToIgnore, stream, security, this.NetworkedObject);
                 }
             }
         }
