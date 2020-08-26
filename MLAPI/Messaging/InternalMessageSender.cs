@@ -103,7 +103,7 @@ namespace MLAPI.Messaging
 
                         if (targetObject != null && !targetObject.observers.Contains(clientIds[i]))
                         {
-                            if (LogHelper.CurrentLogLevel <= LogLevel.Developer) LogHelper.LogWarning("Silently suppressed send(all) call because it was directed to an object without visibility");
+                            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogWarning("Silently suppressed send(all) call because it was directed to an object without visibility");
                             continue;
                         }
 
