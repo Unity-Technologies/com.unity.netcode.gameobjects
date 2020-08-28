@@ -35,6 +35,16 @@ void MyUpdate()
 {
     myFloat.Value += 30;
 }
+
+void ListenChanges()
+{
+    myFloat.OnValueChanged += valueChanged;
+}
+
+void valueChanged(float prevF, float newF){
+    Debug.Log("myFloat went from " + prevF + " to " + newF);
+}
+
 ```
 
 ### Single Sync Values
