@@ -1,4 +1,4 @@
-﻿#define ARRAY_WRITE_PERMISSIVE  // Allow attempt to write "packed" byte array (calls WriteByteArray())
+#define ARRAY_WRITE_PERMISSIVE  // Allow attempt to write "packed" byte array (calls WriteByteArray())
 #define ARRAY_RESOLVE_IMPLICIT  // Include WriteArray() method with automatic type resolution
 #define ARRAY_WRITE_PREMAP      // Create a prefixed array diff mapping
 #define ARRAY_DIFF_ALLOW_RESIZE // Whether or not to permit writing diffs of differently sized arrays
@@ -47,11 +47,13 @@ namespace MLAPI.Serialization
         /// <param name="value">The object to write</param>
         public void WriteObjectPacked(object value)
         {
-            if (value == null || value.GetType().IsNullable())
-            {
-                WriteBool(value == null);
+            bool isNull = value == null || (value is UnityEngine.Object || ((UnityEngine.Object)value) == null);
 
-                if (value == null)
+            if (isNull || value.GetType().IsNullable())
+            {
+                WriteBool(isNull);
+
+                if (isNull)
                 {
                     return;
                 }
