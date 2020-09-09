@@ -29,5 +29,5 @@ Receive:
     - Finds The Behaviour At Index Provided On Object
     - Reads RPC Method Name Hash
     - Finds The Method With The Hash Provided
-    - Invokes It's Delegate With Parameters Or Body
+    - Invokes Its Delegate With Parameters Or Body
 ```
