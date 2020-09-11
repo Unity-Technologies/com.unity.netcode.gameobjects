@@ -77,7 +77,7 @@ namespace MLAPI.Prototyping
         private Vector3 lastSentPos;
         private Quaternion lastSentRot;
 
-        private float lastRecieveTime;
+        private float lastReceiveTime;
         
         /// <summary>
         /// Enables range based send rate
@@ -171,12 +171,12 @@ namespace MLAPI.Prototyping
                     float sendDelay = (IsServer || !EnableRange || !AssumeSyncedSends || NetworkingManager.Singleton.ConnectedClients[NetworkingManager.Singleton.LocalClientId].PlayerObject == null) ? (1f / FixedSendsPerSecond) : GetTimeForLerp(transform.position, NetworkingManager.Singleton.ConnectedClients[NetworkingManager.Singleton.LocalClientId].PlayerObject.transform.position);
                     lerpT += Time.unscaledDeltaTime / sendDelay;
 
-                    if (ExtrapolatePosition && Time.unscaledTime - lastRecieveTime < sendDelay * MaxSendsToExtrapolate)
+                    if (ExtrapolatePosition && Time.unscaledTime - lastReceiveTime < sendDelay * MaxSendsToExtrapolate)
                         transform.position = Vector3.LerpUnclamped(lerpStartPos, lerpEndPos, lerpT);
                     else
                         transform.position = Vector3.Lerp(lerpStartPos, lerpEndPos, lerpT);
 
-                    if (ExtrapolatePosition && Time.unscaledTime - lastRecieveTime < sendDelay * MaxSendsToExtrapolate)
+                    if (ExtrapolatePosition && Time.unscaledTime - lastReceiveTime < sendDelay * MaxSendsToExtrapolate)
                         transform.rotation = Quaternion.SlerpUnclamped(lerpStartRot, lerpEndRot, lerpT);
                     else
                         transform.rotation = Quaternion.Slerp(lerpStartRot, lerpEndRot, lerpT);
@@ -195,7 +195,7 @@ namespace MLAPI.Prototyping
 
             if (InterpolatePosition && (!IsServer || InterpolateServer))
             {
-                lastRecieveTime = Time.unscaledTime;
+                lastReceiveTime = Time.unscaledTime;
                 lerpStartPos = transform.position;
                 lerpStartRot = transform.rotation;
                 lerpEndPos = position;

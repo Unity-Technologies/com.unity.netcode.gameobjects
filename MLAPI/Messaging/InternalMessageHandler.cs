@@ -533,7 +533,7 @@ namespace MLAPI.Messaging
 
                     if (instance == null)
                     {
-                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkedVarDelta message recieved for a non existant behaviour. NetworkId: " + networkId + ", behaviourIndex: " + orderIndex);
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkedVarDelta message received for a non existant behaviour. NetworkId: " + networkId + ", behaviourIndex: " + orderIndex);
                     }
                     else
                     {
@@ -542,11 +542,11 @@ namespace MLAPI.Messaging
                 }
                 else if (NetworkingManager.Singleton.IsServer || !NetworkingManager.Singleton.NetworkConfig.EnableMessageBuffering)
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkedVarDelta message recieved for a non existant object with id: " + networkId + ". This delta was lost.");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkedVarDelta message received for a non existant object with id: " + networkId + ". This delta was lost.");
                 }
                 else
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkedVarDelta message recieved for a non existant object with id: " + networkId + ". This delta will be buffered and might be recovered.");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkedVarDelta message received for a non existant object with id: " + networkId + ". This delta will be buffered and might be recovered.");
                     bufferCallback(networkId, bufferPreset);
                 }
             }
@@ -571,7 +571,7 @@ namespace MLAPI.Messaging
 
                     if (instance == null)
                     {
-                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkedVarUpdate message recieved for a non existant behaviour. NetworkId: " + networkId + ", behaviourIndex: " + orderIndex);
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkedVarUpdate message received for a non existant behaviour. NetworkId: " + networkId + ", behaviourIndex: " + orderIndex);
                     }
                     else
                     {
@@ -580,11 +580,11 @@ namespace MLAPI.Messaging
                 }
                 else if (NetworkingManager.Singleton.IsServer || !NetworkingManager.Singleton.NetworkConfig.EnableMessageBuffering)
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkedVarUpdate message recieved for a non existant object with id: " + networkId + ". This delta was lost.");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkedVarUpdate message received for a non existant object with id: " + networkId + ". This delta was lost.");
                 }
                 else
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkedVarUpdate message recieved for a non existant object with id: " + networkId + ". This delta will be buffered and might be recovered.");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkedVarUpdate message received for a non existant object with id: " + networkId + ". This delta will be buffered and might be recovered.");
                     bufferCallback(networkId, bufferPreset);
                 }
             }
@@ -602,14 +602,14 @@ namespace MLAPI.Messaging
                     NetworkedBehaviour instance = SpawnManager.SpawnedObjects[networkId].GetBehaviourAtOrderIndex(orderIndex);
                     if (instance == null)
                     {
-                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("SyncedVar message recieved for a non existant behaviour");
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("SyncedVar message received for a non existant behaviour");
                         return;
                     }
                     NetworkedBehaviour.HandleSyncedVarValue(instance.syncedVars, stream, clientId, instance);
                 }
                 else
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("SyncedVar message recieved for a non existant object with id: " + networkId);
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("SyncedVar message received for a non existant object with id: " + networkId);
                     return;
                 }
             }
@@ -629,7 +629,7 @@ namespace MLAPI.Messaging
 
                     if (behaviour == null)
                     {
-                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("ServerRPC message recieved for a non existant behaviour. NetworkId: " + networkId + ", behaviourIndex: " + behaviourId);
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("ServerRPC message received for a non existant behaviour. NetworkId: " + networkId + ", behaviourIndex: " + behaviourId);
                     }
                     else
                     {
@@ -638,7 +638,7 @@ namespace MLAPI.Messaging
                 }
                 else if (NetworkingManager.Singleton.IsServer || !NetworkingManager.Singleton.NetworkConfig.EnableMessageBuffering)
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("ServerRPC message recieved for a non existant object with id: " + networkId + ". This message is lost.");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("ServerRPC message received for a non existant object with id: " + networkId + ". This message is lost.");
                 }
             }
         }
@@ -658,7 +658,7 @@ namespace MLAPI.Messaging
 
                     if (behaviour == null)
                     {
-                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("ServerRPCRequest message recieved for a non existant behaviour. NetworkId: " + networkId + ", behaviourIndex: " + behaviourId);
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("ServerRPCRequest message received for a non existant behaviour. NetworkId: " + networkId + ", behaviourIndex: " + behaviourId);
                     }
                     else
                     {
@@ -678,7 +678,7 @@ namespace MLAPI.Messaging
                 }
                 else
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("ServerRPCRequest message recieved for a non existant object with id: " + networkId + ". This message is lost.");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("ServerRPCRequest message received for a non existant object with id: " + networkId + ". This message is lost.");
                 }
             }
         }
@@ -701,7 +701,7 @@ namespace MLAPI.Messaging
                 }
                 else
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("ServerRPCResponse message recieved for a non existant responseId: " + responseId + ". This response is lost.");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("ServerRPCResponse message received for a non existant responseId: " + responseId + ". This response is lost.");
                 }
             }
         }
@@ -720,7 +720,7 @@ namespace MLAPI.Messaging
 
                     if (behaviour == null)
                     {
-                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("ClientRPC message recieved for a non existant behaviour. NetworkId: " + networkId + ", behaviourIndex: " + behaviourId);
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("ClientRPC message received for a non existant behaviour. NetworkId: " + networkId + ", behaviourIndex: " + behaviourId);
                     }
                     else
                     {
@@ -729,11 +729,11 @@ namespace MLAPI.Messaging
                 }
                 else if (NetworkingManager.Singleton.IsServer || !NetworkingManager.Singleton.NetworkConfig.EnableMessageBuffering)
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("ClientRPC message recieved for a non existant object with id: " + networkId + ". This message is lost.");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("ClientRPC message received for a non existant object with id: " + networkId + ". This message is lost.");
                 }
                 else
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("ClientRPC message recieved for a non existant object with id: " + networkId + ". This message will be buffered and might be recovered.");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("ClientRPC message received for a non existant object with id: " + networkId + ". This message will be buffered and might be recovered.");
                     bufferCallback(networkId, bufferPreset);
                 }
             }
@@ -754,7 +754,7 @@ namespace MLAPI.Messaging
 
                     if (behaviour == null)
                     {
-                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("ClientRPCRequest message recieved for a non existant behaviour. NetworkId: " + networkId + ", behaviourIndex: " + behaviourId);
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("ClientRPCRequest message received for a non existant behaviour. NetworkId: " + networkId + ", behaviourIndex: " + behaviourId);
                     }
                     else
                     {
@@ -774,11 +774,11 @@ namespace MLAPI.Messaging
                 }
                 else if (NetworkingManager.Singleton.IsServer || !NetworkingManager.Singleton.NetworkConfig.EnableMessageBuffering)
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("ClientRPCRequest message recieved for a non existant object with id: " + networkId + ". This message is lost.");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("ClientRPCRequest message received for a non existant object with id: " + networkId + ". This message is lost.");
                 }
                 else
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("ClientRPCRequest message recieved for a non existant object with id: " + networkId + ". This message will be buffered and might be recovered.");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("ClientRPCRequest message received for a non existant object with id: " + networkId + ". This message will be buffered and might be recovered.");
                     bufferCallback(networkId, bufferPreset);
                 }
             }
