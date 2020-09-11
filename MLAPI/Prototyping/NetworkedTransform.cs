@@ -141,6 +141,8 @@ namespace MLAPI.Prototyping
 
         private void Update()
         {
+            if (!transform.hasChanged) return;
+
             if (IsOwner)
             {
                 if (NetworkingManager.Singleton.NetworkTime - lastSendTime >= (1f / FixedSendsPerSecond) && (Vector3.Distance(transform.position, lastSentPos) > MinMeters || Quaternion.Angle(transform.rotation, lastSentRot) > MinDegrees))
@@ -182,6 +184,8 @@ namespace MLAPI.Prototyping
             }
 
             if (IsServer && EnableRange && EnableNonProvokedResendChecks) CheckForMissedSends();
+
+            transform.hasChanged = false;
         }
 
         [ClientRPC]
