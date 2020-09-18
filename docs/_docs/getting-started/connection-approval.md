@@ -7,6 +7,9 @@ During every new connection the MLAPI performs a handshake on top of the one(s) 
 
 However, when ConnectionApproval is true you are also required to provide a callback where you put your approval logic inside. (Server only) Example:
 ```csharp
+using MLAPI;
+using MLAPI.Spawning;
+
 private void Setup() 
 {
     NetworkingManager.Singleton.ConnectionApprovalCallback += ApprovalCheck;
@@ -29,6 +32,8 @@ private void ApprovalCheck(byte[] connectionData, ulong clientId, MLAPI.Networki
 ### Connection data
 The connectionData parameter is any custom data of your choice that the client should send to the server. Usually, this should be some sort of ticket, room password or similar that will decide if a connection should be approved or not. The connectionData is specified on the Client side in the NetworkingConfig supplied when connecting. Example:
 ```csharp
+using MLAPI;
+
 NetworkingManager.Singleton.NetworkConfig.ConnectionData = System.Text.Encoding.ASCII.GetBytes("room password");
 NetworkingManager.Singleton.StartClient();
 ```
