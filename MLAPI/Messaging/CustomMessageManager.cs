@@ -157,7 +157,7 @@ namespace MLAPI.Messaging
         /// <param name="name">The message name to send</param>
         /// <param name="clientId">The client to send the message to</param>
         /// <param name="stream">The message stream containing the data</param>
-        /// <param name="channel">The channel tos end the data on</param>
+        /// <param name="channel">The channel to send the data on</param>
         /// <param name="security">The security settings to apply to the message</param>
         public static void SendNamedMessage(string name, ulong clientId, Stream stream, string channel = null, SecuritySendFlags security = SecuritySendFlags.None)
         {
