@@ -23,33 +23,36 @@ void MyMethod(int myInt)
 
 #### Convenience Example
 ```csharp
-private void OnGUI()
+public class Example : NetworkedBehaviour
 {
-    if (GUILayout.Button("SendRandomInt"))
-    {
-        if (IsServer)
-        {
-            InvokeClientRpcOnEveryone(MyClientRPC, Random.Range(-50, 50));
-        }
-        else
-        {
-            InvokeServerRpc(MyServerRpc, Random.Range(-50, 50));
-        }
-    }
-}
+  private void OnGUI()
+  {
+      if (GUILayout.Button("SendRandomInt"))
+      {
+          if (IsServer)
+          {
+              InvokeClientRpcOnEveryone(MyClientRPC, Random.Range(-50, 50));
+          }
+          else
+          {
+              InvokeServerRpc(MyServerRpc, Random.Range(-50, 50));
+          }
+      }
+  }
 
-[ServerRPC]
-private void MyServerRPC(int number)
-{
-    Debug.Log("The number received was: " + number);
-    Debug.Log("This method ran on the server upon the request of a client");
-}
+  [ServerRPC]
+  private void MyServerRPC(int number)
+  {
+      Debug.Log("The number received was: " + number);
+      Debug.Log("This method ran on the server upon the request of a client");
+  }
 
-[ClientRPC]
-private void MyClientRPC(int number)
-{
-    Debug.Log("The number received was: " + number);
-    Debug.Log("This method ran on the client upon the request of the server");
+  [ClientRPC]
+  private void MyClientRPC(int number)
+  {
+      Debug.Log("The number received was: " + number);
+      Debug.Log("This method ran on the client upon the request of the server");
+  }
 }
 ```
 
