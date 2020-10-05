@@ -1,8 +1,8 @@
 {
     "name": "MLAPI-EDITOR",
-    "rootNamespace": "",
+    "rootNamespace": "MLAPI",
     "references": [
-        "GUID:cb028ca1e7aa943d781c3ea73e90a08d"
+        "GUID:297ad7307cc674bf081191611f936215"
     ],
     "includePlatforms": [
         "Editor"

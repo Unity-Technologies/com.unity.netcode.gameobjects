@@ -10,6 +10,7 @@ using MLAPI.Messaging;
 using MLAPI.Security;
 using MLAPI.Serialization.Pooled;
 using MLAPI.Spawning;
+using Unity.Profiling;
 using UnityEngine;
 
 namespace MLAPI
@@ -20,6 +21,10 @@ namespace MLAPI
     [AddComponentMenu("MLAPI/NetworkedObject", -99)]
     public sealed class NetworkedObject : MonoBehaviour
     {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+        public static ProfilerMarker s_NetworkedBehaviourUpdate = new ProfilerMarker("MLAPI.NetworkedObject.NetworkedBehaviourUpdate");
+#endif
+        
         private void OnValidate()
         {
             // Set this so the hash can be serialized on Scene objects. For prefabs, they are generated at runtime.
@@ -538,25 +543,43 @@ namespace MLAPI
         private static int _lastProcessedObject = 0;
         internal static void NetworkedBehaviourUpdate()
         {
-            if (SpawnManager.SpawnedObjectsList.Count == 0)
-                return;
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            s_NetworkedBehaviourUpdate.Begin();
+#endif
 
-            int amountToProcess = NetworkingManager.Singleton.NetworkConfig.MaxObjectUpdatesPerTick <= 0 ? SpawnManager.SpawnedObjectsList.Count : Mathf.Max(NetworkingManager.Singleton.NetworkConfig.MaxObjectUpdatesPerTick, SpawnManager.SpawnedObjectsList.Count);
-
-            for (int i = 0; i < amountToProcess; i++)
+            try
             {
-                if (_lastProcessedObject >= SpawnManager.SpawnedObjectsList.Count)
-                {
-                    _lastProcessedObject = 0;
-                }
+                if (SpawnManager.SpawnedObjectsList.Count == 0)
+                    return;
 
-                // Sync all vars
-                for (int j = 0; j < SpawnManager.SpawnedObjectsList[_lastProcessedObject].childNetworkedBehaviours.Count; j++)
-                {
-                    SpawnManager.SpawnedObjectsList[_lastProcessedObject].childNetworkedBehaviours[j].VarUpdate();
-                }
+                int amountToProcess = NetworkingManager.Singleton.NetworkConfig.MaxObjectUpdatesPerTick <= 0
+                    ? SpawnManager.SpawnedObjectsList.Count
+                    : Mathf.Max(NetworkingManager.Singleton.NetworkConfig.MaxObjectUpdatesPerTick,
+                        SpawnManager.SpawnedObjectsList.Count);
 
-                _lastProcessedObject++;
+                for (int i = 0; i < amountToProcess; i++)
+                {
+                    if (_lastProcessedObject >= SpawnManager.SpawnedObjectsList.Count)
+                    {
+                        _lastProcessedObject = 0;
+                    }
+
+                    // Sync all vars
+                    for (int j = 0;
+                        j < SpawnManager.SpawnedObjectsList[_lastProcessedObject].childNetworkedBehaviours.Count;
+                        j++)
+                    {
+                        SpawnManager.SpawnedObjectsList[_lastProcessedObject].childNetworkedBehaviours[j].VarUpdate();
+                    }
+
+                    _lastProcessedObject++;
+                }
+            }
+            finally
+            {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+                s_NetworkedBehaviourUpdate.End();
+#endif
             }
         }
 

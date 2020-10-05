@@ -33,6 +33,10 @@ namespace MLAPI.Transports
         /// <value><c>true</c> if is supported; otherwise, <c>false</c>.</value>
         public virtual bool IsSupported => true;
 
+        public abstract ushort PrimaryPort { get; set; }
+        
+        public abstract string PrimaryAddress{get; set;}
+
         private TransportChannel[] _channelsCache = null;
 
         internal void ResetChannelCache()
@@ -122,6 +126,19 @@ namespace MLAPI.Transports
         /// Invokation has to occur on the Unity thread in the Update loop.
         /// </summary>
         public event TransportEventDelegate OnTransportEvent;
+
+        /// <summary>
+        /// Invokes the <see cref="OnTransportEvent"/>. Invokation has to occur on the Unity thread in the Update loop.
+        /// </summary>
+        /// <param name="type">The event type</param>
+        /// <param name="clientId">The clientId this event is for</param>
+        /// <param name="channelName">The channel the data arrived at. This is usually used when responding to things like RPCs</param>
+        /// <param name="payload">The incoming data payload</param>
+        /// <param name="receiveTime">The time the event was received, as reported by Time.realtimeSinceStartup.</param>
+        protected void InvokeOnTransportEvent(NetEventType type, ulong clientId, string channelName, ArraySegment<byte> payload, float receiveTime)
+        {
+            OnTransportEvent?.Invoke(type, clientId, channelName, payload, receiveTime);
+        }
 
         /// <summary>
         /// Send a payload to the specified clientId, data and channelName.

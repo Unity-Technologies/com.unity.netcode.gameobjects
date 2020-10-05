@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using MLAPI.Transports.Tasks;
 
 namespace MLAPI.Transports.Multiplex
@@ -50,6 +51,18 @@ namespace MLAPI.Transports.Multiplex
         private byte _lastProcessedTransportIndex;
 
         public override bool IsSupported => true;
+
+        public override string PrimaryAddress
+        {
+            get => Transports.Any() ? Transports.First().PrimaryAddress : default;
+            set => Array.ForEach(Transports, t => t.PrimaryAddress = value);
+        }
+
+        public override ushort PrimaryPort
+        {
+            get => Transports.Any() ? Transports.First().PrimaryPort : default;
+            set => Array.ForEach(Transports, t => t.PrimaryPort = value);
+        }
 
         public override void DisconnectLocalClient()
         {

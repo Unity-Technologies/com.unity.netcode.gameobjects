@@ -23,12 +23,14 @@ namespace MLAPI.Messaging
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogWarning("Silently suppressed send call because it was directed to an object without visibility");
                 return;
             }
-            
+
             using (BitStream stream = MessagePacker.WrapMessage(messageType, clientId, messageStream, flags))
             {
-                NetworkProfiler.StartEvent(TickType.Send, (uint)stream.Length, channelName, MLAPIConstants.MESSAGE_NAMES[messageType]);
-                
+                NetworkProfiler.StartEvent(TickType.Send, (uint) stream.Length, channelName,
+                    MLAPIConstants.MESSAGE_NAMES[messageType]);
+
                 NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(clientId, new ArraySegment<byte>(stream.GetBuffer(), 0, (int)stream.Length), channelName);
+                ProfilerStatManager.bytesSent.Record((int)stream.Length);
 
                 NetworkProfiler.EndEvent();
             }
@@ -63,8 +65,9 @@ namespace MLAPI.Messaging
                             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogWarning("Silently suppressed send(all) call because it was directed to an object without visibility");
                             continue;
                         }
-                        
+
                         NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId, new ArraySegment<byte>(stream.GetBuffer(), 0, (int)stream.Length), channelName);
+                        ProfilerStatManager.bytesSent.Record((int)stream.Length); 
                     }
                     NetworkProfiler.EndEvent();
                 }
@@ -108,6 +111,7 @@ namespace MLAPI.Messaging
                         }
 
                         NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(clientIds[i], new ArraySegment<byte>(stream.GetBuffer(), 0, (int)stream.Length), channelName);
+                        ProfilerStatManager.bytesSent.Record((int)stream.Length);
                     }
                     NetworkProfiler.EndEvent();
                 }
@@ -149,6 +153,7 @@ namespace MLAPI.Messaging
                         }
 
                         NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId, new ArraySegment<byte>(stream.GetBuffer(), 0, (int)stream.Length), channelName);
+                        ProfilerStatManager.bytesSent.Record((int)stream.Length);
                     }
                     NetworkProfiler.EndEvent();
                 }

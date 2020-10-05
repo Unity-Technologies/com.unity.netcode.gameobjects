@@ -11,12 +11,14 @@ using MLAPI.Hashing;
 using MLAPI.Logging;
 using MLAPI.Messaging;
 using MLAPI.NetworkedVar;
+using MLAPI.Profiling;
 using MLAPI.Reflection;
 using MLAPI.Security;
 using MLAPI.Serialization.Pooled;
 using MLAPI.Spawning;
 using BitStream = MLAPI.Serialization.BitStream;
 using MLAPI.Serialization;
+using Unity.Profiling;
 
 namespace MLAPI
 {
@@ -25,6 +27,9 @@ namespace MLAPI
     /// </summary>
     public abstract partial class NetworkedBehaviour : MonoBehaviour
     {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+        static ProfilerMarker s_SendClientRPCPerformance = new ProfilerMarker("NetworkedBehaviour.SendClientRPCPerformance");
+#endif
         /// <summary>
         /// Gets if the object is the the personal clients player object
         /// </summary>
@@ -1175,6 +1180,7 @@ namespace MLAPI
                     else
                     {
                         InternalMessageSender.Send(NetworkingManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_SERVER_RPC, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security, null);
+                        ProfilerStatManager.rpcsSent.Record();
                     }
                 }
             }
@@ -1232,6 +1238,7 @@ namespace MLAPI
                         ResponseMessageManager.Add(response.Id, response);
 
                         InternalMessageSender.Send(NetworkingManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_SERVER_RPC_REQUEST, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security, null);
+                        ProfilerStatManager.rpcsSent.Record();
 
                         return response;
                     }
@@ -1272,12 +1279,16 @@ namespace MLAPI
                     }
 
                     InternalMessageSender.Send(MLAPIConstants.MLAPI_CLIENT_RPC, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, clientIds, stream, security, this.NetworkedObject);
+                    ProfilerStatManager.rpcsSent.Record(clientIds?.Count ?? NetworkingManager.Singleton.ConnectedClientsList.Count);
                 }
             }
         }
 
         internal void SendClientRPCPerformance(ulong hash, Stream messageStream, ulong clientIdToIgnore, string channel, SecuritySendFlags security)
         {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            s_SendClientRPCPerformance.Begin();
+#endif
             if (!IsServer && IsRunning)
             {
                 //We are NOT a server.
@@ -1310,8 +1321,13 @@ namespace MLAPI
                     }
 
                     InternalMessageSender.Send(MLAPIConstants.MLAPI_CLIENT_RPC, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, clientIdToIgnore, stream, security, this.NetworkedObject);
+                    ProfilerStatManager.rpcsSent.Record(NetworkingManager.Singleton.ConnectedClientsList.Count - 1);
                 }
             }
+
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            s_SendClientRPCPerformance.End();
+#endif
         }
 
         internal void SendClientRPCPerformance(ulong hash, ulong clientId, Stream messageStream, string channel, SecuritySendFlags security)
@@ -1347,6 +1363,7 @@ namespace MLAPI
                     else
                     {
                         InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_CLIENT_RPC, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security, null);
+                        ProfilerStatManager.rpcsSent.Record();
                     }
                 }
             }
@@ -1410,6 +1427,7 @@ namespace MLAPI
                         ResponseMessageManager.Add(response.Id, response);
 
                         InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_CLIENT_RPC_REQUEST, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security, null);
+                        ProfilerStatManager.rpcsSent.Record();
 
                         return response;
                     }

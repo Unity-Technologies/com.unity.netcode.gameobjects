@@ -26,6 +26,7 @@ using static MLAPI.Messaging.CustomMessagingManager;
 using MLAPI.Exceptions;
 using MLAPI.Transports.Tasks;
 using MLAPI.Messaging.Buffering;
+using Unity.Profiling;
 
 namespace MLAPI
 {
@@ -35,6 +36,18 @@ namespace MLAPI
     [AddComponentMenu("MLAPI/NetworkingManager", -100)]
     public class NetworkingManager : MonoBehaviour
     {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+        static ProfilerMarker s_EventTick = new ProfilerMarker("Event");
+        static ProfilerMarker s_ReceiveTick = new ProfilerMarker("Receive");
+        static ProfilerMarker s_SyncTime = new ProfilerMarker("SyncTime");
+        static ProfilerMarker s_TransportConnect =
+            new ProfilerMarker("TransportConnect");
+        static ProfilerMarker s_HandleIncomingData =
+            new ProfilerMarker("HandleIncomingData");
+        static ProfilerMarker s_TransportDisconnect =
+            new ProfilerMarker("TransportDisconnect");
+#endif
+        
         /// <summary>
         /// A synchronized time, represents the time in seconds since the server application started. Is replicated across all clients
         /// </summary>
@@ -311,6 +324,10 @@ namespace MLAPI
             }
             else
             {
+                if (NetworkConfig.PlayerPrefabHash == null)
+                {
+                    NetworkConfig.PlayerPrefabHash = new NullableBoolSerializable();
+                }
                 NetworkConfig.PlayerPrefabHash.Value = prefab.Hash;
             }
         }
@@ -641,6 +658,10 @@ namespace MLAPI
             {
                 if ((NetworkTime - lastReceiveTickTime >= (1f / NetworkConfig.ReceiveTickrate)) || NetworkConfig.ReceiveTickrate <= 0)
                 {
+                    ProfilerStatManager.rcvTickRate.Record();
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+                    s_ReceiveTick.Begin();
+#endif
                     NetworkProfiler.StartTick(TickType.Receive);
                     NetEventType eventType;
                     int processedEvents = 0;
@@ -654,6 +675,9 @@ namespace MLAPI
                     } while (IsListening && (eventType != NetEventType.Nothing && (NetworkConfig.MaxReceiveEventsPerTickRate <= 0 || processedEvents < NetworkConfig.MaxReceiveEventsPerTickRate)));
                     lastReceiveTickTime = NetworkTime;
                     NetworkProfiler.EndTick();
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+                    s_ReceiveTick.End();
+#endif
                 }
 
                 if (!IsListening)
@@ -664,6 +688,9 @@ namespace MLAPI
 
                 if (((NetworkTime - lastEventTickTime >= (1f / NetworkConfig.EventTickrate))))
                 {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+                    s_EventTick.Begin();
+#endif
                     NetworkProfiler.StartTick(TickType.Event);
 
                     if (IsServer)
@@ -690,6 +717,9 @@ namespace MLAPI
                     }
 
                     NetworkProfiler.EndTick();
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+                    s_EventTick.End();
+#endif
                 }
                 else if (IsServer && eventOvershootCounter >= ((1f / NetworkConfig.EventTickrate)))
                 {
@@ -768,9 +798,13 @@ namespace MLAPI
 
         private void HandleRawTransportPoll(NetEventType eventType, ulong clientId, string channelName, ArraySegment<byte> payload, float receiveTime)
         {
+            ProfilerStatManager.bytesRcvd.Record(payload.Count);
             switch (eventType)
             {
                 case NetEventType.Connect:
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+                    s_TransportConnect.Begin();
+#endif
                     NetworkProfiler.StartEvent(TickType.Receive, (uint)payload.Count, channelName, "TRANSPORT_CONNECT");
                     if (IsServer)
                     {
@@ -844,11 +878,11 @@ namespace MLAPI
                         else
                         {
 #endif
-                            PendingClients.Add(clientId, new PendingClient()
-                            {
-                                ClientId = clientId,
-                                ConnectionState = PendingClient.State.PendingConnection
-                            });
+                        PendingClients.Add(clientId, new PendingClient()
+                        {
+                            ClientId = clientId,
+                            ConnectionState = PendingClient.State.PendingConnection
+                        });
 #if !DISABLE_CRYPTOGRAPHY
                         }
 #endif
@@ -863,6 +897,9 @@ namespace MLAPI
                         StartCoroutine(ApprovalTimeout(clientId));
                     }
                     NetworkProfiler.EndEvent();
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+                    s_TransportConnect.End();
+#endif
                     break;
                 case NetEventType.Data:
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo($"Incoming Data From {clientId} : {payload.Count} bytes");
@@ -870,6 +907,9 @@ namespace MLAPI
                     HandleIncomingData(clientId, channelName, payload, receiveTime, true);
                     break;
                 case NetEventType.Disconnect:
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+                    s_TransportDisconnect.Begin();
+#endif
                     NetworkProfiler.StartEvent(TickType.Receive, 0, "NONE", "TRANSPORT_DISCONNECT");
 
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo("Disconnect Event From " + clientId);
@@ -885,6 +925,9 @@ namespace MLAPI
                     if (OnClientDisconnectCallback != null)
                         OnClientDisconnectCallback.Invoke(clientId);
                     NetworkProfiler.EndEvent();
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+                    s_TransportDisconnect.End();
+#endif
                     break;
             }
         }
@@ -893,6 +936,9 @@ namespace MLAPI
 
         internal void HandleIncomingData(ulong clientId, string channelName, ArraySegment<byte> data, float receiveTime, bool allowBuffer)
         {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            s_HandleIncomingData.Begin();
+#endif
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo("Unwrapping Data Header");
 
             inputStreamWrapper.SetTarget(data.Array);
@@ -1046,6 +1092,9 @@ namespace MLAPI
 
                 NetworkProfiler.EndEvent();
             }
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            s_HandleIncomingData.End();
+#endif
         }
 
         private void BufferCallback(ulong networkId, PreBufferPreset preset)
@@ -1089,8 +1138,10 @@ namespace MLAPI
 
             for (int i = ConnectedClientsList.Count - 1; i > -1; i--)
             {
-                if (ConnectedClientsList[i].ClientId == clientId)
+                if (ConnectedClientsList[i].ClientId == clientId) {
                     ConnectedClientsList.RemoveAt(i);
+                    ProfilerStatManager.connections.Record(-1);
+                }
             }
 
             NetworkConfig.NetworkTransport.DisconnectRemoteClient(clientId);
@@ -1153,6 +1204,7 @@ namespace MLAPI
                     if (ConnectedClientsList[i].ClientId == clientId)
                     {
                         ConnectedClientsList.RemoveAt(i);
+                        ProfilerStatManager.connections.Record(-1);
                         break;
                     }
                 }
@@ -1163,6 +1215,9 @@ namespace MLAPI
 
         private void SyncTime()
         {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            s_SyncTime.Begin();
+#endif
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo("Syncing Time To Clients");
             using (PooledBitStream stream = PooledBitStream.Get())
             {
@@ -1172,6 +1227,9 @@ namespace MLAPI
                     InternalMessageSender.Send(MLAPIConstants.MLAPI_TIME_SYNC, "MLAPI_TIME_SYNC", stream, SecuritySendFlags.None, null);
                 }
             }
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            s_SyncTime.End();
+#endif
         }
 
         private readonly List<NetworkedObject> _observedObjects = new List<NetworkedObject>();
@@ -1193,6 +1251,8 @@ namespace MLAPI
                 };
                 ConnectedClients.Add(clientId, client);
                 ConnectedClientsList.Add(client);
+
+                ProfilerStatManager.connections.Record();
 
                 // This packet is unreliable, but if it gets through it should provide a much better sync than the potentially huge approval message.
                 SyncTime();
@@ -1306,6 +1366,9 @@ namespace MLAPI
                             OnClientConnectedCallback.Invoke(clientId);
                     }
                 }
+
+                if(!createPlayerObject || (playerPrefabHash == null && NetworkConfig.PlayerPrefabHash == null))
+                    return;
 
                 //Inform old clients of the new player
 

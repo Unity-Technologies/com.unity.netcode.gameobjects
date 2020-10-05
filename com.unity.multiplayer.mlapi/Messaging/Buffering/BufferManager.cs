@@ -1,12 +1,17 @@
 using System;
 using System.Collections.Generic;
 using MLAPI.Serialization.Pooled;
+using Unity.Profiling;
 using UnityEngine;
 
 namespace MLAPI.Messaging.Buffering
 {
     internal static class BufferManager
     {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+        public static ProfilerMarker s_CleanBuffer = new ProfilerMarker("MLAPI.BufferManager.CleanBuffer");
+#endif
+        
         private static readonly Dictionary<ulong, Queue<BufferedMessage>> bufferQueues = new Dictionary<ulong, Queue<BufferedMessage>>();
 
         internal struct BufferedMessage
@@ -66,6 +71,9 @@ namespace MLAPI.Messaging.Buffering
         private static readonly List<ulong> _keysToDestroy = new List<ulong>();
         internal static void CleanBuffer()
         {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            s_CleanBuffer.Begin();
+#endif
             foreach (KeyValuePair<ulong, Queue<BufferedMessage>> pair in bufferQueues)
             {
                 while (pair.Value.Count > 0 && Time.realtimeSinceStartup - pair.Value.Peek().bufferTime >= NetworkingManager.Singleton.NetworkConfig.MessageBufferTimeout)
@@ -87,6 +95,9 @@ namespace MLAPI.Messaging.Buffering
             }
 
             _keysToDestroy.Clear();
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            s_CleanBuffer.End();
+#endif
         }
     }
 }

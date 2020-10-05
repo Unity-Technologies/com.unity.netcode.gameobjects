@@ -1,6 +1,8 @@
 #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+
 using MLAPI.Logging;
 using MLAPI.Transports.Tasks;
 using UnityEngine.Networking;
@@ -9,9 +11,16 @@ namespace MLAPI.Transports.UNET
 {
     public class UnetTransport : Transport
     {
+        public enum SendMode
+        {
+            Immediately, 
+            Queued
+        }
+
         // Inspector / settings
         public int MessageBufferSize = 1024 * 5;
         public int MaxConnections = 100;
+        public int MaxSentMessageQueueSize = 128;
 
         public string ConnectAddress = "127.0.0.1";
         public int ConnectPort = 7777;
@@ -25,6 +34,8 @@ namespace MLAPI.Transports.UNET
         public string MLAPIRelayAddress = "184.72.104.138";
         public int MLAPIRelayPort = 8888;
 
+        public SendMode MessageSendMode = SendMode.Immediately;
+
         // Runtime / state
         private byte[] messageBuffer;
         private WeakReference temporaryBufferReference;
@@ -37,7 +48,33 @@ namespace MLAPI.Transports.UNET
 
         private SocketTask connectTask;
 
+        public override string PrimaryAddress
+        {
+            get => ConnectAddress;
+            set => ConnectAddress = value;
+        }
+
+        public override ushort PrimaryPort
+        {
+            get => (ushort) ConnectPort;
+            set => ConnectPort = value;
+        }
+
         public override ulong ServerClientId => GetMLAPIClientId(0, 0, true);
+
+        protected void LateUpdate()
+        {
+            if (NetworkTransport.IsStarted  && MessageSendMode == SendMode.Queued) {
+                if (NetworkingManager.Singleton.IsServer) {
+                    for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++) {
+                        SendQueued(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId);
+                    }
+                }
+                else {
+                    SendQueued(NetworkingManager.Singleton.LocalClientId);
+                }
+            }
+        }
 
         public override void Send(ulong clientId, ArraySegment<byte> data, string channelName)
         {
@@ -85,7 +122,20 @@ namespace MLAPI.Transports.UNET
                 buffer = data.Array;
             }
 
-            RelayTransport.Send(hostId, connectionId, channelId, buffer, data.Count, out byte error);
+            if (MessageSendMode == SendMode.Queued) {
+                RelayTransport.QueueMessageForSending(hostId, connectionId, channelId, buffer, data.Count, out byte error);
+            }
+            else {
+                RelayTransport.Send(hostId, connectionId, channelId, buffer, data.Count, out byte error);
+            }
+        }
+
+
+        public void SendQueued(ulong clientId)
+        {
+            GetUnetConnectionDetails(clientId, out byte hostId, out ushort connectionId);
+
+            RelayTransport.SendQueuedMessages(hostId, connectionId, out byte error);
         }
 
         public override NetEventType PollEvent(out ulong clientId, out string channelName, out ArraySegment<byte> payload, out float receiveTime)
@@ -323,6 +373,8 @@ namespace MLAPI.Transports.UNET
                 channelIdToName.Add(channelId, Channels[i].Name);
                 channelNameToId.Add(Channels[i].Name, channelId);
             }
+
+            config.MaxSentMessageQueueSize = (ushort)MaxSentMessageQueueSize;
 
             return config;
         }

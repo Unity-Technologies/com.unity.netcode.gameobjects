@@ -54,7 +54,7 @@ namespace MLAPI.Configuration
         /// <summary>
         /// The default player prefab
         /// </summary>
-        [SerializeField]
+        [SerializeReference]
         internal NullableBoolSerializable PlayerPrefabHash;
         /// <summary>
         /// Whether or not a player object should be created by default. This value can be overriden on a case by case basis with ConnectionApproval.
@@ -344,7 +344,7 @@ namespace MLAPI.Configuration
                     writer.WriteUInt16Packed(ProtocolVersion);
                     writer.WriteString(MLAPIConstants.MLAPI_PROTOCOL_VERSION);
 
-                    if (EnableSceneManagement && !AllowRuntimeSceneChanges)
+                    if (!AllowRuntimeSceneChanges)
                     {
                         for (int i = 0; i < RegisteredScenes.Count; i++)
                         {
