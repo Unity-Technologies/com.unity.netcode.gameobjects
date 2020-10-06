@@ -1,0 +1,17 @@
+{
+    "name": "Unity MLAPI Editor",
+    "references": [
+        "GUID:696707ce333fb8645b1ced9c7a716445"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -1,0 +1,19 @@
+{
+    "name": "Unity MLAPI Transport",
+    "references": [
+        "GUID:696707ce333fb8645b1ced9c7a716445",
+        "GUID:e0cd26848372d4e5c891c569017e11f1",
+        "GUID:f2d49d9fa7e7eb3418e39723a7d3b92f",
+        "GUID:8a2eafa29b15f444eb6d74f94a930e1d",
+        "GUID:2665a8d13d1b3f18800f46e256720795"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
