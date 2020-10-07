@@ -1,0 +1,2 @@
+-nowarn:CS0618
+-define:DISABLE_CRYPTOGRAPHY
