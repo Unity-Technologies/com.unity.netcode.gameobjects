@@ -1,5 +1,5 @@
 {
-    "name": "Unity MLAPI Editor",
+    "name": "Unity.Multiplayer.MLAPI.Editor",
     "rootNamespace": "",
     "references": [
         "GUID:685f79b2e74fed940acdd221b82faf9c"

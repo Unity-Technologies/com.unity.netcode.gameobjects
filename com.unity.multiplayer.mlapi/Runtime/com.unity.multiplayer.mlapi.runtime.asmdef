@@ -1,5 +1,5 @@
 {
-    "name": "Unity MLAPI Runtime",
+    "name": "Unity.Multiplayer.MLAPI.Runtime",
     "rootNamespace": "MLAPI",
     "references": [],
     "includePlatforms": [],
