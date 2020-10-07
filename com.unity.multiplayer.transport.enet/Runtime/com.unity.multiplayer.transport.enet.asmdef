@@ -1,7 +1,8 @@
 {
     "name": "ENET MLAPI Transport",
+    "rootNamespace": "",
     "references": [
-        "GUID:696707ce333fb8645b1ced9c7a716445"
+        "GUID:685f79b2e74fed940acdd221b82faf9c"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
