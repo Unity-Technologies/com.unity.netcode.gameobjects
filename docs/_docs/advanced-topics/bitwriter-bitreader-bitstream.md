@@ -3,10 +3,10 @@ title: BitWriter, BitReader & BitStream
 permalink: /wiki/bitwriter-bitreader-bitstream/
 ---
 
-Internally, the MLAPI uses Streams for it's data. This gives a ton of flexibility for the end user. If the end user for example doesn't want to use Streams but rather just byte arrays at their own level. They can do so by wrapping their arrays in MemoryStreams which doesn't create any garbage.
+Internally, the MLAPI uses Streams for it's data. This gives a ton of flexibility for the end user. If the end user for example doesn't want to use Streams but rather just byte arrays at their own level. They can do so by wrapping their arrays in MemoryStreams which don't create any garbage.
 
 
-The MLAPI does have it's own prefered Stream that is used internally. It's called the BitStream.
+The MLAPI does have its own prefered Stream that is used internally. It's called the BitStream.
 
 ## BitStream
 The BitStream is a Stream implementation that functions in a similar way as the MemoryStream. The main difference is that the BitStream have methods for operating on the Bit level rather than the Byte level.
@@ -34,18 +34,18 @@ When using the "Packed" versions of a write or read, the output will be VarInted
 When using the "Diff" versions of an array write or read, the output will be the diff between two arrays, allowing for delta encoding.
 
 #### Unity Types
-The BitWriter & BitReader supports many data types by default such as Vector3, Vector2, Ray, Quaternion and more.
+The BitWriter & BitReader support many data types by default such as Vector3, Vector2, Ray, Quaternion and more.
 
 #### BitWise Writing
-If you for example have an enum with 5 values. All those values could be fit into 3 bits. With the BitWriter, this can be done like this:
+If you for example have an enum with 5 values. All those values could fit into 3 bits. With the BitWriter, this can be done like this:
 
 ```csharp
 writer.WriteBits((byte)MyEnum.MyEnumValue, 3);
 MyEnum value = (Myenum)reader.ReadBits(3);
 ```
 
-#### Performance concideration
-When the stream is not aligned, (BitAligned == false, this occurs when writing bits that does fill the whole byte, or when writing bools as they are written as bits), performance is decreased for each write and read. This is only a big concern if you are about to write a large amount of data after not being aligned. To solve this, the BitWriter allows you to "WritePadBits" and the BitReader then lets you skip those bits with "SkipPadBits" to align the stream to the nearest byte.
+#### Performance consideration
+When the stream is not aligned, (BitAligned == false, this occurs when writing bits that do fill the whole byte, or when writing bools as they are written as bits), performance is decreased for each write and read. This is only a big concern if you are about to write a large amount of data after not being aligned. To solve this, the BitWriter allows you to "WritePadBits" and the BitReader then lets you skip those bits with "SkipPadBits" to align the stream to the nearest byte.
 
 ```csharp
 writer.WriteBool(true); //Now the stream is no longer aligned. Every byte has to be offset by 1 bit.
@@ -59,7 +59,7 @@ reader.ReadByteArray(myOutputArray, 1024);
 ```
 
 ### Pooled BitReader/Writer
-The writer and reader also has pooled versions to avoid allocating the classes themselves. You might aswell use them.
+The writer and reader also has pooled versions to avoid allocating the classes themselves. You might as well use them.
 
 ```csharp
 using (PooledBitReader reader = PooledBitReader.Get(myStreamToReadFrom))
