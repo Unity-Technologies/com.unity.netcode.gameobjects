@@ -15,7 +15,7 @@ permalink: /api/profiler-tick/
 	<h3 markdown="1">Public Properties</h3>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public ``uint`` Bytes { get; }</b></h4>
-		<p>The amount of bytes that were sent and / or recieved during this tick</p>
+		<p>The amount of bytes that were sent and / or received during this tick</p>
 	</div>
 </div>
 <br>

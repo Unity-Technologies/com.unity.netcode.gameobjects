@@ -31,7 +31,7 @@ namespace MLAPI.Prototyping
         /// <summary>
         /// The percentage to lerp on corrections
         /// </summary>
-        [Tooltip("Everytime a correction packet is recieved. This is the percentage (between 0 & 1) that we will move towards the goal.")]
+        [Tooltip("Everytime a correction packet is received. This is the percentage (between 0 & 1) that we will move towards the goal.")]
         public float DriftCorrectionPercentage = 0.1f;
         /// <summary>
         /// Should we warp on destination change

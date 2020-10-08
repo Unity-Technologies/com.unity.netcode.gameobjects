@@ -108,7 +108,7 @@ namespace MLAPI.Profiling
         /// </summary>
         public int EventId;
         /// <summary>
-        /// The amount of bytes that were sent and / or recieved during this tick
+        /// The amount of bytes that were sent and / or received during this tick
         /// </summary>
         public uint Bytes
         {
