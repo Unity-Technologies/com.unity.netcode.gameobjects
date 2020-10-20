@@ -110,7 +110,7 @@ private void OnGUI()
                 {
                     writer.WriteInt32Packed(Random.Range(-50, 50));
 
-                    InvokeServerRpcPerformance(MyServerRpc, stream);
+                    InvokeServerRpcPerformance(MyServerRPC, stream);
                 }
             }
         }
