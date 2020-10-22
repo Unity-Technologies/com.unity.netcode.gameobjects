@@ -185,18 +185,6 @@ public class UTPTransport : Transport
 
     public override ulong ServerClientId => 0;
 
-    public override string PrimaryAddress
-    {
-        get => Address;
-        set => Address = value;
-    }
-
-    public override ushort PrimaryPort
-    {
-        get => (ushort)Port;
-        set => Port = value;
-    }
-
     public override void DisconnectLocalClient() { m_Driver.Disconnect(m_Connections[0]); }
     public override void DisconnectRemoteClient(ulong clientId)
     {

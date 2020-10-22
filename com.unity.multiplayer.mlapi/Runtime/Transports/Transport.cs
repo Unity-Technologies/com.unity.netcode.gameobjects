@@ -33,10 +33,6 @@ namespace MLAPI.Transports
         /// <value><c>true</c> if is supported; otherwise, <c>false</c>.</value>
         public virtual bool IsSupported => true;
 
-        public abstract ushort PrimaryPort { get; set; }
-        
-        public abstract string PrimaryAddress{get; set;}
-
         private TransportChannel[] _channelsCache = null;
 
         internal void ResetChannelCache()

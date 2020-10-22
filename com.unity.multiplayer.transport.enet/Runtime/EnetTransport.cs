@@ -82,18 +82,6 @@ namespace EnetTransport
 
         private bool hasServiced;
 
-        public override string PrimaryAddress
-        {
-            get => Address;
-            set => Address = value;
-        }
-
-        public override ushort PrimaryPort
-        {
-            get => (ushort) Port;
-            set => Port = value;
-        }
-
         public override ulong ServerClientId => GetMLAPIClientId(0, true);
 
         public override void Send(ulong clientId, ArraySegment<byte> data, string channelName)

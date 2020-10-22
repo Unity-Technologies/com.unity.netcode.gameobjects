@@ -52,18 +52,6 @@ namespace MLAPI.Transports.Multiplex
 
         public override bool IsSupported => true;
 
-        public override string PrimaryAddress
-        {
-            get => Transports.Any() ? Transports.First().PrimaryAddress : default;
-            set => Array.ForEach(Transports, t => t.PrimaryAddress = value);
-        }
-
-        public override ushort PrimaryPort
-        {
-            get => Transports.Any() ? Transports.First().PrimaryPort : default;
-            set => Array.ForEach(Transports, t => t.PrimaryPort = value);
-        }
-
         public override void DisconnectLocalClient()
         {
             Transports[GetFirstSupportedTransportIndex()].DisconnectLocalClient();

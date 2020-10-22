@@ -47,19 +47,6 @@ namespace MLAPI.Transports.UNET
         private int serverHostId;
 
         private SocketTask connectTask;
-
-        public override string PrimaryAddress
-        {
-            get => ConnectAddress;
-            set => ConnectAddress = value;
-        }
-
-        public override ushort PrimaryPort
-        {
-            get => (ushort) ConnectPort;
-            set => ConnectPort = value;
-        }
-
         public override ulong ServerClientId => GetMLAPIClientId(0, 0, true);
 
         protected void LateUpdate()
