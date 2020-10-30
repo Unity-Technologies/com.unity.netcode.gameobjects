@@ -72,7 +72,7 @@ namespace MLAPI.Configuration
         [Tooltip("The maximum amount of Receive events to poll per Receive tick. This is to prevent flooding and freezing on the server")]
         public int MaxReceiveEventsPerTickRate = 500;
         /// <summary>
-        /// The amount of times per second internal frame events will occur, examples include SyncedVar send checking.
+        /// The amount of times per second internal frame events will occur, e.g. send checking.
         /// </summary>
         [Tooltip("The amount of times per second the internal event loop will run. This includes for example NetworkedVar checking and LagCompensation tracking")]
         public int EventTickrate = 64;
@@ -82,7 +82,7 @@ namespace MLAPI.Configuration
         /// Set this to less than or equal to 0 for unlimited
         /// </summary>
         [FormerlySerializedAs("MaxBehaviourUpdatesPerTick")]
-        [Tooltip("The maximum amount of NetworkedObject SyncedVars to process per Event tick. This is to prevent freezing")]
+        [Tooltip("The maximum amount of NetworkedObjects to process per Event tick. This is to prevent freezing")]
         public int MaxObjectUpdatesPerTick = -1;
         /// <summary>
         /// The amount of seconds to wait for handshake to complete before timing out a client

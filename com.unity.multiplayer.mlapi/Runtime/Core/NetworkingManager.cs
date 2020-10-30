@@ -47,7 +47,7 @@ namespace MLAPI
         static ProfilerMarker s_TransportDisconnect =
             new ProfilerMarker("TransportDisconnect");
 #endif
-        
+
         /// <summary>
         /// A synchronized time, represents the time in seconds since the server application started. Is replicated across all clients
         /// </summary>
@@ -1078,9 +1078,6 @@ namespace MLAPI
                     case MLAPIConstants.MLAPI_CLIENT_SWITCH_SCENE_COMPLETED:
                         if (IsServer && NetworkConfig.EnableSceneManagement) InternalMessageHandler.HandleClientSwitchSceneCompleted(clientId, messageStream);
                         break;
-                    case MLAPIConstants.MLAPI_SYNCED_VAR:
-                        if (IsClient) InternalMessageHandler.HandleSyncedVar(clientId, messageStream);
-                        break;
                     case MLAPIConstants.MLAPI_SERVER_LOG:
                         if (IsServer && NetworkConfig.EnableNetworkLogs) InternalMessageHandler.HandleNetworkLog(clientId, messageStream);
                         break;
@@ -1356,7 +1353,6 @@ namespace MLAPI
                             if (NetworkConfig.EnableNetworkedVar)
                             {
                                 observedObject.WriteNetworkedVarData(stream, clientId);
-                                observedObject.WriteSyncedVarData(stream, clientId);
                             }
                         }
 
@@ -1420,7 +1416,6 @@ namespace MLAPI
                             if (NetworkConfig.EnableNetworkedVar)
                             {
                                 ConnectedClients[clientId].PlayerObject.WriteNetworkedVarData(stream, clientPair.Key);
-                                ConnectedClients[clientId].PlayerObject.WriteSyncedVarData(stream, clientPair.Key);
                             }
 
                             InternalMessageSender.Send(clientPair.Key, MLAPIConstants.MLAPI_ADD_OBJECT, "MLAPI_INTERNAL", stream, SecuritySendFlags.None, null);

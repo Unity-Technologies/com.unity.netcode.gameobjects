@@ -42,8 +42,6 @@ namespace MLAPI.Messaging
             new ProfilerMarker("InternalMessageHandler.HandleNetworkedVarDelta");
         static ProfilerMarker s_HandleNetworkedVarUpdate =
             new ProfilerMarker("InternalMessageHandler.HandleNetworkedVarUpdate");
-        static ProfilerMarker s_HandleSyncedVar =
-            new ProfilerMarker("InternalMessageHandler.HandleSyncedVar");
         static ProfilerMarker s_HandleServerRPC =
             new ProfilerMarker("InternalMessageHandler.HandleServerRPC");
         static ProfilerMarker s_HandleServerRPCRequest =
@@ -64,7 +62,7 @@ namespace MLAPI.Messaging
             new ProfilerMarker("InternalMessageHandler.HandleNetworkLog");
 
 #endif
-        
+
 #if !DISABLE_CRYPTOGRAPHY
         // Runs on client
         internal static void HandleHailRequest(ulong clientId, Stream stream)
@@ -689,54 +687,9 @@ namespace MLAPI.Messaging
 #endif
         }
 
-        internal static void HandleSyncedVar(ulong clientId, Stream stream)
-        {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_HandleSyncedVar.Begin();
-#endif
-            try
-            {
-                using (PooledBitReader reader = PooledBitReader.Get(stream))
-                {
-                    ulong networkId = reader.ReadUInt64Packed();
-                    ushort orderIndex = reader.ReadUInt16Packed();
-
-                    if (SpawnManager.SpawnedObjects.ContainsKey(networkId))
-                    {
-                        ProfilerStatManager.syncVar.Record(1);
-                        NetworkedBehaviour instance =
-                            SpawnManager.SpawnedObjects[networkId].GetBehaviourAtOrderIndex(orderIndex);
-                        if (instance == null)
-                        {
-                            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                                NetworkLog.LogWarning("SyncedVar message received for a non-existent behaviour");
-                            return;
-                        }
-
-                        NetworkedBehaviour.HandleSyncedVarValue(instance.syncedVars, stream, clientId, instance);
-                    }
-                    else
-                    {
-                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
-                            NetworkLog.LogWarning("SyncedVar message received for a non-existent object with id: " +
-                                                  networkId);
-                        return;
-                    }
-                }
-            }
-            finally
-            {
-
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-                s_HandleSyncedVar.End();
-#endif
-            }
-
-        }
-
         internal static void HandleServerRPC(ulong clientId, Stream stream)
         {
-            ProfilerStatManager.rpcsRecived.Record();
+            ProfilerStatManager.rpcsRcvd.Record();
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleServerRPC.Begin();
 #endif
@@ -818,7 +771,7 @@ namespace MLAPI.Messaging
 
         internal static void HandleServerRPCResponse(ulong clientId, Stream stream)
         {
-            ProfilerStatManager.rpcsRecived.Record();
+            ProfilerStatManager.rpcsRcvd.Record();
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleServerRPCResponse.Begin();
 #endif
@@ -848,7 +801,7 @@ namespace MLAPI.Messaging
 
         internal static void HandleClientRPC(ulong clientId, Stream stream, Action<ulong, PreBufferPreset> bufferCallback, PreBufferPreset bufferPreset)
         {
-            ProfilerStatManager.rpcsRecived.Record();
+            ProfilerStatManager.rpcsRcvd.Record();
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleClientRPC.Begin();
 #endif
@@ -940,7 +893,7 @@ namespace MLAPI.Messaging
 
         internal static void HandleClientRPCResponse(ulong clientId, Stream stream)
         {
-            ProfilerStatManager.rpcsRecived.Record();
+            ProfilerStatManager.rpcsRcvd.Record();
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleClientRPCResponse.Begin();
 #endif
@@ -967,7 +920,7 @@ namespace MLAPI.Messaging
         }
 
         internal static void HandleUnnamedMessage(ulong clientId, Stream stream)
-        {    
+        {
             ProfilerStatManager.unnamedMessage.Record();
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleUnnamedMessage.Begin();

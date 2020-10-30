@@ -133,7 +133,7 @@ namespace MLAPI
                 {
                     _networkedObject = GetComponentInParent<NetworkedObject>();
                 }
-                
+
                 return _networkedObject != null;
             }
         }
@@ -182,13 +182,6 @@ namespace MLAPI
         }
 
         /// <summary>
-        /// Gets called when SyncedVars gets updated
-        /// </summary>
-        public virtual void OnSyncVarUpdate()
-        {
-
-        }
-        /// <summary>
         /// Gets called when the local client gains ownership of this object
         /// </summary>
         public virtual void OnGainedOwnership()
@@ -232,11 +225,6 @@ namespace MLAPI
 
         private static readonly Dictionary<Type, FieldInfo[]> fieldTypes = new Dictionary<Type, FieldInfo[]>();
 
-        private readonly List<HashSet<int>> channelMappedSyncedVarIndexes = new List<HashSet<int>>();
-        private readonly List<string> channelsForSyncedVarGroups = new List<string>();
-        internal readonly List<SyncedVarContainer> syncedVars = new List<SyncedVarContainer>();
-
-
         private static FieldInfo[] GetFieldInfoForType(Type type)
         {
             if (!fieldTypes.ContainsKey(type))
@@ -279,29 +267,6 @@ namespace MLAPI
             {
                 Type fieldType = sortedFields[i].FieldType;
 
-                // Simple syncedVar attributes
-                SyncedVarAttribute[] attributes = (SyncedVarAttribute[])sortedFields[i].GetCustomAttributes(typeof(SyncedVarAttribute), true);
-
-                if (attributes.Length == 1)
-                {
-                    if (SerializationManager.IsTypeSupported(fieldType))
-                    {
-                        // This is a supported simple var type.
-                        syncedVars.Add(new SyncedVarContainer()
-                        {
-                            field = sortedFields[i],
-                            fieldInstance = this,
-                            isDirty = false,
-                            value = sortedFields[i].GetValue(this),
-                            attribute = attributes[0]
-                        });
-                    }
-                    else
-                    {
-                        if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError("SyncedVar has unsupported type");
-                    }
-                }
-
                 if (fieldType.HasInterface(typeof(INetworkedVar)))
                 {
                     INetworkedVar instance = (INetworkedVar)sortedFields[i].GetValue(this);
@@ -314,32 +279,6 @@ namespace MLAPI
 
                     instance.SetNetworkedBehaviour(this);
                     networkedVarFields.Add(instance);
-                }
-            }
-
-
-            {
-                // Create index map for channels
-                Dictionary<string, int> firstLevelIndex = new Dictionary<string, int>();
-                int secondLevelCounter = 0;
-
-                for (int i = 0; i < syncedVars.Count; i++)
-                {
-                    string channel = syncedVars[i].attribute.Channel;
-
-                    if (!firstLevelIndex.ContainsKey(channel))
-                    {
-                        firstLevelIndex.Add(channel, secondLevelCounter);
-                        channelsForSyncedVarGroups.Add(channel);
-                        secondLevelCounter++;
-                    }
-
-                    if (firstLevelIndex[channel] >= channelMappedSyncedVarIndexes.Count)
-                    {
-                        channelMappedSyncedVarIndexes.Add(new HashSet<int>());
-                    }
-
-                    channelMappedSyncedVarIndexes[firstLevelIndex[channel]].Add(i);
                 }
             }
 
@@ -374,110 +313,7 @@ namespace MLAPI
             if (!varInit)
                 InitializeVars();
 
-            SyncedVarUpdate();
             NetworkedVarUpdate();
-        }
-
-        private readonly List<int> syncedVarIndexesToReset = new List<int>();
-        private readonly HashSet<int> syncedVarIndexesToResetSet = new HashSet<int>();
-
-        private void SyncedVarUpdate()
-        {
-            if (!IsServer || !CouldHaveDirtySyncedVars())
-                return;
-
-            syncedVarIndexesToReset.Clear();
-            syncedVarIndexesToResetSet.Clear();
-
-            for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)
-            {
-                // Do this check here to prevent doing all the expensive dirty checks
-                if (this.NetworkedObject.observers.Contains(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId))
-                {
-                    // This iterates over every "channel group".
-                    for (int j = 0; j < channelMappedSyncedVarIndexes.Count; j++)
-                    {
-                        using (PooledBitStream stream = PooledBitStream.Get())
-                        {
-                            using (PooledBitWriter writer = PooledBitWriter.Get(stream))
-                            {
-                                writer.WriteUInt64Packed(NetworkId);
-                                writer.WriteUInt16Packed(NetworkedObject.GetOrderIndex(this));
-
-                                ulong clientId = NetworkingManager.Singleton.ConnectedClientsList[i].ClientId;
-                                bool writtenAny = false;
-                                for (int k = 0; k < syncedVars.Count; k++)
-                                {
-                                    if (!channelMappedSyncedVarIndexes[j].Contains(k))
-                                    {
-                                        // This var does not belong to the currently iterating channel group.
-                                        if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
-                                        {
-                                            writer.WriteUInt16Packed(0);
-                                        }
-                                        else
-                                        {
-                                            writer.WriteBool(false);
-                                        }
-                                        continue;
-                                    }
-
-                                    bool isDirty = syncedVars[k].IsDirty(); // cache this here. You never know what operations users will do in the dirty methods
-
-                                    if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
-                                    {
-                                        if (!isDirty)
-                                        {
-                                            writer.WriteUInt16Packed(0);
-                                        }
-                                    }
-                                    else
-                                    {
-                                        writer.WriteBool(isDirty);
-                                    }
-
-                                    if (isDirty)
-                                    {
-                                        writtenAny = true;
-
-                                        if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
-                                        {
-                                            using (PooledBitStream varStream = PooledBitStream.Get())
-                                            {
-                                                syncedVars[k].WriteValue(varStream, false);
-                                                varStream.PadStream();
-
-                                                writer.WriteUInt16Packed((ushort)varStream.Length);
-                                                stream.CopyFrom(varStream);
-                                            }
-                                        }
-                                        else
-                                        {
-                                            syncedVars[k].WriteValue(stream, false);
-                                        }
-
-                                        if (!syncedVarIndexesToResetSet.Contains(k))
-                                        {
-                                            syncedVarIndexesToResetSet.Add(k);
-                                            syncedVarIndexesToReset.Add(k);
-                                        }
-                                    }
-                                }
-
-                                if (writtenAny)
-                                {
-                                    InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_SYNCED_VAR, channelsForSyncedVarGroups[j], stream, SecuritySendFlags.None, this.NetworkedObject);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            for (int i = 0; i < syncedVarIndexesToReset.Count; i++)
-            {
-                syncedVars[syncedVarIndexesToReset[i]].ResetDirty();
-            }
         }
 
         private readonly List<int> networkedVarIndexesToReset = new List<int>();
@@ -597,61 +433,6 @@ namespace MLAPI
             return false;
         }
 
-        private bool CouldHaveDirtySyncedVars()
-        {
-            for (int i = 0; i < syncedVars.Count; i++)
-            {
-                if (syncedVars[i].IsDirty())
-                    return true;
-            }
-
-            return false;
-        }
-
-        internal static void HandleSyncedVarValue(List<SyncedVarContainer> syncedVarList, Stream stream, ulong clientId, NetworkedBehaviour logInstance)
-        {
-            using (PooledBitReader reader = PooledBitReader.Get(stream))
-            {
-                for (int i = 0; i < syncedVarList.Count; i++)
-                {
-                    ushort varSize = 0;
-
-                    if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
-                    {
-                        varSize = reader.ReadUInt16Packed();
-
-                        if (varSize == 0)
-                            continue;
-                    }
-                    else
-                    {
-                        if (!reader.ReadBool())
-                            continue;
-                    }
-
-                    long readStartPos = stream.Position;
-
-                    syncedVarList[i].ReadValue(stream);
-
-                    if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
-                    {
-                        (stream as BitStream).SkipPadBits();
-
-                        if (stream.Position > (readStartPos + varSize))
-                        {
-                            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("SyncedVar read too far. " + (stream.Position - (readStartPos + varSize)) + " bytes." + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
-                            stream.Position = readStartPos + varSize;
-                        }
-                        else if (stream.Position < (readStartPos + varSize))
-                        {
-                            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("SyncedVar read too little. " + ((readStartPos + varSize) - stream.Position) + " bytes." + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
-                            stream.Position = readStartPos + varSize;
-                        }
-                    }
-                }
-            }
-        }
-
         internal static void HandleNetworkedVarDeltas(List<INetworkedVar> networkedVarList, Stream stream, ulong clientId, NetworkedBehaviour logInstance)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
@@ -699,6 +480,7 @@ namespace MLAPI
                     long readStartPos = stream.Position;
 
                     networkedVarList[i].ReadDelta(stream, NetworkingManager.Singleton.IsServer);
+                    ProfilerStatManager.networkVarsRcvd.Record();
 
                     if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
                     {
@@ -765,6 +547,7 @@ namespace MLAPI
                     long readStartPos = stream.Position;
 
                     networkedVarList[i].ReadField(stream);
+                    ProfilerStatManager.networkVarsRcvd.Record();
 
                     if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
                     {
@@ -788,88 +571,6 @@ namespace MLAPI
             }
         }
 
-        internal static void WriteSyncedVarData(List<SyncedVarContainer> syncedVarList, Stream stream, ulong clientId)
-        {
-            if (syncedVarList.Count == 0)
-                return;
-
-            using (PooledBitWriter writer = PooledBitWriter.Get(stream))
-            {
-                for (int j = 0; j < syncedVarList.Count; j++)
-                {
-                    if (!NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
-                    {
-                        writer.WriteBool(true);
-                    }
-
-                    if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
-                    {
-                        using (PooledBitStream varStream = PooledBitStream.Get())
-                        {
-                            syncedVarList[j].WriteValue(varStream);
-                            varStream.PadStream();
-
-                            writer.WriteUInt16Packed((ushort)varStream.Length);
-                            varStream.CopyTo(stream);
-                        }
-                    }
-                    else
-                    {
-                        syncedVarList[j].WriteValue(stream);
-                    }
-                }
-            }
-        }
-
-        internal static void SetSyncedVarData(List<SyncedVarContainer> syncedVarList, Stream stream)
-        {
-            if (syncedVarList.Count == 0)
-                return;
-
-            using (PooledBitReader reader = PooledBitReader.Get(stream))
-            {
-                for (int j = 0; j < syncedVarList.Count; j++)
-                {
-                    ushort varSize = 0;
-
-                    if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
-                    {
-                        varSize = reader.ReadUInt16Packed();
-
-                        if (varSize == 0)
-                            continue;
-                    }
-                    else
-                    {
-                        if (!reader.ReadBool())
-                            continue;
-                    }
-
-                    long readStartPos = stream.Position;
-
-                    syncedVarList[j].ReadValue(stream);
-
-                    if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
-                    {
-                        if (stream is BitStream bitStream)
-                        {
-                            bitStream.SkipPadBits();
-                        }
-
-                        if (stream.Position > (readStartPos + varSize))
-                        {
-                            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("SyncedVar data read too far. " + (stream.Position - (readStartPos + varSize)) + " bytes.");
-                            stream.Position = readStartPos + varSize;
-                        }
-                        else if (stream.Position < (readStartPos + varSize))
-                        {
-                            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("SyncedVar data read too little. " + ((readStartPos + varSize) - stream.Position) + " bytes.");
-                            stream.Position = readStartPos + varSize;
-                        }
-                    }
-                }
-            }
-        }
 
         internal static void WriteNetworkedVarData(List<INetworkedVar> networkedVarList, Stream stream, ulong clientId)
         {

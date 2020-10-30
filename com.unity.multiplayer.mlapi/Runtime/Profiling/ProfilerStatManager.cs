@@ -11,10 +11,10 @@ namespace MLAPI.Profiling
 
         public static ProfilerStat rcvTickRate = new ProfilerStat("Rcv Tick Rate");
 
-        public static ProfilerStat rpcsRecived = new ProfilerStat("RPCs Rcvd");
+        public static ProfilerStat rpcsRcvd = new ProfilerStat("RPCs Rcvd");
         public static ProfilerStat rpcsSent = new ProfilerStat("RPCs Sent");
 
-        public static ProfilerStat syncVar = new ProfilerStat("Sync Vars Rcvd");
+        public static ProfilerStat networkVarsRcvd = new ProfilerStat("Network Vars Rcvd");
 
         public static ProfilerStat namedMessage = new ProfilerStat("Named Message");
         public static ProfilerStat unnamedMessage = new ProfilerStat("UnNamed Message");

@@ -24,7 +24,7 @@ namespace MLAPI
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
         public static ProfilerMarker s_NetworkedBehaviourUpdate = new ProfilerMarker("MLAPI.NetworkedObject.NetworkedBehaviourUpdate");
 #endif
-        
+
         private void OnValidate()
         {
             // Set this so the hash can be serialized on Scene objects. For prefabs, they are generated at runtime.
@@ -580,24 +580,6 @@ namespace MLAPI
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                 s_NetworkedBehaviourUpdate.End();
 #endif
-            }
-        }
-
-        internal void WriteSyncedVarData(Stream stream, ulong clientId)
-        {
-            for (int i = 0; i < childNetworkedBehaviours.Count; i++)
-            {
-                childNetworkedBehaviours[i].InitializeVars();
-                NetworkedBehaviour.WriteSyncedVarData(childNetworkedBehaviours[i].syncedVars, stream, clientId);
-            }
-        }
-
-        internal void SetSyncedVarData(Stream stream)
-        {
-            for (int i = 0; i < childNetworkedBehaviours.Count; i++)
-            {
-                childNetworkedBehaviours[i].InitializeVars();
-                NetworkedBehaviour.SetSyncedVarData(childNetworkedBehaviours[i].syncedVars, stream);
             }
         }
 

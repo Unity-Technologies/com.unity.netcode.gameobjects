@@ -302,7 +302,6 @@ namespace MLAPI.SceneManagement
                                     if (NetworkingManager.Singleton.NetworkConfig.EnableNetworkedVar)
                                     {
                                         newSceneObjects[i].WriteNetworkedVarData(stream, NetworkingManager.Singleton.ConnectedClientsList[j].ClientId);
-                                        newSceneObjects[i].WriteSyncedVarData(stream, NetworkingManager.Singleton.ConnectedClientsList[j].ClientId);
                                     }
                                 }
                             }

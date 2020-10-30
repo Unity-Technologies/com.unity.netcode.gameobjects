@@ -10,7 +10,7 @@ namespace MLAPI.Profiling
 	public enum TickType
     {
         /// <summary>
-        /// Event tick. During EventTick SyncedVars are flushed etc
+        /// Event tick. During EventTick NetworkVars are flushed etc
         /// </summary>
         Event,
         /// <summary>
