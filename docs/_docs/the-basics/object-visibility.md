@@ -16,7 +16,7 @@ netObject.CheckObjectVisibility = ((clientId) => {
     // return true to show the object, return false to hide it
 
 
-    if (Vector3.Distance(NetworkingManager.Singleton.ConnectedClients[clientId].PlayerObject.position, transform.position) > 5)
+    if (Vector3.Distance(NetworkingManager.Singleton.ConnectedClients[clientId].PlayerObject.transform.position, transform.position) > 5)
     {
         // Only show the object to players that are within 5 meters. Note that this has to be rechecked by your own code
         // If you want it to update as the client and objects distance change.
