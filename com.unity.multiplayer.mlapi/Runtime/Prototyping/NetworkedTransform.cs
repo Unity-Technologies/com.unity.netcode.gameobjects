@@ -102,10 +102,11 @@ namespace MLAPI.Prototyping
         /// <summary>
         /// The delegate used to check if a move is valid
         /// </summary>
+        /// <param name="clientId">The client id the move is being validated for</param>
         /// <param name="oldPos">The previous position</param>
         /// <param name="newPos">The new requested position</param>
         /// <returns>Returns Whether or not the move is valid</returns>
-        public delegate bool MoveValidationDelegate(Vector3 oldPos, Vector3 newPos);
+        public delegate bool MoveValidationDelegate(ulong clientId, Vector3 oldPos, Vector3 newPos);
         /// <summary>
         /// If set, moves will only be accepted if the custom delegate returns true
         /// </summary>
@@ -256,7 +257,7 @@ namespace MLAPI.Prototyping
                 float yRot = reader.ReadSinglePacked();
                 float zRot = reader.ReadSinglePacked();
 
-                if (IsMoveValidDelegate != null && !IsMoveValidDelegate(lerpEndPos, new Vector3(xPos, yPos, zPos))) {
+                if (IsMoveValidDelegate != null && !IsMoveValidDelegate(clientId, lerpEndPos, new Vector3(xPos, yPos, zPos))) {
                     //Invalid move!
                     //TODO: Add rubber band (just a message telling them to go back)
                     return;
