@@ -15,7 +15,7 @@ Since the NetworkedVar container is a wrapper container around the value, the va
         <h3 class="panel-title">Disclaimer</h3>
     </div>
     <div class="panel-body">
-        The NetworkedVar, NetworkedList and NetworkedDictionary implementations are <b>primarily</b> designed as samples showing how to create INetworkedVar structures. The NetworkedVar container is however concidered production ready for simple types.
+        The NetworkedVar, NetworkedList and NetworkedDictionary implementations are <b>primarily</b> designed as samples showing how to create INetworkedVar structures. The NetworkedVar container is however considered production ready for simple types.
     </div>
 </div>
 
