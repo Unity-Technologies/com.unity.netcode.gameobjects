@@ -33,7 +33,7 @@ To create your own NetworkedVar container, simply create a class with the INetwo
 ### Permissions
 By default NetworkedVar and it's subclasses can only be wrote to by the server (NetworkedVarPermission.ServerOnly). To change that set the permission to the desired value during initialization:
 ```csharp
-private NetworkedVar<float> myFloat = new NetworkedVar(new NetworkedVarSettings {WritePermission = NetworkedVarPermission.OwnerOnly}, 5);
+private NetworkedVar<float> myFloat = new NetworkedVar<float>(new NetworkedVarSettings {WritePermission = NetworkedVarPermission.OwnerOnly}, 5);
 ```
 
 ### Example
