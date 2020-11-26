@@ -540,7 +540,6 @@ namespace MLAPI
             }
         }
 
-        private static int _lastProcessedObject = 0;
         internal static void NetworkedBehaviourUpdate()
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -552,27 +551,15 @@ namespace MLAPI
                 if (SpawnManager.SpawnedObjectsList.Count == 0)
                     return;
 
-                int amountToProcess = NetworkingManager.Singleton.NetworkConfig.MaxObjectUpdatesPerTick <= 0
-                    ? SpawnManager.SpawnedObjectsList.Count
-                    : Mathf.Max(NetworkingManager.Singleton.NetworkConfig.MaxObjectUpdatesPerTick,
-                        SpawnManager.SpawnedObjectsList.Count);
-
-                for (int i = 0; i < amountToProcess; i++)
+                foreach (var sobj in SpawnManager.SpawnedObjectsList)
                 {
-                    if (_lastProcessedObject >= SpawnManager.SpawnedObjectsList.Count)
-                    {
-                        _lastProcessedObject = 0;
-                    }
-
                     // Sync all vars
                     for (int j = 0;
-                        j < SpawnManager.SpawnedObjectsList[_lastProcessedObject].childNetworkedBehaviours.Count;
+                        j < sobj.childNetworkedBehaviours.Count;
                         j++)
                     {
-                        SpawnManager.SpawnedObjectsList[_lastProcessedObject].childNetworkedBehaviours[j].VarUpdate();
+                        sobj.childNetworkedBehaviours[j].VarUpdate();
                     }
-
-                    _lastProcessedObject++;
                 }
             }
             finally

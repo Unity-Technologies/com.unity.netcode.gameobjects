@@ -107,7 +107,6 @@ public class NetworkingManagerEditor : Editor
         receiveTickrateProperty = networkConfigProperty.FindPropertyRelative("ReceiveTickrate");
         maxReceiveEventsPerTickRateProperty = networkConfigProperty.FindPropertyRelative("MaxReceiveEventsPerTickRate");
         eventTickrateProperty = networkConfigProperty.FindPropertyRelative("EventTickrate");
-        maxObjectUpdatesPerTickProperty = networkConfigProperty.FindPropertyRelative("MaxObjectUpdatesPerTick");
         clientConnectionBufferTimeoutProperty = networkConfigProperty.FindPropertyRelative("ClientConnectionBufferTimeout");
         connectionApprovalProperty = networkConfigProperty.FindPropertyRelative("ConnectionApproval");
         secondsHistoryProperty = networkConfigProperty.FindPropertyRelative("SecondsHistory");
@@ -148,7 +147,6 @@ public class NetworkingManagerEditor : Editor
         receiveTickrateProperty = networkConfigProperty.FindPropertyRelative("ReceiveTickrate");
         maxReceiveEventsPerTickRateProperty = networkConfigProperty.FindPropertyRelative("MaxReceiveEventsPerTickRate");
         eventTickrateProperty = networkConfigProperty.FindPropertyRelative("EventTickrate");
-        maxObjectUpdatesPerTickProperty = networkConfigProperty.FindPropertyRelative("MaxObjectUpdatesPerTick");
         clientConnectionBufferTimeoutProperty = networkConfigProperty.FindPropertyRelative("ClientConnectionBufferTimeout");
         connectionApprovalProperty = networkConfigProperty.FindPropertyRelative("ConnectionApproval");
         secondsHistoryProperty = networkConfigProperty.FindPropertyRelative("SecondsHistory");

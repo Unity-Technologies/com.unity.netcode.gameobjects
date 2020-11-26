@@ -476,34 +476,34 @@ namespace MLAPI.SceneManagement
         private static void MoveObjectsToDontDestroyOnLoad()
         {
             // Move ALL networked objects to the temp scene
-            List<NetworkedObject> objectsToKeep = SpawnManager.SpawnedObjectsList;
+            HashSet<NetworkedObject> objectsToKeep = SpawnManager.SpawnedObjectsList;
 
-            for (int i = 0; i < objectsToKeep.Count; i++)
+            foreach (var sobj in objectsToKeep)
             {
                 //In case an object has been set as a child of another object it has to be unchilded in order to be moved from one scene to another.
-                if (objectsToKeep[i].gameObject.transform.parent != null)
+                if (sobj.gameObject.transform.parent != null)
                 {
-                    objectsToKeep[i].gameObject.transform.parent = null;
+                    sobj.gameObject.transform.parent = null;
                 }
 
-                MonoBehaviour.DontDestroyOnLoad(objectsToKeep[i].gameObject);
+                MonoBehaviour.DontDestroyOnLoad(sobj.gameObject);
             }
         }
 
         private static void MoveObjectsToScene(Scene scene)
         {
             // Move ALL networked objects to the temp scene
-            List<NetworkedObject> objectsToKeep = SpawnManager.SpawnedObjectsList;
+            HashSet<NetworkedObject> objectsToKeep = SpawnManager.SpawnedObjectsList;
 
-            for (int i = 0; i < objectsToKeep.Count; i++)
+            foreach (var sobj in objectsToKeep)
             {
                 //In case an object has been set as a child of another object it has to be unchilded in order to be moved from one scene to another.
-                if (objectsToKeep[i].gameObject.transform.parent != null)
+                if (sobj.gameObject.transform.parent != null)
                 {
-                    objectsToKeep[i].gameObject.transform.parent = null;
+                    sobj.gameObject.transform.parent = null;
                 }
 
-                SceneManager.MoveGameObjectToScene(objectsToKeep[i].gameObject, scene);
+                SceneManager.MoveGameObjectToScene(sobj.gameObject, scene);
             }
         }
     }

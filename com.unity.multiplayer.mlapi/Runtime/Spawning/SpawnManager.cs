@@ -4,12 +4,10 @@ using System.IO;
 using MLAPI.Configuration;
 using MLAPI.Exceptions;
 using MLAPI.Hashing;
-using MLAPI.Internal;
 using MLAPI.Logging;
 using MLAPI.Messaging;
 using MLAPI.SceneManagement;
 using MLAPI.Security;
-using MLAPI.Serialization;
 using MLAPI.Serialization.Pooled;
 using UnityEngine;
 
@@ -29,7 +27,7 @@ namespace MLAPI.Spawning
         /// <summary>
         /// A list of the spawned objects
         /// </summary>
-        public static readonly List<NetworkedObject> SpawnedObjectsList = new List<NetworkedObject>();
+        public static readonly HashSet<NetworkedObject> SpawnedObjectsList = new HashSet<NetworkedObject>();
         /// <summary>
         /// The delegate used when spawning a networked object
         /// </summary>
@@ -339,6 +337,8 @@ namespace MLAPI.Spawning
                 netObject.SetNetworkedVarData(dataStream);
             }
 
+            if (SpawnedObjects.ContainsKey(netObject.NetworkId)) return;
+
             netObject.IsSpawned = true;
 
             netObject.IsSceneObject = sceneObject;
@@ -502,31 +502,31 @@ namespace MLAPI.Spawning
         // Makes scene objects ready to be reused
         internal static void ServerResetShudownStateForSceneObjects()
         {
-            for (int i = 0; i < SpawnedObjectsList.Count; i++)
+            foreach (var sobj in SpawnedObjectsList)
             {
-                if ((SpawnedObjectsList[i].IsSceneObject != null && SpawnedObjectsList[i].IsSceneObject == true) || SpawnedObjectsList[i].DestroyWithScene)
+                if ((sobj.IsSceneObject != null && sobj.IsSceneObject == true) || sobj.DestroyWithScene)
                 {
-                    SpawnedObjectsList[i].IsSpawned = false;
-                    SpawnedObjectsList[i].DestroyWithScene = false;
-                    SpawnedObjectsList[i].IsSceneObject = null;
+                    sobj.IsSpawned = false;
+                    sobj.DestroyWithScene = false;
+                    sobj.IsSceneObject = null;
                 }
             }
         }
 
         internal static void ServerDestroySpawnedSceneObjects()
         {
-            for (int i = SpawnedObjectsList.Count - 1; i >= 0; i--)
+            foreach (var sobj in SpawnedObjectsList)
             {
-                if ((SpawnedObjectsList[i].IsSceneObject != null && SpawnedObjectsList[i].IsSceneObject == true) || SpawnedObjectsList[i].DestroyWithScene)
+                if ((sobj.IsSceneObject != null && sobj.IsSceneObject == true) || sobj.DestroyWithScene)
                 {
-                    if (customDestroyHandlers.ContainsKey(SpawnedObjectsList[i].PrefabHash))
+                    if (customDestroyHandlers.ContainsKey(sobj.PrefabHash))
                     {
-                        customDestroyHandlers[SpawnedObjectsList[i].PrefabHash](SpawnedObjectsList[i]);
-                        SpawnManager.OnDestroyObject(SpawnedObjectsList[i].NetworkId, false);
+                        customDestroyHandlers[sobj.PrefabHash](sobj);
+                        SpawnManager.OnDestroyObject(sobj.NetworkId, false);
                     }
                     else
                     {
-                        MonoBehaviour.Destroy(SpawnedObjectsList[i].gameObject);
+                        MonoBehaviour.Destroy(sobj.gameObject);
                     }
                 }
             }
@@ -610,17 +610,19 @@ namespace MLAPI.Spawning
             if (!SpawnedObjects.ContainsKey(networkId))
                 return;
 
-			if (!SpawnedObjects[networkId].IsOwnedByServer && !SpawnedObjects[networkId].IsPlayerObject &&
-			    NetworkingManager.Singleton.ConnectedClients.ContainsKey(SpawnedObjects[networkId].OwnerClientId))
+            var sobj = SpawnedObjects[networkId];
+
+			   if (!sobj.IsOwnedByServer && !sobj.IsPlayerObject &&
+			      NetworkingManager.Singleton.ConnectedClients.ContainsKey(sobj.OwnerClientId))
             {
                 //Someone owns it.
-                for (int i = NetworkingManager.Singleton.ConnectedClients[SpawnedObjects[networkId].OwnerClientId].OwnedObjects.Count - 1; i > -1; i--)
+                for (int i = NetworkingManager.Singleton.ConnectedClients[sobj.OwnerClientId].OwnedObjects.Count - 1; i > -1; i--)
                 {
-                    if (NetworkingManager.Singleton.ConnectedClients[SpawnedObjects[networkId].OwnerClientId].OwnedObjects[i].NetworkId == networkId)
-                        NetworkingManager.Singleton.ConnectedClients[SpawnedObjects[networkId].OwnerClientId].OwnedObjects.RemoveAt(i);
+                    if (NetworkingManager.Singleton.ConnectedClients[sobj.OwnerClientId].OwnedObjects[i].NetworkId == networkId)
+                        NetworkingManager.Singleton.ConnectedClients[sobj.OwnerClientId].OwnedObjects.RemoveAt(i);
                 }
             }
-            SpawnedObjects[networkId].IsSpawned = false;
+            sobj.IsSpawned = false;
 
             if (NetworkingManager.Singleton != null && NetworkingManager.Singleton.IsServer)
             {
@@ -633,7 +635,7 @@ namespace MLAPI.Spawning
                     });
                 }
 
-                if (SpawnedObjects[networkId] != null)
+                if (sobj != null)
                 {
                     using (PooledBitStream stream = PooledBitStream.Get())
                     {
@@ -647,13 +649,13 @@ namespace MLAPI.Spawning
                 }
             }
 
-            GameObject go = SpawnedObjects[networkId].gameObject;
+            GameObject go = sobj.gameObject;
 
             if (destroyGameObject && go != null)
             {
-                if (customDestroyHandlers.ContainsKey(SpawnedObjects[networkId].PrefabHash))
+                if (customDestroyHandlers.ContainsKey(sobj.PrefabHash))
                 {
-                    customDestroyHandlers[SpawnedObjects[networkId].PrefabHash](SpawnedObjects[networkId]);
+                    customDestroyHandlers[sobj.PrefabHash](sobj);
                     SpawnManager.OnDestroyObject(networkId, false);
                 }
                 else
@@ -662,12 +664,13 @@ namespace MLAPI.Spawning
                 }
             }
 
-            SpawnedObjects.Remove(networkId);
-
-            for (int i = SpawnedObjectsList.Count - 1; i > -1; i--)
+            // for some reason, we can get down here and SpawnedObjects for this
+            //  networkId will no longer be here, even as we check this at the start
+            //  of the function
+            if (SpawnedObjects.ContainsKey(networkId))
             {
-                if (SpawnedObjectsList[i].NetworkId == networkId)
-                    SpawnedObjectsList.RemoveAt(i);
+                SpawnedObjectsList.Remove(sobj);
+                SpawnedObjects.Remove(networkId);
             }
         }
     }

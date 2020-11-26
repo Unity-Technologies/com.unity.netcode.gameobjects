@@ -1190,9 +1190,10 @@ namespace MLAPI
                     }
 
                     // TODO: Could(should?) be replaced with more memory per client, by storing the visiblity
-                    for (int i = 0; i < SpawnManager.SpawnedObjectsList.Count; i++)
+
+                    foreach (var sobj in SpawnManager.SpawnedObjectsList)
                     {
-                        SpawnManager.SpawnedObjectsList[i].observers.Remove(clientId);
+                        sobj.observers.Remove(clientId);
                     }
                 }
 
@@ -1265,13 +1266,12 @@ namespace MLAPI
 
                 _observedObjects.Clear();
 
-                for (int i = 0; i < SpawnManager.SpawnedObjectsList.Count; i++)
+                foreach (var sobj in SpawnManager.SpawnedObjectsList)
                 {
-                    if (clientId == ServerClientId || SpawnManager.SpawnedObjectsList[i].CheckObjectVisibility == null || SpawnManager.SpawnedObjectsList[i].CheckObjectVisibility(clientId))
+                    if (clientId == ServerClientId || sobj.CheckObjectVisibility == null || sobj.CheckObjectVisibility(clientId))
                     {
-                        _observedObjects.Add(SpawnManager.SpawnedObjectsList[i]);
-
-                        SpawnManager.SpawnedObjectsList[i].observers.Add(clientId);
+                        _observedObjects.Add(sobj);
+                        sobj.observers.Add(clientId);
                     }
                 }
 

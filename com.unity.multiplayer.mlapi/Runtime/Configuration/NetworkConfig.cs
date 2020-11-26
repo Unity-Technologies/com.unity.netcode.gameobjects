@@ -77,14 +77,6 @@ namespace MLAPI.Configuration
         [Tooltip("The amount of times per second the internal event loop will run. This includes for example NetworkedVar checking and LagCompensation tracking")]
         public int EventTickrate = 64;
         /// <summary>
-        /// The maximum amount of NetworkedObject's to process per tick.
-        /// This is useful to prevent the MLAPI from hanging a frame
-        /// Set this to less than or equal to 0 for unlimited
-        /// </summary>
-        [FormerlySerializedAs("MaxBehaviourUpdatesPerTick")]
-        [Tooltip("The maximum amount of NetworkedObjects to process per Event tick. This is to prevent freezing")]
-        public int MaxObjectUpdatesPerTick = -1;
-        /// <summary>
         /// The amount of seconds to wait for handshake to complete before timing out a client
         /// </summary>
         [Tooltip("The amount of seconds to wait for the handshake to complete before the client times out")]
