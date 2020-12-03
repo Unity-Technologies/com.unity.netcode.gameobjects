@@ -156,7 +156,7 @@ namespace MLAPI.Serialization
             if (type == typeof(char))
                 return ReadCharPacked();
             if (type.IsEnum)
-                return ReadInt32Packed();
+                return ReadObjectPacked(System.Enum.GetUnderlyingType(type));
             if (type == typeof(GameObject))
             {
                 ulong networkId = ReadUInt64Packed();
