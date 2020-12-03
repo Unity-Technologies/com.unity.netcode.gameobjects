@@ -15,30 +15,30 @@
 [![Api](https://img.shields.io/badge/docs-api-informational.svg)](https://midlevel.github.io/MLAPI/api/)
 
 
-MLAPI (Mid level API) is a framework that simplifies building networked games in Unity. It offers **low level** access to core networking while at the same time offering **high level** abstractions. The MLAPI aims to remove the repetetive tasks and reduces the network code dramatically, no matter how many of the **modular** features you use.
-
-
-The MLAPI has features matched by nobody else, any more features are added when requested. The MLAPI is constantly evolving. Read about our features [here](https://mlapi.network/features/).
-
+The Unity MLAPI (Mid level API) is a framework that simplifies building networked games in Unity. It offers **low level** access to core networking while at the same time providing **high level** abstractions. The MLAPI aims to remove the repetetive tasks and reduces the network code dramatically, no matter how many of the **modular** features you use.
 
 ### Getting Started
 To get started, check the [Wiki](https://mlapi.network/wiki/).
-This is also where most documentation lies. Follow the [quickstart](https://mlapi.network/wiki/installation/), join our [discord](http://discord.mlapi.network/) and get started today!
+This is also where most documentation lies. Follow the [quickstart](https://mlapi.network/wiki/installation/), join our [Discord](http://discord.mlapi.network/) and get started today!
 
-### Support
-For bug reports or feature requests you want to propose, please use the Issue Tracker on GitHub. For general questions, networking advice or to discuss changes before proposing them, please use the [Discord server](https://discord.gg/FM8SE9E).
+### Community and Feedback
+For general questions, networking advice or discussions about MLAPI, please join our [Discord Community](https://discord.gg/FM8SE9E) or create a post in the [Unity Multiplayer Forum](https://forum.unity.com/forums/multiplayer.26/).
 
 ### Compatibility
-The MLAPI is built to work everywhere. It will run in the web, on many Unity versions, .NET runtimes and such.
+The MLAPI supports all major Unity platforms. To use the WebGL platform a custom WebGL transport based on web sockets is needed.
 
-The requirements for the MLAPI are:
-* Unity >= 2017
+MLAPI is compatible with Unity 2019 and newer versions.
 
-### Special thanks
-Special thanks to [Gabriel Tofvesson](https://github.com/GabrielTofvesson) for writing the BitWriter, BitReader & ECDH implementation.
+### Development
+We follow the [Gitflow Workflow](https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow). The master branch contains our latest stable release version while the develop branch tracks our current work.
+
+### Contributing
+The MLAPI is an open-source project and we encourage and welcome
+contributions. If you wish to contribute, be sure to review our
+[contribution guidelines](CONTRIBUTING.md)
 
 ### Issues and missing features
-If there are any issues, bugs or features that are missing. Please open an issue on the GitHub [issues page](https://github.com/MidLevel/MLAPI/issues).
+If you have an issue, bug or feature request, please follow the information in our [contribution guidelines](CONTRIBUTING.md) to submit an issue.
 
 ### Example
 Here is a sample MonoBehaviour showing a chat script where everyone can write and read from. This shows the basis of the MLAPI and the abstractions it adds.
@@ -75,3 +75,6 @@ public class Chat : NetworkedBehaviour
     }
 }
 ```
+
+### License
+[MIT Licence](LICENSE)
