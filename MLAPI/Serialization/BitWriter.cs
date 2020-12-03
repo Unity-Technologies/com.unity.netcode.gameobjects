@@ -182,7 +182,19 @@ namespace MLAPI.Serialization
             }
             else if (value.GetType().IsEnum)
             {
-                WriteInt32Packed((int)value);
+                var underlyingType = System.Enum.GetUnderlyingType(value.GetType());
+
+                if (underlyingType == typeof(Int32))
+                    WriteInt32Packed((int)value);
+                else if (underlyingType == typeof(byte))
+                    WriteByte((byte)value);
+                else if (underlyingType == typeof(Int16))
+                    WriteInt16Packed((short)value);
+                else else if (underlyingType == typeof(Int64))
+                    WriteInt64Packed((long)value);
+                else
+                    WriteObjectPacked(Convert.ChangeType(value, underlyingType));
+
                 return;
             }
             else if (value is GameObject)
