@@ -1,3 +1,4 @@
+Just safety testing the CLA assistant
 [![](https://i.imgur.com/d0amtqs.png)](https://midlevel.github.io/MLAPI/)
 
 [![GitHub Release](https://img.shields.io/github/release/MidLevel/MLAPI.svg?logo=github)](https://github.com/MidLevel/MLAPI/releases)
