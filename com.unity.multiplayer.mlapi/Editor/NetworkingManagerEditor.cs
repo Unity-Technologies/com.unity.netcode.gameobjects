@@ -26,7 +26,6 @@ public class NetworkingManagerEditor : Editor
     private SerializedProperty receiveTickrateProperty;
     private SerializedProperty maxReceiveEventsPerTickRateProperty;
     private SerializedProperty eventTickrateProperty;
-    private SerializedProperty maxObjectUpdatesPerTickProperty;
     private SerializedProperty clientConnectionBufferTimeoutProperty;
     private SerializedProperty connectionApprovalProperty;
     private SerializedProperty secondsHistoryProperty;
@@ -306,7 +305,6 @@ public class NetworkingManagerEditor : Editor
 
             using (new EditorGUI.DisabledScope(!networkingManager.NetworkConfig.EnableNetworkedVar))
             {
-                EditorGUILayout.PropertyField(maxObjectUpdatesPerTickProperty);
                 EditorGUILayout.PropertyField(ensureNetworkedVarLengthSafetyProperty);
             }
 
