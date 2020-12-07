@@ -9,5 +9,8 @@
     "unity"
   ],
   "type": "library",
-  "hideInEditor": false
+  "hideInEditor": false,
+  "dependencies": {
+    "com.unity.collections": "0.14.0-preview.16"
+  }
 }
