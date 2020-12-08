@@ -320,13 +320,15 @@ namespace MLAPI.Prototyping
 
                                     InvokeClientRpcOnClientPerformance(applyTransformDelegate, NetworkingManager.Singleton.ConnectedClientsList[i].ClientId, writeStream, string.IsNullOrEmpty(Channel) ? "MLAPI_DEFAULT_MESSAGE" : Channel);
                                 }
-                                else {
+                                else 
+                                {
                                     info.lastMissedPosition = new Vector3(xPos, yPos, zPos);
                                     info.lastMissedRotation = Quaternion.Euler(xRot, yRot, zRot);
                                 }
                             }
                         }
-                        else {
+                        else 
+                        {
                             InvokeClientRpcOnEveryoneExceptPerformance(applyTransformDelegate, OwnerClientId, writeStream, string.IsNullOrEmpty(Channel) ? "MLAPI_DEFAULT_MESSAGE" : Channel);
                         }
 
