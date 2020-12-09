@@ -260,3 +260,6 @@ __pycache__/
 
 # Docs
 docs/LastBuild.log
+
+# Unity Package Manager CI output
+upm-ci~
