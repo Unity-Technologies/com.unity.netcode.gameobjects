@@ -77,4 +77,4 @@ public class Chat : NetworkedBehaviour
 ```
 
 ### License
-[MIT Licence](LICENSE)
+[MIT License](LICENSE)
