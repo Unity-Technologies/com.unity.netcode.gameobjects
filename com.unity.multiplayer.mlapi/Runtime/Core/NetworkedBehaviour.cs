@@ -14,11 +14,16 @@ using MLAPI.NetworkedVar;
 using MLAPI.Profiling;
 using MLAPI.Reflection;
 using MLAPI.Security;
+using MLAPI.Serialization;
 using MLAPI.Serialization.Pooled;
 using MLAPI.Spawning;
 using BitStream = MLAPI.Serialization.BitStream;
-using MLAPI.Serialization;
 using Unity.Profiling;
+
+#if UNITY_EDITOR
+using System.Runtime.CompilerServices;
+[assembly: InternalsVisibleTo("Unity.Multiplayer.MLAPI.Editor.CodeGen")]
+#endif // UNITY_EDITOR
 
 namespace MLAPI
 {
@@ -27,6 +32,121 @@ namespace MLAPI
     /// </summary>
     public abstract partial class NetworkedBehaviour : MonoBehaviour
     {
+        // RuntimeAccessModifiersILPP will make this `protected`
+        internal enum NExec
+        {
+            None = 0,
+            Server = 1,
+            Client = 2
+        }
+
+#pragma warning disable 414
+        // RuntimeAccessModifiersILPP will make this `protected`
+        private NExec __nexec = NExec.None;
+#pragma warning restore 414
+
+        // RuntimeAccessModifiersILPP will make this `protected`
+        private BitWriter BeginServerRPC()
+        {
+            // @mfatihmar (Unity) Begin: Temporary, placeholder implementation
+            var stream = PooledBitStream.Get();
+            var writer = PooledBitWriter.Get(stream);
+
+            writer.WriteBit(false); // Encrypted
+            writer.WriteBit(false); // Authenticated
+            writer.WriteBits(MLAPIConstants.MLAPI_STD_SERVER_RPC, 6); // MessageType
+            writer.WriteUInt64Packed(NetworkId); // NetworkObjectId
+            writer.WriteUInt16Packed(GetBehaviourId()); // NetworkBehaviourId
+
+            return writer;
+            // @mfatihmar (Unity) End: Temporary, placeholder implementation
+        }
+
+        // RuntimeAccessModifiersILPP will make this `protected`
+        private void EndServerRPC(BitWriter writer)
+        {
+            // @mfatihmar (Unity) Begin: Temporary, placeholder implementation
+            if (writer == null) return;
+
+            var stream = (BitStream)writer.GetStream();
+            if (stream != null)
+            {
+                stream.PadStream();
+
+                var networkManager = NetworkingManager.Singleton;
+                if (ReferenceEquals(networkManager, null)) return;
+
+                var payload = new ArraySegment<byte>(stream.GetBuffer(), 0, (int)stream.Length);
+                // @mfatihmar (Unity) Begin: Temporary, inbound RPC queue will replace this workaround
+                if (networkManager.IsHost)
+                {
+                    networkManager.__loopbackRPCs.Enqueue((payload, Time.realtimeSinceStartup));
+                }
+                // @mfatihmar (Unity) End: Temporary, inbound RPC queue will replace this workaround
+                else
+                {
+                    networkManager.NetworkConfig.NetworkTransport.Send(networkManager.ServerClientId, payload, "STDRPC");
+                }
+            }
+
+            writer.SetStream(null);
+            // @mfatihmar (Unity) End: Temporary, placeholder implementation
+        }
+
+        // RuntimeAccessModifiersILPP will make this `protected`
+        private BitWriter BeginClientRPC(ulong[] targetClientIds)
+        {
+            // @mfatihmar (Unity) Begin: Temporary, placeholder implementation
+            var stream = PooledBitStream.Get();
+            var writer = PooledBitWriter.Get(stream);
+
+            writer.WriteBit(false); // Encrypted
+            writer.WriteBit(false); // Authenticated
+            writer.WriteBits(MLAPIConstants.MLAPI_STD_CLIENT_RPC, 6); // MessageType
+            writer.WriteUInt64Packed(NetworkId); // NetworkObjectId
+            writer.WriteUInt16Packed(GetBehaviourId()); // NetworkBehaviourId
+
+            return writer;
+            // @mfatihmar (Unity) End: Temporary, placeholder implementation
+        }
+
+        // RuntimeAccessModifiersILPP will make this `protected`
+        private void EndClientRPC(BitWriter writer, ulong[] targetClientIds)
+        {
+            // @mfatihmar (Unity) Begin: Temporary, placeholder implementation
+            if (writer == null) return;
+
+            var stream = (BitStream)writer.GetStream();
+            if (stream != null)
+            {
+                stream.PadStream();
+
+                var networkManager = NetworkingManager.Singleton;
+                if (ReferenceEquals(networkManager, null)) return;
+
+                if (targetClientIds == null) targetClientIds = networkManager.ConnectedClientsList.Select(client => client.ClientId).ToArray();
+                foreach (var clientId in targetClientIds)
+                {
+                    if (!NetworkedObject.observers.Contains(clientId)) continue;
+
+                    var payload = new ArraySegment<byte>(stream.GetBuffer(), 0, (int)stream.Length);
+                    // @mfatihmar (Unity) Begin: Temporary, inbound RPC queue will replace this workaround
+                    if (clientId == networkManager.ServerClientId && networkManager.IsHost)
+                    {
+                        networkManager.__loopbackRPCs.Enqueue((payload, Time.realtimeSinceStartup));
+                    }
+                    // @mfatihmar (Unity) End: Temporary, inbound RPC queue will replace this workaround
+                    else
+                    {
+                        networkManager.NetworkConfig.NetworkTransport.Send(clientId, payload, "STDRPC");
+                    }
+                }
+            }
+
+            writer.SetStream(null);
+            // @mfatihmar (Unity) End: Temporary, placeholder implementation
+        }
+
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
         static ProfilerMarker s_SendClientRPCPerformance = new ProfilerMarker("NetworkedBehaviour.SendClientRPCPerformance");
 #endif
@@ -952,7 +1072,7 @@ namespace MLAPI
             if (!IsServer && IsRunning)
             {
                 //We are NOT a server.
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Only servers and hosts can invoke ClientRPC");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Only clients and host can invoke ClientRPC");
                 return;
             }
 
@@ -993,7 +1113,7 @@ namespace MLAPI
             if (!IsServer && IsRunning)
             {
                 //We are NOT a server.
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Only servers and hosts can invoke ClientRPC");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Only clients and host can invoke ClientRPC");
                 return;
             }
 
@@ -1036,7 +1156,7 @@ namespace MLAPI
             if (!IsServer && IsRunning)
             {
                 //We are NOT a server.
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Only servers and hosts can invoke ClientRPC");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Only clients and host can invoke ClientRPC");
                 return;
             }
 
@@ -1075,7 +1195,7 @@ namespace MLAPI
             if (!IsServer && IsRunning)
             {
                 //We are NOT a server.
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Only servers and hosts can invoke ClientRPC");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Only clients and host can invoke ClientRPC");
                 return null;
             }
 

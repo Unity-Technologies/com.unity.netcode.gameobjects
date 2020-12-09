@@ -11,6 +11,7 @@
   "type": "library",
   "hideInEditor": false,
   "dependencies": {
+    "com.unity.nuget.mono-cecil": "0.1.6-preview.2",
     "com.unity.collections": "0.14.0-preview.16"
   }
 }

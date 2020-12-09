@@ -31,6 +31,8 @@ namespace MLAPI.Configuration
         internal const byte MLAPI_DESTROY_OBJECTS = 21;
         internal const byte MLAPI_NAMED_MESSAGE = 22;
         internal const byte MLAPI_SERVER_LOG = 23;
+        internal const byte MLAPI_STD_SERVER_RPC = 30;
+        internal const byte MLAPI_STD_CLIENT_RPC = 31;
         internal const byte INVALID = 32;
 
         internal static readonly string[] MESSAGE_NAMES = {
@@ -64,8 +66,8 @@ namespace MLAPI.Configuration
             "",
             "",
             "",
-            "",
-            "",
+            "MLAPI_STD_SERVER_RPC",
+            "MLAPI_STD_CLIENT_RPC",
             "INVALID" // 32
         };
     }

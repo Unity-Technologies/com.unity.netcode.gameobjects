@@ -36,6 +36,13 @@ namespace MLAPI
     [AddComponentMenu("MLAPI/NetworkingManager", -100)]
     public class NetworkingManager : MonoBehaviour
     {
+        // RuntimeAccessModifiersILPP will make this `public`
+        internal static readonly Dictionary<uint, Action<NetworkedBehaviour, BitReader>> __ntable = new Dictionary<uint, Action<NetworkedBehaviour, BitReader>>();
+
+        // @mfatihmar (Unity) Begin: Temporary, inbound RPC queue will replace this workaround
+        internal Queue<(ArraySegment<byte> payload, float receiveTime)> __loopbackRPCs = new Queue<(ArraySegment<byte> payload, float receiveTime)>();
+        // @mfatihmar (Unity) End: Temporary, inbound RPC queue will replace this workaround
+
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
         static ProfilerMarker s_EventTick = new ProfilerMarker("Event");
         static ProfilerMarker s_ReceiveTick = new ProfilerMarker("Receive");
@@ -356,6 +363,10 @@ namespace MLAPI
             NetworkSceneManager.sceneNameToIndex.Clear();
             NetworkSceneManager.sceneSwitchProgresses.Clear();
 
+            // @mfatihmar (Unity) Begin: Temporary, inbound RPC queue will replace this workaround
+            __loopbackRPCs.Clear();
+            // @mfatihmar (Unity) End: Temporary, inbound RPC queue will replace this workaround
+
             if (NetworkConfig.NetworkTransport == null)
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError("No transport has been selected!");
@@ -640,6 +651,9 @@ namespace MLAPI
             IsListening = false;
             IsServer = false;
             IsClient = false;
+            // @mfatihmar (Unity) Begin: Temporary, inbound RPC queue will replace this workaround
+            __loopbackRPCs.Clear();
+            // @mfatihmar (Unity) End: Temporary, inbound RPC queue will replace this workaround
             NetworkConfig.NetworkTransport.OnTransportEvent -= HandleRawTransportPoll;
             SpawnManager.DestroyNonSceneObjects();
             SpawnManager.ServerResetShudownStateForSceneObjects();
@@ -662,6 +676,18 @@ namespace MLAPI
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_ReceiveTick.Begin();
 #endif
+
+                    // @mfatihmar (Unity) Begin: Temporary, inbound RPC queue will replace this workaround
+                    if (IsHost)
+                    {
+                        while (__loopbackRPCs.Count > 0)
+                        {
+                            var (payload, receiveTime) = __loopbackRPCs.Dequeue();
+                            HandleRawTransportPoll(NetEventType.Data, ServerClientId, "STDRPC", payload, receiveTime);
+                        }
+                    }
+                    // @mfatihmar (Unity) End: Temporary, inbound RPC queue will replace this workaround
+
                     NetworkProfiler.StartTick(TickType.Receive);
                     NetEventType eventType;
                     int processedEvents = 0;
@@ -1081,6 +1107,51 @@ namespace MLAPI
                     case MLAPIConstants.MLAPI_SERVER_LOG:
                         if (IsServer && NetworkConfig.EnableNetworkLogs) InternalMessageHandler.HandleNetworkLog(clientId, messageStream);
                         break;
+                    // @mfatihmar (Unity) Begin: Temporary, placeholder implementation
+                    case MLAPIConstants.MLAPI_STD_SERVER_RPC:
+                        if (IsServer)
+                        {
+                            using var reader = PooledBitReader.Get(messageStream);
+                            var networkObjectId = reader.ReadUInt64Packed();
+                            var networkBehaviourId = reader.ReadUInt16Packed();
+                            var networkMethodId = reader.ReadUInt32Packed();
+
+                            if (__ntable.ContainsKey(networkMethodId))
+                            {
+                                if (!SpawnManager.SpawnedObjects.ContainsKey(networkObjectId)) return;
+                                var networkObject = SpawnManager.SpawnedObjects[networkObjectId];
+
+                                // only the OwnerClient can execute ServerRPC from client to server
+                                if (networkObject.OwnerClientId != clientId) return;
+
+                                var networkBehaviour = networkObject.GetBehaviourAtOrderIndex(networkBehaviourId);
+                                if (ReferenceEquals(networkBehaviour, null)) return;
+
+                                __ntable[networkMethodId](networkBehaviour, reader);
+                            }
+                        }
+                        break;
+                    case MLAPIConstants.MLAPI_STD_CLIENT_RPC:
+                        if (IsClient)
+                        {
+                            using var reader = PooledBitReader.Get(messageStream);
+                            var networkObjectId = reader.ReadUInt64Packed();
+                            var networkBehaviourId = reader.ReadUInt16Packed();
+                            var networkMethodId = reader.ReadUInt32Packed();
+
+                            if (__ntable.ContainsKey(networkMethodId))
+                            {
+                                if (!SpawnManager.SpawnedObjects.ContainsKey(networkObjectId)) return;
+                                var networkObject = SpawnManager.SpawnedObjects[networkObjectId];
+
+                                var networkBehaviour = networkObject.GetBehaviourAtOrderIndex(networkBehaviourId);
+                                if (ReferenceEquals(networkBehaviour, null)) return;
+
+                                __ntable[networkMethodId](networkBehaviour, reader);
+                            }
+                        }
+                        break;
+                    // @mfatihmar (Unity) End: Temporary, placeholder implementation
                     default:
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError("Read unrecognized messageType " + messageType);
                         break;

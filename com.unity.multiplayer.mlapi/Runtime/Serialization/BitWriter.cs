@@ -41,6 +41,11 @@ namespace MLAPI.Serialization
             bitSink = stream as BitStream;
         }
 
+        internal Stream GetStream()
+        {
+            return sink;
+        }
+
         /// <summary>
         /// Writes a boxed object in a packed format
         /// </summary>
@@ -296,6 +301,26 @@ namespace MLAPI.Serialization
         {
             WriteVector3Packed(ray.origin);
             WriteVector3Packed(ray.direction);
+        }
+
+        /// <summary>
+        /// Convenience method that writes two non-packed Vector2 from the ray to the stream
+        /// </summary>
+        /// <param name="ray2d">Ray2D to write</param>
+        public void WriteRay2D(Ray2D ray2d)
+        {
+            WriteVector2(ray2d.origin);
+            WriteVector2(ray2d.direction);
+        }
+
+        /// <summary>
+        /// Convenience method that writes two packed Vector2 from the ray to the stream
+        /// </summary>
+        /// <param name="ray2d">Ray2D to write</param>
+        public void WriteRay2DPacked(Ray2D ray2d)
+        {
+            WriteVector2Packed(ray2d.origin);
+            WriteVector2Packed(ray2d.direction);
         }
 
         /// <summary>
