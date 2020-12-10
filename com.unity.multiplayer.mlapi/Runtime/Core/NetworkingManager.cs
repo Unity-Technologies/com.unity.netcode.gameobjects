@@ -206,7 +206,7 @@ namespace MLAPI
             }
         }
 
-        
+
 
         /// <summary>
         /// The callback to invoke once the server is ready
@@ -661,7 +661,7 @@ namespace MLAPI
         }
 
         public void OnDestroyForNewScene()
-        {            
+        {
             Destroy(this.gameObject);
         }
 
@@ -671,7 +671,7 @@ namespace MLAPI
             {
                 rpcQueueMananger.OnExiting();
             }
-            
+
 
             if (Singleton != null && Singleton == this)
             {
@@ -702,7 +702,7 @@ namespace MLAPI
                 rpcQueueMananger.Shutdown();
                 rpcQueueMananger = null;
             }
-           
+
         }
 
 
@@ -716,7 +716,7 @@ namespace MLAPI
             {
                  rpcQueueMananger.Initialize(0);
             }
-           
+
             NetworkUpdateManager.RegisterNetworkUpdateAction(NetworkPreUpdate,NetworkUpdateManager.NetworkUpdateStages.PREUPDATE);
             NetworkUpdateManager.RegisterNetworkUpdateAction(NetworkFixedUpdate,NetworkUpdateManager.NetworkUpdateStages.FIXEDUPDATE);
             NetworkUpdateManager.RegisterNetworkUpdateAction(NetworkUpdate,NetworkUpdateManager.NetworkUpdateStages.UPDATE);
@@ -811,7 +811,7 @@ namespace MLAPI
         /// Primarily handles all remaining messages, network variable/behavior updates
         /// </summary>
         void NetworkUpdate()
-        {            
+        {
             if (IsListening)
             {
 
@@ -896,7 +896,7 @@ namespace MLAPI
         {
             if(rpcQueueMananger != null)
             {
-                rpcQueueMananger.ProcessAndFlushRPCQueue(RPCQueueManager.RPCQueueProcessingTypes.SEND);  
+                rpcQueueMananger.ProcessAndFlushRPCQueue(RPCQueueManager.RPCQueueProcessingTypes.SEND);
             }
         }
 
@@ -1058,7 +1058,7 @@ namespace MLAPI
                 case NetEventType.Data:
                     {
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo($"Incoming Data From {clientId} : {payload.Count} bytes");
-                    
+
                         HandleIncomingData(clientId, channelName, payload, receiveTime, true);
 
                         break;
@@ -1144,7 +1144,7 @@ namespace MLAPI
                     case MLAPIConstants.MLAPI_DESTROY_OBJECT:
                         if (IsClient) InternalMessageHandler.HandleDestroyObject(clientId, messageStream);
                         break;
-                    case MLAPIConstants.MLAPI_SWITCH_SCENE:                        
+                    case MLAPIConstants.MLAPI_SWITCH_SCENE:
                         if (IsClient)
                             InternalMessageHandler.HandleSwitchScene(clientId, messageStream);
                         break;
@@ -1202,7 +1202,7 @@ namespace MLAPI
                         if (IsClient) InternalMessageHandler.HandleServerRPCResponse(clientId, messageStream);
                         break;
                     case MLAPIConstants.MLAPI_CLIENT_RPC:
-                        {                         
+                        {
                             if (IsClient)
                             {
                                 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -1213,10 +1213,10 @@ namespace MLAPI
 
                                 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                                 s_MLAPIClientRPCQueued.End();
-                                #endif                                   
-                            }                            
+                                #endif
+                            }
                             break;
-                        }                        
+                        }
                     case MLAPIConstants.MLAPI_CLIENT_RPC_REQUEST:
                         if (IsClient) InternalMessageHandler.HandleClientRPCRequest(clientId, messageStream, channelName, security, BufferCallback, new PreBufferPreset()
                         {
@@ -1255,7 +1255,7 @@ namespace MLAPI
                         if (IsServer && NetworkConfig.EnableNetworkLogs) InternalMessageHandler.HandleNetworkLog(clientId, messageStream);
                         break;
                     case MLAPIConstants.MLAPI_STD_SERVER_RPC:
-                        {                            
+                        {
                             if (IsServer)
                             {
 
@@ -1267,12 +1267,12 @@ namespace MLAPI
 
                                 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                                 s_MLAPIServerSTDRPCQueued.End();
-                                #endif                                    
-                            }                            
+                                #endif
+                            }
                             break;
                         }
                     case MLAPIConstants.MLAPI_STD_CLIENT_RPC:
-                        {                         
+                        {
                             if (IsClient)
                             {
                                 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -1283,8 +1283,8 @@ namespace MLAPI
 
                                 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                                 s_MLAPIClientSTDRPCQueued.End();
-                                #endif                                   
-                            }                            
+                                #endif
+                            }
                             break;
                         }
                     //// @mfatihmar (Unity) Begin: Temporary, placeholder implementation
@@ -1354,7 +1354,7 @@ namespace MLAPI
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                 s_InvokeRPC.Begin();
-#endif                            
+#endif
                 var networkObjectId = queueItem.StreamReader.ReadUInt64Packed();
                 var networkBehaviourId = queueItem.StreamReader.ReadUInt16Packed();
                 var networkMethodId = queueItem.StreamReader.ReadUInt32Packed();

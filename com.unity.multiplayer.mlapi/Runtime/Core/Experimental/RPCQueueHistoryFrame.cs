@@ -8,7 +8,7 @@ namespace MLAPI
 
     /// <summary>
     /// QueueHistoryFrame
-    /// All queued RPCs end up in a PooledBitStream within a QueueHistoryFrame instance.        
+    /// All queued RPCs end up in a PooledBitStream within a QueueHistoryFrame instance.
     /// </summary>
     public class QueueHistoryFrame
     {
@@ -21,7 +21,7 @@ namespace MLAPI
         public uint TotalSize;
         public uint TotalPackedSize;
         public uint FrameNumber;
-            
+
         public PooledBitStream QueueStream;
         public PooledBitWriter QueueWriter;
         public PooledBitReader QueueReader;
@@ -76,7 +76,7 @@ namespace MLAPI
             //Write the packed version of the queueItem to our current queue history buffer
             CurrentQueueItem.QueueItemType = (RPCQueueManager.QueueItemType)QueueReader.ReadUInt16();
             CurrentQueueItem.SendFlags = (Security.SecuritySendFlags)QueueReader.ReadUInt16();
-            CurrentQueueItem.TimeStamp = QueueReader.ReadSingle();                        
+            CurrentQueueItem.TimeStamp = QueueReader.ReadSingle();
             CurrentQueueItem.NetworkId = QueueReader.ReadUInt64();
 
             //NSS: For now, with inbound we are punting on reading the channel and clients for these reasons:
@@ -106,7 +106,7 @@ namespace MLAPI
                     for(int i = 0; i < NumClients; i++)
                     {
                         clientIdArray[i] = QueueReader.ReadUInt64();
-                    }                    
+                    }
                     if(CurrentQueueItem.ClientIds == null)
                     {
                         CurrentQueueItem.ClientIds = new List<ulong>(clientIdArray);
@@ -115,7 +115,7 @@ namespace MLAPI
                     {
                         CurrentQueueItem.ClientIds.Clear();
                         CurrentQueueItem.ClientIds.AddRange(clientIdArray);
-                    }                    
+                    }
                 }
                 else
                 {
@@ -151,10 +151,10 @@ namespace MLAPI
             else
             {
                 //Create a byte array segment for outbound sending
-                CurrentQueueItem.MessageData = QueueReader.CreateArraySegment((int)CurrentQueueItem.StreamSize, (int)QueueStream.Position);                    
+                CurrentQueueItem.MessageData = QueueReader.CreateArraySegment((int)CurrentQueueItem.StreamSize, (int)QueueStream.Position);
             }
-                               
-            return CurrentQueueItem;    
+
+            return CurrentQueueItem;
         }
 
         /// <summary>
@@ -170,11 +170,11 @@ namespace MLAPI
             if(QueueItemOffsetIndex >= QueueItemOffsets.Count)
             {
                 CurrentQueueItem.QueueItemType = RPCQueueManager.QueueItemType.NONE;
-                return CurrentQueueItem;              
+                return CurrentQueueItem;
             }
-            return GetCurrentQueueItem();                     
+            return GetCurrentQueueItem();
         }
-            
+
         /// <summary>
         /// GetFirstQueueItem
         /// Should be called the first time a queue item is pulled from a queue history frame.
@@ -193,7 +193,7 @@ namespace MLAPI
                     CurrentQueueItem.ItemStream = PooledBitStream.Get();
                     CurrentQueueItem.StreamWriter = PooledBitWriter.Get(CurrentQueueItem.ItemStream);
                     CurrentQueueItem.StreamReader = PooledBitReader.Get(CurrentQueueItem.ItemStream);
-                }                    
+                }
                 return GetCurrentQueueItem();
             }
             else
@@ -231,7 +231,7 @@ namespace MLAPI
         }
 
         /// <summary>
-        /// QueueHistoryFrame Constructor            
+        /// QueueHistoryFrame Constructor
         /// </summary>
         /// <param name="queueType">type of queue history frame (Inbound/Outbound)</param>
         public QueueHistoryFrame(QueueFrameType queueType)

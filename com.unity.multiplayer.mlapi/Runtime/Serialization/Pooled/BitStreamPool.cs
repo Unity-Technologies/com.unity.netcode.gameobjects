@@ -41,7 +41,7 @@ namespace MLAPI.Serialization.Pooled
                         return strongStream;
                     }
                 }
-                
+
                 if (createdStreams == MaxBitPoolStreams)
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning(MaxBitPoolStreams.ToString() + " streams have been created. Did you forget to dispose?");

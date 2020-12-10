@@ -19,7 +19,7 @@ namespace MLAPI
     internal class RPCQueueProcessing
     {
 
-#if DEVELOPMENT_BUILD || UNITY_EDITOR        
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
         static ProfilerMarker s_MLAPIRPCQueueProcess = new ProfilerMarker("MLAPIRPCQueueProcess");
         static ProfilerMarker s_MLAPIRPCQueueSend = new ProfilerMarker("MLAPIRPCQueueSend");
 #endif
@@ -48,7 +48,7 @@ namespace MLAPI
             bool AdvanceFrameHistory = false;
             RPCQueueManager rpcQueueManager = NetworkingManager.Singleton.GetRPCQueueManager();
             if(rpcQueueManager != null)
-            {    
+            {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_MLAPIRPCQueueProcess.Begin();
 #endif
@@ -71,10 +71,10 @@ namespace MLAPI
                             ProfilerStatManager.rpcsQueueProc.Record();
                             currentQueueItem = CurrentFrame.GetNextQueueItem();
                         }
-                        //We call this to dispose of the shared stream writer and stream 
+                        //We call this to dispose of the shared stream writer and stream
                         CurrentFrame.CloseQueue();
                     }
-            
+
                 }
                 catch(Exception ex)
                 {
@@ -82,13 +82,13 @@ namespace MLAPI
                 }
 
                 if(AdvanceFrameHistory)
-                {                                  
+                {
                     rpcQueueManager.AdvanceFrameHistory(QueueHistoryFrame.QueueFrameType.Inbound);
                 }
             }
-#if DEVELOPMENT_BUILD || UNITY_EDITOR    
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_MLAPIRPCQueueProcess.End();
-#endif           
+#endif
         }
 
         /// <summary>
@@ -104,7 +104,7 @@ namespace MLAPI
             RPCQueueSendAndFlush();
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_MLAPIRPCQueueSend.End();            
+            s_MLAPIRPCQueueSend.End();
 #endif
             InternalMessagesSendAndFlush();
         }
@@ -158,15 +158,15 @@ namespace MLAPI
         /// <summary>
         /// RPCQueueSendAndFlush
         /// Sends all RPC queue items in the current outbound frame
-        /// </summary>       
+        /// </summary>
         private void RPCQueueSendAndFlush()
         {
             bool AdvanceFrameHistory = false;
             RPCQueueManager rpcQueueManager = NetworkingManager.Singleton.GetRPCQueueManager();
             if(rpcQueueManager != null)
-            {    
+            {
                 try
-                {            
+                {
                     QueueHistoryFrame CurrentFrame = rpcQueueManager.GetCurrentFrame(QueueHistoryFrame.QueueFrameType.Outbound);
                     //If loopback is enabled
                     if(rpcQueueManager.IsLoopBack())
@@ -176,7 +176,7 @@ namespace MLAPI
                         AdvanceFrameHistory = true;
                     }
                     else
-                    {            
+                    {
                         if(CurrentFrame != null)
                         {
                             FrameQueueItem currentQueueItem = CurrentFrame.GetFirstQueueItem();
@@ -187,7 +187,7 @@ namespace MLAPI
                                 currentQueueItem = CurrentFrame.GetNextQueueItem();
                             }
                         }
-                     }                
+                     }
                 }
                 catch(Exception ex)
                 {

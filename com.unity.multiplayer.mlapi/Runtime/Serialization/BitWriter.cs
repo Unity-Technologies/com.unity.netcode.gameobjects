@@ -852,18 +852,18 @@ namespace MLAPI.Serialization
         /// WriteBytes
         /// Takes a byte array buffer and writes the bytes into the currently assigned stream at its current position
         /// This reduces the iterations required to write (n) bytes by a factor of up to 8x less iterations.
-        /// for blocks of memory that exceed 8 bytes in size. It also doesn't require passing arrays over the stack.        
+        /// for blocks of memory that exceed 8 bytes in size. It also doesn't require passing arrays over the stack.
         /// Ex:
         /// 256 bytes iterates 32 times vs 256 times ------------------------- 8x less iterations
         /// 64 bytes iterates 8 times vs 64 times----------------------------- 8x less iterations
-        /// 22 bytes iterates 5 times ( 2-Int64 1-Int32 2-Byte) vs 22 times -- 4x less iterations    
+        /// 22 bytes iterates 5 times ( 2-Int64 1-Int32 2-Byte) vs 22 times -- 4x less iterations
         /// </summary>
         /// <param name="buffer"></param>
         /// <param name="targetSize"></param>
         public void WriteBytes(byte[] buffer, long targetSize)
         {
-            
-            long TargetSize = targetSize;            
+
+            long TargetSize = targetSize;
             long LargeInt64Blocks = (long)((float)TargetSize * 0.125f);
             int IndexOffset = 0;
             //8 Byte blocks
@@ -889,7 +889,7 @@ namespace MLAPI.Serialization
             {
                 for(long i = 0; i < (TargetSize - Offset); i++)
                 {
-                    WriteByte(buffer[IndexOffset+i]);                        
+                    WriteByte(buffer[IndexOffset+i]);
                 }
             }
         }
@@ -899,23 +899,23 @@ namespace MLAPI.Serialization
         /// ReadAndWrite
         /// Uses a BitReader to read (targetSize) bytes and will write (targetSize) bytes to current stream.
         /// This reduces the iterations required to write (n) bytes by a factor of up to 8x less iterations.
-        /// for blocks of memory that exceed 8 bytes in size. It also doesn't require passing arrays over the stack.        
+        /// for blocks of memory that exceed 8 bytes in size. It also doesn't require passing arrays over the stack.
         /// Ex:
         /// 256 bytes iterates 32 times vs 256 times ------------------------- 8x less iterations
         /// 64 bytes iterates 8 times vs 64 times----------------------------- 8x less iterations
-        /// 22 bytes iterates 5 times ( 2-Int64 1-Int32 2-Byte) vs 22 times -- 4x less iterations       
+        /// 22 bytes iterates 5 times ( 2-Int64 1-Int32 2-Byte) vs 22 times -- 4x less iterations
         /// </summary>
         /// <param name="sourceReader"></param>
-        /// <param name="targetSize"></param>        
+        /// <param name="targetSize"></param>
         public void ReadAndWrite(BitReader sourceReader, long targetSize)
-        {            
-            long TargetSize = targetSize;            
+        {
+            long TargetSize = targetSize;
             long LargeInt64Blocks = (long)((float)TargetSize * 0.125f);
 
             //8 Byte blocks
             for(long i = 0; i < LargeInt64Blocks; i++ )
             {
-               WriteInt64(sourceReader.ReadInt64());                        
+               WriteInt64(sourceReader.ReadInt64());
             }
 
             long Offset = LargeInt64Blocks*8;
@@ -933,7 +933,7 @@ namespace MLAPI.Serialization
             {
                 for(long i = 0; i < (TargetSize - Offset); i++)
                 {
-                    WriteByte(sourceReader.ReadByteDirect());                        
+                    WriteByte(sourceReader.ReadByteDirect());
                 }
             }
         }
