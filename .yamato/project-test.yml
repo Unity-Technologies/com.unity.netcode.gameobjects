@@ -105,14 +105,12 @@ badges_test_trigger:
 all_tests_trigger:
   name: Repository Tests Trigger
   dependencies:
+    # Pull in package and validate jobs through the badges job
     - .yamato/project-test.yml#badges_test_trigger
 {% for editor in test_editors -%}
 {% for platform in test_platforms -%}
 {% for project in projects -%}
     - .yamato/project-test.yml#test_{{ project.name }}_{{ editor }}_{{ platform.name }}
-{% endfor -%}
-{% for package in projects.first.packages -%}
-    - .yamato/project-test.yml#test_{{ projects.first.name}}_{{ package.name }}_{{ platform.name }}_{{ editor }}
 {% endfor -%}
 {% endfor -%}
 {% endfor -%}
@@ -123,17 +121,14 @@ all_tests_trigger:
 develop_pull_request_trigger:
   name: Develop Branch Triggers
   dependencies:
-#{% for package in projects.first.packages -%}
 {% for editor in test_editors -%}
 {% for platform in test_platforms -%}
-#        - .yamato/project-test.yml#test_{{ projects.first.name }}_{{ package.name }}_{{ platform.name }}_{{ editor }}
         - .yamato/project-test.yml#test_{{ projects.first.name }}_com.unity.multiplayer.mlapi_{{ platform.name }}_{{ editor }}
 {% endfor -%}
 {% endfor -%}
-#{% endfor -%}
   triggers:
-  cancel_old_ci: true
-  pull_requests:
+    cancel_old_ci: true
+    pull_requests:
     - targets:
         only:
           - "develop"
