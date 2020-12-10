@@ -18,6 +18,8 @@ using System.Collections.Generic;
 using MLAPI.Messaging.Buffering;
 using MLAPI.Profiling;
 using Unity.Profiling;
+using MLAPI.Serialization;
+using BitStream = MLAPI.Serialization.BitStream;
 
 namespace MLAPI.Messaging
 {
@@ -29,35 +31,50 @@ namespace MLAPI.Messaging
         static ProfilerMarker s_HandleAddObject = new ProfilerMarker("InternalMessageHandler.HandleAddObject");
         static ProfilerMarker s_HandleDestroyObject = new ProfilerMarker("InternalMessageHandler.HandleDestroyObject");
         static ProfilerMarker s_HandleSwitchScene = new ProfilerMarker("InternalMessageHandler.HandleSwitchScene");
-        static ProfilerMarker s_HandleClientSwitchSceneCompleted = new ProfilerMarker("InternalMessageHandler.HandleClientSwitchSceneCompleted");
+        static ProfilerMarker s_HandleClientSwitchSceneCompleted = new ProfilerMarker("InternalMessageHandler.HandleClientSwitchSceneCompleted");        
+
         static ProfilerMarker s_HandleChangeOwner =
             new ProfilerMarker("InternalMessageHandler.HandleChangeOwner");
+
         static ProfilerMarker s_HandleAddObjects =
             new ProfilerMarker("InternalMessageHandler.HandleAddObjects");
+
         static ProfilerMarker s_HandleDestroyObjects =
             new ProfilerMarker("InternalMessageHandler.HandleDestroyObjects");
+
         static ProfilerMarker s_HandleTimeSync =
             new ProfilerMarker("InternalMessageHandler.HandleTimeSync");
+
         static ProfilerMarker s_HandleNetworkedVarDelta =
             new ProfilerMarker("InternalMessageHandler.HandleNetworkedVarDelta");
+
         static ProfilerMarker s_HandleNetworkedVarUpdate =
             new ProfilerMarker("InternalMessageHandler.HandleNetworkedVarUpdate");
+
         static ProfilerMarker s_HandleServerRPC =
             new ProfilerMarker("InternalMessageHandler.HandleServerRPC");
+
         static ProfilerMarker s_HandleServerRPCRequest =
             new ProfilerMarker("InternalMessageHandler.HandleServerRPCRequest");
+
         static ProfilerMarker s_HandleServerRPCResponse =
             new ProfilerMarker("InternalMessageHandler.HandleServerRPCResponse");
+
         static ProfilerMarker s_HandleClientRPC =
             new ProfilerMarker("InternalMessageHandler.HandleClientRPC");
+
         static ProfilerMarker s_HandleClientRPCRequest =
             new ProfilerMarker("InternalMessageHandler.HandleClientRPCRequest");
+
         static ProfilerMarker s_HandleClientRPCResponse =
             new ProfilerMarker("InternalMessageHandler.HandleClientRPCResponse");
+
         static ProfilerMarker s_HandleUnnamedMessage =
             new ProfilerMarker("InternalMessageHandler.HandleUnnamedMessage");
+
         static ProfilerMarker s_HandleNamedMessage =
             new ProfilerMarker("InternalMessageHandler.HandleNamedMessage");
+
         static ProfilerMarker s_HandleNetworkLog =
             new ProfilerMarker("InternalMessageHandler.HandleNetworkLog");
 
@@ -257,7 +274,7 @@ namespace MLAPI.Messaging
             {
                 NetworkingManager.Singleton.LocalClientId = reader.ReadUInt64Packed();
 
-                uint sceneIndex = 0;
+                uint sceneIndex = 0;                
                 Guid sceneSwitchProgressGuid = new Guid();
 
                 if (NetworkingManager.Singleton.NetworkConfig.EnableSceneManagement)
@@ -621,7 +638,7 @@ namespace MLAPI.Messaging
 
                     if (instance == null)
                     {
-                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkedVarDelta message received for a non existant behaviour. NetworkId: " + networkId + ", behaviourIndex: " + orderIndex);
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkedVarDelta message received for a non-existent behaviour. NetworkId: " + networkId + ", behaviourIndex: " + orderIndex);
                     }
                     else
                     {
@@ -686,6 +703,29 @@ namespace MLAPI.Messaging
             s_HandleNetworkedVarUpdate.End();
 #endif
         }
+
+ 
+        /// <summary>
+        /// Converts the stream to a PerformanceQueueItem and adds it to the receive queue
+        /// </summary>
+        /// <param name="clientId"></param>
+        /// <param name="stream"></param>
+        internal static void RPCReceiveQueueItem(ulong clientId, Stream stream,float receiveTime,RPCQueueManager.QueueItemType queueItemType)
+        {
+            if (NetworkingManager.Singleton.IsServer && clientId == NetworkingManager.Singleton.ServerClientId)
+            {
+                return;
+            }
+            ProfilerStatManager.rpcsRcvd.Record();
+            RPCQueueManager rpcQueueManager = NetworkingManager.Singleton.GetRPCQueueManager();
+            if(rpcQueueManager != null)
+            { 
+                rpcQueueManager.AddQueueItemToInboundFrame(queueItemType, receiveTime, clientId, (BitStream)stream);
+            }
+        }
+
+
+  
 
         internal static void HandleServerRPC(ulong clientId, Stream stream)
         {
@@ -754,7 +794,7 @@ namespace MLAPI.Messaging
                                 responseWriter.WriteObjectPacked(result);
                             }
 
-                            InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_SERVER_RPC_RESPONSE, channelName, responseStream, security, SpawnManager.SpawnedObjects[networkId]);
+                            InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_SERVER_RPC_RESPONSE, channelName, responseStream, security);
                             ProfilerStatManager.rpcsSent.Record();
                         }
                     }
@@ -871,7 +911,7 @@ namespace MLAPI.Messaging
                                 responseWriter.WriteObjectPacked(result);
                             }
 
-                            InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_CLIENT_RPC_RESPONSE, channelName, responseStream, security, null);
+                            InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_CLIENT_RPC_RESPONSE, channelName, responseStream, security);
                             ProfilerStatManager.rpcsSent.Record();
                         }
                     }

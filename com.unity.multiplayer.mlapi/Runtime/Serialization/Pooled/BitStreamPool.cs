@@ -9,9 +9,12 @@ namespace MLAPI.Serialization.Pooled
     /// </summary>
     public static class BitStreamPool
     {
-        private static byte createdStreams = 0;
+        private static uint createdStreams = 0;
         private static readonly Queue<WeakReference> overflowStreams = new Queue<WeakReference>();
         private static readonly Queue<PooledBitStream> streams = new Queue<PooledBitStream>();
+
+        private const uint MaxBitPoolStreams = 1024;
+        private const uint MaxCreatedDelta = 768;
 
         /// <summary>
         /// Retrieves an expandable PooledBitStream from the pool
@@ -39,11 +42,11 @@ namespace MLAPI.Serialization.Pooled
                     }
                 }
                 
-                if (createdStreams == 254)
+                if (createdStreams == MaxBitPoolStreams)
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("255 streams have been created. Did you forget to dispose?");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning(MaxBitPoolStreams.ToString() + " streams have been created. Did you forget to dispose?");
                 }
-                else if (createdStreams < 255) createdStreams++;
+                else if (createdStreams < MaxBitPoolStreams) createdStreams++;
 
                 return new PooledBitStream();
             }
@@ -62,7 +65,7 @@ namespace MLAPI.Serialization.Pooled
         /// <param name="stream">The stream to put in the pool</param>
         public static void PutBackInPool(PooledBitStream stream)
         {
-            if (streams.Count > 16)
+            if (streams.Count > MaxCreatedDelta)
             {
                 // The user just created lots of streams without returning them in between.
                 // Streams are essentially byte array wrappers. This is valuable memory.
