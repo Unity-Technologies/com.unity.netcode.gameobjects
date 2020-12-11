@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using Unity.Profiling;
 using MLAPI.Configuration;
@@ -10,6 +11,13 @@ using MLAPI.Serialization.Pooled;
 
 namespace MLAPI
 {
+    internal class SendStream
+    {
+        public FrameQueueItem item;
+        public PooledBitWriter writer;
+        public PooledBitStream stream = new PooledBitStream();
+    }
+
     /// <summary>
     /// RPCQueueProcessing
     /// Handles processing of RPCQueues
@@ -29,6 +37,8 @@ namespace MLAPI
         readonly List<FrameQueueItem> InternalMLAPISendQueue = new List<FrameQueueItem>();
 
         RPCQueueManager rpcQueueManager;
+
+        private Dictionary<ulong, SendStream> SendDict = new Dictionary<ulong, SendStream>();
 
         /// <summary>
         /// ProcessReceiveQueue
@@ -183,11 +193,11 @@ namespace MLAPI
                             while(currentQueueItem.QueueItemType != RPCQueueManager.QueueItemType.NONE)
                             {
                                 AdvanceFrameHistory = true;
-                                SendFrameQueueItem(currentQueueItem);
+                                QueueItem(currentQueueItem);
                                 currentQueueItem = CurrentFrame.GetNextQueueItem();
                             }
                         }
-                     }
+                    }
                 }
                 catch(Exception ex)
                 {
@@ -201,7 +211,76 @@ namespace MLAPI
             }
         }
 
-        /// <summary>
+        private static List<ulong> GetTargetList(FrameQueueItem item)
+        {
+            List<ulong> ret = new List<ulong>();
+            switch (item.QueueItemType)
+            {
+                case RPCQueueManager.QueueItemType.ServerRPC:
+                    ret.Add(item.NetworkId);
+                    break;
+                case RPCQueueManager.QueueItemType.ClientRPC:
+                    ret = item.ClientIds;
+                    break;
+            }
+            return ret;
+        }
+
+        private void QueueItem(FrameQueueItem queueItem)
+        {
+            foreach (ulong clientid in GetTargetList(queueItem))
+            {
+                // todo: actually queue and buffer. For now, the dict contains just one entry ...
+                SendDict[clientid] = new SendStream();
+                SendDict[clientid].item = queueItem;
+                SendDict[clientid].writer = new PooledBitWriter(SendDict[clientid].stream);
+
+                SendDict[clientid].writer.WriteBit(false); // Encrypted
+                SendDict[clientid].writer.WriteBit(false); // Authenticated
+                switch (queueItem.QueueItemType)
+                {
+                    case RPCQueueManager.QueueItemType.ServerRPC:
+                        SendDict[clientid].writer.WriteBits(MLAPIConstants.MLAPI_STD_SERVER_RPC, 6); // MessageType
+                        break;
+                    case RPCQueueManager.QueueItemType.ClientRPC:
+                        SendDict[clientid].writer.WriteBits(MLAPIConstants.MLAPI_STD_CLIENT_RPC, 6); // MessageType
+                        break;
+                }
+
+                SendDict[clientid].writer.WriteByte((byte)queueItem.MessageData.Count); // write the amounts of bytes that are coming up
+
+                // write the message to send
+                // todo: is there a faster alternative to .ToArray()
+                SendDict[clientid].writer.WriteBytes(queueItem.MessageData.ToArray(), queueItem.MessageData.Count);
+
+                SendDict[clientid].writer.WriteByte(42); // extra for testing
+            }
+
+            foreach (KeyValuePair<ulong, SendStream> entry in SendDict)
+            {
+                // read the queued message
+                byte[] byteBuffer = new byte[1000];
+
+                using PooledBitWriter writer = SendDict[entry.Key].writer;
+                int length = (int)writer.GetStream().Length;
+
+                Byte[] bytes = ((MLAPI.Serialization.BitStream)writer.GetStream()).GetBuffer();
+                System.Buffer.BlockCopy(bytes, 0, byteBuffer, 0, length);
+
+                ArraySegment<byte> sendBuffer = new ArraySegment<byte>(byteBuffer, 0, length);
+
+                // todo: ... that gets sent right away
+                NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(entry.Key, sendBuffer,
+                    string.IsNullOrEmpty(entry.Value.item.Channel) ? "MLAPI_DEFAULT_MESSAGE" : entry.Value.item.Channel);
+
+                ProfilerStatManager.bytesSent.Record((int)entry.Value.item.StreamSize);
+                ProfilerStatManager.rpcsSent.Record();
+            }
+
+            SendDict.Clear();
+        }
+
+            /// <summary>
         /// SendFrameQueueItem
         /// Sends the RPC Queue Item to the specified destination
         /// </summary>

@@ -1187,7 +1187,7 @@ namespace MLAPI
                             s_MLAPIServerRPCQueued.Begin();
                             #endif
 
-                            if (IsServer) InternalMessageHandler.RPCReceiveQueueItem(clientId, messageStream, receiveTime,RPCQueueManager.QueueItemType.ServerRPC);
+                            if (IsServer) InternalMessageHandler.RPCReceiveQueueItem(clientId, messageStream, receiveTime,RPCQueueManager.QueueItemType.ServerRPC, messageStream.Length);
 
                             #if DEVELOPMENT_BUILD || UNITY_EDITOR
                             s_MLAPIServerRPCQueued.End();
@@ -1208,7 +1208,7 @@ namespace MLAPI
                                 s_MLAPIClientRPCQueued.Begin();
                                 #endif
 
-                                InternalMessageHandler.RPCReceiveQueueItem(clientId, messageStream,receiveTime,RPCQueueManager.QueueItemType.ClientRPC);
+                                InternalMessageHandler.RPCReceiveQueueItem(clientId, messageStream,receiveTime,RPCQueueManager.QueueItemType.ClientRPC, messageStream.Length);
 
                                 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                                 s_MLAPIClientRPCQueued.End();
@@ -1255,6 +1255,8 @@ namespace MLAPI
                         break;
                     case MLAPIConstants.MLAPI_STD_SERVER_RPC:
                         {
+                            int rpcSize = messageStream.ReadByte();
+
                             if (IsServer)
                             {
 
@@ -1262,28 +1264,42 @@ namespace MLAPI
                                 s_MLAPIServerSTDRPCQueued.Begin();
                                 #endif
 
-                                InternalMessageHandler.RPCReceiveQueueItem(clientId, messageStream, receiveTime,RPCQueueManager.QueueItemType.ServerRPC);
+                                InternalMessageHandler.RPCReceiveQueueItem(clientId, messageStream, receiveTime,RPCQueueManager.QueueItemType.ServerRPC, rpcSize);
 
                                 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                                 s_MLAPIServerSTDRPCQueued.End();
                                 #endif
                             }
+
+                            messageStream.Seek(rpcSize, SeekOrigin.Current);
+                            int value = messageStream.ReadByte();
+
+                            while (value != 42) { }
+
                             break;
                         }
                     case MLAPIConstants.MLAPI_STD_CLIENT_RPC:
                         {
+                            int rpcSize = messageStream.ReadByte();
+
                             if (IsClient)
                             {
                                 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                                 s_MLAPIClientSTDRPCQueued.Begin();
                                 #endif
 
-                                InternalMessageHandler.RPCReceiveQueueItem(clientId, messageStream,receiveTime,RPCQueueManager.QueueItemType.ClientRPC);
+                                InternalMessageHandler.RPCReceiveQueueItem(clientId, messageStream,receiveTime,RPCQueueManager.QueueItemType.ClientRPC, rpcSize);
 
                                 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                                 s_MLAPIClientSTDRPCQueued.End();
                                 #endif
                             }
+
+                            messageStream.Seek(rpcSize, SeekOrigin.Current);
+                            int value = messageStream.ReadByte();
+
+                            while (value != 42) { }
+
                             break;
                         }
                     default:

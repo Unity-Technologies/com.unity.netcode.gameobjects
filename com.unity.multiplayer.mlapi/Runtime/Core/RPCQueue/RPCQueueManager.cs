@@ -271,7 +271,8 @@ namespace MLAPI
         /// <param name="timeStamp">when it was received</param>
         /// <param name="sourceNetworkId">who sent the rpc</param>
         /// <param name="message">the message being received</param>
-        public void AddQueueItemToInboundFrame(QueueItemType qItemType, float timeStamp, ulong sourceNetworkId, BitStream message)
+        /// <param name="length">the length to read from the stream (the rest might belong to a different message)</param>///
+        public void AddQueueItemToInboundFrame(QueueItemType qItemType, float timeStamp, ulong sourceNetworkId, BitStream message, long length)
         {
 
             QueueHistoryFrame queueHistoryItem = GetCurrentQueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Inbound);
@@ -291,13 +292,12 @@ namespace MLAPI
             queueHistoryItem.QueueWriter.WriteInt32(0);
 
             //Always make sure we are positioned at the start of the stream
-            long streamSize = message.Position;
+            long streamSize = message.Length;
+            long reportedLength = length + 2; // why the +2 ?
 
-            //Inbound we copy the entire packet and store the position offset
-            streamSize = message.Length;
-            queueHistoryItem.QueueWriter.WriteInt64(streamSize);
+            queueHistoryItem.QueueWriter.WriteInt64(reportedLength);
             queueHistoryItem.QueueWriter.WriteInt64(message.Position);
-            queueHistoryItem.QueueWriter.WriteBytes(message.GetBuffer(),streamSize);
+            queueHistoryItem.QueueWriter.WriteBytes(message.GetBuffer(), reportedLength);
 
             //Add the packed size to the offsets for parsing over various entries
             queueHistoryItem.QueueItemOffsets.Add((uint)queueHistoryItem.QueueStream.Position);
@@ -458,7 +458,7 @@ namespace MLAPI
                         Buffer.BlockCopy(frameQueueItem.MessageData.Array, frameQueueItem.MessageData.Offset, pooledBitStreamArray,0,(int)frameQueueItem.StreamSize);
                         pooledBitStream.Position = 1;
 
-                        AddQueueItemToInboundFrame(frameQueueItem.QueueItemType, UnityEngine.Time.realtimeSinceStartup, frameQueueItem.NetworkId, pooledBitStream);
+                        AddQueueItemToInboundFrame(frameQueueItem.QueueItemType, UnityEngine.Time.realtimeSinceStartup, frameQueueItem.NetworkId, pooledBitStream, 0); //todo: check how batching plays with this
                         frameQueueItem = queueHistoryItemOutbound.GetNextQueueItem();
                     }
                 }
