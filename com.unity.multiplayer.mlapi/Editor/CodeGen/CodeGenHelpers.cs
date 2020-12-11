@@ -20,8 +20,8 @@ namespace MLAPI.Editor.CodeGen
         public static readonly string NetworkBehaviour_FullName = typeof(NetworkedBehaviour).FullName;
         public static readonly string ServerRPCAttribute_FullName = typeof(ServerRPCAttribute).FullName;
         public static readonly string ClientRPCAttribute_FullName = typeof(ClientRPCAttribute).FullName;
-        public static readonly string ServerRPCOptions_FullName = typeof(ServerRPCOptions).FullName;
-        public static readonly string ClientRPCOptions_FullName = typeof(ClientRPCOptions).FullName;
+        public static readonly string ServerRpcParams_FullName = typeof(ServerRpcParams).FullName;
+        public static readonly string ClientRpcParams_FullName = typeof(ClientRpcParams).FullName;
         public static readonly string INetworkSerializable_FullName = typeof(INetworkSerializable).FullName;
         public static readonly string INetworkSerializable_NetworkRead_Name = nameof(INetworkSerializable.NetworkRead);
         public static readonly string INetworkSerializable_NetworkWrite_Name = nameof(INetworkSerializable.NetworkWrite);
