@@ -79,7 +79,7 @@ namespace MLAPI.Editor.CodeGen
         {
             foreach (var fieldDefinition in typeDefinition.Fields)
             {
-                if (fieldDefinition.Name == "__ntable")
+                if (fieldDefinition.Name == nameof(NetworkingManager.__ntable))
                 {
                     fieldDefinition.IsPublic = true;
                 }
@@ -90,7 +90,7 @@ namespace MLAPI.Editor.CodeGen
         {
             foreach (var nestedType in typeDefinition.NestedTypes)
             {
-                if (nestedType.Name == "NExec")
+                if (nestedType.Name == nameof(NetworkedBehaviour.NExec))
                 {
                     nestedType.IsNestedFamily = true;
                 }
@@ -98,7 +98,7 @@ namespace MLAPI.Editor.CodeGen
 
             foreach (var fieldDefinition in typeDefinition.Fields)
             {
-                if (fieldDefinition.Name == "__nexec")
+                if (fieldDefinition.Name == nameof(NetworkedBehaviour.__nexec))
                 {
                     fieldDefinition.IsFamily = true;
                 }
@@ -108,10 +108,10 @@ namespace MLAPI.Editor.CodeGen
             {
                 switch (methodDefinition.Name)
                 {
-                    case "BeginServerRPC":
-                    case "BeginClientRPC":
-                    case "EndServerRPC":
-                    case "EndClientRPC":
+                    case nameof(NetworkedBehaviour.BeginSendServerRpc):
+                    case nameof(NetworkedBehaviour.EndSendServerRpc):
+                    case nameof(NetworkedBehaviour.BeginSendClientRpc):
+                    case nameof(NetworkedBehaviour.EndSendClientRpc):
                         methodDefinition.IsFamily = true;
                         break;
                 }

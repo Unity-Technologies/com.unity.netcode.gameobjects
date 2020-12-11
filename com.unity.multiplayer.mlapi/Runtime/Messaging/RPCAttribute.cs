@@ -7,5 +7,6 @@ namespace MLAPI.Messaging
     /// </summary>
     public abstract class RPCAttribute : Attribute
 	{
+        public bool IsReliable = true;
 	}
 }

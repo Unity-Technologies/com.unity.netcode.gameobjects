@@ -37,10 +37,10 @@ namespace MLAPI
     public class NetworkingManager : MonoBehaviour
     {
         // RuntimeAccessModifiersILPP will make this `public`
-        internal static readonly Dictionary<uint, Action<NetworkedBehaviour, BitReader>> __ntable = new Dictionary<uint, Action<NetworkedBehaviour, BitReader>>();
+        internal static readonly Dictionary<uint, Action<NetworkedBehaviour, BitReader, ulong>> __ntable = new Dictionary<uint, Action<NetworkedBehaviour, BitReader, ulong>>();
 
         // @mfatihmar (Unity) Begin: Temporary, inbound RPC queue will replace this workaround
-        internal Queue<(ArraySegment<byte> payload, float receiveTime)> __loopbackRPCs = new Queue<(ArraySegment<byte> payload, float receiveTime)>();
+        internal readonly Queue<(ArraySegment<byte> payload, float receiveTime)> __loopbackRpcQueue = new Queue<(ArraySegment<byte> payload, float receiveTime)>();
         // @mfatihmar (Unity) End: Temporary, inbound RPC queue will replace this workaround
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -364,7 +364,7 @@ namespace MLAPI
             NetworkSceneManager.sceneSwitchProgresses.Clear();
 
             // @mfatihmar (Unity) Begin: Temporary, inbound RPC queue will replace this workaround
-            __loopbackRPCs.Clear();
+            __loopbackRpcQueue.Clear();
             // @mfatihmar (Unity) End: Temporary, inbound RPC queue will replace this workaround
 
             if (NetworkConfig.NetworkTransport == null)
@@ -652,7 +652,7 @@ namespace MLAPI
             IsServer = false;
             IsClient = false;
             // @mfatihmar (Unity) Begin: Temporary, inbound RPC queue will replace this workaround
-            __loopbackRPCs.Clear();
+            __loopbackRpcQueue.Clear();
             // @mfatihmar (Unity) End: Temporary, inbound RPC queue will replace this workaround
             NetworkConfig.NetworkTransport.OnTransportEvent -= HandleRawTransportPoll;
             SpawnManager.DestroyNonSceneObjects();
@@ -681,9 +681,9 @@ namespace MLAPI
                     // @mfatihmar (Unity) Begin: Temporary, inbound RPC queue will replace this workaround
                     if (IsHost)
                     {
-                        while (__loopbackRPCs.Count > 0)
+                        while (__loopbackRpcQueue.Count > 0)
                         {
-                            var (payload, receiveTime) = __loopbackRPCs.Dequeue();
+                            var (payload, receiveTime) = __loopbackRpcQueue.Dequeue();
                             HandleRawTransportPoll(NetEventType.Data, ServerClientId, "STDRPC", payload, receiveTime);
                         }
                     }
@@ -1128,7 +1128,7 @@ namespace MLAPI
                                 var networkBehaviour = networkObject.GetBehaviourAtOrderIndex(networkBehaviourId);
                                 if (ReferenceEquals(networkBehaviour, null)) return;
 
-                                __ntable[networkMethodId](networkBehaviour, reader);
+                                __ntable[networkMethodId](networkBehaviour, reader, clientId);
                             }
                         }
                         break;
@@ -1148,7 +1148,7 @@ namespace MLAPI
                                 var networkBehaviour = networkObject.GetBehaviourAtOrderIndex(networkBehaviourId);
                                 if (ReferenceEquals(networkBehaviour, null)) return;
 
-                                __ntable[networkMethodId](networkBehaviour, reader);
+                                __ntable[networkMethodId](networkBehaviour, reader, clientId);
                             }
                         }
                         break;

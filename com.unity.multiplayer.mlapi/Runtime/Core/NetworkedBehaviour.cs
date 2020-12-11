@@ -42,11 +42,11 @@ namespace MLAPI
 
 #pragma warning disable 414
         // RuntimeAccessModifiersILPP will make this `protected`
-        private NExec __nexec = NExec.None;
+        internal NExec __nexec = NExec.None;
 #pragma warning restore 414
 
         // RuntimeAccessModifiersILPP will make this `protected`
-        private BitWriter BeginServerRPC()
+        internal BitWriter BeginSendServerRpc(ServerRpcSendParams sendParams, bool isReliable)
         {
             // @mfatihmar (Unity) Begin: Temporary, placeholder implementation
             var stream = PooledBitStream.Get();
@@ -63,7 +63,7 @@ namespace MLAPI
         }
 
         // RuntimeAccessModifiersILPP will make this `protected`
-        private void EndServerRPC(BitWriter writer)
+        internal void EndSendServerRpc(BitWriter writer, ServerRpcSendParams sendParams, bool isReliable)
         {
             // @mfatihmar (Unity) Begin: Temporary, placeholder implementation
             if (writer == null) return;
@@ -80,7 +80,7 @@ namespace MLAPI
                 // @mfatihmar (Unity) Begin: Temporary, inbound RPC queue will replace this workaround
                 if (networkManager.IsHost)
                 {
-                    networkManager.__loopbackRPCs.Enqueue((payload, Time.realtimeSinceStartup));
+                    networkManager.__loopbackRpcQueue.Enqueue((payload, Time.realtimeSinceStartup));
                 }
                 // @mfatihmar (Unity) End: Temporary, inbound RPC queue will replace this workaround
                 else
@@ -94,7 +94,7 @@ namespace MLAPI
         }
 
         // RuntimeAccessModifiersILPP will make this `protected`
-        private BitWriter BeginClientRPC(ulong[] targetClientIds)
+        internal BitWriter BeginSendClientRpc(ClientRpcSendParams sendParams, bool isReliable)
         {
             // @mfatihmar (Unity) Begin: Temporary, placeholder implementation
             var stream = PooledBitStream.Get();
@@ -111,7 +111,7 @@ namespace MLAPI
         }
 
         // RuntimeAccessModifiersILPP will make this `protected`
-        private void EndClientRPC(BitWriter writer, ulong[] targetClientIds)
+        internal void EndSendClientRpc(BitWriter writer, ClientRpcSendParams sendParams, bool isReliable)
         {
             // @mfatihmar (Unity) Begin: Temporary, placeholder implementation
             if (writer == null) return;
@@ -124,8 +124,8 @@ namespace MLAPI
                 var networkManager = NetworkingManager.Singleton;
                 if (ReferenceEquals(networkManager, null)) return;
 
-                if (targetClientIds == null) targetClientIds = networkManager.ConnectedClientsList.Select(client => client.ClientId).ToArray();
-                foreach (var clientId in targetClientIds)
+                if (sendParams.TargetClientIds == null) sendParams.TargetClientIds = networkManager.ConnectedClientsList.Select(client => client.ClientId).ToArray();
+                foreach (var clientId in sendParams.TargetClientIds)
                 {
                     if (!NetworkedObject.observers.Contains(clientId)) continue;
 
@@ -133,7 +133,7 @@ namespace MLAPI
                     // @mfatihmar (Unity) Begin: Temporary, inbound RPC queue will replace this workaround
                     if (clientId == networkManager.ServerClientId && networkManager.IsHost)
                     {
-                        networkManager.__loopbackRPCs.Enqueue((payload, Time.realtimeSinceStartup));
+                        networkManager.__loopbackRpcQueue.Enqueue((payload, Time.realtimeSinceStartup));
                     }
                     // @mfatihmar (Unity) End: Temporary, inbound RPC queue will replace this workaround
                     else
