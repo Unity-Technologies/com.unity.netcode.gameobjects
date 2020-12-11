@@ -1,0 +1,10 @@
+{
+    "Exceptions":
+    [
+        {
+            "ValidationTest": "Restricted File Type Validation",
+            "ExceptionError": "/Runtime/csc.rsp cannot be included in a package.",
+            "PackageVersion": "0.0.1-preview.1"
+        }
+    ]
+}
