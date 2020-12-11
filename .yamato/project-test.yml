@@ -121,9 +121,10 @@ all_tests_trigger:
 develop_pull_request_trigger:
   name: Develop Branch Triggers
   dependencies:
+    - .yamato/project-test.yml#validate_{{ projects.first.name }}_com.unity.multiplayer.mlapi_{{ test_platforms.first.name }}_{{ test_editors.first }}
 {% for editor in test_editors -%}
 {% for platform in test_platforms -%}
-        - .yamato/project-test.yml#test_{{ projects.first.name }}_com.unity.multiplayer.mlapi_{{ platform.name }}_{{ editor }}
+    - .yamato/project-test.yml#test_{{ projects.first.name }}_com.unity.multiplayer.mlapi_{{ platform.name }}_{{ editor }}
 {% endfor -%}
 {% endfor -%}
   triggers:
