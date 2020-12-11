@@ -237,7 +237,7 @@ namespace MLAPI.Prototyping
             if (i == 5) param5 = p;
         }
 
-        [ServerRPC]
+        [ServerRpc]
         private void SubmitAnimMsg(ulong clientId, Stream stream)
         {
             // usually transitions will be triggered by parameters, if not, play anims directly.
@@ -260,7 +260,7 @@ namespace MLAPI.Prototyping
             }
         }
 
-        [ClientRPC]
+        [ClientRpc]
         private void ApplyAnimMsg(ulong clientId, Stream stream)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
@@ -275,7 +275,7 @@ namespace MLAPI.Prototyping
             }
         }
 
-        [ServerRPC]
+        [ServerRpc]
         private void SubmitAnimParamMsg(ulong clientId, Stream stream)
         {
             if (EnableProximity)
@@ -294,13 +294,13 @@ namespace MLAPI.Prototyping
             }
         }
 
-        [ClientRPC]
+        [ClientRpc]
         private void ApplyAnimParamMsg(ulong clientId, Stream stream)
         {
             ReadParameters(stream, true);
         }
 
-        [ServerRPC]
+        [ServerRpc]
         private void SubmitAnimTriggerMsg(ulong clientId, Stream stream)
         {
             if (EnableProximity)
@@ -319,7 +319,7 @@ namespace MLAPI.Prototyping
             }
         }
 
-        [ClientRPC]
+        [ClientRpc]
         private void ApplyAnimTriggerMsg(ulong clientId, Stream stream)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
