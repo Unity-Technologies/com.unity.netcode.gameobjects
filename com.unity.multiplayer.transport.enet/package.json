@@ -4,7 +4,7 @@
   "version": "0.0.1-preview.1",
   "unity": "2019.4",
   "unityRelease": "8f1",
-  "description": "ENET Transport for MLAPI",
+  "description": "ENET Transport for MLAPI Core Unity Mid-level API that provides core SDK for multiplayer games within unity",
   "keywords": [
     "unity"
   ],
