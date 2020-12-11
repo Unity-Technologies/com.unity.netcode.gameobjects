@@ -18,8 +18,8 @@ namespace MLAPI.Editor.CodeGen
         public const string RuntimeAssemblyName = "Unity.Multiplayer.MLAPI.Runtime";
 
         public static readonly string NetworkBehaviour_FullName = typeof(NetworkedBehaviour).FullName;
-        public static readonly string ServerRPCAttribute_FullName = typeof(ServerRPCAttribute).FullName;
-        public static readonly string ClientRPCAttribute_FullName = typeof(ClientRPCAttribute).FullName;
+        public static readonly string ServerRpcAttribute_FullName = typeof(ServerRpcAttribute).FullName;
+        public static readonly string ClientRpcAttribute_FullName = typeof(ClientRpcAttribute).FullName;
         public static readonly string ServerRpcParams_FullName = typeof(ServerRpcParams).FullName;
         public static readonly string ClientRpcParams_FullName = typeof(ClientRpcParams).FullName;
         public static readonly string INetworkSerializable_FullName = typeof(INetworkSerializable).FullName;

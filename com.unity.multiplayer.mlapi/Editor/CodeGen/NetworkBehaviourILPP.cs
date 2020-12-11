@@ -481,8 +481,8 @@ namespace MLAPI.Editor.CodeGen
             {
                 var customAttributeType_FullName = customAttribute.AttributeType.FullName;
 
-                if (customAttributeType_FullName == CodeGenHelpers.ServerRPCAttribute_FullName ||
-                    customAttributeType_FullName == CodeGenHelpers.ClientRPCAttribute_FullName)
+                if (customAttributeType_FullName == CodeGenHelpers.ServerRpcAttribute_FullName ||
+                    customAttributeType_FullName == CodeGenHelpers.ClientRpcAttribute_FullName)
                 {
                     if (methodDefinition.IsStatic)
                     {
@@ -502,21 +502,21 @@ namespace MLAPI.Editor.CodeGen
                         return null;
                     }
 
-                    if (customAttributeType_FullName == CodeGenHelpers.ServerRPCAttribute_FullName &&
+                    if (customAttributeType_FullName == CodeGenHelpers.ServerRpcAttribute_FullName &&
                         !methodDefinition.Name.EndsWith("ServerRpc", StringComparison.OrdinalIgnoreCase))
                     {
                         _diagnostics.AddError(methodDefinition, "todo: informative error message -> !methodDefinition.Name.EndsWith('ServerRpc')");
                         return null;
                     }
 
-                    if (customAttributeType_FullName == CodeGenHelpers.ClientRPCAttribute_FullName &&
+                    if (customAttributeType_FullName == CodeGenHelpers.ClientRpcAttribute_FullName &&
                         !methodDefinition.Name.EndsWith("ClientRpc", StringComparison.OrdinalIgnoreCase))
                     {
                         _diagnostics.AddError(methodDefinition, "todo: informative error message -> !methodDefinition.Name.EndsWith('ClientRpc')");
                         return null;
                     }
 
-                    isServerRpc = customAttributeType_FullName == CodeGenHelpers.ServerRPCAttribute_FullName;
+                    isServerRpc = customAttributeType_FullName == CodeGenHelpers.ServerRpcAttribute_FullName;
                     rpcAttribute = customAttribute;
                     break;
                 }
@@ -564,13 +564,13 @@ namespace MLAPI.Editor.CodeGen
             var typeSystem = methodDefinition.Module.TypeSystem;
             var instructions = new List<Instruction>();
             var processor = methodDefinition.Body.GetILProcessor();
-            var isServerRpc = rpcAttribute.AttributeType.FullName == CodeGenHelpers.ServerRPCAttribute_FullName;
+            var isServerRpc = rpcAttribute.AttributeType.FullName == CodeGenHelpers.ServerRpcAttribute_FullName;
             var isReliableRpc = true;
             foreach (var attrField in rpcAttribute.Fields)
             {
                 switch (attrField.Name)
                 {
-                    case nameof(RPCAttribute.IsReliable):
+                    case nameof(RpcAttribute.IsReliable):
                         isReliableRpc = attrField.Argument.Type == typeSystem.Boolean &&
                                         (bool)attrField.Argument.Value;
                         break;
@@ -1037,7 +1037,7 @@ namespace MLAPI.Editor.CodeGen
             nhandler.Parameters.Add(new ParameterDefinition("sender", ParameterAttributes.None, typeSystem.UInt64));
 
             var processor = nhandler.Body.GetILProcessor();
-            var isServerRpc = rpcAttribute.AttributeType.FullName == CodeGenHelpers.ServerRPCAttribute_FullName;
+            var isServerRpc = rpcAttribute.AttributeType.FullName == CodeGenHelpers.ServerRpcAttribute_FullName;
 
             nhandler.Body.InitLocals = true;
             // read method parameters from stream

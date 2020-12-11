@@ -205,7 +205,7 @@ namespace MLAPI.Prototyping
                 CheckForMissedSends();
         }
 
-        [ClientRPC]
+        [ClientRpc]
         private void ApplyTransform(ulong clientId, Stream stream)
         {
             if (!enabled)
@@ -243,7 +243,7 @@ namespace MLAPI.Prototyping
             }
         }
 
-        [ServerRPC]
+        [ServerRpc]
         private void SubmitTransform(ulong clientId, Stream stream)
         {
             if (!enabled)

@@ -124,7 +124,7 @@ namespace MLAPI.Prototyping
             }
         }
 
-        [ClientRPC]
+        [ClientRpc]
         private void OnNavMeshStateUpdate(ulong clientId, Stream stream)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
@@ -155,7 +155,7 @@ namespace MLAPI.Prototyping
             }
         }
 
-        [ClientRPC]
+        [ClientRpc]
         private void OnNavMeshCorrectionUpdate(ulong clientId, Stream stream)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
