@@ -525,6 +525,11 @@ namespace MLAPI
             }
         }
 
+        public void SetLoopbackState(bool enabled)
+        {
+            IsLoopbackEnabled = enabled;
+        }
+
 
         /// <summary>
         /// Constructor for RPCQueueManager

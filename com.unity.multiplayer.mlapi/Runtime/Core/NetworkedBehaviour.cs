@@ -32,7 +32,7 @@ namespace MLAPI
     /// </summary>
     public abstract partial class NetworkedBehaviour : MonoBehaviour
     {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR                
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
         static ProfilerMarker s_MLAPIRPCSendQueued = new ProfilerMarker("MLAPIRPCSendQueued");
 #endif
         const String StandardRPC_Channel = "STDRPC";
@@ -61,7 +61,7 @@ namespace MLAPI
                 writer.WriteBit(false); // Encrypted
                 writer.WriteBit(false); // Authenticated
                 writer.WriteBits(MLAPIConstants.MLAPI_STD_SERVER_RPC, 6); // MessageType
-                writer.WriteUInt64Packed(NetworkId); // NetworkObjectId                
+                writer.WriteUInt64Packed(NetworkId); // NetworkObjectId
                 writer.WriteUInt16Packed(GetBehaviourId()); // NetworkBehaviourId
 
                 return writer;

@@ -78,7 +78,6 @@ namespace MLAPI
         {
             UpdateAction = updateAction;
         }
-                
         public void PostUpdate()
         {
 
@@ -157,7 +156,7 @@ namespace MLAPI
                          CurrentNetworkUpdateEngine.PostUpdateRegister(updateAction);
                         break;
                     }
-            }           
+            }
         }
 
         /// <summary>
@@ -176,7 +175,7 @@ namespace MLAPI
 
             Type currentNUEType = CurrentNetworkUpdateEngine.GetType();
 
-            //NetworkUpdateManager Primary PlayerLoop Update Registrations 
+            //NetworkUpdateManager Primary PlayerLoop Update Registrations
             var networkPreUpdateLoop = new PlayerLoopSystem()
             {
                 updateDelegate = CurrentNetworkUpdateEngine.PreUpdate,
@@ -211,10 +210,10 @@ namespace MLAPI
 
             PlayerLoop.SetPlayerLoop(def);
         }
-        
+
         /// <summary>
         /// InsertSystem
-        /// Recursively search for the given system type and insert the new system immediately afterwards        
+        /// Recursively search for the given system type and insert the new system immediately afterwards
         /// </summary>
         /// <param name="system">PlayerLoopSystem to search</param>
         /// <param name="toInsert">PlayerLoopSystem to insert</param>
@@ -270,7 +269,7 @@ namespace MLAPI
 
             system.subSystemList = newSubSystems;
         }
-        
+
         #if UNITY_EDITOR
         /// <summary>
         /// PrintPlayerLoop
@@ -316,6 +315,6 @@ namespace MLAPI
             }
         }
         #endif
-        
+
     }
 }
