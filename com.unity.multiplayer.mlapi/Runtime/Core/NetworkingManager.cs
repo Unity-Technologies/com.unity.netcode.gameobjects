@@ -1255,11 +1255,10 @@ namespace MLAPI
                         break;
                     case MLAPIConstants.MLAPI_STD_SERVER_RPC:
                         {
-                            int value;
                             do
                             {
+                                // read the length of the next RPC
                                 int rpcSize = messageStream.ReadByte();
-
                                 if (IsServer)
                                 {
 
@@ -1279,20 +1278,19 @@ namespace MLAPI
                                     s_MLAPIServerSTDRPCQueued.End();
 #endif
                                 }
+                                // seek over the RPC
+                                // RPCReceiveQueueItem peeks at content, it doesn't advance
                                 messageStream.Seek(rpcSize, SeekOrigin.Current);
-                                value = messageStream.ReadByte();
-                                while (value != 42) { }
                             } while (messageStream.Position < messageStream.Length);
 
                             break;
                         }
                     case MLAPIConstants.MLAPI_STD_CLIENT_RPC:
                         {
-                            int value;
                             do
                             {
+                                // read the length of the next RPC
                                 int rpcSize = messageStream.ReadByte();
-
                                 if (IsClient)
                                 {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -1304,17 +1302,14 @@ namespace MLAPI
                                     copy.SetLength(rpcSize);
                                     copy.Position = 0;
                                     Buffer.BlockCopy(messageStream.GetBuffer(), (int)pos, copy.GetBuffer(), 0, rpcSize);
-
                                     InternalMessageHandler.RPCReceiveQueueItem(clientId, copy, receiveTime, RPCQueueManager.QueueItemType.ClientRPC);
-
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                                     s_MLAPIClientSTDRPCQueued.End();
 #endif
                                 }
-
+                                // seek over the RPC
+                                // RPCReceiveQueueItem peeks at content, it doesn't advance
                                 messageStream.Seek(rpcSize, SeekOrigin.Current);
-                                value = messageStream.ReadByte();
-                                while (value != 42) { }
                             } while (messageStream.Position < messageStream.Length);
 
                             break;

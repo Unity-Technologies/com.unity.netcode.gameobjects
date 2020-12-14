@@ -55,7 +55,6 @@ namespace MLAPI
             if(rpcQueueMananger != null)
             {
                 var writer = rpcQueueMananger.BeginAddQueueItemToOutboundFrame(RPCQueueManager.QueueItemType.ServerRPC, Time.realtimeSinceStartup, StandardRPC_Channel,0, NetworkingManager.Singleton.ServerClientId,null);
-
                 writer.WriteUInt64Packed(NetworkId); // NetworkObjectId
                 writer.WriteUInt16Packed(GetBehaviourId()); // NetworkBehaviourId
 
