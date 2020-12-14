@@ -266,8 +266,7 @@ namespace MLAPI
                     NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(entry.Key, sendBuffer,
                         string.IsNullOrEmpty(entry.Value.Item.Channel) ? "MLAPI_DEFAULT_MESSAGE" : entry.Value.Item.Channel);
 
-                    ProfilerStatManager.bytesSent.Record((int)entry.Value.Item.StreamSize);
-                    ProfilerStatManager.rpcsSent.Record();
+                    ProfilerStatManager.rpcBatchesSent.Record();
 
                     // mark the client for which a batch was sent
                     sent.Add(entry.Key);
@@ -312,11 +311,16 @@ namespace MLAPI
                     }
                 }
 
+                // TODO: write special 255 length for counts above 255 and either add full length as further
+                // data, or force immediate send. Also fix receiving side.
                 SendDict[clientId].Writer.WriteByte((byte)item.MessageData.Count); // write the amounts of bytes that are coming up
 
                 // write the message to send
                 // todo: is there a faster alternative to .ToArray()
                 SendDict[clientId].Writer.WriteBytes(item.MessageData.ToArray(), item.MessageData.Count);
+
+                ProfilerStatManager.bytesSent.Record((int)item.MessageData.Count);
+                ProfilerStatManager.rpcsSent.Record();
             }
         }
 

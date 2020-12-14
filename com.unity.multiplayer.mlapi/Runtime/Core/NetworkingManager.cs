@@ -1282,6 +1282,7 @@ namespace MLAPI
                                 // RPCReceiveQueueItem peeks at content, it doesn't advance
                                 messageStream.Seek(rpcSize, SeekOrigin.Current);
                             } while (messageStream.Position < messageStream.Length);
+                            ProfilerStatManager.rpcBatchesRcvd.Record();
 
                             break;
                         }
@@ -1311,6 +1312,7 @@ namespace MLAPI
                                 // RPCReceiveQueueItem peeks at content, it doesn't advance
                                 messageStream.Seek(rpcSize, SeekOrigin.Current);
                             } while (messageStream.Position < messageStream.Length);
+                            ProfilerStatManager.rpcBatchesRcvd.Record();
 
                             break;
                         }
