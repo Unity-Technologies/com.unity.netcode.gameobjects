@@ -271,7 +271,6 @@ namespace MLAPI
         /// <param name="timeStamp">when it was received</param>
         /// <param name="sourceNetworkId">who sent the rpc</param>
         /// <param name="message">the message being received</param>
-        /// <param name="length">the length to read from the stream (the rest might belong to a different message)</param>///
         public void AddQueueItemToInboundFrame(QueueItemType qItemType, float timeStamp, ulong sourceNetworkId, BitStream message)
         {
 
@@ -292,10 +291,12 @@ namespace MLAPI
             queueHistoryItem.QueueWriter.WriteInt32(0);
 
             //Always make sure we are positioned at the start of the stream
+            long streamSize = message.Length;
 
-            queueHistoryItem.QueueWriter.WriteInt64(message.Length);
+            //Inbound we copy the entire packet and store the position offset
+            queueHistoryItem.QueueWriter.WriteInt64(streamSize);
             queueHistoryItem.QueueWriter.WriteInt64(message.Position);
-            queueHistoryItem.QueueWriter.WriteBytes(message.GetBuffer(), message.Length);
+            queueHistoryItem.QueueWriter.WriteBytes(message.GetBuffer(), streamSize);
 
             //Add the packed size to the offsets for parsing over various entries
             queueHistoryItem.QueueItemOffsets.Add((uint)queueHistoryItem.QueueStream.Position);
