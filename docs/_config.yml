@@ -7,8 +7,8 @@ lang: en-US
 
 baseurl: "" # the subpath of your site, e.g. /blog/
 url: https://mlapi.network # the base hostname & protocol for your site
-git_address: https://github.com/MidLevel/MLAPI
-git_edit_address: https://github.com/MidLevel/MLAPI/blob/master/docs
+git_address: https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi
+git_edit_address: https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/blob/master/docs
 
 # theme options from https://bootswatch.com/
 # comment out this to use default Bootstrap
