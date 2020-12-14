@@ -195,7 +195,10 @@ namespace MLAPI
                                 AdvanceFrameHistory = true;
                                 QueueItem(currentQueueItem);
                                 currentQueueItem = CurrentFrame.GetNextQueueItem();
+
+                                SendItems(1000); // this sends anything already above 1K
                             }
+                            SendItems(0); // this batches everything no matter what
                         }
                     }
                 }
@@ -226,25 +229,66 @@ namespace MLAPI
             return ret;
         }
 
+        private void SendItems(int threshold)
+        {
+            List<ulong> sent = new List<ulong>();
+
+            foreach (KeyValuePair<ulong, SendStream> entry in SendDict)
+            {
+                // read the queued message
+
+                using PooledBitWriter writer = SendDict[entry.Key].writer;
+                int length = (int)writer.GetStream().Length;
+
+                if (length >= threshold)
+                {
+                    byte[] byteBuffer = new byte[2000];
+
+                    Byte[] bytes = ((MLAPI.Serialization.BitStream)writer.GetStream()).GetBuffer();
+                    System.Buffer.BlockCopy(bytes, 0, byteBuffer, 0, length);
+
+                    ArraySegment<byte> sendBuffer = new ArraySegment<byte>(byteBuffer, 0, length);
+
+                    NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(entry.Key, sendBuffer,
+                        string.IsNullOrEmpty(entry.Value.item.Channel) ? "MLAPI_DEFAULT_MESSAGE" : entry.Value.item.Channel);
+
+                    ProfilerStatManager.bytesSent.Record((int)entry.Value.item.StreamSize);
+                    ProfilerStatManager.rpcsSent.Record();
+                    sent.Add(entry.Key);
+                }
+            }
+
+            foreach(ulong clientid in sent)
+            {
+                SendDict.Remove(clientid);
+            }
+        }
+
         private void QueueItem(FrameQueueItem queueItem)
         {
             foreach (ulong clientid in GetTargetList(queueItem))
             {
-                // todo: actually queue and buffer. For now, the dict contains just one entry ...
-                SendDict[clientid] = new SendStream();
-                SendDict[clientid].item = queueItem;
-                SendDict[clientid].writer = new PooledBitWriter(SendDict[clientid].stream);
+                // todo: actually queue and buffer. For now, the dict contains just one entry !!!
 
-                SendDict[clientid].writer.WriteBit(false); // Encrypted
-                SendDict[clientid].writer.WriteBit(false); // Authenticated
-                switch (queueItem.QueueItemType)
+                if (!SendDict.ContainsKey(clientid))
                 {
-                    case RPCQueueManager.QueueItemType.ServerRPC:
-                        SendDict[clientid].writer.WriteBits(MLAPIConstants.MLAPI_STD_SERVER_RPC, 6); // MessageType
-                        break;
-                    case RPCQueueManager.QueueItemType.ClientRPC:
-                        SendDict[clientid].writer.WriteBits(MLAPIConstants.MLAPI_STD_CLIENT_RPC, 6); // MessageType
-                        break;
+                    SendDict[clientid] = new SendStream();
+                    SendDict[clientid].item = queueItem;
+                    SendDict[clientid].writer = new PooledBitWriter(SendDict[clientid].stream);
+
+                    SendDict[clientid].writer.WriteBit(false); // Encrypted
+                    SendDict[clientid].writer.WriteBit(false); // Authenticated
+
+
+                    switch (queueItem.QueueItemType)
+                    {
+                        case RPCQueueManager.QueueItemType.ServerRPC:
+                            SendDict[clientid].writer.WriteBits(MLAPIConstants.MLAPI_STD_SERVER_RPC, 6); // MessageType
+                            break;
+                        case RPCQueueManager.QueueItemType.ClientRPC:
+                            SendDict[clientid].writer.WriteBits(MLAPIConstants.MLAPI_STD_CLIENT_RPC, 6); // MessageType
+                            break;
+                    }
                 }
 
                 SendDict[clientid].writer.WriteByte((byte)queueItem.MessageData.Count); // write the amounts of bytes that are coming up
@@ -254,66 +298,6 @@ namespace MLAPI
                 SendDict[clientid].writer.WriteBytes(queueItem.MessageData.ToArray(), queueItem.MessageData.Count);
 
                 SendDict[clientid].writer.WriteByte(42); // extra for testing
-            }
-
-            foreach (KeyValuePair<ulong, SendStream> entry in SendDict)
-            {
-                // read the queued message
-                byte[] byteBuffer = new byte[1000];
-
-                using PooledBitWriter writer = SendDict[entry.Key].writer;
-                int length = (int)writer.GetStream().Length;
-
-                Byte[] bytes = ((MLAPI.Serialization.BitStream)writer.GetStream()).GetBuffer();
-                System.Buffer.BlockCopy(bytes, 0, byteBuffer, 0, length);
-
-                ArraySegment<byte> sendBuffer = new ArraySegment<byte>(byteBuffer, 0, length);
-
-                // todo: ... that gets sent right away
-                NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(entry.Key, sendBuffer,
-                    string.IsNullOrEmpty(entry.Value.item.Channel) ? "MLAPI_DEFAULT_MESSAGE" : entry.Value.item.Channel);
-
-                ProfilerStatManager.bytesSent.Record((int)entry.Value.item.StreamSize);
-                ProfilerStatManager.rpcsSent.Record();
-            }
-
-            SendDict.Clear();
-        }
-
-            /// <summary>
-        /// SendFrameQueueItem
-        /// Sends the RPC Queue Item to the specified destination
-        /// </summary>
-        /// <param name="queueItem">Information on what to send</param>
-        private void SendFrameQueueItem(FrameQueueItem queueItem)
-        {
-            switch(queueItem.QueueItemType)
-            {
-                case RPCQueueManager.QueueItemType.ServerRPC:
-                    {
-
-                        NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(queueItem.NetworkId, queueItem.MessageData,
-                            string.IsNullOrEmpty(queueItem.Channel) ? "MLAPI_DEFAULT_MESSAGE" : queueItem.Channel);
-
-                        //For each packet sent, we want to record how much data we have sent
-                        ProfilerStatManager.bytesSent.Record((int)queueItem.StreamSize);
-                        ProfilerStatManager.rpcsSent.Record();
-                        break;
-                    }
-                case RPCQueueManager.QueueItemType.ClientRPC:
-                    {
-                        foreach(ulong clientid in queueItem.ClientIds)
-                        {
-                            NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(clientid, queueItem.MessageData, string.IsNullOrEmpty(queueItem.Channel) ? "MLAPI_DEFAULT_MESSAGE" : queueItem.Channel);
-
-                            //For each packet sent, we want to record how much data we have sent
-                            ProfilerStatManager.bytesSent.Record((int)queueItem.StreamSize);
-                        }
-                        //For each client we send to, we want to record how many RPCs we have sent
-                        ProfilerStatManager.rpcsSent.Record(queueItem.ClientIds?.Count ?? NetworkingManager.Singleton.ConnectedClientsList.Count);
-
-                        break;
-                    }
             }
         }
 

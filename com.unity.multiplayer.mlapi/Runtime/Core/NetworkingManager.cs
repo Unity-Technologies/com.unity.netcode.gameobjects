@@ -1187,7 +1187,7 @@ namespace MLAPI
                             s_MLAPIServerRPCQueued.Begin();
                             #endif
 
-                            if (IsServer) InternalMessageHandler.RPCReceiveQueueItem(clientId, messageStream, receiveTime,RPCQueueManager.QueueItemType.ServerRPC, messageStream.Length);
+                            if (IsServer) InternalMessageHandler.RPCReceiveQueueItem(clientId, messageStream, receiveTime,RPCQueueManager.QueueItemType.ServerRPC);
 
                             #if DEVELOPMENT_BUILD || UNITY_EDITOR
                             s_MLAPIServerRPCQueued.End();
@@ -1208,7 +1208,7 @@ namespace MLAPI
                                 s_MLAPIClientRPCQueued.Begin();
                                 #endif
 
-                                InternalMessageHandler.RPCReceiveQueueItem(clientId, messageStream,receiveTime,RPCQueueManager.QueueItemType.ClientRPC, messageStream.Length);
+                                InternalMessageHandler.RPCReceiveQueueItem(clientId, messageStream,receiveTime,RPCQueueManager.QueueItemType.ClientRPC);
 
                                 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                                 s_MLAPIClientRPCQueued.End();
@@ -1255,50 +1255,67 @@ namespace MLAPI
                         break;
                     case MLAPIConstants.MLAPI_STD_SERVER_RPC:
                         {
-                            int rpcSize = messageStream.ReadByte();
-
-                            if (IsServer)
+                            int value;
+                            do
                             {
+                                int rpcSize = messageStream.ReadByte();
 
-                                #if DEVELOPMENT_BUILD || UNITY_EDITOR
-                                s_MLAPIServerSTDRPCQueued.Begin();
-                                #endif
+                                if (IsServer)
+                                {
 
-                                InternalMessageHandler.RPCReceiveQueueItem(clientId, messageStream, receiveTime,RPCQueueManager.QueueItemType.ServerRPC, rpcSize);
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+                                    s_MLAPIServerSTDRPCQueued.Begin();
+#endif
+                                    // copy what comes after current stream position
+                                    long pos = messageStream.Position;
+                                    BitStream copy = new BitStream();
+                                    copy.SetLength(rpcSize);
+                                    copy.Position = 0;
+                                    Buffer.BlockCopy(messageStream.GetBuffer(), (int)pos, copy.GetBuffer(), 0, rpcSize);
 
-                                #if DEVELOPMENT_BUILD || UNITY_EDITOR
-                                s_MLAPIServerSTDRPCQueued.End();
-                                #endif
-                            }
+                                    InternalMessageHandler.RPCReceiveQueueItem(clientId, copy, receiveTime, RPCQueueManager.QueueItemType.ServerRPC);
 
-                            messageStream.Seek(rpcSize, SeekOrigin.Current);
-                            int value = messageStream.ReadByte();
-
-                            while (value != 42) { }
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+                                    s_MLAPIServerSTDRPCQueued.End();
+#endif
+                                }
+                                messageStream.Seek(rpcSize, SeekOrigin.Current);
+                                value = messageStream.ReadByte();
+                                while (value != 42) { }
+                            } while (messageStream.Position < messageStream.Length);
 
                             break;
                         }
                     case MLAPIConstants.MLAPI_STD_CLIENT_RPC:
                         {
-                            int rpcSize = messageStream.ReadByte();
-
-                            if (IsClient)
+                            int value;
+                            do
                             {
-                                #if DEVELOPMENT_BUILD || UNITY_EDITOR
-                                s_MLAPIClientSTDRPCQueued.Begin();
-                                #endif
+                                int rpcSize = messageStream.ReadByte();
 
-                                InternalMessageHandler.RPCReceiveQueueItem(clientId, messageStream,receiveTime,RPCQueueManager.QueueItemType.ClientRPC, rpcSize);
+                                if (IsClient)
+                                {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+                                    s_MLAPIClientSTDRPCQueued.Begin();
+#endif
+                                    // copy what comes after current stream position
+                                    long pos = messageStream.Position;
+                                    BitStream copy = new BitStream();
+                                    copy.SetLength(rpcSize);
+                                    copy.Position = 0;
+                                    Buffer.BlockCopy(messageStream.GetBuffer(), (int)pos, copy.GetBuffer(), 0, rpcSize);
 
-                                #if DEVELOPMENT_BUILD || UNITY_EDITOR
-                                s_MLAPIClientSTDRPCQueued.End();
-                                #endif
-                            }
+                                    InternalMessageHandler.RPCReceiveQueueItem(clientId, copy, receiveTime, RPCQueueManager.QueueItemType.ClientRPC);
 
-                            messageStream.Seek(rpcSize, SeekOrigin.Current);
-                            int value = messageStream.ReadByte();
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+                                    s_MLAPIClientSTDRPCQueued.End();
+#endif
+                                }
 
-                            while (value != 42) { }
+                                messageStream.Seek(rpcSize, SeekOrigin.Current);
+                                value = messageStream.ReadByte();
+                                while (value != 42) { }
+                            } while (messageStream.Position < messageStream.Length);
 
                             break;
                         }
