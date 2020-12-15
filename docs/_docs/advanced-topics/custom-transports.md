@@ -8,7 +8,7 @@ The MLAPI supports custom transports. It uses UNET by default. You can also writ
 Usually, transports doesn't support all channel types and event types. Sometimes they have more, in that case you manually have to do translation between them. See the ENET transport for examples.
 
 ### Official Transports
-The MLAPI has some official transport implementations you can use. They can be found [here](https://github.com/midlevel/MLAPI.Transports). All you have to do is download the ZIP file you want from the CI server and export it into your assets folder and it will show up in the NetworkingManager automatically.
+The MLAPI has some official transport implementations you can use. They can be found [here](https://github.com/Unity-Technologies/MLAPI.Transports). All you have to do is download the ZIP file you want from the CI server and export it into your assets folder and it will show up in the NetworkingManager automatically.
 
 You can also install transports from the MLAPI Installer. Just click the "Transports" tab at the top.
 

@@ -4,7 +4,7 @@ permalink: /wiki/installation/
 ---
 
 ### Installer
-To get started with the MLAPI. You need to install the library. The easiest way is to use the Editor installer. Simply download the MLAPI_Installer Unity package from [here](https://github.com/MidLevel/MLAPI/releases), double click it to import it into Unity, and once that's done select Window > MLAPI from Unity's top menu bar. Once in the MLAPI window, select the version you wish to use and press install.
+To get started with the MLAPI. You need to install the library. The easiest way is to use the Editor installer. Simply download the MLAPI_Installer Unity package from [here](https://github.com/Unity-Technologies/com.unity.multiplayer.mlapi/releases), double click it to import it into Unity, and once that's done select Window > MLAPI from Unity's top menu bar. Once in the MLAPI window, select the version you wish to use and press install.
 
 
 ![Video showing the install process](https://i.imgur.com/zN63DlJ.gif)
