@@ -1112,43 +1112,47 @@ namespace MLAPI
                     case MLAPIConstants.MLAPI_STD_SERVER_RPC:
                         if (IsServer)
                         {
-                            using var reader = PooledBitReader.Get(messageStream);
-                            var networkObjectId = reader.ReadUInt64Packed();
-                            var networkBehaviourId = reader.ReadUInt16Packed();
-                            var networkMethodId = reader.ReadUInt32Packed();
-
-                            if (__ntable.ContainsKey(networkMethodId))
+                            using (var reader = PooledBitReader.Get(messageStream))
                             {
-                                if (!SpawnManager.SpawnedObjects.ContainsKey(networkObjectId)) return;
-                                var networkObject = SpawnManager.SpawnedObjects[networkObjectId];
+                                var networkObjectId = reader.ReadUInt64Packed();
+                                var networkBehaviourId = reader.ReadUInt16Packed();
+                                var networkMethodId = reader.ReadUInt32Packed();
 
-                                // only the OwnerClient can execute ServerRPC from client to server
-                                if (networkObject.OwnerClientId != clientId) return;
+                                if (__ntable.ContainsKey(networkMethodId))
+                                {
+                                    if (!SpawnManager.SpawnedObjects.ContainsKey(networkObjectId)) return;
+                                    var networkObject = SpawnManager.SpawnedObjects[networkObjectId];
 
-                                var networkBehaviour = networkObject.GetBehaviourAtOrderIndex(networkBehaviourId);
-                                if (ReferenceEquals(networkBehaviour, null)) return;
+                                    // only the OwnerClient can execute ServerRPC from client to server
+                                    if (networkObject.OwnerClientId != clientId) return;
 
-                                __ntable[networkMethodId](networkBehaviour, reader, clientId);
+                                    var networkBehaviour = networkObject.GetBehaviourAtOrderIndex(networkBehaviourId);
+                                    if (ReferenceEquals(networkBehaviour, null)) return;
+
+                                    __ntable[networkMethodId](networkBehaviour, reader, clientId);
+                                }
                             }
                         }
                         break;
                     case MLAPIConstants.MLAPI_STD_CLIENT_RPC:
                         if (IsClient)
                         {
-                            using var reader = PooledBitReader.Get(messageStream);
-                            var networkObjectId = reader.ReadUInt64Packed();
-                            var networkBehaviourId = reader.ReadUInt16Packed();
-                            var networkMethodId = reader.ReadUInt32Packed();
-
-                            if (__ntable.ContainsKey(networkMethodId))
+                            using (var reader = PooledBitReader.Get(messageStream))
                             {
-                                if (!SpawnManager.SpawnedObjects.ContainsKey(networkObjectId)) return;
-                                var networkObject = SpawnManager.SpawnedObjects[networkObjectId];
+                                var networkObjectId = reader.ReadUInt64Packed();
+                                var networkBehaviourId = reader.ReadUInt16Packed();
+                                var networkMethodId = reader.ReadUInt32Packed();
 
-                                var networkBehaviour = networkObject.GetBehaviourAtOrderIndex(networkBehaviourId);
-                                if (ReferenceEquals(networkBehaviour, null)) return;
+                                if (__ntable.ContainsKey(networkMethodId))
+                                {
+                                    if (!SpawnManager.SpawnedObjects.ContainsKey(networkObjectId)) return;
+                                    var networkObject = SpawnManager.SpawnedObjects[networkObjectId];
 
-                                __ntable[networkMethodId](networkBehaviour, reader, clientId);
+                                    var networkBehaviour = networkObject.GetBehaviourAtOrderIndex(networkBehaviourId);
+                                    if (ReferenceEquals(networkBehaviour, null)) return;
+
+                                    __ntable[networkMethodId](networkBehaviour, reader, clientId);
+                                }
                             }
                         }
                         break;
