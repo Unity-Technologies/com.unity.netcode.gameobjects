@@ -10,13 +10,6 @@ using MLAPI.Serialization.Pooled;
 
 namespace MLAPI
 {
-    internal class SendStream
-    {
-        public FrameQueueItem Item;
-        public PooledBitWriter Writer;
-        public PooledBitStream Stream = new PooledBitStream();
-    }
-
     /// <summary>
     /// RPCQueueProcessing
     /// Handles processing of RPCQueues
@@ -37,8 +30,7 @@ namespace MLAPI
 
         RPCQueueManager rpcQueueManager;
 
-        // Stores the stream of batched RPC to send to each client, by ClientId
-        private Dictionary<ulong, SendStream> SendDict = new Dictionary<ulong, SendStream>();
+        // Batcher object used to manage the RPC batching on the send side
         private BatchUtil batcher = new BatchUtil();
 
         private int BatchThreshold = 1000;
@@ -199,9 +191,9 @@ namespace MLAPI
                                 batcher.QueueItem(currentQueueItem);
                                 currentQueueItem = CurrentFrame.GetNextQueueItem();
 
-                                batcher.SendItems(BatchThreshold); // send anything already above the batching threshold
+                                batcher.SendItems(BatchThreshold, SendCallback); // send anything already above the batching threshold
                             }
-                            batcher.SendItems(0); // send the remaining  batches
+                            batcher.SendItems(0, SendCallback); // send the remaining  batches
                         }
                     }
                 }
@@ -215,6 +207,11 @@ namespace MLAPI
                     rpcQueueManager.AdvanceFrameHistory(QueueHistoryFrame.QueueFrameType.Outbound);
                 }
             }
+        }
+
+        private static int SendCallback(int x)
+        {
+            return 0;
         }
 
         public RPCQueueProcessing(RPCQueueManager rpcqueuemanager)

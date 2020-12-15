@@ -5,11 +5,20 @@ using MLAPI.Profiling;
 using System.Collections.Generic;
 using System.Linq;
 using System;
+using System.Reflection;
 
 namespace MLAPI
 {
     class BatchUtil
     {
+        private class SendStream
+        {
+            public FrameQueueItem Item;
+            public PooledBitWriter Writer;
+            public PooledBitStream Stream = new PooledBitStream();
+        }
+
+        // Stores the stream of batched RPC to send to each client, by ClientId
         private Dictionary<ulong, SendStream> SendDict = new Dictionary<ulong, SendStream>();
 
         public void PushLength(int length, ref PooledBitWriter writer)
@@ -111,8 +120,10 @@ namespace MLAPI
         /// Send any batch of RPC that are of length above threshold
         /// </summary>
         /// <param name="threshold">the threshold in bytes</param>
-        public void SendItems(int threshold)
+        public void SendItems(int threshold, Func<int, int> SendCallback)
         {
+            //todo: move back the send code in the RPCQueueProcessing, for "separation of concern"/"Single-responsibility principle"
+            SendCallback(0);
             List<ulong> sent = new List<ulong>();
 
             foreach (KeyValuePair<ulong, SendStream> entry in SendDict)
