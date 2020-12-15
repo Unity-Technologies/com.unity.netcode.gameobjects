@@ -9,6 +9,7 @@ using Mono.Cecil;
 using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
 using Unity.CompilationPipeline.Common.Diagnostics;
+using Unity.CompilationPipeline.Common.ILPostProcessing;
 using UnityEngine;
 
 namespace MLAPI.Editor.CodeGen
@@ -18,14 +19,13 @@ namespace MLAPI.Editor.CodeGen
         public const string RuntimeAssemblyName = "Unity.Multiplayer.MLAPI.Runtime";
 
         public static readonly string NetworkBehaviour_FullName = typeof(NetworkedBehaviour).FullName;
-        public static readonly string ServerRPCAttribute_FullName = typeof(ServerRPCAttribute).FullName;
-        public static readonly string ClientRPCAttribute_FullName = typeof(ClientRPCAttribute).FullName;
-        public static readonly string ServerRPCOptions_FullName = typeof(ServerRPCOptions).FullName;
-        public static readonly string ClientRPCOptions_FullName = typeof(ClientRPCOptions).FullName;
+        public static readonly string ServerRpcAttribute_FullName = typeof(ServerRpcAttribute).FullName;
+        public static readonly string ClientRpcAttribute_FullName = typeof(ClientRpcAttribute).FullName;
+        public static readonly string ServerRpcParams_FullName = typeof(ServerRpcParams).FullName;
+        public static readonly string ClientRpcParams_FullName = typeof(ClientRpcParams).FullName;
         public static readonly string INetworkSerializable_FullName = typeof(INetworkSerializable).FullName;
         public static readonly string INetworkSerializable_NetworkRead_Name = nameof(INetworkSerializable.NetworkRead);
         public static readonly string INetworkSerializable_NetworkWrite_Name = nameof(INetworkSerializable.NetworkWrite);
-        public static readonly string IEnumerable_FullName = typeof(IEnumerable<>).FullName;
         public static readonly string UnityColor_FullName = typeof(Color).FullName;
         public static readonly string UnityVector2_FullName = typeof(Vector2).FullName;
         public static readonly string UnityVector3_FullName = typeof(Vector3).FullName;
@@ -36,7 +36,7 @@ namespace MLAPI.Editor.CodeGen
 
         public static uint Hash(this MethodDefinition methodDefinition)
         {
-            var sigArr = Encoding.UTF8.GetBytes($"{methodDefinition.Module.Name} => {methodDefinition.FullName}");
+            var sigArr = Encoding.UTF8.GetBytes($"{methodDefinition.Module.Name} / {methodDefinition.FullName}");
             var sigLen = sigArr.Length;
             unsafe
             {
@@ -87,21 +87,6 @@ namespace MLAPI.Editor.CodeGen
             return false;
         }
 
-        public static bool HasGenericInterface(this TypeReference typeReference, string GenericInterfaceTypeFullName)
-        {
-            try
-            {
-                var typeDef = typeReference.Resolve();
-                var typeFaces = typeDef.Interfaces;
-                return typeFaces.Any(iface => iface.InterfaceType.FullName.StartsWith(GenericInterfaceTypeFullName));
-            }
-            catch
-            {
-            }
-
-            return false;
-        }
-
         public static bool IsSupportedType(this TypeReference typeReference)
         {
             var typeSystem = typeReference.Module.TypeSystem;
@@ -136,6 +121,13 @@ namespace MLAPI.Editor.CodeGen
             // Enum
             if (typeReference.GetEnumAsInt() != null) return true;
 
+            // todo: [RFC] Serializable Types
+            // StaticArray[]
+            // IEnumerable<T>
+            // IEnumerable<KeyValuePair<K, V>>
+            // IEnumerable<Tuple<T1, T2, T3...T7>>
+            // IEnumerable<Tuple<T1, T2...TRest>>
+
             return false;
         }
 
@@ -163,7 +155,7 @@ namespace MLAPI.Editor.CodeGen
 
         public static void AddError(this List<DiagnosticMessage> diagnostics, MethodDefinition methodDefinition, string message)
         {
-            diagnostics.AddError(methodDefinition.DebugInformation.SequencePoints[0], message);
+            diagnostics.AddError(methodDefinition.DebugInformation.SequencePoints.FirstOrDefault(), message);
         }
 
         public static void AddError(this List<DiagnosticMessage> diagnostics, SequencePoint sequencePoint, string message)
@@ -174,8 +166,32 @@ namespace MLAPI.Editor.CodeGen
                 File = sequencePoint?.Document.Url.Replace($"{Environment.CurrentDirectory}{Path.DirectorySeparatorChar}", ""),
                 Line = sequencePoint?.StartLine ?? 0,
                 Column = sequencePoint?.StartColumn ?? 0,
-                MessageData = message
+                MessageData = $" - {message}"
             });
+        }
+
+        internal static AssemblyDefinition AssemblyDefinitionFor(ICompiledAssembly compiledAssembly)
+        {
+            var resolver = new PostProcessorAssemblyResolver(compiledAssembly);
+            var readerParameters = new ReaderParameters
+            {
+                SymbolStream = new MemoryStream(compiledAssembly.InMemoryAssembly.PdbData.ToArray()),
+                SymbolReaderProvider = new PortablePdbReaderProvider(),
+                AssemblyResolver = resolver,
+                ReflectionImporterProvider = new PostProcessorReflectionImporterProvider(),
+                ReadingMode = ReadingMode.Immediate
+            };
+
+            var peStream = new MemoryStream(compiledAssembly.InMemoryAssembly.PeData.ToArray());
+            var assemblyDefinition = AssemblyDefinition.ReadAssembly(peStream, readerParameters);
+
+            //apparently, it will happen that when we ask to resolve a type that lives inside Unity.Entities, and we
+            //are also postprocessing Unity.Entities, type resolving will fail, because we do not actually try to resolve
+            //inside the assembly we are processing. Let's make sure we do that, so that we can use postprocessor features inside
+            //unity.entities itself as well.
+            resolver.AddAssemblyDefinitionBeingOperatedOn(assemblyDefinition);
+
+            return assemblyDefinition;
         }
     }
 }

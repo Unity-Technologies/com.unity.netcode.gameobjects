@@ -20,22 +20,12 @@ namespace MLAPI.Editor.CodeGen
             if (!WillProcess(compiledAssembly)) return null;
             _diagnostics.Clear();
 
-
-            // read
-            var readerParameters = new ReaderParameters
-            {
-                SymbolStream = new MemoryStream(compiledAssembly.InMemoryAssembly.PdbData),
-                SymbolReaderProvider = new PortablePdbReaderProvider(),
-                ReadingMode = ReadingMode.Immediate
-            };
-
-            var assemblyDefinition = AssemblyDefinition.ReadAssembly(new MemoryStream(compiledAssembly.InMemoryAssembly.PeData), readerParameters);
+            var assemblyDefinition = CodeGenHelpers.AssemblyDefinitionFor(compiledAssembly);
             if (assemblyDefinition == null)
             {
-                _diagnostics.AddError("todo: informative error message -> assemblyDefinition == null");
+                _diagnostics.AddError($"Cannot read MLAPI Runtime assembly definition: {compiledAssembly.Name}");
                 return null;
             }
-
 
             // process
             var mainModule = assemblyDefinition.MainModule;
@@ -56,7 +46,7 @@ namespace MLAPI.Editor.CodeGen
                     }
                 }
             }
-            else _diagnostics.AddError("todo: informative error message -> mainModule != null");
+            else _diagnostics.AddError($"Cannot get main module from MLAPI Runtime assembly definition: {compiledAssembly.Name}");
 
 
             // write
@@ -79,7 +69,7 @@ namespace MLAPI.Editor.CodeGen
         {
             foreach (var fieldDefinition in typeDefinition.Fields)
             {
-                if (fieldDefinition.Name == "__ntable")
+                if (fieldDefinition.Name == nameof(NetworkingManager.__ntable))
                 {
                     fieldDefinition.IsPublic = true;
                 }
@@ -90,7 +80,7 @@ namespace MLAPI.Editor.CodeGen
         {
             foreach (var nestedType in typeDefinition.NestedTypes)
             {
-                if (nestedType.Name == "NExec")
+                if (nestedType.Name == nameof(NetworkedBehaviour.NExec))
                 {
                     nestedType.IsNestedFamily = true;
                 }
@@ -98,7 +88,7 @@ namespace MLAPI.Editor.CodeGen
 
             foreach (var fieldDefinition in typeDefinition.Fields)
             {
-                if (fieldDefinition.Name == "__nexec")
+                if (fieldDefinition.Name == nameof(NetworkedBehaviour.__nexec))
                 {
                     fieldDefinition.IsFamily = true;
                 }
@@ -108,10 +98,10 @@ namespace MLAPI.Editor.CodeGen
             {
                 switch (methodDefinition.Name)
                 {
-                    case "BeginServerRPC":
-                    case "BeginClientRPC":
-                    case "EndServerRPC":
-                    case "EndClientRPC":
+                    case nameof(NetworkedBehaviour.BeginSendServerRpc):
+                    case nameof(NetworkedBehaviour.EndSendServerRpc):
+                    case nameof(NetworkedBehaviour.BeginSendClientRpc):
+                    case nameof(NetworkedBehaviour.EndSendClientRpc):
                         methodDefinition.IsFamily = true;
                         break;
                 }

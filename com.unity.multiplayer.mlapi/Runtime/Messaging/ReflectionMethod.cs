@@ -19,7 +19,7 @@ namespace MLAPI.Messaging
 
         internal static ReflectionMethod Create(MethodInfo method, ParameterInfo[] parameters, int index)
         {
-            RPCAttribute[] attributes = (RPCAttribute[])method.GetCustomAttributes(typeof(RPCAttribute), true);
+            RpcAttribute[] attributes = (RpcAttribute[])method.GetCustomAttributes(typeof(RpcAttribute), true);
 
             if (attributes.Length == 0)
                 return null;
@@ -37,12 +37,12 @@ namespace MLAPI.Messaging
             return new ReflectionMethod(method, parameters, attributes[0], index);
         }
 
-        internal ReflectionMethod(MethodInfo method, ParameterInfo[] parameters, RPCAttribute attribute, int index)
+        internal ReflectionMethod(MethodInfo method, ParameterInfo[] parameters, RpcAttribute attribute, int index)
         {
             this.method = method;
             this.index = index;
 
-            if (attribute is ServerRPCAttribute serverRpcAttribute)
+            if (attribute is ServerRpcAttribute serverRpcAttribute)
             {
                 requireOwnership = serverRpcAttribute.RequireOwnership;
                 serverTarget = true;

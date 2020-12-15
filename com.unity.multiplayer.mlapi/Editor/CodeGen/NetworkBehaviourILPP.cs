@@ -31,23 +31,15 @@ namespace MLAPI.Editor.CodeGen
 
 
             // read
-            var readerParameters = new ReaderParameters
-            {
-                SymbolStream = new MemoryStream(compiledAssembly.InMemoryAssembly.PdbData),
-                SymbolReaderProvider = new PortablePdbReaderProvider(),
-                ReadingMode = ReadingMode.Immediate
-            };
-
-            var assemblyDefinition = AssemblyDefinition.ReadAssembly(new MemoryStream(compiledAssembly.InMemoryAssembly.PeData), readerParameters);
+            var assemblyDefinition = CodeGenHelpers.AssemblyDefinitionFor(compiledAssembly);
             if (assemblyDefinition == null)
             {
-                _diagnostics.AddError("todo: informative error message -> assemblyDefinition == null");
+                _diagnostics.AddError($"Cannot read assembly definition: {compiledAssembly.Name}");
                 return null;
             }
 
 
             // process
-
             var mainModule = assemblyDefinition.MainModule;
             if (mainModule != null)
             {
@@ -59,9 +51,9 @@ namespace MLAPI.Editor.CodeGen
                         .ToList()
                         .ForEach(ProcessNetworkBehaviour);
                 }
-                else _diagnostics.AddError("todo: informative error message -> ImportReferences(mainModule)");
+                else _diagnostics.AddError($"Cannot import references into main module: {mainModule.Name}");
             }
-            else _diagnostics.AddError("todo: informative error message -> mainModule != null");
+            else _diagnostics.AddError($"Cannot get main module from assembly definition: {compiledAssembly.Name}");
 
 
             // write
@@ -89,13 +81,23 @@ namespace MLAPI.Editor.CodeGen
         private MethodReference NetworkManager_getIsServer_MethodRef;
         private MethodReference NetworkManager_getIsClient_MethodRef;
         private TypeReference NetworkBehaviour_TypeRef;
-        private MethodReference NetworkBehaviour_BeginServerRPC_MethodRef;
-        private MethodReference NetworkBehaviour_EndServerRPC_MethodRef;
-        private MethodReference NetworkBehaviour_BeginClientRPC_MethodRef;
-        private MethodReference NetworkBehaviour_EndClientRPC_MethodRef;
+        private MethodReference NetworkBehaviour_BeginSendServerRpc_MethodRef;
+        private MethodReference NetworkBehaviour_EndSendServerRpc_MethodRef;
+        private MethodReference NetworkBehaviour_BeginSendClientRpc_MethodRef;
+        private MethodReference NetworkBehaviour_EndSendClientRpc_MethodRef;
         private FieldReference NetworkBehaviour_nexec_FieldRef;
         private MethodReference NetworkHandlerDelegateCtor_MethodRef;
-        private FieldReference ClientRPCOptions_TargetClientIds_FieldRef;
+        private TypeReference ServerRpcParams_TypeRef;
+        private FieldReference ServerRpcParams_Send_FieldRef;
+        private FieldReference ServerRpcParams_Receive_FieldRef;
+        private TypeReference ServerRpcSendParams_TypeRef;
+        private TypeReference ServerRpcReceiveParams_TypeRef;
+        private FieldReference ServerRpcReceiveParams_SenderClientId_FieldRef;
+        private TypeReference ClientRpcParams_TypeRef;
+        private FieldReference ClientRpcParams_Send_FieldRef;
+        private FieldReference ClientRpcParams_Receive_FieldRef;
+        private TypeReference ClientRpcSendParams_TypeRef;
+        private TypeReference ClientRpcReceiveParams_TypeRef;
         private TypeReference BitWriter_TypeRef;
         private MethodReference BitWriter_WriteBool_MethodRef;
         private MethodReference BitWriter_WriteChar_MethodRef;
@@ -143,24 +145,24 @@ namespace MLAPI.Editor.CodeGen
         {
             var networkManagerType = typeof(NetworkingManager);
             NetworkManager_TypeRef = moduleDefinition.ImportReference(networkManagerType);
-            foreach (var methodInfo in networkManagerType.GetMethods())
+            foreach (var propertyInfo in networkManagerType.GetProperties())
             {
-                switch (methodInfo.Name)
+                switch (propertyInfo.Name)
                 {
-                    case "get_Singleton":
-                        NetworkManager_getSingleton_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                    case nameof(NetworkingManager.Singleton):
+                        NetworkManager_getSingleton_MethodRef = moduleDefinition.ImportReference(propertyInfo.GetMethod);
                         break;
-                    case "get_IsListening":
-                        NetworkManager_getIsListening_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                    case nameof(NetworkingManager.IsListening):
+                        NetworkManager_getIsListening_MethodRef = moduleDefinition.ImportReference(propertyInfo.GetMethod);
                         break;
-                    case "get_IsHost":
-                        NetworkManager_getIsHost_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                    case nameof(NetworkingManager.IsHost):
+                        NetworkManager_getIsHost_MethodRef = moduleDefinition.ImportReference(propertyInfo.GetMethod);
                         break;
-                    case "get_IsServer":
-                        NetworkManager_getIsServer_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                    case nameof(NetworkingManager.IsServer):
+                        NetworkManager_getIsServer_MethodRef = moduleDefinition.ImportReference(propertyInfo.GetMethod);
                         break;
-                    case "get_IsClient":
-                        NetworkManager_getIsClient_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                    case nameof(NetworkingManager.IsClient):
+                        NetworkManager_getIsClient_MethodRef = moduleDefinition.ImportReference(propertyInfo.GetMethod);
                         break;
                 }
             }
@@ -169,7 +171,7 @@ namespace MLAPI.Editor.CodeGen
             {
                 switch (fieldInfo.Name)
                 {
-                    case "__ntable":
+                    case nameof(NetworkingManager.__ntable):
                         NetworkManager_ntable_FieldRef = moduleDefinition.ImportReference(fieldInfo);
                         NetworkManager_ntable_Add_MethodRef = moduleDefinition.ImportReference(fieldInfo.FieldType.GetMethod("Add"));
                         break;
@@ -182,17 +184,17 @@ namespace MLAPI.Editor.CodeGen
             {
                 switch (methodInfo.Name)
                 {
-                    case "BeginServerRPC":
-                        NetworkBehaviour_BeginServerRPC_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                    case nameof(NetworkedBehaviour.BeginSendServerRpc):
+                        NetworkBehaviour_BeginSendServerRpc_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
-                    case "EndServerRPC":
-                        NetworkBehaviour_EndServerRPC_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                    case nameof(NetworkedBehaviour.EndSendServerRpc):
+                        NetworkBehaviour_EndSendServerRpc_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
-                    case "BeginClientRPC":
-                        NetworkBehaviour_BeginClientRPC_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                    case nameof(NetworkedBehaviour.BeginSendClientRpc):
+                        NetworkBehaviour_BeginSendClientRpc_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
-                    case "EndClientRPC":
-                        NetworkBehaviour_EndClientRPC_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                    case nameof(NetworkedBehaviour.EndSendClientRpc):
+                        NetworkBehaviour_EndSendClientRpc_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
                 }
             }
@@ -201,27 +203,67 @@ namespace MLAPI.Editor.CodeGen
             {
                 switch (fieldInfo.Name)
                 {
-                    case "__nexec":
+                    case nameof(NetworkedBehaviour.__nexec):
                         NetworkBehaviour_nexec_FieldRef = moduleDefinition.ImportReference(fieldInfo);
                         break;
                 }
             }
 
-            var networkHandlerDelegateType = typeof(Action<NetworkedBehaviour, BitReader>);
+            var networkHandlerDelegateType = typeof(Action<NetworkedBehaviour, BitReader, ulong>);
             NetworkHandlerDelegateCtor_MethodRef = moduleDefinition.ImportReference(
                 networkHandlerDelegateType
                     .GetConstructor(new[] {typeof(object), typeof(IntPtr)}));
 
-            var clientRPCOptionsType = typeof(ClientRPCOptions);
-            foreach (var fieldInfo in clientRPCOptionsType.GetFields())
+            var serverRpcParamsType = typeof(ServerRpcParams);
+            ServerRpcParams_TypeRef = moduleDefinition.ImportReference(serverRpcParamsType);
+            foreach (var fieldInfo in serverRpcParamsType.GetFields())
             {
                 switch (fieldInfo.Name)
                 {
-                    case "TargetClientIds":
-                        ClientRPCOptions_TargetClientIds_FieldRef = moduleDefinition.ImportReference(fieldInfo);
+                    case nameof(ServerRpcParams.Send):
+                        ServerRpcParams_Send_FieldRef = moduleDefinition.ImportReference(fieldInfo);
+                        break;
+                    case nameof(ServerRpcParams.Receive):
+                        ServerRpcParams_Receive_FieldRef = moduleDefinition.ImportReference(fieldInfo);
                         break;
                 }
             }
+
+            var serverRpcSendParamsType = typeof(ServerRpcSendParams);
+            ServerRpcSendParams_TypeRef = moduleDefinition.ImportReference(serverRpcSendParamsType);
+
+            var serverRpcReceiveParamsType = typeof(ServerRpcReceiveParams);
+            ServerRpcReceiveParams_TypeRef = moduleDefinition.ImportReference(serverRpcReceiveParamsType);
+            foreach (var fieldInfo in serverRpcReceiveParamsType.GetFields())
+            {
+                switch (fieldInfo.Name)
+                {
+                    case nameof(ServerRpcReceiveParams.SenderClientId):
+                        ServerRpcReceiveParams_SenderClientId_FieldRef = moduleDefinition.ImportReference(fieldInfo);
+                        break;
+                }
+            }
+
+            var clientRpcParamsType = typeof(ClientRpcParams);
+            ClientRpcParams_TypeRef = moduleDefinition.ImportReference(clientRpcParamsType);
+            foreach (var fieldInfo in clientRpcParamsType.GetFields())
+            {
+                switch (fieldInfo.Name)
+                {
+                    case nameof(ClientRpcParams.Send):
+                        ClientRpcParams_Send_FieldRef = moduleDefinition.ImportReference(fieldInfo);
+                        break;
+                    case nameof(ClientRpcParams.Receive):
+                        ClientRpcParams_Receive_FieldRef = moduleDefinition.ImportReference(fieldInfo);
+                        break;
+                }
+            }
+
+            var clientRpcSendParamsType = typeof(ClientRpcSendParams);
+            ClientRpcSendParams_TypeRef = moduleDefinition.ImportReference(clientRpcSendParamsType);
+
+            var clientRpcReceiveParamsType = typeof(ClientRpcReceiveParams);
+            ClientRpcReceiveParams_TypeRef = moduleDefinition.ImportReference(clientRpcReceiveParamsType);
 
             var bitWriterType = typeof(BitWriter);
             BitWriter_TypeRef = moduleDefinition.ImportReference(bitWriterType);
@@ -229,64 +271,64 @@ namespace MLAPI.Editor.CodeGen
             {
                 switch (methodInfo.Name)
                 {
-                    case "WriteBool":
+                    case nameof(BitWriter.WriteBool):
                         BitWriter_WriteBool_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
-                    case "WriteChar":
+                    case nameof(BitWriter.WriteChar):
                         BitWriter_WriteChar_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
-                    case "WriteSByte":
+                    case nameof(BitWriter.WriteSByte):
                         BitWriter_WriteSByte_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
-                    case "WriteByte":
+                    case nameof(BitWriter.WriteByte):
                         BitWriter_WriteByte_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
-                    case "WriteInt16Packed":
+                    case nameof(BitWriter.WriteInt16Packed):
                         BitWriter_WriteInt16Packed_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
-                    case "WriteUInt16Packed":
+                    case nameof(BitWriter.WriteUInt16Packed):
                         BitWriter_WriteUInt16Packed_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
-                    case "WriteInt32Packed":
+                    case nameof(BitWriter.WriteInt32Packed):
                         BitWriter_WriteInt32Packed_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
-                    case "WriteUInt32Packed":
+                    case nameof(BitWriter.WriteUInt32Packed):
                         BitWriter_WriteUInt32Packed_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
-                    case "WriteInt64Packed":
+                    case nameof(BitWriter.WriteInt64Packed):
                         BitWriter_WriteInt64Packed_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
-                    case "WriteUInt64Packed":
+                    case nameof(BitWriter.WriteUInt64Packed):
                         BitWriter_WriteUInt64Packed_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
-                    case "WriteSinglePacked":
+                    case nameof(BitWriter.WriteSinglePacked):
                         BitWriter_WriteSinglePacked_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
-                    case "WriteDoublePacked":
+                    case nameof(BitWriter.WriteDoublePacked):
                         BitWriter_WriteDoublePacked_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
-                    case "WriteStringPacked":
+                    case nameof(BitWriter.WriteStringPacked):
                         BitWriter_WriteStringPacked_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
-                    case "WriteColorPacked":
+                    case nameof(BitWriter.WriteColorPacked):
                         BitWriter_WriteColorPacked_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
-                    case "WriteVector2Packed":
+                    case nameof(BitWriter.WriteVector2Packed):
                         BitWriter_WriteVector2Packed_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
-                    case "WriteVector3Packed":
+                    case nameof(BitWriter.WriteVector3Packed):
                         BitWriter_WriteVector3Packed_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
-                    case "WriteVector4Packed":
+                    case nameof(BitWriter.WriteVector4Packed):
                         BitWriter_WriteVector4Packed_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
-                    case "WriteRotationPacked":
+                    case nameof(BitWriter.WriteRotationPacked):
                         BitWriter_WriteRotationPacked_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
-                    case "WriteRayPacked":
+                    case nameof(BitWriter.WriteRayPacked):
                         BitWriter_WriteRayPacked_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
-                    case "WriteRay2DPacked":
+                    case nameof(BitWriter.WriteRay2DPacked):
                         BitWriter_WriteRay2DPacked_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
                 }
@@ -298,64 +340,64 @@ namespace MLAPI.Editor.CodeGen
             {
                 switch (methodInfo.Name)
                 {
-                    case "ReadBool":
+                    case nameof(BitReader.ReadBool):
                         BitReader_ReadBool_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
-                    case "ReadChar":
+                    case nameof(BitReader.ReadChar):
                         BitReader_ReadChar_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
-                    case "ReadSByte":
+                    case nameof(BitReader.ReadSByte):
                         BitReader_ReadSByte_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
-                    case "ReadByte":
+                    case nameof(BitReader.ReadByte):
                         BitReader_ReadByte_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
-                    case "ReadInt16Packed":
+                    case nameof(BitReader.ReadInt16Packed):
                         BitReader_ReadInt16Packed_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
-                    case "ReadUInt16Packed":
+                    case nameof(BitReader.ReadUInt16Packed):
                         BitReader_ReadUInt16Packed_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
-                    case "ReadInt32Packed":
+                    case nameof(BitReader.ReadInt32Packed):
                         BitReader_ReadInt32Packed_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
-                    case "ReadUInt32Packed":
+                    case nameof(BitReader.ReadUInt32Packed):
                         BitReader_ReadUInt32Packed_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
-                    case "ReadInt64Packed":
+                    case nameof(BitReader.ReadInt64Packed):
                         BitReader_ReadInt64Packed_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
-                    case "ReadUInt64Packed":
+                    case nameof(BitReader.ReadUInt64Packed):
                         BitReader_ReadUInt64Packed_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
-                    case "ReadSinglePacked":
+                    case nameof(BitReader.ReadSinglePacked):
                         BitReader_ReadSinglePacked_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
-                    case "ReadDoublePacked":
+                    case nameof(BitReader.ReadDoublePacked):
                         BitReader_ReadDoublePacked_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
-                    case "ReadStringPacked":
+                    case nameof(BitReader.ReadStringPacked):
                         BitReader_ReadStringPacked_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
-                    case "ReadColorPacked":
+                    case nameof(BitReader.ReadColorPacked):
                         BitReader_ReadColorPacked_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
-                    case "ReadVector2Packed":
+                    case nameof(BitReader.ReadVector2Packed):
                         BitReader_ReadVector2Packed_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
-                    case "ReadVector3Packed":
+                    case nameof(BitReader.ReadVector3Packed):
                         BitReader_ReadVector3Packed_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
-                    case "ReadVector4Packed":
+                    case nameof(BitReader.ReadVector4Packed):
                         BitReader_ReadVector4Packed_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
-                    case "ReadRotationPacked":
+                    case nameof(BitReader.ReadRotationPacked):
                         BitReader_ReadRotationPacked_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
-                    case "ReadRayPacked":
+                    case nameof(BitReader.ReadRayPacked):
                         BitReader_ReadRayPacked_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
-                    case "ReadRay2DPacked":
+                    case nameof(BitReader.ReadRay2DPacked):
                         BitReader_ReadRay2DPacked_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
                 }
@@ -385,7 +427,7 @@ namespace MLAPI.Editor.CodeGen
                 if (staticCtorMethodDef == null)
                 {
                     staticCtorMethodDef = new MethodDefinition(
-                        ".cctor",
+                        ".cctor", // Static Constructor (constant-constructor)
                         MethodAttributes.HideBySig |
                         MethodAttributes.SpecialName |
                         MethodAttributes.RTSpecialName |
@@ -426,53 +468,69 @@ namespace MLAPI.Editor.CodeGen
         private CustomAttribute CheckAndGetRPCAttribute(MethodDefinition methodDefinition)
         {
             CustomAttribute rpcAttribute = null;
-            bool isServerRPC = false;
+            bool isServerRpc = false;
             foreach (var customAttribute in methodDefinition.CustomAttributes)
             {
                 var customAttributeType_FullName = customAttribute.AttributeType.FullName;
 
-                if (customAttributeType_FullName == CodeGenHelpers.ServerRPCAttribute_FullName ||
-                    customAttributeType_FullName == CodeGenHelpers.ClientRPCAttribute_FullName)
+                if (customAttributeType_FullName == CodeGenHelpers.ServerRpcAttribute_FullName ||
+                    customAttributeType_FullName == CodeGenHelpers.ClientRpcAttribute_FullName)
                 {
+                    bool isValid = true;
+
                     if (methodDefinition.IsStatic)
                     {
-                        _diagnostics.AddError(methodDefinition, "todo: informative error message -> methodDefinition.IsStatic");
-                        return null;
+                        _diagnostics.AddError(methodDefinition, "RPC method must not be static!");
+                        isValid = false;
                     }
 
                     if (methodDefinition.IsAbstract)
                     {
-                        _diagnostics.AddError(methodDefinition, "todo: informative error message -> methodDefinition.IsAbstract");
-                        return null;
+                        _diagnostics.AddError(methodDefinition, "RPC method must not be abstract!");
+                        isValid = false;
                     }
 
                     if (methodDefinition.ReturnType != methodDefinition.Module.TypeSystem.Void)
                     {
-                        _diagnostics.AddError(methodDefinition, "todo: informative error message -> methodDefinition.ReturnType != methodDefinition.Module.TypeSystem.Void");
-                        return null;
+                        _diagnostics.AddError(methodDefinition, "RPC method must return `void`!");
+                        isValid = false;
                     }
 
-                    if (customAttributeType_FullName == CodeGenHelpers.ServerRPCAttribute_FullName &&
-                        !methodDefinition.Name.EndsWith("ServerRPC"))
+                    if (customAttributeType_FullName == CodeGenHelpers.ServerRpcAttribute_FullName &&
+                        !methodDefinition.Name.EndsWith("ServerRpc", StringComparison.OrdinalIgnoreCase))
                     {
-                        _diagnostics.AddError(methodDefinition, "todo: informative error message -> !methodDefinition.Name.EndsWith('ServerRPC')");
-                        return null;
+                        _diagnostics.AddError(methodDefinition, "ServerRpc method must end with 'ServerRpc' suffix!");
+                        isValid = false;
                     }
 
-                    if (customAttributeType_FullName == CodeGenHelpers.ClientRPCAttribute_FullName &&
-                        !methodDefinition.Name.EndsWith("ClientRPC"))
+                    if (customAttributeType_FullName == CodeGenHelpers.ClientRpcAttribute_FullName &&
+                        !methodDefinition.Name.EndsWith("ClientRpc", StringComparison.OrdinalIgnoreCase))
                     {
-                        _diagnostics.AddError(methodDefinition, "todo: informative error message -> !methodDefinition.Name.EndsWith('ClientRPC')");
-                        return null;
+                        _diagnostics.AddError(methodDefinition, "ClientRpc method must end with 'ClientRpc' suffix!");
+                        isValid = false;
                     }
 
-                    isServerRPC = customAttributeType_FullName == CodeGenHelpers.ServerRPCAttribute_FullName;
-                    rpcAttribute = customAttribute;
-                    break;
+                    if (isValid)
+                    {
+                        isServerRpc = customAttributeType_FullName == CodeGenHelpers.ServerRpcAttribute_FullName;
+                        rpcAttribute = customAttribute;
+                    }
                 }
             }
 
-            if (rpcAttribute == null) return null;
+            if (rpcAttribute == null)
+            {
+                if (methodDefinition.Name.EndsWith("ServerRpc", StringComparison.OrdinalIgnoreCase))
+                {
+                    _diagnostics.AddError(methodDefinition, "ServerRpc method must be marked with 'ServerRpc' attribute!");
+                }
+                else if (methodDefinition.Name.EndsWith("ClientRpc", StringComparison.OrdinalIgnoreCase))
+                {
+                    _diagnostics.AddError(methodDefinition, "ClientRpc method must be marked with 'ClientRpc' attribute!");
+                }
+
+                return null;
+            }
 
             int paramCount = methodDefinition.Parameters.Count;
             for (int paramIndex = 0; paramIndex < paramCount; ++paramIndex)
@@ -480,28 +538,14 @@ namespace MLAPI.Editor.CodeGen
                 var paramDef = methodDefinition.Parameters[paramIndex];
                 var paramType = paramDef.ParameterType;
 
-                if (paramType.IsSupportedType()) continue; // Basic types
+                if (paramType.IsSupportedType()) continue;
 
-                // todo: StaticArray[]
-                // if (paramType.IsArray && paramType.GetElementType().IsSupportedType()) continue;
+                // ServerRpcParams
+                if (paramType.FullName == CodeGenHelpers.ServerRpcParams_FullName && isServerRpc && paramIndex == paramCount - 1) continue;
+                // ClientRpcParams
+                if (paramType.FullName == CodeGenHelpers.ClientRpcParams_FullName && !isServerRpc && paramIndex == paramCount - 1) continue;
 
-                // todo: IEnumerable<T> for List/Set<T> etc. support
-                /*
-                // IEnumerable<T> or based on IEnumerable<T>
-                if (paramType.FullName.StartsWith(IEnumerable_FullName)) continue;
-                if (paramType.HasGenericInterface(IEnumerable_FullName)) continue;
-                */
-
-                // todo: double-check method overloading
-                // todo: IEnumerable<KeyValuePair<K, V>> for Dictionary<K, V> support
-                // todo: IEnumerable<Tuple<T1, T2, T3...T7>> for Tuple<T1-T7> support
-                // todo: IEnumerable<Tuple<T1, T2...TRest>> for Tuple<T1-TRest> support (nested tuples)
-
-                // ServerRPCOptions, ClientRPCOptions
-                if (paramType.FullName == CodeGenHelpers.ServerRPCOptions_FullName && isServerRPC && paramIndex == paramCount - 1) continue;
-                if (paramType.FullName == CodeGenHelpers.ClientRPCOptions_FullName && !isServerRPC && paramIndex == paramCount - 1) continue;
-
-                _diagnostics.AddError(methodDefinition, $"todo: informative error message -> CheckAndGetRPCAttribute --- unsupported parameter type: {paramType.FullName}");
+                _diagnostics.AddError(methodDefinition, $"RPC method parameter does not support serialization: {paramType.FullName}");
                 rpcAttribute = null;
             }
 
@@ -510,11 +554,26 @@ namespace MLAPI.Editor.CodeGen
 
         private void InjectWriteAndCallBlocks(MethodDefinition methodDefinition, CustomAttribute rpcAttribute, uint methodDefHash)
         {
+            var typeSystem = methodDefinition.Module.TypeSystem;
             var instructions = new List<Instruction>();
             var processor = methodDefinition.Body.GetILProcessor();
-            var isServerRPC = rpcAttribute.AttributeType.FullName == CodeGenHelpers.ServerRPCAttribute_FullName;
+            var isServerRpc = rpcAttribute.AttributeType.FullName == CodeGenHelpers.ServerRpcAttribute_FullName;
+            var isReliableRpc = true;
+            foreach (var attrField in rpcAttribute.Fields)
+            {
+                switch (attrField.Name)
+                {
+                    case nameof(RpcAttribute.IsReliable):
+                        isReliableRpc = attrField.Argument.Type == typeSystem.Boolean && (bool)attrField.Argument.Value;
+                        break;
+                }
+            }
+
             var paramCount = methodDefinition.Parameters.Count;
-            var hasRPCOptions = !isServerRPC && paramCount > 0 && methodDefinition.Parameters[paramCount - 1].ParameterType.FullName == CodeGenHelpers.ClientRPCOptions_FullName;
+            var hasRpcParams =
+                paramCount > 0 &&
+                ((isServerRpc && methodDefinition.Parameters[paramCount - 1].ParameterType.FullName == CodeGenHelpers.ServerRpcParams_FullName) ||
+                 (!isServerRpc && methodDefinition.Parameters[paramCount - 1].ParameterType.FullName == CodeGenHelpers.ClientRpcParams_FullName));
 
             methodDefinition.Body.InitLocals = true;
             // NetworkManager networkManager;
@@ -523,10 +582,13 @@ namespace MLAPI.Editor.CodeGen
             // BitWriter writer;
             methodDefinition.Body.Variables.Add(new VariableDefinition(BitWriter_TypeRef));
             int writerLocIdx = methodDefinition.Body.Variables.Count - 1;
+            // XXXRpcSendParams
+            if (!hasRpcParams) methodDefinition.Body.Variables.Add(new VariableDefinition(isServerRpc ? ServerRpcSendParams_TypeRef : ClientRpcSendParams_TypeRef));
+            int sendParamsIdx = !hasRpcParams ? methodDefinition.Body.Variables.Count - 1 : -1;
 
             {
-                var nextInstr = processor.Create(OpCodes.Nop);
                 var returnInstr = processor.Create(OpCodes.Ret);
+                var lastInstr = processor.Create(OpCodes.Nop);
 
                 // networkManager = NetworkManager.Singleton;
                 instructions.Add(processor.Create(OpCodes.Call, NetworkManager_getSingleton_MethodRef));
@@ -537,68 +599,92 @@ namespace MLAPI.Editor.CodeGen
                 instructions.Add(processor.Create(OpCodes.Brfalse, returnInstr));
                 instructions.Add(processor.Create(OpCodes.Ldloc, netManLocIdx));
                 instructions.Add(processor.Create(OpCodes.Callvirt, NetworkManager_getIsListening_MethodRef));
-                instructions.Add(processor.Create(OpCodes.Brtrue, nextInstr));
+                instructions.Add(processor.Create(OpCodes.Brtrue, lastInstr));
 
                 instructions.Add(returnInstr);
-                instructions.Add(nextInstr);
+                instructions.Add(lastInstr);
             }
 
             {
-                var nextInstr = processor.Create(OpCodes.Nop);
+                var beginInstr = processor.Create(OpCodes.Nop);
                 var endInstr = processor.Create(OpCodes.Nop);
-                var writeInstr = processor.Create(OpCodes.Nop);
+                var lastInstr = processor.Create(OpCodes.Nop);
 
-                // if (__nexec != NExec.Server) -> ServerRPC
-                // if (__nexec != NExec.Client) -> ClientRPC
+                // if (__nexec != NExec.Server) -> ServerRpc
+                // if (__nexec != NExec.Client) -> ClientRpc
                 instructions.Add(processor.Create(OpCodes.Ldarg_0));
                 instructions.Add(processor.Create(OpCodes.Ldfld, NetworkBehaviour_nexec_FieldRef));
-                instructions.Add(processor.Create(OpCodes.Ldc_I4, (int)(isServerRPC ? NetworkedBehaviour.NExec.Server : NetworkedBehaviour.NExec.Client)));
+                instructions.Add(processor.Create(OpCodes.Ldc_I4, (int)(isServerRpc ? NetworkedBehaviour.NExec.Server : NetworkedBehaviour.NExec.Client)));
                 instructions.Add(processor.Create(OpCodes.Ceq));
                 instructions.Add(processor.Create(OpCodes.Ldc_I4, 0));
                 instructions.Add(processor.Create(OpCodes.Ceq));
-                instructions.Add(processor.Create(OpCodes.Brfalse, nextInstr));
+                instructions.Add(processor.Create(OpCodes.Brfalse, lastInstr));
 
-                // if (networkManager.IsClient || networkManager.IsHost) { ... } -> ServerRPC
-                // if (networkManager.IsServer || networkManager.IsHost) { ... } -> ClientRPC
+                // if (networkManager.IsClient || networkManager.IsHost) { ... } -> ServerRpc
+                // if (networkManager.IsServer || networkManager.IsHost) { ... } -> ClientRpc
                 instructions.Add(processor.Create(OpCodes.Ldloc, netManLocIdx));
-                instructions.Add(processor.Create(OpCodes.Callvirt, isServerRPC ? NetworkManager_getIsClient_MethodRef : NetworkManager_getIsServer_MethodRef));
-                instructions.Add(processor.Create(OpCodes.Brtrue, writeInstr));
+                instructions.Add(processor.Create(OpCodes.Callvirt, isServerRpc ? NetworkManager_getIsClient_MethodRef : NetworkManager_getIsServer_MethodRef));
+                instructions.Add(processor.Create(OpCodes.Brtrue, beginInstr));
                 instructions.Add(processor.Create(OpCodes.Ldloc, netManLocIdx));
                 instructions.Add(processor.Create(OpCodes.Callvirt, NetworkManager_getIsHost_MethodRef));
-                instructions.Add(processor.Create(OpCodes.Brfalse, nextInstr));
+                instructions.Add(processor.Create(OpCodes.Brfalse, lastInstr));
 
-                instructions.Add(writeInstr);
+                instructions.Add(beginInstr);
 
-                // var writer = BeginServerRPC() -> ServerRPC
-                // var writer = BeginClientRPC(targetClientIds) -> ClientRPC
-                if (isServerRPC)
+                // var writer = BeginSendServerRpc(sendParams, isReliable) -> ServerRpc
+                // var writer = BeginSendClientRpc(sendParams, isReliable) -> ClientRpc
+                if (isServerRpc)
                 {
-                    // ServerRPC
-                    // var writer = BeginServerRPC();
+                    // ServerRpc
+                    // var writer = BeginSendServerRpc(sendParams, isReliable);
                     instructions.Add(processor.Create(OpCodes.Ldarg_0));
-                    instructions.Add(processor.Create(OpCodes.Call, NetworkBehaviour_BeginServerRPC_MethodRef));
+
+                    if (hasRpcParams)
+                    {
+                        // rpcParams.Send
+                        instructions.Add(processor.Create(OpCodes.Ldarg, paramCount));
+                        instructions.Add(processor.Create(OpCodes.Ldfld, ServerRpcParams_Send_FieldRef));
+                    }
+                    else
+                    {
+                        // default
+                        instructions.Add(processor.Create(OpCodes.Ldloca, sendParamsIdx));
+                        instructions.Add(processor.Create(OpCodes.Initobj, ServerRpcSendParams_TypeRef));
+                        instructions.Add(processor.Create(OpCodes.Ldloc, sendParamsIdx));
+                    }
+
+                    // isReliable
+                    instructions.Add(processor.Create(isReliableRpc ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0));
+
+                    // BeginSendServerRpc
+                    instructions.Add(processor.Create(OpCodes.Call, NetworkBehaviour_BeginSendServerRpc_MethodRef));
                     instructions.Add(processor.Create(OpCodes.Stloc, writerLocIdx));
                 }
                 else
                 {
-                    // ClientRPC
-                    // var writer = BeginClientRPC(targetClientIds);
+                    // ClientRpc
+                    // var writer = BeginSendClientRpc(sendParams, isReliable);
                     instructions.Add(processor.Create(OpCodes.Ldarg_0));
 
-                    if (hasRPCOptions)
+                    if (hasRpcParams)
                     {
-                        // targetClientIds
+                        // rpcParams.Send
                         instructions.Add(processor.Create(OpCodes.Ldarg, paramCount));
-                        instructions.Add(processor.Create(OpCodes.Ldfld, ClientRPCOptions_TargetClientIds_FieldRef));
+                        instructions.Add(processor.Create(OpCodes.Ldfld, ClientRpcParams_Send_FieldRef));
                     }
                     else
                     {
-                        // null
-                        instructions.Add(processor.Create(OpCodes.Ldnull));
+                        // default
+                        instructions.Add(processor.Create(OpCodes.Ldloca, sendParamsIdx));
+                        instructions.Add(processor.Create(OpCodes.Initobj, ClientRpcSendParams_TypeRef));
+                        instructions.Add(processor.Create(OpCodes.Ldloc, sendParamsIdx));
                     }
 
-                    // BeginClientRPC
-                    instructions.Add(processor.Create(OpCodes.Call, NetworkBehaviour_BeginClientRPC_MethodRef));
+                    // isReliable
+                    instructions.Add(processor.Create(isReliableRpc ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0));
+
+                    // BeginSendClientRpc
+                    instructions.Add(processor.Create(OpCodes.Call, NetworkBehaviour_BeginSendClientRpc_MethodRef));
                     instructions.Add(processor.Create(OpCodes.Stloc, writerLocIdx));
                 }
 
@@ -611,7 +697,6 @@ namespace MLAPI.Editor.CodeGen
                 instructions.Add(processor.Create(OpCodes.Ldc_I4, unchecked((int)methodDefHash)));
                 instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteUInt32Packed_MethodRef));
                 // write method parameters into stream
-                var typeSystem = methodDefinition.Module.TypeSystem;
                 for (int paramIndex = 0; paramIndex < paramCount; ++paramIndex)
                 {
                     var paramDef = methodDefinition.Parameters[paramIndex];
@@ -822,88 +907,93 @@ namespace MLAPI.Editor.CodeGen
                             continue;
                         }
                     }
-
-                    // todo: StaticArray[]
-                    /*
-                    if (paramType.IsArray)
-                    {
-                        // instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                        // instructions.Add(processor.Create(OpCodes.Ldlen));
-                    }
-                    */
-
-                    // todo: double-check method overloading
-                    // todo: IEnumerable<T> for List/Set<T> etc. support
-                    // todo: IEnumerable<KeyValuePair<K, V>> for Dictionary<K, V> support
-                    // todo: IEnumerable<Tuple<T1, T2, T3...T7>> for Tuple<T1-T7> support
-                    // todo: IEnumerable<Tuple<T1, T2...TRest>> for Tuple<T1-TRest> support (nested tuples)
-
-                    // todo: ServerRPCOptions, ClientRPCOptions
                 }
 
                 instructions.Add(endInstr);
 
-                // EndServerRPC(writer) -> ServerRPC
-                // EndClientRPC(writer, targetClientIds) -> ClientRPC
-                if (isServerRPC)
+                // EndSendServerRpc(writer, sendParams, isReliable) -> ServerRpc
+                // EndSendClientRpc(writer, sendParams, isReliable) -> ClientRpc
+                if (isServerRpc)
                 {
-                    // ServerRPC
-                    // EndServerRPC(writer);
-                    instructions.Add(processor.Create(OpCodes.Ldarg_0));
-                    instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
-                    instructions.Add(processor.Create(OpCodes.Call, NetworkBehaviour_EndServerRPC_MethodRef));
-                }
-                else
-                {
-                    // ClientRPC
-                    // EndClientRPC(writer, targetClientIds);
+                    // ServerRpc
+                    // EndSendServerRpc(writer, sendParams, isReliable);
                     instructions.Add(processor.Create(OpCodes.Ldarg_0));
 
                     // writer
                     instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
 
-                    if (hasRPCOptions)
+                    if (hasRpcParams)
                     {
-                        // targetClientIds
+                        // rpcParams.Send
                         instructions.Add(processor.Create(OpCodes.Ldarg, paramCount));
-                        instructions.Add(processor.Create(OpCodes.Ldfld, ClientRPCOptions_TargetClientIds_FieldRef));
+                        instructions.Add(processor.Create(OpCodes.Ldfld, ServerRpcParams_Send_FieldRef));
                     }
                     else
                     {
-                        // null
-                        instructions.Add(processor.Create(OpCodes.Ldnull));
+                        // default
+                        instructions.Add(processor.Create(OpCodes.Ldloc, sendParamsIdx));
                     }
 
-                    // EndClientRPC
-                    instructions.Add(processor.Create(OpCodes.Call, NetworkBehaviour_EndClientRPC_MethodRef));
+                    // isReliable
+                    instructions.Add(processor.Create(isReliableRpc ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0));
+
+                    // EndSendServerRpc
+                    instructions.Add(processor.Create(OpCodes.Call, NetworkBehaviour_EndSendServerRpc_MethodRef));
+                }
+                else
+                {
+                    // ClientRpc
+                    // EndSendClientRpc(writer, sendParams, isReliable);
+                    instructions.Add(processor.Create(OpCodes.Ldarg_0));
+
+                    // writer
+                    instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
+
+                    if (hasRpcParams)
+                    {
+                        // rpcParams.Send
+                        instructions.Add(processor.Create(OpCodes.Ldarg, paramCount));
+                        instructions.Add(processor.Create(OpCodes.Ldfld, ClientRpcParams_Send_FieldRef));
+                    }
+                    else
+                    {
+                        // default
+                        instructions.Add(processor.Create(OpCodes.Ldloc, sendParamsIdx));
+                    }
+
+                    // isReliable
+                    instructions.Add(processor.Create(isReliableRpc ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0));
+
+                    // EndSendClientRpc
+                    instructions.Add(processor.Create(OpCodes.Call, NetworkBehaviour_EndSendClientRpc_MethodRef));
                 }
 
-                instructions.Add(nextInstr);
+                instructions.Add(lastInstr);
             }
 
             {
                 var returnInstr = processor.Create(OpCodes.Ret);
-                var nextInstr = processor.Create(OpCodes.Nop);
+                var lastInstr = processor.Create(OpCodes.Nop);
 
-                // if (__nexec == NExec.Server) -> ServerRPC
-                // if (__nexec == NExec.Client) -> ClientRPC
+                // if (__nexec == NExec.Server) -> ServerRpc
+                // if (__nexec == NExec.Client) -> ClientRpc
                 instructions.Add(processor.Create(OpCodes.Ldarg_0));
                 instructions.Add(processor.Create(OpCodes.Ldfld, NetworkBehaviour_nexec_FieldRef));
-                instructions.Add(processor.Create(OpCodes.Ldc_I4, (int)(isServerRPC ? NetworkedBehaviour.NExec.Server : NetworkedBehaviour.NExec.Client)));
+                instructions.Add(processor.Create(OpCodes.Ldc_I4, (int)(isServerRpc ? NetworkedBehaviour.NExec.Server : NetworkedBehaviour.NExec.Client)));
                 instructions.Add(processor.Create(OpCodes.Ceq));
                 instructions.Add(processor.Create(OpCodes.Brfalse, returnInstr));
 
-                // if (networkManager.IsServer || networkManager.IsHost) -> ServerRPC
-                // if (networkManager.IsClient || networkManager.IsHost) -> ClientRPC
+                // if (networkManager.IsServer || networkManager.IsHost) -> ServerRpc
+                // if (networkManager.IsClient || networkManager.IsHost) -> ClientRpc
                 instructions.Add(processor.Create(OpCodes.Ldloc, netManLocIdx));
-                instructions.Add(processor.Create(OpCodes.Callvirt, isServerRPC ? NetworkManager_getIsServer_MethodRef : NetworkManager_getIsClient_MethodRef));
-                instructions.Add(processor.Create(OpCodes.Brtrue, nextInstr));
+                instructions.Add(processor.Create(OpCodes.Callvirt, isServerRpc ? NetworkManager_getIsServer_MethodRef : NetworkManager_getIsClient_MethodRef));
+                instructions.Add(processor.Create(OpCodes.Brtrue, lastInstr));
                 instructions.Add(processor.Create(OpCodes.Ldloc, netManLocIdx));
                 instructions.Add(processor.Create(OpCodes.Callvirt, NetworkManager_getIsHost_MethodRef));
-                instructions.Add(processor.Create(OpCodes.Brtrue, nextInstr));
+                instructions.Add(processor.Create(OpCodes.Brtrue, lastInstr));
 
                 instructions.Add(returnInstr);
-                instructions.Add(nextInstr);
+                instructions.Add(lastInstr);
             }
 
             instructions.Reverse();
@@ -912,19 +1002,20 @@ namespace MLAPI.Editor.CodeGen
 
         private MethodDefinition GenerateStaticHandler(MethodDefinition methodDefinition, CustomAttribute rpcAttribute)
         {
+            var typeSystem = methodDefinition.Module.TypeSystem;
             var nhandler = new MethodDefinition(
                 $"{methodDefinition.Name}__nhandler",
                 MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.HideBySig,
                 methodDefinition.Module.TypeSystem.Void);
             nhandler.Parameters.Add(new ParameterDefinition("target", ParameterAttributes.None, NetworkBehaviour_TypeRef));
             nhandler.Parameters.Add(new ParameterDefinition("reader", ParameterAttributes.None, BitReader_TypeRef));
+            nhandler.Parameters.Add(new ParameterDefinition("sender", ParameterAttributes.None, typeSystem.UInt64));
 
             var processor = nhandler.Body.GetILProcessor();
-            var isServerRPC = rpcAttribute.AttributeType.FullName == CodeGenHelpers.ServerRPCAttribute_FullName;
+            var isServerRpc = rpcAttribute.AttributeType.FullName == CodeGenHelpers.ServerRpcAttribute_FullName;
 
             nhandler.Body.InitLocals = true;
             // read method parameters from stream
-            var typeSystem = methodDefinition.Module.TypeSystem;
             int paramCount = methodDefinition.Parameters.Count;
             for (int paramIndex = 0; paramIndex < paramCount; ++paramIndex)
             {
@@ -1150,24 +1241,33 @@ namespace MLAPI.Editor.CodeGen
                     }
                 }
 
-                // todo: StaticArray[] -> stackalloc?
+                // ServerRpcParams, ClientRpcParams
+                {
+                    // ServerRpcParams
+                    if (paramType.FullName == CodeGenHelpers.ServerRpcParams_FullName)
+                    {
+                        processor.Emit(OpCodes.Ldloca, paramIndex);
+                        processor.Emit(OpCodes.Ldflda, ServerRpcParams_Receive_FieldRef);
+                        processor.Emit(OpCodes.Ldarg_2);
+                        processor.Emit(OpCodes.Stfld, ServerRpcReceiveParams_SenderClientId_FieldRef);
+                        continue;
+                    }
 
-                // todo: double-check method overloading
-                // todo: IEnumerable<T> for List/Set<T> etc. support
-                // todo: IEnumerable<KeyValuePair<K, V>> for Dictionary<K, V> support
-                // todo: IEnumerable<Tuple<T1, T2, T3...T7>> for Tuple<T1-T7> support
-                // todo: IEnumerable<Tuple<T1, T2...TRest>> for Tuple<T1-TRest> support (nested tuples)
-
-                // todo: ServerRPCOptions, ClientRPCOptions
+                    // ClientRpcParams
+                    if (paramType.FullName == CodeGenHelpers.ClientRpcParams_FullName)
+                    {
+                        continue;
+                    }
+                }
             }
 
-            // NetworkBehaviour.__nexec = NExec.Server; -> ServerRPC
-            // NetworkBehaviour.__nexec = NExec.Client; -> ClientRPC
+            // NetworkBehaviour.__nexec = NExec.Server; -> ServerRpc
+            // NetworkBehaviour.__nexec = NExec.Client; -> ClientRpc
             processor.Emit(OpCodes.Ldarg_0);
-            processor.Emit(OpCodes.Ldc_I4, (int)(isServerRPC ? NetworkedBehaviour.NExec.Server : NetworkedBehaviour.NExec.Client));
+            processor.Emit(OpCodes.Ldc_I4, (int)(isServerRpc ? NetworkedBehaviour.NExec.Server : NetworkedBehaviour.NExec.Client));
             processor.Emit(OpCodes.Stfld, NetworkBehaviour_nexec_FieldRef);
 
-            // NetworkBehaviour.XXXRPC(...);
+            // NetworkBehaviour.XXXRpc(...);
             processor.Emit(OpCodes.Ldarg_0);
             processor.Emit(OpCodes.Castclass, methodDefinition.DeclaringType);
             Enumerable.Range(0, paramCount).ToList().ForEach(paramIndex => processor.Emit(OpCodes.Ldloc, paramIndex));
