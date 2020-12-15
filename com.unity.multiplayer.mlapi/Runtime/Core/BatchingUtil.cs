@@ -5,13 +5,12 @@ using MLAPI.Profiling;
 using System.Collections.Generic;
 using System.Linq;
 using System;
-using System.Reflection;
 
 namespace MLAPI
 {
     class BatchUtil
     {
-        private class SendStream
+        public class SendStream
         {
             public FrameQueueItem Item;
             public PooledBitWriter Writer;
@@ -119,11 +118,10 @@ namespace MLAPI
         /// SendItems
         /// Send any batch of RPC that are of length above threshold
         /// </summary>
-        /// <param name="threshold">the threshold in bytes</param>
-        public void SendItems(int threshold, Func<int, int> SendCallback)
+        /// <param name="threshold"> the threshold in bytes</param>
+        /// <param name="sendCallback"> the function to call for sending the batch</param>
+        public void SendItems(int threshold, Func<ulong, SendStream, int> sendCallback)
         {
-            //todo: move back the send code in the RPCQueueProcessing, for "separation of concern"/"Single-responsibility principle"
-            SendCallback(0);
             List<ulong> sent = new List<ulong>();
 
             foreach (KeyValuePair<ulong, SendStream> entry in SendDict)
@@ -134,17 +132,7 @@ namespace MLAPI
 
                 if (length >= threshold)
                 {
-                    byte[] byteBuffer = new byte[length];
-
-                    Byte[] bytes = ((MLAPI.Serialization.BitStream)writer.GetStream()).GetBuffer();
-                    System.Buffer.BlockCopy(bytes, 0, byteBuffer, 0, length);
-
-                    ArraySegment<byte> sendBuffer = new ArraySegment<byte>(byteBuffer, 0, length);
-
-                    NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(entry.Key, sendBuffer,
-                        string.IsNullOrEmpty(entry.Value.Item.Channel) ? "MLAPI_DEFAULT_MESSAGE" : entry.Value.Item.Channel);
-
-                    ProfilerStatManager.rpcBatchesSent.Record();
+                    sendCallback(entry.Key, entry.Value);
 
                     // mark the client for which a batch was sent
                     sent.Add(entry.Key);
@@ -158,7 +146,4 @@ namespace MLAPI
             }
         }
     }
-
-
-
 }

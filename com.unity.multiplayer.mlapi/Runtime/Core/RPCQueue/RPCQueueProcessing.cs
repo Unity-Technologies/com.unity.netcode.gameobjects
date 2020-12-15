@@ -209,8 +209,23 @@ namespace MLAPI
             }
         }
 
-        private static int SendCallback(int x)
+        private static int SendCallback(ulong clientId, MLAPI.BatchUtil.SendStream sendStream)
         {
+            using PooledBitWriter writer = sendStream.Writer;
+            int length = (int)writer.GetStream().Length;
+
+            byte[] byteBuffer = new byte[length];
+
+            Byte[] bytes = ((MLAPI.Serialization.BitStream)writer.GetStream()).GetBuffer();
+            System.Buffer.BlockCopy(bytes, 0, byteBuffer, 0, length);
+
+            ArraySegment<byte> sendBuffer = new ArraySegment<byte>(byteBuffer, 0, length);
+
+            NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(clientId, sendBuffer,
+                string.IsNullOrEmpty(sendStream.Item.Channel) ? "MLAPI_DEFAULT_MESSAGE" : sendStream.Item.Channel);
+
+            ProfilerStatManager.rpcBatchesSent.Record();
+
             return 0;
         }
 
