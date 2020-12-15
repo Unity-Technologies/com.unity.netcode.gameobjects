@@ -20,22 +20,12 @@ namespace MLAPI.Editor.CodeGen
             if (!WillProcess(compiledAssembly)) return null;
             _diagnostics.Clear();
 
-
-            // read
-            var readerParameters = new ReaderParameters
-            {
-                SymbolStream = new MemoryStream(compiledAssembly.InMemoryAssembly.PdbData),
-                SymbolReaderProvider = new PortablePdbReaderProvider(),
-                ReadingMode = ReadingMode.Immediate
-            };
-
-            var assemblyDefinition = AssemblyDefinition.ReadAssembly(new MemoryStream(compiledAssembly.InMemoryAssembly.PeData), readerParameters);
+            var assemblyDefinition = CodeGenHelpers.AssemblyDefinitionFor(compiledAssembly);
             if (assemblyDefinition == null)
             {
                 _diagnostics.AddError($"Cannot read MLAPI Runtime assembly definition: {compiledAssembly.Name}");
                 return null;
             }
-
 
             // process
             var mainModule = assemblyDefinition.MainModule;
