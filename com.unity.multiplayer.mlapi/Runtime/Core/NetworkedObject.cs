@@ -21,10 +21,6 @@ namespace MLAPI
     [AddComponentMenu("MLAPI/NetworkedObject", -99)]
     public sealed class NetworkedObject : MonoBehaviour
     {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-        public static ProfilerMarker s_NetworkedBehaviourUpdate = new ProfilerMarker("MLAPI.NetworkedObject.NetworkedBehaviourUpdate");
-#endif
-
         private void OnValidate()
         {
             // Set this so the hash can be serialized on Scene objects. For prefabs, they are generated at runtime.
@@ -537,36 +533,6 @@ namespace MLAPI
                     }
                 }
                 return _childNetworkedBehaviours;
-            }
-        }
-
-        internal static void NetworkedBehaviourUpdate()
-        {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_NetworkedBehaviourUpdate.Begin();
-#endif
-
-            try
-            {
-                if (SpawnManager.SpawnedObjectsList.Count == 0)
-                    return;
-
-                foreach (var sobj in SpawnManager.SpawnedObjectsList)
-                {
-                    // Sync all vars
-                    for (int j = 0;
-                        j < sobj.childNetworkedBehaviours.Count;
-                        j++)
-                    {
-                        sobj.childNetworkedBehaviours[j].VarUpdate();
-                    }
-                }
-            }
-            finally
-            {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-                s_NetworkedBehaviourUpdate.End();
-#endif
             }
         }
 
