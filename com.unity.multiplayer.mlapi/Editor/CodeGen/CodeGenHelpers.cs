@@ -25,7 +25,6 @@ namespace MLAPI.Editor.CodeGen
         public static readonly string INetworkSerializable_FullName = typeof(INetworkSerializable).FullName;
         public static readonly string INetworkSerializable_NetworkRead_Name = nameof(INetworkSerializable.NetworkRead);
         public static readonly string INetworkSerializable_NetworkWrite_Name = nameof(INetworkSerializable.NetworkWrite);
-        public static readonly string IEnumerable_FullName = typeof(IEnumerable<>).FullName;
         public static readonly string UnityColor_FullName = typeof(Color).FullName;
         public static readonly string UnityVector2_FullName = typeof(Vector2).FullName;
         public static readonly string UnityVector3_FullName = typeof(Vector3).FullName;
@@ -36,7 +35,7 @@ namespace MLAPI.Editor.CodeGen
 
         public static uint Hash(this MethodDefinition methodDefinition)
         {
-            var sigArr = Encoding.UTF8.GetBytes($"{methodDefinition.Module.Name} => {methodDefinition.FullName}");
+            var sigArr = Encoding.UTF8.GetBytes($"{methodDefinition.Module.Name} / {methodDefinition.FullName}");
             var sigLen = sigArr.Length;
             unsafe
             {
@@ -87,21 +86,6 @@ namespace MLAPI.Editor.CodeGen
             return false;
         }
 
-        public static bool HasGenericInterface(this TypeReference typeReference, string GenericInterfaceTypeFullName)
-        {
-            try
-            {
-                var typeDef = typeReference.Resolve();
-                var typeFaces = typeDef.Interfaces;
-                return typeFaces.Any(iface => iface.InterfaceType.FullName.StartsWith(GenericInterfaceTypeFullName));
-            }
-            catch
-            {
-            }
-
-            return false;
-        }
-
         public static bool IsSupportedType(this TypeReference typeReference)
         {
             var typeSystem = typeReference.Module.TypeSystem;
@@ -136,6 +120,13 @@ namespace MLAPI.Editor.CodeGen
             // Enum
             if (typeReference.GetEnumAsInt() != null) return true;
 
+            // todo: [RFC] Serializable Types
+            // StaticArray[]
+            // IEnumerable<T>
+            // IEnumerable<KeyValuePair<K, V>>
+            // IEnumerable<Tuple<T1, T2, T3...T7>>
+            // IEnumerable<Tuple<T1, T2...TRest>>
+
             return false;
         }
 
@@ -163,7 +154,7 @@ namespace MLAPI.Editor.CodeGen
 
         public static void AddError(this List<DiagnosticMessage> diagnostics, MethodDefinition methodDefinition, string message)
         {
-            diagnostics.AddError(methodDefinition.DebugInformation.SequencePoints[0], message);
+            diagnostics.AddError(methodDefinition.DebugInformation.SequencePoints.FirstOrDefault(), message);
         }
 
         public static void AddError(this List<DiagnosticMessage> diagnostics, SequencePoint sequencePoint, string message)
@@ -174,7 +165,7 @@ namespace MLAPI.Editor.CodeGen
                 File = sequencePoint?.Document.Url.Replace($"{Environment.CurrentDirectory}{Path.DirectorySeparatorChar}", ""),
                 Line = sequencePoint?.StartLine ?? 0,
                 Column = sequencePoint?.StartColumn ?? 0,
-                MessageData = message
+                MessageData = $" - {message}"
             });
         }
     }

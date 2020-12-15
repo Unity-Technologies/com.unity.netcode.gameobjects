@@ -32,7 +32,7 @@ namespace MLAPI.Editor.CodeGen
             var assemblyDefinition = AssemblyDefinition.ReadAssembly(new MemoryStream(compiledAssembly.InMemoryAssembly.PeData), readerParameters);
             if (assemblyDefinition == null)
             {
-                _diagnostics.AddError("todo: informative error message -> assemblyDefinition == null");
+                _diagnostics.AddError($"Cannot read MLAPI Runtime assembly definition: {compiledAssembly.Name}");
                 return null;
             }
 
@@ -56,7 +56,7 @@ namespace MLAPI.Editor.CodeGen
                     }
                 }
             }
-            else _diagnostics.AddError("todo: informative error message -> mainModule != null");
+            else _diagnostics.AddError($"Cannot get main module from MLAPI Runtime assembly definition: {compiledAssembly.Name}");
 
 
             // write
