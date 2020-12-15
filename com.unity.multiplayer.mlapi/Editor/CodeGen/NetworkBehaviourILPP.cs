@@ -31,15 +31,7 @@ namespace MLAPI.Editor.CodeGen
 
 
             // read
-            var readerParameters = new ReaderParameters
-            {
-                SymbolStream = new MemoryStream(compiledAssembly.InMemoryAssembly.PdbData),
-                SymbolReaderProvider = new PortablePdbReaderProvider(),
-                ReflectionImporterProvider = new PostProcessorReflectionImporterProvider(),
-                ReadingMode = ReadingMode.Immediate
-            };
-
-            var assemblyDefinition = AssemblyDefinition.ReadAssembly(new MemoryStream(compiledAssembly.InMemoryAssembly.PeData), readerParameters);
+            var assemblyDefinition = CodeGenHelpers.AssemblyDefinitionFor(compiledAssembly);
             if (assemblyDefinition == null)
             {
                 _diagnostics.AddError($"Cannot read assembly definition: {compiledAssembly.Name}");
@@ -78,34 +70,6 @@ namespace MLAPI.Editor.CodeGen
             assemblyDefinition.Write(pe, writerParameters);
 
             return new ILPostProcessResult(new InMemoryAssembly(pe.ToArray(), pdb.ToArray()), _diagnostics);
-        }
-
-
-        internal class PostProcessorReflectionImporterProvider : IReflectionImporterProvider
-        {
-            public IReflectionImporter GetReflectionImporter(ModuleDefinition module)
-            {
-                return new PostProcessorReflectionImporter(module);
-            }
-        }
-
-        internal class PostProcessorReflectionImporter : DefaultReflectionImporter
-        {
-            private const string SystemPrivateCoreLib = "System.Private.CoreLib";
-            private AssemblyNameReference _correctCorlib;
-
-            public PostProcessorReflectionImporter(ModuleDefinition module) : base(module)
-            {
-                _correctCorlib = module.AssemblyReferences.FirstOrDefault(a => a.Name == "mscorlib" || a.Name == "netstandard" || a.Name == SystemPrivateCoreLib);
-            }
-
-            public override AssemblyNameReference ImportReference(AssemblyName reference)
-            {
-                if (_correctCorlib != null && reference.Name == SystemPrivateCoreLib)
-                    return _correctCorlib;
-
-                return base.ImportReference(reference);
-            }
         }
 
         private TypeReference NetworkManager_TypeRef;
