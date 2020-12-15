@@ -1089,6 +1089,7 @@ namespace MLAPI
         }
 
         private readonly BitStream inputStreamWrapper = new BitStream(new byte[0]);
+        private BatchUtil batcher = new BatchUtil();
 
         internal void HandleIncomingData(ulong clientId, string channelName, ArraySegment<byte> data, float receiveTime, bool allowBuffer)
         {
@@ -1258,7 +1259,7 @@ namespace MLAPI
                             do
                             {
                                 // read the length of the next RPC
-                                int rpcSize = messageStream.ReadByte();
+                                int rpcSize = batcher.PopLength(messageStream);
                                 if (IsServer)
                                 {
 
@@ -1291,7 +1292,7 @@ namespace MLAPI
                             do
                             {
                                 // read the length of the next RPC
-                                int rpcSize = messageStream.ReadByte();
+                                int rpcSize = batcher.PopLength(messageStream);
                                 if (IsClient)
                                 {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR

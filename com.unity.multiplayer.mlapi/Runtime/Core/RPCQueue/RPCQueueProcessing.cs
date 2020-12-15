@@ -8,7 +8,6 @@ using MLAPI.Messaging;
 using MLAPI.Profiling;
 using MLAPI.Serialization.Pooled;
 
-
 namespace MLAPI
 {
     internal class SendStream
@@ -40,6 +39,7 @@ namespace MLAPI
 
         // Stores the stream of batched RPC to send to each client, by ClientId
         private Dictionary<ulong, SendStream> SendDict = new Dictionary<ulong, SendStream>();
+        private BatchUtil batcher = new BatchUtil();
 
         private int BatchThreshold = 1000;
 
@@ -311,9 +311,8 @@ namespace MLAPI
                     }
                 }
 
-                // TODO: write special 255 length for counts above 255 and either add full length as further
-                // data, or force immediate send. Also fix receiving side.
-                SendDict[clientId].Writer.WriteByte((byte)item.MessageData.Count); // write the amounts of bytes that are coming up
+                // write the amounts of bytes that are coming up
+                batcher.PushLength(item.MessageData.Count, ref SendDict[clientId].Writer);
 
                 // write the message to send
                 // todo: is there a faster alternative to .ToArray()
