@@ -41,13 +41,12 @@ namespace MLAPI.Editor.CodeGen
             var assemblyDefinition = AssemblyDefinition.ReadAssembly(new MemoryStream(compiledAssembly.InMemoryAssembly.PeData), readerParameters);
             if (assemblyDefinition == null)
             {
-                _diagnostics.AddError("todo: informative error message -> assemblyDefinition == null");
+                _diagnostics.AddError($"Cannot read assembly definition: {compiledAssembly.Name}");
                 return null;
             }
 
 
             // process
-
             var mainModule = assemblyDefinition.MainModule;
             if (mainModule != null)
             {
@@ -59,9 +58,9 @@ namespace MLAPI.Editor.CodeGen
                         .ToList()
                         .ForEach(ProcessNetworkBehaviour);
                 }
-                else _diagnostics.AddError("todo: informative error message -> ImportReferences(mainModule)");
+                else _diagnostics.AddError($"Cannot import references into main module: {mainModule.Name}");
             }
-            else _diagnostics.AddError("todo: informative error message -> mainModule != null");
+            else _diagnostics.AddError($"Cannot get main module from assembly definition: {compiledAssembly.Name}");
 
 
             // write
@@ -484,45 +483,61 @@ namespace MLAPI.Editor.CodeGen
                 if (customAttributeType_FullName == CodeGenHelpers.ServerRpcAttribute_FullName ||
                     customAttributeType_FullName == CodeGenHelpers.ClientRpcAttribute_FullName)
                 {
+                    bool isValid = true;
+
                     if (methodDefinition.IsStatic)
                     {
-                        _diagnostics.AddError(methodDefinition, "todo: informative error message -> methodDefinition.IsStatic");
-                        return null;
+                        _diagnostics.AddError(methodDefinition, "RPC method must not be static!");
+                        isValid = false;
                     }
 
                     if (methodDefinition.IsAbstract)
                     {
-                        _diagnostics.AddError(methodDefinition, "todo: informative error message -> methodDefinition.IsAbstract");
-                        return null;
+                        _diagnostics.AddError(methodDefinition, "RPC method must not be abstract!");
+                        isValid = false;
                     }
 
                     if (methodDefinition.ReturnType != methodDefinition.Module.TypeSystem.Void)
                     {
-                        _diagnostics.AddError(methodDefinition, "todo: informative error message -> methodDefinition.ReturnType != methodDefinition.Module.TypeSystem.Void");
-                        return null;
+                        _diagnostics.AddError(methodDefinition, "RPC method must return `void`!");
+                        isValid = false;
                     }
 
                     if (customAttributeType_FullName == CodeGenHelpers.ServerRpcAttribute_FullName &&
                         !methodDefinition.Name.EndsWith("ServerRpc", StringComparison.OrdinalIgnoreCase))
                     {
-                        _diagnostics.AddError(methodDefinition, "todo: informative error message -> !methodDefinition.Name.EndsWith('ServerRpc')");
-                        return null;
+                        _diagnostics.AddError(methodDefinition, "ServerRpc method must end with 'ServerRpc' suffix!");
+                        isValid = false;
                     }
 
                     if (customAttributeType_FullName == CodeGenHelpers.ClientRpcAttribute_FullName &&
                         !methodDefinition.Name.EndsWith("ClientRpc", StringComparison.OrdinalIgnoreCase))
                     {
-                        _diagnostics.AddError(methodDefinition, "todo: informative error message -> !methodDefinition.Name.EndsWith('ClientRpc')");
-                        return null;
+                        _diagnostics.AddError(methodDefinition, "ClientRpc method must end with 'ClientRpc' suffix!");
+                        isValid = false;
                     }
 
-                    isServerRpc = customAttributeType_FullName == CodeGenHelpers.ServerRpcAttribute_FullName;
-                    rpcAttribute = customAttribute;
-                    break;
+                    if (isValid)
+                    {
+                        isServerRpc = customAttributeType_FullName == CodeGenHelpers.ServerRpcAttribute_FullName;
+                        rpcAttribute = customAttribute;
+                    }
                 }
             }
 
-            if (rpcAttribute == null) return null;
+            if (rpcAttribute == null)
+            {
+                if (methodDefinition.Name.EndsWith("ServerRpc", StringComparison.OrdinalIgnoreCase))
+                {
+                    _diagnostics.AddError(methodDefinition, "ServerRpc method must be marked with 'ServerRpc' attribute!");
+                }
+                else if (methodDefinition.Name.EndsWith("ClientRpc", StringComparison.OrdinalIgnoreCase))
+                {
+                    _diagnostics.AddError(methodDefinition, "ClientRpc method must be marked with 'ClientRpc' attribute!");
+                }
+
+                return null;
+            }
 
             int paramCount = methodDefinition.Parameters.Count;
             for (int paramIndex = 0; paramIndex < paramCount; ++paramIndex)
@@ -530,29 +545,14 @@ namespace MLAPI.Editor.CodeGen
                 var paramDef = methodDefinition.Parameters[paramIndex];
                 var paramType = paramDef.ParameterType;
 
-                if (paramType.IsSupportedType()) continue; // Basic types
-
-                // todo: StaticArray[]
-                // if (paramType.IsArray && paramType.GetElementType().IsSupportedType()) continue;
-
-                // todo: IEnumerable<T> for List/Set<T> etc. support
-                /*
-                // IEnumerable<T> or based on IEnumerable<T>
-                if (paramType.FullName.StartsWith(IEnumerable_FullName)) continue;
-                if (paramType.HasGenericInterface(IEnumerable_FullName)) continue;
-                */
-
-                // todo: double-check method overloading
-                // todo: IEnumerable<KeyValuePair<K, V>> for Dictionary<K, V> support
-                // todo: IEnumerable<Tuple<T1, T2, T3...T7>> for Tuple<T1-T7> support
-                // todo: IEnumerable<Tuple<T1, T2...TRest>> for Tuple<T1-TRest> support (nested tuples)
+                if (paramType.IsSupportedType()) continue;
 
                 // ServerRpcParams
                 if (paramType.FullName == CodeGenHelpers.ServerRpcParams_FullName && isServerRpc && paramIndex == paramCount - 1) continue;
                 // ClientRpcParams
                 if (paramType.FullName == CodeGenHelpers.ClientRpcParams_FullName && !isServerRpc && paramIndex == paramCount - 1) continue;
 
-                _diagnostics.AddError(methodDefinition, $"todo: informative error message -> CheckAndGetRPCAttribute --- unsupported parameter type: {paramType.FullName}");
+                _diagnostics.AddError(methodDefinition, $"RPC method parameter does not support serialization: {paramType.FullName}");
                 rpcAttribute = null;
             }
 
@@ -571,8 +571,7 @@ namespace MLAPI.Editor.CodeGen
                 switch (attrField.Name)
                 {
                     case nameof(RpcAttribute.IsReliable):
-                        isReliableRpc = attrField.Argument.Type == typeSystem.Boolean &&
-                                        (bool)attrField.Argument.Value;
+                        isReliableRpc = attrField.Argument.Type == typeSystem.Boolean && (bool)attrField.Argument.Value;
                         break;
                 }
             }
@@ -915,23 +914,6 @@ namespace MLAPI.Editor.CodeGen
                             continue;
                         }
                     }
-
-                    // todo: StaticArray[]
-                    /*
-                    if (paramType.IsArray)
-                    {
-                        // instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                        // instructions.Add(processor.Create(OpCodes.Ldlen));
-                    }
-                    */
-
-                    // todo: double-check method overloading
-                    // todo: IEnumerable<T> for List/Set<T> etc. support
-                    // todo: IEnumerable<KeyValuePair<K, V>> for Dictionary<K, V> support
-                    // todo: IEnumerable<Tuple<T1, T2, T3...T7>> for Tuple<T1-T7> support
-                    // todo: IEnumerable<Tuple<T1, T2...TRest>> for Tuple<T1-TRest> support (nested tuples)
-
-                    // todo: ServerRpcParams, ClientRpcParams
                 }
 
                 instructions.Add(endInstr);
@@ -1265,14 +1247,6 @@ namespace MLAPI.Editor.CodeGen
                         continue;
                     }
                 }
-
-                // todo: StaticArray[] -> stackalloc?
-
-                // todo: double-check method overloading
-                // todo: IEnumerable<T> for List/Set<T> etc. support
-                // todo: IEnumerable<KeyValuePair<K, V>> for Dictionary<K, V> support
-                // todo: IEnumerable<Tuple<T1, T2, T3...T7>> for Tuple<T1-T7> support
-                // todo: IEnumerable<Tuple<T1, T2...TRest>> for Tuple<T1-TRest> support (nested tuples)
 
                 // ServerRpcParams, ClientRpcParams
                 {
