@@ -40,6 +40,8 @@ namespace MLAPI
             Client = 2
         }
 
+        const String StandardRPC_Channel = "STDRPC";
+
 #pragma warning disable 414
         // RuntimeAccessModifiersILPP will make this `protected`
         internal NExec __nexec = NExec.None;
@@ -49,125 +51,6 @@ namespace MLAPI
         internal BitWriter BeginSendServerRpc(ServerRpcSendParams sendParams, bool isReliable)
         {
             // @mfatihmar (Unity) Begin: Temporary, placeholder implementation
-            var stream = PooledBitStream.Get();
-            var writer = PooledBitWriter.Get(stream);
-
-            writer.WriteBit(false); // Encrypted
-            writer.WriteBit(false); // Authenticated
-            writer.WriteBits(MLAPIConstants.MLAPI_STD_SERVER_RPC, 6); // MessageType
-            writer.WriteUInt64Packed(NetworkId); // NetworkObjectId
-            writer.WriteUInt16Packed(GetBehaviourId()); // NetworkBehaviourId
-
-            return writer;
-            // @mfatihmar (Unity) End: Temporary, placeholder implementation
-        }
-
-        // RuntimeAccessModifiersILPP will make this `protected`
-        internal void EndSendServerRpc(BitWriter writer, ServerRpcSendParams sendParams, bool isReliable)
-        {
-            // @mfatihmar (Unity) Begin: Temporary, placeholder implementation
-            if (writer == null) return;
-
-            var stream = (BitStream)writer.GetStream();
-            if (stream != null)
-            {
-                stream.PadStream();
-
-                var networkManager = NetworkingManager.Singleton;
-                if (ReferenceEquals(networkManager, null)) return;
-
-                var payload = new ArraySegment<byte>(stream.GetBuffer(), 0, (int)stream.Length);
-                // @mfatihmar (Unity) Begin: Temporary, inbound RPC queue will replace this workaround
-                if (networkManager.IsHost)
-                {
-                    networkManager.__loopbackRpcQueue.Enqueue((payload, Time.realtimeSinceStartup));
-                }
-                // @mfatihmar (Unity) End: Temporary, inbound RPC queue will replace this workaround
-                else
-                {
-                    networkManager.NetworkConfig.NetworkTransport.Send(networkManager.ServerClientId, payload, "STDRPC");
-                }
-            }
-
-            writer.SetStream(null);
-            // @mfatihmar (Unity) End: Temporary, placeholder implementation
-        }
-
-        // RuntimeAccessModifiersILPP will make this `protected`
-        internal BitWriter BeginSendClientRpc(ClientRpcSendParams sendParams, bool isReliable)
-        {
-            // @mfatihmar (Unity) Begin: Temporary, placeholder implementation
-            var stream = PooledBitStream.Get();
-            var writer = PooledBitWriter.Get(stream);
-
-            writer.WriteBit(false); // Encrypted
-            writer.WriteBit(false); // Authenticated
-            writer.WriteBits(MLAPIConstants.MLAPI_STD_CLIENT_RPC, 6); // MessageType
-            writer.WriteUInt64Packed(NetworkId); // NetworkObjectId
-            writer.WriteUInt16Packed(GetBehaviourId()); // NetworkBehaviourId
-
-            return writer;
-            // @mfatihmar (Unity) End: Temporary, placeholder implementation
-        }
-
-        // RuntimeAccessModifiersILPP will make this `protected`
-        internal void EndSendClientRpc(BitWriter writer, ClientRpcSendParams sendParams, bool isReliable)
-        {
-            // @mfatihmar (Unity) Begin: Temporary, placeholder implementation
-            if (writer == null) return;
-
-            var stream = (BitStream)writer.GetStream();
-            if (stream != null)
-            {
-                stream.PadStream();
-
-                var networkManager = NetworkingManager.Singleton;
-                if (ReferenceEquals(networkManager, null)) return;
-
-                if (sendParams.TargetClientIds == null) sendParams.TargetClientIds = networkManager.ConnectedClientsList.Select(client => client.ClientId).ToArray();
-                foreach (var clientId in sendParams.TargetClientIds)
-                {
-                    if (!NetworkedObject.observers.Contains(clientId)) continue;
-
-                    var payload = new ArraySegment<byte>(stream.GetBuffer(), 0, (int)stream.Length);
-                    // @mfatihmar (Unity) Begin: Temporary, inbound RPC queue will replace this workaround
-                    if (clientId == networkManager.ServerClientId && networkManager.IsHost)
-                    {
-                        networkManager.__loopbackRpcQueue.Enqueue((payload, Time.realtimeSinceStartup));
-                    }
-                    // @mfatihmar (Unity) End: Temporary, inbound RPC queue will replace this workaround
-                    else
-                    {
-                        networkManager.NetworkConfig.NetworkTransport.Send(clientId, payload, "STDRPC");
-                    }
-                }
-            }
-
-            writer.SetStream(null);
-            // @mfatihmar (Unity) End: Temporary, placeholder implementation
-        }
-
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-        static ProfilerMarker s_MLAPIRPCSendQueued = new ProfilerMarker("MLAPIRPCSendQueued");
-#endif
-        const String StandardRPC_Channel = "STDRPC";
-        // RuntimeAccessModifiersILPP will make this `protected`
-        internal enum NExec
-        {
-            None = 0,
-            Server = 1,
-            Client = 2
-        }
-
-#pragma warning disable 414
-        // RuntimeAccessModifiersILPP will make this `protected`
-        private NExec __nexec = NExec.None;
-#pragma warning restore 414
-
-        // RuntimeAccessModifiersILPP will make this `protected`
-        private BitWriter BeginServerRPC()
-        {
-            //This will start a new queue item entry and will then return the writer to the current frame's stream
             RPCQueueManager rpcQueueMananger = NetworkingManager.Singleton.GetRPCQueueManager();
             if(rpcQueueMananger != null)
             {
@@ -186,9 +69,9 @@ namespace MLAPI
         }
 
         // RuntimeAccessModifiersILPP will make this `protected`
-        private void EndServerRPC(BitWriter writer)
+        internal void EndSendServerRpc(BitWriter writer, ServerRpcSendParams sendParams, bool isReliable)
         {
-            // @mfatihmar (Unity) Begin: Temporary, placeholder implementation
+
             if (writer == null) return;
 
             RPCQueueManager rpcQueueMananger = NetworkingManager.Singleton.GetRPCQueueManager();
@@ -196,16 +79,17 @@ namespace MLAPI
             {
                 rpcQueueMananger.EndAddQueueItemToOutboundFrame(writer);
             }
+
         }
 
         // RuntimeAccessModifiersILPP will make this `protected`
-        private BitWriter BeginClientRPC(ulong[] targetClientIds)
+        internal BitWriter BeginSendClientRpc(ClientRpcSendParams sendParams, bool isReliable)
         {
             //This will start a new queue item entry and will then return the writer to the current frame's stream
             RPCQueueManager rpcQueueMananger = NetworkingManager.Singleton.GetRPCQueueManager();
             if(rpcQueueMananger != null)
             {
-                var writer = rpcQueueMananger.BeginAddQueueItemToOutboundFrame(RPCQueueManager.QueueItemType.ClientRPC, Time.realtimeSinceStartup, StandardRPC_Channel,0, NetworkId,targetClientIds == null ? InternalMessageSender.GetAllClientIds().ToArray() :  targetClientIds);
+                var writer = rpcQueueMananger.BeginAddQueueItemToOutboundFrame(RPCQueueManager.QueueItemType.ClientRPC, Time.realtimeSinceStartup, StandardRPC_Channel,0, NetworkId,sendParams.TargetClientIds == null ? InternalMessageSender.GetAllClientIds().ToArray() :  sendParams.TargetClientIds);
                 writer.WriteBit(false); // Encrypted
                 writer.WriteBit(false); // Authenticated
                 writer.WriteBits(MLAPIConstants.MLAPI_STD_CLIENT_RPC, 6); // MessageType
@@ -218,9 +102,8 @@ namespace MLAPI
         }
 
         // RuntimeAccessModifiersILPP will make this `protected`
-        private void EndClientRPC(BitWriter writer, ulong[] targetClientIds)
+        internal void EndSendClientRpc(BitWriter writer, ClientRpcSendParams sendParams, bool isReliable)
         {
-            // @mfatihmar (Unity) Begin: Temporary, placeholder implementation
             if (writer == null) return;
 
             RPCQueueManager rpcQueueMananger = NetworkingManager.Singleton.GetRPCQueueManager();
@@ -229,7 +112,6 @@ namespace MLAPI
                 rpcQueueMananger.EndAddQueueItemToOutboundFrame(writer);
             }
         }
-
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
         static ProfilerMarker s_SendClientRPCPerformance = new ProfilerMarker("NetworkedBehaviour.SendClientRPCPerformance");

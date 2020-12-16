@@ -31,7 +31,7 @@ namespace MLAPI.Messaging
         static ProfilerMarker s_HandleAddObject = new ProfilerMarker("InternalMessageHandler.HandleAddObject");
         static ProfilerMarker s_HandleDestroyObject = new ProfilerMarker("InternalMessageHandler.HandleDestroyObject");
         static ProfilerMarker s_HandleSwitchScene = new ProfilerMarker("InternalMessageHandler.HandleSwitchScene");
-        static ProfilerMarker s_HandleClientSwitchSceneCompleted = new ProfilerMarker("InternalMessageHandler.HandleClientSwitchSceneCompleted");        
+        static ProfilerMarker s_HandleClientSwitchSceneCompleted = new ProfilerMarker("InternalMessageHandler.HandleClientSwitchSceneCompleted");
 
         static ProfilerMarker s_HandleChangeOwner =
             new ProfilerMarker("InternalMessageHandler.HandleChangeOwner");
@@ -274,7 +274,7 @@ namespace MLAPI.Messaging
             {
                 NetworkingManager.Singleton.LocalClientId = reader.ReadUInt64Packed();
 
-                uint sceneIndex = 0;                
+                uint sceneIndex = 0;
                 Guid sceneSwitchProgressGuid = new Guid();
 
                 if (NetworkingManager.Singleton.NetworkConfig.EnableSceneManagement)
@@ -704,7 +704,7 @@ namespace MLAPI.Messaging
 #endif
         }
 
- 
+
         /// <summary>
         /// Converts the stream to a PerformanceQueueItem and adds it to the receive queue
         /// </summary>
@@ -719,13 +719,13 @@ namespace MLAPI.Messaging
             ProfilerStatManager.rpcsRcvd.Record();
             RPCQueueManager rpcQueueManager = NetworkingManager.Singleton.GetRPCQueueManager();
             if(rpcQueueManager != null)
-            { 
+            {
                 rpcQueueManager.AddQueueItemToInboundFrame(queueItemType, receiveTime, clientId, (BitStream)stream);
             }
         }
 
 
-  
+
 
         internal static void HandleServerRPC(ulong clientId, Stream stream)
         {

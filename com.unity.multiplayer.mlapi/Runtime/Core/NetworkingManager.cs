@@ -1286,51 +1286,6 @@ namespace MLAPI
                             }
                             break;
                         }
-                    //// @mfatihmar (Unity) Begin: Temporary, placeholder implementation
-                    //case MLAPIConstants.MLAPI_STD_SERVER_RPC:
-                    //    if (IsServer)
-                    //    {
-                    //        using var reader = PooledBitReader.Get(messageStream);
-                    //        var networkObjectId = reader.ReadUInt64Packed();
-                    //        var networkBehaviourId = reader.ReadUInt16Packed();
-                    //        var networkMethodId = reader.ReadUInt32Packed();
-
-                    //        if (__ntable.ContainsKey(networkMethodId))
-                    //        {
-                    //            if (!SpawnManager.SpawnedObjects.ContainsKey(networkObjectId)) return;
-                    //            var networkObject = SpawnManager.SpawnedObjects[networkObjectId];
-
-                    //            // only the OwnerClient can execute ServerRPC from client to server
-                    //            if (networkObject.OwnerClientId != clientId) return;
-
-                    //            var networkBehaviour = networkObject.GetBehaviourAtOrderIndex(networkBehaviourId);
-                    //            if (ReferenceEquals(networkBehaviour, null)) return;
-
-                    //            __ntable[networkMethodId](networkBehaviour, reader);
-                    //        }
-                    //    }
-                    //    break;
-                    //case MLAPIConstants.MLAPI_STD_CLIENT_RPC:
-                    //    if (IsClient)
-                    //    {
-                    //        using var reader = PooledBitReader.Get(messageStream);
-                    //        var networkObjectId = reader.ReadUInt64Packed();
-                    //        var networkBehaviourId = reader.ReadUInt16Packed();
-                    //        var networkMethodId = reader.ReadUInt32Packed();
-
-                    //        if (__ntable.ContainsKey(networkMethodId))
-                    //        {
-                    //            if (!SpawnManager.SpawnedObjects.ContainsKey(networkObjectId)) return;
-                    //            var networkObject = SpawnManager.SpawnedObjects[networkObjectId];
-
-                    //            var networkBehaviour = networkObject.GetBehaviourAtOrderIndex(networkBehaviourId);
-                    //            if (ReferenceEquals(networkBehaviour, null)) return;
-
-                    //            __ntable[networkMethodId](networkBehaviour, reader);
-                    //        }
-                    //    }
-                    //    break;
-                    // @mfatihmar (Unity) End: Temporary, placeholder implementation
                     default:
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError("Read unrecognized messageType " + messageType);
                         break;
@@ -1366,7 +1321,7 @@ namespace MLAPI
                     var networkBehaviour = networkObject.GetBehaviourAtOrderIndex(networkBehaviourId);
                     if (ReferenceEquals(networkBehaviour, null)) return;
 
-                    __ntable[networkMethodId](networkBehaviour, queueItem.StreamReader);
+                    __ntable[networkMethodId](networkBehaviour, queueItem.StreamReader,queueItem.NetworkId);
                 }
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
