@@ -1255,68 +1255,23 @@ namespace MLAPI
                         if (IsServer && NetworkConfig.EnableNetworkLogs) InternalMessageHandler.HandleNetworkLog(clientId, messageStream);
                         break;
                     case MLAPIConstants.MLAPI_STD_SERVER_RPC:
+                    {
+                        if (IsServer)
                         {
-                            do
-                            {
-                                // read the length of the next RPC
-                                int rpcSize = batcher.PopLength(messageStream);
-                                if (IsServer)
-                                {
-
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-                                    s_MLAPIServerSTDRPCQueued.Begin();
-#endif
-                                    // copy what comes after current stream position
-                                    long pos = messageStream.Position;
-                                    BitStream copy = new BitStream();
-                                    copy.SetLength(rpcSize);
-                                    copy.Position = 0;
-                                    Buffer.BlockCopy(messageStream.GetBuffer(), (int)pos, copy.GetBuffer(), 0, rpcSize);
-
-                                    InternalMessageHandler.RPCReceiveQueueItem(clientId, copy, receiveTime, RPCQueueManager.QueueItemType.ServerRPC);
-
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-                                    s_MLAPIServerSTDRPCQueued.End();
-#endif
-                                }
-                                // seek over the RPC
-                                // RPCReceiveQueueItem peeks at content, it doesn't advance
-                                messageStream.Seek(rpcSize, SeekOrigin.Current);
-                            } while (messageStream.Position < messageStream.Length);
-                            ProfilerStatManager.rpcBatchesRcvd.Record();
-
-                            break;
+                            batcher.ReceiveItems(messageStream, ReceiveCallback, MLAPIConstants.MLAPI_STD_SERVER_RPC, clientId, receiveTime);
                         }
+                        ProfilerStatManager.rpcBatchesRcvd.Record();
+                        break;
+                    }
                     case MLAPIConstants.MLAPI_STD_CLIENT_RPC:
+                    {
+                        if (IsClient)
                         {
-                            do
-                            {
-                                // read the length of the next RPC
-                                int rpcSize = batcher.PopLength(messageStream);
-                                if (IsClient)
-                                {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-                                    s_MLAPIClientSTDRPCQueued.Begin();
-#endif
-                                    // copy what comes after current stream position
-                                    long pos = messageStream.Position;
-                                    BitStream copy = new BitStream();
-                                    copy.SetLength(rpcSize);
-                                    copy.Position = 0;
-                                    Buffer.BlockCopy(messageStream.GetBuffer(), (int)pos, copy.GetBuffer(), 0, rpcSize);
-                                    InternalMessageHandler.RPCReceiveQueueItem(clientId, copy, receiveTime, RPCQueueManager.QueueItemType.ClientRPC);
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-                                    s_MLAPIClientSTDRPCQueued.End();
-#endif
-                                }
-                                // seek over the RPC
-                                // RPCReceiveQueueItem peeks at content, it doesn't advance
-                                messageStream.Seek(rpcSize, SeekOrigin.Current);
-                            } while (messageStream.Position < messageStream.Length);
-                            ProfilerStatManager.rpcBatchesRcvd.Record();
-
-                            break;
+                            batcher.ReceiveItems(messageStream, ReceiveCallback, MLAPIConstants.MLAPI_STD_CLIENT_RPC, clientId, receiveTime);
                         }
+                        ProfilerStatManager.rpcBatchesRcvd.Record();
+                        break;
+                    }
                     default:
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError("Read unrecognized messageType " + messageType);
                         break;
@@ -1328,6 +1283,19 @@ namespace MLAPI
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleIncomingData.End();
 #endif
+        }
+
+        private static int ReceiveCallback(ulong clientId, BitStream messageStream, Byte messageType, float receiveTime)
+        {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            s_MLAPIClientSTDRPCQueued.Begin();
+#endif
+            InternalMessageHandler.RPCReceiveQueueItem(clientId, messageStream, receiveTime, RPCQueueManager.QueueItemType.ClientRPC);
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            s_MLAPIClientSTDRPCQueued.End();
+#endif
+
+            return 0;
         }
 
         /// <summary>

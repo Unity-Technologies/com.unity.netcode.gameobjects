@@ -209,6 +209,13 @@ namespace MLAPI
             }
         }
 
+        /// <summary>
+        /// SendCallback
+        /// This is the callback from the batcher when it need to send a batch
+        ///
+        /// </summary>
+        /// <param name="clientId"> clientId to send to</param>
+        /// <param name="sendStream"> the stream to send</param>
         private static int SendCallback(ulong clientId, MLAPI.BatchUtil.SendStream sendStream)
         {
             using PooledBitWriter writer = sendStream.Writer;
@@ -223,8 +230,6 @@ namespace MLAPI
 
             NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(clientId, sendBuffer,
                 string.IsNullOrEmpty(sendStream.Item.Channel) ? "MLAPI_DEFAULT_MESSAGE" : sendStream.Item.Channel);
-
-            ProfilerStatManager.rpcBatchesSent.Record();
 
             return 0;
         }

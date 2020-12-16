@@ -5,6 +5,7 @@ using MLAPI.Profiling;
 using System.Collections.Generic;
 using System.Linq;
 using System;
+using System.IO;
 
 namespace MLAPI
 {
@@ -133,6 +134,7 @@ namespace MLAPI
                 if (length >= threshold)
                 {
                     sendCallback(entry.Key, entry.Value);
+                    ProfilerStatManager.rpcBatchesSent.Record();
 
                     // mark the client for which a batch was sent
                     sent.Add(entry.Key);
@@ -145,5 +147,29 @@ namespace MLAPI
                 SendDict.Remove(clientid);
             }
         }
+
+        public int ReceiveItems(BitStream messageStream, Func<ulong, BitStream, byte, float, int> ReceiveCallback, byte messageType, ulong clientId, float receiveTime)
+        {
+            do
+            {
+                // read the length of the next RPC
+                int rpcSize = PopLength(messageStream);
+
+                // copy what comes after current stream position
+                long pos = messageStream.Position;
+                BitStream copy = new BitStream();
+                copy.SetLength(rpcSize);
+                copy.Position = 0;
+                Buffer.BlockCopy(messageStream.GetBuffer(), (int)pos, copy.GetBuffer(), 0, rpcSize);
+
+                ReceiveCallback(clientId, copy, messageType, receiveTime);
+
+                // seek over the RPC
+                // RPCReceiveQueueItem peeks at content, it doesn't advance
+                messageStream.Seek(rpcSize, SeekOrigin.Current);
+            } while (messageStream.Position < messageStream.Length);
+            return 0;
+        }
+
     }
 }
