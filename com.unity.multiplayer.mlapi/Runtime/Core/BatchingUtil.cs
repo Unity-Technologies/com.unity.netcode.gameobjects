@@ -55,7 +55,7 @@ namespace MLAPI
         /// Returns the list of ClientId an item is targeted to
         /// </summary>
         /// <param name="item">the FrameQueueItem we want targets for</param>
-        private static List<ulong> GetTargetList(FrameQueueItem item)
+        private static List<ulong> GetTargetList(in FrameQueueItem item)
         {
             List<ulong> ret = new List<ulong>();
             switch (item.QueueItemType)
@@ -77,7 +77,7 @@ namespace MLAPI
         /// Add a FrameQueueItem to be sent
         /// </summary>queueItem
         /// <param name="item">the threshold in bytes</param>
-        public void QueueItem(FrameQueueItem item)
+        public void QueueItem(in FrameQueueItem item)
         {
             foreach (ulong clientId in GetTargetList(item))
             {
@@ -148,7 +148,16 @@ namespace MLAPI
             }
         }
 
-        public int ReceiveItems(BitStream messageStream, Func<ulong, BitStream, MLAPI.RPCQueueManager.QueueItemType, float, int> receiveCallback, MLAPI.RPCQueueManager.QueueItemType messageType, ulong clientId, float receiveTime)
+        /// <summary>
+        /// ReceiveItems
+        /// Process the messageStream and call the callback with individual RPC messages
+        /// </summary>
+        /// <param name="messageStream"> the messageStream containing the batched RPC</param>
+        /// <param name="receiveCallback"> the callback to call has type int f(message, type, clientId, time) </param>
+        /// <param name="messageType"> the message type to pass back to callback</param>
+        /// <param name="clientId"> the clientId to pass back to callback</param>
+        /// <param name="receiveTime"> the packet receive time to pass back to callback</param>
+        public int ReceiveItems(in BitStream messageStream, Func<BitStream, MLAPI.RPCQueueManager.QueueItemType, ulong, float, int> receiveCallback, MLAPI.RPCQueueManager.QueueItemType messageType, ulong clientId, float receiveTime)
         {
             do
             {
@@ -162,7 +171,7 @@ namespace MLAPI
                 copy.Position = 0;
                 Buffer.BlockCopy(messageStream.GetBuffer(), (int)pos, copy.GetBuffer(), 0, rpcSize);
 
-                receiveCallback(clientId, copy, messageType, receiveTime);
+                receiveCallback(copy, messageType, clientId, receiveTime);
 
                 // seek over the RPC
                 // RPCReceiveQueueItem peeks at content, it doesn't advance

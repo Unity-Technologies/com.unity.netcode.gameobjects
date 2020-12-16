@@ -1285,7 +1285,7 @@ namespace MLAPI
 #endif
         }
 
-        private static int ReceiveCallback(ulong clientId, BitStream messageStream, MLAPI.RPCQueueManager.QueueItemType messageType, float receiveTime)
+        private static int ReceiveCallback(BitStream messageStream, MLAPI.RPCQueueManager.QueueItemType messageType, ulong clientId, float receiveTime)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (messageType == RPCQueueManager.QueueItemType.ServerRPC)
