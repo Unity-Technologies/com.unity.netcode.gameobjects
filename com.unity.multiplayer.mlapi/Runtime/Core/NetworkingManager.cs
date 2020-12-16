@@ -353,7 +353,6 @@ namespace MLAPI
             ConnectedClients.Clear();
             ConnectedClientsList.Clear();
 
-            ResponseMessageManager.Clear();
             SpawnManager.SpawnedObjects.Clear();
             SpawnManager.SpawnedObjectsList.Clear();
             SpawnManager.releasedNetworkObjectIds.Clear();
@@ -723,7 +722,6 @@ namespace MLAPI
                     {
                         eventOvershootCounter += ((NetworkTime - lastEventTickTime) - (1f / NetworkConfig.EventTickrate));
                         LagCompensationManager.AddFrames();
-                        ResponseMessageManager.CheckTimeouts();
                     }
 
                     if (NetworkConfig.EnableNetworkedVar)
@@ -1049,40 +1047,6 @@ namespace MLAPI
                             MessageType = messageType,
                             ReceiveTime = receiveTime
                         });
-                        break;
-                    case MLAPIConstants.MLAPI_SERVER_RPC:
-                        if (IsServer) InternalMessageHandler.HandleServerRPC(clientId, messageStream);
-                        break;
-                    case MLAPIConstants.MLAPI_SERVER_RPC_REQUEST:
-                        if (IsServer) InternalMessageHandler.HandleServerRPCRequest(clientId, messageStream, channelName, security);
-                        break;
-                    case MLAPIConstants.MLAPI_SERVER_RPC_RESPONSE:
-                        if (IsClient) InternalMessageHandler.HandleServerRPCResponse(clientId, messageStream);
-                        break;
-                    case MLAPIConstants.MLAPI_CLIENT_RPC:
-                        if (IsClient) InternalMessageHandler.HandleClientRPC(clientId, messageStream, BufferCallback, new PreBufferPreset()
-                        {
-                            AllowBuffer = allowBuffer,
-                            ChannelName = channelName,
-                            ClientId = clientId,
-                            Data = data,
-                            MessageType = messageType,
-                            ReceiveTime = receiveTime
-                        });
-                        break;
-                    case MLAPIConstants.MLAPI_CLIENT_RPC_REQUEST:
-                        if (IsClient) InternalMessageHandler.HandleClientRPCRequest(clientId, messageStream, channelName, security, BufferCallback, new PreBufferPreset()
-                        {
-                            AllowBuffer = allowBuffer,
-                            ChannelName = channelName,
-                            ClientId = clientId,
-                            Data = data,
-                            MessageType = messageType,
-                            ReceiveTime = receiveTime
-                        });
-                        break;
-                    case MLAPIConstants.MLAPI_CLIENT_RPC_RESPONSE:
-                        if (IsServer) InternalMessageHandler.HandleClientRPCResponse(clientId, messageStream);
                         break;
                     case MLAPIConstants.MLAPI_UNNAMED_MESSAGE:
                         InternalMessageHandler.HandleUnnamedMessage(clientId, messageStream);

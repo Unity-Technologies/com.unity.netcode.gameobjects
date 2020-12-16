@@ -161,7 +161,19 @@ namespace MLAPI.Messaging
         /// <param name="security">The security settings to apply to the message</param>
         public static void SendNamedMessage(string name, ulong clientId, Stream stream, string channel = null, SecuritySendFlags security = SecuritySendFlags.None)
         {
-            ulong hash = NetworkedBehaviour.HashMethodName(name);
+            ulong hash = 0;
+            switch (NetworkingManager.Singleton.NetworkConfig.RpcHashSize)
+            {
+                case HashSize.VarIntTwoBytes:
+                    hash = name.GetStableHash16();
+                    break;
+                case HashSize.VarIntFourBytes:
+                    hash = name.GetStableHash32();
+                    break;
+                case HashSize.VarIntEightBytes:
+                    hash = name.GetStableHash64();
+                    break;
+            }
 
             using (PooledBitStream messageStream = PooledBitStream.Get())
             {
@@ -186,7 +198,19 @@ namespace MLAPI.Messaging
         /// <param name="security">The security settings to apply to the message</param>
         public static void SendNamedMessage(string name, List<ulong> clientIds, Stream stream, string channel = null, SecuritySendFlags security = SecuritySendFlags.None)
         {
-            ulong hash = NetworkedBehaviour.HashMethodName(name);
+            ulong hash = 0;
+            switch (NetworkingManager.Singleton.NetworkConfig.RpcHashSize)
+            {
+                case HashSize.VarIntTwoBytes:
+                    hash = name.GetStableHash16();
+                    break;
+                case HashSize.VarIntFourBytes:
+                    hash = name.GetStableHash32();
+                    break;
+                case HashSize.VarIntEightBytes:
+                    hash = name.GetStableHash64();
+                    break;
+            }
 
             using (PooledBitStream messageStream = PooledBitStream.Get())
             {

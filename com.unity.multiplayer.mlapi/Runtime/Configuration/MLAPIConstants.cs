@@ -21,12 +21,6 @@ namespace MLAPI.Configuration
         internal const byte MLAPI_TIME_SYNC = 11;
         internal const byte MLAPI_NETWORKED_VAR_DELTA = 12;
         internal const byte MLAPI_NETWORKED_VAR_UPDATE = 13;
-        internal const byte MLAPI_SERVER_RPC = 14;
-        internal const byte MLAPI_SERVER_RPC_REQUEST = 15;
-        internal const byte MLAPI_SERVER_RPC_RESPONSE = 16;
-        internal const byte MLAPI_CLIENT_RPC = 17;
-        internal const byte MLAPI_CLIENT_RPC_REQUEST = 18;
-        internal const byte MLAPI_CLIENT_RPC_RESPONSE = 19;
         internal const byte MLAPI_UNNAMED_MESSAGE = 20;
         internal const byte MLAPI_DESTROY_OBJECTS = 21;
         internal const byte MLAPI_NAMED_MESSAGE = 22;
@@ -50,12 +44,12 @@ namespace MLAPI.Configuration
             "MLAPI_TIME_SYNC",
             "MLAPI_NETWORKED_VAR_DELTA",
             "MLAPI_NETWORKED_VAR_UPDATE",
-            "MLAPI_SERVER_RPC",
-            "MLAPI_SERVER_RPC_REQUEST",
-            "MLAPI_SERVER_RPC_RESPONSE", // 16
-            "MLAPI_CLIENT_RPC",
-            "MLAPI_CLIENT_RPC_REQUEST",
-            "MLAPI_CLIENT_RPC_RESPONSE",
+            "",
+            "",
+            "", // 16
+            "",
+            "",
+            "",
             "MLAPI_UNNAMED_MESSAGE",
             "MLAPI_DESTROY_OBJECTS",
             "MLAPI_NAMED_MESSAGE",

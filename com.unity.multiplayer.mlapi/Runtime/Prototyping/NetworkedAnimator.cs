@@ -14,6 +14,8 @@ namespace MLAPI.Prototyping
     [AddComponentMenu("MLAPI/NetworkedAnimator")]
     public class NetworkedAnimator : NetworkedBehaviour
     {
+        // TODO @mfatihmar (Unity): Re-implement without bugs and unexpected stream read/write behaviours
+        /*
         /// <summary>
         /// Is proximity enabled
         /// </summary>
@@ -453,5 +455,6 @@ namespace MLAPI.Prototyping
                 }
             }
         }
+        */
     }
 }
