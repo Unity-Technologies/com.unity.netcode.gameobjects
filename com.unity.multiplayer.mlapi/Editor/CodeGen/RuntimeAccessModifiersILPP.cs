@@ -20,6 +20,7 @@ namespace MLAPI.Editor.CodeGen
             if (!WillProcess(compiledAssembly)) return null;
             _diagnostics.Clear();
 
+            // read
             var assemblyDefinition = CodeGenHelpers.AssemblyDefinitionFor(compiledAssembly);
             if (assemblyDefinition == null)
             {
@@ -47,7 +48,6 @@ namespace MLAPI.Editor.CodeGen
                 }
             }
             else _diagnostics.AddError($"Cannot get main module from MLAPI Runtime assembly definition: {compiledAssembly.Name}");
-
 
             // write
             var pe = new MemoryStream();
