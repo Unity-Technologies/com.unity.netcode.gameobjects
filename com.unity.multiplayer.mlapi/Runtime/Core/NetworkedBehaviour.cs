@@ -55,10 +55,6 @@ namespace MLAPI
             if(rpcQueueMananger != null)
             {
                 var writer = rpcQueueMananger.BeginAddQueueItemToOutboundFrame(RPCQueueManager.QueueItemType.ServerRPC, Time.realtimeSinceStartup, StandardRPC_Channel,0, NetworkingManager.Singleton.ServerClientId,null);
-
-                writer.WriteBit(false); // Encrypted
-                writer.WriteBit(false); // Authenticated
-                writer.WriteBits(MLAPIConstants.MLAPI_STD_SERVER_RPC, 6); // MessageType
                 writer.WriteUInt64Packed(NetworkId); // NetworkObjectId
                 writer.WriteUInt16Packed(GetBehaviourId()); // NetworkBehaviourId
 
@@ -90,9 +86,6 @@ namespace MLAPI
             if(rpcQueueMananger != null)
             {
                 var writer = rpcQueueMananger.BeginAddQueueItemToOutboundFrame(RPCQueueManager.QueueItemType.ClientRPC, Time.realtimeSinceStartup, StandardRPC_Channel,0, NetworkId,sendParams.TargetClientIds == null ? InternalMessageSender.GetAllClientIds().ToArray() :  sendParams.TargetClientIds);
-                writer.WriteBit(false); // Encrypted
-                writer.WriteBit(false); // Authenticated
-                writer.WriteBits(MLAPIConstants.MLAPI_STD_CLIENT_RPC, 6); // MessageType
                 writer.WriteUInt64Packed(NetworkId); // NetworkObjectId
                 writer.WriteUInt16Packed(GetBehaviourId()); // NetworkBehaviourId
 

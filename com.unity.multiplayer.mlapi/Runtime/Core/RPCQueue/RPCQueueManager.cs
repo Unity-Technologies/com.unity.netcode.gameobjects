@@ -291,13 +291,10 @@ namespace MLAPI
             queueHistoryItem.QueueWriter.WriteInt32(0);
 
             //Always make sure we are positioned at the start of the stream
-            long streamSize = message.Position;
-
-            //Inbound we copy the entire packet and store the position offset
-            streamSize = message.Length;
+            long streamSize = message.Length;
             queueHistoryItem.QueueWriter.WriteInt64(streamSize);
             queueHistoryItem.QueueWriter.WriteInt64(message.Position);
-            queueHistoryItem.QueueWriter.WriteBytes(message.GetBuffer(),streamSize);
+            queueHistoryItem.QueueWriter.WriteBytes(message.GetBuffer(), streamSize);
 
             //Add the packed size to the offsets for parsing over various entries
             queueHistoryItem.QueueItemOffsets.Add((uint)queueHistoryItem.QueueStream.Position);
