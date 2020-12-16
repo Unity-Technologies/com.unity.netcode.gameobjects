@@ -1258,7 +1258,7 @@ namespace MLAPI
                     {
                         if (IsServer)
                         {
-                            batcher.ReceiveItems(messageStream, ReceiveCallback, MLAPIConstants.MLAPI_STD_SERVER_RPC, clientId, receiveTime);
+                            batcher.ReceiveItems(messageStream, ReceiveCallback, RPCQueueManager.QueueItemType.ServerRPC, clientId, receiveTime);
                         }
                         ProfilerStatManager.rpcBatchesRcvd.Record();
                         break;
@@ -1267,7 +1267,7 @@ namespace MLAPI
                     {
                         if (IsClient)
                         {
-                            batcher.ReceiveItems(messageStream, ReceiveCallback, MLAPIConstants.MLAPI_STD_CLIENT_RPC, clientId, receiveTime);
+                            batcher.ReceiveItems(messageStream, ReceiveCallback, RPCQueueManager.QueueItemType.ClientRPC, clientId, receiveTime);
                         }
                         ProfilerStatManager.rpcBatchesRcvd.Record();
                         break;
@@ -1285,14 +1285,28 @@ namespace MLAPI
 #endif
         }
 
-        private static int ReceiveCallback(ulong clientId, BitStream messageStream, Byte messageType, float receiveTime)
+        private static int ReceiveCallback(ulong clientId, BitStream messageStream, MLAPI.RPCQueueManager.QueueItemType messageType, float receiveTime)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_MLAPIClientSTDRPCQueued.Begin();
+            if (messageType == RPCQueueManager.QueueItemType.ServerRPC)
+            {
+                s_MLAPIServerSTDRPCQueued.Begin();
+            }
+            else
+            {
+                s_MLAPIClientSTDRPCQueued.Begin();
+            }
 #endif
-            InternalMessageHandler.RPCReceiveQueueItem(clientId, messageStream, receiveTime, RPCQueueManager.QueueItemType.ClientRPC);
+            InternalMessageHandler.RPCReceiveQueueItem(clientId, messageStream, receiveTime, messageType);
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_MLAPIClientSTDRPCQueued.End();
+            if (messageType == RPCQueueManager.QueueItemType.ServerRPC)
+            {
+                s_MLAPIServerSTDRPCQueued.End();
+            }
+            else
+            {
+                s_MLAPIClientSTDRPCQueued.End();
+            }
 #endif
 
             return 0;

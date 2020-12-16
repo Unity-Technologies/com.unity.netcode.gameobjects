@@ -148,7 +148,7 @@ namespace MLAPI
             }
         }
 
-        public int ReceiveItems(BitStream messageStream, Func<ulong, BitStream, byte, float, int> ReceiveCallback, byte messageType, ulong clientId, float receiveTime)
+        public int ReceiveItems(BitStream messageStream, Func<ulong, BitStream, MLAPI.RPCQueueManager.QueueItemType, float, int> receiveCallback, MLAPI.RPCQueueManager.QueueItemType messageType, ulong clientId, float receiveTime)
         {
             do
             {
@@ -162,7 +162,7 @@ namespace MLAPI
                 copy.Position = 0;
                 Buffer.BlockCopy(messageStream.GetBuffer(), (int)pos, copy.GetBuffer(), 0, rpcSize);
 
-                ReceiveCallback(clientId, copy, messageType, receiveTime);
+                receiveCallback(clientId, copy, messageType, receiveTime);
 
                 // seek over the RPC
                 // RPCReceiveQueueItem peeks at content, it doesn't advance
