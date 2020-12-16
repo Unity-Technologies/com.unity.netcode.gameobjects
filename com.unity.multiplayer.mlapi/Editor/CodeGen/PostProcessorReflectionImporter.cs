@@ -7,7 +7,7 @@ namespace MLAPI.Editor.CodeGen
     internal class PostProcessorReflectionImporter : DefaultReflectionImporter
     {
         private const string SystemPrivateCoreLib = "System.Private.CoreLib";
-        private AssemblyNameReference _correctCorlib;
+        private readonly AssemblyNameReference _correctCorlib;
 
         public PostProcessorReflectionImporter(ModuleDefinition module) : base(module)
         {
@@ -16,10 +16,7 @@ namespace MLAPI.Editor.CodeGen
 
         public override AssemblyNameReference ImportReference(AssemblyName reference)
         {
-            if (_correctCorlib != null && reference.Name == SystemPrivateCoreLib)
-                return _correctCorlib;
-
-            return base.ImportReference(reference);
+            return _correctCorlib != null && reference.Name == SystemPrivateCoreLib ? _correctCorlib : base.ImportReference(reference);
         }
     }
 }

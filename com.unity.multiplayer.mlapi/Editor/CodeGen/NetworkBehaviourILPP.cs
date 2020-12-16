@@ -29,7 +29,6 @@ namespace MLAPI.Editor.CodeGen
             if (!WillProcess(compiledAssembly)) return null;
             _diagnostics.Clear();
 
-
             // read
             var assemblyDefinition = CodeGenHelpers.AssemblyDefinitionFor(compiledAssembly);
             if (assemblyDefinition == null)
@@ -37,7 +36,6 @@ namespace MLAPI.Editor.CodeGen
                 _diagnostics.AddError($"Cannot read assembly definition: {compiledAssembly.Name}");
                 return null;
             }
-
 
             // process
             var mainModule = assemblyDefinition.MainModule;
@@ -54,7 +52,6 @@ namespace MLAPI.Editor.CodeGen
                 else _diagnostics.AddError($"Cannot import references into main module: {mainModule.Name}");
             }
             else _diagnostics.AddError($"Cannot get main module from assembly definition: {compiledAssembly.Name}");
-
 
             // write
             var pe = new MemoryStream();

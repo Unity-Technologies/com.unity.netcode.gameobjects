@@ -170,26 +170,25 @@ namespace MLAPI.Editor.CodeGen
             });
         }
 
-        internal static AssemblyDefinition AssemblyDefinitionFor(ICompiledAssembly compiledAssembly)
+        public static AssemblyDefinition AssemblyDefinitionFor(ICompiledAssembly compiledAssembly)
         {
-            var resolver = new PostProcessorAssemblyResolver(compiledAssembly);
+            var assemblyResolver = new PostProcessorAssemblyResolver(compiledAssembly);
             var readerParameters = new ReaderParameters
             {
-                SymbolStream = new MemoryStream(compiledAssembly.InMemoryAssembly.PdbData.ToArray()),
+                SymbolStream = new MemoryStream(compiledAssembly.InMemoryAssembly.PdbData),
                 SymbolReaderProvider = new PortablePdbReaderProvider(),
-                AssemblyResolver = resolver,
+                AssemblyResolver = assemblyResolver,
                 ReflectionImporterProvider = new PostProcessorReflectionImporterProvider(),
                 ReadingMode = ReadingMode.Immediate
             };
 
-            var peStream = new MemoryStream(compiledAssembly.InMemoryAssembly.PeData.ToArray());
-            var assemblyDefinition = AssemblyDefinition.ReadAssembly(peStream, readerParameters);
+            var assemblyDefinition = AssemblyDefinition.ReadAssembly(new MemoryStream(compiledAssembly.InMemoryAssembly.PeData), readerParameters);
 
             //apparently, it will happen that when we ask to resolve a type that lives inside Unity.Entities, and we
             //are also postprocessing Unity.Entities, type resolving will fail, because we do not actually try to resolve
             //inside the assembly we are processing. Let's make sure we do that, so that we can use postprocessor features inside
             //unity.entities itself as well.
-            resolver.AddAssemblyDefinitionBeingOperatedOn(assemblyDefinition);
+            assemblyResolver.AddAssemblyDefinitionBeingOperatedOn(assemblyDefinition);
 
             return assemblyDefinition;
         }
