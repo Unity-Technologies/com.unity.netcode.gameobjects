@@ -47,13 +47,28 @@ namespace MLAPI
         static ProfilerMarker s_EventTick = new ProfilerMarker("Event");
         static ProfilerMarker s_ReceiveTick = new ProfilerMarker("Receive");
         static ProfilerMarker s_SyncTime = new ProfilerMarker("SyncTime");
-        static ProfilerMarker s_TransportConnect =
-            new ProfilerMarker("TransportConnect");
-        static ProfilerMarker s_HandleIncomingData =
-            new ProfilerMarker("HandleIncomingData");
-        static ProfilerMarker s_TransportDisconnect =
-            new ProfilerMarker("TransportDisconnect");
+        static ProfilerMarker s_TransportConnect = new ProfilerMarker("TransportConnect");
+        static ProfilerMarker s_HandleIncomingData = new ProfilerMarker("HandleIncomingData");
+        static ProfilerMarker s_TransportDisconnect = new ProfilerMarker("TransportDisconnect");
+
+
+        static ProfilerMarker s_MLAPIServerRPC = new ProfilerMarker("MLAPIServerRPC");
+        static ProfilerMarker s_MLAPIServerRPCQueued = new ProfilerMarker("MLAPIServerRPCQueued");
+
+        static ProfilerMarker s_MLAPIClientRPC = new ProfilerMarker("MLAPIClientRPC");
+        static ProfilerMarker s_MLAPIClientRPCQueued = new ProfilerMarker("MLAPIClientRPCQueued");
+
+        static ProfilerMarker s_MLAPIServerSTDRPC = new ProfilerMarker("MLAPIServerSTDRPC");
+        static ProfilerMarker s_MLAPIServerSTDRPCQueued = new ProfilerMarker("MLAPIServerSTDRPCQueued");
+
+        static ProfilerMarker s_MLAPIClientSTDRPC = new ProfilerMarker("MLAPIClientSTDRPC");
+        static ProfilerMarker s_MLAPIClientSTDRPCQueued = new ProfilerMarker("MLAPIClientSTDRPCQueued");
+        static ProfilerMarker s_InvokeRPC = new ProfilerMarker("InvokeRPC");
+
+
 #endif
+        [HideInInspector]
+        public bool LoopbackEnabled;
 
         /// <summary>
         /// A synchronized time, represents the time in seconds since the server application started. Is replicated across all clients
@@ -190,6 +205,9 @@ namespace MLAPI
                 OnClientDisconnectCallback(clientId);
             }
         }
+
+
+
         /// <summary>
         /// The callback to invoke once the server is ready
         /// </summary>
@@ -252,7 +270,7 @@ namespace MLAPI
                 return;
             }
 
-            InternalMessageSender.Send(MLAPIConstants.MLAPI_UNNAMED_MESSAGE, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, clientIds, stream, security, null);
+            InternalMessageSender.Send(MLAPIConstants.MLAPI_UNNAMED_MESSAGE, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, clientIds, stream, security);
         }
 
         /// <summary>
@@ -265,7 +283,7 @@ namespace MLAPI
         [Obsolete("Use CustomMessagingManager.SendUnnamedMessage instead")]
         public void SendCustomMessage(ulong clientId, BitStream stream, string channel = null, SecuritySendFlags security = SecuritySendFlags.None)
         {
-            InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_UNNAMED_MESSAGE, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security, null);
+            InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_UNNAMED_MESSAGE, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security);
         }
 
         private void OnValidate()
@@ -337,6 +355,12 @@ namespace MLAPI
                 }
                 NetworkConfig.PlayerPrefabHash.Value = prefab.Hash;
             }
+        }
+
+        RPCQueueManager rpcQueueMananger;
+        public RPCQueueManager GetRPCQueueManager()
+        {
+            return rpcQueueMananger;
         }
 
         private void Init(bool server)
@@ -635,8 +659,19 @@ namespace MLAPI
             }
         }
 
+        public void OnDestroyForNewScene()
+        {
+            Destroy(this.gameObject);
+        }
+
         private void OnDestroy()
         {
+            if(rpcQueueMananger != null)
+            {
+                rpcQueueMananger.OnExiting();
+            }
+
+
             if (Singleton != null && Singleton == this)
             {
                 Singleton = null;
@@ -660,22 +695,67 @@ namespace MLAPI
 
             if (NetworkConfig != null && NetworkConfig.NetworkTransport != null) //The Transport is set during Init time, thus it is possible for the Transport to be null
                 NetworkConfig.NetworkTransport.Shutdown();
+
+            if(rpcQueueMananger != null)
+            {
+                rpcQueueMananger.Shutdown();
+                rpcQueueMananger = null;
+            }
+
+        }
+
+
+        private void Awake()
+        {
+
+            rpcQueueMananger = new RPCQueueManager(LoopbackEnabled);
+            //Note: Since frame history is not being used, this is set to 0
+            //To test frame history, increase the number to (n) where n > 0
+            if(rpcQueueMananger != null)
+            {
+                 rpcQueueMananger.Initialize(0);
+            }
+
+            NetworkUpdateManager.RegisterNetworkUpdateAction(NetworkPreUpdate,NetworkUpdateManager.NetworkUpdateStages.PREUPDATE);
+            NetworkUpdateManager.RegisterNetworkUpdateAction(NetworkFixedUpdate,NetworkUpdateManager.NetworkUpdateStages.FIXEDUPDATE);
+            NetworkUpdateManager.RegisterNetworkUpdateAction(NetworkUpdate,NetworkUpdateManager.NetworkUpdateStages.UPDATE);
+            NetworkUpdateManager.RegisterNetworkUpdateAction(NetworkLateUpdate,NetworkUpdateManager.NetworkUpdateStages.LATEUPDATE);
+        }
+
+        private void Start()
+        {
+
         }
 
         private float lastReceiveTickTime;
         private float lastEventTickTime;
         private float eventOvershootCounter;
         private float lastTimeSyncTime;
-        private void Update()
+
+        //NSS-TODO: Remove this tick counter once this is replaced with the real implementation that should be part of the network timing synchronization
+        public static ulong CurrentReceiveTick = 0;
+
+        /// <summary>
+        /// NetworkPreUpdate:
+        /// Mostly for handling the receiving of RPCs
+        /// </summary>
+        void NetworkPreUpdate()
         {
-            if (IsListening)
+            if(IsListening)
             {
+                // Process received data
                 if ((NetworkTime - lastReceiveTickTime >= (1f / NetworkConfig.ReceiveTickrate)) || NetworkConfig.ReceiveTickrate <= 0)
                 {
                     ProfilerStatManager.rcvTickRate.Record();
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_ReceiveTick.Begin();
 #endif
+                    bool IsLoopBack = false;
+                    if(rpcQueueMananger != null)
+                    {
+                        IsLoopBack = rpcQueueMananger.IsLoopBack();
+                    }
+
 
                     // @mfatihmar (Unity) Begin: Temporary, inbound RPC queue will replace this workaround
                     if (IsHost)
@@ -689,35 +769,60 @@ namespace MLAPI
                     // @mfatihmar (Unity) End: Temporary, inbound RPC queue will replace this workaround
 
                     NetworkProfiler.StartTick(TickType.Receive);
-                    NetEventType eventType;
-                    int processedEvents = 0;
-                    do
-                    {
-                        processedEvents++;
-                        eventType = NetworkConfig.NetworkTransport.PollEvent(out ulong clientId, out string channelName, out ArraySegment<byte> payload, out float receiveTime);
-                        HandleRawTransportPoll(eventType, clientId, channelName, payload, receiveTime);
 
-                        // Only do another iteration if: there are no more messages AND (there is no limit to max events or we have processed less than the maximum)
-                    } while (IsListening && (eventType != NetEventType.Nothing && (NetworkConfig.MaxReceiveEventsPerTickRate <= 0 || processedEvents < NetworkConfig.MaxReceiveEventsPerTickRate)));
+                    //If we are in loopback mode, we don't need to touch the transport
+                    if(!IsLoopBack)
+                    {
+                        NetEventType eventType;
+                        int processedEvents = 0;
+                        do
+                        {
+                            processedEvents++;
+                            eventType = NetworkConfig.NetworkTransport.PollEvent(out ulong clientId, out string channelName, out ArraySegment<byte> payload, out float receiveTime);
+                            HandleRawTransportPoll(eventType, clientId, channelName, payload, receiveTime);
+
+                            // Only do another iteration if: there are no more messages AND (there is no limit to max events or we have processed less than the maximum)
+                        } while (IsListening && (eventType != NetEventType.Nothing) && (NetworkConfig.MaxReceiveEventsPerTickRate <= 0 || processedEvents < NetworkConfig.MaxReceiveEventsPerTickRate));
+                    }
                     lastReceiveTickTime = NetworkTime;
+
+                    //NSS-TODO: Remove this tick counter once this is replaced with the real implementation that should be part of the network timing synchronization
+                    CurrentReceiveTick++;
                     NetworkProfiler.EndTick();
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_ReceiveTick.End();
 #endif
                 }
+            }
+        }
 
-                if (!IsListening)
-                {
-                    // If we get disconnected in the previous poll. IsListening will be set to false.
-                    return;
-                }
+
+        void NetworkFixedUpdate()
+        {
+            if(rpcQueueMananger != null)
+            {
+                rpcQueueMananger.ProcessAndFlushRPCQueue(RPCQueueManager.RPCQueueProcessingTypes.RECEIVE);
+            }
+        }
+
+        /// <summary>
+        /// NetworkUpdate:
+        /// Primarily handles all remaining messages, network variable/behavior updates
+        /// </summary>
+        void NetworkUpdate()
+        {
+            if (IsListening)
+            {
 
                 if (((NetworkTime - lastEventTickTime >= (1f / NetworkConfig.EventTickrate))))
                 {
+
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_EventTick.Begin();
 #endif
+#if UNITY_EDITOR
                     NetworkProfiler.StartTick(TickType.Event);
+#endif
 
                     if (IsServer)
                     {
@@ -741,27 +846,37 @@ namespace MLAPI
                     {
                         lastEventTickTime = NetworkTime;
                     }
-
+#if UNITY_EDITOR
                     NetworkProfiler.EndTick();
+#endif
+
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_EventTick.End();
 #endif
                 }
                 else if (IsServer && eventOvershootCounter >= ((1f / NetworkConfig.EventTickrate)))
                 {
+#if UNITY_EDITOR
                     NetworkProfiler.StartTick(TickType.Event);
+#endif
                     //We run this one to compensate for previous update overshoots.
                     eventOvershootCounter -= (1f / NetworkConfig.EventTickrate);
                     LagCompensationManager.AddFrames();
+#if UNITY_EDITOR
                     NetworkProfiler.EndTick();
+#endif
                 }
 
                 if (IsServer && NetworkConfig.EnableTimeResync && NetworkTime - lastTimeSyncTime >= NetworkConfig.TimeResyncInterval)
                 {
+#if UNITY_EDITOR
                     NetworkProfiler.StartTick(TickType.Event);
+#endif
                     SyncTime();
                     lastTimeSyncTime = NetworkTime;
+#if UNITY_EDITOR
                     NetworkProfiler.EndTick();
+#endif
                 }
 
                 if (!Mathf.Approximately(networkTimeOffset, currentNetworkTimeOffset)) {
@@ -772,6 +887,18 @@ namespace MLAPI
                 }
             }
         }
+
+        /// <summary>
+        /// Finalizes the end of this network frame timing (i.e. anything beyond this time is next frame
+        /// </summary>
+        void NetworkLateUpdate()
+        {
+            if(rpcQueueMananger != null)
+            {
+                rpcQueueMananger.ProcessAndFlushRPCQueue(RPCQueueManager.RPCQueueProcessingTypes.SEND);
+            }
+        }
+
 
         internal void UpdateNetworkTime(ulong clientId, float netTime, float receiveTime, bool warp = false)
         {
@@ -795,7 +922,7 @@ namespace MLAPI
                         writer.WriteByteArray(NetworkConfig.ConnectionData);
                 }
 
-                InternalMessageSender.Send(ServerClientId, MLAPIConstants.MLAPI_CONNECTION_REQUEST, "MLAPI_INTERNAL", stream, SecuritySendFlags.Authenticated | SecuritySendFlags.Encrypted, null);
+                InternalMessageSender.Send(ServerClientId, MLAPIConstants.MLAPI_CONNECTION_REQUEST, "MLAPI_INTERNAL", stream, SecuritySendFlags.Authenticated | SecuritySendFlags.Encrypted);
             }
         }
 
@@ -928,10 +1055,13 @@ namespace MLAPI
 #endif
                     break;
                 case NetEventType.Data:
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo($"Incoming Data From {clientId} : {payload.Count} bytes");
+                    {
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo($"Incoming Data From {clientId} : {payload.Count} bytes");
 
-                    HandleIncomingData(clientId, channelName, payload, receiveTime, true);
-                    break;
+                        HandleIncomingData(clientId, channelName, payload, receiveTime, true);
+
+                        break;
+                    }
                 case NetEventType.Disconnect:
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_TransportDisconnect.Begin();
@@ -1014,7 +1144,8 @@ namespace MLAPI
                         if (IsClient) InternalMessageHandler.HandleDestroyObject(clientId, messageStream);
                         break;
                     case MLAPIConstants.MLAPI_SWITCH_SCENE:
-                        if (IsClient) InternalMessageHandler.HandleSwitchScene(clientId, messageStream);
+                        if (IsClient)
+                            InternalMessageHandler.HandleSwitchScene(clientId, messageStream);
                         break;
                     case MLAPIConstants.MLAPI_CHANGE_OWNER:
                         if (IsClient) InternalMessageHandler.HandleChangeOwner(clientId, messageStream);
@@ -1051,8 +1182,18 @@ namespace MLAPI
                         });
                         break;
                     case MLAPIConstants.MLAPI_SERVER_RPC:
-                        if (IsServer) InternalMessageHandler.HandleServerRPC(clientId, messageStream);
-                        break;
+                        {
+                            #if DEVELOPMENT_BUILD || UNITY_EDITOR
+                            s_MLAPIServerRPCQueued.Begin();
+                            #endif
+
+                            if (IsServer) InternalMessageHandler.RPCReceiveQueueItem(clientId, messageStream, receiveTime,RPCQueueManager.QueueItemType.ServerRPC);
+
+                            #if DEVELOPMENT_BUILD || UNITY_EDITOR
+                            s_MLAPIServerRPCQueued.End();
+                            #endif
+                            break;
+                        }
                     case MLAPIConstants.MLAPI_SERVER_RPC_REQUEST:
                         if (IsServer) InternalMessageHandler.HandleServerRPCRequest(clientId, messageStream, channelName, security);
                         break;
@@ -1060,16 +1201,21 @@ namespace MLAPI
                         if (IsClient) InternalMessageHandler.HandleServerRPCResponse(clientId, messageStream);
                         break;
                     case MLAPIConstants.MLAPI_CLIENT_RPC:
-                        if (IsClient) InternalMessageHandler.HandleClientRPC(clientId, messageStream, BufferCallback, new PreBufferPreset()
                         {
-                            AllowBuffer = allowBuffer,
-                            ChannelName = channelName,
-                            ClientId = clientId,
-                            Data = data,
-                            MessageType = messageType,
-                            ReceiveTime = receiveTime
-                        });
-                        break;
+                            if (IsClient)
+                            {
+                                #if DEVELOPMENT_BUILD || UNITY_EDITOR
+                                s_MLAPIClientRPCQueued.Begin();
+                                #endif
+
+                                InternalMessageHandler.RPCReceiveQueueItem(clientId, messageStream,receiveTime,RPCQueueManager.QueueItemType.ClientRPC);
+
+                                #if DEVELOPMENT_BUILD || UNITY_EDITOR
+                                s_MLAPIClientRPCQueued.End();
+                                #endif
+                            }
+                            break;
+                        }
                     case MLAPIConstants.MLAPI_CLIENT_RPC_REQUEST:
                         if (IsClient) InternalMessageHandler.HandleClientRPCRequest(clientId, messageStream, channelName, security, BufferCallback, new PreBufferPreset()
                         {
@@ -1107,55 +1253,39 @@ namespace MLAPI
                     case MLAPIConstants.MLAPI_SERVER_LOG:
                         if (IsServer && NetworkConfig.EnableNetworkLogs) InternalMessageHandler.HandleNetworkLog(clientId, messageStream);
                         break;
-                    // @mfatihmar (Unity) Begin: Temporary, placeholder implementation
                     case MLAPIConstants.MLAPI_STD_SERVER_RPC:
-                        if (IsServer)
                         {
-                            using (var reader = PooledBitReader.Get(messageStream))
+                            if (IsServer)
                             {
-                                var networkObjectId = reader.ReadUInt64Packed();
-                                var networkBehaviourId = reader.ReadUInt16Packed();
-                                var networkMethodId = reader.ReadUInt32Packed();
 
-                                if (__ntable.ContainsKey(networkMethodId))
-                                {
-                                    if (!SpawnManager.SpawnedObjects.ContainsKey(networkObjectId)) return;
-                                    var networkObject = SpawnManager.SpawnedObjects[networkObjectId];
+                                #if DEVELOPMENT_BUILD || UNITY_EDITOR
+                                s_MLAPIServerSTDRPCQueued.Begin();
+                                #endif
 
-                                    // only the OwnerClient can execute ServerRPC from client to server
-                                    if (networkObject.OwnerClientId != clientId) return;
+                                InternalMessageHandler.RPCReceiveQueueItem(clientId, messageStream, receiveTime,RPCQueueManager.QueueItemType.ServerRPC);
 
-                                    var networkBehaviour = networkObject.GetBehaviourAtOrderIndex(networkBehaviourId);
-                                    if (ReferenceEquals(networkBehaviour, null)) return;
-
-                                    __ntable[networkMethodId](networkBehaviour, reader, clientId);
-                                }
+                                #if DEVELOPMENT_BUILD || UNITY_EDITOR
+                                s_MLAPIServerSTDRPCQueued.End();
+                                #endif
                             }
+                            break;
                         }
-                        break;
                     case MLAPIConstants.MLAPI_STD_CLIENT_RPC:
-                        if (IsClient)
                         {
-                            using (var reader = PooledBitReader.Get(messageStream))
+                            if (IsClient)
                             {
-                                var networkObjectId = reader.ReadUInt64Packed();
-                                var networkBehaviourId = reader.ReadUInt16Packed();
-                                var networkMethodId = reader.ReadUInt32Packed();
+                                #if DEVELOPMENT_BUILD || UNITY_EDITOR
+                                s_MLAPIClientSTDRPCQueued.Begin();
+                                #endif
 
-                                if (__ntable.ContainsKey(networkMethodId))
-                                {
-                                    if (!SpawnManager.SpawnedObjects.ContainsKey(networkObjectId)) return;
-                                    var networkObject = SpawnManager.SpawnedObjects[networkObjectId];
+                                InternalMessageHandler.RPCReceiveQueueItem(clientId, messageStream,receiveTime,RPCQueueManager.QueueItemType.ClientRPC);
 
-                                    var networkBehaviour = networkObject.GetBehaviourAtOrderIndex(networkBehaviourId);
-                                    if (ReferenceEquals(networkBehaviour, null)) return;
-
-                                    __ntable[networkMethodId](networkBehaviour, reader, clientId);
-                                }
+                                #if DEVELOPMENT_BUILD || UNITY_EDITOR
+                                s_MLAPIClientSTDRPCQueued.End();
+                                #endif
                             }
+                            break;
                         }
-                        break;
-                    // @mfatihmar (Unity) End: Temporary, placeholder implementation
                     default:
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError("Read unrecognized messageType " + messageType);
                         break;
@@ -1166,6 +1296,36 @@ namespace MLAPI
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleIncomingData.End();
+#endif
+        }
+
+        /// <summary>
+        /// InvokeRPC
+        /// Called when an inbound queued RPC is invoked
+        /// </summary>
+        /// <param name="queueItem">frame queue item to invoke</param>
+        public void InvokeRPC(FrameQueueItem queueItem)
+        {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+                s_InvokeRPC.Begin();
+#endif
+                var networkObjectId = queueItem.StreamReader.ReadUInt64Packed();
+                var networkBehaviourId = queueItem.StreamReader.ReadUInt16Packed();
+                var networkMethodId = queueItem.StreamReader.ReadUInt32Packed();
+
+                if (__ntable.ContainsKey(networkMethodId))
+                {
+                    if (!SpawnManager.SpawnedObjects.ContainsKey(networkObjectId)) return;
+                    var networkObject = SpawnManager.SpawnedObjects[networkObjectId];
+
+                    var networkBehaviour = networkObject.GetBehaviourAtOrderIndex(networkBehaviourId);
+                    if (ReferenceEquals(networkBehaviour, null)) return;
+
+                    __ntable[networkMethodId](networkBehaviour, queueItem.StreamReader,queueItem.NetworkId);
+                }
+
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+                s_InvokeRPC.End();
 #endif
         }
 
@@ -1297,7 +1457,7 @@ namespace MLAPI
                 using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                 {
                     writer.WriteSinglePacked(Time.realtimeSinceStartup);
-                    InternalMessageSender.Send(MLAPIConstants.MLAPI_TIME_SYNC, "MLAPI_TIME_SYNC", stream, SecuritySendFlags.None, null);
+                    InternalMessageSender.Send(MLAPIConstants.MLAPI_TIME_SYNC, "MLAPI_TIME_SYNC", stream, SecuritySendFlags.None);
                 }
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -1431,7 +1591,7 @@ namespace MLAPI
                             }
                         }
 
-                        InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_CONNECTION_APPROVED, "MLAPI_INTERNAL", stream, SecuritySendFlags.Encrypted | SecuritySendFlags.Authenticated, null);
+                        InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_CONNECTION_APPROVED, "MLAPI_INTERNAL", stream, SecuritySendFlags.Encrypted | SecuritySendFlags.Authenticated);
 
                         if (OnClientConnectedCallback != null)
                             OnClientConnectedCallback.Invoke(clientId);
@@ -1493,7 +1653,7 @@ namespace MLAPI
                                 ConnectedClients[clientId].PlayerObject.WriteNetworkedVarData(stream, clientPair.Key);
                             }
 
-                            InternalMessageSender.Send(clientPair.Key, MLAPIConstants.MLAPI_ADD_OBJECT, "MLAPI_INTERNAL", stream, SecuritySendFlags.None, null);
+                            InternalMessageSender.Send(clientPair.Key, MLAPIConstants.MLAPI_ADD_OBJECT, "MLAPI_INTERNAL", stream, SecuritySendFlags.None);
                         }
                     }
                 }

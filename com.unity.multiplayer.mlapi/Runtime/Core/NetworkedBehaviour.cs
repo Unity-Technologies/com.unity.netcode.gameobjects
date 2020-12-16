@@ -40,6 +40,8 @@ namespace MLAPI
             Client = 2
         }
 
+        const String StandardRPC_Channel = "STDRPC";
+
 #pragma warning disable 414
         // RuntimeAccessModifiersILPP will make this `protected`
         internal NExec __nexec = NExec.None;
@@ -49,102 +51,66 @@ namespace MLAPI
         internal BitWriter BeginSendServerRpc(ServerRpcSendParams sendParams, bool isReliable)
         {
             // @mfatihmar (Unity) Begin: Temporary, placeholder implementation
-            var stream = PooledBitStream.Get();
-            var writer = PooledBitWriter.Get(stream);
+            RPCQueueManager rpcQueueMananger = NetworkingManager.Singleton.GetRPCQueueManager();
+            if(rpcQueueMananger != null)
+            {
+                var writer = rpcQueueMananger.BeginAddQueueItemToOutboundFrame(RPCQueueManager.QueueItemType.ServerRPC, Time.realtimeSinceStartup, StandardRPC_Channel,0, NetworkingManager.Singleton.ServerClientId,null);
 
-            writer.WriteBit(false); // Encrypted
-            writer.WriteBit(false); // Authenticated
-            writer.WriteBits(MLAPIConstants.MLAPI_STD_SERVER_RPC, 6); // MessageType
-            writer.WriteUInt64Packed(NetworkId); // NetworkObjectId
-            writer.WriteUInt16Packed(GetBehaviourId()); // NetworkBehaviourId
+                writer.WriteBit(false); // Encrypted
+                writer.WriteBit(false); // Authenticated
+                writer.WriteBits(MLAPIConstants.MLAPI_STD_SERVER_RPC, 6); // MessageType
+                writer.WriteUInt64Packed(NetworkId); // NetworkObjectId
+                writer.WriteUInt16Packed(GetBehaviourId()); // NetworkBehaviourId
 
-            return writer;
+                return writer;
+            }
+            return null;
             // @mfatihmar (Unity) End: Temporary, placeholder implementation
         }
 
         // RuntimeAccessModifiersILPP will make this `protected`
         internal void EndSendServerRpc(BitWriter writer, ServerRpcSendParams sendParams, bool isReliable)
         {
-            // @mfatihmar (Unity) Begin: Temporary, placeholder implementation
+
             if (writer == null) return;
 
-            var stream = (BitStream)writer.GetStream();
-            if (stream != null)
+            RPCQueueManager rpcQueueMananger = NetworkingManager.Singleton.GetRPCQueueManager();
+            if(rpcQueueMananger != null)
             {
-                stream.PadStream();
-
-                var networkManager = NetworkingManager.Singleton;
-                if (ReferenceEquals(networkManager, null)) return;
-
-                var payload = new ArraySegment<byte>(stream.GetBuffer(), 0, (int)stream.Length);
-                // @mfatihmar (Unity) Begin: Temporary, inbound RPC queue will replace this workaround
-                if (networkManager.IsHost)
-                {
-                    networkManager.__loopbackRpcQueue.Enqueue((payload, Time.realtimeSinceStartup));
-                }
-                // @mfatihmar (Unity) End: Temporary, inbound RPC queue will replace this workaround
-                else
-                {
-                    networkManager.NetworkConfig.NetworkTransport.Send(networkManager.ServerClientId, payload, "STDRPC");
-                }
+                rpcQueueMananger.EndAddQueueItemToOutboundFrame(writer);
             }
 
-            writer.SetStream(null);
-            // @mfatihmar (Unity) End: Temporary, placeholder implementation
         }
 
         // RuntimeAccessModifiersILPP will make this `protected`
         internal BitWriter BeginSendClientRpc(ClientRpcSendParams sendParams, bool isReliable)
         {
-            // @mfatihmar (Unity) Begin: Temporary, placeholder implementation
-            var stream = PooledBitStream.Get();
-            var writer = PooledBitWriter.Get(stream);
+            //This will start a new queue item entry and will then return the writer to the current frame's stream
+            RPCQueueManager rpcQueueMananger = NetworkingManager.Singleton.GetRPCQueueManager();
+            if(rpcQueueMananger != null)
+            {
+                var writer = rpcQueueMananger.BeginAddQueueItemToOutboundFrame(RPCQueueManager.QueueItemType.ClientRPC, Time.realtimeSinceStartup, StandardRPC_Channel,0, NetworkId,sendParams.TargetClientIds == null ? InternalMessageSender.GetAllClientIds().ToArray() :  sendParams.TargetClientIds);
+                writer.WriteBit(false); // Encrypted
+                writer.WriteBit(false); // Authenticated
+                writer.WriteBits(MLAPIConstants.MLAPI_STD_CLIENT_RPC, 6); // MessageType
+                writer.WriteUInt64Packed(NetworkId); // NetworkObjectId
+                writer.WriteUInt16Packed(GetBehaviourId()); // NetworkBehaviourId
 
-            writer.WriteBit(false); // Encrypted
-            writer.WriteBit(false); // Authenticated
-            writer.WriteBits(MLAPIConstants.MLAPI_STD_CLIENT_RPC, 6); // MessageType
-            writer.WriteUInt64Packed(NetworkId); // NetworkObjectId
-            writer.WriteUInt16Packed(GetBehaviourId()); // NetworkBehaviourId
-
-            return writer;
-            // @mfatihmar (Unity) End: Temporary, placeholder implementation
+                return writer;
+            }
+            return null;
         }
 
         // RuntimeAccessModifiersILPP will make this `protected`
         internal void EndSendClientRpc(BitWriter writer, ClientRpcSendParams sendParams, bool isReliable)
         {
-            // @mfatihmar (Unity) Begin: Temporary, placeholder implementation
             if (writer == null) return;
 
-            var stream = (BitStream)writer.GetStream();
-            if (stream != null)
+            RPCQueueManager rpcQueueMananger = NetworkingManager.Singleton.GetRPCQueueManager();
+            if(rpcQueueMananger != null)
             {
-                stream.PadStream();
-
-                var networkManager = NetworkingManager.Singleton;
-                if (ReferenceEquals(networkManager, null)) return;
-
-                if (sendParams.TargetClientIds == null) sendParams.TargetClientIds = networkManager.ConnectedClientsList.Select(client => client.ClientId).ToArray();
-                foreach (var clientId in sendParams.TargetClientIds)
-                {
-                    if (!NetworkedObject.observers.Contains(clientId)) continue;
-
-                    var payload = new ArraySegment<byte>(stream.GetBuffer(), 0, (int)stream.Length);
-                    // @mfatihmar (Unity) Begin: Temporary, inbound RPC queue will replace this workaround
-                    if (clientId == networkManager.ServerClientId && networkManager.IsHost)
-                    {
-                        networkManager.__loopbackRpcQueue.Enqueue((payload, Time.realtimeSinceStartup));
-                    }
-                    // @mfatihmar (Unity) End: Temporary, inbound RPC queue will replace this workaround
-                    else
-                    {
-                        networkManager.NetworkConfig.NetworkTransport.Send(clientId, payload, "STDRPC");
-                    }
-                }
+                rpcQueueMananger.EndAddQueueItemToOutboundFrame(writer);
             }
-
-            writer.SetStream(null);
-            // @mfatihmar (Unity) End: Temporary, placeholder implementation
         }
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -526,9 +492,9 @@ namespace MLAPI
                                 if (writtenAny)
                                 {
                                     if (IsServer)
-                                        InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA, channelsForNetworkedVarGroups[j], stream, SecuritySendFlags.None, this.NetworkedObject);
+                                        InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA, channelsForNetworkedVarGroups[j], stream, SecuritySendFlags.None);
                                     else
-                                        InternalMessageSender.Send(NetworkingManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA, channelsForNetworkedVarGroups[j], stream, SecuritySendFlags.None, null);
+                                        InternalMessageSender.Send(NetworkingManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA, channelsForNetworkedVarGroups[j], stream, SecuritySendFlags.None);
                                 }
                             }
                         }
@@ -1000,7 +966,7 @@ namespace MLAPI
                     }
                     else
                     {
-                        InternalMessageSender.Send(NetworkingManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_SERVER_RPC, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security, null);
+                        InternalMessageSender.Send(NetworkingManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_SERVER_RPC, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security);
                         ProfilerStatManager.rpcsSent.Record();
                     }
                 }
@@ -1058,7 +1024,7 @@ namespace MLAPI
 
                         ResponseMessageManager.Add(response.Id, response);
 
-                        InternalMessageSender.Send(NetworkingManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_SERVER_RPC_REQUEST, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security, null);
+                        InternalMessageSender.Send(NetworkingManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_SERVER_RPC_REQUEST, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security);
                         ProfilerStatManager.rpcsSent.Record();
 
                         return response;
@@ -1099,7 +1065,7 @@ namespace MLAPI
                         }
                     }
 
-                    InternalMessageSender.Send(MLAPIConstants.MLAPI_CLIENT_RPC, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, clientIds, stream, security, this.NetworkedObject);
+                    InternalMessageSender.Send(MLAPIConstants.MLAPI_CLIENT_RPC, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, clientIds, stream, security);
                     ProfilerStatManager.rpcsSent.Record(clientIds?.Count ?? NetworkingManager.Singleton.ConnectedClientsList.Count);
                 }
             }
@@ -1141,7 +1107,7 @@ namespace MLAPI
                         }
                     }
 
-                    InternalMessageSender.Send(MLAPIConstants.MLAPI_CLIENT_RPC, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, clientIdToIgnore, stream, security, this.NetworkedObject);
+                    InternalMessageSender.Send(MLAPIConstants.MLAPI_CLIENT_RPC, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, clientIdToIgnore, stream, security);
                     ProfilerStatManager.rpcsSent.Record(NetworkingManager.Singleton.ConnectedClientsList.Count - 1);
                 }
             }
@@ -1183,7 +1149,7 @@ namespace MLAPI
                     }
                     else
                     {
-                        InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_CLIENT_RPC, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security, null);
+                        InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_CLIENT_RPC, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security);
                         ProfilerStatManager.rpcsSent.Record();
                     }
                 }
@@ -1247,7 +1213,7 @@ namespace MLAPI
 
                         ResponseMessageManager.Add(response.Id, response);
 
-                        InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_CLIENT_RPC_REQUEST, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security, null);
+                        InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_CLIENT_RPC_REQUEST, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security);
                         ProfilerStatManager.rpcsSent.Record();
 
                         return response;

@@ -12,6 +12,7 @@ using MLAPI.Transports;
 public class NetworkingManagerEditor : Editor
 {
     // Properties
+    private SerializedProperty runInLoopbackModeProperty;
     private SerializedProperty dontDestroyOnLoadProperty;
     private SerializedProperty runInBackgroundProperty;
     private SerializedProperty logLevelProperty;
@@ -26,6 +27,7 @@ public class NetworkingManagerEditor : Editor
     private SerializedProperty receiveTickrateProperty;
     private SerializedProperty maxReceiveEventsPerTickRateProperty;
     private SerializedProperty eventTickrateProperty;
+    private SerializedProperty maxObjectUpdatesPerTickProperty;
     private SerializedProperty clientConnectionBufferTimeoutProperty;
     private SerializedProperty connectionApprovalProperty;
     private SerializedProperty secondsHistoryProperty;
@@ -94,6 +96,7 @@ public class NetworkingManagerEditor : Editor
         networkingManager = (NetworkingManager)target;
 
         // Base properties
+        runInLoopbackModeProperty = serializedObject.FindProperty("LoopbackEnabled");
         dontDestroyOnLoadProperty = serializedObject.FindProperty("DontDestroy");
         runInBackgroundProperty = serializedObject.FindProperty("RunInBackground");
         logLevelProperty = serializedObject.FindProperty("LogLevel");
@@ -134,6 +137,7 @@ public class NetworkingManagerEditor : Editor
     private void CheckNullProperties()
     {
         // Base properties
+        runInLoopbackModeProperty = serializedObject.FindProperty("LoopbackEnabled");
         dontDestroyOnLoadProperty = serializedObject.FindProperty("DontDestroy");
         runInBackgroundProperty = serializedObject.FindProperty("RunInBackground");
         logLevelProperty = serializedObject.FindProperty("LogLevel");
@@ -247,7 +251,7 @@ public class NetworkingManagerEditor : Editor
         if (!networkingManager.IsServer && !networkingManager.IsClient)
         {
             serializedObject.Update();
-
+            EditorGUILayout.PropertyField(runInLoopbackModeProperty);
             EditorGUILayout.PropertyField(dontDestroyOnLoadProperty);
             EditorGUILayout.PropertyField(runInBackgroundProperty);
             EditorGUILayout.PropertyField(logLevelProperty);
@@ -305,6 +309,11 @@ public class NetworkingManagerEditor : Editor
 
             using (new EditorGUI.DisabledScope(!networkingManager.NetworkConfig.EnableNetworkedVar))
             {
+                if(maxObjectUpdatesPerTickProperty != null)
+                {
+                    EditorGUILayout.PropertyField(maxObjectUpdatesPerTickProperty);
+                }
+  
                 EditorGUILayout.PropertyField(ensureNetworkedVarLengthSafetyProperty);
             }
 
