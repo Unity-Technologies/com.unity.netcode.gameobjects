@@ -1,4 +1,4 @@
-﻿#define ARRAY_WRITE_PERMISSIVE  // Allow attempt to write "packed" byte array (calls WriteByteArray())
+#define ARRAY_WRITE_PERMISSIVE  // Allow attempt to write "packed" byte array (calls WriteByteArray())
 #define ARRAY_RESOLVE_IMPLICIT  // Include WriteArray() method with automatic type resolution
 #define ARRAY_WRITE_PREMAP      // Create a prefixed array diff mapping
 #define ARRAY_DIFF_ALLOW_RESIZE // Whether or not to permit writing diffs of differently sized arrays
@@ -99,7 +99,6 @@ namespace MLAPI.Serialization
                     return null;
                 }
             }
-
             if (SerializationManager.TryDeserialize(source, type, out object obj))
                 return obj;
             if (type.IsArray && type.HasElementType)
@@ -136,7 +135,7 @@ namespace MLAPI.Serialization
             if (type == typeof(double))
                 return ReadDoublePacked();
             if (type == typeof(string))
-                return ReadStringPacked().ToString();
+                return ReadStringPacked();
             if (type == typeof(bool))
                 return ReadBool();
             if (type == typeof(Vector2))
@@ -442,7 +441,6 @@ namespace MLAPI.Serialization
             if (bitSource == null) throw new InvalidOperationException("Cannot read bits on a non BitStream stream");
             if (bitCount > 8) throw new ArgumentOutOfRangeException("Cannot read more than 8 bits into an 8-bit value!");
             if (bitCount < 0) throw new ArgumentOutOfRangeException("Cannot read fewer than 0 bits!");
-
             int result = 0;
             ByteBool convert = new ByteBool();
             for (int i = 0; i < bitCount; ++i)
@@ -459,7 +457,6 @@ namespace MLAPI.Serialization
         {
             if (bitSource == null) throw new InvalidOperationException("Cannot read bits on a non BitStream stream");
             ByteBool convert = new ByteBool();
-
             byte result = (byte) (
                 convert.Collapse(ReadBit()) |
                 (convert.Collapse(ReadBit()) << 1) |
@@ -613,14 +610,14 @@ namespace MLAPI.Serialization
         /// </summary>
         /// <returns>The string that was read.</returns>
         /// <param name="builder">The builder to read the string into or null to use a new builder</param>
-        public StringBuilder ReadStringPacked(StringBuilder builder = null)
+        public string ReadStringPacked(StringBuilder builder = null)
         {
             int expectedLength = (int)ReadUInt32Packed();
             if (builder == null) builder = new StringBuilder(expectedLength);
             else if (builder.Capacity + builder.Length < expectedLength) builder.Capacity = expectedLength + builder.Length;
             for (int i = 0; i < expectedLength; ++i)
                 builder.Insert(i, ReadCharPacked());
-            return builder;
+            return builder.ToString();
         }
         /// <summary>
         /// Read string diff from the stream.
@@ -794,6 +791,54 @@ namespace MLAPI.Serialization
             for (long i = 0; i < knownLength; ++i) readTo[i] = ReadByteDirect();
             return readTo;
         }
+
+        /// <summary>
+        /// CreateArraySegment
+        /// Creates an array segment from the size and offset values passed in.
+        /// If none are passed in, then it creates an array segment of the entire buffer.
+        /// </summary>
+        /// <param name="sizeToCopy">size to copy</param>
+        /// <param name="offset">offset within the stream buffer to start copying</param>
+        /// <returns>ArraySegment<byte></returns>
+        public ArraySegment<byte> CreateArraySegment(int sizeToCopy = -1, int offset = -1)
+        {
+            if(bitSource != null)
+            {
+                //If no offset was passed, used the current position
+                int Offset = offset == -1 ? (int)bitSource.Position:offset;
+                int CopySize = sizeToCopy == -1 && offset == -1 ? (int)bitSource.Length:sizeToCopy;
+                if(CopySize > 0)
+                {
+                    //Check to make sure we won't be copying beyond our bounds
+                    if((bitSource.Length - Offset) < CopySize)
+                    {
+                        //If we didn't pass anything in or passed the length of the buffer
+                        if(CopySize == bitSource.Length)
+                        {
+                            Offset = 0;
+                        }
+                        else
+                        {
+                            Debug.LogError("[BitReader.CreateArraySegment] CopySize (" + CopySize.ToString() + ") exceeds bounds with an Offset of (" + Offset.ToString() + ")! <returning empty array segment>");
+                            return new ArraySegment<byte>();
+                        }
+                    }
+
+                    //Return the request array segment
+                    return new ArraySegment<byte>(bitSource.GetBuffer(), Offset, CopySize);
+                }
+                else
+                {
+                     Debug.LogError("[BitReader.CreateArraySegment] CopySize (" + CopySize.ToString() + ") is zero or less! <returning empty array segment>");
+                }
+            }
+            else
+            {
+                Debug.LogError("[BitReader.CreateArraySegment] Reader has no stream assigned to it! <returning empty array segment>");
+            }
+            return new ArraySegment<byte>();
+        }
+
         /// <summary>
         /// Read byte array diff into an optional buffer from the stream.
         /// </summary>
