@@ -115,13 +115,16 @@ namespace MLAPI
             }
         }
 
+        public delegate void SendCallbackType(ulong clientId, SendStream messageStream);
+        public delegate void ReceiveCallbackType(BitStream messageStream, MLAPI.RPCQueueManager.QueueItemType messageType, ulong clientId, float time);
+
         /// <summary>
         /// SendItems
         /// Send any batch of RPC that are of length above threshold
         /// </summary>
         /// <param name="threshold"> the threshold in bytes</param>
         /// <param name="sendCallback"> the function to call for sending the batch</param>
-        public void SendItems(int threshold, Func<ulong, SendStream, int> sendCallback)
+        public void SendItems(int threshold, SendCallbackType sendCallback)
         {
             List<ulong> sent = new List<ulong>();
 
@@ -157,7 +160,7 @@ namespace MLAPI
         /// <param name="messageType"> the message type to pass back to callback</param>
         /// <param name="clientId"> the clientId to pass back to callback</param>
         /// <param name="receiveTime"> the packet receive time to pass back to callback</param>
-        public int ReceiveItems(in BitStream messageStream, Func<BitStream, MLAPI.RPCQueueManager.QueueItemType, ulong, float, int> receiveCallback, MLAPI.RPCQueueManager.QueueItemType messageType, ulong clientId, float receiveTime)
+        public int ReceiveItems(in BitStream messageStream, ReceiveCallbackType receiveCallback, MLAPI.RPCQueueManager.QueueItemType messageType, ulong clientId, float receiveTime)
         {
             do
             {

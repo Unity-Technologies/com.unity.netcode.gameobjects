@@ -216,7 +216,7 @@ namespace MLAPI
         /// </summary>
         /// <param name="clientId"> clientId to send to</param>
         /// <param name="sendStream"> the stream to send</param>
-        private static int SendCallback(ulong clientId, MLAPI.BatchUtil.SendStream sendStream)
+        private static void SendCallback(ulong clientId, MLAPI.BatchUtil.SendStream sendStream)
         {
             using PooledBitWriter writer = sendStream.Writer;
             int length = (int)writer.GetStream().Length;
@@ -226,8 +226,6 @@ namespace MLAPI
 
             NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(clientId, sendBuffer,
                 string.IsNullOrEmpty(sendStream.Item.Channel) ? "MLAPI_DEFAULT_MESSAGE" : sendStream.Item.Channel);
-
-            return 0;
         }
 
         public RPCQueueProcessing(RPCQueueManager rpcqueuemanager)
