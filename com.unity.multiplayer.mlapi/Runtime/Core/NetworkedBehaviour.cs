@@ -513,9 +513,9 @@ namespace MLAPI
                                 if (writtenAny)
                                 {
                                     if (IsServer)
-                                        InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA, channelsForNetworkedVarGroups[j], stream, SecuritySendFlags.None, this.NetworkedObject);
+                                        InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA, channelsForNetworkedVarGroups[j], stream, SecuritySendFlags.None);
                                     else
-                                        InternalMessageSender.Send(NetworkingManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA, channelsForNetworkedVarGroups[j], stream, SecuritySendFlags.None, null);
+                                        InternalMessageSender.Send(NetworkingManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA, channelsForNetworkedVarGroups[j], stream, SecuritySendFlags.None);
                                 }
                             }
                         }

@@ -55,7 +55,7 @@ namespace MLAPI.Messaging
                 return;
             }
 
-            InternalMessageSender.Send(MLAPIConstants.MLAPI_UNNAMED_MESSAGE, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, clientIds, stream, security, null);
+            InternalMessageSender.Send(MLAPIConstants.MLAPI_UNNAMED_MESSAGE, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, clientIds, stream, security);
         }
 
         /// <summary>
@@ -67,7 +67,7 @@ namespace MLAPI.Messaging
         /// <param name="security">The security settings to apply to the message</param>
         public static void SendUnnamedMessage(ulong clientId, BitStream stream, string channel = null, SecuritySendFlags security = SecuritySendFlags.None)
         {
-            InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_UNNAMED_MESSAGE, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security, null);
+            InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_UNNAMED_MESSAGE, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security);
         }
         #endregion
         #region Named
@@ -184,7 +184,7 @@ namespace MLAPI.Messaging
 
                 messageStream.CopyFrom(stream);
 
-                InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_NAMED_MESSAGE, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, messageStream, security, null);
+                InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_NAMED_MESSAGE, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, messageStream, security);
             }
         }
 
@@ -227,7 +227,7 @@ namespace MLAPI.Messaging
                     return;
                 }
 
-                InternalMessageSender.Send(MLAPIConstants.MLAPI_NAMED_MESSAGE, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, clientIds, messageStream, security, null);
+                InternalMessageSender.Send(MLAPIConstants.MLAPI_NAMED_MESSAGE, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, clientIds, messageStream, security);
             }
         }
         #endregion
