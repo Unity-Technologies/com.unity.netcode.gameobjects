@@ -32,7 +32,7 @@ namespace MLAPI
         RPCQueueManager rpcQueueManager;
 
         // Batcher object used to manage the RPC batching on the send side
-        private BatchUtil batcher = new BatchUtil();
+        private MessageBatcher batcher = new MessageBatcher();
 
         private int BatchThreshold = 1000;
 
@@ -217,7 +217,7 @@ namespace MLAPI
         /// </summary>
         /// <param name="clientId"> clientId to send to</param>
         /// <param name="sendStream"> the stream to send</param>
-        private static void SendCallback(ulong clientId, MLAPI.BatchUtil.SendStream sendStream)
+        private static void SendCallback(ulong clientId, MLAPI.MessageBatcher.SendStream sendStream)
         {
             using PooledBitWriter writer = sendStream.Writer;
             int length = (int)writer.GetStream().Length;

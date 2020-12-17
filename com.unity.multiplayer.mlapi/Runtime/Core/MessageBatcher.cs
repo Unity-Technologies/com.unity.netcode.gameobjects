@@ -9,7 +9,7 @@ using System.IO;
 
 namespace MLAPI
 {
-    class BatchUtil
+    class MessageBatcher
     {
         public class SendStream
         {
@@ -21,16 +21,20 @@ namespace MLAPI
         // Stores the stream of batched RPC to send to each client, by ClientId
         private Dictionary<ulong, SendStream> SendDict = new Dictionary<ulong, SendStream>();
 
+        // Used to store targets, internally
+        private List<ulong> TargetList = new List<ulong>();
+
         public void PushLength(int length, ref PooledBitWriter writer)
         {
-            // supports lengths up to 16-bit wide
-            if (length < 255)
+            // If length is single byte we write it
+            if (length < 256)
             {
                 writer.WriteByte((byte)length); // write the amounts of bytes that are coming up
             }
             else
             {
-                writer.WriteByte(255); // mark larger size
+                // otherwise we write a 0, and a two-byte length
+                writer.WriteByte(0); // mark larger size
                 writer.WriteByte((byte)(length % 256)); // write the length modulo 256
                 writer.WriteByte((byte)(length / 256)); // write the length divided by 256
             }
@@ -38,13 +42,14 @@ namespace MLAPI
 
         public int PopLength(in BitStream messageStream)
         {
-            int length = 0;
             byte read = (byte)messageStream.ReadByte();
-            if (read != 255)
+            // if we read a non-zero value, we have a single byte length
+            if (read != 0)
             {
                 return read;
             }
-            length += messageStream.ReadByte();
+            // otherwise, a two-byte length follows
+            int length = messageStream.ReadByte();
             length += messageStream.ReadByte() * 256;
 
             return length;
@@ -55,6 +60,7 @@ namespace MLAPI
         /// Returns the list of ClientId an item is targeted to
         /// </summary>
         /// <param name="item">the FrameQueueItem we want targets for</param>
+        /// <param name="list">the list to fill</param>
         private static List<ulong> GetTargetList(in FrameQueueItem item)
         {
             List<ulong> ret = new List<ulong>();
@@ -72,6 +78,22 @@ namespace MLAPI
             return ret;
         }
 
+        private static void FillTargetList(in FrameQueueItem item, ref List<ulong> list)
+        {
+            list.Clear();
+            switch (item.QueueItemType)
+            {
+                case RPCQueueManager.QueueItemType.ServerRPC:
+                    list.Add(item.NetworkId);
+                    break;
+                case RPCQueueManager.QueueItemType.ClientRPC:
+                    list = item.ClientIds;
+                    break;
+                default:
+                    break;
+            }
+        }
+
         /// <summary>
         /// QueueItem
         /// Add a FrameQueueItem to be sent
@@ -79,7 +101,15 @@ namespace MLAPI
         /// <param name="item">the threshold in bytes</param>
         public void QueueItem(in FrameQueueItem item)
         {
-            foreach (ulong clientId in GetTargetList(item))
+            FillTargetList(item, ref TargetList);
+            List<ulong> targets = GetTargetList(item);
+
+            while(targets.Except(TargetList).Any() || TargetList.Except(targets).Any())
+            {
+                long bkpt = 0;
+            }
+
+            foreach (ulong clientId in TargetList)
             {
                 // todo: actually queue and buffer. For now, the dict contains just one entry !!!
 

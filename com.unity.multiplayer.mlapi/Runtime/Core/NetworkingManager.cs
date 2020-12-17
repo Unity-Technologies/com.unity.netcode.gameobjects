@@ -1089,7 +1089,7 @@ namespace MLAPI
         }
 
         private readonly BitStream inputStreamWrapper = new BitStream(new byte[0]);
-        private BatchUtil batcher = new BatchUtil();
+        private MessageBatcher batcher = new MessageBatcher();
 
         internal void HandleIncomingData(ulong clientId, string channelName, ArraySegment<byte> data, float receiveTime, bool allowBuffer)
         {
