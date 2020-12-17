@@ -3,7 +3,7 @@ using System.Collections.Generic;
 namespace MLAPI.Profiling
 {
     public static class ProfilerStatManager
-    {    
+    {
         public static List<ProfilerStat> allStats = new List<ProfilerStat>();
         public static ProfilerIncStat connections = new ProfilerIncStat("Connections");
         public static ProfilerStat bytesRcvd = new ProfilerStat("Bytes Rcvd");

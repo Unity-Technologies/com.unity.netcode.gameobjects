@@ -377,7 +377,6 @@ namespace MLAPI
             ConnectedClients.Clear();
             ConnectedClientsList.Clear();
 
-            ResponseMessageManager.Clear();
             SpawnManager.SpawnedObjects.Clear();
             SpawnManager.SpawnedObjectsList.Clear();
             SpawnManager.releasedNetworkObjectIds.Clear();
@@ -756,7 +755,6 @@ namespace MLAPI
                         IsLoopBack = rpcQueueMananger.IsLoopBack();
                     }
 
-
                     // @mfatihmar (Unity) Begin: Temporary, inbound RPC queue will replace this workaround
                     if (IsHost)
                     {
@@ -828,7 +826,6 @@ namespace MLAPI
                     {
                         eventOvershootCounter += ((NetworkTime - lastEventTickTime) - (1f / NetworkConfig.EventTickrate));
                         LagCompensationManager.AddFrames();
-                        ResponseMessageManager.CheckTimeouts();
                     }
 
                     if (NetworkConfig.EnableNetworkedVar)
@@ -1181,55 +1178,6 @@ namespace MLAPI
                             ReceiveTime = receiveTime
                         });
                         break;
-                    case MLAPIConstants.MLAPI_SERVER_RPC:
-                        {
-                            #if DEVELOPMENT_BUILD || UNITY_EDITOR
-                            s_MLAPIServerRPCQueued.Begin();
-                            #endif
-
-                            if (IsServer) InternalMessageHandler.RPCReceiveQueueItem(clientId, messageStream, receiveTime,RPCQueueManager.QueueItemType.ServerRPC);
-
-                            #if DEVELOPMENT_BUILD || UNITY_EDITOR
-                            s_MLAPIServerRPCQueued.End();
-                            #endif
-                            break;
-                        }
-                    case MLAPIConstants.MLAPI_SERVER_RPC_REQUEST:
-                        if (IsServer) InternalMessageHandler.HandleServerRPCRequest(clientId, messageStream, channelName, security);
-                        break;
-                    case MLAPIConstants.MLAPI_SERVER_RPC_RESPONSE:
-                        if (IsClient) InternalMessageHandler.HandleServerRPCResponse(clientId, messageStream);
-                        break;
-                    case MLAPIConstants.MLAPI_CLIENT_RPC:
-                        {
-                            if (IsClient)
-                            {
-                                #if DEVELOPMENT_BUILD || UNITY_EDITOR
-                                s_MLAPIClientRPCQueued.Begin();
-                                #endif
-
-                                InternalMessageHandler.RPCReceiveQueueItem(clientId, messageStream,receiveTime,RPCQueueManager.QueueItemType.ClientRPC);
-
-                                #if DEVELOPMENT_BUILD || UNITY_EDITOR
-                                s_MLAPIClientRPCQueued.End();
-                                #endif
-                            }
-                            break;
-                        }
-                    case MLAPIConstants.MLAPI_CLIENT_RPC_REQUEST:
-                        if (IsClient) InternalMessageHandler.HandleClientRPCRequest(clientId, messageStream, channelName, security, BufferCallback, new PreBufferPreset()
-                        {
-                            AllowBuffer = allowBuffer,
-                            ChannelName = channelName,
-                            ClientId = clientId,
-                            Data = data,
-                            MessageType = messageType,
-                            ReceiveTime = receiveTime
-                        });
-                        break;
-                    case MLAPIConstants.MLAPI_CLIENT_RPC_RESPONSE:
-                        if (IsServer) InternalMessageHandler.HandleClientRPCResponse(clientId, messageStream);
-                        break;
                     case MLAPIConstants.MLAPI_UNNAMED_MESSAGE:
                         InternalMessageHandler.HandleUnnamedMessage(clientId, messageStream);
                         break;
@@ -1253,7 +1201,7 @@ namespace MLAPI
                     case MLAPIConstants.MLAPI_SERVER_LOG:
                         if (IsServer && NetworkConfig.EnableNetworkLogs) InternalMessageHandler.HandleNetworkLog(clientId, messageStream);
                         break;
-                    case MLAPIConstants.MLAPI_STD_SERVER_RPC:
+                    case MLAPIConstants.MLAPI_SERVER_RPC:
                         {
                             if (IsServer)
                             {
@@ -1270,7 +1218,7 @@ namespace MLAPI
                             }
                             break;
                         }
-                    case MLAPIConstants.MLAPI_STD_CLIENT_RPC:
+                    case MLAPIConstants.MLAPI_CLIENT_RPC:
                         {
                             if (IsClient)
                             {

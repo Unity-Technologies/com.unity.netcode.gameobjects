@@ -184,10 +184,10 @@ namespace MLAPI.Editor.CodeGen
 
             var assemblyDefinition = AssemblyDefinition.ReadAssembly(new MemoryStream(compiledAssembly.InMemoryAssembly.PeData), readerParameters);
 
-            //apparently, it will happen that when we ask to resolve a type that lives inside Unity.Entities, and we
-            //are also postprocessing Unity.Entities, type resolving will fail, because we do not actually try to resolve
+            //apparently, it will happen that when we ask to resolve a type that lives inside MLAPI.Runtime, and we
+            //are also postprocessing MLAPI.Runtime, type resolving will fail, because we do not actually try to resolve
             //inside the assembly we are processing. Let's make sure we do that, so that we can use postprocessor features inside
-            //unity.entities itself as well.
+            //MLAPI.Runtime itself as well.
             assemblyResolver.AddAssemblyDefinitionBeingOperatedOn(assemblyDefinition);
 
             return assemblyDefinition;
