@@ -52,7 +52,7 @@ namespace MLAPI
 
             writer.WriteBit(false); // Encrypted
             writer.WriteBit(false); // Authenticated
-            writer.WriteBits(MLAPIConstants.MLAPI_STD_SERVER_RPC, 6); // MessageType
+            writer.WriteBits(MLAPIConstants.MLAPI_SERVER_RPC, 6); // MessageType
             writer.WriteUInt64Packed(NetworkId); // NetworkObjectId
             writer.WriteUInt16Packed(GetBehaviourId()); // NetworkBehaviourId
 
@@ -100,7 +100,7 @@ namespace MLAPI
 
             writer.WriteBit(false); // Encrypted
             writer.WriteBit(false); // Authenticated
-            writer.WriteBits(MLAPIConstants.MLAPI_STD_CLIENT_RPC, 6); // MessageType
+            writer.WriteBits(MLAPIConstants.MLAPI_CLIENT_RPC, 6); // MessageType
             writer.WriteUInt64Packed(NetworkId); // NetworkObjectId
             writer.WriteUInt16Packed(GetBehaviourId()); // NetworkBehaviourId
 

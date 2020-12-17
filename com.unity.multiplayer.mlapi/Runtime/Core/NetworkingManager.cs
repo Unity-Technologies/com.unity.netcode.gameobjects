@@ -1072,7 +1072,7 @@ namespace MLAPI
                         if (IsServer && NetworkConfig.EnableNetworkLogs) InternalMessageHandler.HandleNetworkLog(clientId, messageStream);
                         break;
                     // @mfatihmar (Unity) Begin: Temporary, placeholder implementation
-                    case MLAPIConstants.MLAPI_STD_SERVER_RPC:
+                    case MLAPIConstants.MLAPI_SERVER_RPC:
                         if (IsServer)
                         {
                             using (var reader = PooledBitReader.Get(messageStream))
@@ -1097,7 +1097,7 @@ namespace MLAPI
                             }
                         }
                         break;
-                    case MLAPIConstants.MLAPI_STD_CLIENT_RPC:
+                    case MLAPIConstants.MLAPI_CLIENT_RPC:
                         if (IsClient)
                         {
                             using (var reader = PooledBitReader.Get(messageStream))
