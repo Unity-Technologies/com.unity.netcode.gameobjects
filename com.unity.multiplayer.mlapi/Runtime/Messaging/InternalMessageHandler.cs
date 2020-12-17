@@ -754,7 +754,7 @@ namespace MLAPI.Messaging
                                 responseWriter.WriteObjectPacked(result);
                             }
 
-                            InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_SERVER_RPC_RESPONSE, channelName, responseStream, security, SpawnManager.SpawnedObjects[networkId]);
+                            InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_SERVER_RPC_RESPONSE, channelName, responseStream, security);
                             ProfilerStatManager.rpcsSent.Record();
                         }
                     }
@@ -871,7 +871,7 @@ namespace MLAPI.Messaging
                                 responseWriter.WriteObjectPacked(result);
                             }
 
-                            InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_CLIENT_RPC_RESPONSE, channelName, responseStream, security, null);
+                            InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_CLIENT_RPC_RESPONSE, channelName, responseStream, security);
                             ProfilerStatManager.rpcsSent.Record();
                         }
                     }
