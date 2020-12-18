@@ -160,7 +160,7 @@ namespace MLAPI.Internal
                     else
                     {
 #endif
-                        // 6 is because ...
+                        // 6 bits are used for the message type, which is an MLAPIConstants
                         messageType = inputHeaderReader.ReadByteBits(6);
                         // The input stream is now ready to be read from. It's "safe" and has the correct position
                         return inputStream;
