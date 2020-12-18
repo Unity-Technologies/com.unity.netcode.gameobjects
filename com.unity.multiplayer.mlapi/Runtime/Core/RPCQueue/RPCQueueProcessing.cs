@@ -219,9 +219,8 @@ namespace MLAPI
         /// <param name="sendStream"> the stream to send</param>
         private static void SendCallback(ulong clientId, MLAPI.MessageBatcher.SendStream sendStream)
         {
-            using PooledBitWriter writer = sendStream.Writer;
-            int length = (int)writer.GetStream().Length;
-            Byte[] bytes = ((MLAPI.Serialization.BitStream)writer.GetStream()).GetBuffer();
+            int length = (int)sendStream.Stream.Length;
+            Byte[] bytes = sendStream.Stream.GetBuffer();
 
             ArraySegment<byte> sendBuffer = new ArraySegment<byte>(bytes, 0, length);
 
