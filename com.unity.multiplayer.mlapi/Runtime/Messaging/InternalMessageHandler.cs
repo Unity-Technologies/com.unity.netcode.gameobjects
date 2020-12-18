@@ -18,6 +18,8 @@ using System.Collections.Generic;
 using MLAPI.Messaging.Buffering;
 using MLAPI.Profiling;
 using Unity.Profiling;
+using MLAPI.Serialization;
+using BitStream = MLAPI.Serialization.BitStream;
 
 namespace MLAPI.Messaging
 {
@@ -30,22 +32,30 @@ namespace MLAPI.Messaging
         static ProfilerMarker s_HandleDestroyObject = new ProfilerMarker("InternalMessageHandler.HandleDestroyObject");
         static ProfilerMarker s_HandleSwitchScene = new ProfilerMarker("InternalMessageHandler.HandleSwitchScene");
         static ProfilerMarker s_HandleClientSwitchSceneCompleted = new ProfilerMarker("InternalMessageHandler.HandleClientSwitchSceneCompleted");
+
         static ProfilerMarker s_HandleChangeOwner =
             new ProfilerMarker("InternalMessageHandler.HandleChangeOwner");
+
         static ProfilerMarker s_HandleAddObjects =
             new ProfilerMarker("InternalMessageHandler.HandleAddObjects");
+
         static ProfilerMarker s_HandleDestroyObjects =
             new ProfilerMarker("InternalMessageHandler.HandleDestroyObjects");
+
         static ProfilerMarker s_HandleTimeSync =
             new ProfilerMarker("InternalMessageHandler.HandleTimeSync");
+
         static ProfilerMarker s_HandleNetworkedVarDelta =
             new ProfilerMarker("InternalMessageHandler.HandleNetworkedVarDelta");
+
         static ProfilerMarker s_HandleNetworkedVarUpdate =
             new ProfilerMarker("InternalMessageHandler.HandleNetworkedVarUpdate");
         static ProfilerMarker s_HandleUnnamedMessage =
             new ProfilerMarker("InternalMessageHandler.HandleUnnamedMessage");
+
         static ProfilerMarker s_HandleNamedMessage =
             new ProfilerMarker("InternalMessageHandler.HandleNamedMessage");
+
         static ProfilerMarker s_HandleNetworkLog =
             new ProfilerMarker("InternalMessageHandler.HandleNetworkLog");
 
@@ -609,7 +619,7 @@ namespace MLAPI.Messaging
 
                     if (instance == null)
                     {
-                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkedVarDelta message received for a non existant behaviour. NetworkId: " + networkId + ", behaviourIndex: " + orderIndex);
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkedVarDelta message received for a non-existent behaviour. NetworkId: " + networkId + ", behaviourIndex: " + orderIndex);
                     }
                     else
                     {
@@ -673,6 +683,26 @@ namespace MLAPI.Messaging
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleNetworkedVarUpdate.End();
 #endif
+        }
+
+        /// <summary>
+        /// Converts the stream to a PerformanceQueueItem and adds it to the receive queue
+        /// </summary>
+        /// <param name="clientId"></param>
+        /// <param name="stream"></param>
+        internal static void RPCReceiveQueueItem(ulong clientId, Stream stream, float receiveTime, RPCQueueManager.QueueItemType queueItemType)
+        {
+            if (NetworkingManager.Singleton.IsServer && clientId == NetworkingManager.Singleton.ServerClientId)
+            {
+                return;
+            }
+
+            ProfilerStatManager.rpcsRcvd.Record();
+            RPCQueueManager rpcQueueManager = NetworkingManager.Singleton.GetRPCQueueManager();
+            if (rpcQueueManager != null)
+            {
+                rpcQueueManager.AddQueueItemToInboundFrame(queueItemType, receiveTime, clientId, (BitStream)stream);
+            }
         }
 
         internal static void HandleUnnamedMessage(ulong clientId, Stream stream)

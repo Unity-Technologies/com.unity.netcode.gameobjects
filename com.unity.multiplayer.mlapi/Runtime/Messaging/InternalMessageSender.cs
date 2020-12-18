@@ -1,29 +1,66 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.Linq;
+using Unity.Profiling;
 using MLAPI.Configuration;
 using MLAPI.Internal;
 using MLAPI.Logging;
 using MLAPI.Profiling;
 using MLAPI.Security;
+using MLAPI.Serialization.Pooled;
 using BitStream = MLAPI.Serialization.BitStream;
 
 namespace MLAPI.Messaging
 {
     internal static class InternalMessageSender
     {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+        static ProfilerMarker s_MLAPIRPCSendQueued = new ProfilerMarker("MLAPIRPCSendQueued");
+#endif
+
+        private const string MLAPI_STD_RPC_CHANNEL = "STD_RPC_CH";
+
+        /// <summary>
+        /// GetAllClientIdsExcluding
+        /// Gets all client network ids excluding the one clientId and the server client id
+        /// </summary>
+        /// <param name="clientId">client id to exclude</param>
+        /// <returns>remaining list of client ids</returns>
+        public static List<ulong> GetAllClientIdsExcluding(ulong clientId)
+        {
+            List<ulong> ClientIds = GetAllClientIds();
+            if(ClientIds != null)
+            {
+                ClientIds.Remove(clientId);
+            }
+            return ClientIds;
+        }
+
+        /// <summary>
+        /// GetAllClientIds
+        /// Gets all client network ids excluding the server client id
+        /// </summary>
+        /// <returns>remaining list of client ids</returns>
+        public static List<ulong> GetAllClientIds()
+        {
+            List<ulong> ClientIds = new List<ulong>(NetworkingManager.Singleton.ConnectedClients.Keys);
+            ClientIds.Remove(NetworkingManager.Singleton.ServerClientId);
+            return ClientIds.Count == 0 ? new List<ulong>():ClientIds;
+        }
+
         internal static void Send(ulong clientId, byte messageType, string channelName, BitStream messageStream, SecuritySendFlags flags)
         {
             messageStream.PadStream();
 
-            if (NetworkingManager.Singleton.IsServer && clientId == NetworkingManager.Singleton.ServerClientId)
+            if (NetworkingManager.Singleton.IsServer && clientId == NetworkingManager.Singleton.ServerClientId )
                 return;
 
             using (BitStream stream = MessagePacker.WrapMessage(messageType, clientId, messageStream, flags))
             {
-                NetworkProfiler.StartEvent(TickType.Send, (uint) stream.Length, channelName,
-                    MLAPIConstants.MESSAGE_NAMES[messageType]);
+                NetworkProfiler.StartEvent(TickType.Send, (uint)stream.Length, channelName, MLAPIConstants.MESSAGE_NAMES[messageType]);
 
                 NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(clientId, new ArraySegment<byte>(stream.GetBuffer(), 0, (int)stream.Length), channelName);
+
                 ProfilerStatManager.bytesSent.Record((int)stream.Length);
 
                 NetworkProfiler.EndEvent();
@@ -57,6 +94,7 @@ namespace MLAPI.Messaging
                         NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId, new ArraySegment<byte>(stream.GetBuffer(), 0, (int)stream.Length), channelName);
                         ProfilerStatManager.bytesSent.Record((int)stream.Length);
                     }
+
                     NetworkProfiler.EndEvent();
                 }
             }
@@ -95,6 +133,7 @@ namespace MLAPI.Messaging
                         NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(clientIds[i], new ArraySegment<byte>(stream.GetBuffer(), 0, (int)stream.Length), channelName);
                         ProfilerStatManager.bytesSent.Record((int)stream.Length);
                     }
+
                     NetworkProfiler.EndEvent();
                 }
             }
@@ -131,6 +170,7 @@ namespace MLAPI.Messaging
                         NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId, new ArraySegment<byte>(stream.GetBuffer(), 0, (int)stream.Length), channelName);
                         ProfilerStatManager.bytesSent.Record((int)stream.Length);
                     }
+
                     NetworkProfiler.EndEvent();
                 }
             }
