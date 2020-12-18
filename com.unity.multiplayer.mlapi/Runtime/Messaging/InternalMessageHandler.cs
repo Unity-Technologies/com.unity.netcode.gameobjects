@@ -342,6 +342,22 @@ namespace MLAPI.Messaging
                             }
                         }
 
+                        // Clean up the diffed scene objects. I.E scene objects that have been destroyed
+                        if (SpawnManager.pendingSoftSyncObjects.Count > 0)
+                        {
+                            List<NetworkedObject> objectsToDestroy = new List<NetworkedObject>();
+
+                            foreach (KeyValuePair<ulong, NetworkedObject> pair in SpawnManager.pendingSoftSyncObjects)
+                            {
+                                objectsToDestroy.Add(pair.Value);
+                            }
+
+                            for (int i = 0; i < objectsToDestroy.Count; i++)
+                            {
+                                MonoBehaviour.Destroy(objectsToDestroy[i].gameObject);
+                            }
+                        }
+
                         NetworkingManager.Singleton.IsConnectedClient = true;
 
                         NetworkingManager.Singleton.InvokeOnClientConnectedCallback(NetworkingManager.Singleton.LocalClientId);
