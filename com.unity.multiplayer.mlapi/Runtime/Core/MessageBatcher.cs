@@ -9,7 +9,7 @@ using System.IO;
 
 namespace MLAPI
 {
-    class MessageBatcher
+    internal class MessageBatcher
     {
         public class SendStream
         {
