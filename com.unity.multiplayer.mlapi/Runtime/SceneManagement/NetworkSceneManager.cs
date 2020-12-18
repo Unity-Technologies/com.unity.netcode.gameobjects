@@ -162,20 +162,6 @@ namespace MLAPI.SceneManagement
             }
         }
 
-        public static uint GetCurrentSceneIndex()
-        {
-            Scene activeScene = SceneManager.GetActiveScene();
-            if(sceneNameToIndex.Count == 0)
-            {
-                return (uint)activeScene.buildIndex;
-            }
-            else
-            {
-                string sceneName = SceneManager.GetActiveScene().name;
-                return sceneNameToIndex[sceneName];
-            }
-        }
-
         internal static void OnFirstSceneSwitchSync(uint sceneIndex, Guid switchSceneGuid)
         {
             if (!sceneIndexToString.ContainsKey(sceneIndex) || !registeredSceneNames.Contains(sceneIndexToString[sceneIndex]))

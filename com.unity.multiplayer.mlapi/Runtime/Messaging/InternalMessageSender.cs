@@ -12,17 +12,17 @@ using BitStream = MLAPI.Serialization.BitStream;
 
 namespace MLAPI.Messaging
 {
-    public static class InternalMessageSender
+    internal static class InternalMessageSender
     {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR                
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
         static ProfilerMarker s_MLAPIRPCSendQueued = new ProfilerMarker("MLAPIRPCSendQueued");
 #endif
 
         private const string MLAPI_STD_RPC_CHANNEL = "STD_RPC_CH";
-        
+
         /// <summary>
         /// GetAllClientIdsExcluding
-        /// Gets all client network ids excluding the one clientId and the server client id 
+        /// Gets all client network ids excluding the one clientId and the server client id
         /// </summary>
         /// <param name="clientId">client id to exclude</param>
         /// <returns>remaining list of client ids</returns>
@@ -38,7 +38,7 @@ namespace MLAPI.Messaging
 
         /// <summary>
         /// GetAllClientIds
-        /// Gets all client network ids excluding the server client id 
+        /// Gets all client network ids excluding the server client id
         /// </summary>
         /// <returns>remaining list of client ids</returns>
         public static List<ulong> GetAllClientIds()
@@ -46,12 +46,12 @@ namespace MLAPI.Messaging
             List<ulong> ClientIds = new List<ulong>(NetworkingManager.Singleton.ConnectedClients.Keys);
             ClientIds.Remove(NetworkingManager.Singleton.ServerClientId);
             return ClientIds.Count == 0 ? new List<ulong>():ClientIds;
-        }    
+        }
 
         internal static void Send(ulong clientId, byte messageType, string channelName, BitStream messageStream, SecuritySendFlags flags)
         {
             messageStream.PadStream();
-            
+
             if (NetworkingManager.Singleton.IsServer && clientId == NetworkingManager.Singleton.ServerClientId )
                 return;
 
@@ -174,6 +174,6 @@ namespace MLAPI.Messaging
                     NetworkProfiler.EndEvent();
                 }
             }
-        }        
+        }
     }
 }
