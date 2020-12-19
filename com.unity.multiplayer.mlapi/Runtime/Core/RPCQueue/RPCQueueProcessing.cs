@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using Unity.Profiling;
 using MLAPI.Configuration;
@@ -23,6 +24,9 @@ namespace MLAPI
         static ProfilerMarker s_MLAPIRPCQueueProcess = new ProfilerMarker("MLAPIRPCQueueProcess");
         static ProfilerMarker s_MLAPIRPCQueueSend = new ProfilerMarker("MLAPIRPCQueueSend");
 #endif
+        // Batcher object used to manage the RPC batching on the send side
+        private MessageBatcher batcher = new MessageBatcher();
+        private int BatchThreshold = 1000;
 
         //NSS-TODO:  Need to determine how we want to handle all other MLAPI send types
         //Temporary place to keep internal MLAPI messages
@@ -183,9 +187,12 @@ namespace MLAPI
                             while(currentQueueItem.QueueItemType != RPCQueueManager.QueueItemType.NONE)
                             {
                                 AdvanceFrameHistory = true;
-                                SendFrameQueueItem(currentQueueItem);
+                                batcher.QueueItem(currentQueueItem);
                                 currentQueueItem = CurrentFrame.GetNextQueueItem();
+
+                                batcher.SendItems(BatchThreshold, SendCallback); // send anything already above the batching threshold
                             }
+                            batcher.SendItems(0, SendCallback); // send the remaining  batches
                         }
                      }
                 }
@@ -202,40 +209,20 @@ namespace MLAPI
         }
 
         /// <summary>
-        /// SendFrameQueueItem
-        /// Sends the RPC Queue Item to the specified destination
+        /// SendCallback
+        /// This is the callback from the batcher when it need to send a batch
+        ///
         /// </summary>
-        /// <param name="queueItem">Information on what to send</param>
-        private void SendFrameQueueItem(FrameQueueItem queueItem)
+        /// <param name="clientId"> clientId to send to</param>
+        /// <param name="sendStream"> the stream to send</param>
+        private static void SendCallback(ulong clientId, MLAPI.MessageBatcher.SendStream sendStream)
         {
-            switch(queueItem.QueueItemType)
-            {
-                case RPCQueueManager.QueueItemType.ServerRPC:
-                    {
+            int length = (int)sendStream.Stream.Length;
+            Byte[] bytes = sendStream.Stream.GetBuffer();
+            ArraySegment<byte> sendBuffer = new ArraySegment<byte>(bytes, 0, length);
 
-                        NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(queueItem.NetworkId, queueItem.MessageData,
-                            string.IsNullOrEmpty(queueItem.Channel) ? "MLAPI_DEFAULT_MESSAGE" : queueItem.Channel);
-
-                        //For each packet sent, we want to record how much data we have sent
-                        ProfilerStatManager.bytesSent.Record((int)queueItem.StreamSize);
-                        ProfilerStatManager.rpcsSent.Record();
-                        break;
-                    }
-                case RPCQueueManager.QueueItemType.ClientRPC:
-                    {
-                        foreach(ulong clientid in queueItem.ClientIds)
-                        {
-                            NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(clientid, queueItem.MessageData, string.IsNullOrEmpty(queueItem.Channel) ? "MLAPI_DEFAULT_MESSAGE" : queueItem.Channel);
-
-                            //For each packet sent, we want to record how much data we have sent
-                            ProfilerStatManager.bytesSent.Record((int)queueItem.StreamSize);
-                        }
-                        //For each client we send to, we want to record how many RPCs we have sent
-                        ProfilerStatManager.rpcsSent.Record(queueItem.ClientIds?.Count ?? NetworkingManager.Singleton.ConnectedClientsList.Count);
-
-                        break;
-                    }
-            }
+            NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(clientId, sendBuffer,
+                string.IsNullOrEmpty(sendStream.Item.Channel) ? "MLAPI_DEFAULT_MESSAGE" : sendStream.Item.Channel);
         }
 
         public RPCQueueProcessing(RPCQueueManager rpcqueuemanager)
