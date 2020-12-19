@@ -1,8 +1,6 @@
 using System;
-using System.Collections.Generic;
 using MLAPI.Security;
 using MLAPI.Serialization.Pooled;
-
 
 namespace MLAPI
 {
@@ -16,10 +14,9 @@ namespace MLAPI
     {
         public RPCQueueManager.QueueItemType QueueItemType;
         public SecuritySendFlags        SendFlags;
-        public float                    TimeStamp;          //WIP: This is a temporary value in place of network tic/frame
         public ulong                    NetworkId;          //Sender's network Identifier
-        public String                   Channel;
-        public List<ulong>              ClientIds;          //Server invoked Client RPCs only
+        public string                   Channel;
+        public ulong[]                  ClientIds;          //Server invoked Client RPCs only
         public long                     StreamSize;
         public PooledBitWriter          StreamWriter;
         public PooledBitReader          StreamReader;

@@ -70,6 +70,8 @@ namespace MLAPI
         [HideInInspector]
         public bool LoopbackEnabled;
 
+        public RPCQueueManager RpcQueueManager { get; private set; }
+
         /// <summary>
         /// A synchronized time, represents the time in seconds since the server application started. Is replicated across all clients
         /// </summary>
@@ -205,9 +207,6 @@ namespace MLAPI
                 OnClientDisconnectCallback(clientId);
             }
         }
-
-
-
         /// <summary>
         /// The callback to invoke once the server is ready
         /// </summary>
@@ -355,12 +354,6 @@ namespace MLAPI
                 }
                 NetworkConfig.PlayerPrefabHash.Value = prefab.Hash;
             }
-        }
-
-        RPCQueueManager rpcQueueMananger;
-        public RPCQueueManager GetRPCQueueManager()
-        {
-            return rpcQueueMananger;
         }
 
         private void Init(bool server)
@@ -658,18 +651,9 @@ namespace MLAPI
             }
         }
 
-        public void OnDestroyForNewScene()
-        {
-            Destroy(this.gameObject);
-        }
-
         private void OnDestroy()
         {
-            if(rpcQueueMananger != null)
-            {
-                rpcQueueMananger.OnExiting();
-            }
-
+            RpcQueueManager?.OnExiting();
 
             if (Singleton != null && Singleton == this)
             {
@@ -695,35 +679,25 @@ namespace MLAPI
             if (NetworkConfig != null && NetworkConfig.NetworkTransport != null) //The Transport is set during Init time, thus it is possible for the Transport to be null
                 NetworkConfig.NetworkTransport.Shutdown();
 
-            if(rpcQueueMananger != null)
+            if (RpcQueueManager != null)
             {
-                rpcQueueMananger.Shutdown();
-                rpcQueueMananger = null;
+                RpcQueueManager.Shutdown();
+                RpcQueueManager = null;
             }
-
         }
 
 
         private void Awake()
         {
-
-            rpcQueueMananger = new RPCQueueManager(LoopbackEnabled);
+            RpcQueueManager = new RPCQueueManager(LoopbackEnabled);
             //Note: Since frame history is not being used, this is set to 0
             //To test frame history, increase the number to (n) where n > 0
-            if(rpcQueueMananger != null)
-            {
-                 rpcQueueMananger.Initialize(0);
-            }
+            RpcQueueManager?.Initialize(0);
 
-            NetworkUpdateManager.RegisterNetworkUpdateAction(NetworkPreUpdate,NetworkUpdateManager.NetworkUpdateStages.PREUPDATE);
-            NetworkUpdateManager.RegisterNetworkUpdateAction(NetworkFixedUpdate,NetworkUpdateManager.NetworkUpdateStages.FIXEDUPDATE);
-            NetworkUpdateManager.RegisterNetworkUpdateAction(NetworkUpdate,NetworkUpdateManager.NetworkUpdateStages.UPDATE);
-            NetworkUpdateManager.RegisterNetworkUpdateAction(NetworkLateUpdate,NetworkUpdateManager.NetworkUpdateStages.LATEUPDATE);
-        }
-
-        private void Start()
-        {
-
+            NetworkUpdateManager.RegisterNetworkUpdateAction(NetworkPreUpdate, NetworkUpdateManager.NetworkUpdateStages.PREUPDATE);
+            NetworkUpdateManager.RegisterNetworkUpdateAction(NetworkFixedUpdate, NetworkUpdateManager.NetworkUpdateStages.FIXEDUPDATE);
+            NetworkUpdateManager.RegisterNetworkUpdateAction(NetworkUpdate, NetworkUpdateManager.NetworkUpdateStages.UPDATE);
+            NetworkUpdateManager.RegisterNetworkUpdateAction(NetworkLateUpdate, NetworkUpdateManager.NetworkUpdateStages.LATEUPDATE);
         }
 
         private float lastReceiveTickTime;
@@ -731,16 +705,13 @@ namespace MLAPI
         private float eventOvershootCounter;
         private float lastTimeSyncTime;
 
-        //NSS-TODO: Remove this tick counter once this is replaced with the real implementation that should be part of the network timing synchronization
-        public static ulong CurrentReceiveTick = 0;
-
         /// <summary>
         /// NetworkPreUpdate:
         /// Mostly for handling the receiving of RPCs
         /// </summary>
-        void NetworkPreUpdate()
+        private void NetworkPreUpdate()
         {
-            if(IsListening)
+            if (IsListening)
             {
                 // Process received data
                 if ((NetworkTime - lastReceiveTickTime >= (1f / NetworkConfig.ReceiveTickrate)) || NetworkConfig.ReceiveTickrate <= 0)
@@ -750,9 +721,9 @@ namespace MLAPI
                     s_ReceiveTick.Begin();
 #endif
                     bool IsLoopBack = false;
-                    if(rpcQueueMananger != null)
+                    if (RpcQueueManager != null)
                     {
-                        IsLoopBack = rpcQueueMananger.IsLoopBack();
+                        IsLoopBack = RpcQueueManager.IsLoopBack();
                     }
 
                     // @mfatihmar (Unity) Begin: Temporary, inbound RPC queue will replace this workaround
@@ -769,7 +740,7 @@ namespace MLAPI
                     NetworkProfiler.StartTick(TickType.Receive);
 
                     //If we are in loopback mode, we don't need to touch the transport
-                    if(!IsLoopBack)
+                    if (!IsLoopBack)
                     {
                         NetEventType eventType;
                         int processedEvents = 0;
@@ -782,10 +753,9 @@ namespace MLAPI
                             // Only do another iteration if: there are no more messages AND (there is no limit to max events or we have processed less than the maximum)
                         } while (IsListening && (eventType != NetEventType.Nothing) && (NetworkConfig.MaxReceiveEventsPerTickRate <= 0 || processedEvents < NetworkConfig.MaxReceiveEventsPerTickRate));
                     }
+
                     lastReceiveTickTime = NetworkTime;
 
-                    //NSS-TODO: Remove this tick counter once this is replaced with the real implementation that should be part of the network timing synchronization
-                    CurrentReceiveTick++;
                     NetworkProfiler.EndTick();
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_ReceiveTick.End();
@@ -794,20 +764,16 @@ namespace MLAPI
             }
         }
 
-
-        void NetworkFixedUpdate()
+        private void NetworkFixedUpdate()
         {
-            if(rpcQueueMananger != null)
-            {
-                rpcQueueMananger.ProcessAndFlushRPCQueue(RPCQueueManager.RPCQueueProcessingTypes.RECEIVE);
-            }
+            RpcQueueManager?.ProcessAndFlushRPCQueue(RPCQueueManager.RPCQueueProcessingTypes.Receive);
         }
 
         /// <summary>
         /// NetworkUpdate:
         /// Primarily handles all remaining messages, network variable/behavior updates
         /// </summary>
-        void NetworkUpdate()
+        private void NetworkUpdate()
         {
             if (IsListening)
             {
@@ -888,14 +854,10 @@ namespace MLAPI
         /// <summary>
         /// Finalizes the end of this network frame timing (i.e. anything beyond this time is next frame
         /// </summary>
-        void NetworkLateUpdate()
+        private void NetworkLateUpdate()
         {
-            if(rpcQueueMananger != null)
-            {
-                rpcQueueMananger.ProcessAndFlushRPCQueue(RPCQueueManager.RPCQueueProcessingTypes.SEND);
-            }
+            RpcQueueManager?.ProcessAndFlushRPCQueue(RPCQueueManager.RPCQueueProcessingTypes.Send);
         }
-
 
         internal void UpdateNetworkTime(ulong clientId, float netTime, float receiveTime, bool warp = false)
         {
@@ -1054,9 +1016,7 @@ namespace MLAPI
                 case NetEventType.Data:
                     {
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo($"Incoming Data From {clientId} : {payload.Count} bytes");
-
                         HandleIncomingData(clientId, channelName, payload, receiveTime, true);
-
                         break;
                     }
                 case NetEventType.Disconnect:
@@ -1141,8 +1101,7 @@ namespace MLAPI
                         if (IsClient) InternalMessageHandler.HandleDestroyObject(clientId, messageStream);
                         break;
                     case MLAPIConstants.MLAPI_SWITCH_SCENE:
-                        if (IsClient)
-                            InternalMessageHandler.HandleSwitchScene(clientId, messageStream);
+                        if (IsClient) InternalMessageHandler.HandleSwitchScene(clientId, messageStream);
                         break;
                     case MLAPIConstants.MLAPI_CHANGE_OWNER:
                         if (IsClient) InternalMessageHandler.HandleChangeOwner(clientId, messageStream);
@@ -1205,12 +1164,11 @@ namespace MLAPI
                         {
                             if (IsServer)
                             {
-
                                 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                                 s_MLAPIServerSTDRPCQueued.Begin();
                                 #endif
 
-                                InternalMessageHandler.RPCReceiveQueueItem(clientId, messageStream, receiveTime,RPCQueueManager.QueueItemType.ServerRPC);
+                                InternalMessageHandler.RPCReceiveQueueItem(clientId, messageStream, receiveTime,RPCQueueManager.QueueItemType.ServerRpc);
 
                                 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                                 s_MLAPIServerSTDRPCQueued.End();
@@ -1226,7 +1184,7 @@ namespace MLAPI
                                 s_MLAPIClientSTDRPCQueued.Begin();
                                 #endif
 
-                                InternalMessageHandler.RPCReceiveQueueItem(clientId, messageStream,receiveTime,RPCQueueManager.QueueItemType.ClientRPC);
+                                InternalMessageHandler.RPCReceiveQueueItem(clientId, messageStream,receiveTime,RPCQueueManager.QueueItemType.ClientRpc);
 
                                 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                                 s_MLAPIClientSTDRPCQueued.End();
@@ -1252,28 +1210,28 @@ namespace MLAPI
         /// Called when an inbound queued RPC is invoked
         /// </summary>
         /// <param name="queueItem">frame queue item to invoke</param>
-        public void InvokeRPC(FrameQueueItem queueItem)
+        public static void InvokeRpc(FrameQueueItem queueItem)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-                s_InvokeRPC.Begin();
+            s_InvokeRPC.Begin();
 #endif
-                var networkObjectId = queueItem.StreamReader.ReadUInt64Packed();
-                var networkBehaviourId = queueItem.StreamReader.ReadUInt16Packed();
-                var networkMethodId = queueItem.StreamReader.ReadUInt32Packed();
+            var networkObjectId = queueItem.StreamReader.ReadUInt64Packed();
+            var networkBehaviourId = queueItem.StreamReader.ReadUInt16Packed();
+            var networkMethodId = queueItem.StreamReader.ReadUInt32Packed();
 
-                if (__ntable.ContainsKey(networkMethodId))
-                {
-                    if (!SpawnManager.SpawnedObjects.ContainsKey(networkObjectId)) return;
-                    var networkObject = SpawnManager.SpawnedObjects[networkObjectId];
+            if (__ntable.ContainsKey(networkMethodId))
+            {
+                if (!SpawnManager.SpawnedObjects.ContainsKey(networkObjectId)) return;
+                var networkObject = SpawnManager.SpawnedObjects[networkObjectId];
 
-                    var networkBehaviour = networkObject.GetBehaviourAtOrderIndex(networkBehaviourId);
-                    if (ReferenceEquals(networkBehaviour, null)) return;
+                var networkBehaviour = networkObject.GetBehaviourAtOrderIndex(networkBehaviourId);
+                if (ReferenceEquals(networkBehaviour, null)) return;
 
-                    __ntable[networkMethodId](networkBehaviour, queueItem.StreamReader,queueItem.NetworkId);
-                }
+                __ntable[networkMethodId](networkBehaviour, queueItem.StreamReader, queueItem.NetworkId);
+            }
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-                s_InvokeRPC.End();
+            s_InvokeRPC.End();
 #endif
         }
 

@@ -1,11 +1,8 @@
-using System;
 using System.Collections.Generic;
-using System.Text;
 using MLAPI.Serialization.Pooled;
 
 namespace MLAPI
 {
-
     /// <summary>
     /// QueueHistoryFrame
     /// All queued RPCs end up in a PooledBitStream within a QueueHistoryFrame instance.
@@ -19,18 +16,16 @@ namespace MLAPI
         }
 
         public uint TotalSize;
-        public uint TotalPackedSize;
-        public uint FrameNumber;
 
         public PooledBitStream QueueStream;
         public PooledBitWriter QueueWriter;
         public PooledBitReader QueueReader;
 
-        public List<UInt32> QueueItemOffsets;
+        public List<uint> QueueItemOffsets;
 
         private int QueueItemOffsetIndex;
         private FrameQueueItem CurrentQueueItem;
-        private QueueFrameType queueFrameType;
+        private readonly QueueFrameType queueFrameType;
 
         long CurrentStreamSizeMark;
 
@@ -50,7 +45,7 @@ namespace MLAPI
         /// </summary>
         public void MarkCurrentStreamPosition()
         {
-            if(QueueStream != null)
+            if (QueueStream != null)
             {
                 CurrentStreamSizeMark = QueueStream.Position;
             }
@@ -71,62 +66,48 @@ namespace MLAPI
         /// Internal method to get the current Queue Item from the stream at its current position
         /// </summary>
         /// <returns>FrameQueueItem</returns>
-        FrameQueueItem GetCurrentQueueItem()
+        private FrameQueueItem GetCurrentQueueItem()
         {
             //Write the packed version of the queueItem to our current queue history buffer
             CurrentQueueItem.QueueItemType = (RPCQueueManager.QueueItemType)QueueReader.ReadUInt16();
             CurrentQueueItem.SendFlags = (Security.SecuritySendFlags)QueueReader.ReadUInt16();
-            CurrentQueueItem.TimeStamp = QueueReader.ReadSingle();
+            QueueReader.ReadSingle();
             CurrentQueueItem.NetworkId = QueueReader.ReadUInt64();
 
             //NSS: For now, with inbound we are punting on reading the channel and clients for these reasons:
             //1.) For right now, channels are not pertinent as the message is already received
             //2.) Clients are not pertinent as a received RPC is a "single target" destination
-            if(queueFrameType == QueueFrameType.Inbound)
+            if (queueFrameType == QueueFrameType.Inbound)
             {
                 QueueReader.ReadByte();
                 QueueReader.ReadInt32();
-                if(CurrentQueueItem.ClientIds == null)
-                {
-                    CurrentQueueItem.ClientIds = new List<ulong>();
-                }
-                else
-                {
-                    CurrentQueueItem.ClientIds.Clear();
-                }
+                CurrentQueueItem.ClientIds = new ulong[0];
             }
             else
             {
                 //NSS: Outbound we care about both channel and clients
                 CurrentQueueItem.Channel = QueueReader.ReadString().ToString();
-                Int32 NumClients = QueueReader.ReadInt32();
-                if(NumClients > 0)
+                int NumClients = QueueReader.ReadInt32();
+                if (NumClients > 0)
                 {
                     ulong[] clientIdArray = new ulong[NumClients];
-                    for(int i = 0; i < NumClients; i++)
+                    for (int i = 0; i < NumClients; i++)
                     {
                         clientIdArray[i] = QueueReader.ReadUInt64();
                     }
-                    if(CurrentQueueItem.ClientIds == null)
+
+                    if (CurrentQueueItem.ClientIds == null)
                     {
-                        CurrentQueueItem.ClientIds = new List<ulong>(clientIdArray);
+                        CurrentQueueItem.ClientIds = clientIdArray;
                     }
                     else
                     {
-                        CurrentQueueItem.ClientIds.Clear();
-                        CurrentQueueItem.ClientIds.AddRange(clientIdArray);
+                        CurrentQueueItem.ClientIds = clientIdArray;
                     }
                 }
                 else
                 {
-                    if(CurrentQueueItem.ClientIds == null)
-                    {
-                        CurrentQueueItem.ClientIds = new List<ulong>();
-                    }
-                    else
-                    {
-                        CurrentQueueItem.ClientIds.Clear();
-                    }
+                    CurrentQueueItem.ClientIds = new ulong[0];
                 }
             }
 
@@ -134,7 +115,7 @@ namespace MLAPI
             CurrentQueueItem.StreamSize = QueueReader.ReadInt64();
 
             //Inbound and Outbound message streams are handled differently
-            if(queueFrameType == QueueFrameType.Inbound)
+            if (queueFrameType == QueueFrameType.Inbound)
             {
                 //Get our offset
                 long Position = QueueReader.ReadInt64();
@@ -165,13 +146,14 @@ namespace MLAPI
         /// <returns>FrameQueueItem</returns>
         public FrameQueueItem GetNextQueueItem()
         {
-            QueueStream.Position = (long)QueueItemOffsets[QueueItemOffsetIndex];
+            QueueStream.Position = QueueItemOffsets[QueueItemOffsetIndex];
             QueueItemOffsetIndex++;
-            if(QueueItemOffsetIndex >= QueueItemOffsets.Count)
+            if (QueueItemOffsetIndex >= QueueItemOffsets.Count)
             {
-                CurrentQueueItem.QueueItemType = RPCQueueManager.QueueItemType.NONE;
+                CurrentQueueItem.QueueItemType = RPCQueueManager.QueueItemType.None;
                 return CurrentQueueItem;
             }
+
             return GetCurrentQueueItem();
         }
 
@@ -183,22 +165,23 @@ namespace MLAPI
         /// <returns>FrameQueueItem</returns>
         public FrameQueueItem GetFirstQueueItem()
         {
-            if(QueueStream.Position > 0)
+            if (QueueStream.Position > 0)
             {
                 QueueItemOffsetIndex = 0;
                 QueueStream.Position = 0;
 
-                if(queueFrameType == QueueFrameType.Inbound)
+                if (queueFrameType == QueueFrameType.Inbound)
                 {
                     CurrentQueueItem.ItemStream = PooledBitStream.Get();
                     CurrentQueueItem.StreamWriter = PooledBitWriter.Get(CurrentQueueItem.ItemStream);
                     CurrentQueueItem.StreamReader = PooledBitReader.Get(CurrentQueueItem.ItemStream);
                 }
+
                 return GetCurrentQueueItem();
             }
             else
             {
-                CurrentQueueItem.QueueItemType = RPCQueueManager.QueueItemType.NONE;
+                CurrentQueueItem.QueueItemType = RPCQueueManager.QueueItemType.None;
                 return CurrentQueueItem;
             }
         }
@@ -211,19 +194,19 @@ namespace MLAPI
         /// </summary>
         public void CloseQueue()
         {
-            if(CurrentQueueItem.StreamWriter != null)
+            if (CurrentQueueItem.StreamWriter != null)
             {
                 CurrentQueueItem.StreamWriter.Dispose();
                 CurrentQueueItem.StreamWriter = null;
             }
 
-            if(CurrentQueueItem.StreamReader != null)
+            if (CurrentQueueItem.StreamReader != null)
             {
                 CurrentQueueItem.StreamReader.Dispose();
                 CurrentQueueItem.StreamReader = null;
             }
 
-            if(CurrentQueueItem.ItemStream != null)
+            if (CurrentQueueItem.ItemStream != null)
             {
                 CurrentQueueItem.ItemStream.Dispose();
                 CurrentQueueItem.ItemStream = null;

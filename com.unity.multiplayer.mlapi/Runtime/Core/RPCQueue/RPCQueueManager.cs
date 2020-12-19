@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using MLAPI.Serialization;
 using MLAPI.Serialization.Pooled;
 using MLAPI.Profiling;
-using MLAPI.Configuration;
 
 namespace MLAPI
 {
@@ -16,51 +15,38 @@ namespace MLAPI
     {
         public enum QueueItemType
         {
-            ServerRPC,
-            ClientRPC,
-            CreateObject,                   //MLAPI Constant *** We need to determine if these belong here ***
-            DestroyObject,                  //MLAPI Constant
+            ServerRpc,
+            ClientRpc,
+            CreateObject, //MLAPI Constant *** We need to determine if these belong here ***
+            DestroyObject, //MLAPI Constant
 
-            NONE                            //Indicates end of frame
+            None //Indicates end of frame
         }
 
         public enum RPCQueueProcessingTypes
         {
-            SEND,
-            RECEIVE,
+            Send,
+            Receive,
         }
 
         private RPCQueueProcessing rpcQueueProcessing;
 
-        private UInt32 OutboundFramesProcessed;
-        private UInt32 InboundFramesProcessed;
-        private UInt32 MaxFrameHistory;
+        private uint OutboundFramesProcessed;
+        private uint InboundFramesProcessed;
+        private uint MaxFrameHistory;
 
         private int InboundStreamBufferIndex;
         private int OutBoundStreamBufferIndex;
-        private bool IsTestingEnabled;
+        private readonly bool IsTestingEnabled;
         private bool IsLoopbackEnabled;
 
-        private Dictionary<QueueHistoryFrame.QueueFrameType, Dictionary<int,QueueHistoryFrame>> QueueHistory = new Dictionary<QueueHistoryFrame.QueueFrameType, Dictionary<int, QueueHistoryFrame>>();
-
-
-
-        /// <summary>
-        /// IsTesting
-        /// Whether we are in testing mode or not (generally used for testing or debugging)
-        /// </summary>
-        /// <returns>true or false</returns>
-        public bool IsTesting()
-        {
-            return IsTestingEnabled;
-        }
+        private readonly Dictionary<QueueHistoryFrame.QueueFrameType, Dictionary<int, QueueHistoryFrame>> QueueHistory = new Dictionary<QueueHistoryFrame.QueueFrameType, Dictionary<int, QueueHistoryFrame>>();
 
         /// <summary>
         /// IsLoopBack
         /// Whether we are in loopback mode or not (generally used for testing or debugging)
         /// </summary>
         /// <returns>true or false</returns>
-
         public bool IsLoopBack()
         {
             return IsLoopbackEnabled;
@@ -91,10 +77,7 @@ namespace MLAPI
         /// <param name="queueItem">item to add to the internal MLAPI queue</param>
         public void AddToInternalMLAPISendQueue(FrameQueueItem queueItem)
         {
-            if(rpcQueueProcessing != null)
-            {
-                rpcQueueProcessing.QueueInternalMLAPICommand(queueItem);
-            }
+            rpcQueueProcessing?.QueueInternalMLAPICommand(queueItem);
         }
 
         /// <summary>
@@ -104,20 +87,22 @@ namespace MLAPI
         /// <param name="queueType"></param>
         public void ProcessAndFlushRPCQueue(RPCQueueProcessingTypes queueType)
         {
-            if(rpcQueueProcessing != null)
+            if (rpcQueueProcessing == null)
             {
-                switch(queueType)
+                return;
+            }
+
+            switch (queueType)
+            {
+                case RPCQueueProcessingTypes.Receive:
                 {
-                    case RPCQueueProcessingTypes.RECEIVE:
-                        {
-                            rpcQueueProcessing.ProcessReceiveQueue();
-                            break;
-                        }
-                    case RPCQueueProcessingTypes.SEND:
-                        {
-                            rpcQueueProcessing.ProcessSendQueue();
-                            break;
-                        }
+                    RPCQueueProcessing.ProcessReceiveQueue();
+                    break;
+                }
+                case RPCQueueProcessingTypes.Send:
+                {
+                    rpcQueueProcessing.ProcessSendQueue();
+                    break;
                 }
             }
         }
@@ -130,16 +115,16 @@ namespace MLAPI
         /// <returns>QueueHistoryFrame</returns>
         public QueueHistoryFrame GetCurrentFrame(QueueHistoryFrame.QueueFrameType qType)
         {
-            if(QueueHistory.ContainsKey(qType))
+            if (QueueHistory.ContainsKey(qType))
             {
                 int StreamBufferIndex = GetStreamBufferIndex(qType);
 
-                if(QueueHistory[qType].ContainsKey(StreamBufferIndex))
+                if (QueueHistory[qType].ContainsKey(StreamBufferIndex))
                 {
-                     return QueueHistory[qType][StreamBufferIndex];
+                    return QueueHistory[qType][StreamBufferIndex];
                 }
-
             }
+
             return null;
         }
 
@@ -151,7 +136,7 @@ namespace MLAPI
         /// <returns></returns>
         private int GetStreamBufferIndex(QueueHistoryFrame.QueueFrameType queueType)
         {
-            return queueType == QueueHistoryFrame.QueueFrameType.Inbound ? InboundStreamBufferIndex:OutBoundStreamBufferIndex;
+            return queueType == QueueHistoryFrame.QueueFrameType.Inbound ? InboundStreamBufferIndex : OutBoundStreamBufferIndex;
         }
 
         /// <summary>
@@ -162,68 +147,59 @@ namespace MLAPI
         /// <param name="queueType"></param>
         public void AdvanceFrameHistory(QueueHistoryFrame.QueueFrameType queueType)
         {
-            try
+            int StreamBufferIndex = GetStreamBufferIndex(queueType);
+
+            if (!QueueHistory.ContainsKey(queueType))
             {
-
-                int StreamBufferIndex = GetStreamBufferIndex(queueType);
-
-                if (!QueueHistory.ContainsKey(queueType))
-                {
-                    UnityEngine.Debug.LogError("You must initialize the RPCQueueManager before using MLAPI!");
-                    return;
-                }
-
-                if(!QueueHistory[queueType].ContainsKey(StreamBufferIndex))
-                {
-                    UnityEngine.Debug.LogError("RPCQueueManager " + queueType.ToString() + " queue stream buffer index out of range! [" + StreamBufferIndex.ToString() + "]");
-                    return;
-                }
-
-                QueueHistoryFrame queueHistoryItem = QueueHistory[queueType][StreamBufferIndex];
-
-                if (queueHistoryItem.QueueItemOffsets.Count > 0 )
-                {
-
-                    if(queueType == QueueHistoryFrame.QueueFrameType.Inbound)
-                    {
-                        ProfilerStatManager.rpcInQueueSize.Record((int)queueHistoryItem.TotalSize);
-                    }
-                    else
-                    {
-                        ProfilerStatManager.rpcOutQueueSize.Record((int)queueHistoryItem.TotalSize);
-                    }
-
-                    //Roll to the next stream buffer
-                    StreamBufferIndex++;
-
-                    //If we have hit our maximum history, roll back over to the first one
-                    if(StreamBufferIndex >= MaxFrameHistory)
-                    {
-                        StreamBufferIndex = 0;
-                    }
-
-                    if(queueType == QueueHistoryFrame.QueueFrameType.Inbound)
-                    {
-                        InboundStreamBufferIndex = StreamBufferIndex;
-                    }
-                    else
-                    {
-                        OutBoundStreamBufferIndex = StreamBufferIndex;
-                    }
-
-
-                    //If we already have a frame stored in this next queue history item, then clear it out for
-                    //next frame when processed
-                    if (QueueHistory[queueType].ContainsKey(StreamBufferIndex))
-                    {
-                        ResetQueueHistoryFrame(QueueHistory[queueType][StreamBufferIndex]);
-                        IncrementAndSetQueueHistoryFrame(QueueHistory[queueType][StreamBufferIndex]);
-                    }
-                }
+                UnityEngine.Debug.LogError("You must initialize the RPCQueueManager before using MLAPI!");
+                return;
             }
-            catch(Exception ex)
+
+            if (!QueueHistory[queueType].ContainsKey(StreamBufferIndex))
             {
-                UnityEngine.Debug.LogError(ex);
+                UnityEngine.Debug.LogError("RPCQueueManager " + queueType + " queue stream buffer index out of range! [" + StreamBufferIndex + "]");
+                return;
+            }
+
+            QueueHistoryFrame queueHistoryItem = QueueHistory[queueType][StreamBufferIndex];
+
+            if (queueHistoryItem.QueueItemOffsets.Count > 0)
+            {
+                if (queueType == QueueHistoryFrame.QueueFrameType.Inbound)
+                {
+                    ProfilerStatManager.rpcInQueueSize.Record((int)queueHistoryItem.TotalSize);
+                }
+                else
+                {
+                    ProfilerStatManager.rpcOutQueueSize.Record((int)queueHistoryItem.TotalSize);
+                }
+
+                //Roll to the next stream buffer
+                StreamBufferIndex++;
+
+                //If we have hit our maximum history, roll back over to the first one
+                if (StreamBufferIndex >= MaxFrameHistory)
+                {
+                    StreamBufferIndex = 0;
+                }
+
+                if (queueType == QueueHistoryFrame.QueueFrameType.Inbound)
+                {
+                    InboundStreamBufferIndex = StreamBufferIndex;
+                }
+                else
+                {
+                    OutBoundStreamBufferIndex = StreamBufferIndex;
+                }
+
+
+                //If we already have a frame stored in this next queue history item, then clear it out for
+                //next frame when processed
+                if (QueueHistory[queueType].ContainsKey(StreamBufferIndex))
+                {
+                    ResetQueueHistoryFrame(QueueHistory[queueType][StreamBufferIndex]);
+                    IncrementAndSetQueueHistoryFrame(QueueHistory[queueType][StreamBufferIndex]);
+                }
             }
         }
 
@@ -232,17 +208,15 @@ namespace MLAPI
         /// Increments and sets frame count for this queue frame
         /// </summary>
         /// <param name="queueFrame">QueueHistoryFrame to be reset</param>
-        void IncrementAndSetQueueHistoryFrame(QueueHistoryFrame queueFrame)
+        private void IncrementAndSetQueueHistoryFrame(QueueHistoryFrame queueFrame)
         {
-            if(queueFrame.GetQueueFrameType() == QueueHistoryFrame.QueueFrameType.Inbound)
+            if (queueFrame.GetQueueFrameType() == QueueHistoryFrame.QueueFrameType.Inbound)
             {
                 InboundFramesProcessed++;
-                queueFrame.FrameNumber = InboundFramesProcessed;
             }
             else
             {
                 OutboundFramesProcessed++;
-                queueFrame.FrameNumber = OutboundFramesProcessed;
             }
         }
 
@@ -251,16 +225,13 @@ namespace MLAPI
         /// Resets the queue history frame passed to this method
         /// </summary>
         /// <param name="queueFrame">QueueHistoryFrame to be reset</param>
-        void ResetQueueHistoryFrame(QueueHistoryFrame queueFrame)
+        private static void ResetQueueHistoryFrame(QueueHistoryFrame queueFrame)
         {
-            queueFrame.TotalPackedSize = 0;
             queueFrame.TotalSize = 0;
             queueFrame.QueueItemOffsets.Clear();
             queueFrame.QueueStream.Position = 0;
             queueFrame.MarkCurrentStreamPosition();
         }
-
-
 
 
         /// <summary>
@@ -271,9 +242,8 @@ namespace MLAPI
         /// <param name="timeStamp">when it was received</param>
         /// <param name="sourceNetworkId">who sent the rpc</param>
         /// <param name="message">the message being received</param>
-        public void AddQueueItemToInboundFrame(QueueItemType qItemType, float timeStamp, ulong sourceNetworkId, BitStream message)
+        internal void AddQueueItemToInboundFrame(QueueItemType qItemType, float timeStamp, ulong sourceNetworkId, BitStream message)
         {
-
             QueueHistoryFrame queueHistoryItem = GetCurrentQueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Inbound);
 
             long StartPosition = queueHistoryItem.QueueStream.Position;
@@ -291,13 +261,12 @@ namespace MLAPI
             queueHistoryItem.QueueWriter.WriteInt32(0);
 
             //Always make sure we are positioned at the start of the stream
-            long streamSize = message.Position;
 
             //Inbound we copy the entire packet and store the position offset
-            streamSize = message.Length;
+            long streamSize = message.Length;
             queueHistoryItem.QueueWriter.WriteInt64(streamSize);
             queueHistoryItem.QueueWriter.WriteInt64(message.Position);
-            queueHistoryItem.QueueWriter.WriteBytes(message.GetBuffer(),streamSize);
+            queueHistoryItem.QueueWriter.WriteBytes(message.GetBuffer(), streamSize);
 
             //Add the packed size to the offsets for parsing over various entries
             queueHistoryItem.QueueItemOffsets.Add((uint)queueHistoryItem.QueueStream.Position);
@@ -317,18 +286,18 @@ namespace MLAPI
         /// <param name="sourceNetworkId">who is sending the rpc</param>
         /// <param name="targetNetworkIds">who the rpc is being sent to</param>
         /// <returns></returns>
-        public PooledBitWriter BeginAddQueueItemToOutboundFrame(QueueItemType qItemType, float timeStamp, string channel, UInt16 sendflags, ulong sourceNetworkId, ulong[] targetNetworkIds)
+        public PooledBitWriter BeginAddQueueItemToOutboundFrame(QueueItemType qItemType, float timeStamp, string channel, ushort sendflags, ulong sourceNetworkId, ulong[] targetNetworkIds)
         {
             QueueHistoryFrame queueHistoryItem = GetCurrentQueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Outbound);
 
             //Write the packed version of the queueItem to our current queue history buffer
             queueHistoryItem.QueueWriter.WriteUInt16((ushort)qItemType);
-            queueHistoryItem.QueueWriter.WriteUInt16((ushort)sendflags);
+            queueHistoryItem.QueueWriter.WriteUInt16(sendflags);
             queueHistoryItem.QueueWriter.WriteSingle(timeStamp);
             queueHistoryItem.QueueWriter.WriteUInt64(sourceNetworkId);
 
             //NSS-TODO: Determine if we need to store the channel
-            if(channel != String.Empty && channel != null)
+            if (!string.IsNullOrEmpty(channel))
             {
                 queueHistoryItem.QueueWriter.WriteCharArray(channel.ToCharArray());
             }
@@ -337,11 +306,11 @@ namespace MLAPI
                 queueHistoryItem.QueueWriter.WriteByte(0);
             }
 
-            if(targetNetworkIds != null && targetNetworkIds.Length != 0)
+            if (targetNetworkIds != null && targetNetworkIds.Length != 0)
             {
                 queueHistoryItem.QueueWriter.WriteInt32(targetNetworkIds.Length);
 
-                for(int i = 0; i < targetNetworkIds.Length; i++)
+                for (int i = 0; i < targetNetworkIds.Length; i++)
                 {
                     queueHistoryItem.QueueWriter.WriteUInt64(targetNetworkIds[i]);
                 }
@@ -369,14 +338,13 @@ namespace MLAPI
         /// <param name="writer">writer that was used</param>
         public void EndAddQueueItemToOutboundFrame(BitWriter writer)
         {
-
             QueueHistoryFrame queueHistoryItem = GetCurrentQueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Outbound);
             PooledBitWriter pbWriter = (PooledBitWriter)writer;
 
             //Sanity check
-            if(pbWriter != queueHistoryItem.QueueWriter)
+            if (pbWriter != queueHistoryItem.QueueWriter)
             {
-                 UnityEngine.Debug.LogError("RPCQueueManager " + QueueHistoryFrame.QueueFrameType.Outbound.ToString() + " passed writer is not the same as the current PooledBitWrite for the " +QueueHistoryFrame.QueueFrameType.Outbound.ToString() + "]!");
+                UnityEngine.Debug.LogError("RPCQueueManager " + QueueHistoryFrame.QueueFrameType.Outbound + " passed writer is not the same as the current PooledBitWrite for the " + QueueHistoryFrame.QueueFrameType.Outbound + "]!");
             }
 
             //The total size of the frame is the last known position of the stream
@@ -402,7 +370,6 @@ namespace MLAPI
 
             //Add the packed size to the offsets for parsing over various entries
             queueHistoryItem.QueueItemOffsets.Add((uint)queueHistoryItem.QueueStream.Position);
-
         }
 
         /// <summary>
@@ -421,15 +388,14 @@ namespace MLAPI
                 return null;
             }
 
-            if(!QueueHistory[QueueHistoryFrame.QueueFrameType.Outbound].ContainsKey(StreamBufferIndex))
+            if (!QueueHistory[QueueHistoryFrame.QueueFrameType.Outbound].ContainsKey(StreamBufferIndex))
             {
-                UnityEngine.Debug.LogError("RPCQueueManager " + frameType.ToString() + " queue stream buffer index out of range! [" + StreamBufferIndex.ToString() + "]");
+                UnityEngine.Debug.LogError("RPCQueueManager " + frameType + " queue stream buffer index out of range! [" + StreamBufferIndex + "]");
                 return null;
             }
+
             return QueueHistory[frameType][StreamBufferIndex];
         }
-
-
 
 
         /// <summary>
@@ -439,23 +405,21 @@ namespace MLAPI
         public void LoopbackSendFrame()
         {
             //If we do not have loop back or testing mode enabled then ignore the call
-            if(IsLoopbackEnabled || IsTestingEnabled)
+            if (IsLoopbackEnabled || IsTestingEnabled)
             {
-
                 QueueHistoryFrame queueHistoryItemOutbound = GetCurrentQueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Outbound);
-                if(queueHistoryItemOutbound.QueueItemOffsets.Count > 0)
+                if (queueHistoryItemOutbound.QueueItemOffsets.Count > 0)
                 {
                     QueueHistoryFrame queueHistoryItemInbound = GetCurrentQueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Inbound);
                     ResetQueueHistoryFrame(queueHistoryItemInbound);
                     PooledBitStream pooledBitStream = PooledBitStream.Get();
                     FrameQueueItem frameQueueItem = queueHistoryItemOutbound.GetFirstQueueItem();
-                    byte[] pooledBitStreamArray = pooledBitStream.GetBuffer();
-                    while(frameQueueItem.QueueItemType != RPCQueueManager.QueueItemType.NONE)
+                    while (frameQueueItem.QueueItemType != RPCQueueManager.QueueItemType.None)
                     {
                         pooledBitStream.SetLength(frameQueueItem.StreamSize);
                         pooledBitStream.Position = 0;
-                        pooledBitStreamArray = pooledBitStream.GetBuffer();
-                        Buffer.BlockCopy(frameQueueItem.MessageData.Array, frameQueueItem.MessageData.Offset, pooledBitStreamArray,0,(int)frameQueueItem.StreamSize);
+                        byte[] pooledBitStreamArray = pooledBitStream.GetBuffer();
+                        Buffer.BlockCopy(frameQueueItem.MessageData.Array ?? Array.Empty<byte>(), frameQueueItem.MessageData.Offset, pooledBitStreamArray, 0, (int)frameQueueItem.StreamSize);
                         pooledBitStream.Position = 1;
 
                         AddQueueItemToInboundFrame(frameQueueItem.QueueItemType, UnityEngine.Time.realtimeSinceStartup, frameQueueItem.NetworkId, pooledBitStream);
@@ -472,37 +436,37 @@ namespace MLAPI
         /// Note: For zero frame history set maxFrameHistory to zero
         /// </summary>
         /// <param name="maxFrameHistory"></param>
-        public void Initialize(UInt32 maxFrameHistory)
+        public void Initialize(uint maxFrameHistory)
         {
             ClearParameters();
 
-            rpcQueueProcessing = new RPCQueueProcessing(this);
+            rpcQueueProcessing = new RPCQueueProcessing();
 
             MaxFrameHistory = maxFrameHistory + 1;
 
-            if(IsLoopbackEnabled && MaxFrameHistory > 1)
+            if (IsLoopbackEnabled && MaxFrameHistory > 1)
             {
-                String MSG = "Loopback is enabled but there are (" + MaxFrameHistory.ToString() + ") frames allocated for history!\n";
+                string MSG = "Loopback is enabled but there are (" + MaxFrameHistory + ") frames allocated for history!\n";
                 MSG += "Adjusting to use 1 frames for loopback mode.  (Initialize RPC Queue Manager with 0 history frame buffers for LoopBack mode)\n";
                 UnityEngine.Debug.LogWarning(MSG);
                 MaxFrameHistory = 1;
             }
 
-            if(!QueueHistory.ContainsKey(QueueHistoryFrame.QueueFrameType.Inbound))
+            if (!QueueHistory.ContainsKey(QueueHistoryFrame.QueueFrameType.Inbound))
             {
                 QueueHistory.Add(QueueHistoryFrame.QueueFrameType.Inbound, new Dictionary<int, QueueHistoryFrame>());
             }
-            if(!QueueHistory.ContainsKey(QueueHistoryFrame.QueueFrameType.Outbound))
+
+            if (!QueueHistory.ContainsKey(QueueHistoryFrame.QueueFrameType.Outbound))
             {
                 QueueHistory.Add(QueueHistoryFrame.QueueFrameType.Outbound, new Dictionary<int, QueueHistoryFrame>());
             }
 
-            for(int i = 0; i < MaxFrameHistory; i++)
+            for (int i = 0; i < MaxFrameHistory; i++)
             {
                 if (!QueueHistory[QueueHistoryFrame.QueueFrameType.Inbound].ContainsKey(i))
                 {
                     QueueHistoryFrame queueHistoryFrame = new QueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Inbound);
-                    queueHistoryFrame.FrameNumber = 0;
                     queueHistoryFrame.QueueStream = PooledBitStream.Get();
                     queueHistoryFrame.QueueStream.Position = 0;
                     queueHistoryFrame.QueueWriter = PooledBitWriter.Get(queueHistoryFrame.QueueStream);
@@ -514,7 +478,6 @@ namespace MLAPI
                 if (!QueueHistory[QueueHistoryFrame.QueueFrameType.Outbound].ContainsKey(i))
                 {
                     QueueHistoryFrame queueHistoryFrame = new QueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Outbound);
-                    queueHistoryFrame.FrameNumber = 0;
                     queueHistoryFrame.QueueStream = PooledBitStream.Get();
                     queueHistoryFrame.QueueStream.Position = 0;
                     queueHistoryFrame.QueueWriter = PooledBitWriter.Get(queueHistoryFrame.QueueStream);
@@ -529,7 +492,6 @@ namespace MLAPI
         {
             IsLoopbackEnabled = enabled;
         }
-
 
         /// <summary>
         /// Constructor for RPCQueueManager
@@ -559,12 +521,8 @@ namespace MLAPI
         /// </summary>
         public void OnExiting()
         {
-            if(rpcQueueProcessing != null)
-            {
-                //We need to make sure all internal messages (i.e. object destroy) are sent
-                rpcQueueProcessing.InternalMessagesSendAndFlush();
-            }
-
+            //We need to make sure all internal messages (i.e. object destroy) are sent
+            rpcQueueProcessing?.InternalMessagesSendAndFlush();
         }
 
         /// <summary>
@@ -573,27 +531,16 @@ namespace MLAPI
         /// </summary>
         public void Shutdown()
         {
-
-            foreach(KeyValuePair<QueueHistoryFrame.QueueFrameType,Dictionary<int,QueueHistoryFrame>> queueHistorySection in QueueHistory)
+            foreach (KeyValuePair<QueueHistoryFrame.QueueFrameType, Dictionary<int, QueueHistoryFrame>> queueHistorySection in QueueHistory)
             {
-                foreach(KeyValuePair<int,QueueHistoryFrame> queueHistoryItem in queueHistorySection.Value)
+                foreach (KeyValuePair<int, QueueHistoryFrame> queueHistoryItem in queueHistorySection.Value)
                 {
-                    if(queueHistoryItem.Value.QueueWriter != null)
-                    {
-                        queueHistoryItem.Value.QueueWriter.Dispose();
-                    }
-
-                    if(queueHistoryItem.Value.QueueReader != null)
-                    {
-                        queueHistoryItem.Value.QueueReader.Dispose();
-                    }
-
-                    if(queueHistoryItem.Value.QueueStream != null)
-                    {
-                        queueHistoryItem.Value.QueueStream.Dispose();
-                    }
+                    queueHistoryItem.Value.QueueWriter?.Dispose();
+                    queueHistoryItem.Value.QueueReader?.Dispose();
+                    queueHistoryItem.Value.QueueStream?.Dispose();
                 }
             }
+
             QueueHistory.Clear();
 
             ClearParameters();

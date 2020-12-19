@@ -99,6 +99,7 @@ namespace MLAPI.Serialization
                     return null;
                 }
             }
+
             if (SerializationManager.TryDeserialize(source, type, out object obj))
                 return obj;
             if (type.IsArray && type.HasElementType)
@@ -441,6 +442,7 @@ namespace MLAPI.Serialization
             if (bitSource == null) throw new InvalidOperationException("Cannot read bits on a non BitStream stream");
             if (bitCount > 8) throw new ArgumentOutOfRangeException("Cannot read more than 8 bits into an 8-bit value!");
             if (bitCount < 0) throw new ArgumentOutOfRangeException("Cannot read fewer than 0 bits!");
+
             int result = 0;
             ByteBool convert = new ByteBool();
             for (int i = 0; i < bitCount; ++i)
@@ -457,6 +459,7 @@ namespace MLAPI.Serialization
         {
             if (bitSource == null) throw new InvalidOperationException("Cannot read bits on a non BitStream stream");
             ByteBool convert = new ByteBool();
+
             byte result = (byte) (
                 convert.Collapse(ReadBit()) |
                 (convert.Collapse(ReadBit()) << 1) |
@@ -799,43 +802,44 @@ namespace MLAPI.Serialization
         /// </summary>
         /// <param name="sizeToCopy">size to copy</param>
         /// <param name="offset">offset within the stream buffer to start copying</param>
-        /// <returns>ArraySegment<byte></returns>
+        /// <returns>ArraySegment&lt;byte&gt;</returns>
         public ArraySegment<byte> CreateArraySegment(int sizeToCopy = -1, int offset = -1)
         {
-            if(bitSource != null)
+            if (bitSource != null)
             {
                 //If no offset was passed, used the current position
-                int Offset = offset == -1 ? (int)bitSource.Position:offset;
-                int CopySize = sizeToCopy == -1 && offset == -1 ? (int)bitSource.Length:sizeToCopy;
-                if(CopySize > 0)
+                int Offset = offset == -1 ? (int)bitSource.Position : offset;
+                int CopySize = sizeToCopy == -1 && offset == -1 ? (int)bitSource.Length : sizeToCopy;
+                if (CopySize > 0)
                 {
                     //Check to make sure we won't be copying beyond our bounds
-                    if((bitSource.Length - Offset) < CopySize)
+                    if ((bitSource.Length - Offset) >= CopySize)
                     {
-                        //If we didn't pass anything in or passed the length of the buffer
-                        if(CopySize == bitSource.Length)
-                        {
-                            Offset = 0;
-                        }
-                        else
-                        {
-                            Debug.LogError("[BitReader.CreateArraySegment] CopySize (" + CopySize.ToString() + ") exceeds bounds with an Offset of (" + Offset.ToString() + ")! <returning empty array segment>");
-                            return new ArraySegment<byte>();
-                        }
+                        return new ArraySegment<byte>(bitSource.GetBuffer(), Offset, CopySize);
+                    }
+
+                    //If we didn't pass anything in or passed the length of the buffer
+                    if (CopySize == bitSource.Length)
+                    {
+                        Offset = 0;
+                    }
+                    else
+                    {
+                        Debug.LogError($"CopySize ({CopySize}) exceeds bounds with an Offset of ({Offset})! <returning empty array segment>");
+                        return new ArraySegment<byte>();
                     }
 
                     //Return the request array segment
                     return new ArraySegment<byte>(bitSource.GetBuffer(), Offset, CopySize);
                 }
-                else
-                {
-                     Debug.LogError("[BitReader.CreateArraySegment] CopySize (" + CopySize.ToString() + ") is zero or less! <returning empty array segment>");
-                }
+
+                Debug.LogError($"CopySize ({CopySize}) is zero or less! <returning empty array segment>");
             }
             else
             {
-                Debug.LogError("[BitReader.CreateArraySegment] Reader has no stream assigned to it! <returning empty array segment>");
+                Debug.LogError("Reader has no stream assigned to it! <returning empty array segment>");
             }
+
             return new ArraySegment<byte>();
         }
 

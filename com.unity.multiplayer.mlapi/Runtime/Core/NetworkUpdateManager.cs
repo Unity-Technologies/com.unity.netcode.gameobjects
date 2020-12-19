@@ -23,7 +23,6 @@ namespace MLAPI
 
         void PostUpdate();
         void PostUpdateRegister(Action updateAction);
-
     }
 
     /// <summary>
@@ -31,7 +30,7 @@ namespace MLAPI
     /// Basic-Default version of an INetworkUpdateEngine implementation
     /// This allows for anyone to come up with custom variations, which could include allowing multiple actions to be registered
     /// </summary>
-    internal class InternalNetworkUpdateEngine:INetworkUpdateEngine
+    internal class InternalNetworkUpdateEngine : INetworkUpdateEngine
     {
         public Action PreUpdateAction;
         public Action PostPreUpdateAction;
@@ -44,7 +43,7 @@ namespace MLAPI
         /// </summary>
         public void PreUpdate()
         {
-            if(PreUpdateAction != null)
+            if (PreUpdateAction != null)
             {
                 PreUpdateAction.Invoke();
             }
@@ -57,11 +56,12 @@ namespace MLAPI
 
         public void FixedUpdate()
         {
-            if(FixedUpdateAction != null)
+            if (FixedUpdateAction != null)
             {
                 FixedUpdateAction.Invoke();
             }
         }
+
         public void FixedUpdateRegister(Action updateAction)
         {
             FixedUpdateAction = updateAction;
@@ -69,19 +69,20 @@ namespace MLAPI
 
         public void Update()
         {
-            if(UpdateAction != null)
+            if (UpdateAction != null)
             {
                 UpdateAction.Invoke();
             }
         }
+
         public void UpdateRegister(Action updateAction)
         {
             UpdateAction = updateAction;
         }
+
         public void PostUpdate()
         {
-
-            if(PostUpdateAction != null)
+            if (PostUpdateAction != null)
             {
                 PostUpdateAction.Invoke();
             }
@@ -103,10 +104,10 @@ namespace MLAPI
     {
         public enum NetworkUpdateStages
         {
-            PREUPDATE,      //Invoked after EarlyUpdate.UnityWebRequestUpdate
-            FIXEDUPDATE,    //Invoked after FixedUpdate.AudioFixedUpdate (prior to any physics being applied or simulated)
-            UPDATE,         //Invoked after PreUpdate.UpdateVideo   (just before the primary Update is invoked)
-            LATEUPDATE      //Invoked after PostLateUpdate.ProcessWebSendMessages (after all updates)
+            PREUPDATE, //Invoked after EarlyUpdate.UnityWebRequestUpdate
+            FIXEDUPDATE, //Invoked after FixedUpdate.AudioFixedUpdate (prior to any physics being applied or simulated)
+            UPDATE, //Invoked after PreUpdate.UpdateVideo   (just before the primary Update is invoked)
+            LATEUPDATE //Invoked after PostLateUpdate.ProcessWebSendMessages (after all updates)
         }
 
         static INetworkUpdateEngine CurrentNetworkUpdateEngine;
@@ -129,33 +130,33 @@ namespace MLAPI
         /// <param name="updateStage">update stage to apply the action to</param>
         public static void RegisterNetworkUpdateAction(Action updateAction, NetworkUpdateStages updateStage)
         {
-            if(CurrentNetworkUpdateEngine == null)
+            if (CurrentNetworkUpdateEngine == null)
             {
                 CurrentNetworkUpdateEngine = new InternalNetworkUpdateEngine();
             }
 
-            switch(updateStage)
+            switch (updateStage)
             {
                 case NetworkUpdateStages.PREUPDATE:
-                    {
-                         CurrentNetworkUpdateEngine.PreUpdateRegister(updateAction);
-                        break;
-                    }
+                {
+                    CurrentNetworkUpdateEngine.PreUpdateRegister(updateAction);
+                    break;
+                }
                 case NetworkUpdateStages.FIXEDUPDATE:
-                    {
-                         CurrentNetworkUpdateEngine.FixedUpdateRegister(updateAction);
-                        break;
-                    }
+                {
+                    CurrentNetworkUpdateEngine.FixedUpdateRegister(updateAction);
+                    break;
+                }
                 case NetworkUpdateStages.UPDATE:
-                    {
-                        CurrentNetworkUpdateEngine.UpdateRegister(updateAction);
-                        break;
-                    }
+                {
+                    CurrentNetworkUpdateEngine.UpdateRegister(updateAction);
+                    break;
+                }
                 case NetworkUpdateStages.LATEUPDATE:
-                    {
-                         CurrentNetworkUpdateEngine.PostUpdateRegister(updateAction);
-                        break;
-                    }
+                {
+                    CurrentNetworkUpdateEngine.PostUpdateRegister(updateAction);
+                    break;
+                }
             }
         }
 
@@ -168,7 +169,7 @@ namespace MLAPI
         {
             var def = PlayerLoop.GetCurrentPlayerLoop();
 
-            if(CurrentNetworkUpdateEngine == null)
+            if (CurrentNetworkUpdateEngine == null)
             {
                 CurrentNetworkUpdateEngine = new InternalNetworkUpdateEngine();
             }
@@ -204,9 +205,9 @@ namespace MLAPI
             };
             InsertSystem(ref def, networkPostUpdateLoop, typeof(PostLateUpdate.ProcessWebSendMessages));
 
-    #if UNITY_EDITOR
+#if UNITY_EDITOR
             PrintPlayerLoop(def);
-    #endif
+#endif
 
             PlayerLoop.SetPlayerLoop(def);
         }
@@ -242,6 +243,7 @@ namespace MLAPI
                     return true;
                 }
             }
+
             return false;
         }
 
@@ -270,7 +272,7 @@ namespace MLAPI
             system.subSystemList = newSubSystems;
         }
 
-        #if UNITY_EDITOR
+#if UNITY_EDITOR
         /// <summary>
         /// PrintPlayerLoop
         /// Prints all PlayerLoopSystems within the PlayerLoopSystem provided
@@ -302,8 +304,10 @@ namespace MLAPI
                 {
                     sb.Append("\t");
                 }
+
                 sb.AppendLine(def.type.Name);
             }
+
             if (def.subSystemList != null)
             {
                 depth++;
@@ -311,10 +315,10 @@ namespace MLAPI
                 {
                     RecursivePlayerLoopPrint(s, sb, depth);
                 }
+
                 depth--;
             }
         }
-        #endif
-
+#endif
     }
 }

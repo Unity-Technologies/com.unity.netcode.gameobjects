@@ -38,7 +38,7 @@ namespace MLAPI
             Client = 2
         }
 
-        const String StandardRPC_Channel = "STDRPC";
+        private const string StandardRpc_ChannelName = "STDRPC";
 
 #pragma warning disable 414
         // RuntimeAccessModifiersILPP will make this `protected`
@@ -48,20 +48,19 @@ namespace MLAPI
         // RuntimeAccessModifiersILPP will make this `protected`
         internal BitWriter BeginSendServerRpc(ServerRpcSendParams sendParams, bool isReliable)
         {
-            RPCQueueManager rpcQueueMananger = NetworkingManager.Singleton.GetRPCQueueManager();
-            if(rpcQueueMananger != null)
+            var rpcQueueMananger = NetworkingManager.Singleton.RpcQueueManager;
+            if (rpcQueueMananger == null)
             {
-                var writer = rpcQueueMananger.BeginAddQueueItemToOutboundFrame(RPCQueueManager.QueueItemType.ServerRPC, Time.realtimeSinceStartup, StandardRPC_Channel,0, NetworkingManager.Singleton.ServerClientId,null);
-
-                writer.WriteBit(false); // Encrypted
-                writer.WriteBit(false); // Authenticated
-                writer.WriteBits(MLAPIConstants.MLAPI_SERVER_RPC, 6); // MessageType
-                writer.WriteUInt64Packed(NetworkId); // NetworkObjectId
-                writer.WriteUInt16Packed(GetBehaviourId()); // NetworkBehaviourId
-
-                return writer;
+                return null;
             }
-            return null;
+
+            var writer = rpcQueueMananger.BeginAddQueueItemToOutboundFrame(RPCQueueManager.QueueItemType.ServerRpc, Time.realtimeSinceStartup, StandardRpc_ChannelName, 0, NetworkingManager.Singleton.ServerClientId, null);
+            writer.WriteBit(false); // Encrypted
+            writer.WriteBit(false); // Authenticated
+            writer.WriteBits(MLAPIConstants.MLAPI_SERVER_RPC, 6); // MessageType
+            writer.WriteUInt64Packed(NetworkId); // NetworkObjectId
+            writer.WriteUInt16Packed(GetBehaviourId()); // NetworkBehaviourId
+            return writer;
         }
 
         // RuntimeAccessModifiersILPP will make this `protected`
@@ -69,30 +68,27 @@ namespace MLAPI
         {
             if (writer == null) return;
 
-            RPCQueueManager rpcQueueMananger = NetworkingManager.Singleton.GetRPCQueueManager();
-            if(rpcQueueMananger != null)
-            {
-                rpcQueueMananger.EndAddQueueItemToOutboundFrame(writer);
-            }
+            var rpcQueueMananger = NetworkingManager.Singleton.RpcQueueManager;
+            rpcQueueMananger?.EndAddQueueItemToOutboundFrame(writer);
         }
 
         // RuntimeAccessModifiersILPP will make this `protected`
         internal BitWriter BeginSendClientRpc(ClientRpcSendParams sendParams, bool isReliable)
         {
             //This will start a new queue item entry and will then return the writer to the current frame's stream
-            RPCQueueManager rpcQueueMananger = NetworkingManager.Singleton.GetRPCQueueManager();
-            if(rpcQueueMananger != null)
+            var rpcQueueMananger = NetworkingManager.Singleton.RpcQueueManager;
+            if (rpcQueueMananger == null)
             {
-                var writer = rpcQueueMananger.BeginAddQueueItemToOutboundFrame(RPCQueueManager.QueueItemType.ClientRPC, Time.realtimeSinceStartup, StandardRPC_Channel,0, NetworkId,sendParams.TargetClientIds == null ? InternalMessageSender.GetAllClientIds().ToArray() :  sendParams.TargetClientIds);
-                writer.WriteBit(false); // Encrypted
-                writer.WriteBit(false); // Authenticated
-                writer.WriteBits(MLAPIConstants.MLAPI_CLIENT_RPC, 6); // MessageType
-                writer.WriteUInt64Packed(NetworkId); // NetworkObjectId
-                writer.WriteUInt16Packed(GetBehaviourId()); // NetworkBehaviourId
-
-                return writer;
+                return null;
             }
-            return null;
+
+            var writer = rpcQueueMananger.BeginAddQueueItemToOutboundFrame(RPCQueueManager.QueueItemType.ClientRpc, Time.realtimeSinceStartup, StandardRpc_ChannelName, 0, NetworkId, sendParams.TargetClientIds ?? NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray());
+            writer.WriteBit(false); // Encrypted
+            writer.WriteBit(false); // Authenticated
+            writer.WriteBits(MLAPIConstants.MLAPI_CLIENT_RPC, 6); // MessageType
+            writer.WriteUInt64Packed(NetworkId); // NetworkObjectId
+            writer.WriteUInt16Packed(GetBehaviourId()); // NetworkBehaviourId
+            return writer;
         }
 
         // RuntimeAccessModifiersILPP will make this `protected`
@@ -100,11 +96,8 @@ namespace MLAPI
         {
             if (writer == null) return;
 
-            RPCQueueManager rpcQueueMananger = NetworkingManager.Singleton.GetRPCQueueManager();
-            if(rpcQueueMananger != null)
-            {
-                rpcQueueMananger.EndAddQueueItemToOutboundFrame(writer);
-            }
+            var rpcQueueMananger = NetworkingManager.Singleton.RpcQueueManager;
+            rpcQueueMananger?.EndAddQueueItemToOutboundFrame(writer);
         }
 
         /// <summary>
