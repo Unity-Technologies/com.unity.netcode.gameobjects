@@ -1046,6 +1046,7 @@ namespace MLAPI
         }
 
         private readonly BitStream inputStreamWrapper = new BitStream(new byte[0]);
+        private MessageBatcher batcher = new MessageBatcher();
 
         internal void HandleIncomingData(ulong clientId, string channelName, ArraySegment<byte> data, float receiveTime, bool allowBuffer)
         {
@@ -1164,32 +1165,18 @@ namespace MLAPI
                         {
                             if (IsServer)
                             {
-                                #if DEVELOPMENT_BUILD || UNITY_EDITOR
-                                s_MLAPIServerSTDRPCQueued.Begin();
-                                #endif
-
-                                InternalMessageHandler.RPCReceiveQueueItem(clientId, messageStream, receiveTime,RPCQueueManager.QueueItemType.ServerRpc);
-
-                                #if DEVELOPMENT_BUILD || UNITY_EDITOR
-                                s_MLAPIServerSTDRPCQueued.End();
-                                #endif
+                                batcher.ReceiveItems(messageStream, ReceiveCallback, RPCQueueManager.QueueItemType.ServerRpc, clientId, receiveTime);
                             }
+                            ProfilerStatManager.rpcBatchesRcvd.Record();
                             break;
                         }
                     case MLAPIConstants.MLAPI_CLIENT_RPC:
                         {
                             if (IsClient)
                             {
-                                #if DEVELOPMENT_BUILD || UNITY_EDITOR
-                                s_MLAPIClientSTDRPCQueued.Begin();
-                                #endif
-
-                                InternalMessageHandler.RPCReceiveQueueItem(clientId, messageStream,receiveTime,RPCQueueManager.QueueItemType.ClientRpc);
-
-                                #if DEVELOPMENT_BUILD || UNITY_EDITOR
-                                s_MLAPIClientSTDRPCQueued.End();
-                                #endif
+                                batcher.ReceiveItems(messageStream, ReceiveCallback, RPCQueueManager.QueueItemType.ClientRpc, clientId, receiveTime);
                             }
+                            ProfilerStatManager.rpcBatchesRcvd.Record();
                             break;
                         }
                     default:
@@ -1202,6 +1189,31 @@ namespace MLAPI
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleIncomingData.End();
+#endif
+        }
+
+        private static void ReceiveCallback(BitStream messageStream, MLAPI.RPCQueueManager.QueueItemType messageType, ulong clientId, float receiveTime)
+        {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            if (messageType == RPCQueueManager.QueueItemType.ServerRpc)
+            {
+                s_MLAPIServerSTDRPCQueued.Begin();
+            }
+            else
+            {
+               s_MLAPIClientSTDRPCQueued.Begin();
+            }
+#endif
+            InternalMessageHandler.RPCReceiveQueueItem(clientId, messageStream, receiveTime, messageType);
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            if (messageType == RPCQueueManager.QueueItemType.ServerRpc)
+            {
+                s_MLAPIServerSTDRPCQueued.End();
+            }
+            else
+            {
+                s_MLAPIClientSTDRPCQueued.End();
+            }
 #endif
         }
 
