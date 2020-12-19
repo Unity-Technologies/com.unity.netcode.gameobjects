@@ -36,6 +36,13 @@ namespace MLAPI
     [AddComponentMenu("MLAPI/NetworkingManager", -100)]
     public class NetworkingManager : MonoBehaviour
     {
+        // RuntimeAccessModifiersILPP will make this `public`
+        internal static readonly Dictionary<uint, Action<NetworkedBehaviour, BitReader, ulong>> __ntable = new Dictionary<uint, Action<NetworkedBehaviour, BitReader, ulong>>();
+
+        // @mfatihmar (Unity) Begin: Temporary, inbound RPC queue will replace this workaround
+        internal readonly Queue<(ArraySegment<byte> payload, float receiveTime)> __loopbackRpcQueue = new Queue<(ArraySegment<byte> payload, float receiveTime)>();
+        // @mfatihmar (Unity) End: Temporary, inbound RPC queue will replace this workaround
+
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
         static ProfilerMarker s_EventTick = new ProfilerMarker("Event");
         static ProfilerMarker s_ReceiveTick = new ProfilerMarker("Receive");
@@ -346,7 +353,6 @@ namespace MLAPI
             ConnectedClients.Clear();
             ConnectedClientsList.Clear();
 
-            ResponseMessageManager.Clear();
             SpawnManager.SpawnedObjects.Clear();
             SpawnManager.SpawnedObjectsList.Clear();
             SpawnManager.releasedNetworkObjectIds.Clear();
@@ -355,6 +361,10 @@ namespace MLAPI
             NetworkSceneManager.sceneIndexToString.Clear();
             NetworkSceneManager.sceneNameToIndex.Clear();
             NetworkSceneManager.sceneSwitchProgresses.Clear();
+
+            // @mfatihmar (Unity) Begin: Temporary, inbound RPC queue will replace this workaround
+            __loopbackRpcQueue.Clear();
+            // @mfatihmar (Unity) End: Temporary, inbound RPC queue will replace this workaround
 
             if (NetworkConfig.NetworkTransport == null)
             {
@@ -640,6 +650,9 @@ namespace MLAPI
             IsListening = false;
             IsServer = false;
             IsClient = false;
+            // @mfatihmar (Unity) Begin: Temporary, inbound RPC queue will replace this workaround
+            __loopbackRpcQueue.Clear();
+            // @mfatihmar (Unity) End: Temporary, inbound RPC queue will replace this workaround
             NetworkConfig.NetworkTransport.OnTransportEvent -= HandleRawTransportPoll;
             SpawnManager.DestroyNonSceneObjects();
             SpawnManager.ServerResetShudownStateForSceneObjects();
@@ -663,6 +676,18 @@ namespace MLAPI
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_ReceiveTick.Begin();
 #endif
+
+                    // @mfatihmar (Unity) Begin: Temporary, inbound RPC queue will replace this workaround
+                    if (IsHost)
+                    {
+                        while (__loopbackRpcQueue.Count > 0)
+                        {
+                            var (payload, receiveTime) = __loopbackRpcQueue.Dequeue();
+                            HandleRawTransportPoll(NetEventType.Data, ServerClientId, "STDRPC", payload, receiveTime);
+                        }
+                    }
+                    // @mfatihmar (Unity) End: Temporary, inbound RPC queue will replace this workaround
+
                     NetworkProfiler.StartTick(TickType.Receive);
                     NetEventType eventType;
                     int processedEvents = 0;
@@ -698,7 +723,6 @@ namespace MLAPI
                     {
                         eventOvershootCounter += ((NetworkTime - lastEventTickTime) - (1f / NetworkConfig.EventTickrate));
                         LagCompensationManager.AddFrames();
-                        ResponseMessageManager.CheckTimeouts();
                     }
 
                     if (NetworkConfig.EnableNetworkedVar)
@@ -1025,40 +1049,6 @@ namespace MLAPI
                             ReceiveTime = receiveTime
                         });
                         break;
-                    case MLAPIConstants.MLAPI_SERVER_RPC:
-                        if (IsServer) InternalMessageHandler.HandleServerRPC(clientId, messageStream);
-                        break;
-                    case MLAPIConstants.MLAPI_SERVER_RPC_REQUEST:
-                        if (IsServer) InternalMessageHandler.HandleServerRPCRequest(clientId, messageStream, channelName, security);
-                        break;
-                    case MLAPIConstants.MLAPI_SERVER_RPC_RESPONSE:
-                        if (IsClient) InternalMessageHandler.HandleServerRPCResponse(clientId, messageStream);
-                        break;
-                    case MLAPIConstants.MLAPI_CLIENT_RPC:
-                        if (IsClient) InternalMessageHandler.HandleClientRPC(clientId, messageStream, BufferCallback, new PreBufferPreset()
-                        {
-                            AllowBuffer = allowBuffer,
-                            ChannelName = channelName,
-                            ClientId = clientId,
-                            Data = data,
-                            MessageType = messageType,
-                            ReceiveTime = receiveTime
-                        });
-                        break;
-                    case MLAPIConstants.MLAPI_CLIENT_RPC_REQUEST:
-                        if (IsClient) InternalMessageHandler.HandleClientRPCRequest(clientId, messageStream, channelName, security, BufferCallback, new PreBufferPreset()
-                        {
-                            AllowBuffer = allowBuffer,
-                            ChannelName = channelName,
-                            ClientId = clientId,
-                            Data = data,
-                            MessageType = messageType,
-                            ReceiveTime = receiveTime
-                        });
-                        break;
-                    case MLAPIConstants.MLAPI_CLIENT_RPC_RESPONSE:
-                        if (IsServer) InternalMessageHandler.HandleClientRPCResponse(clientId, messageStream);
-                        break;
                     case MLAPIConstants.MLAPI_UNNAMED_MESSAGE:
                         InternalMessageHandler.HandleUnnamedMessage(clientId, messageStream);
                         break;
@@ -1082,6 +1072,55 @@ namespace MLAPI
                     case MLAPIConstants.MLAPI_SERVER_LOG:
                         if (IsServer && NetworkConfig.EnableNetworkLogs) InternalMessageHandler.HandleNetworkLog(clientId, messageStream);
                         break;
+                    // @mfatihmar (Unity) Begin: Temporary, placeholder implementation
+                    case MLAPIConstants.MLAPI_SERVER_RPC:
+                        if (IsServer)
+                        {
+                            using (var reader = PooledBitReader.Get(messageStream))
+                            {
+                                var networkObjectId = reader.ReadUInt64Packed();
+                                var networkBehaviourId = reader.ReadUInt16Packed();
+                                var networkMethodId = reader.ReadUInt32Packed();
+
+                                if (__ntable.ContainsKey(networkMethodId))
+                                {
+                                    if (!SpawnManager.SpawnedObjects.ContainsKey(networkObjectId)) return;
+                                    var networkObject = SpawnManager.SpawnedObjects[networkObjectId];
+
+                                    // only the OwnerClient can execute ServerRPC from client to server
+                                    if (networkObject.OwnerClientId != clientId) return;
+
+                                    var networkBehaviour = networkObject.GetBehaviourAtOrderIndex(networkBehaviourId);
+                                    if (ReferenceEquals(networkBehaviour, null)) return;
+
+                                    __ntable[networkMethodId](networkBehaviour, reader, clientId);
+                                }
+                            }
+                        }
+                        break;
+                    case MLAPIConstants.MLAPI_CLIENT_RPC:
+                        if (IsClient)
+                        {
+                            using (var reader = PooledBitReader.Get(messageStream))
+                            {
+                                var networkObjectId = reader.ReadUInt64Packed();
+                                var networkBehaviourId = reader.ReadUInt16Packed();
+                                var networkMethodId = reader.ReadUInt32Packed();
+
+                                if (__ntable.ContainsKey(networkMethodId))
+                                {
+                                    if (!SpawnManager.SpawnedObjects.ContainsKey(networkObjectId)) return;
+                                    var networkObject = SpawnManager.SpawnedObjects[networkObjectId];
+
+                                    var networkBehaviour = networkObject.GetBehaviourAtOrderIndex(networkBehaviourId);
+                                    if (ReferenceEquals(networkBehaviour, null)) return;
+
+                                    __ntable[networkMethodId](networkBehaviour, reader, clientId);
+                                }
+                            }
+                        }
+                        break;
+                    // @mfatihmar (Unity) End: Temporary, placeholder implementation
                     default:
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError("Read unrecognized messageType " + messageType);
                         break;

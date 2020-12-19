@@ -5,31 +5,146 @@ using UnityEngine;
 using System.Reflection;
 using System.Linq;
 using System.IO;
-using System.Text;
 using MLAPI.Configuration;
-using MLAPI.Hashing;
 using MLAPI.Logging;
 using MLAPI.Messaging;
 using MLAPI.NetworkedVar;
 using MLAPI.Profiling;
 using MLAPI.Reflection;
 using MLAPI.Security;
+using MLAPI.Serialization;
 using MLAPI.Serialization.Pooled;
 using MLAPI.Spawning;
 using BitStream = MLAPI.Serialization.BitStream;
-using MLAPI.Serialization;
 using Unity.Profiling;
+
+#if UNITY_EDITOR
+using System.Runtime.CompilerServices;
+[assembly: InternalsVisibleTo("Unity.Multiplayer.MLAPI.Editor.CodeGen")]
+#endif // UNITY_EDITOR
 
 namespace MLAPI
 {
     /// <summary>
     /// The base class to override to write networked code. Inherits MonoBehaviour
     /// </summary>
-    public abstract partial class NetworkedBehaviour : MonoBehaviour
+    public abstract class NetworkedBehaviour : MonoBehaviour
     {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-        static ProfilerMarker s_SendClientRPCPerformance = new ProfilerMarker("NetworkedBehaviour.SendClientRPCPerformance");
-#endif
+        // RuntimeAccessModifiersILPP will make this `protected`
+        internal enum NExec
+        {
+            None = 0,
+            Server = 1,
+            Client = 2
+        }
+
+#pragma warning disable 414
+        // RuntimeAccessModifiersILPP will make this `protected`
+        internal NExec __nexec = NExec.None;
+#pragma warning restore 414
+
+        // RuntimeAccessModifiersILPP will make this `protected`
+        internal BitWriter BeginSendServerRpc(ServerRpcSendParams sendParams, bool isReliable)
+        {
+            // @mfatihmar (Unity) Begin: Temporary, placeholder implementation
+            var stream = new BitStream();
+            var writer = new BitWriter(stream);
+
+            writer.WriteBit(false); // Encrypted
+            writer.WriteBit(false); // Authenticated
+            writer.WriteBits(MLAPIConstants.MLAPI_SERVER_RPC, 6); // MessageType
+            writer.WriteUInt64Packed(NetworkId); // NetworkObjectId
+            writer.WriteUInt16Packed(GetBehaviourId()); // NetworkBehaviourId
+
+            return writer;
+            // @mfatihmar (Unity) End: Temporary, placeholder implementation
+        }
+
+        // RuntimeAccessModifiersILPP will make this `protected`
+        internal void EndSendServerRpc(BitWriter writer, ServerRpcSendParams sendParams, bool isReliable)
+        {
+            // @mfatihmar (Unity) Begin: Temporary, placeholder implementation
+            if (writer == null) return;
+
+            var stream = (BitStream)writer.GetStream();
+            if (stream != null)
+            {
+                stream.PadStream();
+
+                var networkManager = NetworkingManager.Singleton;
+                if (ReferenceEquals(networkManager, null)) return;
+
+                var payload = new ArraySegment<byte>(stream.GetBuffer(), 0, (int)stream.Length);
+                // @mfatihmar (Unity) Begin: Temporary, inbound RPC queue will replace this workaround
+                if (networkManager.IsHost)
+                {
+                    networkManager.__loopbackRpcQueue.Enqueue((payload, Time.realtimeSinceStartup));
+                }
+                // @mfatihmar (Unity) End: Temporary, inbound RPC queue will replace this workaround
+                else
+                {
+                    networkManager.NetworkConfig.NetworkTransport.Send(networkManager.ServerClientId, payload, "STDRPC");
+                }
+            }
+
+            writer.SetStream(null);
+            // @mfatihmar (Unity) End: Temporary, placeholder implementation
+        }
+
+        // RuntimeAccessModifiersILPP will make this `protected`
+        internal BitWriter BeginSendClientRpc(ClientRpcSendParams sendParams, bool isReliable)
+        {
+            // @mfatihmar (Unity) Begin: Temporary, placeholder implementation
+            var stream = new BitStream();
+            var writer = new BitWriter(stream);
+
+            writer.WriteBit(false); // Encrypted
+            writer.WriteBit(false); // Authenticated
+            writer.WriteBits(MLAPIConstants.MLAPI_CLIENT_RPC, 6); // MessageType
+            writer.WriteUInt64Packed(NetworkId); // NetworkObjectId
+            writer.WriteUInt16Packed(GetBehaviourId()); // NetworkBehaviourId
+
+            return writer;
+            // @mfatihmar (Unity) End: Temporary, placeholder implementation
+        }
+
+        // RuntimeAccessModifiersILPP will make this `protected`
+        internal void EndSendClientRpc(BitWriter writer, ClientRpcSendParams sendParams, bool isReliable)
+        {
+            // @mfatihmar (Unity) Begin: Temporary, placeholder implementation
+            if (writer == null) return;
+
+            var stream = (BitStream)writer.GetStream();
+            if (stream != null)
+            {
+                stream.PadStream();
+
+                var networkManager = NetworkingManager.Singleton;
+                if (ReferenceEquals(networkManager, null)) return;
+
+                if (sendParams.TargetClientIds == null) sendParams.TargetClientIds = networkManager.ConnectedClientsList.Select(client => client.ClientId).ToArray();
+                foreach (var clientId in sendParams.TargetClientIds)
+                {
+                    if (!NetworkedObject.observers.Contains(clientId)) continue;
+
+                    var payload = new ArraySegment<byte>(stream.GetBuffer(), 0, (int)stream.Length);
+                    // @mfatihmar (Unity) Begin: Temporary, inbound RPC queue will replace this workaround
+                    if (clientId == networkManager.ServerClientId && networkManager.IsHost)
+                    {
+                        networkManager.__loopbackRpcQueue.Enqueue((payload, Time.realtimeSinceStartup));
+                    }
+                    // @mfatihmar (Unity) End: Temporary, inbound RPC queue will replace this workaround
+                    else
+                    {
+                        networkManager.NetworkConfig.NetworkTransport.Send(clientId, payload, "STDRPC");
+                    }
+                }
+            }
+
+            writer.SetStream(null);
+            // @mfatihmar (Unity) End: Temporary, placeholder implementation
+        }
+
         /// <summary>
         /// Gets if the object is the the personal clients player object
         /// </summary>
@@ -91,11 +206,6 @@ namespace MLAPI
         /// Gets Whether or not the object has a owner
         /// </summary>
         public bool IsOwnedByServer => NetworkedObject.IsOwnedByServer;
-        /// <summary>
-        /// Contains the sender of the currently executing RPC. Useful for the convenience RPC methods
-        /// </summary>
-        protected ulong ExecutingRpcSender => executingRpcSender;
-        internal ulong executingRpcSender;
         /// <summary>
         /// Gets the NetworkedObject that owns this NetworkedBehaviour instance
         /// </summary>
@@ -175,9 +285,6 @@ namespace MLAPI
 
         internal void InternalNetworkStart()
         {
-            rpcDefinition = RpcTypeDefinition.Get(GetType());
-            rpcDelegates = rpcDefinition.CreateTargetedDelegates(this);
-
             InitializeVars();
         }
 
@@ -735,475 +842,6 @@ namespace MLAPI
                             if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Var data read too little. " + ((readStartPos + varSize) - stream.Position) + " bytes.");
                             stream.Position = readStartPos + varSize;
                         }
-                    }
-                }
-            }
-        }
-        #endregion
-
-        #region MESSAGING_SYSTEM
-        private static readonly StringBuilder methodInfoStringBuilder = new StringBuilder();
-        private static readonly Dictionary<MethodInfo, ulong> methodInfoHashTable = new Dictionary<MethodInfo, ulong>();
-        private RpcTypeDefinition rpcDefinition;
-        internal RpcDelegate[] rpcDelegates;
-
-        internal static ulong HashMethodName(string name)
-        {
-            HashSize mode = NetworkingManager.Singleton.NetworkConfig.RpcHashSize;
-
-            if (mode == HashSize.VarIntTwoBytes)
-                return name.GetStableHash16();
-            if (mode == HashSize.VarIntFourBytes)
-                return name.GetStableHash32();
-            if (mode == HashSize.VarIntEightBytes)
-                return name.GetStableHash64();
-
-            return 0;
-        }
-
-        private ulong HashMethod(MethodInfo method)
-        {
-            if (methodInfoHashTable.ContainsKey(method))
-            {
-                return methodInfoHashTable[method];
-            }
-
-            ulong hash = HashMethodName(GetHashableMethodSignature(method));
-            methodInfoHashTable.Add(method, hash);
-
-            return hash;
-        }
-
-        internal static string GetHashableMethodSignature(MethodInfo method)
-        {
-            methodInfoStringBuilder.Length = 0;
-            methodInfoStringBuilder.Append(method.Name);
-
-            ParameterInfo[] parameters = method.GetParameters();
-
-            for (int i = 0; i < parameters.Length; i++)
-            {
-                methodInfoStringBuilder.Append(parameters[i].ParameterType.Name);
-            }
-
-            return methodInfoStringBuilder.ToString();
-        }
-
-        internal object OnRemoteServerRPC(ulong hash, ulong senderClientId, Stream stream)
-        {
-            if (!rpcDefinition.serverMethods.ContainsKey(hash))
-            {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("ServerRPC request method not found");
-                return null;
-
-            }
-
-            return InvokeServerRPCLocal(hash, senderClientId, stream);
-        }
-
-        internal object OnRemoteClientRPC(ulong hash, ulong senderClientId, Stream stream)
-        {
-            if (!rpcDefinition.clientMethods.ContainsKey(hash))
-            {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("ClientRPC request method not found");
-                return null;
-            }
-
-            return InvokeClientRPCLocal(hash, senderClientId, stream);
-        }
-
-        private object InvokeServerRPCLocal(ulong hash, ulong senderClientId, Stream stream)
-        {
-            if (rpcDefinition.serverMethods.ContainsKey(hash))
-            {
-                return rpcDefinition.serverMethods[hash].Invoke(this, senderClientId, stream);
-            }
-
-            return null;
-        }
-
-        private object InvokeClientRPCLocal(ulong hash, ulong senderClientId, Stream stream)
-        {
-            if (rpcDefinition.clientMethods.ContainsKey(hash))
-            {
-                return rpcDefinition.clientMethods[hash].Invoke(this, senderClientId, stream);
-            }
-
-            return null;
-        }
-
-        //Technically boxed writes are not needed. But save LOC for the non performance sends.
-        internal void SendServerRPCBoxed(ulong hash, string channel, SecuritySendFlags security, params object[] parameters)
-        {
-            using (PooledBitStream stream = PooledBitStream.Get())
-            {
-                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
-                {
-
-                    for (int i = 0; i < parameters.Length; i++)
-                    {
-                        writer.WriteObjectPacked(parameters[i]);
-                    }
-
-                    SendServerRPCPerformance(hash, stream, channel, security);
-                }
-            }
-        }
-
-        internal RpcResponse<T> SendServerRPCBoxedResponse<T>(ulong hash, string channel, SecuritySendFlags security, params object[] parameters)
-        {
-            using (PooledBitStream stream = PooledBitStream.Get())
-            {
-                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
-                {
-                    for (int i = 0; i < parameters.Length; i++)
-                    {
-                        writer.WriteObjectPacked(parameters[i]);
-                    }
-
-                    return SendServerRPCPerformanceResponse<T>(hash, stream, channel, security);
-                }
-            }
-        }
-
-        internal void SendClientRPCBoxedToClient(ulong hash, ulong clientId, string channel, SecuritySendFlags security, params object[] parameters)
-        {
-            using (PooledBitStream stream = PooledBitStream.Get())
-            {
-                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
-                {
-                    for (int i = 0; i < parameters.Length; i++)
-                    {
-                        writer.WriteObjectPacked(parameters[i]);
-                    }
-                    SendClientRPCPerformance(hash, clientId, stream, channel, security);
-                }
-            }
-        }
-
-        internal RpcResponse<T> SendClientRPCBoxedResponse<T>(ulong hash, ulong clientId, string channel, SecuritySendFlags security, params object[] parameters)
-        {
-            using (PooledBitStream stream = PooledBitStream.Get())
-            {
-                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
-                {
-                    for (int i = 0; i < parameters.Length; i++)
-                    {
-                        writer.WriteObjectPacked(parameters[i]);
-                    }
-
-                    return SendClientRPCPerformanceResponse<T>(hash, clientId, stream, channel, security);
-                }
-            }
-        }
-
-        internal void SendClientRPCBoxed(ulong hash, List<ulong> clientIds, string channel, SecuritySendFlags security, params object[] parameters)
-        {
-            using (PooledBitStream stream = PooledBitStream.Get())
-            {
-                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
-                {
-                    for (int i = 0; i < parameters.Length; i++)
-                    {
-                        writer.WriteObjectPacked(parameters[i]);
-                    }
-                    SendClientRPCPerformance(hash, clientIds, stream, channel, security);
-                }
-            }
-        }
-
-        internal void SendClientRPCBoxedToEveryoneExcept(ulong clientIdToIgnore, ulong hash, string channel, SecuritySendFlags security, params object[] parameters)
-        {
-            using (PooledBitStream stream = PooledBitStream.Get())
-            {
-                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
-                {
-                    for (int i = 0; i < parameters.Length; i++)
-                    {
-                        writer.WriteObjectPacked(parameters[i]);
-                    }
-                    SendClientRPCPerformance(hash, stream, clientIdToIgnore, channel, security);
-                }
-            }
-        }
-
-        internal void SendServerRPCPerformance(ulong hash, Stream messageStream, string channel, SecuritySendFlags security)
-        {
-            if (!IsClient && IsRunning)
-            {
-                //We are ONLY a server.
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Only client and host can invoke ServerRPC");
-                return;
-            }
-
-            using (PooledBitStream stream = PooledBitStream.Get())
-            {
-                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
-                {
-                    writer.WriteUInt64Packed(NetworkId);
-                    writer.WriteUInt16Packed(NetworkedObject.GetOrderIndex(this));
-                    writer.WriteUInt64Packed(hash);
-
-                    stream.CopyFrom(messageStream);
-
-                    if (IsHost)
-                    {
-                        messageStream.Position = 0;
-                        InvokeServerRPCLocal(hash, NetworkingManager.Singleton.LocalClientId, messageStream);
-                    }
-                    else
-                    {
-                        InternalMessageSender.Send(NetworkingManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_SERVER_RPC, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security);
-                        ProfilerStatManager.rpcsSent.Record();
-                    }
-                }
-            }
-        }
-
-        internal RpcResponse<T> SendServerRPCPerformanceResponse<T>(ulong hash, Stream messageStream, string channel, SecuritySendFlags security)
-        {
-            if (!IsClient && IsRunning)
-            {
-                //We are ONLY a server.
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Only client and host can invoke ServerRPC");
-                return null;
-            }
-
-            ulong responseId = ResponseMessageManager.GenerateMessageId();
-
-            using (PooledBitStream stream = PooledBitStream.Get())
-            {
-                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
-                {
-                    writer.WriteUInt64Packed(NetworkId);
-                    writer.WriteUInt16Packed(NetworkedObject.GetOrderIndex(this));
-                    writer.WriteUInt64Packed(hash);
-
-                    if (!IsHost) writer.WriteUInt64Packed(responseId);
-
-                    stream.CopyFrom(messageStream);
-
-                    if (IsHost)
-                    {
-                        messageStream.Position = 0;
-                        object result = InvokeServerRPCLocal(hash, NetworkingManager.Singleton.LocalClientId, messageStream);
-
-                        return new RpcResponse<T>()
-                        {
-                            Id = responseId,
-                            IsDone = true,
-                            IsSuccessful = true,
-                            Result = result,
-                            Type = typeof(T),
-                            ClientId = NetworkingManager.Singleton.ServerClientId
-                        };
-                    }
-                    else
-                    {
-                        RpcResponse<T> response = new RpcResponse<T>()
-                        {
-                            Id = responseId,
-                            IsDone = false,
-                            IsSuccessful = false,
-                            Type = typeof(T),
-                            ClientId = NetworkingManager.Singleton.ServerClientId
-                        };
-
-                        ResponseMessageManager.Add(response.Id, response);
-
-                        InternalMessageSender.Send(NetworkingManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_SERVER_RPC_REQUEST, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security);
-                        ProfilerStatManager.rpcsSent.Record();
-
-                        return response;
-                    }
-                }
-            }
-        }
-
-        internal void SendClientRPCPerformance(ulong hash,  List<ulong> clientIds, Stream messageStream, string channel, SecuritySendFlags security)
-        {
-            if (!IsServer && IsRunning)
-            {
-                //We are NOT a server.
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Only servers and hosts can invoke ClientRPC");
-                return;
-            }
-
-            using (PooledBitStream stream = PooledBitStream.Get())
-            {
-                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
-                {
-                    writer.WriteUInt64Packed(NetworkId);
-                    writer.WriteUInt16Packed(NetworkedObject.GetOrderIndex(this));
-                    writer.WriteUInt64Packed(hash);
-
-                    stream.CopyFrom(messageStream);
-
-                    if (IsHost)
-                    {
-                        if (this.NetworkedObject.observers.Contains(NetworkingManager.Singleton.LocalClientId))
-                        {
-                            messageStream.Position = 0;
-                            InvokeClientRPCLocal(hash, NetworkingManager.Singleton.LocalClientId, messageStream);
-                        }
-                        else
-                        {
-                            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogWarning("Silently suppressed ClientRPC because a connected client was not an observer");
-                        }
-                    }
-
-                    InternalMessageSender.Send(MLAPIConstants.MLAPI_CLIENT_RPC, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, clientIds, stream, security);
-                    ProfilerStatManager.rpcsSent.Record(clientIds?.Count ?? NetworkingManager.Singleton.ConnectedClientsList.Count);
-                }
-            }
-        }
-
-        internal void SendClientRPCPerformance(ulong hash, Stream messageStream, ulong clientIdToIgnore, string channel, SecuritySendFlags security)
-        {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_SendClientRPCPerformance.Begin();
-#endif
-            if (!IsServer && IsRunning)
-            {
-                //We are NOT a server.
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Only servers and hosts can invoke ClientRPC");
-                return;
-            }
-
-            using (PooledBitStream stream = PooledBitStream.Get())
-            {
-                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
-                {
-                    writer.WriteUInt64Packed(NetworkId);
-                    writer.WriteUInt16Packed(NetworkedObject.GetOrderIndex(this));
-                    writer.WriteUInt64Packed(hash);
-
-                    stream.CopyFrom(messageStream);
-
-
-                    if (IsHost && NetworkingManager.Singleton.LocalClientId != clientIdToIgnore)
-                    {
-                        if (this.NetworkedObject.observers.Contains(NetworkingManager.Singleton.LocalClientId))
-                        {
-                            messageStream.Position = 0;
-                            InvokeClientRPCLocal(hash, NetworkingManager.Singleton.LocalClientId, messageStream);
-                        }
-                        else
-                        {
-                            if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogWarning("Silently suppressed ClientRPC because a connected client was not an observer");
-                        }
-                    }
-
-                    InternalMessageSender.Send(MLAPIConstants.MLAPI_CLIENT_RPC, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, clientIdToIgnore, stream, security);
-                    ProfilerStatManager.rpcsSent.Record(NetworkingManager.Singleton.ConnectedClientsList.Count - 1);
-                }
-            }
-
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_SendClientRPCPerformance.End();
-#endif
-        }
-
-        internal void SendClientRPCPerformance(ulong hash, ulong clientId, Stream messageStream, string channel, SecuritySendFlags security)
-        {
-            if (!IsServer && IsRunning)
-            {
-                //We are NOT a server.
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Only servers and hosts can invoke ClientRPC");
-                return;
-            }
-
-            if (!this.NetworkedObject.observers.Contains(clientId))
-            {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Cannot send ClientRPC to client without visibility to the object");
-                return;
-            }
-
-            using (PooledBitStream stream = PooledBitStream.Get())
-            {
-                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
-                {
-                    writer.WriteUInt64Packed(NetworkId);
-                    writer.WriteUInt16Packed(NetworkedObject.GetOrderIndex(this));
-                    writer.WriteUInt64Packed(hash);
-
-                    stream.CopyFrom(messageStream);
-
-                    if (IsHost && clientId == NetworkingManager.Singleton.LocalClientId)
-                    {
-                        messageStream.Position = 0;
-                        InvokeClientRPCLocal(hash, NetworkingManager.Singleton.LocalClientId, messageStream);
-                    }
-                    else
-                    {
-                        InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_CLIENT_RPC, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security);
-                        ProfilerStatManager.rpcsSent.Record();
-                    }
-                }
-            }
-        }
-
-        internal RpcResponse<T> SendClientRPCPerformanceResponse<T>(ulong hash, ulong clientId, Stream messageStream, string channel, SecuritySendFlags security)
-        {
-            if (!IsServer && IsRunning)
-            {
-                //We are NOT a server.
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Only servers and hosts can invoke ClientRPC");
-                return null;
-            }
-
-            if (!this.NetworkedObject.observers.Contains(clientId))
-            {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Cannot send ClientRPC to client without visibility to the object");
-                return null;
-            }
-
-            ulong responseId = ResponseMessageManager.GenerateMessageId();
-
-            using (PooledBitStream stream = PooledBitStream.Get())
-            {
-                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
-                {
-                    writer.WriteUInt64Packed(NetworkId);
-                    writer.WriteUInt16Packed(NetworkedObject.GetOrderIndex(this));
-                    writer.WriteUInt64Packed(hash);
-
-                    if (!(IsHost && clientId == NetworkingManager.Singleton.LocalClientId)) writer.WriteUInt64Packed(responseId);
-
-                    stream.CopyFrom(messageStream);
-
-                    if (IsHost && clientId == NetworkingManager.Singleton.LocalClientId)
-                    {
-                        messageStream.Position = 0;
-                        object result = InvokeClientRPCLocal(hash, NetworkingManager.Singleton.LocalClientId, messageStream);
-
-                        return new RpcResponse<T>()
-                        {
-                            Id = responseId,
-                            IsDone = true,
-                            IsSuccessful = true,
-                            Result = result,
-                            Type = typeof(T),
-                            ClientId = clientId
-                        };
-                    }
-                    else
-                    {
-                        RpcResponse<T> response = new RpcResponse<T>()
-                        {
-                            Id = responseId,
-                            IsDone = false,
-                            IsSuccessful = false,
-                            Type = typeof(T),
-                            ClientId = clientId
-                        };
-
-                        ResponseMessageManager.Add(response.Id, response);
-
-                        InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_CLIENT_RPC_REQUEST, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security);
-                        ProfilerStatManager.rpcsSent.Record();
-
-                        return response;
                     }
                 }
             }

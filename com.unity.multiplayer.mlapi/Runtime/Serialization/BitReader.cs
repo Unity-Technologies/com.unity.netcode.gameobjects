@@ -99,7 +99,7 @@ namespace MLAPI.Serialization
                     return null;
                 }
             }
-            
+
             if (SerializationManager.TryDeserialize(source, type, out object obj))
                 return obj;
             if (type.IsArray && type.HasElementType)
@@ -160,12 +160,12 @@ namespace MLAPI.Serialization
             if (type == typeof(GameObject))
             {
                 ulong networkId = ReadUInt64Packed();
-                
-                if (SpawnManager.SpawnedObjects.ContainsKey(networkId)) 
+
+                if (SpawnManager.SpawnedObjects.ContainsKey(networkId))
                 {
                     return SpawnManager.SpawnedObjects[networkId].gameObject;
                 }
-                else 
+                else
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                         NetworkLog.LogWarning("BitReader cannot find the GameObject sent in the SpawnedObjects list, it may have been destroyed. NetworkId: " + networkId.ToString());
@@ -175,12 +175,12 @@ namespace MLAPI.Serialization
             if (type == typeof(NetworkedObject))
             {
                 ulong networkId = ReadUInt64Packed();
-                
-                if (SpawnManager.SpawnedObjects.ContainsKey(networkId)) 
+
+                if (SpawnManager.SpawnedObjects.ContainsKey(networkId))
                 {
                     return SpawnManager.SpawnedObjects[networkId];
                 }
-                else 
+                else
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                         NetworkLog.LogWarning("BitReader cannot find the NetworkedObject sent in the SpawnedObjects list, it may have been destroyed. NetworkId: " + networkId.ToString());
@@ -191,11 +191,11 @@ namespace MLAPI.Serialization
             {
                 ulong networkId = ReadUInt64Packed();
                 ushort behaviourId = ReadUInt16Packed();
-                if (SpawnManager.SpawnedObjects.ContainsKey(networkId)) 
+                if (SpawnManager.SpawnedObjects.ContainsKey(networkId))
                 {
                     return SpawnManager.SpawnedObjects[networkId].GetBehaviourAtOrderIndex(behaviourId);
                 }
-                else 
+                else
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                         NetworkLog.LogWarning("BitReader cannot find the NetworkedBehaviour sent in the SpawnedObjects list, it may have been destroyed. NetworkId: " + networkId.ToString());
@@ -335,6 +335,18 @@ namespace MLAPI.Serialization
         public Ray ReadRayPacked() => new Ray(ReadVector3Packed(), ReadVector3Packed());
 
         /// <summary>
+        /// Read a Ray2D from the stream.
+        /// </summary>
+        /// <returns>The Ray2D read from the stream.</returns>
+        public Ray2D ReadRay2D() => new Ray2D(ReadVector2(), ReadVector2());
+
+        /// <summary>
+        /// Read a Ray2D from the stream.
+        /// </summary>
+        /// <returns>The Ray2D read from the stream.</returns>
+        public Ray2D ReadRay2DPacked() => new Ray2D(ReadVector2Packed(), ReadVector2Packed());
+
+        /// <summary>
         /// Read a single-precision floating point value from the stream. The value is between (inclusive) the minValue and maxValue.
         /// </summary>
         /// <param name="minValue">Minimum value that this value could be</param>
@@ -430,7 +442,7 @@ namespace MLAPI.Serialization
             if (bitSource == null) throw new InvalidOperationException("Cannot read bits on a non BitStream stream");
             if (bitCount > 8) throw new ArgumentOutOfRangeException("Cannot read more than 8 bits into an 8-bit value!");
             if (bitCount < 0) throw new ArgumentOutOfRangeException("Cannot read fewer than 0 bits!");
-            
+
             int result = 0;
             ByteBool convert = new ByteBool();
             for (int i = 0; i < bitCount; ++i)
@@ -447,7 +459,7 @@ namespace MLAPI.Serialization
         {
             if (bitSource == null) throw new InvalidOperationException("Cannot read bits on a non BitStream stream");
             ByteBool convert = new ByteBool();
-            
+
             byte result = (byte) (
                 convert.Collapse(ReadBit()) |
                 (convert.Collapse(ReadBit()) << 1) |
