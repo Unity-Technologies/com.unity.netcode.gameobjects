@@ -24,7 +24,7 @@ namespace MLAPI
         // Used to store targets, internally
         private List<ulong> TargetList = new List<ulong>();
 
-        public void PushLength(int length, ref PooledBitWriter writer)
+        private void PushLength(int length, ref PooledBitWriter writer)
         {
             // If length is single byte we write it
             if (length < 256)
@@ -40,7 +40,7 @@ namespace MLAPI
             }
         }
 
-        public int PopLength(in BitStream messageStream)
+        private int PopLength(in BitStream messageStream)
         {
             byte read = (byte)messageStream.ReadByte();
             // if we read a non-zero value, we have a single byte length
