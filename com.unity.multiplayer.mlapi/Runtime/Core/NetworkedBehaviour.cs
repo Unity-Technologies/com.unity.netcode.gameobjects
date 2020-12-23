@@ -388,9 +388,9 @@ namespace MLAPI
                     for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)
                     {
                         var client = NetworkingManager.Singleton.ConnectedClientsList[i];
-                        var spawnedObjs = SpawnManager.SpawnedObjectsList;
-                        touched.UnionWith(spawnedObjs);
-                        foreach (var sobj in spawnedObjs)
+
+                        NetworkingManager.Singleton.ClientObjMapNode.QueryFor(client, touched);
+                        foreach (var sobj in touched)
                         {
                             // Sync just the variables for just the objects this client sees
                             for (int k = 0; k < sobj.childNetworkedBehaviours.Count; k++)
@@ -556,6 +556,7 @@ namespace MLAPI
                 }
             }
         }
+
         private bool CouldHaveDirtyNetworkedVars()
         {
             // TODO: There should be a better way by reading one dirty variable vs. 'n'

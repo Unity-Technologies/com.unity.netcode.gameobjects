@@ -26,6 +26,7 @@ using static MLAPI.Messaging.CustomMessagingManager;
 using MLAPI.Exceptions;
 using MLAPI.Transports.Tasks;
 using MLAPI.Messaging.Buffering;
+using MLAPI.AOI;
 using Unity.Profiling;
 
 namespace MLAPI
@@ -185,6 +186,27 @@ namespace MLAPI
         /// Gets if we are connected as a client
         /// </summary>
         public bool IsConnectedClient { get; internal set; }
+
+        private ClientObjMapNode<NetworkedClient, NetworkedObject> clientObjMapNode;
+
+        public ClientObjMapNode<NetworkedClient, NetworkedObject> ClientObjMapNode
+        {
+            get
+            {
+                if (clientObjMapNode == null)
+                {
+                    clientObjMapNode = new ClientObjMapNode<NetworkedClient, NetworkedObject>();
+                    clientObjMapNode.OnBypass = delegate(HashSet<NetworkedObject> results)
+                    {
+                        results.UnionWith(SpawnManager.SpawnedObjectsList);
+                    };
+                    clientObjMapNode.Bypass = true;
+                }
+
+                return clientObjMapNode;
+            }
+        }
+
         /// <summary>
         /// The callback to invoke once a client connects. This callback is only ran on the server and on the local client that connects.
         /// </summary>
@@ -355,7 +377,6 @@ namespace MLAPI
                 NetworkConfig.PlayerPrefabHash.Value = prefab.Hash;
             }
         }
-
         private void Init(bool server)
         {
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo("Init()");
