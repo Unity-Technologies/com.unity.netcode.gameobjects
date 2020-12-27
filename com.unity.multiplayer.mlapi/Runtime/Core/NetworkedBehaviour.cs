@@ -82,7 +82,19 @@ namespace MLAPI
                 return null;
             }
 
-            var writer = rpcQueueMananger.BeginAddQueueItemToOutboundFrame(RPCQueueManager.QueueItemType.ClientRpc, Time.realtimeSinceStartup, StandardRpc_ChannelName, 0, NetworkId, sendParams.TargetClientIds ?? NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray());
+            ulong[] TargetIds = sendParams.TargetClientIds;
+            if(TargetIds == null)
+            {
+                if((NetworkingManager.Singleton.ConnectedClientsList.Count > 0))
+                {
+                    var FirstPass = NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToList();
+                    FirstPass.Remove(NetworkingManager.Singleton.ServerClientId);
+                    TargetIds = FirstPass.ToArray();
+                }
+            }
+
+            //var writer = rpcQueueMananger.BeginAddQueueItemToOutboundFrame(RPCQueueManager.QueueItemType.ClientRpc, Time.realtimeSinceStartup, StandardRpc_ChannelName, 0, NetworkId, sendParams.TargetClientIds ?? NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray());
+            var writer = rpcQueueMananger.BeginAddQueueItemToOutboundFrame(RPCQueueManager.QueueItemType.ClientRpc, Time.realtimeSinceStartup, StandardRpc_ChannelName, 0, NetworkId, TargetIds);
             writer.WriteBit(false); // Encrypted
             writer.WriteBit(false); // Authenticated
             writer.WriteBits(MLAPIConstants.MLAPI_CLIENT_RPC, 6); // MessageType

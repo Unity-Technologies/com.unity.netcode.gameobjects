@@ -323,81 +323,88 @@ namespace MLAPI.Spawning
         // Ran on both server and client
         internal static void SpawnNetworkedObjectLocally(NetworkedObject netObject, ulong networkId, bool sceneObject, bool playerObject, ulong? ownerClientId, Stream dataStream, bool readPayload, int payloadLength, bool readNetworkedVar, bool destroyWithScene)
         {
-            if (netObject == null)
+            try
             {
-                throw new ArgumentNullException(nameof(netObject), "Cannot spawn null object");
-            }
-
-            if (netObject.IsSpawned)
-            {
-                throw new SpawnStateException("Object is already spawned");
-            }
-
-            if (readNetworkedVar && NetworkingManager.Singleton.NetworkConfig.EnableNetworkedVar)
-            {
-                netObject.SetNetworkedVarData(dataStream);
-            }
-
-            if (SpawnedObjects.ContainsKey(netObject.NetworkId)) return;
-
-            netObject.IsSpawned = true;
-
-            netObject.IsSceneObject = sceneObject;
-            netObject.NetworkId = networkId;
-
-            netObject.DestroyWithScene = sceneObject || destroyWithScene;
-
-            netObject._ownerClientId = ownerClientId;
-            netObject.IsPlayerObject = playerObject;
-
-            SpawnedObjects.Add(netObject.NetworkId, netObject);
-            SpawnedObjectsList.Add(netObject);
-
-            if (ownerClientId != null)
-            {
-                if (NetworkingManager.Singleton.IsServer)
+                if (netObject == null)
                 {
-                    if (playerObject)
+                    throw new ArgumentNullException(nameof(netObject), "Cannot spawn null object");
+                }
+
+                if (netObject.IsSpawned)
+                {
+                    throw new SpawnStateException("Object is already spawned");
+                }
+
+                if (readNetworkedVar && NetworkingManager.Singleton.NetworkConfig.EnableNetworkedVar)
+                {
+                    netObject.SetNetworkedVarData(dataStream);
+                }
+
+                if (SpawnedObjects.ContainsKey(netObject.NetworkId)) return;
+
+                netObject.IsSpawned = true;
+
+                netObject.IsSceneObject = sceneObject;
+                netObject.NetworkId = networkId;
+
+                netObject.DestroyWithScene = sceneObject || destroyWithScene;
+
+                netObject._ownerClientId = ownerClientId;
+                netObject.IsPlayerObject = playerObject;
+
+                SpawnedObjects.Add(netObject.NetworkId, netObject);
+                SpawnedObjectsList.Add(netObject);
+
+                if (ownerClientId != null)
+                {
+                    if (NetworkingManager.Singleton.IsServer)
+                    {
+                        if (playerObject)
+                        {
+                            NetworkingManager.Singleton.ConnectedClients[ownerClientId.Value].PlayerObject = netObject;
+                        }
+                        else
+                        {
+                            NetworkingManager.Singleton.ConnectedClients[ownerClientId.Value].OwnedObjects.Add(netObject);
+                        }
+                    }
+                    else if (playerObject && ownerClientId.Value == NetworkingManager.Singleton.LocalClientId)
                     {
                         NetworkingManager.Singleton.ConnectedClients[ownerClientId.Value].PlayerObject = netObject;
                     }
-                    else
+                }
+
+                if (NetworkingManager.Singleton.IsServer)
+                {
+                    for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)
                     {
-                        NetworkingManager.Singleton.ConnectedClients[ownerClientId.Value].OwnedObjects.Add(netObject);
+                        if (netObject.CheckObjectVisibility == null || netObject.CheckObjectVisibility(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId))
+                        {
+                            netObject.observers.Add(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId);
+                        }
                     }
                 }
-                else if (playerObject && ownerClientId.Value == NetworkingManager.Singleton.LocalClientId)
-                {
-                    NetworkingManager.Singleton.ConnectedClients[ownerClientId.Value].PlayerObject = netObject;
-                }
-            }
 
-            if (NetworkingManager.Singleton.IsServer)
-            {
-                for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)
+                netObject.ResetNetworkedStartInvoked();
+
+                if (readPayload)
                 {
-                    if (netObject.CheckObjectVisibility == null || netObject.CheckObjectVisibility(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId))
+                    using (PooledBitStream payloadStream = PooledBitStream.Get())
                     {
-                        netObject.observers.Add(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId);
+                        payloadStream.CopyUnreadFrom(dataStream, payloadLength);
+                        dataStream.Position += payloadLength;
+                        payloadStream.Position = 0;
+                        netObject.InvokeBehaviourNetworkSpawn(payloadStream);
                     }
                 }
-            }
-
-            netObject.ResetNetworkedStartInvoked();
-
-            if (readPayload)
-            {
-                using (PooledBitStream payloadStream = PooledBitStream.Get())
+                else
                 {
-                    payloadStream.CopyUnreadFrom(dataStream, payloadLength);
-                    dataStream.Position += payloadLength;
-                    payloadStream.Position = 0;
-                    netObject.InvokeBehaviourNetworkSpawn(payloadStream);
+                    netObject.InvokeBehaviourNetworkSpawn(null);
                 }
             }
-            else
+            catch(Exception ex)
             {
-                netObject.InvokeBehaviourNetworkSpawn(null);
+                Debug.LogError(ex);
             }
         }
 
@@ -667,7 +674,7 @@ namespace MLAPI.Spawning
                         if (NetworkingManager.Singleton.ConnectedClientsList.Count > 0)
                         {
                             var stream = PooledBitStream.Get();
-                            using var writer = PooledBitWriter.Get(stream);
+                            var writer = PooledBitWriter.Get(stream);
                             writer.WriteUInt64Packed(networkId);
 
                             var QueueItem = new FrameQueueItem

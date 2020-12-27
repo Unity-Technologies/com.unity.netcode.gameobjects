@@ -359,17 +359,26 @@ namespace MLAPI
             queueHistoryItem.QueueStream.Position = queueHistoryItem.GetCurrentMarkedPosition();
 
             Int64 MSGSize = (Int64)(queueHistoryItem.TotalSize - (queueHistoryItem.GetCurrentMarkedPosition() + 8));
-            //Write the actual size of the RPC message
-            queueHistoryItem.QueueWriter.WriteInt64(MSGSize);
+            if(MSGSize > 0)
+            {
+                //Write the actual size of the RPC message
+                queueHistoryItem.QueueWriter.WriteInt64(MSGSize);
+            }
+            else
+            {
+                UnityEngine.Debug.LogWarning("MSGSize of < zero detected!!  Setting message size to zero!");
+                //Write the actual size of the RPC message
+                queueHistoryItem.QueueWriter.WriteInt64(0);
+            }
 
             //////////////////////////////////////////////////////////////
             //<<<< REPOSITIONING STREAM BACK TO THE CURRENT TAIL >>>>
             //////////////////////////////////////////////////////////////
             queueHistoryItem.QueueStream.Position = CurrentPosition;
             queueHistoryItem.QueueStream.BitPosition = BitPosition;
-
             //Add the packed size to the offsets for parsing over various entries
             queueHistoryItem.QueueItemOffsets.Add((uint)queueHistoryItem.QueueStream.Position);
+
         }
 
         /// <summary>

@@ -399,8 +399,8 @@ namespace MLAPI
 
             if (spawnPayload != null)
                 spawnPayload.Position = 0;
-
-            SpawnManager.SpawnNetworkedObjectLocally(this, SpawnManager.GetNetworkObjectId(), false, false, null, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false, destroyWithScene);
+            ulong netId =  SpawnManager.GetNetworkObjectId();
+            SpawnManager.SpawnNetworkedObjectLocally(this,netId, false, false, null, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false, destroyWithScene);
 
             for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)
             {
@@ -497,9 +497,19 @@ namespace MLAPI
 
         internal void ResetNetworkedStartInvoked()
         {
-            for (int i = 0; i < childNetworkedBehaviours.Count; i++)
+            try
             {
-                childNetworkedBehaviours[i].networkedStartInvoked = false;
+                if(childNetworkedBehaviours != null)
+                {
+                    for (int i = 0; i < childNetworkedBehaviours.Count; i++)
+                    {
+                        childNetworkedBehaviours[i].networkedStartInvoked = false;
+                    }
+                }
+            }
+            catch(Exception ex)
+            {
+                Debug.LogError(ex);
             }
         }
 

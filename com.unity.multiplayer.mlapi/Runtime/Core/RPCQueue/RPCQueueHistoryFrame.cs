@@ -88,7 +88,7 @@ namespace MLAPI
                 //NSS: Outbound we care about both channel and clients
                 CurrentQueueItem.Channel = QueueReader.ReadString().ToString();
                 int NumClients = QueueReader.ReadInt32();
-                if (NumClients > 0)
+                if (NumClients > 0 && NumClients < 16)
                 {
                     ulong[] clientIdArray = new ulong[NumClients];
                     for (int i = 0; i < NumClients; i++)
@@ -114,27 +114,35 @@ namespace MLAPI
             //Get the stream size
             CurrentQueueItem.StreamSize = QueueReader.ReadInt64();
 
-            //Inbound and Outbound message streams are handled differently
-            if (queueFrameType == QueueFrameType.Inbound)
+            if(CurrentQueueItem.StreamSize < 131072 && CurrentQueueItem.StreamSize > 0)
             {
-                //Get our offset
-                long Position = QueueReader.ReadInt64();
-                //Always make sure we are positioned at the start of the stream before we write
-                CurrentQueueItem.ItemStream.Position = 0;
 
-                //Write the entire message to the CurrentQueueItem stream (1 stream is re-used for all incoming RPCs)
-                CurrentQueueItem.StreamWriter.ReadAndWrite(QueueReader, CurrentQueueItem.StreamSize);
+                //Inbound and Outbound message streams are handled differently
+                if (queueFrameType == QueueFrameType.Inbound)
+                {
+                    //Get our offset
+                    long Position = QueueReader.ReadInt64();
+                    //Always make sure we are positioned at the start of the stream before we write
+                    CurrentQueueItem.ItemStream.Position = 0;
 
-                //Reset the position back to the offset so std rpc API can process the message properly
-                //(i.e. minus the already processed header)
-                CurrentQueueItem.ItemStream.Position = Position;
+                    //Write the entire message to the CurrentQueueItem stream (1 stream is re-used for all incoming RPCs)
+                    CurrentQueueItem.StreamWriter.ReadAndWrite(QueueReader, CurrentQueueItem.StreamSize);
+
+                    //Reset the position back to the offset so std rpc API can process the message properly
+                    //(i.e. minus the already processed header)
+                    CurrentQueueItem.ItemStream.Position = Position;
+                }
+                else
+                {
+                    //Create a byte array segment for outbound sending
+                    CurrentQueueItem.MessageData = QueueReader.CreateArraySegment((int)CurrentQueueItem.StreamSize, (int)QueueStream.Position);
+                }
             }
             else
             {
-                //Create a byte array segment for outbound sending
-                CurrentQueueItem.MessageData = QueueReader.CreateArraySegment((int)CurrentQueueItem.StreamSize, (int)QueueStream.Position);
+                UnityEngine.Debug.LogWarning("CurrentQueueItem.StreamSize exceeds allowed size (128KB vs " +CurrentQueueItem.StreamSize.ToString() + ")! Exiting Current RPC Queue Enumeration Loop! ");
+                CurrentQueueItem.QueueItemType = RPCQueueManager.QueueItemType.None;
             }
-
             return CurrentQueueItem;
         }
 

@@ -323,7 +323,7 @@ namespace MLAPI
             {
                 if (hashes.Contains(NetworkConfig.NetworkedPrefabs[i].Hash))
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogError("PrefabHash collision! You have two prefabs with the same hash. This is not supported");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogError("PrefabHash collision! You have two prefabs with the same hash (" + NetworkConfig.NetworkedPrefabs[i].Prefab.name + "). This is not supported");
                 }
 
                 hashes.Add(NetworkConfig.NetworkedPrefabs[i].Hash);
