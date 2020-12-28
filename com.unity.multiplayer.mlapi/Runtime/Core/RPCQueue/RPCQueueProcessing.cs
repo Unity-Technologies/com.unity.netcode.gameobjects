@@ -60,7 +60,6 @@ namespace MLAPI
                         {
                             currentQueueItem.ItemStream.Position = 1;
                         }
-
                         NetworkingManager.InvokeRpc(currentQueueItem);
                         ProfilerStatManager.rpcsQueueProc.Record();
                         currentQueueItem = CurrentFrame.GetNextQueueItem();

@@ -1227,7 +1227,14 @@ namespace MLAPI
                 var networkBehaviour = networkObject.GetBehaviourAtOrderIndex(networkBehaviourId);
                 if (ReferenceEquals(networkBehaviour, null)) return;
 
-                __ntable[networkMethodId](networkBehaviour, queueItem.StreamReader, queueItem.NetworkId);
+                try
+                {
+                    __ntable[networkMethodId](networkBehaviour, queueItem.StreamReader, queueItem.NetworkId);
+                }
+                catch(Exception ex)
+                {
+                    Debug.LogError(ex);
+                }
             }
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR

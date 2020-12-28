@@ -414,9 +414,9 @@ namespace MLAPI
         /// <summary>
         /// Unspawns this GameObject and destroys it for other clients. This should be used if the object should be kept on the server
         /// </summary>
-        public void UnSpawn()
+        public void UnSpawn(bool destroy = false)
         {
-            SpawnManager.UnSpawnObject(this);
+            SpawnManager.UnSpawnObject(this,destroy);
         }
 
         /// <summary>

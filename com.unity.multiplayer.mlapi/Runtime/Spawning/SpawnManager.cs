@@ -513,7 +513,7 @@ namespace MLAPI.Spawning
             }
         }
 
-        internal static void UnSpawnObject(NetworkedObject netObject)
+        internal static void UnSpawnObject(NetworkedObject netObject, bool destroyObject = false)
         {
             if (!netObject.IsSpawned)
             {
@@ -525,7 +525,7 @@ namespace MLAPI.Spawning
                 throw new NotServerException("Only server unspawn objects");
             }
 
-            OnDestroyObject(netObject.NetworkId, false);
+            OnDestroyObject(netObject.NetworkId, destroyObject);
         }
 
         // Makes scene objects ready to be reused
