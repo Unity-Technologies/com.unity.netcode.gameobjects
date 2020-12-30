@@ -662,8 +662,18 @@ namespace MLAPI
             }
         }
 
+
+        public delegate void OnShuttingDownCurrentSessionDelegateHandler();
+        public event OnShuttingDownCurrentSessionDelegateHandler OnShuttingDownCurrentSession;
+
         private void Shutdown()
         {
+            if(OnShuttingDownCurrentSession != null)
+            {
+                OnShuttingDownCurrentSession.Invoke();
+            }
+            OnShuttingDownCurrentSession = null;
+
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo("Shutdown()");
             NetworkProfiler.Stop();
             IsListening = false;

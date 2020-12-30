@@ -88,7 +88,7 @@ namespace MLAPI
                 //NSS: Outbound we care about both channel and clients
                 CurrentQueueItem.Channel = QueueReader.ReadString().ToString();
                 int NumClients = QueueReader.ReadInt32();
-                if (NumClients > 0 && NumClients < 16)
+                if (NumClients > 0 && NumClients < 128)
                 {
                     ulong[] clientIdArray = new ulong[NumClients];
                     for (int i = 0; i < NumClients; i++)
