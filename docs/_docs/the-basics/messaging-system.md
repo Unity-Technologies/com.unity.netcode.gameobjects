@@ -35,7 +35,7 @@ public class Example : NetworkedBehaviour
           }
           else
           {
-              InvokeServerRpc(MyServerRpc, Random.Range(-50, 50));
+              InvokeServerRpc(MyServerRPC, Random.Range(-50, 50));
           }
       }
   }
