@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using UnityEngine;
+using UnityEngine.LowLevel;
 using System.Linq;
 using MLAPI.Logging;
 using UnityEngine.SceneManagement;
@@ -34,7 +35,7 @@ namespace MLAPI
     /// The main component of the library
     /// </summary>
     [AddComponentMenu("MLAPI/NetworkingManager", -100)]
-    public class NetworkingManager : MonoBehaviour
+    public class NetworkingManager : MonoBehaviour,INetworkUpdateLoopSystem
     {
         // RuntimeAccessModifiersILPP will make this `public`
         internal static readonly Dictionary<uint, Action<NetworkedBehaviour, BitReader, ulong>> __ntable = new Dictionary<uint, Action<NetworkedBehaviour, BitReader, ulong>>();
@@ -71,6 +72,10 @@ namespace MLAPI
         public bool LoopbackEnabled;
 
         public RPCQueueManager RpcQueueManager { get; private set; }
+
+
+
+
 
         /// <summary>
         /// A synchronized time, represents the time in seconds since the server application started. Is replicated across all clients
@@ -697,12 +702,49 @@ namespace MLAPI
         }
 
 
+        public List<INetworkUpdateLoopSystem> NetworkLoopUpdateSystems;
+
+        public NetworkUpdateManager.NetworkUpdateLoopCallbackFunction RegisterUpdate(NetworkUpdateManager.NetworkUpdateStages stage )
+        {
+            NetworkUpdateManager.NetworkUpdateLoopCallbackFunction networkUpdateLoopCallback = null;
+            switch(stage)
+            {
+                case NetworkUpdateManager.NetworkUpdateStages.PREUPDATE:
+                    {
+                        networkUpdateLoopCallback = NetworkPreUpdate;
+                        break;
+                    }
+                case NetworkUpdateManager.NetworkUpdateStages.FIXEDUPDATE:
+                    {
+                        networkUpdateLoopCallback = NetworkFixedUpdate;
+                        break;
+                    }
+                case NetworkUpdateManager.NetworkUpdateStages.UPDATE:
+                    {
+                        networkUpdateLoopCallback = NetworkUpdate;
+                        break;
+                    }
+                case NetworkUpdateManager.NetworkUpdateStages.LATEUPDATE:
+                    {
+                        networkUpdateLoopCallback = NetworkLateUpdate;
+                        break;
+                    }
+            }
+            return networkUpdateLoopCallback;
+        }
+
+
         private void Awake()
         {
+            //We always add the networking manager as the first entry
+            NetworkLoopUpdateSystems.Insert(0, this);
+
             RpcQueueManager = new RPCQueueManager(LoopbackEnabled);
             //Note: Since frame history is not being used, this is set to 0
             //To test frame history, increase the number to (n) where n > 0
             RpcQueueManager?.Initialize(0);
+
+            NetworkUpdateManager.HandleNetworkLoopRegistrations(NetworkLoopUpdateSystems);
 
             NetworkUpdateManager.RegisterNetworkUpdateAction(NetworkPreUpdate, NetworkUpdateManager.NetworkUpdateStages.PREUPDATE);
             NetworkUpdateManager.RegisterNetworkUpdateAction(NetworkFixedUpdate, NetworkUpdateManager.NetworkUpdateStages.FIXEDUPDATE);

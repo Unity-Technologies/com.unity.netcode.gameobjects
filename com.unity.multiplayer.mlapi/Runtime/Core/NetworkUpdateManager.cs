@@ -1,11 +1,31 @@
 using System;
 using System.Text;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.PlayerLoop;
 using UnityEngine.LowLevel;
 
 namespace MLAPI
 {
+
+    public struct NetworkLoopUpdateRegistration
+    {
+        NetworkUpdateManager.NetworkUpdateLoopCallbackFunction updateCallback;
+
+    }
+
+    /// <summary>
+    /// Allows one to create their own network update engine
+    /// in the event they have specific processing needs etc.
+    /// </summary>
+    public  interface INetworkUpdateLoopSystem
+    {
+
+
+        NetworkUpdateManager.NetworkUpdateLoopCallbackFunction RegisterUpdate(NetworkUpdateManager.NetworkUpdateStages stage );
+
+    }
+
     /// <summary>
     /// Allows one to create their own network update engine
     /// in the event they have specific processing needs etc.
@@ -113,6 +133,9 @@ namespace MLAPI
 
         static INetworkUpdateEngine CurrentNetworkUpdateEngine;
 
+
+        public delegate void NetworkUpdateLoopCallbackFunction();
+
         /// <summary>
         /// AssignNetworkUpdateEngine
         /// Provides the option of passing in a custom network update engine
@@ -122,6 +145,39 @@ namespace MLAPI
         {
             CurrentNetworkUpdateEngine = updateEngine;
         }
+
+        static void RegisterNetworkLoopSystems(Dictionary<NetworkUpdateStages,PlayerLoopSystem> systems)
+        {
+
+        }
+
+        public static void HandleNetworkLoopRegistrations(List<INetworkUpdateLoopSystem> networkLoopSystems)
+        {
+            foreach(INetworkUpdateLoopSystem loopSystem in networkLoopSystems)
+            {
+                Dictionary<NetworkUpdateStages,PlayerLoopSystem> RegisterPlayerLoopSystems = new Dictionary<NetworkUpdateStages, PlayerLoopSystem>();
+
+                foreach(NetworkUpdateStages stage in Enum.GetValues(typeof(NetworkUpdateStages)))
+                {
+                    NetworkUpdateLoopCallbackFunction updateFunction = loopSystem.RegisterUpdate(stage);
+                    if(updateFunction != null)
+                    {
+                        PlayerLoopSystem.UpdateFunction callback = new PlayerLoopSystem.UpdateFunction(updateFunction);
+                        PlayerLoopSystem stageLoop = new PlayerLoopSystem() { updateDelegate = callback, type = loopSystem.GetType() };
+                        if(stageLoop.updateDelegate != null)
+                        {
+                            RegisterPlayerLoopSystems.Add(stage, stageLoop);
+                        }
+                    }
+                }
+                if(RegisterPlayerLoopSystems.Count > 0)
+                {
+                    RegisterNetworkLoopSystems(RegisterPlayerLoopSystems);
+                }
+            }
+
+        }
+
 
         /// <summary>
         /// RegisterNetworkUpdateAction
