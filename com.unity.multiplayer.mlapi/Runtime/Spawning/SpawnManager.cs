@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using MLAPI.Configuration;
 using MLAPI.Exceptions;
 using MLAPI.Hashing;
@@ -402,12 +403,33 @@ namespace MLAPI.Spawning
 
         internal static void SendSpawnCallForObject(ulong clientId, NetworkedObject netObject, Stream payload)
         {
-            using (PooledBitStream stream = PooledBitStream.Get())
+            //Currently, if this is called and the clientId (destination) is the server's client Id, this case
+            //will be checked within the below Send function.  To avoid unwarranted allocation of a PooledBitStream
+            //placing this check here. [NSS]
+            if (NetworkingManager.Singleton.IsServer && clientId == NetworkingManager.Singleton.ServerClientId)
             {
-                WriteSpawnCallForObject(stream, clientId, netObject, payload);
-
-                InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_ADD_OBJECT, "MLAPI_INTERNAL", stream, SecuritySendFlags.None);
+                return;
             }
+
+            RPCQueueManager rpcQueueManager = NetworkingManager.Singleton.RpcQueueManager;
+            if (rpcQueueManager == null)
+            {
+                return;
+            }
+
+            var stream = PooledBitStream.Get();
+            WriteSpawnCallForObject(stream, clientId, netObject, payload);
+
+            var QueueItem = new FrameQueueItem
+            {
+                QueueItemType = RPCQueueManager.QueueItemType.CreateObject,
+                NetworkId = 0,
+                ItemStream = stream,
+                Channel = "MLAPI_INTERNAL",
+                SendFlags = SecuritySendFlags.None,
+                ClientIds = new[] {clientId}
+            };
+            rpcQueueManager.AddToInternalMLAPISendQueue(QueueItem);
         }
 
         internal static void WriteSpawnCallForObject(Serialization.BitStream stream, ulong clientId, NetworkedObject netObject, Stream payload)
@@ -612,8 +634,8 @@ namespace MLAPI.Spawning
 
             var sobj = SpawnedObjects[networkId];
 
-			   if (!sobj.IsOwnedByServer && !sobj.IsPlayerObject &&
-			      NetworkingManager.Singleton.ConnectedClients.ContainsKey(sobj.OwnerClientId))
+            if (!sobj.IsOwnedByServer && !sobj.IsPlayerObject &&
+                NetworkingManager.Singleton.ConnectedClients.ContainsKey(sobj.OwnerClientId))
             {
                 //Someone owns it.
                 for (int i = NetworkingManager.Singleton.ConnectedClients[sobj.OwnerClientId].OwnedObjects.Count - 1; i > -1; i--)
@@ -622,6 +644,7 @@ namespace MLAPI.Spawning
                         NetworkingManager.Singleton.ConnectedClients[sobj.OwnerClientId].OwnedObjects.RemoveAt(i);
                 }
             }
+
             sobj.IsSpawned = false;
 
             if (NetworkingManager.Singleton != null && NetworkingManager.Singleton.IsServer)
@@ -635,15 +658,28 @@ namespace MLAPI.Spawning
                     });
                 }
 
-                if (sobj != null)
+                var rpcQueueManager = NetworkingManager.Singleton.RpcQueueManager;
+                if (rpcQueueManager != null)
                 {
-                    using (PooledBitStream stream = PooledBitStream.Get())
+                    if (sobj != null)
                     {
-                        using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                        // As long as we have any remaining clients, then notify of the object being destroy.
+                        if (NetworkingManager.Singleton.ConnectedClientsList.Count > 0)
                         {
+                            var stream = PooledBitStream.Get();
+                            using var writer = PooledBitWriter.Get(stream);
                             writer.WriteUInt64Packed(networkId);
 
-                            InternalMessageSender.Send(MLAPIConstants.MLAPI_DESTROY_OBJECT, "MLAPI_INTERNAL", stream, SecuritySendFlags.None);
+                            var QueueItem = new FrameQueueItem
+                            {
+                                QueueItemType = RPCQueueManager.QueueItemType.DestroyObject,
+                                NetworkId = networkId,
+                                ItemStream = stream,
+                                Channel = "MLAPI_INTERNAL",
+                                SendFlags = SecuritySendFlags.None,
+                                ClientIds = NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray()
+                            };
+                            rpcQueueManager.AddToInternalMLAPISendQueue(QueueItem);
                         }
                     }
                 }
