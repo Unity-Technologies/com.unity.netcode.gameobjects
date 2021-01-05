@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using MLAPI.Messaging;
+using MLAPI.NetworkedVar;
 using MLAPI.Serialization.Pooled;
 using UnityEngine;
 
@@ -18,6 +19,25 @@ namespace MLAPI.Prototyping
             public float lastSent;
             public Vector3? lastMissedPosition;
             public Quaternion? lastMissedRotation;
+        }
+
+        private NetworkedVarVector3 _nvAngles = new NetworkedVarVector3();
+        private NetworkedVarVector3 _nvPos = new NetworkedVarVector3();
+
+        public NetworkedTransform()
+        {
+            _nvAngles.OnValueChanged = anglesChanged;
+            _nvPos.OnValueChanged = posChanged;
+        }
+
+        private void anglesChanged(Vector3 v1, Vector3 v2)
+        {
+            ApplyTransformInternal(_nvPos.Value, Quaternion.Euler(_nvAngles.Value));
+        }
+
+        private void posChanged(Vector3 v1, Vector3 v2)
+        {
+            ApplyTransformInternal(_nvPos.Value, Quaternion.Euler(_nvAngles.Value));
         }
 
         /// <summary>
@@ -165,8 +185,8 @@ namespace MLAPI.Prototyping
 
                     if (IsServer)
                     {
-                        ApplyTransformClientRpc(transform.position, transform.rotation.eulerAngles,
-                            new ClientRpcParams {Send = new ClientRpcSendParams {TargetClientIds = NetworkingManager.Singleton.ConnectedClientsList.Where(c => c.ClientId != OwnerClientId).Select(c => c.ClientId).ToArray()}});
+                        _nvPos.Value = transform.position;
+                        _nvAngles.Value = transform.rotation.eulerAngles;
                     }
                     else
                     {
@@ -202,15 +222,6 @@ namespace MLAPI.Prototyping
 
             if (IsServer && EnableRange && EnableNonProvokedResendChecks)
                 CheckForMissedSends();
-        }
-
-        [ClientRpc]
-        private void ApplyTransformClientRpc(Vector3 position, Vector3 eulerAngles, ClientRpcParams rpcParams = default)
-        {
-            if (enabled)
-            {
-                ApplyTransformInternal(position, Quaternion.Euler(eulerAngles));
-            }
         }
 
         private void ApplyTransformInternal(Vector3 position, Quaternion rotation)
@@ -277,8 +288,8 @@ namespace MLAPI.Prototyping
                         info.lastMissedPosition = null;
                         info.lastMissedRotation = null;
 
-                        ApplyTransformClientRpc(position, eulerAngles,
-                            new ClientRpcParams {Send = new ClientRpcSendParams {TargetClientIds = new[] {NetworkingManager.Singleton.ConnectedClientsList[i].ClientId}}});
+                        _nvPos.Value = position;
+                        _nvAngles.Value = eulerAngles;
                     }
                     else
                     {
@@ -289,8 +300,8 @@ namespace MLAPI.Prototyping
             }
             else
             {
-                ApplyTransformClientRpc(position, eulerAngles,
-                    new ClientRpcParams {Send = new ClientRpcSendParams {TargetClientIds = NetworkingManager.Singleton.ConnectedClientsList.Where(c => c.ClientId != OwnerClientId).Select(c => c.ClientId).ToArray()}});
+                _nvPos.Value = position;
+                _nvAngles.Value = eulerAngles;
             }
         }
 
@@ -321,8 +332,8 @@ namespace MLAPI.Prototyping
                     {
                         info.lastSent = NetworkingManager.Singleton.NetworkTime;
 
-                        ApplyTransformClientRpc(info.lastMissedPosition.Value, info.lastMissedRotation.Value.eulerAngles,
-                            new ClientRpcParams {Send = new ClientRpcSendParams {TargetClientIds = new[] {NetworkingManager.Singleton.ConnectedClientsList[i].ClientId}}});
+                        _nvPos.Value = info.lastMissedPosition.Value;
+                        _nvAngles.Value = info.lastMissedRotation.Value.eulerAngles;
 
                         info.lastMissedPosition = null;
                         info.lastMissedRotation = null;
