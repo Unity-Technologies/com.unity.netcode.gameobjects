@@ -808,7 +808,7 @@ namespace MLAPI
                     if (NetworkConfig.EnableNetworkedVar)
                     {
                         // Do NetworkedVar updates
-                        NetworkedObject.NetworkedBehaviourUpdate();
+                        NetworkedBehaviour.NetworkedBehaviourUpdate();
                     }
 
                     if (!IsServer && NetworkConfig.EnableMessageBuffering)
