@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using MLAPI.Serialization.Pooled;
 
-namespace MLAPI
+namespace MLAPI.Messaging
 {
     /// <summary>
     /// QueueHistoryFrame
@@ -28,6 +28,8 @@ namespace MLAPI
         private readonly QueueFrameType queueFrameType;
 
         long CurrentStreamSizeMark;
+        NetworkUpdateManager.NetworkUpdateStages StreamUpdateStage; //Update stage specific to RPCs (typically inbound has most potential for variation)
+
 
         /// <summary>
         /// GetQueueFrameType
@@ -68,7 +70,8 @@ namespace MLAPI
         /// <returns>FrameQueueItem</returns>
         private FrameQueueItem GetCurrentQueueItem()
         {
-            //Write the packed version of the queueItem to our current queue history buffer
+
+
             CurrentQueueItem.QueueItemType = (RPCQueueManager.QueueItemType)QueueReader.ReadUInt16();
             CurrentQueueItem.SendFlags = (Security.SecuritySendFlags)QueueReader.ReadUInt16();
             QueueReader.ReadSingle();
@@ -111,6 +114,8 @@ namespace MLAPI
                 }
             }
 
+            CurrentQueueItem.UpdateStage = StreamUpdateStage;
+
             //Get the stream size
             CurrentQueueItem.StreamSize = QueueReader.ReadInt64();
 
@@ -125,12 +130,26 @@ namespace MLAPI
                     //Always make sure we are positioned at the start of the stream before we write
                     CurrentQueueItem.ItemStream.Position = 0;
 
+
+
                     //Write the entire message to the CurrentQueueItem stream (1 stream is re-used for all incoming RPCs)
                     CurrentQueueItem.StreamWriter.ReadAndWrite(QueueReader, CurrentQueueItem.StreamSize);
+
+
 
                     //Reset the position back to the offset so std rpc API can process the message properly
                     //(i.e. minus the already processed header)
                     CurrentQueueItem.ItemStream.Position = Position;
+                    //ushort updateStage = CurrentQueueItem.StreamReader.ReadUInt16();
+                    //if(System.Enum.IsDefined(typeof(NetworkUpdateManager.NetworkUpdateStages),(int)updateStage))
+                    //{
+                    //    CurrentQueueItem.UpdateStage = (NetworkUpdateManager.NetworkUpdateStages)updateStage;
+                    //}
+                    //else
+                    //{
+                    //    CurrentQueueItem.UpdateStage = NetworkUpdateManager.NetworkUpdateStages.UPDATE;
+                    //}
+
                 }
                 else
                 {
@@ -225,10 +244,11 @@ namespace MLAPI
         /// QueueHistoryFrame Constructor
         /// </summary>
         /// <param name="queueType">type of queue history frame (Inbound/Outbound)</param>
-        public QueueHistoryFrame(QueueFrameType queueType)
+        public QueueHistoryFrame(QueueFrameType queueType, NetworkUpdateManager.NetworkUpdateStages updateStage)
         {
             queueFrameType = queueType;
             CurrentQueueItem = new FrameQueueItem();
+            StreamUpdateStage = updateStage;
         }
     }
 }

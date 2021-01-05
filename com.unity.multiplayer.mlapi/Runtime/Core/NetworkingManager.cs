@@ -776,7 +776,7 @@ namespace MLAPI
 
         private void NetworkFixedUpdate()
         {
-            RpcQueueManager?.ProcessAndFlushRPCQueue(RPCQueueManager.RPCQueueProcessingTypes.Receive);
+            RpcQueueManager?.ProcessAndFlushRPCQueue(RPCQueueManager.RPCQueueProcessingTypes.Receive,NetworkUpdateManager.NetworkUpdateStages.FIXEDUPDATE);
         }
 
         /// <summary>
@@ -787,6 +787,7 @@ namespace MLAPI
         {
             if (IsListening)
             {
+                RpcQueueManager?.ProcessAndFlushRPCQueue(RPCQueueManager.RPCQueueProcessingTypes.Receive,NetworkUpdateManager.NetworkUpdateStages.UPDATE);
 
                 if (((NetworkTime - lastEventTickTime >= (1f / NetworkConfig.EventTickrate))))
                 {
@@ -866,7 +867,8 @@ namespace MLAPI
         /// </summary>
         private void NetworkLateUpdate()
         {
-            RpcQueueManager?.ProcessAndFlushRPCQueue(RPCQueueManager.RPCQueueProcessingTypes.Send);
+            RpcQueueManager?.ProcessAndFlushRPCQueue(RPCQueueManager.RPCQueueProcessingTypes.Receive, NetworkUpdateManager.NetworkUpdateStages.LATEUPDATE);
+            RpcQueueManager?.ProcessAndFlushRPCQueue(RPCQueueManager.RPCQueueProcessingTypes.Send, NetworkUpdateManager.NetworkUpdateStages.LATEUPDATE);
         }
 
         internal void UpdateNetworkTime(ulong clientId, float netTime, float receiveTime, bool warp = false)
@@ -1225,8 +1227,12 @@ namespace MLAPI
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_InvokeRPC.Begin();
 #endif
+
             var networkObjectId = queueItem.StreamReader.ReadUInt64Packed();
             var networkBehaviourId = queueItem.StreamReader.ReadUInt16Packed();
+
+            var UpdateStage = queueItem.StreamReader.ReadUInt16Packed();
+
             var networkMethodId = queueItem.StreamReader.ReadUInt32Packed();
 
             if (__ntable.ContainsKey(networkMethodId))

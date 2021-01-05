@@ -104,10 +104,11 @@ namespace MLAPI
     {
         public enum NetworkUpdateStages
         {
-            PREUPDATE, //Invoked after EarlyUpdate.UnityWebRequestUpdate
-            FIXEDUPDATE, //Invoked after FixedUpdate.AudioFixedUpdate (prior to any physics being applied or simulated)
-            UPDATE, //Invoked after PreUpdate.UpdateVideo   (just before the primary Update is invoked)
-            LATEUPDATE //Invoked after PostLateUpdate.ProcessWebSendMessages (after all updates)
+            DEFAULT,        //Will default to the UPDATE stage if no setting was made
+            PREUPDATE,      //Invoked after EarlyUpdate.UnityWebRequestUpdate
+            FIXEDUPDATE,    //Invoked after FixedUpdate.AudioFixedUpdate (prior to any physics being applied or simulated)
+            UPDATE,         //Invoked after PreUpdate.UpdateVideo   (just before the primary Update is invoked)
+            LATEUPDATE      //Invoked after PostLateUpdate.ProcessWebSendMessages (after all updates)
         }
 
         static INetworkUpdateEngine CurrentNetworkUpdateEngine;

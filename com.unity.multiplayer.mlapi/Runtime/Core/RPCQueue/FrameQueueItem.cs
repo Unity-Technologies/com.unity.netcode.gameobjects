@@ -2,7 +2,7 @@ using System;
 using MLAPI.Security;
 using MLAPI.Serialization.Pooled;
 
-namespace MLAPI
+namespace  MLAPI.Messaging
 {
     /// <summary>
     /// FrameQueueItem
@@ -12,6 +12,7 @@ namespace MLAPI
     /// </summary>
     public struct FrameQueueItem
     {
+        public  NetworkUpdateManager.NetworkUpdateStages UpdateStage;
         public RPCQueueManager.QueueItemType QueueItemType;
         public SecuritySendFlags        SendFlags;
         public ulong                    NetworkId;          //Sender's network Identifier

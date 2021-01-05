@@ -31,16 +31,7 @@ namespace MLAPI
         /// ProcessReceiveQueue
         /// Public facing interface method to start processing all RPCs in the current inbound frame
         /// </summary>
-        public static void ProcessReceiveQueue()
-        {
-            RPCReceiveQueueProcessFlush();
-        }
-
-        /// <summary>
-        /// RCPQueueReeiveAndFlush
-        /// Parses through all incoming RPCs in the active RPC History Frame (RPCQueueManager)
-        /// </summary>
-        private static void RPCReceiveQueueProcessFlush()
+        public static void ProcessReceiveQueue(NetworkUpdateManager.NetworkUpdateStages currentStage)
         {
             bool AdvanceFrameHistory = false;
             var rpcQueueManager = NetworkingManager.Singleton.RpcQueueManager;
@@ -49,7 +40,7 @@ namespace MLAPI
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                 s_MLAPIRPCQueueProcess.Begin();
 #endif
-                var CurrentFrame = rpcQueueManager.GetCurrentFrame(QueueHistoryFrame.QueueFrameType.Inbound);
+                var CurrentFrame = rpcQueueManager.GetCurrentFrame(QueueHistoryFrame.QueueFrameType.Inbound,currentStage);
                 if (CurrentFrame != null)
                 {
                     var currentQueueItem = CurrentFrame.GetFirstQueueItem();
@@ -59,6 +50,10 @@ namespace MLAPI
                         if (rpcQueueManager.IsLoopBack())
                         {
                             currentQueueItem.ItemStream.Position = 1;
+                        }
+                        if(rpcQueueManager.IsTesting())
+                        {
+                            Debug.Log("RPC invoked during the " + currentStage.ToString() + " update stage.");
                         }
                         NetworkingManager.InvokeRpc(currentQueueItem);
                         ProfilerStatManager.rpcsQueueProc.Record();
@@ -157,7 +152,7 @@ namespace MLAPI
             var rpcQueueManager = NetworkingManager.Singleton.RpcQueueManager;
             if (rpcQueueManager != null)
             {
-                var CurrentFrame = rpcQueueManager.GetCurrentFrame(QueueHistoryFrame.QueueFrameType.Outbound);
+                var CurrentFrame = rpcQueueManager.GetCurrentFrame(QueueHistoryFrame.QueueFrameType.Outbound,NetworkUpdateManager.NetworkUpdateStages.LATEUPDATE);
                 //If loopback is enabled
                 if (rpcQueueManager.IsLoopBack())
                 {

@@ -58,8 +58,21 @@ namespace MLAPI
             writer.WriteBit(false); // Encrypted
             writer.WriteBit(false); // Authenticated
             writer.WriteBits(MLAPIConstants.MLAPI_SERVER_RPC, 6); // MessageType
+
+
             writer.WriteUInt64Packed(NetworkId); // NetworkObjectId
             writer.WriteUInt16Packed(GetBehaviourId()); // NetworkBehaviourId
+
+            //Write the update stage in front of RPC related information
+            if(sendParams.UpdateStage == NetworkUpdateManager.NetworkUpdateStages.DEFAULT)
+            {
+                writer.WriteUInt16Packed((ushort)NetworkUpdateManager.NetworkUpdateStages.UPDATE);
+            }
+            else
+            {
+                writer.WriteUInt16Packed((ushort)sendParams.UpdateStage);
+            }
+
             return writer;
         }
 
@@ -98,8 +111,22 @@ namespace MLAPI
             writer.WriteBit(false); // Encrypted
             writer.WriteBit(false); // Authenticated
             writer.WriteBits(MLAPIConstants.MLAPI_CLIENT_RPC, 6); // MessageType
+
+
+
             writer.WriteUInt64Packed(NetworkId); // NetworkObjectId
             writer.WriteUInt16Packed(GetBehaviourId()); // NetworkBehaviourId
+
+                        //Write the update stage in front of RPC related information
+            if(sendParams.UpdateStage == NetworkUpdateManager.NetworkUpdateStages.DEFAULT)
+            {
+                writer.WriteUInt16Packed((ushort)NetworkUpdateManager.NetworkUpdateStages.UPDATE);
+            }
+            else
+            {
+                writer.WriteUInt16Packed((ushort)sendParams.UpdateStage);
+            }
+
             return writer;
         }
 
