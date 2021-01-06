@@ -204,7 +204,7 @@ namespace MLAPI
         private static void SendCallback(ulong clientId, MLAPI.MessageBatcher.SendStream sendStream)
         {
             int length = (int)sendStream.Stream.Length;
-            Byte[] bytes = sendStream.Stream.GetBuffer();
+            byte[] bytes = sendStream.Stream.GetBuffer();
             ArraySegment<byte> sendBuffer = new ArraySegment<byte>(bytes, 0, length);
 
             NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(clientId, sendBuffer,

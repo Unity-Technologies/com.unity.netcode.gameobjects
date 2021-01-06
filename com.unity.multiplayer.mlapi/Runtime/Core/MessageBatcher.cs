@@ -24,6 +24,9 @@ namespace MLAPI
         // Used to store targets, internally
         private List<ulong> TargetList = new List<ulong>();
 
+        // Used to mark longer lengths. Works because we can't have zero-sized messages
+        private const byte LongLenMarker = 0;
+
         private void PushLength(int length, ref PooledBitWriter writer)
         {
             // If length is single byte we write it
@@ -33,8 +36,8 @@ namespace MLAPI
             }
             else
             {
-                // otherwise we write a 0, and a two-byte length
-                writer.WriteByte(0); // mark larger size
+                // otherwise we write a two-byte length
+                writer.WriteByte(LongLenMarker); // mark larger size
                 writer.WriteByte((byte)(length % 256)); // write the length modulo 256
                 writer.WriteByte((byte)(length / 256)); // write the length divided by 256
             }
@@ -44,7 +47,7 @@ namespace MLAPI
         {
             byte read = (byte)messageStream.ReadByte();
             // if we read a non-zero value, we have a single byte length
-            if (read != 0)
+            if (read != LongLenMarker)
             {
                 return read;
             }
@@ -91,8 +94,6 @@ namespace MLAPI
 
             foreach (ulong clientId in TargetList)
             {
-                // todo: actually queue and buffer. For now, the dict contains just one entry !!!
-
                 if (!SendDict.ContainsKey(clientId))
                 {
                     SendDict[clientId] = new SendStream();
