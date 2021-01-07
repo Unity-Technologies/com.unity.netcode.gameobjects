@@ -14,15 +14,16 @@ namespace MLAPI
         public class SendStream
         {
             public FrameQueueItem Item;
-            public PooledBitStream Stream = new PooledBitStream();
+            public PooledBitStream Stream = PooledBitStream.Get();
+            public bool Empty = true;
         }
 
         // Stores the stream of batched RPC to send to each client, by ClientId
         private Dictionary<ulong, SendStream> SendDict = new Dictionary<ulong, SendStream>();
-        private PooledBitWriter Writer = new PooledBitWriter(new PooledBitStream());
+        private PooledBitWriter Writer = new PooledBitWriter(PooledBitStream.Get());
 
         // Used to store targets, internally
-        private List<ulong> TargetList = new List<ulong>();
+        private ulong[] TargetList = new ulong[0];
 
         // Used to mark longer lengths. Works because we can't have zero-sized messages
         private const byte LongLenMarker = 0;
@@ -64,19 +65,17 @@ namespace MLAPI
         /// </summary>
         /// <param name="item">the FrameQueueItem we want targets for</param>
         /// <param name="list">the list to fill</param>
-        private static void FillTargetList(in FrameQueueItem item, ref List<ulong> list)
+        private static void FillTargetList(in FrameQueueItem item, ref ulong[] list)
         {
-            list.Clear();
             switch (item.QueueItemType)
             {
                 case RPCQueueManager.QueueItemType.ServerRpc:
-                    list.Add(item.NetworkId);
+                    Array.Resize(ref list, 1);
+                    list[0] = item.NetworkId;
                     break;
                 case RPCQueueManager.QueueItemType.ClientRpc:
-                    foreach (ulong clientId in item.ClientIds)
-                    {
-                        list.Add(clientId);
-                    }
+                    // copy the list
+                    list = item.ClientIds.ToArray();
                     break;
                 default:
                     break;
@@ -96,7 +95,14 @@ namespace MLAPI
             {
                 if (!SendDict.ContainsKey(clientId))
                 {
+                    // todo: consider what happens if many clients join and leave the game consecutively
+                    // we probably need a cleanup mechanism at some point
                     SendDict[clientId] = new SendStream();
+                }
+
+                if (SendDict[clientId].Empty)
+                {
+                    SendDict[clientId].Empty = false;
                     SendDict[clientId].Item = item;
                     Writer.SetStream(SendDict[clientId].Stream);
 
@@ -138,28 +144,24 @@ namespace MLAPI
         /// <param name="sendCallback"> the function to call for sending the batch</param>
         public void SendItems(int threshold, SendCallbackType sendCallback)
         {
-            List<ulong> sent = new List<ulong>();
-
             foreach (KeyValuePair<ulong, SendStream> entry in SendDict)
             {
-                // read the queued message
-                int length = (int)SendDict[entry.Key].Stream.Length;
-
-                if (length >= threshold)
+                if (!entry.Value.Empty)
                 {
-                    sendCallback(entry.Key, entry.Value);
-                    ProfilerStatManager.rpcBatchesSent.Record();
+                    // read the queued message
+                    int length = (int)SendDict[entry.Key].Stream.Length;
 
-                    // mark the client for which a batch was sent
-                    sent.Add(entry.Key);
+                    if (length >= threshold)
+                    {
+                        sendCallback(entry.Key, entry.Value);
+                        ProfilerStatManager.rpcBatchesSent.Record();
+
+                        // clear the batch that was sent from the SendDict
+                        entry.Value.Stream.SetLength(0);
+                        entry.Value.Stream.Position = 0;
+                        entry.Value.Empty = true;
+                    }
                 }
-            }
-
-            // clear the batches that were sent from the SendDict
-            // this cannot be done above acuring the Dictionary iteration, so we do it here
-            foreach(ulong clientid in sent)
-            {
-                SendDict.Remove(clientid);
             }
         }
 
@@ -181,7 +183,7 @@ namespace MLAPI
 
                 // copy what comes after current stream position
                 long pos = messageStream.Position;
-                BitStream copy = new BitStream();
+                BitStream copy = PooledBitStream.Get();
                 copy.SetLength(rpcSize);
                 copy.Position = 0;
                 Buffer.BlockCopy(messageStream.GetBuffer(), (int)pos, copy.GetBuffer(), 0, rpcSize);
