@@ -70,7 +70,7 @@ namespace MLAPI
         [HideInInspector]
         public bool LoopbackEnabled;
 
-        public RPCQueueManager RpcQueueManager { get; private set; }
+        public RPCQueueContainer RpcQueueManager { get; private set; }
 
         /// <summary>
         /// A synchronized time, represents the time in seconds since the server application started. Is replicated across all clients
@@ -689,10 +689,10 @@ namespace MLAPI
 
         private void Awake()
         {
-            RpcQueueManager = new RPCQueueManager(LoopbackEnabled);
+            RpcQueueManager = new RPCQueueContainer(LoopbackEnabled);
             //Note: Since frame history is not being used, this is set to 0
             //To test frame history, increase the number to (n) where n > 0
-            RpcQueueManager?.Initialize(0);
+            RpcQueueManager.Initialize(0);
 
             NetworkUpdateManager.RegisterNetworkUpdateAction(NetworkPreUpdate, NetworkUpdateManager.NetworkUpdateStages.PREUPDATE);
             NetworkUpdateManager.RegisterNetworkUpdateAction(NetworkFixedUpdate, NetworkUpdateManager.NetworkUpdateStages.FIXEDUPDATE);
@@ -766,7 +766,7 @@ namespace MLAPI
 
         private void NetworkFixedUpdate()
         {
-            RpcQueueManager?.ProcessAndFlushRPCQueue(RPCQueueManager.RPCQueueProcessingTypes.Receive);
+            RpcQueueManager?.ProcessAndFlushRPCQueue(RPCQueueContainer.RPCQueueProcessingTypes.Receive);
         }
 
         /// <summary>
@@ -856,7 +856,7 @@ namespace MLAPI
         /// </summary>
         private void NetworkLateUpdate()
         {
-            RpcQueueManager?.ProcessAndFlushRPCQueue(RPCQueueManager.RPCQueueProcessingTypes.Send);
+            RpcQueueManager?.ProcessAndFlushRPCQueue(RPCQueueContainer.RPCQueueProcessingTypes.Send);
         }
 
         internal void UpdateNetworkTime(ulong clientId, float netTime, float receiveTime, bool warp = false)
@@ -1168,7 +1168,7 @@ namespace MLAPI
                                 s_MLAPIServerSTDRPCQueued.Begin();
                                 #endif
 
-                                InternalMessageHandler.RPCReceiveQueueItem(clientId, messageStream, receiveTime,RPCQueueManager.QueueItemType.ServerRpc);
+                                InternalMessageHandler.RPCReceiveQueueItem(clientId, messageStream, receiveTime,RPCQueueContainer.QueueItemType.ServerRpc);
 
                                 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                                 s_MLAPIServerSTDRPCQueued.End();
@@ -1184,7 +1184,7 @@ namespace MLAPI
                                 s_MLAPIClientSTDRPCQueued.Begin();
                                 #endif
 
-                                InternalMessageHandler.RPCReceiveQueueItem(clientId, messageStream,receiveTime,RPCQueueManager.QueueItemType.ClientRpc);
+                                InternalMessageHandler.RPCReceiveQueueItem(clientId, messageStream,receiveTime,RPCQueueContainer.QueueItemType.ClientRpc);
 
                                 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                                 s_MLAPIClientSTDRPCQueued.End();

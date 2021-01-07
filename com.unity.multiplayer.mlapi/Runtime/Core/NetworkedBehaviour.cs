@@ -38,6 +38,9 @@ namespace MLAPI
             Client = 2
         }
 
+        /// <summary>
+        /// This is a temporary solution for channel names and the below hardcoded value might not be mandatory in the future.
+        /// </summary>
         private const string StandardRpc_ChannelName = "STDRPC";
 
 #pragma warning disable 414
@@ -49,12 +52,8 @@ namespace MLAPI
         internal BitWriter BeginSendServerRpc(ServerRpcSendParams sendParams, bool isReliable)
         {
             var rpcQueueMananger = NetworkingManager.Singleton.RpcQueueManager;
-            if (rpcQueueMananger == null)
-            {
-                return null;
-            }
 
-            var writer = rpcQueueMananger.BeginAddQueueItemToOutboundFrame(RPCQueueManager.QueueItemType.ServerRpc, Time.realtimeSinceStartup, StandardRpc_ChannelName, 0, NetworkingManager.Singleton.ServerClientId, null);
+            var writer = rpcQueueMananger.BeginAddQueueItemToOutboundFrame(RPCQueueContainer.QueueItemType.ServerRpc, Time.realtimeSinceStartup, StandardRpc_ChannelName, 0, NetworkingManager.Singleton.ServerClientId, null);
             writer.WriteBit(false); // Encrypted
             writer.WriteBit(false); // Authenticated
             writer.WriteBits(MLAPIConstants.MLAPI_SERVER_RPC, 6); // MessageType
@@ -77,12 +76,8 @@ namespace MLAPI
         {
             //This will start a new queue item entry and will then return the writer to the current frame's stream
             var rpcQueueMananger = NetworkingManager.Singleton.RpcQueueManager;
-            if (rpcQueueMananger == null)
-            {
-                return null;
-            }
 
-            var writer = rpcQueueMananger.BeginAddQueueItemToOutboundFrame(RPCQueueManager.QueueItemType.ClientRpc, Time.realtimeSinceStartup, StandardRpc_ChannelName, 0, NetworkId, sendParams.TargetClientIds ?? NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray());
+            var writer = rpcQueueMananger.BeginAddQueueItemToOutboundFrame(RPCQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, StandardRpc_ChannelName, 0, NetworkId, sendParams.TargetClientIds ?? NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray());
             writer.WriteBit(false); // Encrypted
             writer.WriteBit(false); // Authenticated
             writer.WriteBits(MLAPIConstants.MLAPI_CLIENT_RPC, 6); // MessageType

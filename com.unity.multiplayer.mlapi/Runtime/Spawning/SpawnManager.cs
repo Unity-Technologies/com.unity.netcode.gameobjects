@@ -411,7 +411,7 @@ namespace MLAPI.Spawning
                 return;
             }
 
-            RPCQueueManager rpcQueueManager = NetworkingManager.Singleton.RpcQueueManager;
+            RPCQueueContainer rpcQueueManager = NetworkingManager.Singleton.RpcQueueManager;
             if (rpcQueueManager == null)
             {
                 return;
@@ -422,7 +422,7 @@ namespace MLAPI.Spawning
 
             var QueueItem = new FrameQueueItem
             {
-                QueueItemType = RPCQueueManager.QueueItemType.CreateObject,
+                QueueItemType = RPCQueueContainer.QueueItemType.CreateObject,
                 NetworkId = 0,
                 ItemStream = stream,
                 Channel = "MLAPI_INTERNAL",
@@ -630,7 +630,10 @@ namespace MLAPI.Spawning
 
             //Removal of spawned object
             if (!SpawnedObjects.ContainsKey(networkId))
+            {
+                Debug.LogWarning("Trying to destroy object " + networkId.ToString() + " but it doesn't seem to exist anymore!");
                 return;
+            }
 
             var sobj = SpawnedObjects[networkId];
 
@@ -672,7 +675,7 @@ namespace MLAPI.Spawning
 
                             var QueueItem = new FrameQueueItem
                             {
-                                QueueItemType = RPCQueueManager.QueueItemType.DestroyObject,
+                                QueueItemType = RPCQueueContainer.QueueItemType.DestroyObject,
                                 NetworkId = networkId,
                                 ItemStream = stream,
                                 Channel = "MLAPI_INTERNAL",

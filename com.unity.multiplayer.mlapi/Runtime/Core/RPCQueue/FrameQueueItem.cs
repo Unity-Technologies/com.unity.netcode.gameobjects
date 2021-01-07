@@ -8,11 +8,12 @@ namespace MLAPI
     /// FrameQueueItem
     /// Container structure for RPCs written to the Queue Frame
     /// Used for both Inbound and Outbound RPCs
-    /// NOTE: This could eventually become obsolete as other systems mature
+    /// NOTE: This structure will change in the near future and is in a state of flux.
+    /// This will include removing specific properties or changing property types (i.e. Channel could become a byte value)
     /// </summary>
     public struct FrameQueueItem
     {
-        public RPCQueueManager.QueueItemType QueueItemType;
+        public RPCQueueContainer.QueueItemType QueueItemType;
         public SecuritySendFlags        SendFlags;
         public ulong                    NetworkId;          //Sender's network Identifier
         public string                   Channel;

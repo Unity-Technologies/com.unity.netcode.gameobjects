@@ -7,11 +7,10 @@ using MLAPI.Profiling;
 namespace MLAPI
 {
     /// <summary>
-    /// RPCQueueManager (Singleton Class)
+    /// RPCQueueContainer
     /// Handles the management of the RPC Queue which includes specifying when the Inbound or Outbound queue should be processed.
-    ///
     /// </summary>
-    public class RPCQueueManager
+    public class RPCQueueContainer
     {
         public enum QueueItemType
         {
@@ -151,13 +150,13 @@ namespace MLAPI
 
             if (!QueueHistory.ContainsKey(queueType))
             {
-                UnityEngine.Debug.LogError("You must initialize the RPCQueueManager before using MLAPI!");
+                UnityEngine.Debug.LogError("You must initialize the RPCQueueContainer before using MLAPI!");
                 return;
             }
 
             if (!QueueHistory[queueType].ContainsKey(StreamBufferIndex))
             {
-                UnityEngine.Debug.LogError("RPCQueueManager " + queueType + " queue stream buffer index out of range! [" + StreamBufferIndex + "]");
+                UnityEngine.Debug.LogError("RPCQueueContainer " + queueType + " queue stream buffer index out of range! [" + StreamBufferIndex + "]");
                 return;
             }
 
@@ -254,14 +253,6 @@ namespace MLAPI
             queueHistoryItem.QueueWriter.WriteSingle(timeStamp);
             queueHistoryItem.QueueWriter.WriteUInt64(sourceNetworkId);
 
-            //NSS-TODO: Determine if we need to store the channel (Inbound only)
-            queueHistoryItem.QueueWriter.WriteByte(0);
-
-            //NSS-TODO: Determine if we need to store the clients (Inbound only)
-            queueHistoryItem.QueueWriter.WriteInt32(0);
-
-            //Always make sure we are positioned at the start of the stream
-
             //Inbound we copy the entire packet and store the position offset
             long streamSize = message.Length;
             queueHistoryItem.QueueWriter.WriteInt64(streamSize);
@@ -344,7 +335,7 @@ namespace MLAPI
             //Sanity check
             if (pbWriter != queueHistoryItem.QueueWriter)
             {
-                UnityEngine.Debug.LogError("RPCQueueManager " + QueueHistoryFrame.QueueFrameType.Outbound + " passed writer is not the same as the current PooledBitWrite for the " + QueueHistoryFrame.QueueFrameType.Outbound + "]!");
+                UnityEngine.Debug.LogError("RPCQueueContainer " + QueueHistoryFrame.QueueFrameType.Outbound + " passed writer is not the same as the current PooledBitWrite for the " + QueueHistoryFrame.QueueFrameType.Outbound + "]!");
             }
 
             //The total size of the frame is the last known position of the stream
@@ -358,7 +349,7 @@ namespace MLAPI
             //////////////////////////////////////////////////////////////
             queueHistoryItem.QueueStream.Position = queueHistoryItem.GetCurrentMarkedPosition();
 
-            Int64 MSGSize = (Int64)(queueHistoryItem.TotalSize - (queueHistoryItem.GetCurrentMarkedPosition() + 8));
+            long MSGSize = (long)(queueHistoryItem.TotalSize - (queueHistoryItem.GetCurrentMarkedPosition() + 8));
             //Write the actual size of the RPC message
             queueHistoryItem.QueueWriter.WriteInt64(MSGSize);
 
@@ -384,13 +375,13 @@ namespace MLAPI
 
             if (!QueueHistory.ContainsKey(QueueHistoryFrame.QueueFrameType.Outbound))
             {
-                UnityEngine.Debug.LogError("You must initialize the RPCQueueManager before using MLAPI!");
+                UnityEngine.Debug.LogError("You must initialize the RPCQueueContainer before using MLAPI!");
                 return null;
             }
 
             if (!QueueHistory[QueueHistoryFrame.QueueFrameType.Outbound].ContainsKey(StreamBufferIndex))
             {
-                UnityEngine.Debug.LogError("RPCQueueManager " + frameType + " queue stream buffer index out of range! [" + StreamBufferIndex + "]");
+                UnityEngine.Debug.LogError("RPCQueueContainer " + frameType + " queue stream buffer index out of range! [" + StreamBufferIndex + "]");
                 return null;
             }
 
@@ -414,7 +405,7 @@ namespace MLAPI
                     ResetQueueHistoryFrame(queueHistoryItemInbound);
                     PooledBitStream pooledBitStream = PooledBitStream.Get();
                     FrameQueueItem frameQueueItem = queueHistoryItemOutbound.GetFirstQueueItem();
-                    while (frameQueueItem.QueueItemType != RPCQueueManager.QueueItemType.None)
+                    while (frameQueueItem.QueueItemType != RPCQueueContainer.QueueItemType.None)
                     {
                         pooledBitStream.SetLength(frameQueueItem.StreamSize);
                         pooledBitStream.Position = 0;
@@ -494,11 +485,11 @@ namespace MLAPI
         }
 
         /// <summary>
-        /// Constructor for RPCQueueManager
+        /// Constructor for RPCQueueContainer
         /// </summary>
         /// <param name="isLoopBackEnabled">will redirect traffic back to the receive queue buffer (generally used for debugging or testing)</param>
         /// <param name="isTestingEnabled">used for detecting if we are running tests</param>
-        public RPCQueueManager(bool isLoopBackEnabled = false, bool isTestingEnabled = false)
+        public RPCQueueContainer(bool isLoopBackEnabled = false, bool isTestingEnabled = false)
         {
             IsTestingEnabled = isTestingEnabled;
             IsLoopbackEnabled = isLoopBackEnabled;

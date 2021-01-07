@@ -38,7 +38,7 @@ namespace MLAPI
 
         /// <summary>
         /// RCPQueueReeiveAndFlush
-        /// Parses through all incoming RPCs in the active RPC History Frame (RPCQueueManager)
+        /// Parses through all incoming RPCs in the active RPC History Frame (RPCQueueContainer)
         /// </summary>
         private static void RPCReceiveQueueProcessFlush()
         {
@@ -53,7 +53,7 @@ namespace MLAPI
                 if (CurrentFrame != null)
                 {
                     var currentQueueItem = CurrentFrame.GetFirstQueueItem();
-                    while (currentQueueItem.QueueItemType != RPCQueueManager.QueueItemType.None)
+                    while (currentQueueItem.QueueItemType != RPCQueueContainer.QueueItemType.None)
                     {
                         AdvanceFrameHistory = true;
                         if (rpcQueueManager.IsLoopBack())
@@ -120,7 +120,7 @@ namespace MLAPI
                 var PoolStream = queueItem.ItemStream;
                 switch (queueItem.QueueItemType)
                 {
-                    case RPCQueueManager.QueueItemType.CreateObject:
+                    case RPCQueueContainer.QueueItemType.CreateObject:
                     {
                         foreach (ulong clientId in queueItem.ClientIds)
                         {
@@ -130,7 +130,7 @@ namespace MLAPI
                         ProfilerStatManager.rpcsSent.Record(queueItem.ClientIds.Length);
                         break;
                     }
-                    case RPCQueueManager.QueueItemType.DestroyObject:
+                    case RPCQueueContainer.QueueItemType.DestroyObject:
                     {
                         foreach (ulong clientId in queueItem.ClientIds)
                         {
@@ -171,7 +171,7 @@ namespace MLAPI
                     if (CurrentFrame != null)
                     {
                         var currentQueueItem = CurrentFrame.GetFirstQueueItem();
-                        while (currentQueueItem.QueueItemType != RPCQueueManager.QueueItemType.None)
+                        while (currentQueueItem.QueueItemType != RPCQueueContainer.QueueItemType.None)
                         {
                             AdvanceFrameHistory = true;
                             SendFrameQueueItem(currentQueueItem);
@@ -196,7 +196,7 @@ namespace MLAPI
         {
             switch (queueItem.QueueItemType)
             {
-                case RPCQueueManager.QueueItemType.ServerRpc:
+                case RPCQueueContainer.QueueItemType.ServerRpc:
                 {
                     NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(queueItem.NetworkId, queueItem.MessageData,
                         string.IsNullOrEmpty(queueItem.Channel) ? "MLAPI_DEFAULT_MESSAGE" : queueItem.Channel);
@@ -206,7 +206,7 @@ namespace MLAPI
                     ProfilerStatManager.rpcsSent.Record();
                     break;
                 }
-                case RPCQueueManager.QueueItemType.ClientRpc:
+                case RPCQueueContainer.QueueItemType.ClientRpc:
                 {
                     foreach (ulong clientid in queueItem.ClientIds)
                     {

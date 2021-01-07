@@ -9,6 +9,8 @@ namespace MLAPI
     /// </summary>
     public class QueueHistoryFrame
     {
+        private const int MaximumClients = 512;
+
         public enum QueueFrameType
         {
             Inbound,
@@ -25,7 +27,7 @@ namespace MLAPI
 
         private int QueueItemOffsetIndex;
         private FrameQueueItem CurrentQueueItem;
-        private readonly QueueFrameType queueFrameType;
+        private readonly QueueFrameType _QueueFrameType;
 
         long CurrentStreamSizeMark;
 
@@ -36,7 +38,7 @@ namespace MLAPI
         /// <returns></returns>
         public QueueFrameType GetQueueFrameType()
         {
-            return queueFrameType;
+            return _QueueFrameType;
         }
 
         /// <summary>
@@ -69,26 +71,21 @@ namespace MLAPI
         private FrameQueueItem GetCurrentQueueItem()
         {
             //Write the packed version of the queueItem to our current queue history buffer
-            CurrentQueueItem.QueueItemType = (RPCQueueManager.QueueItemType)QueueReader.ReadUInt16();
+            CurrentQueueItem.QueueItemType = (RPCQueueContainer.QueueItemType)QueueReader.ReadUInt16();
             CurrentQueueItem.SendFlags = (Security.SecuritySendFlags)QueueReader.ReadUInt16();
             QueueReader.ReadSingle();
             CurrentQueueItem.NetworkId = QueueReader.ReadUInt64();
 
-            //NSS: For now, with inbound we are punting on reading the channel and clients for these reasons:
-            //1.) For right now, channels are not pertinent as the message is already received
-            //2.) Clients are not pertinent as a received RPC is a "single target" destination
-            if (queueFrameType == QueueFrameType.Inbound)
+            //Clear out any current value for the client ids
+            CurrentQueueItem.ClientIds = new ulong[0];
+
+            //If outbound, determine if any client ids needs to be added
+            if (_QueueFrameType == QueueFrameType.Outbound)
             {
-                QueueReader.ReadByte();
-                QueueReader.ReadInt32();
-                CurrentQueueItem.ClientIds = new ulong[0];
-            }
-            else
-            {
-                //NSS: Outbound we care about both channel and clients
+                //Outbound we care about both channel and clients
                 CurrentQueueItem.Channel = QueueReader.ReadString().ToString();
                 int NumClients = QueueReader.ReadInt32();
-                if (NumClients > 0)
+                if (NumClients > 0 && NumClients < MaximumClients)
                 {
                     ulong[] clientIdArray = new ulong[NumClients];
                     for (int i = 0; i < NumClients; i++)
@@ -105,17 +102,13 @@ namespace MLAPI
                         CurrentQueueItem.ClientIds = clientIdArray;
                     }
                 }
-                else
-                {
-                    CurrentQueueItem.ClientIds = new ulong[0];
-                }
             }
 
             //Get the stream size
             CurrentQueueItem.StreamSize = QueueReader.ReadInt64();
 
             //Inbound and Outbound message streams are handled differently
-            if (queueFrameType == QueueFrameType.Inbound)
+            if (_QueueFrameType == QueueFrameType.Inbound)
             {
                 //Get our offset
                 long Position = QueueReader.ReadInt64();
@@ -150,7 +143,7 @@ namespace MLAPI
             QueueItemOffsetIndex++;
             if (QueueItemOffsetIndex >= QueueItemOffsets.Count)
             {
-                CurrentQueueItem.QueueItemType = RPCQueueManager.QueueItemType.None;
+                CurrentQueueItem.QueueItemType = RPCQueueContainer.QueueItemType.None;
                 return CurrentQueueItem;
             }
 
@@ -170,7 +163,7 @@ namespace MLAPI
                 QueueItemOffsetIndex = 0;
                 QueueStream.Position = 0;
 
-                if (queueFrameType == QueueFrameType.Inbound)
+                if (_QueueFrameType == QueueFrameType.Inbound)
                 {
                     CurrentQueueItem.ItemStream = PooledBitStream.Get();
                     CurrentQueueItem.StreamWriter = PooledBitWriter.Get(CurrentQueueItem.ItemStream);
@@ -181,7 +174,7 @@ namespace MLAPI
             }
             else
             {
-                CurrentQueueItem.QueueItemType = RPCQueueManager.QueueItemType.None;
+                CurrentQueueItem.QueueItemType = RPCQueueContainer.QueueItemType.None;
                 return CurrentQueueItem;
             }
         }
@@ -219,7 +212,7 @@ namespace MLAPI
         /// <param name="queueType">type of queue history frame (Inbound/Outbound)</param>
         public QueueHistoryFrame(QueueFrameType queueType)
         {
-            queueFrameType = queueType;
+            _QueueFrameType = queueType;
             CurrentQueueItem = new FrameQueueItem();
         }
     }
