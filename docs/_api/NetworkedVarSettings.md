@@ -15,11 +15,11 @@ permalink: /api/networked-var-settings/
 	<h3 markdown="1">Public Fields</h3>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public [``NetworkedVarPermission``](/api/networked-var-permission/) WritePermission;</b></h4>
-		<p>Defines the read permissions for this var</p>
+		<p>Defines the write permissions for this var</p>
 	</div>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public [``NetworkedVarPermission``](/api/networked-var-permission/) ReadPermission;</b></h4>
-		<p>Defines the write permissions for this var</p>
+		<p>Defines the read permissions for this var</p>
 	</div>
 	<div style="line-height: 1;">
 		<h4 markdown="1"><b>public [``NetworkedVarPermissionsDelegate``](/api/networked-var-permissions-delegate/) WritePermissionCallback;</b></h4>
