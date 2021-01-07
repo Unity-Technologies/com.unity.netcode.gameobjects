@@ -688,6 +688,7 @@ namespace MLAPI.Spawning
                                 ClientIds = NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray()
                             };
                             rpcQueueManager.AddToInternalMLAPISendQueue(QueueItem);
+                            writer.Dispose();
                         }
                     }
                 }

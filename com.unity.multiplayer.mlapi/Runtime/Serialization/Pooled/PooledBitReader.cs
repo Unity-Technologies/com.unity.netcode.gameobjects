@@ -9,7 +9,7 @@ namespace MLAPI.Serialization.Pooled
     public sealed class PooledBitReader : BitReader, IDisposable
     {
         private bool isDisposed = false;
-        
+
         internal PooledBitReader(Stream stream) : base(stream)
         {
         }
@@ -34,6 +34,10 @@ namespace MLAPI.Serialization.Pooled
             {
                 isDisposed = true;
                 BitReaderPool.PutBackInPool(this);
+            }
+            else
+            {
+                UnityEngine.Debug.LogWarning("Disposing reader that thinks it is already disposed!");
             }
         }
     }

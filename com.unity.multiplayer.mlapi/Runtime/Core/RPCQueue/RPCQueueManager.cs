@@ -256,16 +256,19 @@ namespace MLAPI.Messaging
         internal void AddQueueItemToInboundFrame(QueueItemType qItemType, float timeStamp, ulong sourceNetworkId, BitStream message)
         {
             long originalPosition = message.Position;
-            BitReader BR = BitReaderPool.GetReader(message);
+            PooledBitReader BR = PooledBitReader.Get(message);
             //var byteValue = BR.ReadByte();         // MLAPI Proto Header (temporary, we reset position just below)
             var longValue = BR.ReadUInt64Packed(); // NetworkObjectId (temporary, we reset position just below)
 
             var shortValue = BR.ReadUInt16Packed(); // NetworkBehaviourId (temporary, we reset position just below)
             ushort updateStageValue = BR.ReadUInt16Packed();
-            if(longValue > 1111111 || shortValue > 111111)
+            if(longValue > 1111111 || shortValue > 11111)
             {
                 originalPosition = originalPosition;
             }
+            
+            BR.Dispose();
+            BR = null;
             NetworkUpdateManager.NetworkUpdateStages updateStage = NetworkUpdateManager.NetworkUpdateStages.UPDATE;
             if(System.Enum.IsDefined(typeof(NetworkUpdateManager.NetworkUpdateStages),(int)updateStageValue))
             {

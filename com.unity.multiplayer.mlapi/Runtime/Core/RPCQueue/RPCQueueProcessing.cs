@@ -80,16 +80,17 @@ namespace MLAPI
         /// </summary>
         public void ProcessSendQueue()
         {
+            InternalMessagesSendAndFlush();
+
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_MLAPIRPCQueueSend.Begin();
 #endif
-
             RPCQueueSendAndFlush();
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_MLAPIRPCQueueSend.End();
 #endif
-            InternalMessagesSendAndFlush();
+
         }
 
         /// <summary>

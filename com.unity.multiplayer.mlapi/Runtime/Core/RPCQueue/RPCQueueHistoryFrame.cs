@@ -199,9 +199,32 @@ namespace MLAPI.Messaging
 
                 if (queueFrameType == QueueFrameType.Inbound)
                 {
-                    CurrentQueueItem.ItemStream = PooledBitStream.Get();
-                    CurrentQueueItem.StreamWriter = PooledBitWriter.Get(CurrentQueueItem.ItemStream);
-                    CurrentQueueItem.StreamReader = PooledBitReader.Get(CurrentQueueItem.ItemStream);
+                    if(CurrentQueueItem.ItemStream == null)
+                    {
+                        CurrentQueueItem.ItemStream = PooledBitStream.Get();
+                    }
+                    else
+                    {
+                        UnityEngine.Debug.LogError("Current queue item already has a stream!");
+                    }
+                    if(CurrentQueueItem.StreamWriter == null)
+                    {
+                        CurrentQueueItem.StreamWriter = PooledBitWriter.Get(CurrentQueueItem.ItemStream);
+                    }
+                    else
+                    {
+                        UnityEngine.Debug.LogError("Current queue writer already has an instance!");
+                    }
+
+                    if(CurrentQueueItem.StreamReader == null)
+                    {
+                        CurrentQueueItem.StreamReader = PooledBitReader.Get(CurrentQueueItem.ItemStream);
+                    }
+                    else
+                    {
+                        UnityEngine.Debug.LogError("Current queue reader already has an instance!");
+                    }
+
                 }
 
                 return GetCurrentQueueItem();
@@ -235,7 +258,8 @@ namespace MLAPI.Messaging
 
             if (CurrentQueueItem.ItemStream != null)
             {
-                CurrentQueueItem.ItemStream.Dispose();
+               CurrentQueueItem.ItemStream.Dispose();
+
                 CurrentQueueItem.ItemStream = null;
             }
         }

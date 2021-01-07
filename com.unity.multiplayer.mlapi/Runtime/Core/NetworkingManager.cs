@@ -737,14 +737,14 @@ namespace MLAPI
         private void Awake()
         {
             //We always add the networking manager as the first entry
-            NetworkLoopUpdateSystems.Insert(0, this);
+            //NetworkLoopUpdateSystems.Insert(0, this);
 
             RpcQueueManager = new RPCQueueManager(LoopbackEnabled);
             //Note: Since frame history is not being used, this is set to 0
             //To test frame history, increase the number to (n) where n > 0
             RpcQueueManager?.Initialize(0);
 
-            NetworkUpdateManager.HandleNetworkLoopRegistrations(NetworkLoopUpdateSystems);
+            //NetworkUpdateManager.HandleNetworkLoopRegistrations(NetworkLoopUpdateSystems);
 
             NetworkUpdateManager.RegisterNetworkUpdateAction(NetworkPreUpdate, NetworkUpdateManager.NetworkUpdateStages.PREUPDATE);
             NetworkUpdateManager.RegisterNetworkUpdateAction(NetworkFixedUpdate, NetworkUpdateManager.NetworkUpdateStages.FIXEDUPDATE);
@@ -1267,7 +1267,7 @@ namespace MLAPI
         public static void InvokeRpc(FrameQueueItem queueItem)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_InvokeRPC.Begin();
+            //s_InvokeRPC.Begin();
 #endif
 
             var networkObjectId = queueItem.StreamReader.ReadUInt64Packed();
@@ -1296,7 +1296,7 @@ namespace MLAPI
             }
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_InvokeRPC.End();
+            //s_InvokeRPC.End();
 #endif
         }
 
