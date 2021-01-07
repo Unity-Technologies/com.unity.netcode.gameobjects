@@ -46,17 +46,28 @@ namespace MLAPI
 
         private int PopLength(in BitStream messageStream)
         {
-            byte read = (byte)messageStream.ReadByte();
+            int read = messageStream.ReadByte();
             // if we read a non-zero value, we have a single byte length
+            // or a -1 error we can return
             if (read != LongLenMarker)
             {
                 return read;
             }
-            // otherwise, a two-byte length follows
-            int length = messageStream.ReadByte();
-            length += messageStream.ReadByte() * 256;
+            // otherwise, a two-byte length follows. We'll read in len1, len2
+            int len1 = messageStream.ReadByte();
+            if (len1 < 0)
+            {
+                // pass errors back to caller
+                return len1;
+            }
+            int len2 = messageStream.ReadByte();
+            if (len2 < 0)
+            {
+                // pass errors back to caller
+                return len2;
+            }
 
-            return length;
+            return len1 + len2 * 256;
         }
 
         /// <summary>
@@ -181,6 +192,12 @@ namespace MLAPI
                 // read the length of the next RPC
                 int rpcSize = PopLength(messageStream);
 
+                if (rpcSize < 0)
+                {
+                    // abort if there's an error reading lengths
+                    return 0;
+                }
+
                 // copy what comes after current stream position
                 long pos = messageStream.Position;
                 BitStream copy = PooledBitStream.Get();
@@ -196,6 +213,5 @@ namespace MLAPI
             } while (messageStream.Position < messageStream.Length);
             return 0;
         }
-
     }
 }
