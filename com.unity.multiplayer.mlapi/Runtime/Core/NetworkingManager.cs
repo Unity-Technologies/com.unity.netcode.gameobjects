@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using UnityEngine;
-using UnityEngine.LowLevel;
 using System.Linq;
 using MLAPI.Logging;
 using UnityEngine.SceneManagement;
@@ -35,7 +34,7 @@ namespace MLAPI
     /// The main component of the library
     /// </summary>
     [AddComponentMenu("MLAPI/NetworkingManager", -100)]
-    public class NetworkingManager : MonoBehaviour,INetworkUpdateLoopSystem
+    public class NetworkingManager : MonoBehaviour
     {
         // RuntimeAccessModifiersILPP will make this `public`
         internal static readonly Dictionary<uint, Action<NetworkedBehaviour, BitReader, ulong>> __ntable = new Dictionary<uint, Action<NetworkedBehaviour, BitReader, ulong>>();
@@ -71,11 +70,7 @@ namespace MLAPI
         [HideInInspector]
         public bool LoopbackEnabled;
 
-        public RpcQueueContainer RpcQueueManager { get; private set; }
-
-
-
-
+        public RpcQueueContainer rpcQueueContainer { get; private set; }
 
         /// <summary>
         /// A synchronized time, represents the time in seconds since the server application started. Is replicated across all clients
@@ -328,7 +323,7 @@ namespace MLAPI
             {
                 if (hashes.Contains(NetworkConfig.NetworkedPrefabs[i].Hash))
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogError("PrefabHash collision! You have two prefabs with the same hash (" + NetworkConfig.NetworkedPrefabs[i].Prefab.name + "). This is not supported");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogError("PrefabHash collision! You have two prefabs with the same hash. This is not supported");
                 }
 
                 hashes.Add(NetworkConfig.NetworkedPrefabs[i].Hash);
@@ -658,7 +653,7 @@ namespace MLAPI
 
         private void OnDestroy()
         {
-            RpcQueueManager?.OnExiting();
+            rpcQueueContainer?.OnExiting();
 
             if (Singleton != null && Singleton == this)
             {
@@ -667,18 +662,8 @@ namespace MLAPI
             }
         }
 
-
-        public delegate void OnShuttingDownCurrentSessionDelegateHandler();
-        public event OnShuttingDownCurrentSessionDelegateHandler OnShuttingDownCurrentSession;
-
         private void Shutdown()
         {
-            if(OnShuttingDownCurrentSession != null)
-            {
-                OnShuttingDownCurrentSession.Invoke();
-            }
-            OnShuttingDownCurrentSession = null;
-
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo("Shutdown()");
             NetworkProfiler.Stop();
             IsListening = false;
@@ -694,54 +679,20 @@ namespace MLAPI
             if (NetworkConfig != null && NetworkConfig.NetworkTransport != null) //The Transport is set during Init time, thus it is possible for the Transport to be null
                 NetworkConfig.NetworkTransport.Shutdown();
 
-            if (RpcQueueManager != null)
+            if (rpcQueueContainer != null)
             {
-                RpcQueueManager.Shutdown();
-                RpcQueueManager = null;
+                rpcQueueContainer.Shutdown();
+                rpcQueueContainer = null;
             }
-        }
-
-
-        public List<INetworkUpdateLoopSystem> NetworkLoopUpdateSystems;
-
-        public NetworkUpdateManager.NetworkUpdateLoopCallbackFunction RegisterUpdate(NetworkUpdateManager.NetworkUpdateStages stage )
-        {
-            NetworkUpdateManager.NetworkUpdateLoopCallbackFunction networkUpdateLoopCallback = null;
-            switch(stage)
-            {
-                case NetworkUpdateManager.NetworkUpdateStages.PREUPDATE:
-                    {
-                        networkUpdateLoopCallback = NetworkPreUpdate;
-                        break;
-                    }
-                case NetworkUpdateManager.NetworkUpdateStages.FIXEDUPDATE:
-                    {
-                        networkUpdateLoopCallback = NetworkFixedUpdate;
-                        break;
-                    }
-                case NetworkUpdateManager.NetworkUpdateStages.UPDATE:
-                    {
-                        networkUpdateLoopCallback = NetworkUpdate;
-                        break;
-                    }
-                case NetworkUpdateManager.NetworkUpdateStages.LATEUPDATE:
-                    {
-                        networkUpdateLoopCallback = NetworkLateUpdate;
-                        break;
-                    }
-            }
-            return networkUpdateLoopCallback;
         }
 
 
         private void Awake()
         {
-            RpcQueueManager = new RpcQueueContainer(LoopbackEnabled);
+            rpcQueueContainer = new RpcQueueContainer(LoopbackEnabled);
             //Note: Since frame history is not being used, this is set to 0
             //To test frame history, increase the number to (n) where n > 0
-            RpcQueueManager.Initialize(0);
-
-            //NetworkUpdateManager.HandleNetworkLoopRegistrations(NetworkLoopUpdateSystems);
+            rpcQueueContainer.Initialize(0);
 
             NetworkUpdateManager.RegisterNetworkUpdateAction(NetworkPreUpdate, NetworkUpdateManager.NetworkUpdateStages.PREUPDATE);
             NetworkUpdateManager.RegisterNetworkUpdateAction(NetworkFixedUpdate, NetworkUpdateManager.NetworkUpdateStages.FIXEDUPDATE);
@@ -770,9 +721,9 @@ namespace MLAPI
                     s_ReceiveTick.Begin();
 #endif
                     bool IsLoopBack = false;
-                    if (RpcQueueManager != null)
+                    if (rpcQueueContainer != null)
                     {
-                        IsLoopBack = RpcQueueManager.IsLoopBack();
+                        IsLoopBack = rpcQueueContainer.IsLoopBack();
                     }
 
                     // @mfatihmar (Unity) Begin: Temporary, inbound RPC queue will replace this workaround
@@ -806,16 +757,18 @@ namespace MLAPI
                     lastReceiveTickTime = NetworkTime;
 
                     NetworkProfiler.EndTick();
+
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_ReceiveTick.End();
 #endif
+                    rpcQueueContainer?.ProcessAndFlushRPCQueue(RpcQueueContainer.RPCQueueProcessingTypes.Receive, NetworkUpdateManager.NetworkUpdateStages.PREUPDATE);
                 }
             }
         }
 
         private void NetworkFixedUpdate()
         {
-            RpcQueueManager?.ProcessAndFlushRPCQueue(RpcQueueContainer.RPCQueueProcessingTypes.Receive);
+            rpcQueueContainer?.ProcessAndFlushRPCQueue(RpcQueueContainer.RPCQueueProcessingTypes.Receive,NetworkUpdateManager.NetworkUpdateStages.FIXEDUPDATE);
         }
 
         /// <summary>
@@ -826,7 +779,7 @@ namespace MLAPI
         {
             if (IsListening)
             {
-                RpcQueueManager?.ProcessAndFlushRPCQueue(RPCQueueManager.RPCQueueProcessingTypes.Receive,NetworkUpdateManager.NetworkUpdateStages.UPDATE);
+                rpcQueueContainer?.ProcessAndFlushRPCQueue(RpcQueueContainer.RPCQueueProcessingTypes.Receive, NetworkUpdateManager.NetworkUpdateStages.UPDATE);
 
                 if (((NetworkTime - lastEventTickTime >= (1f / NetworkConfig.EventTickrate))))
                 {
@@ -906,8 +859,8 @@ namespace MLAPI
         /// </summary>
         private void NetworkLateUpdate()
         {
-            RpcQueueManager?.ProcessAndFlushRPCQueue(RPCQueueManager.RPCQueueProcessingTypes.Receive, NetworkUpdateManager.NetworkUpdateStages.LATEUPDATE);
-            RpcQueueManager?.ProcessAndFlushRPCQueue(RPCQueueManager.RPCQueueProcessingTypes.Send, NetworkUpdateManager.NetworkUpdateStages.LATEUPDATE);            
+            rpcQueueContainer?.ProcessAndFlushRPCQueue(RpcQueueContainer.RPCQueueProcessingTypes.Receive, NetworkUpdateManager.NetworkUpdateStages.LATEUPDATE);
+            rpcQueueContainer?.ProcessAndFlushRPCQueue(RpcQueueContainer.RPCQueueProcessingTypes.Send, NetworkUpdateManager.NetworkUpdateStages.LATEUPDATE);
         }
 
         internal void UpdateNetworkTime(ulong clientId, float netTime, float receiveTime, bool warp = false)
@@ -1243,7 +1196,7 @@ namespace MLAPI
 #endif
         }
 
-        private static void ReceiveCallback(BitStream messageStream, MLAPI.RpcQueueContainer.QueueItemType messageType, ulong clientId, float receiveTime)
+        private static void ReceiveCallback(BitStream messageStream, RpcQueueContainer.QueueItemType messageType, ulong clientId, float receiveTime)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (messageType == RpcQueueContainer.QueueItemType.ServerRpc)
@@ -1276,14 +1229,12 @@ namespace MLAPI
         public static void InvokeRpc(FrameQueueItem queueItem)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            //s_InvokeRPC.Begin();
+            s_InvokeRPC.Begin();
 #endif
-
             var networkObjectId = queueItem.streamReader.ReadUInt64Packed();
             var networkBehaviourId = queueItem.streamReader.ReadUInt16Packed();
             var UpdateStage = queueItem.streamReader.ReadUInt16Packed();
             var networkMethodId = queueItem.streamReader.ReadUInt32Packed();
-
 
             if (__ntable.ContainsKey(networkMethodId))
             {
@@ -1297,7 +1248,7 @@ namespace MLAPI
             }
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            //s_InvokeRPC.End();
+            s_InvokeRPC.End();
 #endif
         }
 
