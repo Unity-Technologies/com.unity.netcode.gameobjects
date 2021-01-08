@@ -13,15 +13,16 @@ namespace MLAPI
     /// </summary>
     public struct FrameQueueItem
     {
-        public RPCQueueContainer.QueueItemType QueueItemType;
-        public SecuritySendFlags        SendFlags;
-        public ulong                    NetworkId;          //Sender's network Identifier
-        public string                   Channel;
-        public ulong[]                  ClientIds;          //Server invoked Client RPCs only
-        public long                     StreamSize;
-        public PooledBitWriter          StreamWriter;
-        public PooledBitReader          StreamReader;
-        public PooledBitStream          ItemStream;
-        public ArraySegment<byte>       MessageData;
+        public RpcQueueContainer.QueueItemType queueItemType;
+        public SecuritySendFlags        sendFlags;
+        public ulong                    networkId;          //Sender's network Identifier
+        public string                   channel;
+        public ulong[]                  clientIds;          //Server invoked Client RPCs only
+        public long                     streamSize;
+        public float                    timeStamp;
+        public PooledBitWriter          streamWriter;
+        public PooledBitReader          streamReader;
+        public PooledBitStream          itemStream;
+        public ArraySegment<byte>       messageData;
     }
 }

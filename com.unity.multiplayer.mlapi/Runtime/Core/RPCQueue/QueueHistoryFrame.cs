@@ -5,31 +5,30 @@ namespace MLAPI
 {
     /// <summary>
     /// QueueHistoryFrame
-    /// All queued RPCs end up in a PooledBitStream within a QueueHistoryFrame instance.
+    /// Used by the RpcQueueContainer to hold queued RPCs
+    /// All queued Rpcs end up in a PooledBitStream within a QueueHistoryFrame instance.
     /// </summary>
     public class QueueHistoryFrame
     {
-        private const int MaximumClients = 512;
-
         public enum QueueFrameType
         {
             Inbound,
             Outbound,
         }
 
-        public uint TotalSize;
+        public uint            TotalSize;
+        public List<uint>      queueItemOffsets;
 
-        public PooledBitStream QueueStream;
-        public PooledBitWriter QueueWriter;
-        public PooledBitReader QueueReader;
+        public PooledBitStream queueStream;
+        public PooledBitWriter queueWriter;
+        public PooledBitReader queueReader;
 
-        public List<uint> QueueItemOffsets;
 
-        private int QueueItemOffsetIndex;
-        private FrameQueueItem CurrentQueueItem;
-        private readonly QueueFrameType _QueueFrameType;
-
-        long CurrentStreamSizeMark;
+        private int                     m_QueueItemOffsetIndex;
+        private FrameQueueItem          m_CurrentQueueItem;
+        private readonly QueueFrameType m_QueueFrameType;
+        private int                     m_MaximumClients;
+        private long                    m_CurrentStreamSizeMark;
 
         /// <summary>
         /// GetQueueFrameType
@@ -38,7 +37,7 @@ namespace MLAPI
         /// <returns></returns>
         public QueueFrameType GetQueueFrameType()
         {
-            return _QueueFrameType;
+            return m_QueueFrameType;
         }
 
         /// <summary>
@@ -47,21 +46,24 @@ namespace MLAPI
         /// </summary>
         public void MarkCurrentStreamPosition()
         {
-            if (QueueStream != null)
+            if (queueStream != null)
             {
-                CurrentStreamSizeMark = QueueStream.Position;
+                m_CurrentStreamSizeMark = queueStream.Position;
             }
             else
             {
-                CurrentStreamSizeMark = 0;
+                m_CurrentStreamSizeMark = 0;
             }
         }
 
+        /// <summary>
+        /// Returns the current position that was marked (to track size of RPC msg)
+        /// </summary>
+        /// <returns>m_CurrentStreamSizeMark</returns>
         public long GetCurrentMarkedPosition()
         {
-            return CurrentStreamSizeMark;
+            return m_CurrentStreamSizeMark;
         }
-
 
         /// <summary>
         /// GetCurrentQueueItem
@@ -71,64 +73,64 @@ namespace MLAPI
         private FrameQueueItem GetCurrentQueueItem()
         {
             //Write the packed version of the queueItem to our current queue history buffer
-            CurrentQueueItem.QueueItemType = (RPCQueueContainer.QueueItemType)QueueReader.ReadUInt16();
-            CurrentQueueItem.SendFlags = (Security.SecuritySendFlags)QueueReader.ReadUInt16();
-            QueueReader.ReadSingle();
-            CurrentQueueItem.NetworkId = QueueReader.ReadUInt64();
+            m_CurrentQueueItem.queueItemType = (RpcQueueContainer.QueueItemType)queueReader.ReadUInt16();
+            m_CurrentQueueItem.sendFlags = (Security.SecuritySendFlags)queueReader.ReadUInt16();
+            m_CurrentQueueItem.timeStamp = queueReader.ReadSingle();
+            m_CurrentQueueItem.networkId = queueReader.ReadUInt64();
 
             //Clear out any current value for the client ids
-            CurrentQueueItem.ClientIds = new ulong[0];
+            m_CurrentQueueItem.clientIds = new ulong[0];
 
             //If outbound, determine if any client ids needs to be added
-            if (_QueueFrameType == QueueFrameType.Outbound)
+            if (m_QueueFrameType == QueueFrameType.Outbound)
             {
                 //Outbound we care about both channel and clients
-                CurrentQueueItem.Channel = QueueReader.ReadString().ToString();
-                int NumClients = QueueReader.ReadInt32();
-                if (NumClients > 0 && NumClients < MaximumClients)
+                m_CurrentQueueItem.channel = queueReader.ReadString().ToString();
+                int NumClients = queueReader.ReadInt32();
+                if (NumClients > 0 && NumClients < m_MaximumClients)
                 {
                     ulong[] clientIdArray = new ulong[NumClients];
                     for (int i = 0; i < NumClients; i++)
                     {
-                        clientIdArray[i] = QueueReader.ReadUInt64();
+                        clientIdArray[i] = queueReader.ReadUInt64();
                     }
 
-                    if (CurrentQueueItem.ClientIds == null)
+                    if (m_CurrentQueueItem.clientIds == null)
                     {
-                        CurrentQueueItem.ClientIds = clientIdArray;
+                        m_CurrentQueueItem.clientIds = clientIdArray;
                     }
                     else
                     {
-                        CurrentQueueItem.ClientIds = clientIdArray;
+                        m_CurrentQueueItem.clientIds = clientIdArray;
                     }
                 }
             }
 
             //Get the stream size
-            CurrentQueueItem.StreamSize = QueueReader.ReadInt64();
+            m_CurrentQueueItem.streamSize = queueReader.ReadInt64();
 
             //Inbound and Outbound message streams are handled differently
-            if (_QueueFrameType == QueueFrameType.Inbound)
+            if (m_QueueFrameType == QueueFrameType.Inbound)
             {
                 //Get our offset
-                long Position = QueueReader.ReadInt64();
+                long Position = queueReader.ReadInt64();
                 //Always make sure we are positioned at the start of the stream before we write
-                CurrentQueueItem.ItemStream.Position = 0;
+                m_CurrentQueueItem.itemStream.Position = 0;
 
-                //Write the entire message to the CurrentQueueItem stream (1 stream is re-used for all incoming RPCs)
-                CurrentQueueItem.StreamWriter.ReadAndWrite(QueueReader, CurrentQueueItem.StreamSize);
+                //Write the entire message to the m_CurrentQueueItem stream (1 stream is re-used for all incoming RPCs)
+                m_CurrentQueueItem.streamWriter.ReadAndWrite(queueReader, m_CurrentQueueItem.streamSize);
 
                 //Reset the position back to the offset so std rpc API can process the message properly
                 //(i.e. minus the already processed header)
-                CurrentQueueItem.ItemStream.Position = Position;
+                m_CurrentQueueItem.itemStream.Position = Position;
             }
             else
             {
                 //Create a byte array segment for outbound sending
-                CurrentQueueItem.MessageData = QueueReader.CreateArraySegment((int)CurrentQueueItem.StreamSize, (int)QueueStream.Position);
+                m_CurrentQueueItem.messageData = queueReader.CreateArraySegment((int)m_CurrentQueueItem.streamSize, (int)queueStream.Position);
             }
 
-            return CurrentQueueItem;
+            return m_CurrentQueueItem;
         }
 
         /// <summary>
@@ -139,12 +141,12 @@ namespace MLAPI
         /// <returns>FrameQueueItem</returns>
         public FrameQueueItem GetNextQueueItem()
         {
-            QueueStream.Position = QueueItemOffsets[QueueItemOffsetIndex];
-            QueueItemOffsetIndex++;
-            if (QueueItemOffsetIndex >= QueueItemOffsets.Count)
+            queueStream.Position = queueItemOffsets[m_QueueItemOffsetIndex];
+            m_QueueItemOffsetIndex++;
+            if (m_QueueItemOffsetIndex >= queueItemOffsets.Count)
             {
-                CurrentQueueItem.QueueItemType = RPCQueueContainer.QueueItemType.None;
-                return CurrentQueueItem;
+                m_CurrentQueueItem.queueItemType = RpcQueueContainer.QueueItemType.None;
+                return m_CurrentQueueItem;
             }
 
             return GetCurrentQueueItem();
@@ -153,56 +155,56 @@ namespace MLAPI
         /// <summary>
         /// GetFirstQueueItem
         /// Should be called the first time a queue item is pulled from a queue history frame.
-        /// This will reset the frame's stream indices and add a new stream and stream writer to the CurrentQueueItem instance.
+        /// This will reset the frame's stream indices and add a new stream and stream writer to the m_CurrentQueueItem instance.
         /// </summary>
         /// <returns>FrameQueueItem</returns>
         public FrameQueueItem GetFirstQueueItem()
         {
-            if (QueueStream.Position > 0)
+            if (queueStream.Position > 0)
             {
-                QueueItemOffsetIndex = 0;
-                QueueStream.Position = 0;
+                m_QueueItemOffsetIndex = 0;
+                queueStream.Position = 0;
 
-                if (_QueueFrameType == QueueFrameType.Inbound)
+                if (m_QueueFrameType == QueueFrameType.Inbound)
                 {
-                    CurrentQueueItem.ItemStream = PooledBitStream.Get();
-                    CurrentQueueItem.StreamWriter = PooledBitWriter.Get(CurrentQueueItem.ItemStream);
-                    CurrentQueueItem.StreamReader = PooledBitReader.Get(CurrentQueueItem.ItemStream);
+                    m_CurrentQueueItem.itemStream = PooledBitStream.Get();
+                    m_CurrentQueueItem.streamWriter = PooledBitWriter.Get(m_CurrentQueueItem.itemStream);
+                    m_CurrentQueueItem.streamReader = PooledBitReader.Get(m_CurrentQueueItem.itemStream);
                 }
 
                 return GetCurrentQueueItem();
             }
             else
             {
-                CurrentQueueItem.QueueItemType = RPCQueueContainer.QueueItemType.None;
-                return CurrentQueueItem;
+                m_CurrentQueueItem.queueItemType = RpcQueueContainer.QueueItemType.None;
+                return m_CurrentQueueItem;
             }
         }
 
         /// <summary>
         /// CloseQueue
         /// Should be called once all processing of the current frame is complete.
-        /// This only closes the CurrentQueueItem's stream which is used as a "middle-man" (currently)
+        /// This only closes the m_CurrentQueueItem's stream which is used as a "middle-man" (currently)
         /// for delivering the RPC message to the method requesting a queue item from a frame.
         /// </summary>
         public void CloseQueue()
         {
-            if (CurrentQueueItem.StreamWriter != null)
+            if (m_CurrentQueueItem.streamWriter != null)
             {
-                CurrentQueueItem.StreamWriter.Dispose();
-                CurrentQueueItem.StreamWriter = null;
+                m_CurrentQueueItem.streamWriter.Dispose();
+                m_CurrentQueueItem.streamWriter = null;
             }
 
-            if (CurrentQueueItem.StreamReader != null)
+            if (m_CurrentQueueItem.streamReader != null)
             {
-                CurrentQueueItem.StreamReader.Dispose();
-                CurrentQueueItem.StreamReader = null;
+                m_CurrentQueueItem.streamReader.Dispose();
+                m_CurrentQueueItem.streamReader = null;
             }
 
-            if (CurrentQueueItem.ItemStream != null)
+            if (m_CurrentQueueItem.itemStream != null)
             {
-                CurrentQueueItem.ItemStream.Dispose();
-                CurrentQueueItem.ItemStream = null;
+                m_CurrentQueueItem.itemStream.Dispose();
+                m_CurrentQueueItem.itemStream = null;
             }
         }
 
@@ -210,10 +212,11 @@ namespace MLAPI
         /// QueueHistoryFrame Constructor
         /// </summary>
         /// <param name="queueType">type of queue history frame (Inbound/Outbound)</param>
-        public QueueHistoryFrame(QueueFrameType queueType)
+        public QueueHistoryFrame(QueueFrameType queueType, int maxClients = 512)
         {
-            _QueueFrameType = queueType;
-            CurrentQueueItem = new FrameQueueItem();
+            m_MaximumClients = maxClients;
+            m_QueueFrameType = queueType;
+            m_CurrentQueueItem = new FrameQueueItem();
         }
     }
 }
