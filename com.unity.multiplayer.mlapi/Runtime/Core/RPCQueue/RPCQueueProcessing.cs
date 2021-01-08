@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Unity.Profiling;
+using UnityEngine;
 using MLAPI.Configuration;
 using MLAPI.Messaging;
 using MLAPI.Profiling;

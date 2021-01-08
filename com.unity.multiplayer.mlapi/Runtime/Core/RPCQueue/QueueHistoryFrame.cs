@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using MLAPI.Serialization.Pooled;
 
-namespace MLAPI
+namespace MLAPI.Messaging
 {
     /// <summary>
     /// QueueHistoryFrame
