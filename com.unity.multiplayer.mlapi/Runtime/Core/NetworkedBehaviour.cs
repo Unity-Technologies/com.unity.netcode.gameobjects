@@ -38,6 +38,8 @@ namespace MLAPI
             Client = 2
         }
 
+        private const string StandardRpc_ChannelName = "STDRPC";
+
 #pragma warning disable 414
         // RuntimeAccessModifiersILPP will make this `protected`
         internal NExec __nexec = NExec.None;
@@ -46,103 +48,50 @@ namespace MLAPI
         // RuntimeAccessModifiersILPP will make this `protected`
         internal BitWriter BeginSendServerRpc(ServerRpcSendParams sendParams, bool isReliable)
         {
-            // @mfatihmar (Unity) Begin: Temporary, placeholder implementation
-            var stream = new BitStream();
-            var writer = new BitWriter(stream);
+            var rpcQueueMananger = NetworkingManager.Singleton.RpcQueueManager;
+            if (rpcQueueMananger == null)
+            {
+                return null;
+            }
 
-            writer.WriteBit(false); // Encrypted
-            writer.WriteBit(false); // Authenticated
-            writer.WriteBits(MLAPIConstants.MLAPI_SERVER_RPC, 6); // MessageType
+            var writer = rpcQueueMananger.BeginAddQueueItemToOutboundFrame(RPCQueueManager.QueueItemType.ServerRpc, Time.realtimeSinceStartup, StandardRpc_ChannelName, 0, NetworkingManager.Singleton.ServerClientId, null);
             writer.WriteUInt64Packed(NetworkId); // NetworkObjectId
             writer.WriteUInt16Packed(GetBehaviourId()); // NetworkBehaviourId
-
             return writer;
-            // @mfatihmar (Unity) End: Temporary, placeholder implementation
         }
 
         // RuntimeAccessModifiersILPP will make this `protected`
         internal void EndSendServerRpc(BitWriter writer, ServerRpcSendParams sendParams, bool isReliable)
         {
-            // @mfatihmar (Unity) Begin: Temporary, placeholder implementation
             if (writer == null) return;
 
-            var stream = (BitStream)writer.GetStream();
-            if (stream != null)
-            {
-                stream.PadStream();
-
-                var networkManager = NetworkingManager.Singleton;
-                if (ReferenceEquals(networkManager, null)) return;
-
-                var payload = new ArraySegment<byte>(stream.GetBuffer(), 0, (int)stream.Length);
-                // @mfatihmar (Unity) Begin: Temporary, inbound RPC queue will replace this workaround
-                if (networkManager.IsHost)
-                {
-                    networkManager.__loopbackRpcQueue.Enqueue((payload, Time.realtimeSinceStartup));
-                }
-                // @mfatihmar (Unity) End: Temporary, inbound RPC queue will replace this workaround
-                else
-                {
-                    networkManager.NetworkConfig.NetworkTransport.Send(networkManager.ServerClientId, payload, "STDRPC");
-                }
-            }
-
-            writer.SetStream(null);
-            // @mfatihmar (Unity) End: Temporary, placeholder implementation
+            var rpcQueueMananger = NetworkingManager.Singleton.RpcQueueManager;
+            rpcQueueMananger?.EndAddQueueItemToOutboundFrame(writer);
         }
 
         // RuntimeAccessModifiersILPP will make this `protected`
         internal BitWriter BeginSendClientRpc(ClientRpcSendParams sendParams, bool isReliable)
         {
-            // @mfatihmar (Unity) Begin: Temporary, placeholder implementation
-            var stream = new BitStream();
-            var writer = new BitWriter(stream);
+            //This will start a new queue item entry and will then return the writer to the current frame's stream
+            var rpcQueueMananger = NetworkingManager.Singleton.RpcQueueManager;
+            if (rpcQueueMananger == null)
+            {
+                return null;
+            }
 
-            writer.WriteBit(false); // Encrypted
-            writer.WriteBit(false); // Authenticated
-            writer.WriteBits(MLAPIConstants.MLAPI_CLIENT_RPC, 6); // MessageType
+            var writer = rpcQueueMananger.BeginAddQueueItemToOutboundFrame(RPCQueueManager.QueueItemType.ClientRpc, Time.realtimeSinceStartup, StandardRpc_ChannelName, 0, NetworkId, sendParams.TargetClientIds ?? NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray());
             writer.WriteUInt64Packed(NetworkId); // NetworkObjectId
             writer.WriteUInt16Packed(GetBehaviourId()); // NetworkBehaviourId
-
             return writer;
-            // @mfatihmar (Unity) End: Temporary, placeholder implementation
         }
 
         // RuntimeAccessModifiersILPP will make this `protected`
         internal void EndSendClientRpc(BitWriter writer, ClientRpcSendParams sendParams, bool isReliable)
         {
-            // @mfatihmar (Unity) Begin: Temporary, placeholder implementation
             if (writer == null) return;
 
-            var stream = (BitStream)writer.GetStream();
-            if (stream != null)
-            {
-                stream.PadStream();
-
-                var networkManager = NetworkingManager.Singleton;
-                if (ReferenceEquals(networkManager, null)) return;
-
-                if (sendParams.TargetClientIds == null) sendParams.TargetClientIds = networkManager.ConnectedClientsList.Select(client => client.ClientId).ToArray();
-                foreach (var clientId in sendParams.TargetClientIds)
-                {
-                    if (!NetworkedObject.observers.Contains(clientId)) continue;
-
-                    var payload = new ArraySegment<byte>(stream.GetBuffer(), 0, (int)stream.Length);
-                    // @mfatihmar (Unity) Begin: Temporary, inbound RPC queue will replace this workaround
-                    if (clientId == networkManager.ServerClientId && networkManager.IsHost)
-                    {
-                        networkManager.__loopbackRpcQueue.Enqueue((payload, Time.realtimeSinceStartup));
-                    }
-                    // @mfatihmar (Unity) End: Temporary, inbound RPC queue will replace this workaround
-                    else
-                    {
-                        networkManager.NetworkConfig.NetworkTransport.Send(clientId, payload, "STDRPC");
-                    }
-                }
-            }
-
-            writer.SetStream(null);
-            // @mfatihmar (Unity) End: Temporary, placeholder implementation
+            var rpcQueueMananger = NetworkingManager.Singleton.RpcQueueManager;
+            rpcQueueMananger?.EndAddQueueItemToOutboundFrame(writer);
         }
 
         /// <summary>
@@ -174,7 +123,7 @@ namespace MLAPI
         /// <summary>
         /// Gets if we are executing as server
         /// </summary>
-        protected bool IsServer => IsRunning && NetworkingManager.Singleton.IsServer;
+        protected static bool IsServer => IsRunning && NetworkingManager.Singleton.IsServer;
         /// <summary>
         /// Gets if we are executing as client
         /// </summary>
@@ -195,7 +144,7 @@ namespace MLAPI
         /// Gets if we are executing as Host, I.E Server and Client
         /// </summary>
         protected bool IsHost => IsRunning && NetworkingManager.Singleton.IsHost;
-        private bool IsRunning => NetworkingManager.Singleton != null && NetworkingManager.Singleton.IsListening;
+        private static bool IsRunning => NetworkingManager.Singleton != null && NetworkingManager.Singleton.IsListening;
         /// <summary>
         /// Gets Whether or not the object has a owner
         /// </summary>
@@ -330,6 +279,7 @@ namespace MLAPI
         private readonly List<string> channelsForNetworkedVarGroups = new List<string>();
         internal readonly List<INetworkedVar> networkedVarFields = new List<INetworkedVar>();
 
+        private static HashSet<MLAPI.NetworkedObject> touched = new HashSet<MLAPI.NetworkedObject>();
         private static readonly Dictionary<Type, FieldInfo[]> fieldTypes = new Dictionary<Type, FieldInfo[]>();
 
         private static FieldInfo[] GetFieldInfoForType(Type type)
@@ -415,122 +365,194 @@ namespace MLAPI
             }
         }
 
-        internal void VarUpdate()
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+        public static ProfilerMarker s_NetworkedBehaviourUpdate = new ProfilerMarker("MLAPI.NetworkedObject.NetworkedBehaviourUpdate");
+#endif
+
+        internal static void NetworkedBehaviourUpdate()
         {
-            if (!varInit)
-                InitializeVars();
-
-            NetworkedVarUpdate();
-        }
-
-        private readonly List<int> networkedVarIndexesToReset = new List<int>();
-        private readonly HashSet<int> networkedVarIndexesToResetSet = new HashSet<int>();
-
-        private void NetworkedVarUpdate()
-        {
-            if (!CouldHaveDirtyNetworkedVars())
-                return;
-
-            networkedVarIndexesToReset.Clear();
-            networkedVarIndexesToResetSet.Clear();
-
-            for (int i = 0; i < (IsServer ? NetworkingManager.Singleton.ConnectedClientsList.Count : 1); i++)
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+            s_NetworkedBehaviourUpdate.Begin();
+#endif
+            try
             {
-                // Do this check here to prevent doing all the expensive dirty checks
-                if (!IsServer || this.NetworkedObject.observers.Contains(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId))
+                if (IsServer)
                 {
-                    // This iterates over every "channel group".
-                    for (int j = 0; j < channelMappedNetworkedVarIndexes.Count; j++)
+                    touched.Clear();
+                    for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)
                     {
-                        using (PooledBitStream stream = PooledBitStream.Get())
+                        var client = NetworkingManager.Singleton.ConnectedClientsList[i];
+                        var spawnedObjs = SpawnManager.SpawnedObjectsList;
+                        touched.UnionWith(spawnedObjs);
+                        foreach (var sobj in spawnedObjs)
                         {
-                            using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                            // Sync just the variables for just the objects this client sees
+                            for (int k = 0; k < sobj.childNetworkedBehaviours.Count; k++)
                             {
-                                writer.WriteUInt64Packed(NetworkId);
-                                writer.WriteUInt16Packed(NetworkedObject.GetOrderIndex(this));
-
-                                ulong clientId = IsServer ?  NetworkingManager.Singleton.ConnectedClientsList[i].ClientId : NetworkingManager.Singleton.ServerClientId;
-                                bool writtenAny = false;
-                                for (int k = 0; k < networkedVarFields.Count; k++)
-                                {
-                                    if (!channelMappedNetworkedVarIndexes[j].Contains(k))
-                                    {
-                                        // This var does not belong to the currently iterating channel group.
-                                        if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
-                                        {
-                                            writer.WriteUInt16Packed(0);
-                                        }
-                                        else
-                                        {
-                                            writer.WriteBool(false);
-                                        }
-                                        continue;
-                                    }
-
-                                    bool isDirty = networkedVarFields[k].IsDirty(); // cache this here. You never know what operations users will do in the dirty methods
-                                    bool shouldWrite = isDirty && (!IsServer || networkedVarFields[k].CanClientRead(clientId));
-
-                                    if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
-                                    {
-                                        if (!shouldWrite)
-                                        {
-                                            writer.WriteUInt16Packed(0);
-                                        }
-                                    }
-                                    else
-                                    {
-                                        writer.WriteBool(shouldWrite);
-                                    }
-
-                                    if (shouldWrite)
-                                    {
-                                        writtenAny = true;
-
-                                        if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
-                                        {
-                                            using (PooledBitStream varStream = PooledBitStream.Get())
-                                            {
-                                                networkedVarFields[k].WriteDelta(varStream);
-                                                varStream.PadStream();
-
-                                                writer.WriteUInt16Packed((ushort)varStream.Length);
-                                                stream.CopyFrom(varStream);
-                                            }
-                                        }
-                                        else
-                                        {
-                                            networkedVarFields[k].WriteDelta(stream);
-                                        }
-
-                                        if (!networkedVarIndexesToResetSet.Contains(k))
-                                        {
-                                            networkedVarIndexesToResetSet.Add(k);
-                                            networkedVarIndexesToReset.Add(k);
-                                        }
-                                    }
-                                }
-
-                                if (writtenAny)
-                                {
-                                    if (IsServer)
-                                        InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA, channelsForNetworkedVarGroups[j], stream, SecuritySendFlags.None);
-                                    else
-                                        InternalMessageSender.Send(NetworkingManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA, channelsForNetworkedVarGroups[j], stream, SecuritySendFlags.None);
-                                }
+                                sobj.childNetworkedBehaviours[k].VarUpdate(client.ClientId);
                             }
                         }
                     }
-                }
-            }
 
+                    // Now, reset all the no-longer-dirty variables
+                    foreach (var sobj in touched)
+                    {
+                        for (int k = 0; k < sobj.childNetworkedBehaviours.Count; k++)
+                        {
+                            sobj.childNetworkedBehaviours[k].PostNetworkVariableWrite();
+                        }
+                    }
+                }
+                else
+                {
+
+                    // when client updates the sever, it tells it about all its objects
+                    foreach (var sobj in SpawnManager.SpawnedObjectsList)
+                    {
+                        for (int k = 0; k < sobj.childNetworkedBehaviours.Count; k++)
+                        {
+                           sobj.childNetworkedBehaviours[k].VarUpdate(NetworkingManager.Singleton.ServerClientId);
+                        }
+                    }
+
+                    // Now, reset all the no-longer-dirty variables
+                    foreach (var sobj in SpawnManager.SpawnedObjectsList)
+                    {
+                        for (int k = 0; k < sobj.childNetworkedBehaviours.Count; k++)
+                        {
+                            sobj.childNetworkedBehaviours[k].PostNetworkVariableWrite();
+                        }
+                    }
+                }
+
+            }
+            finally
+            {
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
+                s_NetworkedBehaviourUpdate.End();
+#endif
+            }
+        }
+
+
+        internal void PreNetworkVariableWrite()
+        {
+            // reset our "which variables got written" data
+            networkedVarIndexesToReset.Clear();
+            networkedVarIndexesToResetSet.Clear();
+        }
+
+        internal void PostNetworkVariableWrite()
+        {
+            // mark any variables we wrote as no longer dirty
             for (int i = 0; i < networkedVarIndexesToReset.Count; i++)
             {
                 networkedVarFields[networkedVarIndexesToReset[i]].ResetDirty();
             }
         }
 
+        internal void VarUpdate(ulong clientId)
+        {
+            if (!varInit)
+                InitializeVars();
+
+            PreNetworkVariableWrite();
+            NetworkedVarUpdate(clientId);
+        }
+
+        private readonly List<int> networkedVarIndexesToReset = new List<int>();
+        private readonly HashSet<int> networkedVarIndexesToResetSet = new HashSet<int>();
+
+        private void NetworkedVarUpdate(ulong clientId)
+        {
+           if (!CouldHaveDirtyNetworkedVars())
+               return;
+
+            for (int j = 0; j < channelMappedNetworkedVarIndexes.Count; j++)
+            {
+                using (PooledBitStream stream = PooledBitStream.Get())
+                {
+                    using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+                    {
+                        writer.WriteUInt64Packed(NetworkId);
+                        writer.WriteUInt16Packed(NetworkedObject.GetOrderIndex(this));
+
+                        bool writtenAny = false;
+                        for (int k = 0; k < networkedVarFields.Count; k++)
+                        {
+                            if (!channelMappedNetworkedVarIndexes[j].Contains(k))
+                            {
+                                // This var does not belong to the currently iterating channel group.
+                                if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
+                                {
+                                    writer.WriteUInt16Packed(0);
+                                }
+                                else
+                                {
+                                    writer.WriteBool(false);
+                                }
+                                continue;
+                            }
+
+                            bool isDirty = networkedVarFields[k].IsDirty(); // cache this here. You never know what operations users will do in the dirty methods
+
+                            //   if I'm dirty AND a client, write (server always has all permissions)
+                            //   if I'm dirty AND the server AND the client can read me, send.
+                            bool shouldWrite = isDirty && (!IsServer || networkedVarFields[k].CanClientRead(clientId));
+
+                            if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
+                            {
+                                if (!shouldWrite)
+                                {
+                                    writer.WriteUInt16Packed(0);
+                                }
+                            }
+                            else
+                            {
+                                writer.WriteBool(shouldWrite);
+                            }
+
+                            if (shouldWrite)
+                            {
+                                writtenAny = true;
+
+                                if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
+                                {
+                                    using (PooledBitStream varStream = PooledBitStream.Get())
+                                    {
+                                        networkedVarFields[k].WriteDelta(varStream);
+                                        varStream.PadStream();
+
+                                        writer.WriteUInt16Packed((ushort)varStream.Length);
+                                        stream.CopyFrom(varStream);
+                                    }
+                                }
+                                else
+                                {
+                                    networkedVarFields[k].WriteDelta(stream);
+                                }
+
+                                if (!networkedVarIndexesToResetSet.Contains(k))
+                                {
+                                    networkedVarIndexesToResetSet.Add(k);
+                                    networkedVarIndexesToReset.Add(k);
+                                }
+                            }
+                        }
+
+                        if (writtenAny)
+                        {
+                            InternalMessageSender.Send(clientId,
+                                MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA,
+                                channelsForNetworkedVarGroups[j], stream, SecuritySendFlags.None);
+                        }
+                    }
+                }
+            }
+        }
         private bool CouldHaveDirtyNetworkedVars()
         {
+            // TODO: There should be a better way by reading one dirty variable vs. 'n'
             for (int i = 0; i < networkedVarFields.Count; i++)
             {
                 if (networkedVarFields[i].IsDirty())
@@ -561,7 +583,7 @@ namespace MLAPI
                             continue;
                     }
 
-                    if (NetworkingManager.Singleton.IsServer && !networkedVarList[i].CanClientWrite(clientId))
+                    if (IsServer && !networkedVarList[i].CanClientWrite(clientId))
                     {
                         if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
                         {
@@ -586,7 +608,7 @@ namespace MLAPI
 
                     long readStartPos = stream.Position;
 
-                    networkedVarList[i].ReadDelta(stream, NetworkingManager.Singleton.IsServer);
+                    networkedVarList[i].ReadDelta(stream, IsServer);
                     ProfilerStatManager.networkVarsRcvd.Record();
 
                     if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
@@ -629,7 +651,7 @@ namespace MLAPI
                             continue;
                     }
 
-                    if (NetworkingManager.Singleton.IsServer && !networkedVarList[i].CanClientWrite(clientId))
+                    if (IsServer && !networkedVarList[i].CanClientWrite(clientId))
                     {
                         if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
                         {

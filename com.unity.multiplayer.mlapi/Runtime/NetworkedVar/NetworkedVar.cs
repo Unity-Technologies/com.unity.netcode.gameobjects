@@ -23,7 +23,7 @@ namespace MLAPI.NetworkedVar
         /// <summary>
         /// Gets the last time the variable was synced
         /// </summary>
-        public float LastSyncedTime { get; internal set; }        
+        public float LastSyncedTime { get; internal set; }
         /// <summary>
         /// Delegate type for value changed event
         /// </summary>
@@ -35,13 +35,13 @@ namespace MLAPI.NetworkedVar
         /// </summary>
         public OnValueChangedDelegate OnValueChanged;
         private NetworkedBehaviour networkedBehaviour;
-     
+
         /// <summary>
         /// Creates a NetworkedVar with the default value and settings
         /// </summary>
         public NetworkedVar()
         {
-            
+
         }
 
         /// <summary>
@@ -191,7 +191,7 @@ namespace MLAPI.NetworkedVar
         {
             ReadDelta(stream, false);
         }
-        
+
         /// <inheritdoc />
         public void WriteField(Stream stream)
         {
@@ -207,7 +207,7 @@ namespace MLAPI.NetworkedVar
             return Settings.SendChannel;
         }
     }
-    
+
     /// <summary>
     /// A NetworkedVar that holds strings and support serialization
     /// </summary>
@@ -271,7 +271,7 @@ namespace MLAPI.NetworkedVar
         /// <inheritdoc />
         public NetworkedVarSByte(NetworkedVarSettings settings, sbyte value) : base(settings, value) { }
     }
-    
+
     /// <summary>
     /// A NetworkedVar that holds ushorts and support serialization
     /// </summary>
