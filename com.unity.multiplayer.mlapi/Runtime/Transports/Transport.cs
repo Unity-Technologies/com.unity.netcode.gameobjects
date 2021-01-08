@@ -109,11 +109,6 @@ namespace MLAPI.Transports
             {
                 Name = "MLAPI_TIME_SYNC",
                 Type = ChannelType.Unreliable
-            },
-            new TransportChannel()
-            {
-                Name = "STDRPC",
-                Type = ChannelType.ReliableSequenced
             }
         };
 

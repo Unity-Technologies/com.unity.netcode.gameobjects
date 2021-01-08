@@ -71,7 +71,7 @@ namespace MLAPI
         [HideInInspector]
         public bool LoopbackEnabled;
 
-        public RpcQueueContainer RpcQueueManager { get; private set; }
+        public RPCQueueManager RpcQueueManager { get; private set; }
 
 
 
@@ -736,10 +736,13 @@ namespace MLAPI
 
         private void Awake()
         {
-            RpcQueueManager = new RpcQueueContainer(LoopbackEnabled);
+            //We always add the networking manager as the first entry
+            //NetworkLoopUpdateSystems.Insert(0, this);
+
+            RpcQueueManager = new RPCQueueManager(LoopbackEnabled);
             //Note: Since frame history is not being used, this is set to 0
             //To test frame history, increase the number to (n) where n > 0
-            RpcQueueManager.Initialize(0);
+            RpcQueueManager?.Initialize(0);
 
             //NetworkUpdateManager.HandleNetworkLoopRegistrations(NetworkLoopUpdateSystems);
 
@@ -815,7 +818,7 @@ namespace MLAPI
 
         private void NetworkFixedUpdate()
         {
-            RpcQueueManager?.ProcessAndFlushRPCQueue(RpcQueueContainer.RPCQueueProcessingTypes.Receive);
+            RpcQueueManager?.ProcessAndFlushRPCQueue(RPCQueueManager.RPCQueueProcessingTypes.Receive,NetworkUpdateManager.NetworkUpdateStages.FIXEDUPDATE);
         }
 
         /// <summary>
@@ -907,7 +910,7 @@ namespace MLAPI
         private void NetworkLateUpdate()
         {
             RpcQueueManager?.ProcessAndFlushRPCQueue(RPCQueueManager.RPCQueueProcessingTypes.Receive, NetworkUpdateManager.NetworkUpdateStages.LATEUPDATE);
-            RpcQueueManager?.ProcessAndFlushRPCQueue(RPCQueueManager.RPCQueueProcessingTypes.Send, NetworkUpdateManager.NetworkUpdateStages.LATEUPDATE);            
+            RpcQueueManager?.ProcessAndFlushRPCQueue(RPCQueueManager.RPCQueueProcessingTypes.Send, NetworkUpdateManager.NetworkUpdateStages.LATEUPDATE);
         }
 
         internal void UpdateNetworkTime(ulong clientId, float netTime, float receiveTime, bool warp = false)
@@ -1097,7 +1100,6 @@ namespace MLAPI
         }
 
         private readonly BitStream inputStreamWrapper = new BitStream(new byte[0]);
-        private MessageBatcher batcher = new MessageBatcher();
 
         internal void HandleIncomingData(ulong clientId, string channelName, ArraySegment<byte> data, float receiveTime, bool allowBuffer)
         {
@@ -1216,18 +1218,32 @@ namespace MLAPI
                         {
                             if (IsServer)
                             {
-                                batcher.ReceiveItems(messageStream, ReceiveCallback, RpcQueueContainer.QueueItemType.ServerRpc, clientId, receiveTime);
+                                #if DEVELOPMENT_BUILD || UNITY_EDITOR
+                                s_MLAPIServerSTDRPCQueued.Begin();
+                                #endif
+
+                                InternalMessageHandler.RPCReceiveQueueItem(clientId, messageStream, receiveTime,RPCQueueManager.QueueItemType.ServerRpc);
+
+                                #if DEVELOPMENT_BUILD || UNITY_EDITOR
+                                s_MLAPIServerSTDRPCQueued.End();
+                                #endif
                             }
-                            ProfilerStatManager.rpcBatchesRcvd.Record();
                             break;
                         }
                     case MLAPIConstants.MLAPI_CLIENT_RPC:
                         {
                             if (IsClient)
                             {
-                                batcher.ReceiveItems(messageStream, ReceiveCallback, RpcQueueContainer.QueueItemType.ClientRpc, clientId, receiveTime);
+                                #if DEVELOPMENT_BUILD || UNITY_EDITOR
+                                s_MLAPIClientSTDRPCQueued.Begin();
+                                #endif
+
+                                InternalMessageHandler.RPCReceiveQueueItem(clientId, messageStream,receiveTime,RPCQueueManager.QueueItemType.ClientRpc);
+
+                                #if DEVELOPMENT_BUILD || UNITY_EDITOR
+                                s_MLAPIClientSTDRPCQueued.End();
+                                #endif
                             }
-                            ProfilerStatManager.rpcBatchesRcvd.Record();
                             break;
                         }
                     default:
@@ -1243,31 +1259,6 @@ namespace MLAPI
 #endif
         }
 
-        private static void ReceiveCallback(BitStream messageStream, MLAPI.RpcQueueContainer.QueueItemType messageType, ulong clientId, float receiveTime)
-        {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (messageType == RpcQueueContainer.QueueItemType.ServerRpc)
-            {
-                s_MLAPIServerSTDRPCQueued.Begin();
-            }
-            else
-            {
-               s_MLAPIClientSTDRPCQueued.Begin();
-            }
-#endif
-            InternalMessageHandler.RPCReceiveQueueItem(clientId, messageStream, receiveTime, messageType);
-#if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (messageType == RpcQueueContainer.QueueItemType.ServerRpc)
-            {
-                s_MLAPIServerSTDRPCQueued.End();
-            }
-            else
-            {
-                s_MLAPIClientSTDRPCQueued.End();
-            }
-#endif
-        }
-
         /// <summary>
         /// InvokeRPC
         /// Called when an inbound queued RPC is invoked
@@ -1279,11 +1270,12 @@ namespace MLAPI
             //s_InvokeRPC.Begin();
 #endif
 
-            var networkObjectId = queueItem.streamReader.ReadUInt64Packed();
-            var networkBehaviourId = queueItem.streamReader.ReadUInt16Packed();
-            var UpdateStage = queueItem.streamReader.ReadUInt16Packed();
-            var networkMethodId = queueItem.streamReader.ReadUInt32Packed();
+            var networkObjectId = queueItem.StreamReader.ReadUInt64Packed();
+            var networkBehaviourId = queueItem.StreamReader.ReadUInt16Packed();
 
+            var UpdateStage = queueItem.StreamReader.ReadUInt16Packed();
+
+            var networkMethodId = queueItem.StreamReader.ReadUInt32Packed();
 
             if (__ntable.ContainsKey(networkMethodId))
             {
@@ -1293,7 +1285,14 @@ namespace MLAPI
                 var networkBehaviour = networkObject.GetBehaviourAtOrderIndex(networkBehaviourId);
                 if (ReferenceEquals(networkBehaviour, null)) return;
 
-                __ntable[networkMethodId](networkBehaviour, queueItem.streamReader, queueItem.networkId);
+                try
+                {
+                    __ntable[networkMethodId](networkBehaviour, queueItem.StreamReader, queueItem.NetworkId);
+                }
+                catch(Exception ex)
+                {
+                    Debug.LogError(ex);
+                }
             }
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
