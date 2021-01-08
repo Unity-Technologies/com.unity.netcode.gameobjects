@@ -16,6 +16,7 @@ namespace MLAPI
     /// </summary>
     internal class RpcQueueProcessing
     {
+
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
         static ProfilerMarker s_MLAPIRPCQueueProcess = new ProfilerMarker("MLAPIRPCQueueProcess");
         static ProfilerMarker s_MLAPIRPCQueueSend = new ProfilerMarker("MLAPIRPCQueueSend");

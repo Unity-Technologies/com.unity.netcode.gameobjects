@@ -12,6 +12,7 @@ namespace MLAPI
     /// </summary>
     public class RpcQueueContainer
     {
+
         public enum QueueItemType
         {
             ServerRpc,
