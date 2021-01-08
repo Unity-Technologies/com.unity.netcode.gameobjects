@@ -418,7 +418,7 @@ namespace MLAPI.Spawning
                 return;
             }
 
-            RPCQueueManager rpcQueueManager = NetworkingManager.Singleton.RpcQueueManager;
+            RpcQueueContainer rpcQueueManager = NetworkingManager.Singleton.RpcQueueManager;
             if (rpcQueueManager == null)
             {
                 return;
@@ -429,13 +429,13 @@ namespace MLAPI.Spawning
 
             var QueueItem = new FrameQueueItem
             {
-                UpdateStage = NetworkUpdateManager.NetworkUpdateStages.UPDATE,
-                QueueItemType = RPCQueueManager.QueueItemType.CreateObject,
-                NetworkId = 0,
-                ItemStream = stream,
-                Channel = "MLAPI_INTERNAL",
-                SendFlags = SecuritySendFlags.None,
-                ClientIds = new[] {clientId}
+                updateStage = NetworkUpdateManager.NetworkUpdateStages.UPDATE,
+                queueItemType = RPCQueueManager.QueueItemType.CreateObject,
+                networkId = 0,
+                itemStream = stream,
+                channel = "MLAPI_INTERNAL",
+                sendFlags = SecuritySendFlags.None,
+                clientIds = new[] {clientId}
             };
             rpcQueueManager.AddToInternalMLAPISendQueue(QueueItem);
         }
@@ -638,7 +638,10 @@ namespace MLAPI.Spawning
 
             //Removal of spawned object
             if (!SpawnedObjects.ContainsKey(networkId))
+            {
+                Debug.LogWarning("Trying to destroy object " + networkId.ToString() + " but it doesn't seem to exist anymore!");
                 return;
+            }
 
             var sobj = SpawnedObjects[networkId];
 
@@ -680,12 +683,12 @@ namespace MLAPI.Spawning
 
                             var QueueItem = new FrameQueueItem
                             {
-                                QueueItemType = RPCQueueManager.QueueItemType.DestroyObject,
-                                NetworkId = networkId,
-                                ItemStream = stream,
-                                Channel = "MLAPI_INTERNAL",
-                                SendFlags = SecuritySendFlags.None,
-                                ClientIds = NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray()
+                                queueItemType = RpcQueueContainer.QueueItemType.DestroyObject,
+                                networkId = networkId,
+                                itemStream = stream,
+                                channel = "MLAPI_INTERNAL",
+                                sendFlags = SecuritySendFlags.None,
+                                clientIds = NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray()
                             };
                             rpcQueueManager.AddToInternalMLAPISendQueue(QueueItem);
                             writer.Dispose();
