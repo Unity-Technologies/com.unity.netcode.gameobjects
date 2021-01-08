@@ -344,6 +344,8 @@ namespace MLAPI.Messaging
                             }
                         }
 
+                        SpawnManager.CleanDiffedSceneObjects();
+
                         NetworkingManager.Singleton.IsConnectedClient = true;
 
                         NetworkingManager.Singleton.InvokeOnClientConnectedCallback(NetworkingManager.Singleton.LocalClientId);
