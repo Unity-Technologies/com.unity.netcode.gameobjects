@@ -13,7 +13,7 @@ namespace MLAPI.Transports.UNET
     {
         public enum SendMode
         {
-            Immediately, 
+            Immediately,
             Queued
         }
 
