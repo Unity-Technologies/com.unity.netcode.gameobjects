@@ -166,16 +166,16 @@ namespace MLAPI
                     if (length >= threshold)
                     {
                         sendCallback(entry.Key, entry.Value);
-                        ProfilerStatManager.rpcBatchesSent.Record();
-
                         // clear the batch that was sent from the SendDict
                         entry.Value.Stream.SetLength(0);
                         entry.Value.Stream.Position = 0;
                         entry.Value.Empty = true;
+                        ProfilerStatManager.rpcBatchesSent.Record();
                     }
                 }
             }
         }
+
 
         /// <summary>
         /// ReceiveItems

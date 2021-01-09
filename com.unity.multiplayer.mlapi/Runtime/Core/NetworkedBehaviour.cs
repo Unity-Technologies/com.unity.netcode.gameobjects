@@ -54,6 +54,14 @@ namespace MLAPI
             var rpcQueueContainer = NetworkingManager.Singleton.rpcQueueContainer;
 
             var writer = rpcQueueContainer.BeginAddQueueItemToOutboundFrame(RpcQueueContainer.QueueItemType.ServerRpc, Time.realtimeSinceStartup, StandardRpc_ChannelName, 0, NetworkingManager.Singleton.ServerClientId, null);
+
+            if(!rpcQueueContainer.IsUsingBatching())
+            {
+                writer.WriteBit(false); // Encrypted
+                writer.WriteBit(false); // Authenticated
+                writer.WriteBits(MLAPIConstants.MLAPI_SERVER_RPC, 6); // MessageType
+            }
+
             writer.WriteUInt64Packed(NetworkId); // NetworkObjectId
             writer.WriteUInt16Packed(GetBehaviourId()); // NetworkBehaviourId
 
@@ -86,6 +94,14 @@ namespace MLAPI
             var rpcQueueContainer = NetworkingManager.Singleton.rpcQueueContainer;
 
             var writer = rpcQueueContainer.BeginAddQueueItemToOutboundFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, StandardRpc_ChannelName, 0, NetworkId, sendParams.TargetClientIds ?? NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray());
+
+            if(!rpcQueueContainer.IsUsingBatching())
+            {
+                writer.WriteBit(false); // Encrypted
+                writer.WriteBit(false); // Authenticated
+                writer.WriteBits(MLAPIConstants.MLAPI_CLIENT_RPC, 6); // MessageType
+            }
+
             writer.WriteUInt64Packed(NetworkId); // NetworkObjectId
             writer.WriteUInt16Packed(GetBehaviourId()); // NetworkBehaviourId
 

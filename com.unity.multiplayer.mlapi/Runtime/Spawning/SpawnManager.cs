@@ -688,6 +688,7 @@ namespace MLAPI.Spawning
                             };
                             rpcQueueContainer.AddToInternalMLAPISendQueue(QueueItem);
                             writer.Dispose();
+
                         }
                     }
                 }

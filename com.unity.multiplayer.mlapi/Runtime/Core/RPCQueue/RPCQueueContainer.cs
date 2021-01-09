@@ -13,6 +13,7 @@ namespace MLAPI.Messaging
     public class RpcQueueContainer
     {
 
+
         public enum QueueItemType
         {
             ServerRpc,
@@ -41,6 +42,17 @@ namespace MLAPI.Messaging
         private int     m_OutBoundStreamBufferIndex;
         private bool    m_IsLoopbackEnabled;
         private bool    m_IsTestingEnabled;
+        private bool    m_IsNotUsingBatching = false;
+
+        public bool IsUsingBatching()
+        {
+            return !m_IsNotUsingBatching;
+        }
+
+        public void EnableBatchedRpcs(bool isbatchingEnabled)
+        {
+            m_IsNotUsingBatching = !isbatchingEnabled;
+        }
 
         /// <summary>
         /// IsLoopBack
@@ -257,14 +269,15 @@ namespace MLAPI.Messaging
         internal void AddQueueItemToInboundFrame(QueueItemType qItemType, float timeStamp, ulong sourceNetworkId, BitStream message)
         {
             long originalPosition = message.Position;
-            BitReader BR = BitReaderPool.GetReader(message);
+            PooledBitReader BR = PooledBitReader.Get(message);
 
             var longValue = BR.ReadUInt64Packed(); // NetworkObjectId (temporary, we reset position just below)
 
             var shortValue = BR.ReadUInt16Packed(); // NetworkBehaviourId (temporary, we reset position just below)
 
             ushort updateStageValue = BR.ReadUInt16Packed();
-
+            BR.Dispose();
+            BR = null;
 
             NetworkUpdateManager.NetworkUpdateStages updateStage = NetworkUpdateManager.NetworkUpdateStages.UPDATE;
             if(System.Enum.IsDefined(typeof(NetworkUpdateManager.NetworkUpdateStages),(int)updateStageValue))
@@ -465,7 +478,11 @@ namespace MLAPI.Messaging
                         pooledBitStream.Position = 0;
                         byte[] pooledBitStreamArray = pooledBitStream.GetBuffer();
                         Buffer.BlockCopy(frameQueueItem.messageData.Array ?? Array.Empty<byte>(), frameQueueItem.messageData.Offset, pooledBitStreamArray, 0, (int)frameQueueItem.streamSize);
-                        //pooledBitStream.Position = 1;
+
+                        if(!IsUsingBatching())
+                        {
+                            pooledBitStream.Position = 1;
+                        }
 
                         AddQueueItemToInboundFrame(frameQueueItem.queueItemType, UnityEngine.Time.realtimeSinceStartup, frameQueueItem.networkId, pooledBitStream);
                         frameQueueItem = queueHistoryItemOutbound.GetNextQueueItem();

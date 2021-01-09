@@ -179,9 +179,20 @@ namespace MLAPI.Messaging
 
                 if (m_QueueFrameType == QueueFrameType.Inbound)
                 {
-                    m_CurrentQueueItem.itemStream = PooledBitStream.Get();
-                    m_CurrentQueueItem.streamWriter = PooledBitWriter.Get(m_CurrentQueueItem.itemStream);
-                    m_CurrentQueueItem.streamReader = PooledBitReader.Get(m_CurrentQueueItem.itemStream);
+                    if(m_CurrentQueueItem.itemStream == null)
+                    {
+                        m_CurrentQueueItem.itemStream = PooledBitStream.Get();
+                    }
+
+                    if(m_CurrentQueueItem.streamWriter == null)
+                    {
+                        m_CurrentQueueItem.streamWriter = PooledBitWriter.Get(m_CurrentQueueItem.itemStream);
+                    }
+
+                    if(m_CurrentQueueItem.streamReader == null)
+                    {
+                        m_CurrentQueueItem.streamReader = PooledBitReader.Get(m_CurrentQueueItem.itemStream);
+                    }
                 }
 
                 return GetCurrentQueueItem();

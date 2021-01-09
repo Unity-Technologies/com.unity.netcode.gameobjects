@@ -1169,18 +1169,45 @@ namespace MLAPI
                         {
                             if (IsServer)
                             {
-                                batcher.ReceiveItems(messageStream, ReceiveCallback, RpcQueueContainer.QueueItemType.ServerRpc, clientId, receiveTime);
+                                if(rpcQueueContainer.IsUsingBatching())
+                                {
+                                    batcher.ReceiveItems(messageStream, ReceiveCallback, RpcQueueContainer.QueueItemType.ServerRpc, clientId, receiveTime);
+                                    ProfilerStatManager.rpcBatchesRcvd.Record();
+                                }
+                                else
+                                {
+                                    #if DEVELOPMENT_BUILD || UNITY_EDITOR
+                                    s_MLAPIServerSTDRPCQueued.Begin();
+                                    #endif
+                                    InternalMessageHandler.RPCReceiveQueueItem(clientId, messageStream, receiveTime,RpcQueueContainer.QueueItemType.ServerRpc);
+                                    #if DEVELOPMENT_BUILD || UNITY_EDITOR
+                                    s_MLAPIServerSTDRPCQueued.End();
+                                    #endif
+                                }
                             }
-                            ProfilerStatManager.rpcBatchesRcvd.Record();
                             break;
                         }
                     case MLAPIConstants.MLAPI_CLIENT_RPC:
                         {
                             if (IsClient)
                             {
-                                batcher.ReceiveItems(messageStream, ReceiveCallback, RpcQueueContainer.QueueItemType.ClientRpc, clientId, receiveTime);
+                                if(rpcQueueContainer.IsUsingBatching())
+                                {
+                                    batcher.ReceiveItems(messageStream, ReceiveCallback, RpcQueueContainer.QueueItemType.ClientRpc, clientId, receiveTime);
+                                    ProfilerStatManager.rpcBatchesRcvd.Record();
+                                }
+                                else
+                                {
+                                    #if DEVELOPMENT_BUILD || UNITY_EDITOR
+                                    s_MLAPIClientSTDRPCQueued.Begin();
+                                    #endif
+                                    InternalMessageHandler.RPCReceiveQueueItem(clientId, messageStream,receiveTime,RpcQueueContainer.QueueItemType.ClientRpc);
+                                    #if DEVELOPMENT_BUILD || UNITY_EDITOR
+                                    s_MLAPIClientSTDRPCQueued.End();
+                                    #endif
+                                }
                             }
-                            ProfilerStatManager.rpcBatchesRcvd.Record();
+
                             break;
                         }
                     default:

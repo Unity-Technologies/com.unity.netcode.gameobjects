@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Unity.Profiling;
@@ -19,6 +20,11 @@ namespace MLAPI.Messaging
         static ProfilerMarker s_MLAPIRPCQueueProcess = new ProfilerMarker("MLAPIRPCQueueProcess");
         static ProfilerMarker s_MLAPIRPCQueueSend = new ProfilerMarker("MLAPIRPCQueueSend");
 #endif
+
+                // Batcher object used to manage the RPC batching on the send side
+        private MessageBatcher batcher = new MessageBatcher();
+        private int m_BatchThreshold = 1;
+
 
         //NSS-TODO: Need to determine how we want to handle all other MLAPI send types
         //Temporary place to keep internal MLAPI messages
@@ -44,11 +50,11 @@ namespace MLAPI.Messaging
                     while (currentQueueItem.queueItemType != RpcQueueContainer.QueueItemType.None)
                     {
                         AdvanceFrameHistory = true;
-                        //if (rpcQueueContainer.IsLoopBack())
-                        //{
-                        //    currentQueueItem.itemStream.Position = 1;
-                        //}
-                        if(rpcQueueContainer.IsTesting())
+                        if (rpcQueueContainer.IsLoopBack() && !rpcQueueContainer.IsUsingBatching())
+                        {
+                            currentQueueItem.itemStream.Position = 1;
+                        }
+                        if (rpcQueueContainer.IsTesting())
                         {
                             Debug.Log("RPC invoked during the " + currentStage.ToString() + " update stage.");
                         }
@@ -165,8 +171,23 @@ namespace MLAPI.Messaging
                         while (currentQueueItem.queueItemType != RpcQueueContainer.QueueItemType.None)
                         {
                             AdvanceFrameHistory = true;
-                            SendFrameQueueItem(currentQueueItem);
+                            if(rpcQueueContainer.IsUsingBatching())
+                            {
+                                batcher.QueueItem(currentQueueItem);
+
+                                batcher.SendItems(m_BatchThreshold, SendCallback);
+                            }
+                            else
+                            {
+                                SendFrameQueueItem(currentQueueItem);
+                            }
                             currentQueueItem = CurrentFrame.GetNextQueueItem();
+                        }
+
+                        //If the size is < m_BatchThreshold then just send the messages
+                        if(AdvanceFrameHistory && rpcQueueContainer.IsUsingBatching())
+                        {
+                            batcher.SendItems(0, SendCallback);
                         }
                     }
                 }
@@ -176,6 +197,22 @@ namespace MLAPI.Messaging
                     rpcQueueContainer.AdvanceFrameHistory(QueueHistoryFrame.QueueFrameType.Outbound);
                 }
             }
+        }
+
+
+        /// <summary>
+        /// SendCallback
+        /// This is the callback from the batcher when it need to send a batch
+        ///
+        /// </summary>
+        /// <param name="clientId"> clientId to send to</param>
+        /// <param name="sendStream"> the stream to send</param>
+        private static void SendCallback(ulong clientId, MLAPI.MessageBatcher.SendStream sendStream)
+        {
+            int length = (int)sendStream.Stream.Length;
+            byte[] bytes = sendStream.Stream.GetBuffer();
+            ArraySegment<byte> sendBuffer = new ArraySegment<byte>(bytes, 0, length);
+            NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(clientId, sendBuffer, string.IsNullOrEmpty(sendStream.Item.channel) ? "MLAPI_DEFAULT_MESSAGE" : sendStream.Item.channel);
         }
 
         /// <summary>
