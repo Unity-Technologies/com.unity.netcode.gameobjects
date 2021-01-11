@@ -208,7 +208,7 @@ namespace MLAPI
             ArraySegment<byte> sendBuffer = new ArraySegment<byte>(bytes, 0, length);
 
             NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(clientId, sendBuffer,
-                string.IsNullOrEmpty(sendStream.Item.Channel) ? "MLAPI_DEFAULT_MESSAGE" : sendStream.Item.Channel);
+                string.IsNullOrEmpty(sendStream.channel) ? "MLAPI_DEFAULT_MESSAGE" : sendStream.channel);
         }
     }
 }

@@ -13,7 +13,7 @@ namespace MLAPI
     {
         public class SendStream
         {
-            public FrameQueueItem Item;
+            public string channel;
             public PooledBitStream Stream = PooledBitStream.Get();
             public bool Empty = true;
         }
@@ -114,7 +114,7 @@ namespace MLAPI
                 if (SendDict[clientId].Empty)
                 {
                     SendDict[clientId].Empty = false;
-                    SendDict[clientId].Item = item;
+                    SendDict[clientId].channel = item.Channel;
                     Writer.SetStream(SendDict[clientId].Stream);
 
                     Writer.WriteBit(false); // Encrypted
@@ -187,6 +187,7 @@ namespace MLAPI
         /// <param name="receiveTime"> the packet receive time to pass back to callback</param>
         public int ReceiveItems(in BitStream messageStream, ReceiveCallbackType receiveCallback, MLAPI.RPCQueueManager.QueueItemType messageType, ulong clientId, float receiveTime)
         {
+            PooledBitStream copy = PooledBitStream.Get();
             do
             {
                 // read the length of the next RPC
@@ -195,12 +196,12 @@ namespace MLAPI
                 if (rpcSize < 0)
                 {
                     // abort if there's an error reading lengths
+                    copy.Dispose();
                     return 0;
                 }
 
                 // copy what comes after current stream position
                 long pos = messageStream.Position;
-                BitStream copy = PooledBitStream.Get();
                 copy.SetLength(rpcSize);
                 copy.Position = 0;
                 Buffer.BlockCopy(messageStream.GetBuffer(), (int)pos, copy.GetBuffer(), 0, rpcSize);
@@ -211,6 +212,7 @@ namespace MLAPI
                 // RPCReceiveQueueItem peeks at content, it doesn't advance
                 messageStream.Seek(rpcSize, SeekOrigin.Current);
             } while (messageStream.Position < messageStream.Length);
+            copy.Dispose();
             return 0;
         }
     }
