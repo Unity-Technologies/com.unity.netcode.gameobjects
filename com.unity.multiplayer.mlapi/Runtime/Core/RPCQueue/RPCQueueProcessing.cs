@@ -23,7 +23,7 @@ namespace MLAPI.Messaging
 
                 // Batcher object used to manage the RPC batching on the send side
         private MessageBatcher batcher = new MessageBatcher();
-        private int m_BatchThreshold = 1;
+        private int m_BatchThreshold = 512;
 
 
         //NSS-TODO: Need to determine how we want to handle all other MLAPI send types

@@ -93,7 +93,19 @@ namespace MLAPI
             //This will start a new queue item entry and will then return the writer to the current frame's stream
             var rpcQueueContainer = NetworkingManager.Singleton.rpcQueueContainer;
 
-            var writer = rpcQueueContainer.BeginAddQueueItemToOutboundFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, StandardRpc_ChannelName, 0, NetworkId, sendParams.TargetClientIds ?? NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray());
+            ulong[] TargetIds = sendParams.TargetClientIds;
+            if(TargetIds == null)
+            {
+                if((NetworkingManager.Singleton.ConnectedClientsList.Count > 0))
+                {
+                    var FirstPass = NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToList();
+                    FirstPass.Remove(NetworkingManager.Singleton.ServerClientId);
+                    TargetIds = FirstPass.ToArray();
+                }
+            }
+            var writer = rpcQueueContainer.BeginAddQueueItemToOutboundFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, StandardRpc_ChannelName, 0, NetworkId, TargetIds);
+
+            //var writer = rpcQueueContainer.BeginAddQueueItemToOutboundFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, StandardRpc_ChannelName, 0, NetworkId, sendParams.TargetClientIds ?? NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray());
 
             if(!rpcQueueContainer.IsUsingBatching())
             {
