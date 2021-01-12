@@ -36,7 +36,7 @@ namespace MLAPI
         public void ProcessReceiveQueue()
         {
             bool AdvanceFrameHistory = false;
-            var rpcQueueManager = NetworkingManager.Singleton.RpcQueueManager;
+            var rpcQueueManager = NetworkingManager.Singleton.rpcQueueContainer;
             if (rpcQueueManager != null)
             {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -148,7 +148,7 @@ namespace MLAPI
         private void RPCQueueSendAndFlush()
         {
             bool AdvanceFrameHistory = false;
-            var rpcQueueManager = NetworkingManager.Singleton.RpcQueueManager;
+            var rpcQueueManager = NetworkingManager.Singleton.rpcQueueContainer;
             if (rpcQueueManager != null)
             {
                 var CurrentFrame = rpcQueueManager.GetCurrentFrame(QueueHistoryFrame.QueueFrameType.Outbound);

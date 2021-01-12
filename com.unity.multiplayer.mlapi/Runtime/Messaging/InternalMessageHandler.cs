@@ -694,7 +694,7 @@ namespace MLAPI.Messaging
 
             ProfilerStatManager.rpcsRcvd.Record();
 
-            var rpcQueueManager = NetworkingManager.Singleton.RpcQueueManager;
+            var rpcQueueManager = NetworkingManager.Singleton.rpcQueueContainer;
             rpcQueueManager?.AddQueueItemToInboundFrame(queueItemType, receiveTime, clientId, (BitStream)stream);
         }
 

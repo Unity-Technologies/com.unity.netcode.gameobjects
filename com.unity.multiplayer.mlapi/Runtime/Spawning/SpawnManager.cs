@@ -411,7 +411,7 @@ namespace MLAPI.Spawning
                 return;
             }
 
-            RpcQueueContainer rpcQueueManager = NetworkingManager.Singleton.RpcQueueManager;
+            RpcQueueContainer rpcQueueManager = NetworkingManager.Singleton.rpcQueueContainer;
             if (rpcQueueManager == null)
             {
                 return;
@@ -680,7 +680,7 @@ namespace MLAPI.Spawning
                     });
                 }
 
-                var rpcQueueManager = NetworkingManager.Singleton.RpcQueueManager;
+                var rpcQueueManager = NetworkingManager.Singleton.rpcQueueContainer;
                 if (rpcQueueManager != null)
                 {
                     if (sobj != null)

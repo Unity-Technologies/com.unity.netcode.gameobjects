@@ -70,7 +70,7 @@ namespace MLAPI
         [HideInInspector]
         public bool LoopbackEnabled;
 
-        public RpcQueueContainer RpcQueueManager { get; private set; }
+        public RpcQueueContainer rpcQueueContainer { get; private set; }
 
         /// <summary>
         /// A synchronized time, represents the time in seconds since the server application started. Is replicated across all clients
@@ -653,7 +653,7 @@ namespace MLAPI
 
         private void OnDestroy()
         {
-            RpcQueueManager?.OnExiting();
+            rpcQueueContainer?.OnExiting();
 
             if (Singleton != null && Singleton == this)
             {
@@ -679,20 +679,20 @@ namespace MLAPI
             if (NetworkConfig != null && NetworkConfig.NetworkTransport != null) //The Transport is set during Init time, thus it is possible for the Transport to be null
                 NetworkConfig.NetworkTransport.Shutdown();
 
-            if (RpcQueueManager != null)
+            if (rpcQueueContainer != null)
             {
-                RpcQueueManager.Shutdown();
-                RpcQueueManager = null;
+                rpcQueueContainer.Shutdown();
+                rpcQueueContainer = null;
             }
         }
 
 
         private void Awake()
         {
-            RpcQueueManager = new RpcQueueContainer(LoopbackEnabled);
+            rpcQueueContainer = new RpcQueueContainer(LoopbackEnabled);
             //Note: Since frame history is not being used, this is set to 0
             //To test frame history, increase the number to (n) where n > 0
-            RpcQueueManager.Initialize(0);
+            rpcQueueContainer.Initialize(0);
 
             NetworkUpdateManager.RegisterNetworkUpdateAction(NetworkPreUpdate, NetworkUpdateManager.NetworkUpdateStages.PREUPDATE);
             NetworkUpdateManager.RegisterNetworkUpdateAction(NetworkFixedUpdate, NetworkUpdateManager.NetworkUpdateStages.FIXEDUPDATE);
@@ -721,9 +721,9 @@ namespace MLAPI
                     s_ReceiveTick.Begin();
 #endif
                     bool IsLoopBack = false;
-                    if (RpcQueueManager != null)
+                    if (rpcQueueContainer != null)
                     {
-                        IsLoopBack = RpcQueueManager.IsLoopBack();
+                        IsLoopBack = rpcQueueContainer.IsLoopBack();
                     }
 
                     // @mfatihmar (Unity) Begin: Temporary, inbound RPC queue will replace this workaround
@@ -766,7 +766,7 @@ namespace MLAPI
 
         private void NetworkFixedUpdate()
         {
-            RpcQueueManager?.ProcessAndFlushRPCQueue(RpcQueueContainer.RPCQueueProcessingTypes.Receive);
+            rpcQueueContainer.ProcessAndFlushRPCQueue(RpcQueueContainer.RPCQueueProcessingTypes.Receive);
         }
 
         /// <summary>
@@ -856,7 +856,7 @@ namespace MLAPI
         /// </summary>
         private void NetworkLateUpdate()
         {
-            RpcQueueManager?.ProcessAndFlushRPCQueue(RpcQueueContainer.RPCQueueProcessingTypes.Send);
+            rpcQueueContainer.ProcessAndFlushRPCQueue(RpcQueueContainer.RPCQueueProcessingTypes.Send);
         }
 
         internal void UpdateNetworkTime(ulong clientId, float netTime, float receiveTime, bool warp = false)
