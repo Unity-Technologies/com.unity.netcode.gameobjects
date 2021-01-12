@@ -70,8 +70,15 @@ namespace MLAPI.Serialization
         /// <returns>The bit read</returns>
         public bool ReadBool()
         {
-            if (bitSource == null) return source.ReadByte() != 0;
-            else return ReadBit();
+            if (bitSource == null)
+            {
+                return source.ReadByte() != 0;
+            }
+            else
+            {
+                // return ReadBit(); // old (buggy)
+                return ReadByte() != 0; // new (hotfix)
+            }
         }
 
         /// <summary>
