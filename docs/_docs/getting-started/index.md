@@ -52,8 +52,8 @@ Simply add the part of the permalink after ``wiki``. The above examples entry in
   - my-long-topic-name
 ```
 
-### Licence
-Documentation on the wiki is licenced under the follwing licence
+### License
+Documentation on the wiki is licensed under the following license:
 ```
 This is free and unencumbered software released into the public domain.
 
