@@ -695,12 +695,12 @@ namespace MLAPI.Spawning
 
                                 var QueueItem = new FrameQueueItem
                                 {
-                                    QueueItemType = RPCQueueManager.QueueItemType.DestroyObject,
-                                    NetworkId = networkId,
-                                    ItemStream = stream,
-                                    Channel = "MLAPI_INTERNAL",
-                                    SendFlags = SecuritySendFlags.None,
-                                    ClientIds = NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray()
+                                    queueItemType = RpcQueueContainer.QueueItemType.DestroyObject,
+                                    networkId = networkId,
+                                    itemStream = stream,
+                                    channel = "MLAPI_INTERNAL",
+                                    sendFlags = SecuritySendFlags.None,
+                                    clientIds = NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray()
                                 };
                                 rpcQueueManager.AddToInternalMLAPISendQueue(QueueItem);
                             }
