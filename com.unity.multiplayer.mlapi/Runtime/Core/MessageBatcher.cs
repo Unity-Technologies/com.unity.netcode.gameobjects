@@ -187,7 +187,7 @@ namespace MLAPI
         /// <param name="receiveTime"> the packet receive time to pass back to callback</param>
         public int ReceiveItems(in BitStream messageStream, ReceiveCallbackType receiveCallback, MLAPI.RPCQueueManager.QueueItemType messageType, ulong clientId, float receiveTime)
         {
-            PooledBitStream copy = PooledBitStream.Get();
+            using PooledBitStream copy = PooledBitStream.Get();
             do
             {
                 // read the length of the next RPC
@@ -196,7 +196,6 @@ namespace MLAPI
                 if (rpcSize < 0)
                 {
                     // abort if there's an error reading lengths
-                    copy.Dispose();
                     return 0;
                 }
 
@@ -212,7 +211,6 @@ namespace MLAPI
                 // RPCReceiveQueueItem peeks at content, it doesn't advance
                 messageStream.Seek(rpcSize, SeekOrigin.Current);
             } while (messageStream.Position < messageStream.Length);
-            copy.Dispose();
             return 0;
         }
     }
