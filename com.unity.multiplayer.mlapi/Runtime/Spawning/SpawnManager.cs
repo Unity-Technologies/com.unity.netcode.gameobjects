@@ -689,19 +689,21 @@ namespace MLAPI.Spawning
                         if (NetworkingManager.Singleton.ConnectedClientsList.Count > 0)
                         {
                             var stream = PooledBitStream.Get();
-                            using var writer = PooledBitWriter.Get(stream);
-                            writer.WriteUInt64Packed(networkId);
-
-                            var QueueItem = new FrameQueueItem
+                            using (var writer = PooledBitWriter.Get(stream))
                             {
-                                queueItemType = RpcQueueContainer.QueueItemType.DestroyObject,
-                                networkId = networkId,
-                                itemStream = stream,
-                                channel = "MLAPI_INTERNAL",
-                                sendFlags = SecuritySendFlags.None,
-                                clientIds = NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray()
-                            };
-                            rpcQueueManager.AddToInternalMLAPISendQueue(QueueItem);
+                                writer.WriteUInt64Packed(networkId);
+
+                                var QueueItem = new FrameQueueItem
+                                {
+                                    QueueItemType = RPCQueueManager.QueueItemType.DestroyObject,
+                                    NetworkId = networkId,
+                                    ItemStream = stream,
+                                    Channel = "MLAPI_INTERNAL",
+                                    SendFlags = SecuritySendFlags.None,
+                                    ClientIds = NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray()
+                                };
+                                rpcQueueManager.AddToInternalMLAPISendQueue(QueueItem);
+                            }
                         }
                     }
                 }
