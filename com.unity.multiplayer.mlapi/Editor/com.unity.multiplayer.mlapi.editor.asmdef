@@ -2,7 +2,8 @@
     "name": "Unity.Multiplayer.MLAPI.Editor",
     "rootNamespace": "",
     "references": [
-        "Unity.Multiplayer.MLAPI.Runtime"
+        "Unity.Multiplayer.MLAPI.Runtime",
+        "Unity.Multiplayer.MLAPI.Prototyping"
     ],
     "includePlatforms": [
         "Editor"
