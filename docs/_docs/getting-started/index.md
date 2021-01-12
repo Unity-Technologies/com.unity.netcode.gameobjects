@@ -53,7 +53,7 @@ Simply add the part of the permalink after ``wiki``. The above examples entry in
 ```
 
 ### License
-Documentation on the wiki is licensed under the following license
+Documentation on the wiki is licensed under the following license:
 ```
 This is free and unencumbered software released into the public domain.
 
