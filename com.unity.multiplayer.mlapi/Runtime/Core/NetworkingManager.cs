@@ -34,7 +34,7 @@ namespace MLAPI
     /// The main component of the library
     /// </summary>
     [AddComponentMenu("MLAPI/NetworkingManager", -100)]
-    public class NetworkingManager : MonoBehaviour
+    public class NetworkingManager : UpdateLoopBehaviour
     {
         // RuntimeAccessModifiersILPP will make this `public`
         internal static readonly Dictionary<uint, Action<NetworkedBehaviour, BitReader, ulong>> __ntable = new Dictionary<uint, Action<NetworkedBehaviour, BitReader, ulong>>();
@@ -363,9 +363,9 @@ namespace MLAPI
             LocalClientId = 0;
             networkTimeOffset = 0f;
             currentNetworkTimeOffset = 0f;
-            lastEventTickTime = 0f;
-            lastReceiveTickTime = 0f;
-            eventOvershootCounter = 0f;
+            m_LastReceiveTickTime = 0f;
+            m_LastReceiveTickTime = 0f;
+            m_EventOvershootCounter = 0f;
             PendingClients.Clear();
             ConnectedClients.Clear();
             ConnectedClientsList.Clear();
@@ -641,6 +641,7 @@ namespace MLAPI
             }
             else
             {
+                RegisterUpdateLoopSystem();
                 Singleton = this;
                 if (OnSingletonReady != null)
                     OnSingletonReady();
@@ -653,6 +654,8 @@ namespace MLAPI
 
         private void OnDestroy()
         {
+            OnNetworkLoopSystemRemove();
+            //NSS: This is ok to leave this check here
             rpcQueueContainer?.OnExiting();
 
             if (Singleton != null && Singleton == this)
@@ -686,24 +689,48 @@ namespace MLAPI
             }
         }
 
+        /// <summary>
+        /// InternalRegisterNetworkUpdateStage
+        /// Registers all pertinent update stages for NetworkingManager
+        /// </summary>
+        /// <param name="stage">update stage to get callback for</param>
+        /// <returns></returns>
+        protected override Action InternalRegisterNetworkUpdateStage(NetworkUpdateManager.NetworkUpdateStages stage)
+        {
+            Action updateStageCallback = null;
+            switch (stage)
+            {
+                case NetworkUpdateManager.NetworkUpdateStages.PREUPDATE:
+                    {
+                        updateStageCallback = NetworkPreUpdate;
+                        break;
+                    }
+                case NetworkUpdateManager.NetworkUpdateStages.UPDATE:
+                    {
+                        updateStageCallback = NetworkUpdate;
+                        break;
+                    }
+            }
 
+            return updateStageCallback;
+        }
+
+        /// <summary>
+        /// Awake
+        /// Currently this only creates the RpcQueueContainer instance and initializes it.
+        /// </summary>
         private void Awake()
         {
-            rpcQueueContainer = new RpcQueueContainer(LoopbackEnabled);
+            rpcQueueContainer = new RpcQueueContainer(false, LoopbackEnabled);
             //Note: Since frame history is not being used, this is set to 0
             //To test frame history, increase the number to (n) where n > 0
             rpcQueueContainer.Initialize(0);
-
-            NetworkUpdateManager.RegisterNetworkUpdateAction(NetworkPreUpdate, NetworkUpdateManager.NetworkUpdateStages.PREUPDATE);
-            NetworkUpdateManager.RegisterNetworkUpdateAction(NetworkFixedUpdate, NetworkUpdateManager.NetworkUpdateStages.FIXEDUPDATE);
-            NetworkUpdateManager.RegisterNetworkUpdateAction(NetworkUpdate, NetworkUpdateManager.NetworkUpdateStages.UPDATE);
-            NetworkUpdateManager.RegisterNetworkUpdateAction(NetworkLateUpdate, NetworkUpdateManager.NetworkUpdateStages.LATEUPDATE);
         }
 
-        private float lastReceiveTickTime;
-        private float lastEventTickTime;
-        private float eventOvershootCounter;
-        private float lastTimeSyncTime;
+        private float m_LastReceiveTickTime;
+        private float m_LastEventTickTime;
+        private float m_EventOvershootCounter;
+        private float m_LastTimeSyncTime;
 
         /// <summary>
         /// NetworkPreUpdate:
@@ -714,7 +741,7 @@ namespace MLAPI
             if (IsListening)
             {
                 // Process received data
-                if ((NetworkTime - lastReceiveTickTime >= (1f / NetworkConfig.ReceiveTickrate)) || NetworkConfig.ReceiveTickrate <= 0)
+                if ((NetworkTime - m_LastReceiveTickTime >= (1f / NetworkConfig.ReceiveTickrate)) || NetworkConfig.ReceiveTickrate <= 0)
                 {
                     ProfilerStatManager.rcvTickRate.Record();
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -754,21 +781,15 @@ namespace MLAPI
                         } while (IsListening && (eventType != NetEventType.Nothing) && (NetworkConfig.MaxReceiveEventsPerTickRate <= 0 || processedEvents < NetworkConfig.MaxReceiveEventsPerTickRate));
                     }
 
-                    lastReceiveTickTime = NetworkTime;
+                    m_LastReceiveTickTime = NetworkTime;
 
                     NetworkProfiler.EndTick();
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_ReceiveTick.End();
 #endif
-                    rpcQueueContainer?.ProcessAndFlushRPCQueue(RpcQueueContainer.RPCQueueProcessingTypes.Receive, NetworkUpdateManager.NetworkUpdateStages.PREUPDATE);
                 }
             }
-        }
-
-        private void NetworkFixedUpdate()
-        {
-            rpcQueueContainer?.ProcessAndFlushRPCQueue(RpcQueueContainer.RPCQueueProcessingTypes.Receive,NetworkUpdateManager.NetworkUpdateStages.FIXEDUPDATE);
         }
 
         /// <summary>
@@ -779,9 +800,7 @@ namespace MLAPI
         {
             if (IsListening)
             {
-                rpcQueueContainer?.ProcessAndFlushRPCQueue(RpcQueueContainer.RPCQueueProcessingTypes.Receive, NetworkUpdateManager.NetworkUpdateStages.UPDATE);
-
-                if (((NetworkTime - lastEventTickTime >= (1f / NetworkConfig.EventTickrate))))
+                if (((NetworkTime - m_LastEventTickTime >= (1f / NetworkConfig.EventTickrate))))
                 {
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -793,7 +812,7 @@ namespace MLAPI
 
                     if (IsServer)
                     {
-                        eventOvershootCounter += ((NetworkTime - lastEventTickTime) - (1f / NetworkConfig.EventTickrate));
+                        m_EventOvershootCounter += ((NetworkTime - m_LastEventTickTime) - (1f / NetworkConfig.EventTickrate));
                         LagCompensationManager.AddFrames();
                     }
 
@@ -810,7 +829,7 @@ namespace MLAPI
 
                     if (IsServer)
                     {
-                        lastEventTickTime = NetworkTime;
+                        m_LastEventTickTime = NetworkTime;
                     }
 #if UNITY_EDITOR
                     NetworkProfiler.EndTick();
@@ -820,26 +839,26 @@ namespace MLAPI
                     s_EventTick.End();
 #endif
                 }
-                else if (IsServer && eventOvershootCounter >= ((1f / NetworkConfig.EventTickrate)))
+                else if (IsServer && m_EventOvershootCounter >= ((1f / NetworkConfig.EventTickrate)))
                 {
 #if UNITY_EDITOR
                     NetworkProfiler.StartTick(TickType.Event);
 #endif
                     //We run this one to compensate for previous update overshoots.
-                    eventOvershootCounter -= (1f / NetworkConfig.EventTickrate);
+                    m_EventOvershootCounter -= (1f / NetworkConfig.EventTickrate);
                     LagCompensationManager.AddFrames();
 #if UNITY_EDITOR
                     NetworkProfiler.EndTick();
 #endif
                 }
 
-                if (IsServer && NetworkConfig.EnableTimeResync && NetworkTime - lastTimeSyncTime >= NetworkConfig.TimeResyncInterval)
+                if (IsServer && NetworkConfig.EnableTimeResync && NetworkTime - m_LastTimeSyncTime >= NetworkConfig.TimeResyncInterval)
                 {
 #if UNITY_EDITOR
                     NetworkProfiler.StartTick(TickType.Event);
 #endif
                     SyncTime();
-                    lastTimeSyncTime = NetworkTime;
+                    m_LastTimeSyncTime = NetworkTime;
 #if UNITY_EDITOR
                     NetworkProfiler.EndTick();
 #endif
@@ -852,15 +871,6 @@ namespace MLAPI
                     currentNetworkTimeOffset += Mathf.Clamp(networkTimeOffset - currentNetworkTimeOffset, -maxDelta, maxDelta);
                 }
             }
-        }
-
-        /// <summary>
-        /// Finalizes the end of this network frame timing (i.e. anything beyond this time is next frame
-        /// </summary>
-        private void NetworkLateUpdate()
-        {
-            rpcQueueContainer?.ProcessAndFlushRPCQueue(RpcQueueContainer.RPCQueueProcessingTypes.Receive, NetworkUpdateManager.NetworkUpdateStages.LATEUPDATE);
-            rpcQueueContainer?.ProcessAndFlushRPCQueue(RpcQueueContainer.RPCQueueProcessingTypes.Send, NetworkUpdateManager.NetworkUpdateStages.LATEUPDATE);
         }
 
         internal void UpdateNetworkTime(ulong clientId, float netTime, float receiveTime, bool warp = false)

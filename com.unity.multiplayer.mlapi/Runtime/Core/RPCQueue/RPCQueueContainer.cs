@@ -10,10 +10,8 @@ namespace MLAPI.Messaging
     /// RpcQueueContainer
     /// Handles the management of an Rpc Queue
     /// </summary>
-    public class RpcQueueContainer
+    public class RpcQueueContainer:GenericUpdateLoopSystem
     {
-
-
         public enum QueueItemType
         {
             ServerRpc,
@@ -42,6 +40,8 @@ namespace MLAPI.Messaging
         private int     m_OutBoundStreamBufferIndex;
         private bool    m_IsLoopbackEnabled;
         private bool    m_IsTestingEnabled;
+        private bool    m_processUpdateStagesExternally;
+
         private bool    m_IsNotUsingBatching = false;
 
         public bool IsUsingBatching()
@@ -63,6 +63,76 @@ namespace MLAPI.Messaging
         {
             return m_IsLoopbackEnabled;
         }
+
+        /// <summary>
+        /// PreUpdateStage
+        /// Predefined internal network loop update system action
+        /// </summary>
+        void PreUpdateStage()
+        {
+            ProcessAndFlushRPCQueue(RpcQueueContainer.RPCQueueProcessingTypes.Receive,NetworkUpdateManager.NetworkUpdateStages.PREUPDATE);
+        }
+
+        /// <summary>
+        /// FixedUpdateStage
+        /// Predefined internal network loop update system action
+        /// </summary>
+        void FixedUpdateStage()
+        {
+            ProcessAndFlushRPCQueue(RpcQueueContainer.RPCQueueProcessingTypes.Receive,NetworkUpdateManager.NetworkUpdateStages.FIXEDUPDATE);
+        }
+
+        /// <summary>
+        /// UpdateStage
+        /// Predefined internal network loop update system action
+        /// </summary>
+        void UpdateStage()
+        {
+            ProcessAndFlushRPCQueue(RpcQueueContainer.RPCQueueProcessingTypes.Receive,NetworkUpdateManager.NetworkUpdateStages.UPDATE);
+        }
+
+        /// <summary>
+        /// LateUpdateStage
+        /// Predefined internal network loop update system action
+        /// </summary>
+        void LateUpdateStage()
+        {
+            ProcessAndFlushRPCQueue(RpcQueueContainer.RPCQueueProcessingTypes.Receive,NetworkUpdateManager.NetworkUpdateStages.LATEUPDATE);
+            ProcessAndFlushRPCQueue(RpcQueueContainer.RPCQueueProcessingTypes.Send, NetworkUpdateManager.NetworkUpdateStages.LATEUPDATE);
+        }
+
+        protected override Action InternalRegisterNetworkUpdateStage(NetworkUpdateManager.NetworkUpdateStages stage)
+        {
+            Action updateStageAction = null;
+            if(!m_processUpdateStagesExternally)
+            {
+                switch(stage)
+                {
+                    case NetworkUpdateManager.NetworkUpdateStages.PREUPDATE:
+                        {
+                            updateStageAction = PreUpdateStage;
+                            break;
+                        }
+                    case NetworkUpdateManager.NetworkUpdateStages.FIXEDUPDATE:
+                        {
+                            updateStageAction = FixedUpdateStage;
+                            break;
+                        }
+                    case NetworkUpdateManager.NetworkUpdateStages.UPDATE:
+                        {
+                            updateStageAction = UpdateStage;
+                            break;
+                        }
+                    case NetworkUpdateManager.NetworkUpdateStages.LATEUPDATE:
+                        {
+                            updateStageAction = LateUpdateStage;
+                            break;
+                        }
+                }
+            }
+            return updateStageAction;
+        }
+
 
         /// <summary>
         /// GetStreamBufferFrameCount
@@ -557,6 +627,13 @@ namespace MLAPI.Messaging
                     }
                 }
             }
+
+            //As long as this instance is using the pre-defined update stages
+            if (!m_processUpdateStagesExternally)
+            {
+                //Register with the network update loop system
+                RegisterUpdateLoopSystem();
+            }
         }
 
         /// <summary>
@@ -580,18 +657,6 @@ namespace MLAPI.Messaging
             return m_IsTestingEnabled;
         }
 
-
-        /// <summary>
-        /// Constructor for RpcQueueContainer
-        /// </summary>
-        /// <param name="isLoopBackEnabled">will redirect traffic back to the receive queue buffer (generally used for debugging or testing)</param>
-        /// <param name="isTestingEnabled">used for detecting if we are running tests</param>
-        public RpcQueueContainer(bool isLoopBackEnabled = false, bool isTestingEnabled = false)
-        {
-            m_IsTestingEnabled = isTestingEnabled;
-            m_IsLoopbackEnabled = isLoopBackEnabled;
-        }
-
         /// <summary>
         /// Clears all declared parameters
         /// </summary>
@@ -611,6 +676,13 @@ namespace MLAPI.Messaging
         {
             //We need to make sure all internal messages (i.e. object destroy) are sent
             rpcQueueProcessing?.InternalMessagesSendAndFlush();
+
+            //As long as this instance is using the pre-defined update stages
+            if (!m_processUpdateStagesExternally)
+            {
+                //Remove ourself from the network loop update system
+                OnNetworkLoopSystemRemove();
+            }
         }
 
         /// <summary>
@@ -635,6 +707,17 @@ namespace MLAPI.Messaging
             QueueHistory.Clear();
 
             ClearParameters();
+        }
+
+        /// <summary>
+        /// RpcQueueContainer - Constructor
+        /// </summary>
+        /// <param name="processInternally">determines if it handles processing internally or if it will be done externally</param>
+        /// <param name="isLoopBackEnabled">turns loopback on or off (primarily debugging purposes)</param>
+        public RpcQueueContainer(bool processExternally, bool isLoopBackEnabled = false)
+        {
+            m_processUpdateStagesExternally = processExternally;
+            m_IsLoopbackEnabled = isLoopBackEnabled;
         }
     }
 }

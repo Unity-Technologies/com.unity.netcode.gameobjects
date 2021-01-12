@@ -22,13 +22,13 @@ namespace MLAPI.Messaging
 #endif
 
                 // Batcher object used to manage the RPC batching on the send side
-        private MessageBatcher batcher = new MessageBatcher();
+        private MessageBatcher m_batcher = new MessageBatcher();
         private int m_BatchThreshold = 512;
 
 
         //NSS-TODO: Need to determine how we want to handle all other MLAPI send types
         //Temporary place to keep internal MLAPI messages
-        private readonly List<FrameQueueItem> internalMLAPISendQueue = new List<FrameQueueItem>();
+        private readonly List<FrameQueueItem> m_internalMLAPISendQueue = new List<FrameQueueItem>();
 
         /// <summary>
         /// ProcessReceiveQueue
@@ -102,7 +102,7 @@ namespace MLAPI.Messaging
         /// <param name="queueItem">message queue item to add<</param>
         public void QueueInternalMLAPICommand(FrameQueueItem queueItem)
         {
-            internalMLAPISendQueue.Add(queueItem);
+            m_internalMLAPISendQueue.Add(queueItem);
         }
 
         /// <summary>
@@ -112,7 +112,7 @@ namespace MLAPI.Messaging
         /// </summary>
         public void InternalMessagesSendAndFlush()
         {
-            foreach (FrameQueueItem queueItem in internalMLAPISendQueue)
+            foreach (FrameQueueItem queueItem in m_internalMLAPISendQueue)
             {
                 var PoolStream = queueItem.itemStream;
                 switch (queueItem.queueItemType)
@@ -142,7 +142,7 @@ namespace MLAPI.Messaging
                 PoolStream.Dispose();
             }
 
-            internalMLAPISendQueue.Clear();
+            m_internalMLAPISendQueue.Clear();
         }
 
         /// <summary>
@@ -173,9 +173,9 @@ namespace MLAPI.Messaging
                             AdvanceFrameHistory = true;
                             if(rpcQueueContainer.IsUsingBatching())
                             {
-                                batcher.QueueItem(currentQueueItem);
+                                m_batcher.QueueItem(currentQueueItem);
 
-                                batcher.SendItems(m_BatchThreshold, SendCallback);
+                                m_batcher.SendItems(m_BatchThreshold, SendCallback);
                             }
                             else
                             {
@@ -187,7 +187,7 @@ namespace MLAPI.Messaging
                         //If the size is < m_BatchThreshold then just send the messages
                         if(AdvanceFrameHistory && rpcQueueContainer.IsUsingBatching())
                         {
-                            batcher.SendItems(0, SendCallback);
+                            m_batcher.SendItems(0, SendCallback);
                         }
                     }
                 }
