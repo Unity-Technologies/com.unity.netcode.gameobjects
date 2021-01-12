@@ -52,11 +52,14 @@ namespace MLAPI.Serialization
         /// <param name="value">The object to write</param>
         public void WriteObjectPacked(object value)
         {
-            if (value == null || value.GetType().IsNullable())
-            {
-                WriteBool(value == null);
+            // Check unitys custom null checks
+            bool isNull = value == null || (value is UnityEngine.Object && ((UnityEngine.Object)value) == null);
 
-                if (value == null)
+            if (isNull || value.GetType().IsNullable())
+            {
+                WriteBool(isNull);
+
+                if (isNull)
                 {
                     return;
                 }

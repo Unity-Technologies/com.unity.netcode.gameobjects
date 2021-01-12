@@ -336,7 +336,7 @@ namespace MLAPI.Configuration
                     writer.WriteUInt16Packed(ProtocolVersion);
                     writer.WriteString(MLAPIConstants.MLAPI_PROTOCOL_VERSION);
 
-                    if (!AllowRuntimeSceneChanges)
+                    if (EnableSceneManagement && !AllowRuntimeSceneChanges)
                     {
                         for (int i = 0; i < RegisteredScenes.Count; i++)
                         {

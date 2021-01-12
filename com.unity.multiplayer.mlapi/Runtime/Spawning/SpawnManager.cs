@@ -600,6 +600,25 @@ namespace MLAPI.Spawning
             }
         }
 
+        internal static void CleanDiffedSceneObjects()
+        {
+            // Clean up the diffed scene objects. I.E scene objects that have been destroyed
+            if (pendingSoftSyncObjects.Count > 0)
+            {
+                List<NetworkedObject> objectsToDestroy = new List<NetworkedObject>();
+
+                foreach (KeyValuePair<ulong, NetworkedObject> pair in pendingSoftSyncObjects)
+                {
+                    objectsToDestroy.Add(pair.Value);
+                }
+
+                for (int i = 0; i < objectsToDestroy.Count; i++)
+                {
+                    MonoBehaviour.Destroy(objectsToDestroy[i].gameObject);
+                }
+            }
+        }
+
         internal static void ServerSpawnSceneObjectsOnStartSweep()
         {
             NetworkedObject[] networkedObjects = MonoBehaviour.FindObjectsOfType<NetworkedObject>();
@@ -674,21 +693,21 @@ namespace MLAPI.Spawning
                         if (NetworkingManager.Singleton.ConnectedClientsList.Count > 0)
                         {
                             var stream = PooledBitStream.Get();
-                            var writer = PooledBitWriter.Get(stream);
-                            writer.WriteUInt64Packed(networkId);
-
-                            var QueueItem = new FrameQueueItem
+                            using (var writer = PooledBitWriter.Get(stream))
                             {
-                                queueItemType = RpcQueueContainer.QueueItemType.DestroyObject,
-                                networkId = networkId,
-                                itemStream = stream,
-                                channel = "MLAPI_INTERNAL",
-                                sendFlags = SecuritySendFlags.None,
-                                clientIds = NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray()
-                            };
-                            rpcQueueContainer.AddToInternalMLAPISendQueue(QueueItem);
-                            writer.Dispose();
+                                writer.WriteUInt64Packed(networkId);
 
+                                var QueueItem = new FrameQueueItem
+                                {
+                                    QueueItemType = RPCQueueManager.QueueItemType.DestroyObject,
+                                    NetworkId = networkId,
+                                    ItemStream = stream,
+                                    Channel = "MLAPI_INTERNAL",
+                                    SendFlags = SecuritySendFlags.None,
+                                    ClientIds = NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray()
+                                };
+                                rpcQueueManager.AddToInternalMLAPISendQueue(QueueItem);
+                            }
                         }
                     }
                 }
