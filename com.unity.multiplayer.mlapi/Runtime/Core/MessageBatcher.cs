@@ -101,7 +101,6 @@ namespace MLAPI
         public void QueueItem(in FrameQueueItem item)
         {
             FillTargetList(item, ref TargetList);
-
             foreach (ulong clientId in TargetList)
             {
                 if (!SendDict.ContainsKey(clientId))
