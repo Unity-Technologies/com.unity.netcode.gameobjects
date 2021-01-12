@@ -41,7 +41,6 @@ namespace MLAPI.Messaging
         private bool    m_IsLoopbackEnabled;
         private bool    m_IsTestingEnabled;
         private bool    m_processUpdateStagesExternally;
-
         private bool    m_IsNotUsingBatching = false;
 
         public bool IsUsingBatching()
