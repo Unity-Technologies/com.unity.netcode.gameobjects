@@ -1,3 +1,7 @@
+/// About the Network Update Loop
+/// The NetworkUpdateEngine is a temporary solution for the network update loop implementation.
+/// This will be revised with a more robust and modular implementation in the near future.
+
 using System;
 using System.Text;
 using UnityEngine;

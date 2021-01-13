@@ -70,7 +70,7 @@ namespace MLAPI
         [HideInInspector]
         public bool LoopbackEnabled;
 
-        public RPCQueueManager RpcQueueManager { get; private set; }
+        public RpcQueueContainer rpcQueueContainer { get; private set; }
 
         /// <summary>
         /// A synchronized time, represents the time in seconds since the server application started. Is replicated across all clients
@@ -653,7 +653,7 @@ namespace MLAPI
 
         private void OnDestroy()
         {
-            RpcQueueManager?.OnExiting();
+            rpcQueueContainer?.OnExiting();
 
             if (Singleton != null && Singleton == this)
             {
@@ -679,20 +679,20 @@ namespace MLAPI
             if (NetworkConfig != null && NetworkConfig.NetworkTransport != null) //The Transport is set during Init time, thus it is possible for the Transport to be null
                 NetworkConfig.NetworkTransport.Shutdown();
 
-            if (RpcQueueManager != null)
+            if (rpcQueueContainer != null)
             {
-                RpcQueueManager.Shutdown();
-                RpcQueueManager = null;
+                rpcQueueContainer.Shutdown();
+                rpcQueueContainer = null;
             }
         }
 
 
         private void Awake()
         {
-            RpcQueueManager = new RPCQueueManager(LoopbackEnabled);
+            rpcQueueContainer = new RpcQueueContainer(LoopbackEnabled);
             //Note: Since frame history is not being used, this is set to 0
             //To test frame history, increase the number to (n) where n > 0
-            RpcQueueManager?.Initialize(0);
+            rpcQueueContainer.Initialize(0);
 
             NetworkUpdateManager.RegisterNetworkUpdateAction(NetworkPreUpdate, NetworkUpdateManager.NetworkUpdateStages.PREUPDATE);
             NetworkUpdateManager.RegisterNetworkUpdateAction(NetworkFixedUpdate, NetworkUpdateManager.NetworkUpdateStages.FIXEDUPDATE);
@@ -721,9 +721,9 @@ namespace MLAPI
                     s_ReceiveTick.Begin();
 #endif
                     bool IsLoopBack = false;
-                    if (RpcQueueManager != null)
+                    if (rpcQueueContainer != null)
                     {
-                        IsLoopBack = RpcQueueManager.IsLoopBack();
+                        IsLoopBack = rpcQueueContainer.IsLoopBack();
                     }
 
                     // @mfatihmar (Unity) Begin: Temporary, inbound RPC queue will replace this workaround
@@ -766,7 +766,7 @@ namespace MLAPI
 
         private void NetworkFixedUpdate()
         {
-            RpcQueueManager?.ProcessAndFlushRPCQueue(RPCQueueManager.RPCQueueProcessingTypes.Receive);
+            rpcQueueContainer.ProcessAndFlushRPCQueue(RpcQueueContainer.RPCQueueProcessingTypes.Receive);
         }
 
         /// <summary>
@@ -856,7 +856,7 @@ namespace MLAPI
         /// </summary>
         private void NetworkLateUpdate()
         {
-            RpcQueueManager?.ProcessAndFlushRPCQueue(RPCQueueManager.RPCQueueProcessingTypes.Send);
+            rpcQueueContainer.ProcessAndFlushRPCQueue(RpcQueueContainer.RPCQueueProcessingTypes.Send);
         }
 
         internal void UpdateNetworkTime(ulong clientId, float netTime, float receiveTime, bool warp = false)
@@ -1165,7 +1165,7 @@ namespace MLAPI
                         {
                             if (IsServer)
                             {
-                                batcher.ReceiveItems(messageStream, ReceiveCallback, RPCQueueManager.QueueItemType.ServerRpc, clientId, receiveTime);
+                                batcher.ReceiveItems(messageStream, ReceiveCallback, RpcQueueContainer.QueueItemType.ServerRpc, clientId, receiveTime);
                             }
                             ProfilerStatManager.rpcBatchesRcvd.Record();
                             break;
@@ -1174,7 +1174,7 @@ namespace MLAPI
                         {
                             if (IsClient)
                             {
-                                batcher.ReceiveItems(messageStream, ReceiveCallback, RPCQueueManager.QueueItemType.ClientRpc, clientId, receiveTime);
+                                batcher.ReceiveItems(messageStream, ReceiveCallback, RpcQueueContainer.QueueItemType.ClientRpc, clientId, receiveTime);
                             }
                             ProfilerStatManager.rpcBatchesRcvd.Record();
                             break;
@@ -1192,10 +1192,10 @@ namespace MLAPI
 #endif
         }
 
-        private static void ReceiveCallback(BitStream messageStream, MLAPI.RPCQueueManager.QueueItemType messageType, ulong clientId, float receiveTime)
+        private static void ReceiveCallback(BitStream messageStream, MLAPI.RpcQueueContainer.QueueItemType messageType, ulong clientId, float receiveTime)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (messageType == RPCQueueManager.QueueItemType.ServerRpc)
+            if (messageType == RpcQueueContainer.QueueItemType.ServerRpc)
             {
                 s_MLAPIServerSTDRPCQueued.Begin();
             }
@@ -1206,7 +1206,7 @@ namespace MLAPI
 #endif
             InternalMessageHandler.RPCReceiveQueueItem(clientId, messageStream, receiveTime, messageType);
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            if (messageType == RPCQueueManager.QueueItemType.ServerRpc)
+            if (messageType == RpcQueueContainer.QueueItemType.ServerRpc)
             {
                 s_MLAPIServerSTDRPCQueued.End();
             }
@@ -1227,9 +1227,9 @@ namespace MLAPI
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_InvokeRPC.Begin();
 #endif
-            var networkObjectId = queueItem.StreamReader.ReadUInt64Packed();
-            var networkBehaviourId = queueItem.StreamReader.ReadUInt16Packed();
-            var networkMethodId = queueItem.StreamReader.ReadUInt32Packed();
+            var networkObjectId = queueItem.streamReader.ReadUInt64Packed();
+            var networkBehaviourId = queueItem.streamReader.ReadUInt16Packed();
+            var networkMethodId = queueItem.streamReader.ReadUInt32Packed();
 
             if (__ntable.ContainsKey(networkMethodId))
             {
@@ -1239,7 +1239,7 @@ namespace MLAPI
                 var networkBehaviour = networkObject.GetBehaviourAtOrderIndex(networkBehaviourId);
                 if (ReferenceEquals(networkBehaviour, null)) return;
 
-                __ntable[networkMethodId](networkBehaviour, queueItem.StreamReader, queueItem.NetworkId);
+                __ntable[networkMethodId](networkBehaviour, queueItem.streamReader, queueItem.networkId);
             }
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR

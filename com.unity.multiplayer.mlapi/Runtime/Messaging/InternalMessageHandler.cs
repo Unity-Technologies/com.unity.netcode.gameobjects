@@ -685,7 +685,7 @@ namespace MLAPI.Messaging
         /// <param name="clientId"></param>
         /// <param name="stream"></param>
         /// <param name="receiveTime"></param>
-        internal static void RPCReceiveQueueItem(ulong clientId, Stream stream, float receiveTime, RPCQueueManager.QueueItemType queueItemType)
+        internal static void RPCReceiveQueueItem(ulong clientId, Stream stream, float receiveTime, RpcQueueContainer.QueueItemType queueItemType)
         {
             if (NetworkingManager.Singleton.IsServer && clientId == NetworkingManager.Singleton.ServerClientId)
             {
@@ -694,7 +694,7 @@ namespace MLAPI.Messaging
 
             ProfilerStatManager.rpcsRcvd.Record();
 
-            var rpcQueueManager = NetworkingManager.Singleton.RpcQueueManager;
+            var rpcQueueManager = NetworkingManager.Singleton.rpcQueueContainer;
             rpcQueueManager?.AddQueueItemToInboundFrame(queueItemType, receiveTime, clientId, (BitStream)stream);
         }
 

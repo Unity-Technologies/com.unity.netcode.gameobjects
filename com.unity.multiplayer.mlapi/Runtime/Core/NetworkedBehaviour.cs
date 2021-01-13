@@ -38,6 +38,9 @@ namespace MLAPI
             Client = 2
         }
 
+        /// <summary>
+        /// This is a temporary solution for channel names and the below hardcoded value might not be mandatory in the future.
+        /// </summary>
         private const string StandardRpc_ChannelName = "STDRPC";
 
 #pragma warning disable 414
@@ -48,13 +51,9 @@ namespace MLAPI
         // RuntimeAccessModifiersILPP will make this `protected`
         internal BitWriter BeginSendServerRpc(ServerRpcSendParams sendParams, bool isReliable)
         {
-            var rpcQueueMananger = NetworkingManager.Singleton.RpcQueueManager;
-            if (rpcQueueMananger == null)
-            {
-                return null;
-            }
+            var rpcQueueMananger = NetworkingManager.Singleton.rpcQueueContainer;
 
-            var writer = rpcQueueMananger.BeginAddQueueItemToOutboundFrame(RPCQueueManager.QueueItemType.ServerRpc, Time.realtimeSinceStartup, StandardRpc_ChannelName, 0, NetworkingManager.Singleton.ServerClientId, null);
+            var writer = rpcQueueMananger.BeginAddQueueItemToOutboundFrame(RpcQueueContainer.QueueItemType.ServerRpc, Time.realtimeSinceStartup, StandardRpc_ChannelName, 0, NetworkingManager.Singleton.ServerClientId, null);
             writer.WriteUInt64Packed(NetworkId); // NetworkObjectId
             writer.WriteUInt16Packed(GetBehaviourId()); // NetworkBehaviourId
             return writer;
@@ -65,7 +64,7 @@ namespace MLAPI
         {
             if (writer == null) return;
 
-            var rpcQueueMananger = NetworkingManager.Singleton.RpcQueueManager;
+            var rpcQueueMananger = NetworkingManager.Singleton.rpcQueueContainer;
             rpcQueueMananger?.EndAddQueueItemToOutboundFrame(writer);
         }
 
@@ -73,13 +72,9 @@ namespace MLAPI
         internal BitWriter BeginSendClientRpc(ClientRpcSendParams sendParams, bool isReliable)
         {
             //This will start a new queue item entry and will then return the writer to the current frame's stream
-            var rpcQueueMananger = NetworkingManager.Singleton.RpcQueueManager;
-            if (rpcQueueMananger == null)
-            {
-                return null;
-            }
+            var rpcQueueMananger = NetworkingManager.Singleton.rpcQueueContainer;
 
-            var writer = rpcQueueMananger.BeginAddQueueItemToOutboundFrame(RPCQueueManager.QueueItemType.ClientRpc, Time.realtimeSinceStartup, StandardRpc_ChannelName, 0, NetworkId, sendParams.TargetClientIds ?? NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray());
+            var writer = rpcQueueMananger.BeginAddQueueItemToOutboundFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, StandardRpc_ChannelName, 0, NetworkId, sendParams.TargetClientIds ?? NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray());
             writer.WriteUInt64Packed(NetworkId); // NetworkObjectId
             writer.WriteUInt16Packed(GetBehaviourId()); // NetworkBehaviourId
             return writer;
@@ -90,7 +85,7 @@ namespace MLAPI
         {
             if (writer == null) return;
 
-            var rpcQueueMananger = NetworkingManager.Singleton.RpcQueueManager;
+            var rpcQueueMananger = NetworkingManager.Singleton.rpcQueueContainer;
             rpcQueueMananger?.EndAddQueueItemToOutboundFrame(writer);
         }
 

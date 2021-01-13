@@ -78,15 +78,15 @@ namespace MLAPI
         /// <param name="list">the list to fill</param>
         private static void FillTargetList(in FrameQueueItem item, ref ulong[] list)
         {
-            switch (item.QueueItemType)
+            switch (item.queueItemType)
             {
-                case RPCQueueManager.QueueItemType.ServerRpc:
+                case RpcQueueContainer.QueueItemType.ServerRpc:
                     Array.Resize(ref list, 1);
-                    list[0] = item.NetworkId;
+                    list[0] = item.networkId;
                     break;
-                case RPCQueueManager.QueueItemType.ClientRpc:
+                case RpcQueueContainer.QueueItemType.ClientRpc:
                     // copy the list
-                    list = item.ClientIds.ToArray();
+                    list = item.clientIds.ToArray();
                     break;
                 default:
                     break;
@@ -114,38 +114,38 @@ namespace MLAPI
                 if (SendDict[clientId].Empty)
                 {
                     SendDict[clientId].Empty = false;
-                    SendDict[clientId].channel = item.Channel;
+                    SendDict[clientId].channel = item.channel;
                     Writer.SetStream(SendDict[clientId].Stream);
 
                     Writer.WriteBit(false); // Encrypted
                     Writer.WriteBit(false); // Authenticated
 
-                    switch (item.QueueItemType)
+                    switch (item.queueItemType)
                     {
                         // 6 bits are used for the message type, which is an MLAPIConstants
-                        case RPCQueueManager.QueueItemType.ServerRpc:
+                        case RpcQueueContainer.QueueItemType.ServerRpc:
                             Writer.WriteBits(MLAPIConstants.MLAPI_SERVER_RPC, 6); // MessageType
                             break;
-                        case RPCQueueManager.QueueItemType.ClientRpc:
+                        case RpcQueueContainer.QueueItemType.ClientRpc:
                             Writer.WriteBits(MLAPIConstants.MLAPI_CLIENT_RPC, 6); // MessageType
                             break;
                     }
                 }
 
                 // write the amounts of bytes that are coming up
-                PushLength(item.MessageData.Count, ref Writer);
+                PushLength(item.messageData.Count, ref Writer);
 
                 // write the message to send
                 // todo: is there a faster alternative to .ToArray()
-                Writer.WriteBytes(item.MessageData.ToArray(), item.MessageData.Count);
+                Writer.WriteBytes(item.messageData.ToArray(), item.messageData.Count);
 
-                ProfilerStatManager.bytesSent.Record((int)item.MessageData.Count);
+                ProfilerStatManager.bytesSent.Record((int)item.messageData.Count);
                 ProfilerStatManager.rpcsSent.Record();
             }
         }
 
         public delegate void SendCallbackType(ulong clientId, SendStream messageStream);
-        public delegate void ReceiveCallbackType(BitStream messageStream, MLAPI.RPCQueueManager.QueueItemType messageType, ulong clientId, float time);
+        public delegate void ReceiveCallbackType(BitStream messageStream, MLAPI.RpcQueueContainer.QueueItemType messageType, ulong clientId, float time);
 
         /// <summary>
         /// SendItems
@@ -185,7 +185,7 @@ namespace MLAPI
         /// <param name="messageType"> the message type to pass back to callback</param>
         /// <param name="clientId"> the clientId to pass back to callback</param>
         /// <param name="receiveTime"> the packet receive time to pass back to callback</param>
-        public int ReceiveItems(in BitStream messageStream, ReceiveCallbackType receiveCallback, MLAPI.RPCQueueManager.QueueItemType messageType, ulong clientId, float receiveTime)
+        public int ReceiveItems(in BitStream messageStream, ReceiveCallbackType receiveCallback, MLAPI.RpcQueueContainer.QueueItemType messageType, ulong clientId, float receiveTime)
         {
             using PooledBitStream copy = PooledBitStream.Get();
             do
