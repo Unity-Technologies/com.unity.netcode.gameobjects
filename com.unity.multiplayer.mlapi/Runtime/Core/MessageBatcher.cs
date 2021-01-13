@@ -14,7 +14,7 @@ namespace MLAPI
     {
         public class SendStream
         {
-            public FrameQueueItem Item;
+            public string channel;
             public PooledBitStream Stream = PooledBitStream.Get();
             public bool Empty = true;
         }
@@ -115,7 +115,7 @@ namespace MLAPI
                 if (SendDict[clientId].Empty)
                 {
                     SendDict[clientId].Empty = false;
-                    SendDict[clientId].Item = item;
+                    SendDict[clientId].channel = item.channel;
                     Writer.SetStream(SendDict[clientId].Stream);
 
                     Writer.WriteBit(false); // Encrypted
@@ -146,7 +146,7 @@ namespace MLAPI
         }
 
         public delegate void SendCallbackType(ulong clientId, SendStream messageStream);
-        public delegate void ReceiveCallbackType(BitStream messageStream, RpcQueueContainer.QueueItemType messageType, ulong clientId, float time);
+        public delegate void ReceiveCallbackType(BitStream messageStream, MLAPI.RpcQueueContainer.QueueItemType messageType, ulong clientId, float time);
 
         /// <summary>
         /// SendItems
@@ -186,9 +186,9 @@ namespace MLAPI
         /// <param name="messageType"> the message type to pass back to callback</param>
         /// <param name="clientId"> the clientId to pass back to callback</param>
         /// <param name="receiveTime"> the packet receive time to pass back to callback</param>
-        public int ReceiveItems(in BitStream messageStream, ReceiveCallbackType receiveCallback, RpcQueueContainer.QueueItemType messageType, ulong clientId, float receiveTime)
+        public int ReceiveItems(in BitStream messageStream, ReceiveCallbackType receiveCallback, MLAPI.RpcQueueContainer.QueueItemType messageType, ulong clientId, float receiveTime)
         {
-            PooledBitStream copy = PooledBitStream.Get();
+            using PooledBitStream copy = PooledBitStream.Get();
             do
             {
                 // read the length of the next RPC
@@ -203,7 +203,6 @@ namespace MLAPI
 
                 // copy what comes after current stream position
                 long pos = messageStream.Position;
-
                 copy.SetLength(rpcSize);
                 copy.Position = 0;
                 Buffer.BlockCopy(messageStream.GetBuffer(), (int)pos, copy.GetBuffer(), 0, rpcSize);

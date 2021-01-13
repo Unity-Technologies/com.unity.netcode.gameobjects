@@ -4,14 +4,15 @@ using MLAPI.Serialization;
 using MLAPI.Serialization.Pooled;
 using MLAPI.Profiling;
 
-namespace MLAPI.Messaging
+namespace MLAPI
 {
     /// <summary>
     /// RpcQueueContainer
     /// Handles the management of an Rpc Queue
     /// </summary>
-    public class RpcQueueContainer:GenericUpdateLoopSystem
+    public class RpcQueueContainer
     {
+
         public enum QueueItemType
         {
             ServerRpc,
@@ -22,15 +23,15 @@ namespace MLAPI.Messaging
             None //Indicates end of frame
         }
 
-        public enum RpcQueueProcessingTypes
+        public enum RPCQueueProcessingTypes
         {
             Send,
             Receive,
         }
 
-        private readonly Dictionary<QueueHistoryFrame.QueueFrameType, Dictionary<int, Dictionary<NetworkUpdateManager.NetworkUpdateStages, QueueHistoryFrame>>> QueueHistory = new Dictionary<QueueHistoryFrame.QueueFrameType, Dictionary<int, Dictionary<NetworkUpdateManager.NetworkUpdateStages, QueueHistoryFrame>>>();
+        private readonly Dictionary<QueueHistoryFrame.QueueFrameType, Dictionary<int, QueueHistoryFrame>> QueueHistory = new Dictionary<QueueHistoryFrame.QueueFrameType, Dictionary<int, QueueHistoryFrame>>();
 
-
+        private readonly bool       IsTestingEnabled;
         private RpcQueueProcessing  rpcQueueProcessing;
 
         private uint    m_OutboundFramesProcessed;
@@ -39,19 +40,6 @@ namespace MLAPI.Messaging
         private int     m_InboundStreamBufferIndex;
         private int     m_OutBoundStreamBufferIndex;
         private bool    m_IsLoopbackEnabled;
-        private bool    m_IsTestingEnabled;
-        private bool    m_processUpdateStagesExternally;
-        private bool    m_IsNotUsingBatching = false;
-
-        public bool IsUsingBatching()
-        {
-            return !m_IsNotUsingBatching;
-        }
-
-        public void EnableBatchedRpcs(bool isbatchingEnabled)
-        {
-            m_IsNotUsingBatching = !isbatchingEnabled;
-        }
 
         /// <summary>
         /// IsLoopBack
@@ -62,76 +50,6 @@ namespace MLAPI.Messaging
         {
             return m_IsLoopbackEnabled;
         }
-
-        /// <summary>
-        /// PreUpdateStage
-        /// Predefined internal network loop update system action
-        /// </summary>
-        void PreUpdateStage()
-        {
-            ProcessAndFlushRPCQueue(RpcQueueContainer.RpcQueueProcessingTypes.Receive,NetworkUpdateManager.NetworkUpdateStages.PREUPDATE);
-        }
-
-        /// <summary>
-        /// FixedUpdateStage
-        /// Predefined internal network loop update system action
-        /// </summary>
-        void FixedUpdateStage()
-        {
-            ProcessAndFlushRPCQueue(RpcQueueContainer.RpcQueueProcessingTypes.Receive,NetworkUpdateManager.NetworkUpdateStages.FIXEDUPDATE);
-        }
-
-        /// <summary>
-        /// UpdateStage
-        /// Predefined internal network loop update system action
-        /// </summary>
-        void UpdateStage()
-        {
-            ProcessAndFlushRPCQueue(RpcQueueContainer.RpcQueueProcessingTypes.Receive,NetworkUpdateManager.NetworkUpdateStages.UPDATE);
-        }
-
-        /// <summary>
-        /// LateUpdateStage
-        /// Predefined internal network loop update system action
-        /// </summary>
-        void LateUpdateStage()
-        {
-            ProcessAndFlushRPCQueue(RpcQueueContainer.RpcQueueProcessingTypes.Receive,NetworkUpdateManager.NetworkUpdateStages.LATEUPDATE);
-            ProcessAndFlushRPCQueue(RpcQueueContainer.RpcQueueProcessingTypes.Send, NetworkUpdateManager.NetworkUpdateStages.LATEUPDATE);
-        }
-
-        protected override Action InternalRegisterNetworkUpdateStage(NetworkUpdateManager.NetworkUpdateStages stage)
-        {
-            Action updateStageAction = null;
-            if(!m_processUpdateStagesExternally)
-            {
-                switch(stage)
-                {
-                    case NetworkUpdateManager.NetworkUpdateStages.PREUPDATE:
-                        {
-                            updateStageAction = PreUpdateStage;
-                            break;
-                        }
-                    case NetworkUpdateManager.NetworkUpdateStages.FIXEDUPDATE:
-                        {
-                            updateStageAction = FixedUpdateStage;
-                            break;
-                        }
-                    case NetworkUpdateManager.NetworkUpdateStages.UPDATE:
-                        {
-                            updateStageAction = UpdateStage;
-                            break;
-                        }
-                    case NetworkUpdateManager.NetworkUpdateStages.LATEUPDATE:
-                        {
-                            updateStageAction = LateUpdateStage;
-                            break;
-                        }
-                }
-            }
-            return updateStageAction;
-        }
-
 
         /// <summary>
         /// GetStreamBufferFrameCount
@@ -158,7 +76,7 @@ namespace MLAPI.Messaging
         /// <param name="queueItem">item to add to the internal MLAPI queue</param>
         public void AddToInternalMLAPISendQueue(FrameQueueItem queueItem)
         {
-            rpcQueueProcessing.QueueInternalMLAPICommand(queueItem);
+            rpcQueueProcessing?.QueueInternalMLAPICommand(queueItem);
         }
 
         /// <summary>
@@ -166,7 +84,7 @@ namespace MLAPI.Messaging
         /// Will process the RPC queue and then move to the next available frame
         /// </summary>
         /// <param name="queueType"></param>
-        public void ProcessAndFlushRPCQueue(RpcQueueProcessingTypes queueType, NetworkUpdateManager.NetworkUpdateStages currentUpdateStage)
+        public void ProcessAndFlushRPCQueue(RPCQueueProcessingTypes queueType)
         {
             if (rpcQueueProcessing == null)
             {
@@ -175,12 +93,12 @@ namespace MLAPI.Messaging
 
             switch (queueType)
             {
-                case RpcQueueProcessingTypes.Receive:
+                case RPCQueueProcessingTypes.Receive:
                 {
-                    rpcQueueProcessing.ProcessReceiveQueue(currentUpdateStage);
+                    rpcQueueProcessing.ProcessReceiveQueue();
                     break;
                 }
-                case RpcQueueProcessingTypes.Send:
+                case RPCQueueProcessingTypes.Send:
                 {
                     rpcQueueProcessing.ProcessSendQueue();
                     break;
@@ -194,7 +112,7 @@ namespace MLAPI.Messaging
         /// </summary>
         /// <param name="qType"></param>
         /// <returns>QueueHistoryFrame</returns>
-        public QueueHistoryFrame GetCurrentFrame(QueueHistoryFrame.QueueFrameType qType, NetworkUpdateManager.NetworkUpdateStages currentUpdateStage)
+        public QueueHistoryFrame GetCurrentFrame(QueueHistoryFrame.QueueFrameType qType)
         {
             if (QueueHistory.ContainsKey(qType))
             {
@@ -202,10 +120,7 @@ namespace MLAPI.Messaging
 
                 if (QueueHistory[qType].ContainsKey(StreamBufferIndex))
                 {
-                    if(QueueHistory[qType][StreamBufferIndex].ContainsKey(currentUpdateStage))
-                    {
-                        return QueueHistory[qType][StreamBufferIndex][currentUpdateStage];
-                    }
+                    return QueueHistory[qType][StreamBufferIndex];
                 }
             }
 
@@ -245,56 +160,47 @@ namespace MLAPI.Messaging
                 return;
             }
 
+            QueueHistoryFrame queueHistoryItem = QueueHistory[queueType][StreamBufferIndex];
 
-            foreach(KeyValuePair<NetworkUpdateManager.NetworkUpdateStages, QueueHistoryFrame> queueHistoryByUpdates in QueueHistory[queueType][StreamBufferIndex])
+            if (queueHistoryItem.queueItemOffsets.Count > 0)
             {
-                QueueHistoryFrame queueHistoryItem = queueHistoryByUpdates.Value;
-
-                if (queueHistoryItem.queueItemOffsets.Count > 0)
+                if (queueType == QueueHistoryFrame.QueueFrameType.Inbound)
                 {
-                    if (queueType == QueueHistoryFrame.QueueFrameType.Inbound)
-                    {
-                        ProfilerStatManager.rpcInQueueSize.Record((int)queueHistoryItem.TotalSize);
-                    }
-                    else
-                    {
-                        ProfilerStatManager.rpcOutQueueSize.Record((int)queueHistoryItem.TotalSize);
-                    }
+                    ProfilerStatManager.rpcInQueueSize.Record((int)queueHistoryItem.TotalSize);
+                }
+                else
+                {
+                    ProfilerStatManager.rpcOutQueueSize.Record((int)queueHistoryItem.TotalSize);
+                }
+
+                //Roll to the next stream buffer
+                StreamBufferIndex++;
+
+                //If we have hit our maximum history, roll back over to the first one
+                if (StreamBufferIndex >= m_MaxFrameHistory)
+                {
+                    StreamBufferIndex = 0;
+                }
+
+                if (queueType == QueueHistoryFrame.QueueFrameType.Inbound)
+                {
+                    m_InboundStreamBufferIndex = StreamBufferIndex;
+                }
+                else
+                {
+                    m_OutBoundStreamBufferIndex = StreamBufferIndex;
+                }
+
+
+                //If we already have a frame stored in this next queue history item, then clear it out for
+                //next frame when processed
+                if (QueueHistory[queueType].ContainsKey(StreamBufferIndex))
+                {
+                    ResetQueueHistoryFrame(QueueHistory[queueType][StreamBufferIndex]);
+                    IncrementAndSetQueueHistoryFrame(QueueHistory[queueType][StreamBufferIndex]);
                 }
             }
-
-            //Roll to the next stream buffer
-            StreamBufferIndex++;
-
-            //If we have hit our maximum history, roll back over to the first one
-            if (StreamBufferIndex >= m_MaxFrameHistory)
-            {
-                StreamBufferIndex = 0;
-            }
-
-            if (queueType == QueueHistoryFrame.QueueFrameType.Inbound)
-            {
-                m_InboundStreamBufferIndex = StreamBufferIndex;
-            }
-            else
-            {
-                m_OutBoundStreamBufferIndex = StreamBufferIndex;
-            }
-
-            //If we already have a frame stored in this next queue history item, then clear it out for
-            //next frame when processed
-            if (QueueHistory[queueType].ContainsKey(StreamBufferIndex))
-            {
-                foreach(KeyValuePair<NetworkUpdateManager.NetworkUpdateStages, QueueHistoryFrame> queueHistoryByUpdates in QueueHistory[queueType][StreamBufferIndex])
-                {
-                    QueueHistoryFrame queueHistoryItem = queueHistoryByUpdates.Value;
-
-                    ResetQueueHistoryFrame(queueHistoryItem);
-                    IncrementAndSetQueueHistoryFrame(queueHistoryItem);
-                }
-            }
-
-         }
+        }
 
         /// <summary>
         /// IncrementAndSetQueueHistoryFrame
@@ -337,26 +243,7 @@ namespace MLAPI.Messaging
         /// <param name="message">the message being received</param>
         internal void AddQueueItemToInboundFrame(QueueItemType qItemType, float timeStamp, ulong sourceNetworkId, BitStream message)
         {
-            long originalPosition = message.Position;
-            PooledBitReader BR = PooledBitReader.Get(message);
-
-            var longValue = BR.ReadUInt64Packed(); // NetworkObjectId (temporary, we reset position just below)
-
-            var shortValue = BR.ReadUInt16Packed(); // NetworkBehaviourId (temporary, we reset position just below)
-
-            ushort updateStageValue = BR.ReadUInt16Packed();
-            BR.Dispose();
-            BR = null;
-
-            NetworkUpdateManager.NetworkUpdateStages updateStage = NetworkUpdateManager.NetworkUpdateStages.UPDATE;
-            if(System.Enum.IsDefined(typeof(NetworkUpdateManager.NetworkUpdateStages),(int)updateStageValue))
-            {
-                updateStage = (NetworkUpdateManager.NetworkUpdateStages)updateStageValue;
-            }
-
-
-            message.Position = originalPosition;
-            QueueHistoryFrame queueHistoryItem = GetCurrentQueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Inbound, updateStage);
+            QueueHistoryFrame queueHistoryItem = GetCurrentQueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Inbound);
 
             long StartPosition = queueHistoryItem.queueStream.Position;
 
@@ -392,7 +279,7 @@ namespace MLAPI.Messaging
         /// <returns></returns>
         public PooledBitWriter BeginAddQueueItemToOutboundFrame(QueueItemType qItemType, float timeStamp, string channel, ushort sendflags, ulong sourceNetworkId, ulong[] targetNetworkIds)
         {
-            QueueHistoryFrame queueHistoryItem = GetCurrentQueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateManager.NetworkUpdateStages.LATEUPDATE);
+            QueueHistoryFrame queueHistoryItem = GetCurrentQueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Outbound);
 
             //Write the packed version of the queueItem to our current queue history buffer
             queueHistoryItem.queueWriter.WriteUInt16((ushort)qItemType);
@@ -442,7 +329,7 @@ namespace MLAPI.Messaging
         /// <param name="writer">writer that was used</param>
         public void EndAddQueueItemToOutboundFrame(BitWriter writer)
         {
-            QueueHistoryFrame queueHistoryItem = GetCurrentQueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateManager.NetworkUpdateStages.LATEUPDATE);
+            QueueHistoryFrame queueHistoryItem = GetCurrentQueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Outbound);
             PooledBitWriter pbWriter = (PooledBitWriter)writer;
 
             //Sanity check
@@ -462,20 +349,9 @@ namespace MLAPI.Messaging
             //////////////////////////////////////////////////////////////
             queueHistoryItem.queueStream.Position = queueHistoryItem.GetCurrentMarkedPosition();
 
-            //subtracting 8 byte to account for the value of the size of the RPC
             long MSGSize = (long)(queueHistoryItem.TotalSize - (queueHistoryItem.GetCurrentMarkedPosition() + 8));
-
-            if(MSGSize > 0)
-            {
-                //Write the actual size of the RPC message
-                queueHistoryItem.queueWriter.WriteInt64(MSGSize);
-            }
-            else
-            {
-                UnityEngine.Debug.LogWarning("MSGSize of < zero detected!!  Setting message size to zero!");
-                //Write the actual size of the RPC message
-                queueHistoryItem.queueWriter.WriteInt64(0);
-            }
+            //Write the actual size of the RPC message
+            queueHistoryItem.queueWriter.WriteInt64(MSGSize);
 
             //////////////////////////////////////////////////////////////
             //<<<< REPOSITIONING STREAM BACK TO THE CURRENT TAIL >>>>
@@ -493,65 +369,49 @@ namespace MLAPI.Messaging
         /// </summary>
         /// <param name="frameType">inbound or outbound</param>
         /// <returns>QueueHistoryFrame or null</returns>
-        private QueueHistoryFrame GetCurrentQueueHistoryFrame(QueueHistoryFrame.QueueFrameType frameType, NetworkUpdateManager.NetworkUpdateStages updateStage)
+        private QueueHistoryFrame GetCurrentQueueHistoryFrame(QueueHistoryFrame.QueueFrameType frameType)
         {
             int StreamBufferIndex = GetStreamBufferIndex(frameType);
 
-            if (!QueueHistory.ContainsKey(frameType))
+            if (!QueueHistory.ContainsKey(QueueHistoryFrame.QueueFrameType.Outbound))
             {
-                UnityEngine.Debug.LogError("You must initialize the RPCQueueManager before using MLAPI!");
+                UnityEngine.Debug.LogError("You must initialize the RpcQueueContainer before using MLAPI!");
                 return null;
             }
 
-            if (!QueueHistory[frameType].ContainsKey(StreamBufferIndex))
+            if (!QueueHistory[QueueHistoryFrame.QueueFrameType.Outbound].ContainsKey(StreamBufferIndex))
             {
-                UnityEngine.Debug.LogError("RPCQueueManager " + frameType + " queue stream buffer index out of range! [" + StreamBufferIndex + "]");
+                UnityEngine.Debug.LogError("RpcQueueContainer " + frameType + " queue stream buffer index out of range! [" + StreamBufferIndex + "]");
                 return null;
             }
 
-            if(!QueueHistory[frameType][StreamBufferIndex].ContainsKey(updateStage))
-            {
-                UnityEngine.Debug.LogError("RPCQueueManager " + updateStage.ToString() + " update type does not exist!");
-                return null;
-            }
-
-            return QueueHistory[frameType][StreamBufferIndex][updateStage];
+            return QueueHistory[frameType][StreamBufferIndex];
         }
 
 
         /// <summary>
-        /// LoopbackSendFrame
+        /// LoopbackSendFrame  - WIP
         /// Will copy the contents of the current outbound QueueHistoryFrame to the current inbound QueueHistoryFrame
         /// </summary>
         public void LoopbackSendFrame()
         {
             //If we do not have loop back or testing mode enabled then ignore the call
-            if (m_IsLoopbackEnabled || m_IsTestingEnabled)
+            if (m_IsLoopbackEnabled || IsTestingEnabled)
             {
-                QueueHistoryFrame queueHistoryItemOutbound = GetCurrentQueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Outbound,NetworkUpdateManager.NetworkUpdateStages.LATEUPDATE);
+                QueueHistoryFrame queueHistoryItemOutbound = GetCurrentQueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Outbound);
                 if (queueHistoryItemOutbound.queueItemOffsets.Count > 0)
                 {
-                    //Reset inbound queues based on update stage
-                    foreach(NetworkUpdateManager.NetworkUpdateStages stage in System.Enum.GetValues(typeof(NetworkUpdateManager.NetworkUpdateStages)))
-                    {
-                        QueueHistoryFrame queueHistoryItemInbound = GetCurrentQueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Inbound,stage);
-                        ResetQueueHistoryFrame(queueHistoryItemInbound);
-                    }
-
+                    QueueHistoryFrame queueHistoryItemInbound = GetCurrentQueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Inbound);
+                    ResetQueueHistoryFrame(queueHistoryItemInbound);
                     PooledBitStream pooledBitStream = PooledBitStream.Get();
                     FrameQueueItem frameQueueItem = queueHistoryItemOutbound.GetFirstQueueItem();
-
                     while (frameQueueItem.queueItemType != RpcQueueContainer.QueueItemType.None)
                     {
                         pooledBitStream.SetLength(frameQueueItem.streamSize);
                         pooledBitStream.Position = 0;
                         byte[] pooledBitStreamArray = pooledBitStream.GetBuffer();
                         Buffer.BlockCopy(frameQueueItem.messageData.Array ?? Array.Empty<byte>(), frameQueueItem.messageData.Offset, pooledBitStreamArray, 0, (int)frameQueueItem.streamSize);
-
-                        if(!IsUsingBatching())
-                        {
-                            pooledBitStream.Position = 1;
-                        }
+                        pooledBitStream.Position = 1;
 
                         AddQueueItemToInboundFrame(frameQueueItem.queueItemType, UnityEngine.Time.realtimeSinceStartup, frameQueueItem.networkId, pooledBitStream);
                         frameQueueItem = queueHistoryItemOutbound.GetNextQueueItem();
@@ -585,53 +445,37 @@ namespace MLAPI.Messaging
 
             if (!QueueHistory.ContainsKey(QueueHistoryFrame.QueueFrameType.Inbound))
             {
-                QueueHistory.Add(QueueHistoryFrame.QueueFrameType.Inbound, new Dictionary<int, Dictionary<NetworkUpdateManager.NetworkUpdateStages, QueueHistoryFrame>>());
+                QueueHistory.Add(QueueHistoryFrame.QueueFrameType.Inbound, new Dictionary<int, QueueHistoryFrame>());
             }
 
             if (!QueueHistory.ContainsKey(QueueHistoryFrame.QueueFrameType.Outbound))
             {
-                QueueHistory.Add(QueueHistoryFrame.QueueFrameType.Outbound, new Dictionary<int, Dictionary<NetworkUpdateManager.NetworkUpdateStages, QueueHistoryFrame>>());
+                QueueHistory.Add(QueueHistoryFrame.QueueFrameType.Outbound, new Dictionary<int, QueueHistoryFrame>());
             }
 
             for (int i = 0; i < m_MaxFrameHistory; i++)
             {
-                if (!QueueHistory[QueueHistoryFrame.QueueFrameType.Outbound].ContainsKey(i))
+                if (!QueueHistory[QueueHistoryFrame.QueueFrameType.Inbound].ContainsKey(i))
                 {
-                    QueueHistory[QueueHistoryFrame.QueueFrameType.Outbound].Add(i,new Dictionary<NetworkUpdateManager.NetworkUpdateStages, QueueHistoryFrame>() );
-                    QueueHistoryFrame queueHistoryFrame = new QueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Outbound,NetworkUpdateManager.NetworkUpdateStages.LATEUPDATE);
+                    QueueHistoryFrame queueHistoryFrame = new QueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Inbound);
                     queueHistoryFrame.queueStream = PooledBitStream.Get();
                     queueHistoryFrame.queueStream.Position = 0;
                     queueHistoryFrame.queueWriter = PooledBitWriter.Get(queueHistoryFrame.queueStream);
                     queueHistoryFrame.queueReader = PooledBitReader.Get(queueHistoryFrame.queueStream);
                     queueHistoryFrame.queueItemOffsets = new List<uint>();
-
-                    //For now all outbound, we will always have a single update in which they are processed (LATEUPDATE)
-                    QueueHistory[QueueHistoryFrame.QueueFrameType.Outbound][i].Add(NetworkUpdateManager.NetworkUpdateStages.LATEUPDATE, queueHistoryFrame);
+                    QueueHistory[QueueHistoryFrame.QueueFrameType.Inbound].Add(i, queueHistoryFrame);
                 }
 
-                if (!QueueHistory[QueueHistoryFrame.QueueFrameType.Inbound].ContainsKey(i))
+                if (!QueueHistory[QueueHistoryFrame.QueueFrameType.Outbound].ContainsKey(i))
                 {
-                    QueueHistory[QueueHistoryFrame.QueueFrameType.Inbound].Add(i,new Dictionary<NetworkUpdateManager.NetworkUpdateStages, QueueHistoryFrame>() );
-
-                    //For inbound, we create a queue history frame per update stage
-                    foreach(NetworkUpdateManager.NetworkUpdateStages stage in Enum.GetValues(typeof(NetworkUpdateManager.NetworkUpdateStages)))
-                    {
-                        QueueHistoryFrame queueHistoryFrame = new QueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Inbound,stage);
-                        queueHistoryFrame.queueStream = PooledBitStream.Get();
-                        queueHistoryFrame.queueStream.Position = 0;
-                        queueHistoryFrame.queueWriter = PooledBitWriter.Get(queueHistoryFrame.queueStream);
-                        queueHistoryFrame.queueReader = PooledBitReader.Get(queueHistoryFrame.queueStream);
-                        queueHistoryFrame.queueItemOffsets = new List<uint>();
-                        QueueHistory[QueueHistoryFrame.QueueFrameType.Inbound][i].Add(stage, queueHistoryFrame);
-                    }
+                    QueueHistoryFrame queueHistoryFrame = new QueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Outbound);
+                    queueHistoryFrame.queueStream = PooledBitStream.Get();
+                    queueHistoryFrame.queueStream.Position = 0;
+                    queueHistoryFrame.queueWriter = PooledBitWriter.Get(queueHistoryFrame.queueStream);
+                    queueHistoryFrame.queueReader = PooledBitReader.Get(queueHistoryFrame.queueStream);
+                    queueHistoryFrame.queueItemOffsets = new List<uint>();
+                    QueueHistory[QueueHistoryFrame.QueueFrameType.Outbound].Add(i, queueHistoryFrame);
                 }
-            }
-
-            //As long as this instance is using the pre-defined update stages
-            if (!m_processUpdateStagesExternally)
-            {
-                //Register with the network update loop system
-                RegisterUpdateLoopSystem();
             }
         }
 
@@ -646,14 +490,15 @@ namespace MLAPI.Messaging
             m_IsLoopbackEnabled = enabled;
         }
 
-        public void SetTestingState(bool enabled)
+        /// <summary>
+        /// Constructor for RpcQueueContainer
+        /// </summary>
+        /// <param name="isLoopBackEnabled">will redirect traffic back to the receive queue buffer (generally used for debugging or testing)</param>
+        /// <param name="isTestingEnabled">used for detecting if we are running tests</param>
+        public RpcQueueContainer(bool isLoopBackEnabled = false, bool isTestingEnabled = false)
         {
-            m_IsTestingEnabled = enabled;
-        }
-
-        public bool IsTesting()
-        {
-            return m_IsTestingEnabled;
+            IsTestingEnabled = isTestingEnabled;
+            m_IsLoopbackEnabled = isLoopBackEnabled;
         }
 
         /// <summary>
@@ -674,14 +519,7 @@ namespace MLAPI.Messaging
         public void OnExiting()
         {
             //We need to make sure all internal messages (i.e. object destroy) are sent
-            rpcQueueProcessing.InternalMessagesSendAndFlush();
-
-            //As long as this instance is using the pre-defined update stages
-            if (!m_processUpdateStagesExternally)
-            {
-                //Remove ourself from the network loop update system
-                OnNetworkLoopSystemRemove();
-            }
+            rpcQueueProcessing?.InternalMessagesSendAndFlush();
         }
 
         /// <summary>
@@ -690,33 +528,19 @@ namespace MLAPI.Messaging
         /// </summary>
         public void Shutdown()
         {
-            foreach (KeyValuePair<QueueHistoryFrame.QueueFrameType, Dictionary<int, Dictionary<NetworkUpdateManager.NetworkUpdateStages, QueueHistoryFrame>>> queueHistorySection in QueueHistory)
+            foreach (KeyValuePair<QueueHistoryFrame.QueueFrameType, Dictionary<int, QueueHistoryFrame>> queueHistorySection in QueueHistory)
             {
-                foreach (KeyValuePair<int, Dictionary<NetworkUpdateManager.NetworkUpdateStages, QueueHistoryFrame>> queueHistoryItemByStage in queueHistorySection.Value)
+                foreach (KeyValuePair<int, QueueHistoryFrame> queueHistoryItem in queueHistorySection.Value)
                 {
-                    foreach(KeyValuePair<NetworkUpdateManager.NetworkUpdateStages, QueueHistoryFrame> queueHistoryItem in queueHistoryItemByStage.Value)
-                    {
-                        queueHistoryItem.Value.queueWriter?.Dispose();
-                        queueHistoryItem.Value.queueReader?.Dispose();
-                        queueHistoryItem.Value.queueStream?.Dispose();
-                    }
+                    queueHistoryItem.Value.queueWriter?.Dispose();
+                    queueHistoryItem.Value.queueReader?.Dispose();
+                    queueHistoryItem.Value.queueStream?.Dispose();
                 }
             }
 
             QueueHistory.Clear();
 
             ClearParameters();
-        }
-
-        /// <summary>
-        /// RpcQueueContainer - Constructor
-        /// </summary>
-        /// <param name="processInternally">determines if it handles processing internally or if it will be done externally</param>
-        /// <param name="isLoopBackEnabled">turns loopback on or off (primarily debugging purposes)</param>
-        public RpcQueueContainer(bool processExternally, bool isLoopBackEnabled = false)
-        {
-            m_processUpdateStagesExternally = processExternally;
-            m_IsLoopbackEnabled = isLoopBackEnabled;
         }
     }
 }

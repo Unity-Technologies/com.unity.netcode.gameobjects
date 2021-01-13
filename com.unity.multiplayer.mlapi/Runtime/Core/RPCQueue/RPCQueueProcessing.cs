@@ -16,19 +16,20 @@ namespace MLAPI.Messaging
     /// </summary>
     internal class RpcQueueProcessing
     {
+
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
         static ProfilerMarker s_MLAPIRPCQueueProcess = new ProfilerMarker("MLAPIRPCQueueProcess");
         static ProfilerMarker s_MLAPIRPCQueueSend = new ProfilerMarker("MLAPIRPCQueueSend");
 #endif
 
-                // Batcher object used to manage the RPC batching on the send side
+        // Batcher object used to manage the RPC batching on the send side
         private MessageBatcher m_batcher = new MessageBatcher();
         private int m_BatchThreshold = 512;
 
 
         //NSS-TODO: Need to determine how we want to handle all other MLAPI send types
         //Temporary place to keep internal MLAPI messages
-        private readonly List<FrameQueueItem> m_internalMLAPISendQueue = new List<FrameQueueItem>();
+        private readonly List<FrameQueueItem> m_InternalMLAPISendQueue = new List<FrameQueueItem>();
 
         /// <summary>
         /// ProcessReceiveQueue
@@ -102,7 +103,7 @@ namespace MLAPI.Messaging
         /// <param name="queueItem">message queue item to add<</param>
         public void QueueInternalMLAPICommand(FrameQueueItem queueItem)
         {
-            m_internalMLAPISendQueue.Add(queueItem);
+            m_InternalMLAPISendQueue.Add(queueItem);
         }
 
         /// <summary>
@@ -112,7 +113,7 @@ namespace MLAPI.Messaging
         /// </summary>
         public void InternalMessagesSendAndFlush()
         {
-            foreach (FrameQueueItem queueItem in m_internalMLAPISendQueue)
+            foreach (FrameQueueItem queueItem in m_InternalMLAPISendQueue)
             {
                 var PoolStream = queueItem.itemStream;
                 switch (queueItem.queueItemType)
@@ -142,7 +143,7 @@ namespace MLAPI.Messaging
                 PoolStream.Dispose();
             }
 
-            m_internalMLAPISendQueue.Clear();
+            m_InternalMLAPISendQueue.Clear();
         }
 
         /// <summary>
@@ -209,8 +210,8 @@ namespace MLAPI.Messaging
         /// <param name="sendStream"> the stream to send</param>
         private static void SendCallback(ulong clientId, MLAPI.MessageBatcher.SendStream sendStream)
         {
-            int length = (int)sendStream.Stream.Length;
-            byte[] bytes = sendStream.Stream.GetBuffer();
+            var length = (int)sendStream.Stream.Length;
+            var bytes = sendStream.Stream.GetBuffer();
             ArraySegment<byte> sendBuffer = new ArraySegment<byte>(bytes, 0, length);
             NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(clientId, sendBuffer, string.IsNullOrEmpty(sendStream.Item.channel) ? "MLAPI_DEFAULT_MESSAGE" : sendStream.Item.channel);
         }
