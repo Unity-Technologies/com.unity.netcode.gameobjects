@@ -22,7 +22,7 @@ namespace MLAPI
         static ProfilerMarker s_MLAPIRPCQueueSend = new ProfilerMarker("MLAPIRPCQueueSend");
 #endif
         // Batcher object used to manage the RPC batching on the send side
-        private MessageBatcher m_batcher = new MessageBatcher();
+        private readonly MessageBatcher m_batcher = new MessageBatcher();
         private int m_BatchThreshold = 10;
 
         //NSS-TODO: Need to determine how we want to handle all other MLAPI send types
@@ -196,7 +196,7 @@ namespace MLAPI
             var bytes = sendStream.Stream.GetBuffer();
             ArraySegment<byte> sendBuffer = new ArraySegment<byte>(bytes, 0, length);
 
-            NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(clientId, sendBuffer, string.IsNullOrEmpty(sendStream.Item.channel) ? "MLAPI_DEFAULT_MESSAGE" : sendStream.Item.channel);
+            NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(clientId, sendBuffer, string.IsNullOrEmpty(sendStream.channel) ? "MLAPI_DEFAULT_MESSAGE" : sendStream.channel);
         }
     }
 }

@@ -114,7 +114,7 @@ namespace MLAPI
                 if (SendDict[clientId].Empty)
                 {
                     SendDict[clientId].Empty = false;
-                    SendDict[clientId].channel = item.Channel;
+                    SendDict[clientId].channel = item.channel;
                     Writer.SetStream(SendDict[clientId].Stream);
 
                     Writer.WriteBit(false); // Encrypted
