@@ -25,7 +25,7 @@ namespace MLAPI
 #endif
         // Batcher object used to manage the RPC batching on the send side
         private MessageBatcher batcher = new MessageBatcher();
-        private int BatchThreshold = 1000;
+        private int BatchThreshold = 512;
 
         //NSS-TODO: Need to determine how we want to handle all other MLAPI send types
         //Temporary place to keep internal MLAPI messages
@@ -208,7 +208,7 @@ namespace MLAPI
             ArraySegment<byte> sendBuffer = new ArraySegment<byte>(bytes, 0, length);
 
             NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(clientId, sendBuffer,
-                string.IsNullOrEmpty(sendStream.Item.Channel) ? "MLAPI_DEFAULT_MESSAGE" : sendStream.Item.Channel);
+                string.IsNullOrEmpty(sendStream.channel) ? "MLAPI_DEFAULT_MESSAGE" : sendStream.channel);
         }
     }
 }
