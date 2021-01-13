@@ -146,7 +146,7 @@ namespace MLAPI
         }
 
         public delegate void SendCallbackType(ulong clientId, SendStream messageStream);
-        public delegate void ReceiveCallbackType(BitStream messageStream, MLAPI.RpcQueueContainer.QueueItemType messageType, ulong clientId, float time);
+        public delegate void ReceiveCallbackType(BitStream messageStream, RpcQueueContainer.QueueItemType messageType, ulong clientId, float time);
 
         /// <summary>
         /// SendItems
@@ -186,7 +186,7 @@ namespace MLAPI
         /// <param name="messageType"> the message type to pass back to callback</param>
         /// <param name="clientId"> the clientId to pass back to callback</param>
         /// <param name="receiveTime"> the packet receive time to pass back to callback</param>
-        public int ReceiveItems(in BitStream messageStream, ReceiveCallbackType receiveCallback, MLAPI.RpcQueueContainer.QueueItemType messageType, ulong clientId, float receiveTime)
+        public int ReceiveItems(in BitStream messageStream, ReceiveCallbackType receiveCallback, RpcQueueContainer.QueueItemType messageType, ulong clientId, float receiveTime)
         {
             using PooledBitStream copy = PooledBitStream.Get();
             do
