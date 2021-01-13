@@ -22,7 +22,7 @@ namespace MLAPI.Messaging
             None //Indicates end of frame
         }
 
-        public enum RPCQueueProcessingTypes
+        public enum RpcQueueProcessingTypes
         {
             Send,
             Receive,
@@ -69,7 +69,7 @@ namespace MLAPI.Messaging
         /// </summary>
         void PreUpdateStage()
         {
-            ProcessAndFlushRPCQueue(RpcQueueContainer.RPCQueueProcessingTypes.Receive,NetworkUpdateManager.NetworkUpdateStages.PREUPDATE);
+            ProcessAndFlushRPCQueue(RpcQueueContainer.RpcQueueProcessingTypes.Receive,NetworkUpdateManager.NetworkUpdateStages.PREUPDATE);
         }
 
         /// <summary>
@@ -78,7 +78,7 @@ namespace MLAPI.Messaging
         /// </summary>
         void FixedUpdateStage()
         {
-            ProcessAndFlushRPCQueue(RpcQueueContainer.RPCQueueProcessingTypes.Receive,NetworkUpdateManager.NetworkUpdateStages.FIXEDUPDATE);
+            ProcessAndFlushRPCQueue(RpcQueueContainer.RpcQueueProcessingTypes.Receive,NetworkUpdateManager.NetworkUpdateStages.FIXEDUPDATE);
         }
 
         /// <summary>
@@ -87,7 +87,7 @@ namespace MLAPI.Messaging
         /// </summary>
         void UpdateStage()
         {
-            ProcessAndFlushRPCQueue(RpcQueueContainer.RPCQueueProcessingTypes.Receive,NetworkUpdateManager.NetworkUpdateStages.UPDATE);
+            ProcessAndFlushRPCQueue(RpcQueueContainer.RpcQueueProcessingTypes.Receive,NetworkUpdateManager.NetworkUpdateStages.UPDATE);
         }
 
         /// <summary>
@@ -96,8 +96,8 @@ namespace MLAPI.Messaging
         /// </summary>
         void LateUpdateStage()
         {
-            ProcessAndFlushRPCQueue(RpcQueueContainer.RPCQueueProcessingTypes.Receive,NetworkUpdateManager.NetworkUpdateStages.LATEUPDATE);
-            ProcessAndFlushRPCQueue(RpcQueueContainer.RPCQueueProcessingTypes.Send, NetworkUpdateManager.NetworkUpdateStages.LATEUPDATE);
+            ProcessAndFlushRPCQueue(RpcQueueContainer.RpcQueueProcessingTypes.Receive,NetworkUpdateManager.NetworkUpdateStages.LATEUPDATE);
+            ProcessAndFlushRPCQueue(RpcQueueContainer.RpcQueueProcessingTypes.Send, NetworkUpdateManager.NetworkUpdateStages.LATEUPDATE);
         }
 
         protected override Action InternalRegisterNetworkUpdateStage(NetworkUpdateManager.NetworkUpdateStages stage)
@@ -158,7 +158,7 @@ namespace MLAPI.Messaging
         /// <param name="queueItem">item to add to the internal MLAPI queue</param>
         public void AddToInternalMLAPISendQueue(FrameQueueItem queueItem)
         {
-            rpcQueueProcessing?.QueueInternalMLAPICommand(queueItem);
+            rpcQueueProcessing.QueueInternalMLAPICommand(queueItem);
         }
 
         /// <summary>
@@ -166,7 +166,7 @@ namespace MLAPI.Messaging
         /// Will process the RPC queue and then move to the next available frame
         /// </summary>
         /// <param name="queueType"></param>
-        public void ProcessAndFlushRPCQueue(RPCQueueProcessingTypes queueType, NetworkUpdateManager.NetworkUpdateStages currentUpdateStage)
+        public void ProcessAndFlushRPCQueue(RpcQueueProcessingTypes queueType, NetworkUpdateManager.NetworkUpdateStages currentUpdateStage)
         {
             if (rpcQueueProcessing == null)
             {
@@ -175,12 +175,12 @@ namespace MLAPI.Messaging
 
             switch (queueType)
             {
-                case RPCQueueProcessingTypes.Receive:
+                case RpcQueueProcessingTypes.Receive:
                 {
                     rpcQueueProcessing.ProcessReceiveQueue(currentUpdateStage);
                     break;
                 }
-                case RPCQueueProcessingTypes.Send:
+                case RpcQueueProcessingTypes.Send:
                 {
                     rpcQueueProcessing.ProcessSendQueue();
                     break;
@@ -674,7 +674,7 @@ namespace MLAPI.Messaging
         public void OnExiting()
         {
             //We need to make sure all internal messages (i.e. object destroy) are sent
-            rpcQueueProcessing?.InternalMessagesSendAndFlush();
+            rpcQueueProcessing.InternalMessagesSendAndFlush();
 
             //As long as this instance is using the pre-defined update stages
             if (!m_processUpdateStagesExternally)

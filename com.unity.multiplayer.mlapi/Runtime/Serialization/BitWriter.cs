@@ -870,12 +870,12 @@ namespace MLAPI.Serialization
         /// </summary>
         /// <param name="buffer"></param>
         /// <param name="targetSize"></param>
-        public void WriteBytes(byte[] buffer, long targetSize)
+        public void WriteBytes(byte[] buffer, long targetSize, int offset = 0)
         {
 
             long TargetSize = targetSize;
             long LargeInt64Blocks = (long)(TargetSize * 0.125f);
-            int IndexOffset = 0;
+            int IndexOffset = offset;
             //8 Byte blocks
             for (long i = 0; i < LargeInt64Blocks; i++)
             {

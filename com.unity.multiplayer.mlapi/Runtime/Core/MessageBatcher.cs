@@ -212,8 +212,7 @@ namespace MLAPI
 
                 // seek over the RPC
                 // RPCReceiveQueueItem peeks at content, it doesn't advance
-                //messageStream.Seek(rpcSize, SeekOrigin.Current);
-                messageStream.Position += rpcSize;
+                messageStream.Seek(rpcSize, SeekOrigin.Current);
             } while (messageStream.Position < messageStream.Length);
             copy.Dispose();
             return 0;
