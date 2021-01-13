@@ -518,8 +518,15 @@ namespace MLAPI.Serialization
         /// <param name="value"></param>
         public void WriteBool(bool value)
         {
-            if (bitSink == null) sink.WriteByte(value ? (byte)1 : (byte)0);
-            else WriteBit(value);
+            if (bitSink == null)
+            {
+                sink.WriteByte(value ? (byte)1 : (byte)0);
+            }
+            else
+            {
+                // WriteBit(value); // old (buggy)
+                WriteByte(value ? (byte)1 : (byte)0); // new (hotfix)
+            }
         }
 
         /// <summary>
