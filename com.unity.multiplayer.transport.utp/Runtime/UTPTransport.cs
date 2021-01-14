@@ -14,7 +14,7 @@ using Unity.Networking.Transport;
 using UnityEngine;
 using UnityEngine.Assertions;
 
-#if USINGUTP
+
 [StructLayout(LayoutKind.Explicit)]
 public unsafe struct RawNetworkMessage
 {
@@ -457,4 +457,4 @@ public class UTPTransport : Transport
         return SocketTask.Working.AsTasks();
     }
 }
-#endif
+
