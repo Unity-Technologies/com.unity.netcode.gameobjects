@@ -2,6 +2,7 @@ using MLAPI.Configuration;
 using MLAPI.Messaging;
 using MLAPI.Security;
 using MLAPI.Serialization.Pooled;
+using MLAPI.Transports;
 using UnityEngine;
 
 namespace MLAPI.Logging
@@ -75,7 +76,7 @@ namespace MLAPI.Logging
 
                         writer.WriteStringPacked(message);
 
-                        InternalMessageSender.Send(NetworkingManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_SERVER_LOG, "MLAPI_INTERNAL", stream, SecuritySendFlags.None);
+                        InternalMessageSender.Send(NetworkingManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_SERVER_LOG, Transport.MLAPI_INTERNAL_CHANNEL, stream, SecuritySendFlags.None);
                     }
                 }
             }

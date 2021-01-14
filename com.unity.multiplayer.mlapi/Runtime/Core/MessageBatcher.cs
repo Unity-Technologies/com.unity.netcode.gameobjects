@@ -14,7 +14,7 @@ namespace MLAPI
     {
         public class SendStream
         {
-            public string channel;
+            public byte channel;
             public PooledBitStream Stream = PooledBitStream.Get();
             public PooledBitWriter Writer;
             public bool Empty = true;

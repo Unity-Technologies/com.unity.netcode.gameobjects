@@ -15,6 +15,7 @@ using MLAPI.Security;
 using MLAPI.Serialization;
 using MLAPI.Serialization.Pooled;
 using MLAPI.Spawning;
+using MLAPI.Transports;
 using BitStream = MLAPI.Serialization.BitStream;
 using Unity.Profiling;
 
@@ -38,11 +39,6 @@ namespace MLAPI
             Client = 2
         }
 
-        /// <summary>
-        /// This is a temporary solution for channel names and the below hardcoded value might not be mandatory in the future.
-        /// </summary>
-        private const string StandardRpc_ChannelName = "STDRPC";
-
 #pragma warning disable 414
         // RuntimeAccessModifiersILPP will make this `protected`
         internal NExec __nexec = NExec.None;
@@ -53,7 +49,7 @@ namespace MLAPI
         {
             var rpcQueueContainer = NetworkingManager.Singleton.rpcQueueContainer;
 
-            var writer = rpcQueueContainer.BeginAddQueueItemToOutboundFrame(RpcQueueContainer.QueueItemType.ServerRpc, Time.realtimeSinceStartup, StandardRpc_ChannelName, 0, NetworkingManager.Singleton.ServerClientId, null);
+            var writer = rpcQueueContainer.BeginAddQueueItemToOutboundFrame(RpcQueueContainer.QueueItemType.ServerRpc, Time.realtimeSinceStartup, Transport.MLAPI_STDRPC_CHANNEL, 0, NetworkingManager.Singleton.ServerClientId, null);
 
             if(!rpcQueueContainer.IsUsingBatching())
             {
@@ -93,7 +89,7 @@ namespace MLAPI
             //This will start a new queue item entry and will then return the writer to the current frame's stream
             var rpcQueueContainer = NetworkingManager.Singleton.rpcQueueContainer;
 
-            var writer = rpcQueueContainer.BeginAddQueueItemToOutboundFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, StandardRpc_ChannelName, 0, NetworkId, sendParams.TargetClientIds ?? NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray());
+            var writer = rpcQueueContainer.BeginAddQueueItemToOutboundFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, Transport.MLAPI_SERVER_RPC, 0, NetworkId, sendParams.TargetClientIds ?? NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray());
 
             if(!rpcQueueContainer.IsUsingBatching())
             {
@@ -309,7 +305,7 @@ namespace MLAPI
         private bool varInit = false;
 
         private readonly List<HashSet<int>> channelMappedNetworkedVarIndexes = new List<HashSet<int>>();
-        private readonly List<string> channelsForNetworkedVarGroups = new List<string>();
+        private readonly List<byte> channelsForNetworkedVarGroups = new List<byte>();
         internal readonly List<INetworkedVar> networkedVarFields = new List<INetworkedVar>();
 
         private static HashSet<MLAPI.NetworkedObject> touched = new HashSet<MLAPI.NetworkedObject>();
@@ -374,12 +370,15 @@ namespace MLAPI
 
             {
                 // Create index map for channels
-                Dictionary<string, int> firstLevelIndex = new Dictionary<string, int>();
+                Dictionary<byte, int> firstLevelIndex = new Dictionary<byte, int>();
                 int secondLevelCounter = 0;
 
                 for (int i = 0; i < networkedVarFields.Count; i++)
                 {
-                    string channel = networkedVarFields[i].GetChannel(); // Cache this here. Some developers are stupid. You don't know what shit they will do in their methods
+                    // this could be cleaner.  The GetChannel() methods look for the SendChannel string channel name
+                    //  from the settings file.
+                    string channelName = networkedVarFields[i].GetChannel(); // Cache this here. Some developers are stupid. You don't know what shit they will do in their methods
+                    byte channel = Transport.GetChannelByte(channelName);
 
                     if (!firstLevelIndex.ContainsKey(channel))
                     {

@@ -261,7 +261,7 @@ namespace MLAPI
         /// <param name="channel">The channel to send the data on</param>
         /// <param name="security">The security settings to apply to the message</param>
         [Obsolete("Use CustomMessagingManager.SendUnnamedMessage instead")]
-        public void SendCustomMessage(List<ulong> clientIds, BitStream stream, string channel = null, SecuritySendFlags security = SecuritySendFlags.None)
+        public void SendCustomMessage(List<ulong> clientIds, BitStream stream, byte channel = Transport.MLAPI_INTERNAL_CHANNEL, SecuritySendFlags security = SecuritySendFlags.None)
         {
             if (!IsServer)
             {
@@ -269,7 +269,7 @@ namespace MLAPI
                 return;
             }
 
-            InternalMessageSender.Send(MLAPIConstants.MLAPI_UNNAMED_MESSAGE, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, clientIds, stream, security);
+            InternalMessageSender.Send(MLAPIConstants.MLAPI_UNNAMED_MESSAGE, channel, clientIds, stream, security);
         }
 
         /// <summary>
@@ -280,9 +280,9 @@ namespace MLAPI
         /// <param name="channel">The channel tos end the data on</param>
         /// <param name="security">The security settings to apply to the message</param>
         [Obsolete("Use CustomMessagingManager.SendUnnamedMessage instead")]
-        public void SendCustomMessage(ulong clientId, BitStream stream, string channel = null, SecuritySendFlags security = SecuritySendFlags.None)
+        public void SendCustomMessage(ulong clientId, BitStream stream, byte channel = Transport.MLAPI_INTERNAL_CHANNEL, SecuritySendFlags security = SecuritySendFlags.None)
         {
-            InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_UNNAMED_MESSAGE, string.IsNullOrEmpty(channel) ? "MLAPI_DEFAULT_MESSAGE" : channel, stream, security);
+            InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_UNNAMED_MESSAGE, channel, stream, security);
         }
 
         private void OnValidate()
@@ -759,7 +759,7 @@ namespace MLAPI
                         while (__loopbackRpcQueue.Count > 0)
                         {
                             var (payload, receiveTime) = __loopbackRpcQueue.Dequeue();
-                            HandleRawTransportPoll(NetEventType.Data, ServerClientId, "STDRPC", payload, receiveTime);
+                            HandleRawTransportPoll(NetEventType.Data, ServerClientId, Transport.MLAPI_STDRPC_CHANNEL, payload, receiveTime);
                         }
                     }
                     // @mfatihmar (Unity) End: Temporary, inbound RPC queue will replace this workaround
@@ -775,7 +775,10 @@ namespace MLAPI
                         {
                             processedEvents++;
                             eventType = NetworkConfig.NetworkTransport.PollEvent(out ulong clientId, out string channelName, out ArraySegment<byte> payload, out float receiveTime);
-                            HandleRawTransportPoll(eventType, clientId, channelName, payload, receiveTime);
+                            // [MTT-443] This can be improved if the Transport implementations return the channel as a byte vs. string
+                            //  Holding off on this; refactoring the Transport package will be a separate step
+                            byte channel = Transport.GetChannelByte(channelName);
+                            HandleRawTransportPoll(eventType, clientId, channel, payload, receiveTime);
 
                             // Only do another iteration if: there are no more messages AND (there is no limit to max events or we have processed less than the maximum)
                         } while (IsListening && (eventType != NetEventType.Nothing) && (NetworkConfig.MaxReceiveEventsPerTickRate <= 0 || processedEvents < NetworkConfig.MaxReceiveEventsPerTickRate));
@@ -895,7 +898,7 @@ namespace MLAPI
                         writer.WriteByteArray(NetworkConfig.ConnectionData);
                 }
 
-                InternalMessageSender.Send(ServerClientId, MLAPIConstants.MLAPI_CONNECTION_REQUEST, "MLAPI_INTERNAL", stream, SecuritySendFlags.Authenticated | SecuritySendFlags.Encrypted);
+                InternalMessageSender.Send(ServerClientId, MLAPIConstants.MLAPI_CONNECTION_REQUEST, Transport.MLAPI_INTERNAL_CHANNEL, stream, SecuritySendFlags.Authenticated | SecuritySendFlags.Encrypted);
             }
         }
 
@@ -922,7 +925,7 @@ namespace MLAPI
             switchSceneProgress.SetTimedOut();
         }
 
-        private void HandleRawTransportPoll(NetEventType eventType, ulong clientId, string channelName, ArraySegment<byte> payload, float receiveTime)
+        private void HandleRawTransportPoll(NetEventType eventType, ulong clientId, byte channel, ArraySegment<byte> payload, float receiveTime)
         {
             ProfilerStatManager.bytesRcvd.Record(payload.Count);
             switch (eventType)
@@ -931,7 +934,7 @@ namespace MLAPI
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_TransportConnect.Begin();
 #endif
-                    NetworkProfiler.StartEvent(TickType.Receive, (uint)payload.Count, channelName, "TRANSPORT_CONNECT");
+                    NetworkProfiler.StartEvent(TickType.Receive, (uint)payload.Count, channel, "TRANSPORT_CONNECT");
                     if (IsServer)
                     {
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo("Client Connected");
@@ -998,7 +1001,7 @@ namespace MLAPI
                                     }
                                 }
                                 // Send the hail
-                                InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_CERTIFICATE_HAIL, "MLAPI_INTERNAL", hailStream, SecuritySendFlags.None, null);
+                                InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_CERTIFICATE_HAIL, Transport.MLAPI_INTERNAL_CHANNEL, hailStream, SecuritySendFlags.None);
                             }
                         }
                         else
@@ -1030,14 +1033,14 @@ namespace MLAPI
                 case NetEventType.Data:
                     {
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo($"Incoming Data From {clientId} : {payload.Count} bytes");
-                        HandleIncomingData(clientId, channelName, payload, receiveTime, true);
+                        HandleIncomingData(clientId, channel, payload, receiveTime, true);
                         break;
                     }
                 case NetEventType.Disconnect:
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_TransportDisconnect.Begin();
 #endif
-                    NetworkProfiler.StartEvent(TickType.Receive, 0, "NONE", "TRANSPORT_DISCONNECT");
+                    NetworkProfiler.StartEvent(TickType.Receive, 0, Transport.MLAPI_INTERNAL_CHANNEL, "TRANSPORT_DISCONNECT");
 
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo("Disconnect Event From " + clientId);
 
@@ -1062,7 +1065,7 @@ namespace MLAPI
         private readonly BitStream inputStreamWrapper = new BitStream(new byte[0]);
         private MessageBatcher batcher = new MessageBatcher();
 
-        internal void HandleIncomingData(ulong clientId, string channelName, ArraySegment<byte> data, float receiveTime, bool allowBuffer)
+        internal void HandleIncomingData(ulong clientId, byte channel, ArraySegment<byte> data, float receiveTime, bool allowBuffer)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleIncomingData.Begin();
@@ -1087,7 +1090,7 @@ namespace MLAPI
                 }
 
                 uint headerByteSize = (uint)Arithmetic.VarIntSize(messageType);
-                NetworkProfiler.StartEvent(TickType.Receive, (uint)(data.Count - headerByteSize), channelName, messageType);
+                NetworkProfiler.StartEvent(TickType.Receive, (uint)(data.Count - headerByteSize), channel, messageType);
 
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo("Data Header: messageType=" + messageType);
 
@@ -1134,7 +1137,7 @@ namespace MLAPI
                         InternalMessageHandler.HandleNetworkedVarDelta(clientId, messageStream, BufferCallback, new PreBufferPreset()
                         {
                             AllowBuffer = allowBuffer,
-                            ChannelName = channelName,
+                            Channel = channel,
                             ClientId = clientId,
                             Data = data,
                             MessageType = messageType,
@@ -1145,7 +1148,7 @@ namespace MLAPI
                         InternalMessageHandler.HandleNetworkedVarUpdate(clientId, messageStream, BufferCallback, new PreBufferPreset()
                         {
                             AllowBuffer = allowBuffer,
-                            ChannelName = channelName,
+                            Channel = channel,
                             ClientId = clientId,
                             Data = data,
                             MessageType = messageType,
@@ -1308,7 +1311,7 @@ namespace MLAPI
                 throw new InvalidOperationException("Cannot buffer on server.");
             }
 
-            BufferManager.BufferMessageForNetworkId(networkId, preset.ClientId, preset.ChannelName, preset.ReceiveTime, preset.Data);
+            BufferManager.BufferMessageForNetworkId(networkId, preset.ClientId, preset.Channel, preset.ReceiveTime, preset.Data);
         }
 
         /// <summary>
@@ -1417,7 +1420,7 @@ namespace MLAPI
                 using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                 {
                     writer.WriteSinglePacked(Time.realtimeSinceStartup);
-                    InternalMessageSender.Send(MLAPIConstants.MLAPI_TIME_SYNC, "MLAPI_TIME_SYNC", stream, SecuritySendFlags.None);
+                    InternalMessageSender.Send(MLAPIConstants.MLAPI_TIME_SYNC, Transport.MLAPI_TIME_SYNC_CHANNEL, stream, SecuritySendFlags.None);
                 }
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -1551,7 +1554,7 @@ namespace MLAPI
                             }
                         }
 
-                        InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_CONNECTION_APPROVED, "MLAPI_INTERNAL", stream, SecuritySendFlags.Encrypted | SecuritySendFlags.Authenticated);
+                        InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_CONNECTION_APPROVED, Transport.MLAPI_INTERNAL_CHANNEL, stream, SecuritySendFlags.Encrypted | SecuritySendFlags.Authenticated);
 
                         if (OnClientConnectedCallback != null)
                             OnClientConnectedCallback.Invoke(clientId);
@@ -1613,7 +1616,7 @@ namespace MLAPI
                                 ConnectedClients[clientId].PlayerObject.WriteNetworkedVarData(stream, clientPair.Key);
                             }
 
-                            InternalMessageSender.Send(clientPair.Key, MLAPIConstants.MLAPI_ADD_OBJECT, "MLAPI_INTERNAL", stream, SecuritySendFlags.None);
+                            InternalMessageSender.Send(clientPair.Key, MLAPIConstants.MLAPI_ADD_OBJECT, Transport.MLAPI_INTERNAL_CHANNEL, stream, SecuritySendFlags.None);
                         }
                     }
                 }

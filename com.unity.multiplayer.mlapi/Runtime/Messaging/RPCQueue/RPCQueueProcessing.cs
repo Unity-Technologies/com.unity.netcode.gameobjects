@@ -4,6 +4,7 @@ using UnityEngine;
 using Unity.Profiling;
 using MLAPI.Configuration;
 using MLAPI.Profiling;
+using MLAPI.Transports;
 
 
 namespace MLAPI.Messaging
@@ -213,7 +214,10 @@ namespace MLAPI.Messaging
             var length = (int)sendStream.Stream.Length;
             var bytes = sendStream.Stream.GetBuffer();
             ArraySegment<byte> sendBuffer = new ArraySegment<byte>(bytes, 0, length);
-            NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(clientId, sendBuffer, string.IsNullOrEmpty(sendStream.channel) ? "MLAPI_DEFAULT_MESSAGE" : sendStream.channel);
+
+            // [MTT-433] refactor so that the transports receive a byte, not a string
+            //  saving for a separate effort since transports live in their own package
+            NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(clientId, sendBuffer, Transport.GetChannelString(sendStream.channel));
         }
 
         /// <summary>
