@@ -66,7 +66,7 @@ namespace MLAPI.Messaging
         /// <param name="stream">The message stream containing the data</param>
         /// <param name="channel">The channel tos end the data on</param>
         /// <param name="security">The security settings to apply to the message</param>
-        public static void SendUnnamedMessage(ulong clientId, BitStream stream, byte channel, SecuritySendFlags security = SecuritySendFlags.None)
+        public static void SendUnnamedMessage(ulong clientId, BitStream stream, byte channel = Transport.MLAPI_INTERNAL_CHANNEL, SecuritySendFlags security = SecuritySendFlags.None)
         {
             InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_UNNAMED_MESSAGE, channel, stream, security);
         }
