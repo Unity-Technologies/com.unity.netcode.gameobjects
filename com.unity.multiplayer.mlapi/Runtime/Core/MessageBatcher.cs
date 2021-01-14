@@ -16,12 +16,17 @@ namespace MLAPI
         {
             public string channel;
             public PooledBitStream Stream = PooledBitStream.Get();
+            public PooledBitWriter Writer;
             public bool Empty = true;
+
+            public SendStream()
+            {
+                Writer = PooledBitWriter.Get(Stream);
+            }
         }
 
         // Stores the stream of batched RPC to send to each client, by ClientId
         private Dictionary<ulong, SendStream> SendDict = new Dictionary<ulong, SendStream>();
-        private PooledBitWriter Writer = new PooledBitWriter(PooledBitStream.Get());
 
         // Used to store targets, internally
         private ulong[] TargetList = new ulong[0];
@@ -116,29 +121,27 @@ namespace MLAPI
                 {
                     SendDict[clientId].Empty = false;
                     SendDict[clientId].channel = item.channel;
-                    Writer.SetStream(SendDict[clientId].Stream);
 
-                    Writer.WriteBit(false); // Encrypted
-                    Writer.WriteBit(false); // Authenticated
+                    SendDict[clientId].Writer.WriteBit(false); // Encrypted
+                    SendDict[clientId].Writer.WriteBit(false); // Authenticated
 
                     switch (item.queueItemType)
                     {
                         // 6 bits are used for the message type, which is an MLAPIConstants
                         case RpcQueueContainer.QueueItemType.ServerRpc:
-                            Writer.WriteBits(MLAPIConstants.MLAPI_SERVER_RPC, 6); // MessageType
+                            SendDict[clientId].Writer.WriteBits(MLAPIConstants.MLAPI_SERVER_RPC, 6); // MessageType
                             break;
                         case RpcQueueContainer.QueueItemType.ClientRpc:
-                            Writer.WriteBits(MLAPIConstants.MLAPI_CLIENT_RPC, 6); // MessageType
+                            SendDict[clientId].Writer.WriteBits(MLAPIConstants.MLAPI_CLIENT_RPC, 6); // MessageType
                             break;
                     }
                 }
 
                 // write the amounts of bytes that are coming up
-                PushLength(item.messageData.Count, ref Writer);
+                PushLength(item.messageData.Count, ref SendDict[clientId].Writer);
 
                 // write the message to send
-                // todo: is there a faster alternative to .ToArray()
-                Writer.WriteBytes(item.messageData.ToArray(), item.messageData.Count);
+                SendDict[clientId].Writer.WriteBytes(item.messageData.Array, item.messageData.Count, item.messageData.Offset);
 
                 ProfilerStatManager.bytesSent.Record((int)item.messageData.Count);
                 ProfilerStatManager.rpcsSent.Record();
