@@ -187,31 +187,34 @@ namespace MLAPI
         /// <param name="receiveTime"> the packet receive time to pass back to callback</param>
         public int ReceiveItems(in BitStream messageStream, ReceiveCallbackType receiveCallback, MLAPI.RpcQueueContainer.QueueItemType messageType, ulong clientId, float receiveTime)
         {
-            using PooledBitStream copy = PooledBitStream.Get();
-            do
+            using (var copy = PooledBitStream.Get())
             {
-                // read the length of the next RPC
-                int rpcSize = PopLength(messageStream);
-
-                if (rpcSize < 0)
+                do
                 {
-                    // abort if there's an error reading lengths
-                    return 0;
-                }
+                    // read the length of the next RPC
+                    int rpcSize = PopLength(messageStream);
 
-                // copy what comes after current stream position
-                long pos = messageStream.Position;
-                copy.SetLength(rpcSize);
-                copy.Position = 0;
-                Buffer.BlockCopy(messageStream.GetBuffer(), (int)pos, copy.GetBuffer(), 0, rpcSize);
+                    if (rpcSize < 0)
+                    {
+                        // abort if there's an error reading lengths
+                        return 0;
+                    }
 
-                receiveCallback(copy, messageType, clientId, receiveTime);
+                    // copy what comes after current stream position
+                    long pos = messageStream.Position;
+                    copy.SetLength(rpcSize);
+                    copy.Position = 0;
+                    Buffer.BlockCopy(messageStream.GetBuffer(), (int)pos, copy.GetBuffer(), 0, rpcSize);
 
-                // seek over the RPC
-                // RPCReceiveQueueItem peeks at content, it doesn't advance
-                messageStream.Seek(rpcSize, SeekOrigin.Current);
-            } while (messageStream.Position < messageStream.Length);
-            return 0;
+                    receiveCallback(copy, messageType, clientId, receiveTime);
+
+                    // seek over the RPC
+                    // RPCReceiveQueueItem peeks at content, it doesn't advance
+                    messageStream.Seek(rpcSize, SeekOrigin.Current);
+                } while (messageStream.Position < messageStream.Length);
+
+                return 0;
+            }
         }
     }
 }
