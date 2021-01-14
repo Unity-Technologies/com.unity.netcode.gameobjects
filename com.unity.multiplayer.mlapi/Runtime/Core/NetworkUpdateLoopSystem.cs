@@ -8,7 +8,7 @@ namespace MLAPI
     ///  NetworkUpdateLoopBehaviour
     ///  Derive from this class if you need to register a NetworkedBehaviour based class
     /// </summary>
-    public class NetworkUpdateLoopBehaviour:NetworkedBehaviour,INetworkUpdateLoopSystem
+    public class NetworkUpdateLoopBehaviour:NetworkedBehaviour, INetworkUpdateLoopSystem
     {
         protected virtual Action InternalRegisterNetworkUpdateStage(NetworkUpdateManager.NetworkUpdateStages stage )
         {
@@ -33,7 +33,7 @@ namespace MLAPI
             }
         }
 
-        Action<INetworkUpdateLoopSystem> onNetworkLoopSystemDestroyed;
+        private Action<INetworkUpdateLoopSystem> onNetworkLoopSystemDestroyed;
 
         public void RegisterUpdateLoopSystemDestroyCallback(Action<INetworkUpdateLoopSystem> networkLoopSystemDestroyedCallback)
         {
@@ -45,7 +45,7 @@ namespace MLAPI
     ///  UpdateLoopBehaviour
     ///  Derive from this class if you only require MonoBehaviour functionality
     /// </summary>
-    public class UpdateLoopBehaviour:MonoBehaviour,INetworkUpdateLoopSystem
+    public class UpdateLoopBehaviour:MonoBehaviour, INetworkUpdateLoopSystem
     {
         protected virtual Action InternalRegisterNetworkUpdateStage(NetworkUpdateManager.NetworkUpdateStages stage )
         {
@@ -70,7 +70,7 @@ namespace MLAPI
             }
         }
 
-        Action<INetworkUpdateLoopSystem> onNetworkLoopSystemDestroyed;
+        private Action<INetworkUpdateLoopSystem> onNetworkLoopSystemDestroyed;
 
         public void RegisterUpdateLoopSystemDestroyCallback(Action<INetworkUpdateLoopSystem> networkLoopSystemDestroyedCallback)
         {
@@ -107,7 +107,7 @@ namespace MLAPI
             }
         }
 
-        Action<INetworkUpdateLoopSystem> onNetworkLoopSystemDestroyed;
+        private Action<INetworkUpdateLoopSystem> onNetworkLoopSystemDestroyed;
 
         public void RegisterUpdateLoopSystemDestroyCallback(Action<INetworkUpdateLoopSystem> networkLoopSystemDestroyedCallback)
         {

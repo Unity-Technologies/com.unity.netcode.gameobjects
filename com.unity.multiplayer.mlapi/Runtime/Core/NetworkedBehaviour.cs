@@ -66,9 +66,9 @@ namespace MLAPI
             writer.WriteUInt16Packed(GetBehaviourId()); // NetworkBehaviourId
 
             //Write the update stage in front of RPC related information
-            if(sendParams.UpdateStage == NetworkUpdateManager.NetworkUpdateStages.DEFAULT)
+            if(sendParams.UpdateStage == NetworkUpdateManager.NetworkUpdateStages.Default)
             {
-                writer.WriteUInt16Packed((ushort)NetworkUpdateManager.NetworkUpdateStages.UPDATE);
+                writer.WriteUInt16Packed((ushort)NetworkUpdateManager.NetworkUpdateStages.Update);
             }
             else
             {
@@ -84,7 +84,7 @@ namespace MLAPI
             if (writer == null) return;
 
             var rpcQueueContainer = NetworkingManager.Singleton.rpcQueueContainer;
-            rpcQueueContainer?.EndAddQueueItemToOutboundFrame(writer);
+            rpcQueueContainer.EndAddQueueItemToOutboundFrame(writer);
         }
 
         // RuntimeAccessModifiersILPP will make this `protected`
@@ -106,9 +106,9 @@ namespace MLAPI
             writer.WriteUInt16Packed(GetBehaviourId()); // NetworkBehaviourId
 
                         //Write the update stage in front of RPC related information
-            if(sendParams.UpdateStage == NetworkUpdateManager.NetworkUpdateStages.DEFAULT)
+            if(sendParams.UpdateStage == NetworkUpdateManager.NetworkUpdateStages.Default)
             {
-                writer.WriteUInt16Packed((ushort)NetworkUpdateManager.NetworkUpdateStages.UPDATE);
+                writer.WriteUInt16Packed((ushort)NetworkUpdateManager.NetworkUpdateStages.Update);
             }
             else
             {
@@ -124,7 +124,7 @@ namespace MLAPI
             if (writer == null) return;
 
             var rpcQueueContainer = NetworkingManager.Singleton.rpcQueueContainer;
-            rpcQueueContainer?.EndAddQueueItemToOutboundFrame(writer);
+            rpcQueueContainer.EndAddQueueItemToOutboundFrame(writer);
         }
 
         /// <summary>

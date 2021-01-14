@@ -19,14 +19,14 @@ namespace MLAPI
     {
         public enum NetworkUpdateStages
         {
-            DEFAULT,        //Will default to the UPDATE stage if no setting was made
-            PREUPDATE,      //Invoked after EarlyUpdate.UnityWebRequestUpdate
-            FIXEDUPDATE,    //Invoked after FixedUpdate.AudioFixedUpdate (prior to any physics being applied or simulated)
-            UPDATE,         //Invoked after PreUpdate.UpdateVideo   (just before the primary Update is invoked)
-            LATEUPDATE      //Invoked after PostLateUpdate.ProcessWebSendMessages (after all updates)
+            Default,        //Will default to the UPDATE stage if no setting was made
+            PreUpdate,      //Invoked after EarlyUpdate.UnityWebRequestUpdate
+            FixedUpdate,    //Invoked after FixedUpdate.AudioFixedUpdate (prior to any physics being applied or simulated)
+            Update,         //Invoked after PreUpdate.UpdateVideo   (just before the primary Update is invoked)
+            LateUpdate      //Invoked after PostLateUpdate.ProcessWebSendMessages (after all updates)
         }
 
-        static Dictionary<INetworkUpdateLoopSystem,Dictionary<NetworkUpdateStages,PlayerLoopSystem>>  s_RegisteredUpdateLoopSystems = new Dictionary<INetworkUpdateLoopSystem, Dictionary<NetworkUpdateStages, PlayerLoopSystem>>();
+        private static Dictionary<INetworkUpdateLoopSystem,Dictionary<NetworkUpdateStages,PlayerLoopSystem>>  s_RegisteredUpdateLoopSystems = new Dictionary<INetworkUpdateLoopSystem, Dictionary<NetworkUpdateStages, PlayerLoopSystem>>();
 
 
         /// <summary>
@@ -43,22 +43,22 @@ namespace MLAPI
                 Type InsertAfterType = typeof(EarlyUpdate.UnityWebRequestUpdate);
                 switch(updateStage.Key)
                 {
-                    case NetworkUpdateStages.PREUPDATE:
+                    case NetworkUpdateStages.PreUpdate:
                         {
                             InsertAfterType = typeof(EarlyUpdate.UnityWebRequestUpdate);
                             break;
                         }
-                    case NetworkUpdateStages.FIXEDUPDATE:
+                    case NetworkUpdateStages.FixedUpdate:
                         {
                             InsertAfterType = typeof(FixedUpdate.AudioFixedUpdate);
                             break;
                         }
-                    case NetworkUpdateStages.UPDATE:
+                    case NetworkUpdateStages.Update:
                         {
                             InsertAfterType = typeof(PreUpdate.UpdateVideo);
                             break;
                         }
-                    case NetworkUpdateStages.LATEUPDATE:
+                    case NetworkUpdateStages.LateUpdate:
                         {
                             InsertAfterType = typeof(PostLateUpdate.ProcessWebSendMessages);
                             break;

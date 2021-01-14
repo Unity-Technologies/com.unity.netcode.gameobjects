@@ -30,6 +30,8 @@ namespace MLAPI.Messaging
         private int                                      m_MaximumClients;
         private long                                     m_CurrentStreamSizeMark;
         private NetworkUpdateManager.NetworkUpdateStages m_StreamUpdateStage; //Update stage specific to RPCs (typically inbound has most potential for variation)
+        private const int                                m_MaxStreamBounds = 131072;
+        private const int                                m_MinStreamBounds = 0;
 
         /// <summary>
         /// GetQueueFrameType
@@ -113,7 +115,7 @@ namespace MLAPI.Messaging
             m_CurrentQueueItem.streamSize = queueReader.ReadInt64();
 
             //Sanity checking for boundaries
-            if(m_CurrentQueueItem.streamSize < 131072 && m_CurrentQueueItem.streamSize > 0)
+            if(m_CurrentQueueItem.streamSize < m_MaxStreamBounds && m_CurrentQueueItem.streamSize > m_MinStreamBounds)
             {
                 //Inbound and Outbound message streams are handled differently
                 if (m_QueueFrameType == QueueFrameType.Inbound)
@@ -138,7 +140,7 @@ namespace MLAPI.Messaging
             }
             else
             {
-                UnityEngine.Debug.LogWarning("CurrentQueueItem.StreamSize exceeds allowed size (128KB vs " + m_CurrentQueueItem.streamSize.ToString() + ")! Exiting Current RPC Queue Enumeration Loop! ");
+                UnityEngine.Debug.LogWarning("CurrentQueueItem.StreamSize exceeds allowed size ( " + m_MaxStreamBounds.ToString() + " vs " + m_CurrentQueueItem.streamSize.ToString() + " )! Exiting Current RPC Queue Enumeration Loop! ");
                 m_CurrentQueueItem.queueItemType = RpcQueueContainer.QueueItemType.None;
             }
 

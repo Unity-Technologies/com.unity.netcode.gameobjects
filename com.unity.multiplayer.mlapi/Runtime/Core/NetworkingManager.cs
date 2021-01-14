@@ -700,12 +700,12 @@ namespace MLAPI
             Action updateStageCallback = null;
             switch (stage)
             {
-                case NetworkUpdateManager.NetworkUpdateStages.PREUPDATE:
+                case NetworkUpdateManager.NetworkUpdateStages.PreUpdate:
                     {
                         updateStageCallback = NetworkPreUpdate;
                         break;
                     }
-                case NetworkUpdateManager.NetworkUpdateStages.UPDATE:
+                case NetworkUpdateManager.NetworkUpdateStages.Update:
                     {
                         updateStageCallback = NetworkUpdate;
                         break;
@@ -1186,13 +1186,13 @@ namespace MLAPI
                                 }
                                 else
                                 {
-                                    #if DEVELOPMENT_BUILD || UNITY_EDITOR
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
                                     s_MLAPIServerSTDRPCQueued.Begin();
-                                    #endif
+#endif
                                     InternalMessageHandler.RPCReceiveQueueItem(clientId, messageStream, receiveTime,RpcQueueContainer.QueueItemType.ServerRpc);
-                                    #if DEVELOPMENT_BUILD || UNITY_EDITOR
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
                                     s_MLAPIServerSTDRPCQueued.End();
-                                    #endif
+#endif
                                 }
                             }
                             break;
@@ -1208,13 +1208,13 @@ namespace MLAPI
                                 }
                                 else
                                 {
-                                    #if DEVELOPMENT_BUILD || UNITY_EDITOR
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
                                     s_MLAPIClientSTDRPCQueued.Begin();
-                                    #endif
+#endif
                                     InternalMessageHandler.RPCReceiveQueueItem(clientId, messageStream,receiveTime,RpcQueueContainer.QueueItemType.ClientRpc);
-                                    #if DEVELOPMENT_BUILD || UNITY_EDITOR
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
                                     s_MLAPIClientSTDRPCQueued.End();
-                                    #endif
+#endif
                                 }
                             }
 

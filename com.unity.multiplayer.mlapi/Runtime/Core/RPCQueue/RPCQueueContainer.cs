@@ -69,7 +69,7 @@ namespace MLAPI.Messaging
         /// </summary>
         void PreUpdateStage()
         {
-            ProcessAndFlushRPCQueue(RpcQueueContainer.RpcQueueProcessingTypes.Receive,NetworkUpdateManager.NetworkUpdateStages.PREUPDATE);
+            ProcessAndFlushRPCQueue(RpcQueueContainer.RpcQueueProcessingTypes.Receive,NetworkUpdateManager.NetworkUpdateStages.PreUpdate);
         }
 
         /// <summary>
@@ -78,7 +78,7 @@ namespace MLAPI.Messaging
         /// </summary>
         void FixedUpdateStage()
         {
-            ProcessAndFlushRPCQueue(RpcQueueContainer.RpcQueueProcessingTypes.Receive,NetworkUpdateManager.NetworkUpdateStages.FIXEDUPDATE);
+            ProcessAndFlushRPCQueue(RpcQueueContainer.RpcQueueProcessingTypes.Receive,NetworkUpdateManager.NetworkUpdateStages.FixedUpdate);
         }
 
         /// <summary>
@@ -87,7 +87,7 @@ namespace MLAPI.Messaging
         /// </summary>
         void UpdateStage()
         {
-            ProcessAndFlushRPCQueue(RpcQueueContainer.RpcQueueProcessingTypes.Receive,NetworkUpdateManager.NetworkUpdateStages.UPDATE);
+            ProcessAndFlushRPCQueue(RpcQueueContainer.RpcQueueProcessingTypes.Receive,NetworkUpdateManager.NetworkUpdateStages.Update);
         }
 
         /// <summary>
@@ -96,8 +96,8 @@ namespace MLAPI.Messaging
         /// </summary>
         void LateUpdateStage()
         {
-            ProcessAndFlushRPCQueue(RpcQueueContainer.RpcQueueProcessingTypes.Receive,NetworkUpdateManager.NetworkUpdateStages.LATEUPDATE);
-            ProcessAndFlushRPCQueue(RpcQueueContainer.RpcQueueProcessingTypes.Send, NetworkUpdateManager.NetworkUpdateStages.LATEUPDATE);
+            ProcessAndFlushRPCQueue(RpcQueueContainer.RpcQueueProcessingTypes.Receive,NetworkUpdateManager.NetworkUpdateStages.LateUpdate);
+            ProcessAndFlushRPCQueue(RpcQueueContainer.RpcQueueProcessingTypes.Send, NetworkUpdateManager.NetworkUpdateStages.LateUpdate);
         }
 
         protected override Action InternalRegisterNetworkUpdateStage(NetworkUpdateManager.NetworkUpdateStages stage)
@@ -107,22 +107,22 @@ namespace MLAPI.Messaging
             {
                 switch(stage)
                 {
-                    case NetworkUpdateManager.NetworkUpdateStages.PREUPDATE:
+                    case NetworkUpdateManager.NetworkUpdateStages.PreUpdate:
                         {
                             updateStageAction = PreUpdateStage;
                             break;
                         }
-                    case NetworkUpdateManager.NetworkUpdateStages.FIXEDUPDATE:
+                    case NetworkUpdateManager.NetworkUpdateStages.FixedUpdate:
                         {
                             updateStageAction = FixedUpdateStage;
                             break;
                         }
-                    case NetworkUpdateManager.NetworkUpdateStages.UPDATE:
+                    case NetworkUpdateManager.NetworkUpdateStages.Update:
                         {
                             updateStageAction = UpdateStage;
                             break;
                         }
-                    case NetworkUpdateManager.NetworkUpdateStages.LATEUPDATE:
+                    case NetworkUpdateManager.NetworkUpdateStages.LateUpdate:
                         {
                             updateStageAction = LateUpdateStage;
                             break;
@@ -348,7 +348,7 @@ namespace MLAPI.Messaging
             BR.Dispose();
             BR = null;
 
-            NetworkUpdateManager.NetworkUpdateStages updateStage = NetworkUpdateManager.NetworkUpdateStages.UPDATE;
+            NetworkUpdateManager.NetworkUpdateStages updateStage = NetworkUpdateManager.NetworkUpdateStages.Update;
             if(System.Enum.IsDefined(typeof(NetworkUpdateManager.NetworkUpdateStages),(int)updateStageValue))
             {
                 updateStage = (NetworkUpdateManager.NetworkUpdateStages)updateStageValue;
@@ -392,7 +392,7 @@ namespace MLAPI.Messaging
         /// <returns></returns>
         public PooledBitWriter BeginAddQueueItemToOutboundFrame(QueueItemType qItemType, float timeStamp, string channel, ushort sendflags, ulong sourceNetworkId, ulong[] targetNetworkIds)
         {
-            QueueHistoryFrame queueHistoryItem = GetCurrentQueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateManager.NetworkUpdateStages.LATEUPDATE);
+            QueueHistoryFrame queueHistoryItem = GetCurrentQueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateManager.NetworkUpdateStages.LateUpdate);
 
             //Write the packed version of the queueItem to our current queue history buffer
             queueHistoryItem.queueWriter.WriteUInt16((ushort)qItemType);
@@ -442,7 +442,7 @@ namespace MLAPI.Messaging
         /// <param name="writer">writer that was used</param>
         public void EndAddQueueItemToOutboundFrame(BitWriter writer)
         {
-            QueueHistoryFrame queueHistoryItem = GetCurrentQueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateManager.NetworkUpdateStages.LATEUPDATE);
+            QueueHistoryFrame queueHistoryItem = GetCurrentQueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateManager.NetworkUpdateStages.LateUpdate);
             PooledBitWriter pbWriter = (PooledBitWriter)writer;
 
             //Sanity check
@@ -528,7 +528,7 @@ namespace MLAPI.Messaging
             //If we do not have loop back or testing mode enabled then ignore the call
             if (m_IsLoopbackEnabled || m_IsTestingEnabled)
             {
-                QueueHistoryFrame queueHistoryItemOutbound = GetCurrentQueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Outbound,NetworkUpdateManager.NetworkUpdateStages.LATEUPDATE);
+                QueueHistoryFrame queueHistoryItemOutbound = GetCurrentQueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Outbound,NetworkUpdateManager.NetworkUpdateStages.LateUpdate);
                 if (queueHistoryItemOutbound.queueItemOffsets.Count > 0)
                 {
                     //Reset inbound queues based on update stage
@@ -598,7 +598,7 @@ namespace MLAPI.Messaging
                 if (!QueueHistory[QueueHistoryFrame.QueueFrameType.Outbound].ContainsKey(i))
                 {
                     QueueHistory[QueueHistoryFrame.QueueFrameType.Outbound].Add(i,new Dictionary<NetworkUpdateManager.NetworkUpdateStages, QueueHistoryFrame>() );
-                    QueueHistoryFrame queueHistoryFrame = new QueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Outbound,NetworkUpdateManager.NetworkUpdateStages.LATEUPDATE);
+                    QueueHistoryFrame queueHistoryFrame = new QueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Outbound,NetworkUpdateManager.NetworkUpdateStages.LateUpdate);
                     queueHistoryFrame.queueStream = PooledBitStream.Get();
                     queueHistoryFrame.queueStream.Position = 0;
                     queueHistoryFrame.queueWriter = PooledBitWriter.Get(queueHistoryFrame.queueStream);
@@ -606,7 +606,7 @@ namespace MLAPI.Messaging
                     queueHistoryFrame.queueItemOffsets = new List<uint>();
 
                     //For now all outbound, we will always have a single update in which they are processed (LATEUPDATE)
-                    QueueHistory[QueueHistoryFrame.QueueFrameType.Outbound][i].Add(NetworkUpdateManager.NetworkUpdateStages.LATEUPDATE, queueHistoryFrame);
+                    QueueHistory[QueueHistoryFrame.QueueFrameType.Outbound][i].Add(NetworkUpdateManager.NetworkUpdateStages.LateUpdate, queueHistoryFrame);
                 }
 
                 if (!QueueHistory[QueueHistoryFrame.QueueFrameType.Inbound].ContainsKey(i))
