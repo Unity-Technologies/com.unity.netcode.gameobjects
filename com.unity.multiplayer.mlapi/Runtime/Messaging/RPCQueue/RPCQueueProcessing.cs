@@ -231,7 +231,7 @@ namespace MLAPI.Messaging
             {
                 case RpcQueueContainer.QueueItemType.ServerRpc:
                 {
-                    NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(queueItem.networkId, queueItem.messageData, string.IsNullOrEmpty(queueItem.channel) ? "MLAPI_DEFAULT_MESSAGE" : queueItem.channel);
+                    NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(queueItem.networkId, queueItem.messageData, Transport.GetChannelString(queueItem.channel));
 
                     //For each packet sent, we want to record how much data we have sent
                     ProfilerStatManager.bytesSent.Record((int)queueItem.streamSize);
@@ -242,8 +242,7 @@ namespace MLAPI.Messaging
                 {
                     foreach (ulong clientid in queueItem.clientIds)
                     {
-                        NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(clientid, queueItem.messageData, string.IsNullOrEmpty(queueItem.channel) ? "MLAPI_DEFAULT_MESSAGE" : queueItem.channel);
-
+                        NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(clientid, queueItem.messageData, Transport.GetChannelString(queueItem.channel));
                         //For each packet sent, we want to record how much data we have sent
                         ProfilerStatManager.bytesSent.Record((int)queueItem.streamSize);
                     }
