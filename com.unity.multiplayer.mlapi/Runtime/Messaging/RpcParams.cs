@@ -2,6 +2,7 @@ namespace MLAPI.Messaging
 {
     public struct ServerRpcSendParams
     {
+        public NetworkUpdateManager.NetworkUpdateStages UpdateStage;
     }
 
     public struct ServerRpcReceiveParams
@@ -17,6 +18,7 @@ namespace MLAPI.Messaging
 
     public struct ClientRpcSendParams
     {
+        public NetworkUpdateManager.NetworkUpdateStages UpdateStage;
         public ulong[] TargetClientIds;
     }
 

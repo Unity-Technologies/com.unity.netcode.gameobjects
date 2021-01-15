@@ -694,8 +694,8 @@ namespace MLAPI.Messaging
 
             ProfilerStatManager.rpcsRcvd.Record();
 
-            var rpcQueueManager = NetworkingManager.Singleton.rpcQueueContainer;
-            rpcQueueManager?.AddQueueItemToInboundFrame(queueItemType, receiveTime, clientId, (BitStream)stream);
+            var rpcQueueContainer = NetworkingManager.Singleton.rpcQueueContainer;
+            rpcQueueContainer.AddQueueItemToInboundFrame(queueItemType, receiveTime, clientId, (BitStream)stream);
         }
 
         internal static void HandleUnnamedMessage(ulong clientId, Stream stream)

@@ -396,7 +396,7 @@ namespace MLAPI
             if (spawnPayload != null)
                 spawnPayload.Position = 0;
 
-            SpawnManager.SpawnNetworkedObjectLocally(this, SpawnManager.GetNetworkObjectId(), false, false, null, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false, destroyWithScene);
+            SpawnManager.SpawnNetworkedObjectLocally(this,SpawnManager.GetNetworkObjectId(), false, false, null, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false, destroyWithScene);
 
             for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)
             {
@@ -410,9 +410,9 @@ namespace MLAPI
         /// <summary>
         /// Unspawns this GameObject and destroys it for other clients. This should be used if the object should be kept on the server
         /// </summary>
-        public void UnSpawn()
+        public void UnSpawn(bool destroy = false)
         {
-            SpawnManager.UnSpawnObject(this);
+            SpawnManager.UnSpawnObject(this,destroy);
         }
 
         /// <summary>
@@ -493,9 +493,12 @@ namespace MLAPI
 
         internal void ResetNetworkedStartInvoked()
         {
-            for (int i = 0; i < childNetworkedBehaviours.Count; i++)
+            if(childNetworkedBehaviours != null)
             {
-                childNetworkedBehaviours[i].networkedStartInvoked = false;
+                for (int i = 0; i < childNetworkedBehaviours.Count; i++)
+                {
+                    childNetworkedBehaviours[i].networkedStartInvoked = false;
+                }
             }
         }
 

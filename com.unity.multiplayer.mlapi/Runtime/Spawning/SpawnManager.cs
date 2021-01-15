@@ -411,17 +411,14 @@ namespace MLAPI.Spawning
                 return;
             }
 
-            RpcQueueContainer rpcQueueManager = NetworkingManager.Singleton.rpcQueueContainer;
-            if (rpcQueueManager == null)
-            {
-                return;
-            }
+            RpcQueueContainer rpcQueueContainer = NetworkingManager.Singleton.rpcQueueContainer;
 
             var stream = PooledBitStream.Get();
             WriteSpawnCallForObject(stream, clientId, netObject, payload);
 
             var QueueItem = new FrameQueueItem
             {
+                updateStage = NetworkUpdateManager.NetworkUpdateStages.Update,
                 queueItemType = RpcQueueContainer.QueueItemType.CreateObject,
                 networkId = 0,
                 itemStream = stream,
@@ -429,7 +426,7 @@ namespace MLAPI.Spawning
                 sendFlags = SecuritySendFlags.None,
                 clientIds = new[] {clientId}
             };
-            rpcQueueManager.AddToInternalMLAPISendQueue(QueueItem);
+            rpcQueueContainer.AddToInternalMLAPISendQueue(QueueItem);
         }
 
         internal static void WriteSpawnCallForObject(Serialization.BitStream stream, ulong clientId, NetworkedObject netObject, Stream payload)
@@ -506,7 +503,7 @@ namespace MLAPI.Spawning
             }
         }
 
-        internal static void UnSpawnObject(NetworkedObject netObject)
+        internal static void UnSpawnObject(NetworkedObject netObject, bool destroyObject = false)
         {
             if (!netObject.IsSpawned)
             {
@@ -518,7 +515,7 @@ namespace MLAPI.Spawning
                 throw new NotServerException("Only server unspawn objects");
             }
 
-            OnDestroyObject(netObject.NetworkId, false);
+            OnDestroyObject(netObject.NetworkId, destroyObject);
         }
 
         // Makes scene objects ready to be reused
@@ -680,8 +677,8 @@ namespace MLAPI.Spawning
                     });
                 }
 
-                var rpcQueueManager = NetworkingManager.Singleton.rpcQueueContainer;
-                if (rpcQueueManager != null)
+                var rpcQueueContainer = NetworkingManager.Singleton.rpcQueueContainer;
+                if (rpcQueueContainer != null)
                 {
                     if (sobj != null)
                     {
@@ -702,7 +699,7 @@ namespace MLAPI.Spawning
                                     sendFlags = SecuritySendFlags.None,
                                     clientIds = NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray()
                                 };
-                                rpcQueueManager.AddToInternalMLAPISendQueue(QueueItem);
+                                rpcQueueContainer.AddToInternalMLAPISendQueue(QueueItem);
                             }
                         }
                     }

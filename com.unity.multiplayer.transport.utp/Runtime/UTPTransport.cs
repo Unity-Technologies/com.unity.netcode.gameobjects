@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
@@ -13,6 +13,7 @@ using Unity.Networking.Transport;
 
 using UnityEngine;
 using UnityEngine.Assertions;
+
 
 [StructLayout(LayoutKind.Explicit)]
 public unsafe struct RawNetworkMessage
@@ -53,12 +54,12 @@ struct ClientUpdateJob : IJob
                 var temp = new NativeArray<byte>(messageSize, Allocator.Temp);
                 streamReader.ReadBytes(temp);
 
-                var d = new RawNetworkMessage() 
-                { 
-                        length = messageSize, 
-                        type = (uint)NetEventType.Data, 
-                        id = connection[0].InternalId, 
-                        channelId = channelId 
+                var d = new RawNetworkMessage()
+                {
+                        length = messageSize,
+                        type = (uint)NetEventType.Data,
+                        id = connection[0].InternalId,
+                        channelId = channelId
                 };
 
                 UnsafeUtility.MemCpy(d.data, temp.GetUnsafePtr(), d.length);
@@ -215,7 +216,7 @@ public class UTPTransport : Transport
     {
         m_Driver = NetworkDriver.Create();
 
-        // So we have a bunch of different pipelines we can send :D 
+        // So we have a bunch of different pipelines we can send :D
         networkPipelines[0] = m_Driver.CreatePipeline(typeof(NullPipelineStage));
         networkPipelines[1] = m_Driver.CreatePipeline(typeof(ReliableSequencedPipelineStage));
         networkPipelines[2] = m_Driver.CreatePipeline(typeof(UnreliableSequencedPipelineStage));
@@ -295,7 +296,7 @@ public class UTPTransport : Transport
                             var payload = new ArraySegment<byte>(arr);
                             InvokeOnTransportEvent((NetEventType)message.type, clientId, channelIdToName[message.channelId], payload, Time.realtimeSinceStartup);
                         }
-                      
+
                     break;
                     case NetEventType.Connect: {
                         InvokeOnTransportEvent((NetEventType)message.type, clientId, null, new ArraySegment<byte>(), Time.realtimeSinceStartup);
@@ -368,7 +369,7 @@ public class UTPTransport : Transport
     public unsafe override void Send(ulong clientId, ArraySegment<byte> data, string channelName)
     {
         var pipelineIndex = MLAPIChannelToPipeline(internalChannels[channelNameToId[channelName]].Flags);
-     
+
         GetUTPConnectionDetails(clientId, out uint peerId);
 
         DataStreamWriter writer = new DataStreamWriter(data.Count + 1 + 4, Allocator.Temp);
@@ -456,3 +457,4 @@ public class UTPTransport : Transport
         return SocketTask.Working.AsTasks();
     }
 }
+

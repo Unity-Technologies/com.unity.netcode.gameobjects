@@ -51,11 +51,30 @@ namespace MLAPI
         // RuntimeAccessModifiersILPP will make this `protected`
         internal BitWriter BeginSendServerRpc(ServerRpcSendParams sendParams, bool isReliable)
         {
-            var rpcQueueMananger = NetworkingManager.Singleton.rpcQueueContainer;
+            var rpcQueueContainer = NetworkingManager.Singleton.rpcQueueContainer;
 
-            var writer = rpcQueueMananger.BeginAddQueueItemToOutboundFrame(RpcQueueContainer.QueueItemType.ServerRpc, Time.realtimeSinceStartup, StandardRpc_ChannelName, 0, NetworkingManager.Singleton.ServerClientId, null);
+            var writer = rpcQueueContainer.BeginAddQueueItemToOutboundFrame(RpcQueueContainer.QueueItemType.ServerRpc, Time.realtimeSinceStartup, StandardRpc_ChannelName, 0, NetworkingManager.Singleton.ServerClientId, null);
+
+            if(!rpcQueueContainer.IsUsingBatching())
+            {
+                writer.WriteBit(false); // Encrypted
+                writer.WriteBit(false); // Authenticated
+                writer.WriteBits(MLAPIConstants.MLAPI_SERVER_RPC, 6); // MessageType
+            }
+
             writer.WriteUInt64Packed(NetworkId); // NetworkObjectId
             writer.WriteUInt16Packed(GetBehaviourId()); // NetworkBehaviourId
+
+            //Write the update stage in front of RPC related information
+            if(sendParams.UpdateStage == NetworkUpdateManager.NetworkUpdateStages.Default)
+            {
+                writer.WriteUInt16Packed((ushort)NetworkUpdateManager.NetworkUpdateStages.Update);
+            }
+            else
+            {
+                writer.WriteUInt16Packed((ushort)sendParams.UpdateStage);
+            }
+
             return writer;
         }
 
@@ -64,19 +83,38 @@ namespace MLAPI
         {
             if (writer == null) return;
 
-            var rpcQueueMananger = NetworkingManager.Singleton.rpcQueueContainer;
-            rpcQueueMananger?.EndAddQueueItemToOutboundFrame(writer);
+            var rpcQueueContainer = NetworkingManager.Singleton.rpcQueueContainer;
+            rpcQueueContainer.EndAddQueueItemToOutboundFrame(writer);
         }
 
         // RuntimeAccessModifiersILPP will make this `protected`
         internal BitWriter BeginSendClientRpc(ClientRpcSendParams sendParams, bool isReliable)
         {
             //This will start a new queue item entry and will then return the writer to the current frame's stream
-            var rpcQueueMananger = NetworkingManager.Singleton.rpcQueueContainer;
+            var rpcQueueContainer = NetworkingManager.Singleton.rpcQueueContainer;
 
-            var writer = rpcQueueMananger.BeginAddQueueItemToOutboundFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, StandardRpc_ChannelName, 0, NetworkId, sendParams.TargetClientIds ?? NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray());
+            var writer = rpcQueueContainer.BeginAddQueueItemToOutboundFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, StandardRpc_ChannelName, 0, NetworkId, sendParams.TargetClientIds ?? NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray());
+
+            if(!rpcQueueContainer.IsUsingBatching())
+            {
+                writer.WriteBit(false); // Encrypted
+                writer.WriteBit(false); // Authenticated
+                writer.WriteBits(MLAPIConstants.MLAPI_CLIENT_RPC, 6); // MessageType
+            }
+
             writer.WriteUInt64Packed(NetworkId); // NetworkObjectId
             writer.WriteUInt16Packed(GetBehaviourId()); // NetworkBehaviourId
+
+                        //Write the update stage in front of RPC related information
+            if(sendParams.UpdateStage == NetworkUpdateManager.NetworkUpdateStages.Default)
+            {
+                writer.WriteUInt16Packed((ushort)NetworkUpdateManager.NetworkUpdateStages.Update);
+            }
+            else
+            {
+                writer.WriteUInt16Packed((ushort)sendParams.UpdateStage);
+            }
+
             return writer;
         }
 
@@ -85,8 +123,8 @@ namespace MLAPI
         {
             if (writer == null) return;
 
-            var rpcQueueMananger = NetworkingManager.Singleton.rpcQueueContainer;
-            rpcQueueMananger?.EndAddQueueItemToOutboundFrame(writer);
+            var rpcQueueContainer = NetworkingManager.Singleton.rpcQueueContainer;
+            rpcQueueContainer.EndAddQueueItemToOutboundFrame(writer);
         }
 
         /// <summary>

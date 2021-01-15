@@ -1,15 +1,15 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 using Unity.Profiling;
 using MLAPI.Configuration;
-using MLAPI.Messaging;
 using MLAPI.Profiling;
 
 
-namespace MLAPI
+namespace MLAPI.Messaging
 {
     /// <summary>
-    /// RPCQueueProcessing
+    /// RpcQueueProcessing
     /// Handles processing of RPCQueues
     /// Inbound to invocation
     /// Outbound to send
@@ -21,9 +21,11 @@ namespace MLAPI
         static ProfilerMarker s_MLAPIRPCQueueProcess = new ProfilerMarker("MLAPIRPCQueueProcess");
         static ProfilerMarker s_MLAPIRPCQueueSend = new ProfilerMarker("MLAPIRPCQueueSend");
 #endif
+
         // Batcher object used to manage the RPC batching on the send side
-        private readonly MessageBatcher m_batcher = new MessageBatcher();
-        private int m_BatchThreshold = 10;
+        private MessageBatcher m_batcher = new MessageBatcher();
+        private int m_BatchThreshold = 512;
+
 
         //NSS-TODO: Need to determine how we want to handle all other MLAPI send types
         //Temporary place to keep internal MLAPI messages
@@ -33,27 +35,30 @@ namespace MLAPI
         /// ProcessReceiveQueue
         /// Public facing interface method to start processing all RPCs in the current inbound frame
         /// </summary>
-        public void ProcessReceiveQueue()
+        public void ProcessReceiveQueue(NetworkUpdateManager.NetworkUpdateStages currentStage)
         {
             bool AdvanceFrameHistory = false;
-            var rpcQueueManager = NetworkingManager.Singleton.rpcQueueContainer;
-            if (rpcQueueManager != null)
+            var rpcQueueContainer = NetworkingManager.Singleton.rpcQueueContainer;
+            if (rpcQueueContainer != null)
             {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                 s_MLAPIRPCQueueProcess.Begin();
 #endif
-                var CurrentFrame = rpcQueueManager.GetCurrentFrame(QueueHistoryFrame.QueueFrameType.Inbound);
+                var CurrentFrame = rpcQueueContainer.GetCurrentFrame(QueueHistoryFrame.QueueFrameType.Inbound,currentStage);
                 if (CurrentFrame != null)
                 {
                     var currentQueueItem = CurrentFrame.GetFirstQueueItem();
                     while (currentQueueItem.queueItemType != RpcQueueContainer.QueueItemType.None)
                     {
                         AdvanceFrameHistory = true;
-                        if (rpcQueueManager.IsLoopBack())
+                        if (rpcQueueContainer.IsLoopBack() && !rpcQueueContainer.IsUsingBatching())
                         {
                             currentQueueItem.itemStream.Position = 1;
                         }
-
+                        if (rpcQueueContainer.IsTesting())
+                        {
+                            Debug.Log("RPC invoked during the " + currentStage.ToString() + " update stage.");
+                        }
                         NetworkingManager.InvokeRpc(currentQueueItem);
                         ProfilerStatManager.rpcsQueueProc.Record();
                         currentQueueItem = CurrentFrame.GetNextQueueItem();
@@ -65,7 +70,7 @@ namespace MLAPI
 
                 if (AdvanceFrameHistory)
                 {
-                    rpcQueueManager.AdvanceFrameHistory(QueueHistoryFrame.QueueFrameType.Inbound);
+                    rpcQueueContainer.AdvanceFrameHistory(QueueHistoryFrame.QueueFrameType.Inbound);
                 }
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -148,15 +153,15 @@ namespace MLAPI
         private void RPCQueueSendAndFlush()
         {
             bool AdvanceFrameHistory = false;
-            var rpcQueueManager = NetworkingManager.Singleton.rpcQueueContainer;
-            if (rpcQueueManager != null)
+            var rpcQueueContainer = NetworkingManager.Singleton.rpcQueueContainer;
+            if (rpcQueueContainer != null)
             {
-                var CurrentFrame = rpcQueueManager.GetCurrentFrame(QueueHistoryFrame.QueueFrameType.Outbound);
+                var CurrentFrame = rpcQueueContainer.GetCurrentFrame(QueueHistoryFrame.QueueFrameType.Outbound,NetworkUpdateManager.NetworkUpdateStages.LateUpdate);
                 //If loopback is enabled
-                if (rpcQueueManager.IsLoopBack())
+                if (rpcQueueContainer.IsLoopBack())
                 {
                     //Migrate the outbound buffer to the inbound buffer
-                    rpcQueueManager.LoopbackSendFrame();
+                    rpcQueueContainer.LoopbackSendFrame();
                     AdvanceFrameHistory = true;
                 }
                 else
@@ -167,21 +172,34 @@ namespace MLAPI
                         while (currentQueueItem.queueItemType != RpcQueueContainer.QueueItemType.None)
                         {
                             AdvanceFrameHistory = true;
-                            m_batcher.QueueItem(currentQueueItem);
-                            currentQueueItem = CurrentFrame.GetNextQueueItem();
+                            if(rpcQueueContainer.IsUsingBatching())
+                            {
+                                m_batcher.QueueItem(currentQueueItem);
 
-                            m_batcher.SendItems(m_BatchThreshold, SendCallback); // send anything already above the batching threshold
+                                m_batcher.SendItems(m_BatchThreshold, SendCallback);
+                            }
+                            else
+                            {
+                                SendFrameQueueItem(currentQueueItem);
+                            }
+                            currentQueueItem = CurrentFrame.GetNextQueueItem();
                         }
-                        m_batcher.SendItems(0, SendCallback); // send the remaining  batches
+
+                        //If the size is < m_BatchThreshold then just send the messages
+                        if(AdvanceFrameHistory && rpcQueueContainer.IsUsingBatching())
+                        {
+                            m_batcher.SendItems(0, SendCallback);
+                        }
                     }
                 }
 
                 if (AdvanceFrameHistory)
                 {
-                    rpcQueueManager.AdvanceFrameHistory(QueueHistoryFrame.QueueFrameType.Outbound);
+                    rpcQueueContainer.AdvanceFrameHistory(QueueHistoryFrame.QueueFrameType.Outbound);
                 }
             }
         }
+
 
         /// <summary>
         /// SendCallback
@@ -195,8 +213,43 @@ namespace MLAPI
             var length = (int)sendStream.Stream.Length;
             var bytes = sendStream.Stream.GetBuffer();
             ArraySegment<byte> sendBuffer = new ArraySegment<byte>(bytes, 0, length);
-
             NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(clientId, sendBuffer, string.IsNullOrEmpty(sendStream.channel) ? "MLAPI_DEFAULT_MESSAGE" : sendStream.channel);
+        }
+
+        /// <summary>
+        /// SendFrameQueueItem
+        /// Sends the RPC Queue Item to the specified destination
+        /// </summary>
+        /// <param name="queueItem">Information on what to send</param>
+        private void SendFrameQueueItem(FrameQueueItem queueItem)
+        {
+            switch (queueItem.queueItemType)
+            {
+                case RpcQueueContainer.QueueItemType.ServerRpc:
+                {
+                    NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(queueItem.networkId, queueItem.messageData, string.IsNullOrEmpty(queueItem.channel) ? "MLAPI_DEFAULT_MESSAGE" : queueItem.channel);
+
+                    //For each packet sent, we want to record how much data we have sent
+                    ProfilerStatManager.bytesSent.Record((int)queueItem.streamSize);
+                    ProfilerStatManager.rpcsSent.Record();
+                    break;
+                }
+                case RpcQueueContainer.QueueItemType.ClientRpc:
+                {
+                    foreach (ulong clientid in queueItem.clientIds)
+                    {
+                        NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(clientid, queueItem.messageData, string.IsNullOrEmpty(queueItem.channel) ? "MLAPI_DEFAULT_MESSAGE" : queueItem.channel);
+
+                        //For each packet sent, we want to record how much data we have sent
+                        ProfilerStatManager.bytesSent.Record((int)queueItem.streamSize);
+                    }
+
+                    //For each client we send to, we want to record how many RPCs we have sent
+                    ProfilerStatManager.rpcsSent.Record(queueItem.clientIds.Length);
+
+                    break;
+                }
+            }
         }
     }
 }
