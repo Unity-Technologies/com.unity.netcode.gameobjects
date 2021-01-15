@@ -390,7 +390,7 @@ namespace MLAPI.Messaging
         /// <param name="sourceNetworkId">who is sending the rpc</param>
         /// <param name="targetNetworkIds">who the rpc is being sent to</param>
         /// <returns></returns>
-        public PooledBitWriter BeginAddQueueItemToOutboundFrame(QueueItemType qItemType, float timeStamp, string channel, ushort sendflags, ulong sourceNetworkId, ulong[] targetNetworkIds)
+        public PooledBitWriter BeginAddQueueItemToOutboundFrame(QueueItemType qItemType, float timeStamp, byte channel, ushort sendflags, ulong sourceNetworkId, ulong[] targetNetworkIds)
         {
             QueueHistoryFrame queueHistoryItem = GetCurrentQueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateManager.NetworkUpdateStages.LateUpdate);
 
@@ -401,14 +401,7 @@ namespace MLAPI.Messaging
             queueHistoryItem.queueWriter.WriteUInt64(sourceNetworkId);
 
             //NSS-TODO: Determine if we need to store the channel
-            if (!string.IsNullOrEmpty(channel))
-            {
-                queueHistoryItem.queueWriter.WriteCharArray(channel.ToCharArray());
-            }
-            else
-            {
-                queueHistoryItem.queueWriter.WriteByte(0);
-            }
+            queueHistoryItem.queueWriter.WriteByte(channel);
 
             if (targetNetworkIds != null && targetNetworkIds.Length != 0)
             {
