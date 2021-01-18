@@ -36,8 +36,7 @@ namespace MLAPI
     [AddComponentMenu("MLAPI/NetworkingManager", -100)]
     public class NetworkingManager : UpdateLoopBehaviour
     {
-        // RuntimeAccessModifiersILPP will make this `public`
-        internal static readonly Dictionary<uint, Action<NetworkedBehaviour, BitReader, ulong>> __ntable = new Dictionary<uint, Action<NetworkedBehaviour, BitReader, ulong>>();
+        public static readonly Dictionary<uint, Action<NetworkedBehaviour, BitReader, ulong>> __ntable = new Dictionary<uint, Action<NetworkedBehaviour, BitReader, ulong>>();
 
         // @mfatihmar (Unity) Begin: Temporary, inbound RPC queue will replace this workaround
         internal readonly Queue<(ArraySegment<byte> payload, float receiveTime)> __loopbackRpcQueue = new Queue<(ArraySegment<byte> payload, float receiveTime)>();
