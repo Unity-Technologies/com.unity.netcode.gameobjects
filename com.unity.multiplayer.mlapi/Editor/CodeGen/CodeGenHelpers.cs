@@ -170,7 +170,7 @@ namespace MLAPI.Editor.CodeGen
             });
         }
 
-        public static AssemblyDefinition AssemblyDefinitionFor(ICompiledAssembly compiledAssembly)
+        public static Mono.Cecil.AssemblyDefinition AssemblyDefinitionFor(ICompiledAssembly compiledAssembly)
         {
             var assemblyResolver = new PostProcessorAssemblyResolver(compiledAssembly);
             var readerParameters = new ReaderParameters
@@ -182,7 +182,7 @@ namespace MLAPI.Editor.CodeGen
                 ReadingMode = ReadingMode.Immediate
             };
 
-            var assemblyDefinition = AssemblyDefinition.ReadAssembly(new MemoryStream(compiledAssembly.InMemoryAssembly.PeData), readerParameters);
+            var assemblyDefinition = Mono.Cecil.AssemblyDefinition.ReadAssembly(new MemoryStream(compiledAssembly.InMemoryAssembly.PeData), readerParameters);
 
             //apparently, it will happen that when we ask to resolve a type that lives inside MLAPI.Runtime, and we
             //are also postprocessing MLAPI.Runtime, type resolving will fail, because we do not actually try to resolve

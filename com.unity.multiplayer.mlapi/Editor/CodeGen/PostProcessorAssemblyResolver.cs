@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -6,14 +6,16 @@ using System.Threading;
 using Mono.Cecil;
 using Unity.CompilationPipeline.Common.ILPostProcessing;
 
+using AssemblyDefinition = Mono.Cecil.AssemblyDefinition;
+
 namespace MLAPI.Editor.CodeGen
 {
     class PostProcessorAssemblyResolver : IAssemblyResolver
     {
         private readonly string[] _assemblyReferences;
-        private readonly Dictionary<string, AssemblyDefinition> _assemblyCache = new Dictionary<string, AssemblyDefinition>();
+        private readonly Dictionary<string, Mono.Cecil.AssemblyDefinition> _assemblyCache = new Dictionary<string, Mono.Cecil.AssemblyDefinition>();
         private readonly ICompiledAssembly _compiledAssembly;
-        private AssemblyDefinition _selfAssembly;
+        private Mono.Cecil.AssemblyDefinition _selfAssembly;
 
         public PostProcessorAssemblyResolver(ICompiledAssembly compiledAssembly)
         {
@@ -25,9 +27,9 @@ namespace MLAPI.Editor.CodeGen
         {
         }
 
-        public AssemblyDefinition Resolve(AssemblyNameReference name) => Resolve(name, new ReaderParameters(ReadingMode.Deferred));
+        public Mono.Cecil.AssemblyDefinition Resolve(AssemblyNameReference name) => Resolve(name, new ReaderParameters(ReadingMode.Deferred));
 
-        public AssemblyDefinition Resolve(AssemblyNameReference name, ReaderParameters parameters)
+        public Mono.Cecil.AssemblyDefinition Resolve(AssemblyNameReference name, ReaderParameters parameters)
         {
             lock (_assemblyCache)
             {
@@ -53,7 +55,7 @@ namespace MLAPI.Editor.CodeGen
                 if (File.Exists(pdb))
                     parameters.SymbolStream = MemoryStreamFor(pdb);
 
-                var assemblyDefinition = AssemblyDefinition.ReadAssembly(ms, parameters);
+                var assemblyDefinition = Mono.Cecil.AssemblyDefinition.ReadAssembly(ms, parameters);
                 _assemblyCache.Add(cacheKey, assemblyDefinition);
                 return assemblyDefinition;
             }
@@ -120,7 +122,7 @@ namespace MLAPI.Editor.CodeGen
             }
         }
 
-        public void AddAssemblyDefinitionBeingOperatedOn(AssemblyDefinition assemblyDefinition)
+        public void AddAssemblyDefinitionBeingOperatedOn(Mono.Cecil.AssemblyDefinition assemblyDefinition)
         {
             _selfAssembly = assemblyDefinition;
         }

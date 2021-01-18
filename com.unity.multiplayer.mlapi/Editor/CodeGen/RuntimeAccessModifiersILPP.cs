@@ -1,3 +1,6 @@
+
+#if MLAPI_RUNTIME_ILPP
+
 using System.Collections.Generic;
 using System.IO;
 using Mono.Cecil;
@@ -5,11 +8,17 @@ using Mono.Cecil.Cil;
 using Unity.CompilationPipeline.Common.Diagnostics;
 using Unity.CompilationPipeline.Common.ILPostProcessing;
 
+#if !USE_UNITY_ILPP
+using ILPPInterface = MLAPI.Editor.CodeGen.ILPostProcessor;
+#else
+using ILPPInterface = Unity.CompilationPipeline.Common.ILPostProcessing.ILPostProcessor;
+#endif
+
 namespace MLAPI.Editor.CodeGen
 {
-    internal sealed class RuntimeAccessModifiersILPP : ILPostProcessor
+    internal sealed class RuntimeAccessModifiersILPP : ILPPInterface
     {
-        public override ILPostProcessor GetInstance() => this;
+        public override ILPPInterface GetInstance() => this;
 
         public override bool WillProcess(ICompiledAssembly compiledAssembly) => compiledAssembly.Name == CodeGenHelpers.RuntimeAssemblyName;
 

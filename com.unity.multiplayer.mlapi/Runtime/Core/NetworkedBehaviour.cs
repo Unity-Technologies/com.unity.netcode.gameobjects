@@ -19,11 +19,6 @@ using MLAPI.Transports;
 using BitStream = MLAPI.Serialization.BitStream;
 using Unity.Profiling;
 
-#if UNITY_EDITOR
-using System.Runtime.CompilerServices;
-[assembly: InternalsVisibleTo("Unity.Multiplayer.MLAPI.Editor.CodeGen")]
-#endif // UNITY_EDITOR
-
 namespace MLAPI
 {
     /// <summary>
@@ -31,8 +26,7 @@ namespace MLAPI
     /// </summary>
     public abstract class NetworkedBehaviour : MonoBehaviour
     {
-        // RuntimeAccessModifiersILPP will make this `protected`
-        internal enum NExec
+        protected enum NExec
         {
             None = 0,
             Server = 1,
@@ -40,12 +34,10 @@ namespace MLAPI
         }
 
 #pragma warning disable 414
-        // RuntimeAccessModifiersILPP will make this `protected`
-        internal NExec __nexec = NExec.None;
+        protected NExec __nexec = NExec.None;
 #pragma warning restore 414
 
-        // RuntimeAccessModifiersILPP will make this `protected`
-        internal BitWriter BeginSendServerRpc(ServerRpcSendParams sendParams, bool isReliable)
+        protected BitWriter BeginSendServerRpc(ServerRpcSendParams sendParams, bool isReliable)
         {
             var rpcQueueContainer = NetworkingManager.Singleton.rpcQueueContainer;
 
@@ -74,8 +66,7 @@ namespace MLAPI
             return writer;
         }
 
-        // RuntimeAccessModifiersILPP will make this `protected`
-        internal void EndSendServerRpc(BitWriter writer, ServerRpcSendParams sendParams, bool isReliable)
+        protected void EndSendServerRpc(BitWriter writer, ServerRpcSendParams sendParams, bool isReliable)
         {
             if (writer == null) return;
 
@@ -83,8 +74,7 @@ namespace MLAPI
             rpcQueueContainer.EndAddQueueItemToOutboundFrame(writer);
         }
 
-        // RuntimeAccessModifiersILPP will make this `protected`
-        internal BitWriter BeginSendClientRpc(ClientRpcSendParams sendParams, bool isReliable)
+        protected BitWriter BeginSendClientRpc(ClientRpcSendParams sendParams, bool isReliable)
         {
             //This will start a new queue item entry and will then return the writer to the current frame's stream
             var rpcQueueContainer = NetworkingManager.Singleton.rpcQueueContainer;
@@ -114,8 +104,7 @@ namespace MLAPI
             return writer;
         }
 
-        // RuntimeAccessModifiersILPP will make this `protected`
-        internal void EndSendClientRpc(BitWriter writer, ClientRpcSendParams sendParams, bool isReliable)
+        protected void EndSendClientRpc(BitWriter writer, ClientRpcSendParams sendParams, bool isReliable)
         {
             if (writer == null) return;
 
