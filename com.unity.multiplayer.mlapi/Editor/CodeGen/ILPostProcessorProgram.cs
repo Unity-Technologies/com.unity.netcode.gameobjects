@@ -88,7 +88,7 @@ internal class ILPostProcessProgram
         bool usesMLAPI = false;
         bool foundThisAssembly = false;
 
-        HashSet<string> depenencyPaths = new HashSet<string>();
+        List<string> depenencyPaths = new List<string>();
         foreach (var assembly in assemblies)
         {
             // Find the assembly currently being compiled from domain assembly list and check if it's using unet
@@ -100,7 +100,7 @@ internal class ILPostProcessProgram
                     // Since this assembly is already loaded in the domain this is a no-op and returns the
                     // already loaded assembly
                     var location = Assembly.Load(dependency).Location;
-                    depenencyPaths.Add(Path.GetDirectoryName(location));
+                    depenencyPaths.Add(Path.GetFileNameWithoutExtension(location));
                     if (dependency.Name.Contains(CodeGenHelpers.RuntimeAssemblyName))
                     {
                         usesMLAPI = true;
@@ -139,7 +139,7 @@ internal class ILPostProcessProgram
                     {
                         var location = Assembly.Load(assembly.GetName().Name).Location;
                         if (!string.IsNullOrEmpty(location))
-                            depenencyPaths.Add(Path.GetDirectoryName(location));
+                            depenencyPaths.Add(Path.GetFileNameWithoutExtension(location));
                     }
                 }
                 catch (FileNotFoundException) { }
@@ -171,26 +171,9 @@ internal class ILPostProcessProgram
             return;
         }
 
-        var assemblyNoPathName = Path.GetFileNameWithoutExtension(targetAssembly);
         var assemblyPathName = Path.GetFileName(targetAssembly);
 
-        var defines = CompilationPipeline.GetDefinesFromAssemblyName(assemblyNoPathName);
-        var refs = CompilationPipeline.GetAssemblyDefinitionFilePathFromAssemblyName(assemblyNoPathName);
-
-        if (string.IsNullOrEmpty(refs))
-        {
-            Debug.LogError($"Failed to find {assemblyNoPathName} assembly definition");
-            return;
-        }
-
-        var asmDef = JsonUtility.FromJson<AssemblyDefinition>(File.ReadAllText(refs));
-        if (string.IsNullOrEmpty(asmDef.name))
-        {
-            Debug.LogError($"Failed to load {assemblyNoPathName} assembly definition");
-            return;
-        }
-
-        var targetCompiledAssembly = new ILPostProcessCompiledAssembly(assemblyPathName, asmDef.references, defines, outputDirectory);
+        var targetCompiledAssembly = new ILPostProcessCompiledAssembly(assemblyPathName, depenencyPaths.ToArray() , null, outputDirectory);
 
         void WriteAssembly(InMemoryAssembly inMemoryAssembly, string outputPath, string assName)
         {
