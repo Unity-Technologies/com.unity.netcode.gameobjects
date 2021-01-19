@@ -1,15 +1,13 @@
-#if !USE_UNITY_ILPP
-
+#if !UNITY_2020_2_OR_NEWER
 using Unity.CompilationPipeline.Common.ILPostProcessing;
 
 namespace MLAPI.Editor.CodeGen
 {
     public abstract class ILPostProcessor
     {
-        public virtual bool WillProcess(ICompiledAssembly compiledAssembly) => false;
-        public virtual ILPostProcessResult Process(ICompiledAssembly compiledAssembly) => null;
-        public virtual ILPostProcessor GetInstance() => null;
+        public abstract bool WillProcess(ICompiledAssembly compiledAssembly);
+        public abstract ILPostProcessResult Process(ICompiledAssembly compiledAssembly);
+        public abstract ILPostProcessor GetInstance();
     }
 }
-
 #endif

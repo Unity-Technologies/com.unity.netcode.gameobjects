@@ -13,10 +13,10 @@ using Unity.CompilationPipeline.Common.ILPostProcessing;
 using MethodAttributes = Mono.Cecil.MethodAttributes;
 using ParameterAttributes = Mono.Cecil.ParameterAttributes;
 
-#if !USE_UNITY_ILPP
-using ILPPInterface = MLAPI.Editor.CodeGen.ILPostProcessor;
-#else
+#if UNITY_2020_2_OR_NEWER
 using ILPPInterface = Unity.CompilationPipeline.Common.ILPostProcessing.ILPostProcessor;
+#else
+using ILPPInterface = MLAPI.Editor.CodeGen.ILPostProcessor;
 #endif
 
 namespace MLAPI.Editor.CodeGen
@@ -25,21 +25,22 @@ namespace MLAPI.Editor.CodeGen
     {
         public override ILPPInterface GetInstance() => this;
 
-        public override bool WillProcess(ICompiledAssembly compiledAssembly) => compiledAssembly.Name == CodeGenHelpers.RuntimeAssemblyName ||
-            compiledAssembly.References.Any(filePath => filePath == CodeGenHelpers.RuntimeAssemblyName);
+        public override bool WillProcess(ICompiledAssembly compiledAssembly) =>
+            compiledAssembly.Name == CodeGenHelpers.RuntimeAssemblyName ||
+            compiledAssembly.References.Any(filePath => Path.GetFileNameWithoutExtension(filePath) == CodeGenHelpers.RuntimeAssemblyName);
 
-        private readonly List<DiagnosticMessage> _diagnostics = new List<DiagnosticMessage>();
+        private readonly List<DiagnosticMessage> m_Diagnostics = new List<DiagnosticMessage>();
 
         public override ILPostProcessResult Process(ICompiledAssembly compiledAssembly)
         {
             if (!WillProcess(compiledAssembly)) return null;
-            _diagnostics.Clear();
+            m_Diagnostics.Clear();
 
             // read
             var assemblyDefinition = CodeGenHelpers.AssemblyDefinitionFor(compiledAssembly);
             if (assemblyDefinition == null)
             {
-                _diagnostics.AddError($"Cannot read assembly definition: {compiledAssembly.Name}");
+                m_Diagnostics.AddError($"Cannot read assembly definition: {compiledAssembly.Name}");
                 return null;
             }
 
@@ -55,9 +56,9 @@ namespace MLAPI.Editor.CodeGen
                         .ToList()
                         .ForEach(ProcessNetworkBehaviour);
                 }
-                else _diagnostics.AddError($"Cannot import references into main module: {mainModule.Name}");
+                else m_Diagnostics.AddError($"Cannot import references into main module: {mainModule.Name}");
             }
-            else _diagnostics.AddError($"Cannot get main module from assembly definition: {compiledAssembly.Name}");
+            else m_Diagnostics.AddError($"Cannot get main module from assembly definition: {compiledAssembly.Name}");
 
             // write
             var pe = new MemoryStream();
@@ -72,7 +73,7 @@ namespace MLAPI.Editor.CodeGen
 
             assemblyDefinition.Write(pe, writerParameters);
 
-            return new ILPostProcessResult(new InMemoryAssembly(pe.ToArray(), pdb.ToArray()), _diagnostics);
+            return new ILPostProcessResult(new InMemoryAssembly(pe.ToArray(), pdb.ToArray()), m_Diagnostics);
         }
 
         private TypeReference NetworkManager_TypeRef;
@@ -144,27 +145,18 @@ namespace MLAPI.Editor.CodeGen
         private MethodReference BitReader_ReadRayPacked_MethodRef;
         private MethodReference BitReader_ReadRay2DPacked_MethodRef;
 
+        private const string NetworkingManager_Singleton = nameof(NetworkingManager.Singleton);
+        private const string NetworkingManager_IsListening = nameof(NetworkingManager.IsListening);
+        private const string NetworkingManager_IsHost = nameof(NetworkingManager.IsHost);
+        private const string NetworkingManager_IsServer = nameof(NetworkingManager.IsServer);
+        private const string NetworkingManager_IsClient = nameof(NetworkingManager.IsClient);
+        private const string NetworkingManager_ntable = nameof(NetworkingManager.__ntable);
 
-        // TLDR: These fields need to be their proper visibility both in the code
-        // and in the modified DLL. This means that they should just be protected
-        // from the start and not modified by ILPP to become a different visibility.
-        // This of course causes issues because we want to query these fields within
-        // the ILPP which means we need to use their constant names instead of directly
-        // referencing the fields. While a pain its the price we pay with ILPP. 
-
-        private const string NetworkingManager_Singleton = "Singleton";
-        private const string NetworkingManager_IsListening = "IsListening";
-        private const string NetworkingManager_IsHost = "IsHost";
-        private const string NetworkingManager_IsServer = "IsServer";
-        private const string NetworkingManager_IsClient = "IsClient";
-        private const string NetworkingManager_ntable = "__ntable";
-
-        private const string NetworkedBehaviour_BeginSendServerRpc  = "BeginSendServerRpc";
-        private const string NetworkedBehaviour_EndSendServerRpc    = "EndSendServerRpc";
-        private const string NetworkedBehaviour_BeginSendClientRpc  = "BeginSendClientRpc";
-        private const string NetworkedBehaviour_EndSendClientRpc    = "EndSendClientRpc";
-        private const string NetworkedBehaviour_nexec = "__nexec";
-
+        private const string NetworkedBehaviour_BeginSendServerRpc = nameof(NetworkedBehaviour.BeginSendServerRpc);
+        private const string NetworkedBehaviour_EndSendServerRpc = nameof(NetworkedBehaviour.EndSendServerRpc);
+        private const string NetworkedBehaviour_BeginSendClientRpc = nameof(NetworkedBehaviour.BeginSendClientRpc);
+        private const string NetworkedBehaviour_EndSendClientRpc = nameof(NetworkedBehaviour.EndSendClientRpc);
+        private const string NetworkedBehaviour_nexec = nameof(NetworkedBehaviour.__nexec);
 
         private bool ImportReferences(ModuleDefinition moduleDefinition)
         {
@@ -236,8 +228,7 @@ namespace MLAPI.Editor.CodeGen
 
             var networkHandlerDelegateType = typeof(Action<NetworkedBehaviour, BitReader, ulong>);
             NetworkHandlerDelegateCtor_MethodRef = moduleDefinition.ImportReference(
-                networkHandlerDelegateType
-                    .GetConstructor(new[] {typeof(object), typeof(IntPtr)}));
+                networkHandlerDelegateType.GetConstructor(new[] { typeof(object), typeof(IntPtr) }));
 
             var serverRpcParamsType = typeof(ServerRpcParams);
             ServerRpcParams_TypeRef = moduleDefinition.ImportReference(serverRpcParamsType);
@@ -505,33 +496,33 @@ namespace MLAPI.Editor.CodeGen
 
                     if (methodDefinition.IsStatic)
                     {
-                        _diagnostics.AddError(methodDefinition, "RPC method must not be static!");
+                        m_Diagnostics.AddError(methodDefinition, "RPC method must not be static!");
                         isValid = false;
                     }
 
                     if (methodDefinition.IsAbstract)
                     {
-                        _diagnostics.AddError(methodDefinition, "RPC method must not be abstract!");
+                        m_Diagnostics.AddError(methodDefinition, "RPC method must not be abstract!");
                         isValid = false;
                     }
 
                     if (methodDefinition.ReturnType != methodDefinition.Module.TypeSystem.Void)
                     {
-                        _diagnostics.AddError(methodDefinition, "RPC method must return `void`!");
+                        m_Diagnostics.AddError(methodDefinition, "RPC method must return `void`!");
                         isValid = false;
                     }
 
                     if (customAttributeType_FullName == CodeGenHelpers.ServerRpcAttribute_FullName &&
                         !methodDefinition.Name.EndsWith("ServerRpc", StringComparison.OrdinalIgnoreCase))
                     {
-                        _diagnostics.AddError(methodDefinition, "ServerRpc method must end with 'ServerRpc' suffix!");
+                        m_Diagnostics.AddError(methodDefinition, "ServerRpc method must end with 'ServerRpc' suffix!");
                         isValid = false;
                     }
 
                     if (customAttributeType_FullName == CodeGenHelpers.ClientRpcAttribute_FullName &&
                         !methodDefinition.Name.EndsWith("ClientRpc", StringComparison.OrdinalIgnoreCase))
                     {
-                        _diagnostics.AddError(methodDefinition, "ClientRpc method must end with 'ClientRpc' suffix!");
+                        m_Diagnostics.AddError(methodDefinition, "ClientRpc method must end with 'ClientRpc' suffix!");
                         isValid = false;
                     }
 
@@ -547,11 +538,11 @@ namespace MLAPI.Editor.CodeGen
             {
                 if (methodDefinition.Name.EndsWith("ServerRpc", StringComparison.OrdinalIgnoreCase))
                 {
-                    _diagnostics.AddError(methodDefinition, "ServerRpc method must be marked with 'ServerRpc' attribute!");
+                    m_Diagnostics.AddError(methodDefinition, "ServerRpc method must be marked with 'ServerRpc' attribute!");
                 }
                 else if (methodDefinition.Name.EndsWith("ClientRpc", StringComparison.OrdinalIgnoreCase))
                 {
-                    _diagnostics.AddError(methodDefinition, "ClientRpc method must be marked with 'ClientRpc' attribute!");
+                    m_Diagnostics.AddError(methodDefinition, "ClientRpc method must be marked with 'ClientRpc' attribute!");
                 }
 
                 return null;
@@ -570,7 +561,7 @@ namespace MLAPI.Editor.CodeGen
                 // ClientRpcParams
                 if (paramType.FullName == CodeGenHelpers.ClientRpcParams_FullName && !isServerRpc && paramIndex == paramCount - 1) continue;
 
-                _diagnostics.AddError(methodDefinition, $"RPC method parameter does not support serialization: {paramType.FullName}");
+                m_Diagnostics.AddError(methodDefinition, $"RPC method parameter does not support serialization: {paramType.FullName}");
                 rpcAttribute = null;
             }
 
@@ -639,7 +630,7 @@ namespace MLAPI.Editor.CodeGen
                 // if (__nexec != NExec.Client) -> ClientRpc
                 instructions.Add(processor.Create(OpCodes.Ldarg_0));
                 instructions.Add(processor.Create(OpCodes.Ldfld, NetworkBehaviour_nexec_FieldRef));
-                instructions.Add(processor.Create(OpCodes.Ldc_I4, (int)(isServerRpc ? 1 : 0))); // 1 server, 2 client see NetworkedBehaviour.cs
+                instructions.Add(processor.Create(OpCodes.Ldc_I4, (int)(isServerRpc ? NetworkedBehaviour.NExec.Server : NetworkedBehaviour.NExec.Client)));
                 instructions.Add(processor.Create(OpCodes.Ceq));
                 instructions.Add(processor.Create(OpCodes.Ldc_I4, 0));
                 instructions.Add(processor.Create(OpCodes.Ceq));
@@ -1004,7 +995,7 @@ namespace MLAPI.Editor.CodeGen
                 // if (__nexec == NExec.Client) -> ClientRpc
                 instructions.Add(processor.Create(OpCodes.Ldarg_0));
                 instructions.Add(processor.Create(OpCodes.Ldfld, NetworkBehaviour_nexec_FieldRef));
-                instructions.Add(processor.Create(OpCodes.Ldc_I4, (int)(isServerRpc ? 1 : 2))); // 1 server, 2 client see NetworkedBehaviour.cs
+                instructions.Add(processor.Create(OpCodes.Ldc_I4, (int)(isServerRpc ? NetworkedBehaviour.NExec.Server : NetworkedBehaviour.NExec.Client)));
                 instructions.Add(processor.Create(OpCodes.Ceq));
                 instructions.Add(processor.Create(OpCodes.Brfalse, returnInstr));
 
@@ -1289,7 +1280,7 @@ namespace MLAPI.Editor.CodeGen
             // NetworkBehaviour.__nexec = NExec.Server; -> ServerRpc
             // NetworkBehaviour.__nexec = NExec.Client; -> ClientRpc
             processor.Emit(OpCodes.Ldarg_0);
-            processor.Emit(OpCodes.Ldc_I4, (int)(isServerRpc ? 1 : 2)); // 1 server, 2 client see NetworkedBehaviour.cs
+            processor.Emit(OpCodes.Ldc_I4, (int)(isServerRpc ? NetworkedBehaviour.NExec.Server : NetworkedBehaviour.NExec.Client));
             processor.Emit(OpCodes.Stfld, NetworkBehaviour_nexec_FieldRef);
 
             // NetworkBehaviour.XXXRpc(...);
@@ -1300,7 +1291,7 @@ namespace MLAPI.Editor.CodeGen
 
             // NetworkBehaviour.__nexec = NExec.None;
             processor.Emit(OpCodes.Ldarg_0);
-            processor.Emit(OpCodes.Ldc_I4, 0); // 0 none, see NetworkedBehaviour.cs
+            processor.Emit(OpCodes.Ldc_I4, (int)NetworkedBehaviour.NExec.None);
             processor.Emit(OpCodes.Stfld, NetworkBehaviour_nexec_FieldRef);
 
             processor.Emit(OpCodes.Ret);

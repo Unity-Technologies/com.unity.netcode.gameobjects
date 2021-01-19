@@ -1,3 +1,4 @@
+#if !UNITY_2020_2_OR_NEWER
 using System.IO;
 using Unity.CompilationPipeline.Common.ILPostProcessing;
 
@@ -5,44 +6,37 @@ namespace MLAPI.Editor.CodeGen
 {
     internal class ILPostProcessCompiledAssembly : ICompiledAssembly
     {
-        readonly string m_AssemblyFilename;
-        readonly string m_OutputPath;
-        InMemoryAssembly m_InMemoryAssembly;
+        private readonly string m_AssemblyFilename;
+        private readonly string m_OutputPath;
+        private InMemoryAssembly m_InMemoryAssembly;
 
-        public ILPostProcessCompiledAssembly(string assName, string[] refs, string[] defines, string outputPath)
+        public ILPostProcessCompiledAssembly(string asmName, string[] refs, string[] defines, string outputPath)
         {
-            m_AssemblyFilename = assName;
+            m_AssemblyFilename = asmName;
             Name = Path.GetFileNameWithoutExtension(m_AssemblyFilename);
             References = refs;
             Defines = defines;
-
             m_OutputPath = outputPath;
         }
 
+        public string Name { get; }
+        public string[] References { get; }
+        public string[] Defines { get; }
+
         public InMemoryAssembly InMemoryAssembly
         {
-            get { return CreateOrGetInMemoryAssembly(); }
-            set { m_InMemoryAssembly = value; }
-        }
-
-        public string Name { get; set; }
-        public string[] References { get; set; }
-        public string[] Defines { get; private set; }
-
-        private InMemoryAssembly CreateOrGetInMemoryAssembly()
-        {
-            if (m_InMemoryAssembly != null)
+            get
             {
+                if (m_InMemoryAssembly == null)
+                {
+                    m_InMemoryAssembly = new InMemoryAssembly(
+                        File.ReadAllBytes(Path.Combine(m_OutputPath, m_AssemblyFilename)),
+                        File.ReadAllBytes(Path.Combine(m_OutputPath, $"{Path.GetFileNameWithoutExtension(m_AssemblyFilename)}.pdb")));
+                }
+
                 return m_InMemoryAssembly;
             }
-
-            byte[] peData = File.ReadAllBytes(Path.Combine(m_OutputPath, m_AssemblyFilename));
-
-            var pdbFileName = Path.GetFileNameWithoutExtension(m_AssemblyFilename) + ".pdb";
-            byte[] pdbData = File.ReadAllBytes(Path.Combine(m_OutputPath, pdbFileName));
-
-            m_InMemoryAssembly = new InMemoryAssembly(peData, pdbData);
-            return m_InMemoryAssembly;
         }
     }
 }
+#endif

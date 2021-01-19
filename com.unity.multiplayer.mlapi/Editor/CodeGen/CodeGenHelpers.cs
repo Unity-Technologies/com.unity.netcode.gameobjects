@@ -12,6 +12,10 @@ using Unity.CompilationPipeline.Common.Diagnostics;
 using Unity.CompilationPipeline.Common.ILPostProcessing;
 using UnityEngine;
 
+#if !UNITY_2020_2_OR_NEWER && !UNITY_2019_4_OR_NEWER
+#error MLAPI requires Unity 2019.4 or newer
+#endif
+
 namespace MLAPI.Editor.CodeGen
 {
     internal static class CodeGenHelpers
@@ -170,7 +174,7 @@ namespace MLAPI.Editor.CodeGen
             });
         }
 
-        public static Mono.Cecil.AssemblyDefinition AssemblyDefinitionFor(ICompiledAssembly compiledAssembly)
+        public static AssemblyDefinition AssemblyDefinitionFor(ICompiledAssembly compiledAssembly)
         {
             var assemblyResolver = new PostProcessorAssemblyResolver(compiledAssembly);
             var readerParameters = new ReaderParameters
@@ -182,7 +186,7 @@ namespace MLAPI.Editor.CodeGen
                 ReadingMode = ReadingMode.Immediate
             };
 
-            var assemblyDefinition = Mono.Cecil.AssemblyDefinition.ReadAssembly(new MemoryStream(compiledAssembly.InMemoryAssembly.PeData), readerParameters);
+            var assemblyDefinition = AssemblyDefinition.ReadAssembly(new MemoryStream(compiledAssembly.InMemoryAssembly.PeData), readerParameters);
 
             //apparently, it will happen that when we ask to resolve a type that lives inside MLAPI.Runtime, and we
             //are also postprocessing MLAPI.Runtime, type resolving will fail, because we do not actually try to resolve

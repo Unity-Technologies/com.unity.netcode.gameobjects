@@ -1,6 +1,4 @@
-
-#if MLAPI_RUNTIME_ILPP
-
+#if UNITY_2020_2_OR_NEWER
 using System.Collections.Generic;
 using System.IO;
 using Mono.Cecil;
@@ -8,11 +6,7 @@ using Mono.Cecil.Cil;
 using Unity.CompilationPipeline.Common.Diagnostics;
 using Unity.CompilationPipeline.Common.ILPostProcessing;
 
-#if !USE_UNITY_ILPP
-using ILPPInterface = MLAPI.Editor.CodeGen.ILPostProcessor;
-#else
 using ILPPInterface = Unity.CompilationPipeline.Common.ILPostProcessing.ILPostProcessor;
-#endif
 
 namespace MLAPI.Editor.CodeGen
 {
@@ -22,18 +16,18 @@ namespace MLAPI.Editor.CodeGen
 
         public override bool WillProcess(ICompiledAssembly compiledAssembly) => compiledAssembly.Name == CodeGenHelpers.RuntimeAssemblyName;
 
-        private readonly List<DiagnosticMessage> _diagnostics = new List<DiagnosticMessage>();
+        private readonly List<DiagnosticMessage> m_Diagnostics = new List<DiagnosticMessage>();
 
         public override ILPostProcessResult Process(ICompiledAssembly compiledAssembly)
         {
             if (!WillProcess(compiledAssembly)) return null;
-            _diagnostics.Clear();
+            m_Diagnostics.Clear();
 
             // read
             var assemblyDefinition = CodeGenHelpers.AssemblyDefinitionFor(compiledAssembly);
             if (assemblyDefinition == null)
             {
-                _diagnostics.AddError($"Cannot read MLAPI Runtime assembly definition: {compiledAssembly.Name}");
+                m_Diagnostics.AddError($"Cannot read MLAPI Runtime assembly definition: {compiledAssembly.Name}");
                 return null;
             }
 
@@ -56,7 +50,7 @@ namespace MLAPI.Editor.CodeGen
                     }
                 }
             }
-            else _diagnostics.AddError($"Cannot get main module from MLAPI Runtime assembly definition: {compiledAssembly.Name}");
+            else m_Diagnostics.AddError($"Cannot get main module from MLAPI Runtime assembly definition: {compiledAssembly.Name}");
 
             // write
             var pe = new MemoryStream();
@@ -71,7 +65,7 @@ namespace MLAPI.Editor.CodeGen
 
             assemblyDefinition.Write(pe, writerParameters);
 
-            return new ILPostProcessResult(new InMemoryAssembly(pe.ToArray(), pdb.ToArray()), _diagnostics);
+            return new ILPostProcessResult(new InMemoryAssembly(pe.ToArray(), pdb.ToArray()), m_Diagnostics);
         }
 
         private void ProcessNetworkManager(TypeDefinition typeDefinition)
