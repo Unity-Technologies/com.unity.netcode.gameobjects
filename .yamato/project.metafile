@@ -1,6 +1,7 @@
 # Editors where tests will happen. The first entry of this array is also used
 # for validation
 test_editors:
+  - 2019.4
   - 2020.2
   - trunk
 
