@@ -1,4 +1,4 @@
-#if UNITY_2020_2_OR_NEWER
+#if UNITY_2020_2_OR_NEWER && !UNITY_2021_1_OR_NEWER
 using System.Collections.Generic;
 using System.IO;
 using Mono.Cecil;

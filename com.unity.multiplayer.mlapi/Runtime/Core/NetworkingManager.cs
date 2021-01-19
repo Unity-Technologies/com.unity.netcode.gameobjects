@@ -45,7 +45,7 @@ namespace MLAPI
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-#if UNITY_2020_2_OR_NEWER
+#if UNITY_2020_2_OR_NEWER && !UNITY_2021_1_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `public`
         internal static readonly Dictionary<uint, Action<NetworkedBehaviour, BitReader, ulong>> __ntable = new Dictionary<uint, Action<NetworkedBehaviour, BitReader, ulong>>();
 #else

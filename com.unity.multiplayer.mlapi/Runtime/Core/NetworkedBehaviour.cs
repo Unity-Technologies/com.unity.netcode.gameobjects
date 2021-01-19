@@ -20,7 +20,7 @@ using MLAPI.Transports;
 using BitStream = MLAPI.Serialization.BitStream;
 using Unity.Profiling;
 
-#if UNITY_2020_2_OR_NEWER && UNITY_EDITOR
+#if UNITY_2020_2_OR_NEWER && UNITY_EDITOR && !UNITY_2021_1_OR_NEWER
 using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("Unity.Multiplayer.MLAPI.Editor.CodeGen")]
 #endif
@@ -34,7 +34,7 @@ namespace MLAPI
     {
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
-#if UNITY_2020_2_OR_NEWER
+#if UNITY_2020_2_OR_NEWER && !UNITY_2021_1_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `protected`
         internal enum __NExec
 #else
@@ -51,7 +51,7 @@ namespace MLAPI
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-#if UNITY_2020_2_OR_NEWER
+#if UNITY_2020_2_OR_NEWER && !UNITY_2021_1_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `protected`
         internal __NExec __nexec = __NExec.None;
 #else
@@ -62,7 +62,7 @@ namespace MLAPI
 
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
-#if UNITY_2020_2_OR_NEWER
+#if UNITY_2020_2_OR_NEWER && !UNITY_2021_1_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `protected`
         internal BitWriter __beginSendServerRpc(ServerRpcSendParams sendParams, bool isReliable)
 #else
@@ -99,7 +99,7 @@ namespace MLAPI
 
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
-#if UNITY_2020_2_OR_NEWER
+#if UNITY_2020_2_OR_NEWER && !UNITY_2021_1_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `protected`
         internal void __endSendServerRpc(BitWriter writer, ServerRpcSendParams sendParams, bool isReliable)
 #else
@@ -115,7 +115,7 @@ namespace MLAPI
 
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
-#if UNITY_2020_2_OR_NEWER
+#if UNITY_2020_2_OR_NEWER && !UNITY_2021_1_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `protected`
         internal BitWriter __beginSendClientRpc(ClientRpcSendParams sendParams, bool isReliable)
 #else
@@ -153,7 +153,7 @@ namespace MLAPI
 
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
-#if UNITY_2020_2_OR_NEWER
+#if UNITY_2020_2_OR_NEWER && !UNITY_2021_1_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `protected`
         internal void __endSendClientRpc(BitWriter writer, ClientRpcSendParams sendParams, bool isReliable)
 #else

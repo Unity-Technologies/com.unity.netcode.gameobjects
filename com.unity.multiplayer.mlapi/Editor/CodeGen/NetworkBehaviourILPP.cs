@@ -13,7 +13,7 @@ using Unity.CompilationPipeline.Common.ILPostProcessing;
 using MethodAttributes = Mono.Cecil.MethodAttributes;
 using ParameterAttributes = Mono.Cecil.ParameterAttributes;
 
-#if UNITY_2020_2_OR_NEWER
+#if UNITY_2020_2_OR_NEWER && !UNITY_2021_1_OR_NEWER
 using ILPPInterface = Unity.CompilationPipeline.Common.ILPostProcessing.ILPostProcessor;
 #else
 using ILPPInterface = MLAPI.Editor.CodeGen.ILPostProcessor;
@@ -150,6 +150,7 @@ namespace MLAPI.Editor.CodeGen
         private const string NetworkingManager_IsHost = nameof(NetworkingManager.IsHost);
         private const string NetworkingManager_IsServer = nameof(NetworkingManager.IsServer);
         private const string NetworkingManager_IsClient = nameof(NetworkingManager.IsClient);
+#pragma warning disable 618
         private const string NetworkingManager_ntable = nameof(NetworkingManager.__ntable);
 
         private const string NetworkedBehaviour_BeginSendServerRpc = nameof(NetworkedBehaviour.__beginSendServerRpc);
@@ -157,6 +158,7 @@ namespace MLAPI.Editor.CodeGen
         private const string NetworkedBehaviour_BeginSendClientRpc = nameof(NetworkedBehaviour.__beginSendClientRpc);
         private const string NetworkedBehaviour_EndSendClientRpc = nameof(NetworkedBehaviour.__endSendClientRpc);
         private const string NetworkedBehaviour_nexec = nameof(NetworkedBehaviour.__nexec);
+#pragma warning restore 618
 
         private bool ImportReferences(ModuleDefinition moduleDefinition)
         {
@@ -630,7 +632,9 @@ namespace MLAPI.Editor.CodeGen
                 // if (__nexec != NExec.Client) -> ClientRpc
                 instructions.Add(processor.Create(OpCodes.Ldarg_0));
                 instructions.Add(processor.Create(OpCodes.Ldfld, NetworkBehaviour_nexec_FieldRef));
+#pragma warning disable 618
                 instructions.Add(processor.Create(OpCodes.Ldc_I4, (int)(isServerRpc ? NetworkedBehaviour.__NExec.Server : NetworkedBehaviour.__NExec.Client)));
+#pragma warning restore 618
                 instructions.Add(processor.Create(OpCodes.Ceq));
                 instructions.Add(processor.Create(OpCodes.Ldc_I4, 0));
                 instructions.Add(processor.Create(OpCodes.Ceq));
@@ -995,7 +999,9 @@ namespace MLAPI.Editor.CodeGen
                 // if (__nexec == NExec.Client) -> ClientRpc
                 instructions.Add(processor.Create(OpCodes.Ldarg_0));
                 instructions.Add(processor.Create(OpCodes.Ldfld, NetworkBehaviour_nexec_FieldRef));
+#pragma warning disable 618
                 instructions.Add(processor.Create(OpCodes.Ldc_I4, (int)(isServerRpc ? NetworkedBehaviour.__NExec.Server : NetworkedBehaviour.__NExec.Client)));
+#pragma warning restore 618
                 instructions.Add(processor.Create(OpCodes.Ceq));
                 instructions.Add(processor.Create(OpCodes.Brfalse, returnInstr));
 
@@ -1280,7 +1286,9 @@ namespace MLAPI.Editor.CodeGen
             // NetworkBehaviour.__nexec = NExec.Server; -> ServerRpc
             // NetworkBehaviour.__nexec = NExec.Client; -> ClientRpc
             processor.Emit(OpCodes.Ldarg_0);
+#pragma warning disable 618
             processor.Emit(OpCodes.Ldc_I4, (int)(isServerRpc ? NetworkedBehaviour.__NExec.Server : NetworkedBehaviour.__NExec.Client));
+#pragma warning restore 618
             processor.Emit(OpCodes.Stfld, NetworkBehaviour_nexec_FieldRef);
 
             // NetworkBehaviour.XXXRpc(...);
@@ -1291,7 +1299,9 @@ namespace MLAPI.Editor.CodeGen
 
             // NetworkBehaviour.__nexec = NExec.None;
             processor.Emit(OpCodes.Ldarg_0);
+#pragma warning disable 618
             processor.Emit(OpCodes.Ldc_I4, (int)NetworkedBehaviour.__NExec.None);
+#pragma warning restore 618
             processor.Emit(OpCodes.Stfld, NetworkBehaviour_nexec_FieldRef);
 
             processor.Emit(OpCodes.Ret);
