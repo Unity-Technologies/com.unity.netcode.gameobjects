@@ -83,7 +83,7 @@ namespace MLAPI.Editor.CodeGen
         {
             foreach (var nestedType in typeDefinition.NestedTypes)
             {
-                if (nestedType.Name == nameof(NetworkedBehaviour.NExec))
+                if (nestedType.Name == nameof(NetworkedBehaviour.__NExec))
                 {
                     nestedType.IsNestedFamily = true;
                 }
@@ -101,10 +101,10 @@ namespace MLAPI.Editor.CodeGen
             {
                 switch (methodDefinition.Name)
                 {
-                    case nameof(NetworkedBehaviour.BeginSendServerRpc):
-                    case nameof(NetworkedBehaviour.EndSendServerRpc):
-                    case nameof(NetworkedBehaviour.BeginSendClientRpc):
-                    case nameof(NetworkedBehaviour.EndSendClientRpc):
+                    case nameof(NetworkedBehaviour.__beginSendServerRpc):
+                    case nameof(NetworkedBehaviour.__endSendServerRpc):
+                    case nameof(NetworkedBehaviour.__beginSendClientRpc):
+                    case nameof(NetworkedBehaviour.__endSendClientRpc):
                         methodDefinition.IsFamily = true;
                         break;
                 }

@@ -152,10 +152,10 @@ namespace MLAPI.Editor.CodeGen
         private const string NetworkingManager_IsClient = nameof(NetworkingManager.IsClient);
         private const string NetworkingManager_ntable = nameof(NetworkingManager.__ntable);
 
-        private const string NetworkedBehaviour_BeginSendServerRpc = nameof(NetworkedBehaviour.BeginSendServerRpc);
-        private const string NetworkedBehaviour_EndSendServerRpc = nameof(NetworkedBehaviour.EndSendServerRpc);
-        private const string NetworkedBehaviour_BeginSendClientRpc = nameof(NetworkedBehaviour.BeginSendClientRpc);
-        private const string NetworkedBehaviour_EndSendClientRpc = nameof(NetworkedBehaviour.EndSendClientRpc);
+        private const string NetworkedBehaviour_BeginSendServerRpc = nameof(NetworkedBehaviour.__beginSendServerRpc);
+        private const string NetworkedBehaviour_EndSendServerRpc = nameof(NetworkedBehaviour.__endSendServerRpc);
+        private const string NetworkedBehaviour_BeginSendClientRpc = nameof(NetworkedBehaviour.__beginSendClientRpc);
+        private const string NetworkedBehaviour_EndSendClientRpc = nameof(NetworkedBehaviour.__endSendClientRpc);
         private const string NetworkedBehaviour_nexec = nameof(NetworkedBehaviour.__nexec);
 
         private bool ImportReferences(ModuleDefinition moduleDefinition)
@@ -630,7 +630,7 @@ namespace MLAPI.Editor.CodeGen
                 // if (__nexec != NExec.Client) -> ClientRpc
                 instructions.Add(processor.Create(OpCodes.Ldarg_0));
                 instructions.Add(processor.Create(OpCodes.Ldfld, NetworkBehaviour_nexec_FieldRef));
-                instructions.Add(processor.Create(OpCodes.Ldc_I4, (int)(isServerRpc ? NetworkedBehaviour.NExec.Server : NetworkedBehaviour.NExec.Client)));
+                instructions.Add(processor.Create(OpCodes.Ldc_I4, (int)(isServerRpc ? NetworkedBehaviour.__NExec.Server : NetworkedBehaviour.__NExec.Client)));
                 instructions.Add(processor.Create(OpCodes.Ceq));
                 instructions.Add(processor.Create(OpCodes.Ldc_I4, 0));
                 instructions.Add(processor.Create(OpCodes.Ceq));
@@ -995,7 +995,7 @@ namespace MLAPI.Editor.CodeGen
                 // if (__nexec == NExec.Client) -> ClientRpc
                 instructions.Add(processor.Create(OpCodes.Ldarg_0));
                 instructions.Add(processor.Create(OpCodes.Ldfld, NetworkBehaviour_nexec_FieldRef));
-                instructions.Add(processor.Create(OpCodes.Ldc_I4, (int)(isServerRpc ? NetworkedBehaviour.NExec.Server : NetworkedBehaviour.NExec.Client)));
+                instructions.Add(processor.Create(OpCodes.Ldc_I4, (int)(isServerRpc ? NetworkedBehaviour.__NExec.Server : NetworkedBehaviour.__NExec.Client)));
                 instructions.Add(processor.Create(OpCodes.Ceq));
                 instructions.Add(processor.Create(OpCodes.Brfalse, returnInstr));
 
@@ -1280,7 +1280,7 @@ namespace MLAPI.Editor.CodeGen
             // NetworkBehaviour.__nexec = NExec.Server; -> ServerRpc
             // NetworkBehaviour.__nexec = NExec.Client; -> ClientRpc
             processor.Emit(OpCodes.Ldarg_0);
-            processor.Emit(OpCodes.Ldc_I4, (int)(isServerRpc ? NetworkedBehaviour.NExec.Server : NetworkedBehaviour.NExec.Client));
+            processor.Emit(OpCodes.Ldc_I4, (int)(isServerRpc ? NetworkedBehaviour.__NExec.Server : NetworkedBehaviour.__NExec.Client));
             processor.Emit(OpCodes.Stfld, NetworkBehaviour_nexec_FieldRef);
 
             // NetworkBehaviour.XXXRpc(...);
@@ -1291,7 +1291,7 @@ namespace MLAPI.Editor.CodeGen
 
             // NetworkBehaviour.__nexec = NExec.None;
             processor.Emit(OpCodes.Ldarg_0);
-            processor.Emit(OpCodes.Ldc_I4, (int)NetworkedBehaviour.NExec.None);
+            processor.Emit(OpCodes.Ldc_I4, (int)NetworkedBehaviour.__NExec.None);
             processor.Emit(OpCodes.Stfld, NetworkBehaviour_nexec_FieldRef);
 
             processor.Emit(OpCodes.Ret);
