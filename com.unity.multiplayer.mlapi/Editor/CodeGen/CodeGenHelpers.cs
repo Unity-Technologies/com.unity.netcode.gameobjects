@@ -12,10 +12,6 @@ using Unity.CompilationPipeline.Common.Diagnostics;
 using Unity.CompilationPipeline.Common.ILPostProcessing;
 using UnityEngine;
 
-#if UNITY_2021_1_OR_NEWER
-#warning Built-in Unity ILPP needs to be re-enabled after fixing self-referencing assembly reload issue on 2021.1+ and trunk
-#endif
-
 #if !UNITY_2019_4_OR_NEWER
 #error MLAPI requires Unity 2019.4 or newer
 #endif

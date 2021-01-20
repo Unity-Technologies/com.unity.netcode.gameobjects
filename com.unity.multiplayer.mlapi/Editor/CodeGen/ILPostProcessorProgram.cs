@@ -1,4 +1,4 @@
-#if !UNITY_2020_2_OR_NEWER || UNITY_2021_1_OR_NEWER
+#if !UNITY_2020_2_OR_NEWER
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -15,13 +15,13 @@ namespace MLAPI.Editor.CodeGen
 {
     internal static class ILPostProcessProgram
     {
-        private static ILPostProcessor[] ILPostProcessors { get; set; }
+        private static ILPostProcessor[] s_ILPostProcessors { get; set; }
 
         [InitializeOnLoadMethod]
         private static void OnInitializeOnLoad()
         {
             CompilationPipeline.assemblyCompilationFinished += OnCompilationFinished;
-            ILPostProcessors = FindAllPostProcessors();
+            s_ILPostProcessors = FindAllPostProcessors();
         }
 
         private static ILPostProcessor[] FindAllPostProcessors()
@@ -182,7 +182,7 @@ namespace MLAPI.Editor.CodeGen
                 File.WriteAllBytes(pdbPath, inMemoryAssembly.PdbData);
             }
 
-            foreach (var i in ILPostProcessors)
+            foreach (var i in s_ILPostProcessors)
             {
                 var result = i.Process(targetCompiledAssembly);
                 if (result == null)

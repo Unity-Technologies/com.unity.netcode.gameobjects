@@ -13,7 +13,7 @@ using Unity.CompilationPipeline.Common.ILPostProcessing;
 using MethodAttributes = Mono.Cecil.MethodAttributes;
 using ParameterAttributes = Mono.Cecil.ParameterAttributes;
 
-#if UNITY_2020_2_OR_NEWER && !UNITY_2021_1_OR_NEWER
+#if UNITY_2020_2_OR_NEWER
 using ILPPInterface = Unity.CompilationPipeline.Common.ILPostProcessing.ILPostProcessor;
 #else
 using ILPPInterface = MLAPI.Editor.CodeGen.ILPostProcessor;
@@ -26,8 +26,8 @@ namespace MLAPI.Editor.CodeGen
         public override ILPPInterface GetInstance() => this;
 
         public override bool WillProcess(ICompiledAssembly compiledAssembly) =>
-            compiledAssembly.Name == CodeGenHelpers.RuntimeAssemblyName ||
-            compiledAssembly.References.Any(filePath => Path.GetFileNameWithoutExtension(filePath) == CodeGenHelpers.RuntimeAssemblyName);
+            compiledAssembly.References.Any(
+                filePath => Path.GetFileNameWithoutExtension(filePath) == CodeGenHelpers.RuntimeAssemblyName);
 
         private readonly List<DiagnosticMessage> m_Diagnostics = new List<DiagnosticMessage>();
 
@@ -145,19 +145,19 @@ namespace MLAPI.Editor.CodeGen
         private MethodReference BitReader_ReadRayPacked_MethodRef;
         private MethodReference BitReader_ReadRay2DPacked_MethodRef;
 
-        private const string NetworkingManager_Singleton = nameof(NetworkingManager.Singleton);
-        private const string NetworkingManager_IsListening = nameof(NetworkingManager.IsListening);
-        private const string NetworkingManager_IsHost = nameof(NetworkingManager.IsHost);
-        private const string NetworkingManager_IsServer = nameof(NetworkingManager.IsServer);
-        private const string NetworkingManager_IsClient = nameof(NetworkingManager.IsClient);
+        private const string k_NetworkingManager_Singleton = nameof(NetworkingManager.Singleton);
+        private const string k_NetworkingManager_IsListening = nameof(NetworkingManager.IsListening);
+        private const string k_NetworkingManager_IsHost = nameof(NetworkingManager.IsHost);
+        private const string k_NetworkingManager_IsServer = nameof(NetworkingManager.IsServer);
+        private const string k_NetworkingManager_IsClient = nameof(NetworkingManager.IsClient);
 #pragma warning disable 618
-        private const string NetworkingManager_ntable = nameof(NetworkingManager.__ntable);
+        private const string k_NetworkingManager_ntable = nameof(NetworkingManager.__ntable);
 
-        private const string NetworkedBehaviour_BeginSendServerRpc = nameof(NetworkedBehaviour.__beginSendServerRpc);
-        private const string NetworkedBehaviour_EndSendServerRpc = nameof(NetworkedBehaviour.__endSendServerRpc);
-        private const string NetworkedBehaviour_BeginSendClientRpc = nameof(NetworkedBehaviour.__beginSendClientRpc);
-        private const string NetworkedBehaviour_EndSendClientRpc = nameof(NetworkedBehaviour.__endSendClientRpc);
-        private const string NetworkedBehaviour_nexec = nameof(NetworkedBehaviour.__nexec);
+        private const string k_NetworkedBehaviour_BeginSendServerRpc = nameof(NetworkedBehaviour.__beginSendServerRpc);
+        private const string k_NetworkedBehaviour_EndSendServerRpc = nameof(NetworkedBehaviour.__endSendServerRpc);
+        private const string k_NetworkedBehaviour_BeginSendClientRpc = nameof(NetworkedBehaviour.__beginSendClientRpc);
+        private const string k_NetworkedBehaviour_EndSendClientRpc = nameof(NetworkedBehaviour.__endSendClientRpc);
+        private const string k_NetworkedBehaviour_nexec = nameof(NetworkedBehaviour.__nexec);
 #pragma warning restore 618
 
         private bool ImportReferences(ModuleDefinition moduleDefinition)
@@ -168,19 +168,19 @@ namespace MLAPI.Editor.CodeGen
             {
                 switch (propertyInfo.Name)
                 {
-                    case NetworkingManager_Singleton:
+                    case k_NetworkingManager_Singleton:
                         NetworkManager_getSingleton_MethodRef = moduleDefinition.ImportReference(propertyInfo.GetMethod);
                         break;
-                    case NetworkingManager_IsListening:
+                    case k_NetworkingManager_IsListening:
                         NetworkManager_getIsListening_MethodRef = moduleDefinition.ImportReference(propertyInfo.GetMethod);
                         break;
-                    case NetworkingManager_IsHost:
+                    case k_NetworkingManager_IsHost:
                         NetworkManager_getIsHost_MethodRef = moduleDefinition.ImportReference(propertyInfo.GetMethod);
                         break;
-                    case NetworkingManager_IsServer:
+                    case k_NetworkingManager_IsServer:
                         NetworkManager_getIsServer_MethodRef = moduleDefinition.ImportReference(propertyInfo.GetMethod);
                         break;
-                    case NetworkingManager_IsClient:
+                    case k_NetworkingManager_IsClient:
                         NetworkManager_getIsClient_MethodRef = moduleDefinition.ImportReference(propertyInfo.GetMethod);
                         break;
                 }
@@ -190,7 +190,7 @@ namespace MLAPI.Editor.CodeGen
             {
                 switch (fieldInfo.Name)
                 {
-                    case NetworkingManager_ntable:
+                    case k_NetworkingManager_ntable:
                         NetworkManager_ntable_FieldRef = moduleDefinition.ImportReference(fieldInfo);
                         NetworkManager_ntable_Add_MethodRef = moduleDefinition.ImportReference(fieldInfo.FieldType.GetMethod("Add"));
                         break;
@@ -203,16 +203,16 @@ namespace MLAPI.Editor.CodeGen
             {
                 switch (methodInfo.Name)
                 {
-                    case NetworkedBehaviour_BeginSendServerRpc:
+                    case k_NetworkedBehaviour_BeginSendServerRpc:
                         NetworkBehaviour_BeginSendServerRpc_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
-                    case NetworkedBehaviour_EndSendServerRpc:
+                    case k_NetworkedBehaviour_EndSendServerRpc:
                         NetworkBehaviour_EndSendServerRpc_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
-                    case NetworkedBehaviour_BeginSendClientRpc:
+                    case k_NetworkedBehaviour_BeginSendClientRpc:
                         NetworkBehaviour_BeginSendClientRpc_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
-                    case NetworkedBehaviour_EndSendClientRpc:
+                    case k_NetworkedBehaviour_EndSendClientRpc:
                         NetworkBehaviour_EndSendClientRpc_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
                 }
@@ -222,7 +222,7 @@ namespace MLAPI.Editor.CodeGen
             {
                 switch (fieldInfo.Name)
                 {
-                    case NetworkedBehaviour_nexec:
+                    case k_NetworkedBehaviour_nexec:
                         NetworkBehaviour_nexec_FieldRef = moduleDefinition.ImportReference(fieldInfo);
                         break;
                 }
