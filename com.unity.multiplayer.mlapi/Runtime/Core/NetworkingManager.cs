@@ -679,11 +679,13 @@ namespace MLAPI
             SpawnManager.DestroyNonSceneObjects();
             SpawnManager.ServerResetShudownStateForSceneObjects();
 
-            if (NetworkConfig != null && NetworkConfig.NetworkTransport != null) //The Transport is set during Init time, thus it is possible for the Transport to be null
+            //The Transport is set during Init time, thus it is possible for the Transport to be null
+            if (NetworkConfig != null && NetworkConfig.NetworkTransport != null)
                 NetworkConfig.NetworkTransport.Shutdown();
 
             if (rpcQueueContainer != null)
             {
+                rpcQueueContainer.OnExiting();//NSS: This fixes Jira Bug MTT-444
                 rpcQueueContainer.Shutdown();
                 rpcQueueContainer = null;
             }
