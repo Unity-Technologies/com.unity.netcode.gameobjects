@@ -685,7 +685,7 @@ namespace MLAPI
 
             if (rpcQueueContainer != null)
             {
-                rpcQueueContainer.OnExiting();//NSS: This fixes Jira Bug MTT-444
+                rpcQueueContainer.OnExiting();
                 rpcQueueContainer.Shutdown();
                 rpcQueueContainer = null;
             }
