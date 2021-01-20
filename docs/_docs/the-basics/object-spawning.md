@@ -16,7 +16,14 @@ The .Spawn() method takes 2 parameters, both with default values, so they are op
 ```csharp
 public void Spawn(Stream spawnPayload = null, bool destroyWithScene = false);
 ```
-The first parameter is a System.IO.Stream and can be retrieved in the NetworkStart() to sync values once when spawning this object. Note however, that the payload data is only available for people that get the spawn call straight away. People that join later on won't get the payload data.
+The first parameter is a System.IO.Stream and can be retrieved in the NetworkStart() to sync values once when spawning this object. Note however, that the payload data is only available for people that get the spawn call straight away. People that join later on won't get the payload data. Also note, you must use a `PooledBitStream` for this parameter. Here is an example on how to get such a stream and use it.
+```csharp
+using ( var stream = PooledBitStream.Get() )
+{
+    myIBitWritableObject.Write( stream );
+    Instantiate( myPrefab ).GetComponent<NetworkedObject>().Spawn( stream );
+}
+```
 
 The second parameter speaks for itself. If set to true, the object will be destroyed on scene switching. This can only be set inside the spawn call.
 
