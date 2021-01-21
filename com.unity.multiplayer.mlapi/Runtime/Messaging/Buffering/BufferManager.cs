@@ -17,7 +17,7 @@ namespace MLAPI.Messaging.Buffering
         internal struct BufferedMessage
         {
             internal ulong sender;
-            internal string channelName;
+            internal byte channel;
             internal PooledBitStream payload;
             internal float receiveTime;
             internal float bufferTime;
@@ -44,7 +44,7 @@ namespace MLAPI.Messaging.Buffering
             message.payload.Dispose();
         }
 
-        internal static void BufferMessageForNetworkId(ulong networkId, ulong sender, string channelName, float receiveTime, ArraySegment<byte> payload)
+        internal static void BufferMessageForNetworkId(ulong networkId, ulong sender, byte channel, float receiveTime, ArraySegment<byte> payload)
         {
             if (!bufferQueues.ContainsKey(networkId))
             {
@@ -61,7 +61,7 @@ namespace MLAPI.Messaging.Buffering
             queue.Enqueue(new BufferedMessage()
             {
                 bufferTime = Time.realtimeSinceStartup,
-                channelName = channelName,
+                channel = channel,
                 payload = payloadStream,
                 receiveTime = receiveTime,
                 sender = sender

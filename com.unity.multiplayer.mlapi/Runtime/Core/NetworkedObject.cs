@@ -10,6 +10,7 @@ using MLAPI.Messaging;
 using MLAPI.Security;
 using MLAPI.Serialization.Pooled;
 using MLAPI.Spawning;
+using MLAPI.Transports;
 using Unity.Profiling;
 using UnityEngine;
 
@@ -277,7 +278,7 @@ namespace MLAPI
                     SpawnManager.WriteSpawnCallForObject(stream, clientId, networkedObjects[i], payload);
                 }
 
-                InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_ADD_OBJECTS, "MLAPI_INTERNAL", stream, SecuritySendFlags.None);
+                InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_ADD_OBJECTS, Transport.MLAPI_INTERNAL_CHANNEL, stream, SecuritySendFlags.None);
             }
         }
 
@@ -317,7 +318,7 @@ namespace MLAPI
                 {
                     writer.WriteUInt64Packed(NetworkId);
 
-                    InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_DESTROY_OBJECT, "MLAPI_INTERNAL", stream, SecuritySendFlags.None);
+                    InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_DESTROY_OBJECT, Transport.MLAPI_INTERNAL_CHANNEL, stream, SecuritySendFlags.None);
                 }
             }
         }
@@ -369,7 +370,7 @@ namespace MLAPI
                     }
                 }
 
-                InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_DESTROY_OBJECTS, "MLAPI_INTERNAL", stream, SecuritySendFlags.None);
+                InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_DESTROY_OBJECTS, Transport.MLAPI_INTERNAL_CHANNEL, stream, SecuritySendFlags.None);
             }
         }
 
@@ -396,7 +397,7 @@ namespace MLAPI
             if (spawnPayload != null)
                 spawnPayload.Position = 0;
 
-            SpawnManager.SpawnNetworkedObjectLocally(this, SpawnManager.GetNetworkObjectId(), false, false, null, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false, destroyWithScene);
+            SpawnManager.SpawnNetworkedObjectLocally(this,SpawnManager.GetNetworkObjectId(), false, false, null, spawnPayload, spawnPayload != null, spawnPayload == null ? 0 : (int)spawnPayload.Length, false, destroyWithScene);
 
             for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)
             {
@@ -410,9 +411,9 @@ namespace MLAPI
         /// <summary>
         /// Unspawns this GameObject and destroys it for other clients. This should be used if the object should be kept on the server
         /// </summary>
-        public void UnSpawn()
+        public void UnSpawn(bool destroy = false)
         {
-            SpawnManager.UnSpawnObject(this);
+            SpawnManager.UnSpawnObject(this,destroy);
         }
 
         /// <summary>
@@ -493,9 +494,12 @@ namespace MLAPI
 
         internal void ResetNetworkedStartInvoked()
         {
-            for (int i = 0; i < childNetworkedBehaviours.Count; i++)
+            if(childNetworkedBehaviours != null)
             {
-                childNetworkedBehaviours[i].networkedStartInvoked = false;
+                for (int i = 0; i < childNetworkedBehaviours.Count; i++)
+                {
+                    childNetworkedBehaviours[i].networkedStartInvoked = false;
+                }
             }
         }
 

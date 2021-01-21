@@ -2,6 +2,7 @@ using MLAPI.Serialization.Pooled;
 using MLAPI.Serialization;
 using MLAPI.Configuration;
 using MLAPI.Profiling;
+using MLAPI.Messaging;
 using System.Collections.Generic;
 using System.Linq;
 using System;
@@ -13,14 +14,19 @@ namespace MLAPI
     {
         public class SendStream
         {
-            public string channel;
+            public byte channel;
             public PooledBitStream Stream = PooledBitStream.Get();
+            public PooledBitWriter Writer;
             public bool Empty = true;
+
+            public SendStream()
+            {
+                Writer = PooledBitWriter.Get(Stream);
+            }
         }
 
         // Stores the stream of batched RPC to send to each client, by ClientId
         private Dictionary<ulong, SendStream> SendDict = new Dictionary<ulong, SendStream>();
-        private PooledBitWriter Writer = new PooledBitWriter(PooledBitStream.Get());
 
         // Used to store targets, internally
         private ulong[] TargetList = new ulong[0];
@@ -115,29 +121,27 @@ namespace MLAPI
                 {
                     SendDict[clientId].Empty = false;
                     SendDict[clientId].channel = item.channel;
-                    Writer.SetStream(SendDict[clientId].Stream);
 
-                    Writer.WriteBit(false); // Encrypted
-                    Writer.WriteBit(false); // Authenticated
+                    SendDict[clientId].Writer.WriteBit(false); // Encrypted
+                    SendDict[clientId].Writer.WriteBit(false); // Authenticated
 
                     switch (item.queueItemType)
                     {
                         // 6 bits are used for the message type, which is an MLAPIConstants
                         case RpcQueueContainer.QueueItemType.ServerRpc:
-                            Writer.WriteBits(MLAPIConstants.MLAPI_SERVER_RPC, 6); // MessageType
+                            SendDict[clientId].Writer.WriteBits(MLAPIConstants.MLAPI_SERVER_RPC, 6); // MessageType
                             break;
                         case RpcQueueContainer.QueueItemType.ClientRpc:
-                            Writer.WriteBits(MLAPIConstants.MLAPI_CLIENT_RPC, 6); // MessageType
+                            SendDict[clientId].Writer.WriteBits(MLAPIConstants.MLAPI_CLIENT_RPC, 6); // MessageType
                             break;
                     }
                 }
 
                 // write the amounts of bytes that are coming up
-                PushLength(item.messageData.Count, ref Writer);
+                PushLength(item.messageData.Count, ref SendDict[clientId].Writer);
 
                 // write the message to send
-                // todo: is there a faster alternative to .ToArray()
-                Writer.WriteBytes(item.messageData.ToArray(), item.messageData.Count);
+                SendDict[clientId].Writer.WriteBytes(item.messageData.Array, item.messageData.Count, item.messageData.Offset);
 
                 ProfilerStatManager.bytesSent.Record((int)item.messageData.Count);
                 ProfilerStatManager.rpcsSent.Record();
@@ -145,7 +149,7 @@ namespace MLAPI
         }
 
         public delegate void SendCallbackType(ulong clientId, SendStream messageStream);
-        public delegate void ReceiveCallbackType(BitStream messageStream, MLAPI.RpcQueueContainer.QueueItemType messageType, ulong clientId, float time);
+        public delegate void ReceiveCallbackType(BitStream messageStream, RpcQueueContainer.QueueItemType messageType, ulong clientId, float time);
 
         /// <summary>
         /// SendItems
@@ -165,16 +169,16 @@ namespace MLAPI
                     if (length >= threshold)
                     {
                         sendCallback(entry.Key, entry.Value);
-                        ProfilerStatManager.rpcBatchesSent.Record();
-
                         // clear the batch that was sent from the SendDict
                         entry.Value.Stream.SetLength(0);
                         entry.Value.Stream.Position = 0;
                         entry.Value.Empty = true;
+                        ProfilerStatManager.rpcBatchesSent.Record();
                     }
                 }
             }
         }
+
 
         /// <summary>
         /// ReceiveItems
@@ -185,9 +189,9 @@ namespace MLAPI
         /// <param name="messageType"> the message type to pass back to callback</param>
         /// <param name="clientId"> the clientId to pass back to callback</param>
         /// <param name="receiveTime"> the packet receive time to pass back to callback</param>
-        public int ReceiveItems(in BitStream messageStream, ReceiveCallbackType receiveCallback, MLAPI.RpcQueueContainer.QueueItemType messageType, ulong clientId, float receiveTime)
+        public int ReceiveItems(in BitStream messageStream, ReceiveCallbackType receiveCallback, RpcQueueContainer.QueueItemType messageType, ulong clientId, float receiveTime)
         {
-            using PooledBitStream copy = PooledBitStream.Get();
+            PooledBitStream copy = PooledBitStream.Get();
             do
             {
                 // read the length of the next RPC
@@ -195,6 +199,7 @@ namespace MLAPI
 
                 if (rpcSize < 0)
                 {
+                    copy.Dispose();
                     // abort if there's an error reading lengths
                     return 0;
                 }
@@ -211,6 +216,7 @@ namespace MLAPI
                 // RPCReceiveQueueItem peeks at content, it doesn't advance
                 messageStream.Seek(rpcSize, SeekOrigin.Current);
             } while (messageStream.Position < messageStream.Length);
+            copy.Dispose();
             return 0;
         }
     }

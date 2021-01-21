@@ -70,57 +70,48 @@ namespace MLAPI.Transports
             }
         }
 
+        public const byte MLAPI_INTERNAL_CHANNEL = 0;
+        public const byte MLAPI_STDRPC_CHANNEL = 1;
+        public const byte MLAPI_TIME_SYNC_CHANNEL = 2;
+
+        public static string GetChannelString(byte channel)
+        {
+            string channelName = "";
+            if (!TransportChannel.ChannelByteToString.TryGetValue(channel, out channelName))
+            {
+                channelName = "MLAPI_INTERNAL";
+            }
+
+            return channelName;
+        }
+
+        public static byte GetChannelByte(string channelName)
+        {
+            byte channel = MLAPI_INTERNAL_CHANNEL;
+            TransportChannel.ChannelStringToByte.TryGetValue(channelName, out channel);
+            return channel;
+        }
+
+
         /// <summary>
         /// The channels the MLAPI will use when sending internal messages.
         /// </summary>
         private TransportChannel[] MLAPI_INTERNAL_CHANNELS = new TransportChannel[]
         {
-            new TransportChannel()
-            {
-                Name = "MLAPI_INTERNAL",
-                Type = ChannelType.ReliableFragmentedSequenced
-            },
-            new TransportChannel()
-            {
-                Name = "MLAPI_DEFAULT_MESSAGE",
-                Type = ChannelType.Reliable
-            },
-            new TransportChannel()
-            {
-                Name = "MLAPI_POSITION_UPDATE",
-                Type = ChannelType.UnreliableSequenced
-            },
-            new TransportChannel()
-            {
-                Name = "MLAPI_ANIMATION_UPDATE",
-                Type = ChannelType.ReliableSequenced
-            },
-            new TransportChannel()
-            {
-                Name = "MLAPI_NAV_AGENT_STATE",
-                Type = ChannelType.ReliableSequenced
-            },
-            new TransportChannel()
-            {
-                Name = "MLAPI_NAV_AGENT_CORRECTION",
-                Type = ChannelType.UnreliableSequenced
-            },
-            new TransportChannel()
-            {
-                Name = "MLAPI_TIME_SYNC",
-                Type = ChannelType.Unreliable
-            },
-            new TransportChannel()
-            {
-                Name = "STDRPC",
-                Type = ChannelType.ReliableSequenced
-            }
+            new TransportChannel("MLAPI_INTERNAL", ChannelType.ReliableFragmentedSequenced, MLAPI_INTERNAL_CHANNEL),
+            new TransportChannel("STDRPC", ChannelType.ReliableSequenced, MLAPI_STDRPC_CHANNEL),
+            new TransportChannel("MLAPI_TIME_SYNC", ChannelType.Unreliable, MLAPI_TIME_SYNC_CHANNEL),
+            new TransportChannel("MLAPI_DEFAULT_MESSAGE", ChannelType.Reliable, 3),
+            new TransportChannel("MLAPI_POSITION_UPDATE", ChannelType.UnreliableSequenced, 4),
+            new TransportChannel("MLAPI_ANIMATION_UPDATE", ChannelType.ReliableSequenced,5 ),
+            new TransportChannel("MLAPI_NAV_AGENT_STATE", ChannelType.ReliableSequenced, 6),
+            new TransportChannel("MLAPI_NAV_AGENT_CORRECTION", ChannelType.UnreliableSequenced, 7),
         };
 
         /// <summary>
         /// Delegate for transport events.
         /// </summary>
-        public delegate void TransportEventDelegate(NetEventType type, ulong clientId, string channelName, ArraySegment<byte> payload, float receiveTime);
+        public delegate void TransportEventDelegate(NetEventType type, ulong clientId, byte channel, ArraySegment<byte> payload, float receiveTime);
 
         /// <summary>
         /// Occurs when the transport has a new transport event. Can be used to make an event based transport instead of a poll based.
@@ -136,9 +127,9 @@ namespace MLAPI.Transports
         /// <param name="channelName">The channel the data arrived at. This is usually used when responding to things like RPCs</param>
         /// <param name="payload">The incoming data payload</param>
         /// <param name="receiveTime">The time the event was received, as reported by Time.realtimeSinceStartup.</param>
-        protected void InvokeOnTransportEvent(NetEventType type, ulong clientId, string channelName, ArraySegment<byte> payload, float receiveTime)
+        protected void InvokeOnTransportEvent(NetEventType type, ulong clientId, byte channel, ArraySegment<byte> payload, float receiveTime)
         {
-            OnTransportEvent?.Invoke(type, clientId, channelName, payload, receiveTime);
+            OnTransportEvent?.Invoke(type, clientId, channel, payload, receiveTime);
         }
 
         /// <summary>

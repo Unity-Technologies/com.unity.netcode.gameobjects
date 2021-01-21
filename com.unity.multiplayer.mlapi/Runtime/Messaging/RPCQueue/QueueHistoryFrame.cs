@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using MLAPI.Serialization.Pooled;
 
-namespace MLAPI
+namespace MLAPI.Messaging
 {
     /// <summary>
     /// QueueHistoryFrame
@@ -24,11 +24,14 @@ namespace MLAPI
         public PooledBitReader queueReader;
 
 
-        private int                     m_QueueItemOffsetIndex;
-        private FrameQueueItem          m_CurrentQueueItem;
-        private readonly QueueFrameType m_QueueFrameType;
-        private int                     m_MaximumClients;
-        private long                    m_CurrentStreamSizeMark;
+        private int                                      m_QueueItemOffsetIndex;
+        private FrameQueueItem                           m_CurrentQueueItem;
+        private readonly QueueFrameType                  m_QueueFrameType;
+        private int                                      m_MaximumClients;
+        private long                                     m_CurrentStreamSizeMark;
+        private NetworkUpdateManager.NetworkUpdateStages m_StreamUpdateStage; //Update stage specific to RPCs (typically inbound has most potential for variation)
+        private const int                                m_MaxStreamBounds = 131072;
+        private const int                                m_MinStreamBounds = 0;
 
         /// <summary>
         /// GetQueueFrameType
@@ -85,7 +88,7 @@ namespace MLAPI
             if (m_QueueFrameType == QueueFrameType.Outbound)
             {
                 //Outbound we care about both channel and clients
-                m_CurrentQueueItem.channel = queueReader.ReadString().ToString();
+                m_CurrentQueueItem.channel = queueReader.ReadByteDirect();
                 int NumClients = queueReader.ReadInt32();
                 if (NumClients > 0 && NumClients < m_MaximumClients)
                 {
@@ -106,28 +109,39 @@ namespace MLAPI
                 }
             }
 
+            m_CurrentQueueItem.updateStage = m_StreamUpdateStage;
+
             //Get the stream size
             m_CurrentQueueItem.streamSize = queueReader.ReadInt64();
 
-            //Inbound and Outbound message streams are handled differently
-            if (m_QueueFrameType == QueueFrameType.Inbound)
+            //Sanity checking for boundaries
+            if(m_CurrentQueueItem.streamSize < m_MaxStreamBounds && m_CurrentQueueItem.streamSize > m_MinStreamBounds)
             {
-                //Get our offset
-                long Position = queueReader.ReadInt64();
-                //Always make sure we are positioned at the start of the stream before we write
-                m_CurrentQueueItem.itemStream.Position = 0;
+                //Inbound and Outbound message streams are handled differently
+                if (m_QueueFrameType == QueueFrameType.Inbound)
+                {
+                    //Get our offset
+                    long Position = queueReader.ReadInt64();
+                    //Always make sure we are positioned at the start of the stream before we write
+                    m_CurrentQueueItem.itemStream.Position = 0;
 
-                //Write the entire message to the m_CurrentQueueItem stream (1 stream is re-used for all incoming RPCs)
-                m_CurrentQueueItem.streamWriter.ReadAndWrite(queueReader, m_CurrentQueueItem.streamSize);
+                    //Write the entire message to the m_CurrentQueueItem stream (1 stream is re-used for all incoming RPCs)
+                    m_CurrentQueueItem.streamWriter.ReadAndWrite(queueReader, m_CurrentQueueItem.streamSize);
 
-                //Reset the position back to the offset so std rpc API can process the message properly
-                //(i.e. minus the already processed header)
-                m_CurrentQueueItem.itemStream.Position = Position;
+                    //Reset the position back to the offset so std rpc API can process the message properly
+                    //(i.e. minus the already processed header)
+                    m_CurrentQueueItem.itemStream.Position = Position;
+                }
+                else
+                {
+                    //Create a byte array segment for outbound sending
+                    m_CurrentQueueItem.messageData = queueReader.CreateArraySegment((int)m_CurrentQueueItem.streamSize, (int)queueStream.Position);
+                }
             }
             else
             {
-                //Create a byte array segment for outbound sending
-                m_CurrentQueueItem.messageData = queueReader.CreateArraySegment((int)m_CurrentQueueItem.streamSize, (int)queueStream.Position);
+                UnityEngine.Debug.LogWarning("CurrentQueueItem.StreamSize exceeds allowed size ( " + m_MaxStreamBounds.ToString() + " vs " + m_CurrentQueueItem.streamSize.ToString() + " )! Exiting Current RPC Queue Enumeration Loop! ");
+                m_CurrentQueueItem.queueItemType = RpcQueueContainer.QueueItemType.None;
             }
 
             return m_CurrentQueueItem;
@@ -167,9 +181,20 @@ namespace MLAPI
 
                 if (m_QueueFrameType == QueueFrameType.Inbound)
                 {
-                    m_CurrentQueueItem.itemStream = PooledBitStream.Get();
-                    m_CurrentQueueItem.streamWriter = PooledBitWriter.Get(m_CurrentQueueItem.itemStream);
-                    m_CurrentQueueItem.streamReader = PooledBitReader.Get(m_CurrentQueueItem.itemStream);
+                    if(m_CurrentQueueItem.itemStream == null)
+                    {
+                        m_CurrentQueueItem.itemStream = PooledBitStream.Get();
+                    }
+
+                    if(m_CurrentQueueItem.streamWriter == null)
+                    {
+                        m_CurrentQueueItem.streamWriter = PooledBitWriter.Get(m_CurrentQueueItem.itemStream);
+                    }
+
+                    if(m_CurrentQueueItem.streamReader == null)
+                    {
+                        m_CurrentQueueItem.streamReader = PooledBitReader.Get(m_CurrentQueueItem.itemStream);
+                    }
                 }
 
                 return GetCurrentQueueItem();
@@ -212,11 +237,12 @@ namespace MLAPI
         /// QueueHistoryFrame Constructor
         /// </summary>
         /// <param name="queueType">type of queue history frame (Inbound/Outbound)</param>
-        public QueueHistoryFrame(QueueFrameType queueType, int maxClients = 512)
+        public QueueHistoryFrame(QueueFrameType queueType, NetworkUpdateManager.NetworkUpdateStages updateStage, int maxClients = 512)
         {
             m_MaximumClients = maxClients;
             m_QueueFrameType = queueType;
             m_CurrentQueueItem = new FrameQueueItem();
+            m_StreamUpdateStage = updateStage;
         }
     }
 }

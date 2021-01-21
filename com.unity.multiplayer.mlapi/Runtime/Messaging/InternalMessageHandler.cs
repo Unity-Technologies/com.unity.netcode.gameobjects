@@ -19,6 +19,7 @@ using MLAPI.Messaging.Buffering;
 using MLAPI.Profiling;
 using Unity.Profiling;
 using MLAPI.Serialization;
+using MLAPI.Transports;
 using BitStream = MLAPI.Serialization.BitStream;
 
 namespace MLAPI.Messaging
@@ -164,7 +165,7 @@ namespace MLAPI.Messaging
                 }
 
                 // Send HailResponse
-                InternalMessageSender.Send(NetworkingManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_CERTIFICATE_HAIL_RESPONSE, "MLAPI_INTERNAL", outStream, SecuritySendFlags.None, null);
+                InternalMessageSender.Send(NetworkingManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_CERTIFICATE_HAIL_RESPONSE, Transport.MLAPI_INTERNAL_CHANNEL, outStream, SecuritySendFlags.None);
             }
         }
 
@@ -194,7 +195,7 @@ namespace MLAPI.Messaging
                     writer.WriteInt64Packed(DateTime.Now.Ticks); // This serves no purpose.
                 }
 
-                InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_GREETINGS, "MLAPI_INTERNAL", outStream, SecuritySendFlags.None, null);
+                InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_GREETINGS, Transport.MLAPI_INTERNAL_CHANNEL, outStream, SecuritySendFlags.None);
             }
         }
 
@@ -337,7 +338,7 @@ namespace MLAPI.Messaging
                                 {
                                     BufferManager.BufferedMessage message = bufferQueue.Dequeue();
 
-                                    NetworkingManager.Singleton.HandleIncomingData(message.sender, message.channelName, new ArraySegment<byte>(message.payload.GetBuffer(), (int)message.payload.Position, (int)message.payload.Length), message.receiveTime, false);
+                                    NetworkingManager.Singleton.HandleIncomingData(message.sender, message.channel, new ArraySegment<byte>(message.payload.GetBuffer(), (int)message.payload.Position, (int)message.payload.Length), message.receiveTime, false);
 
                                     BufferManager.RecycleConsumedBufferedMessage(message);
                                 }
@@ -450,7 +451,7 @@ namespace MLAPI.Messaging
                     {
                         BufferManager.BufferedMessage message = bufferQueue.Dequeue();
 
-                        NetworkingManager.Singleton.HandleIncomingData(message.sender, message.channelName, new ArraySegment<byte>(message.payload.GetBuffer(), (int)message.payload.Position, (int)message.payload.Length), message.receiveTime, false);
+                        NetworkingManager.Singleton.HandleIncomingData(message.sender, message.channel, new ArraySegment<byte>(message.payload.GetBuffer(), (int)message.payload.Position, (int)message.payload.Length), message.receiveTime, false);
 
                         BufferManager.RecycleConsumedBufferedMessage(message);
                     }
@@ -694,8 +695,8 @@ namespace MLAPI.Messaging
 
             ProfilerStatManager.rpcsRcvd.Record();
 
-            var rpcQueueManager = NetworkingManager.Singleton.rpcQueueContainer;
-            rpcQueueManager?.AddQueueItemToInboundFrame(queueItemType, receiveTime, clientId, (BitStream)stream);
+            var rpcQueueContainer = NetworkingManager.Singleton.rpcQueueContainer;
+            rpcQueueContainer.AddQueueItemToInboundFrame(queueItemType, receiveTime, clientId, (BitStream)stream);
         }
 
         internal static void HandleUnnamedMessage(ulong clientId, Stream stream)

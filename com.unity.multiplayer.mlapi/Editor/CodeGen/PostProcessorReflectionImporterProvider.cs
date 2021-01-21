@@ -4,9 +4,9 @@ namespace MLAPI.Editor.CodeGen
 {
     internal class PostProcessorReflectionImporterProvider : IReflectionImporterProvider
     {
-        public IReflectionImporter GetReflectionImporter(ModuleDefinition module)
+        public IReflectionImporter GetReflectionImporter(ModuleDefinition moduleDefinition)
         {
-            return new PostProcessorReflectionImporter(module);
+            return new PostProcessorReflectionImporter(moduleDefinition);
         }
     }
 }

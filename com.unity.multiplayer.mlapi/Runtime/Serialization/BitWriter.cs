@@ -870,12 +870,12 @@ namespace MLAPI.Serialization
         /// </summary>
         /// <param name="buffer"></param>
         /// <param name="targetSize"></param>
-        public void WriteBytes(byte[] buffer, long targetSize)
+        public void WriteBytes(byte[] buffer, long targetSize, int offset = 0)
         {
 
             long TargetSize = targetSize;
-            long LargeInt64Blocks = (long)(TargetSize * 0.125f);
-            int IndexOffset = 0;
+            long LargeInt64Blocks = TargetSize >> 3;    //Divide by 8
+            int IndexOffset = offset;
             //8 Byte blocks
             for (long i = 0; i < LargeInt64Blocks; i++)
             {
@@ -920,8 +920,11 @@ namespace MLAPI.Serialization
         public void ReadAndWrite(BitReader sourceReader, long targetSize)
         {
             long TargetSize = targetSize;
-            long LargeInt64Blocks = (long)((float)TargetSize * 0.125f);
-
+            long LargeInt64Blocks = TargetSize >> 3;    //Divide by 8
+            if(targetSize > 131072 || targetSize < 0)
+            {
+                return;
+            }
             //8 Byte blocks
             for (long i = 0; i < LargeInt64Blocks; i++)
             {

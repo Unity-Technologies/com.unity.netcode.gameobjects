@@ -35,6 +35,10 @@ namespace MLAPI.Serialization.Pooled
                 isDisposed = true;
                 BitWriterPool.PutBackInPool(this);
             }
+            else
+            {
+                UnityEngine.Debug.LogError("Writer is being disposed but thinks it is already disposed");
+            }
         }
     }
 }
