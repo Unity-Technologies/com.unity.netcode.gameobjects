@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using UnityEngine;
 using System.Linq;
 using MLAPI.Logging;
@@ -28,6 +29,11 @@ using MLAPI.Transports.Tasks;
 using MLAPI.Messaging.Buffering;
 using Unity.Profiling;
 
+#if UNITY_2020_2_OR_NEWER && UNITY_EDITOR
+using System.Runtime.CompilerServices;
+[assembly: InternalsVisibleTo("Unity.Multiplayer.MLAPI.Editor.CodeGen")]
+#endif
+
 namespace MLAPI
 {
     /// <summary>
@@ -36,8 +42,16 @@ namespace MLAPI
     [AddComponentMenu("MLAPI/NetworkingManager", -100)]
     public class NetworkingManager : UpdateLoopBehaviour
     {
+        [Browsable(false)]
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+#if UNITY_2020_2_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `public`
         internal static readonly Dictionary<uint, Action<NetworkedBehaviour, BitReader, ulong>> __ntable = new Dictionary<uint, Action<NetworkedBehaviour, BitReader, ulong>>();
+#else
+        [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
+        public static readonly Dictionary<uint, Action<NetworkedBehaviour, BitReader, ulong>> __ntable = new Dictionary<uint, Action<NetworkedBehaviour, BitReader, ulong>>();
+#endif
 
         // @mfatihmar (Unity) Begin: Temporary, inbound RPC queue will replace this workaround
         internal readonly Queue<(ArraySegment<byte> payload, float receiveTime)> __loopbackRpcQueue = new Queue<(ArraySegment<byte> payload, float receiveTime)>();

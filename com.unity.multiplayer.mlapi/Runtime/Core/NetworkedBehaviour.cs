@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using UnityEngine;
 using System.Reflection;
 using System.Linq;
@@ -19,10 +20,10 @@ using MLAPI.Transports;
 using BitStream = MLAPI.Serialization.BitStream;
 using Unity.Profiling;
 
-#if UNITY_EDITOR
+#if UNITY_2020_2_OR_NEWER && UNITY_EDITOR
 using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("Unity.Multiplayer.MLAPI.Editor.CodeGen")]
-#endif // UNITY_EDITOR
+#endif
 
 namespace MLAPI
 {
@@ -31,8 +32,15 @@ namespace MLAPI
     /// </summary>
     public abstract class NetworkedBehaviour : MonoBehaviour
     {
+        [Browsable(false)]
+        [EditorBrowsable(EditorBrowsableState.Never)]
+#if UNITY_2020_2_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `protected`
-        internal enum NExec
+        internal enum __NExec
+#else
+        [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
+        public enum __NExec
+#endif
         {
             None = 0,
             Server = 1,
@@ -40,12 +48,27 @@ namespace MLAPI
         }
 
 #pragma warning disable 414
+        [Browsable(false)]
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+#if UNITY_2020_2_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `protected`
-        internal NExec __nexec = NExec.None;
+        internal __NExec __nexec = __NExec.None;
+#else
+        [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
+        public __NExec __nexec = __NExec.None;
+#endif
 #pragma warning restore 414
 
+        [Browsable(false)]
+        [EditorBrowsable(EditorBrowsableState.Never)]
+#if UNITY_2020_2_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `protected`
-        internal BitWriter BeginSendServerRpc(ServerRpcSendParams sendParams, bool isReliable)
+        internal BitWriter __beginSendServerRpc(ServerRpcSendParams sendParams, bool isReliable)
+#else
+        [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
+        public BitWriter __beginSendServerRpc(ServerRpcSendParams sendParams, bool isReliable)
+#endif
         {
             var rpcQueueContainer = NetworkingManager.Singleton.rpcQueueContainer;
 
@@ -74,8 +97,15 @@ namespace MLAPI
             return writer;
         }
 
+        [Browsable(false)]
+        [EditorBrowsable(EditorBrowsableState.Never)]
+#if UNITY_2020_2_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `protected`
-        internal void EndSendServerRpc(BitWriter writer, ServerRpcSendParams sendParams, bool isReliable)
+        internal void __endSendServerRpc(BitWriter writer, ServerRpcSendParams sendParams, bool isReliable)
+#else
+        [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
+        public void __endSendServerRpc(BitWriter writer, ServerRpcSendParams sendParams, bool isReliable)
+#endif
         {
             if (writer == null) return;
 
@@ -83,8 +113,15 @@ namespace MLAPI
             rpcQueueContainer.EndAddQueueItemToOutboundFrame(writer);
         }
 
+        [Browsable(false)]
+        [EditorBrowsable(EditorBrowsableState.Never)]
+#if UNITY_2020_2_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `protected`
-        internal BitWriter BeginSendClientRpc(ClientRpcSendParams sendParams, bool isReliable)
+        internal BitWriter __beginSendClientRpc(ClientRpcSendParams sendParams, bool isReliable)
+#else
+        [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
+        public BitWriter __beginSendClientRpc(ClientRpcSendParams sendParams, bool isReliable)
+#endif
         {
             //This will start a new queue item entry and will then return the writer to the current frame's stream
             var rpcQueueContainer = NetworkingManager.Singleton.rpcQueueContainer;
@@ -101,7 +138,7 @@ namespace MLAPI
             writer.WriteUInt64Packed(NetworkId); // NetworkObjectId
             writer.WriteUInt16Packed(GetBehaviourId()); // NetworkBehaviourId
 
-                        //Write the update stage in front of RPC related information
+            //Write the update stage in front of RPC related information
             if(sendParams.UpdateStage == NetworkUpdateManager.NetworkUpdateStages.Default)
             {
                 writer.WriteUInt16Packed((ushort)NetworkUpdateManager.NetworkUpdateStages.Update);
@@ -114,8 +151,15 @@ namespace MLAPI
             return writer;
         }
 
+        [Browsable(false)]
+        [EditorBrowsable(EditorBrowsableState.Never)]
+#if UNITY_2020_2_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `protected`
-        internal void EndSendClientRpc(BitWriter writer, ClientRpcSendParams sendParams, bool isReliable)
+        internal void __endSendClientRpc(BitWriter writer, ClientRpcSendParams sendParams, bool isReliable)
+#else
+        [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
+        public void __endSendClientRpc(BitWriter writer, ClientRpcSendParams sendParams, bool isReliable)
+#endif
         {
             if (writer == null) return;
 

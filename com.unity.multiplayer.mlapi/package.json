@@ -12,6 +12,6 @@
   "hideInEditor": false,
   "dependencies": {
     "com.unity.nuget.mono-cecil": "1.10.1-preview.1",
-    "com.unity.collections": "0.14.0-preview.16"
+    "com.unity.collections": "0.9.0-preview.6"
   }
 }

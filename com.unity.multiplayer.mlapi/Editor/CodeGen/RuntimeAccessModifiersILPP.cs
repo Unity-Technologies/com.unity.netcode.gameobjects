@@ -1,3 +1,4 @@
+#if UNITY_2020_2_OR_NEWER
 using System.Collections.Generic;
 using System.IO;
 using Mono.Cecil;
@@ -5,26 +6,28 @@ using Mono.Cecil.Cil;
 using Unity.CompilationPipeline.Common.Diagnostics;
 using Unity.CompilationPipeline.Common.ILPostProcessing;
 
+using ILPPInterface = Unity.CompilationPipeline.Common.ILPostProcessing.ILPostProcessor;
+
 namespace MLAPI.Editor.CodeGen
 {
-    internal sealed class RuntimeAccessModifiersILPP : ILPostProcessor
+    internal sealed class RuntimeAccessModifiersILPP : ILPPInterface
     {
-        public override ILPostProcessor GetInstance() => this;
+        public override ILPPInterface GetInstance() => this;
 
         public override bool WillProcess(ICompiledAssembly compiledAssembly) => compiledAssembly.Name == CodeGenHelpers.RuntimeAssemblyName;
 
-        private readonly List<DiagnosticMessage> _diagnostics = new List<DiagnosticMessage>();
+        private readonly List<DiagnosticMessage> m_Diagnostics = new List<DiagnosticMessage>();
 
         public override ILPostProcessResult Process(ICompiledAssembly compiledAssembly)
         {
             if (!WillProcess(compiledAssembly)) return null;
-            _diagnostics.Clear();
+            m_Diagnostics.Clear();
 
             // read
             var assemblyDefinition = CodeGenHelpers.AssemblyDefinitionFor(compiledAssembly);
             if (assemblyDefinition == null)
             {
-                _diagnostics.AddError($"Cannot read MLAPI Runtime assembly definition: {compiledAssembly.Name}");
+                m_Diagnostics.AddError($"Cannot read MLAPI Runtime assembly definition: {compiledAssembly.Name}");
                 return null;
             }
 
@@ -47,7 +50,7 @@ namespace MLAPI.Editor.CodeGen
                     }
                 }
             }
-            else _diagnostics.AddError($"Cannot get main module from MLAPI Runtime assembly definition: {compiledAssembly.Name}");
+            else m_Diagnostics.AddError($"Cannot get main module from MLAPI Runtime assembly definition: {compiledAssembly.Name}");
 
             // write
             var pe = new MemoryStream();
@@ -62,7 +65,7 @@ namespace MLAPI.Editor.CodeGen
 
             assemblyDefinition.Write(pe, writerParameters);
 
-            return new ILPostProcessResult(new InMemoryAssembly(pe.ToArray(), pdb.ToArray()), _diagnostics);
+            return new ILPostProcessResult(new InMemoryAssembly(pe.ToArray(), pdb.ToArray()), m_Diagnostics);
         }
 
         private void ProcessNetworkManager(TypeDefinition typeDefinition)
@@ -80,7 +83,7 @@ namespace MLAPI.Editor.CodeGen
         {
             foreach (var nestedType in typeDefinition.NestedTypes)
             {
-                if (nestedType.Name == nameof(NetworkedBehaviour.NExec))
+                if (nestedType.Name == nameof(NetworkedBehaviour.__NExec))
                 {
                     nestedType.IsNestedFamily = true;
                 }
@@ -98,10 +101,10 @@ namespace MLAPI.Editor.CodeGen
             {
                 switch (methodDefinition.Name)
                 {
-                    case nameof(NetworkedBehaviour.BeginSendServerRpc):
-                    case nameof(NetworkedBehaviour.EndSendServerRpc):
-                    case nameof(NetworkedBehaviour.BeginSendClientRpc):
-                    case nameof(NetworkedBehaviour.EndSendClientRpc):
+                    case nameof(NetworkedBehaviour.__beginSendServerRpc):
+                    case nameof(NetworkedBehaviour.__endSendServerRpc):
+                    case nameof(NetworkedBehaviour.__beginSendClientRpc):
+                    case nameof(NetworkedBehaviour.__endSendClientRpc):
                         methodDefinition.IsFamily = true;
                         break;
                 }
@@ -109,3 +112,4 @@ namespace MLAPI.Editor.CodeGen
         }
     }
 }
+#endif

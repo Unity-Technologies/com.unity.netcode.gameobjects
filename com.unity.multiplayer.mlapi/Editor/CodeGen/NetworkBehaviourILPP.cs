@@ -13,27 +13,34 @@ using Unity.CompilationPipeline.Common.ILPostProcessing;
 using MethodAttributes = Mono.Cecil.MethodAttributes;
 using ParameterAttributes = Mono.Cecil.ParameterAttributes;
 
+#if UNITY_2020_2_OR_NEWER
+using ILPPInterface = Unity.CompilationPipeline.Common.ILPostProcessing.ILPostProcessor;
+#else
+using ILPPInterface = MLAPI.Editor.CodeGen.ILPostProcessor;
+#endif
+
 namespace MLAPI.Editor.CodeGen
 {
-    internal sealed class NetworkBehaviourILPP : ILPostProcessor
+    internal sealed class NetworkBehaviourILPP : ILPPInterface
     {
-        public override ILPostProcessor GetInstance() => this;
+        public override ILPPInterface GetInstance() => this;
 
         public override bool WillProcess(ICompiledAssembly compiledAssembly) =>
-            compiledAssembly.References.Any(filePath => Path.GetFileNameWithoutExtension(filePath) == CodeGenHelpers.RuntimeAssemblyName);
+            compiledAssembly.References.Any(
+                filePath => Path.GetFileNameWithoutExtension(filePath) == CodeGenHelpers.RuntimeAssemblyName);
 
-        private readonly List<DiagnosticMessage> _diagnostics = new List<DiagnosticMessage>();
+        private readonly List<DiagnosticMessage> m_Diagnostics = new List<DiagnosticMessage>();
 
         public override ILPostProcessResult Process(ICompiledAssembly compiledAssembly)
         {
             if (!WillProcess(compiledAssembly)) return null;
-            _diagnostics.Clear();
+            m_Diagnostics.Clear();
 
             // read
             var assemblyDefinition = CodeGenHelpers.AssemblyDefinitionFor(compiledAssembly);
             if (assemblyDefinition == null)
             {
-                _diagnostics.AddError($"Cannot read assembly definition: {compiledAssembly.Name}");
+                m_Diagnostics.AddError($"Cannot read assembly definition: {compiledAssembly.Name}");
                 return null;
             }
 
@@ -49,9 +56,9 @@ namespace MLAPI.Editor.CodeGen
                         .ToList()
                         .ForEach(ProcessNetworkBehaviour);
                 }
-                else _diagnostics.AddError($"Cannot import references into main module: {mainModule.Name}");
+                else m_Diagnostics.AddError($"Cannot import references into main module: {mainModule.Name}");
             }
-            else _diagnostics.AddError($"Cannot get main module from assembly definition: {compiledAssembly.Name}");
+            else m_Diagnostics.AddError($"Cannot get main module from assembly definition: {compiledAssembly.Name}");
 
             // write
             var pe = new MemoryStream();
@@ -66,7 +73,7 @@ namespace MLAPI.Editor.CodeGen
 
             assemblyDefinition.Write(pe, writerParameters);
 
-            return new ILPostProcessResult(new InMemoryAssembly(pe.ToArray(), pdb.ToArray()), _diagnostics);
+            return new ILPostProcessResult(new InMemoryAssembly(pe.ToArray(), pdb.ToArray()), m_Diagnostics);
         }
 
         private TypeReference NetworkManager_TypeRef;
@@ -138,6 +145,21 @@ namespace MLAPI.Editor.CodeGen
         private MethodReference BitReader_ReadRayPacked_MethodRef;
         private MethodReference BitReader_ReadRay2DPacked_MethodRef;
 
+        private const string k_NetworkingManager_Singleton = nameof(NetworkingManager.Singleton);
+        private const string k_NetworkingManager_IsListening = nameof(NetworkingManager.IsListening);
+        private const string k_NetworkingManager_IsHost = nameof(NetworkingManager.IsHost);
+        private const string k_NetworkingManager_IsServer = nameof(NetworkingManager.IsServer);
+        private const string k_NetworkingManager_IsClient = nameof(NetworkingManager.IsClient);
+#pragma warning disable 618
+        private const string k_NetworkingManager_ntable = nameof(NetworkingManager.__ntable);
+
+        private const string k_NetworkedBehaviour_BeginSendServerRpc = nameof(NetworkedBehaviour.__beginSendServerRpc);
+        private const string k_NetworkedBehaviour_EndSendServerRpc = nameof(NetworkedBehaviour.__endSendServerRpc);
+        private const string k_NetworkedBehaviour_BeginSendClientRpc = nameof(NetworkedBehaviour.__beginSendClientRpc);
+        private const string k_NetworkedBehaviour_EndSendClientRpc = nameof(NetworkedBehaviour.__endSendClientRpc);
+        private const string k_NetworkedBehaviour_nexec = nameof(NetworkedBehaviour.__nexec);
+#pragma warning restore 618
+
         private bool ImportReferences(ModuleDefinition moduleDefinition)
         {
             var networkManagerType = typeof(NetworkingManager);
@@ -146,19 +168,19 @@ namespace MLAPI.Editor.CodeGen
             {
                 switch (propertyInfo.Name)
                 {
-                    case nameof(NetworkingManager.Singleton):
+                    case k_NetworkingManager_Singleton:
                         NetworkManager_getSingleton_MethodRef = moduleDefinition.ImportReference(propertyInfo.GetMethod);
                         break;
-                    case nameof(NetworkingManager.IsListening):
+                    case k_NetworkingManager_IsListening:
                         NetworkManager_getIsListening_MethodRef = moduleDefinition.ImportReference(propertyInfo.GetMethod);
                         break;
-                    case nameof(NetworkingManager.IsHost):
+                    case k_NetworkingManager_IsHost:
                         NetworkManager_getIsHost_MethodRef = moduleDefinition.ImportReference(propertyInfo.GetMethod);
                         break;
-                    case nameof(NetworkingManager.IsServer):
+                    case k_NetworkingManager_IsServer:
                         NetworkManager_getIsServer_MethodRef = moduleDefinition.ImportReference(propertyInfo.GetMethod);
                         break;
-                    case nameof(NetworkingManager.IsClient):
+                    case k_NetworkingManager_IsClient:
                         NetworkManager_getIsClient_MethodRef = moduleDefinition.ImportReference(propertyInfo.GetMethod);
                         break;
                 }
@@ -168,7 +190,7 @@ namespace MLAPI.Editor.CodeGen
             {
                 switch (fieldInfo.Name)
                 {
-                    case nameof(NetworkingManager.__ntable):
+                    case k_NetworkingManager_ntable:
                         NetworkManager_ntable_FieldRef = moduleDefinition.ImportReference(fieldInfo);
                         NetworkManager_ntable_Add_MethodRef = moduleDefinition.ImportReference(fieldInfo.FieldType.GetMethod("Add"));
                         break;
@@ -181,16 +203,16 @@ namespace MLAPI.Editor.CodeGen
             {
                 switch (methodInfo.Name)
                 {
-                    case nameof(NetworkedBehaviour.BeginSendServerRpc):
+                    case k_NetworkedBehaviour_BeginSendServerRpc:
                         NetworkBehaviour_BeginSendServerRpc_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
-                    case nameof(NetworkedBehaviour.EndSendServerRpc):
+                    case k_NetworkedBehaviour_EndSendServerRpc:
                         NetworkBehaviour_EndSendServerRpc_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
-                    case nameof(NetworkedBehaviour.BeginSendClientRpc):
+                    case k_NetworkedBehaviour_BeginSendClientRpc:
                         NetworkBehaviour_BeginSendClientRpc_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
-                    case nameof(NetworkedBehaviour.EndSendClientRpc):
+                    case k_NetworkedBehaviour_EndSendClientRpc:
                         NetworkBehaviour_EndSendClientRpc_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
                 }
@@ -200,7 +222,7 @@ namespace MLAPI.Editor.CodeGen
             {
                 switch (fieldInfo.Name)
                 {
-                    case nameof(NetworkedBehaviour.__nexec):
+                    case k_NetworkedBehaviour_nexec:
                         NetworkBehaviour_nexec_FieldRef = moduleDefinition.ImportReference(fieldInfo);
                         break;
                 }
@@ -208,8 +230,7 @@ namespace MLAPI.Editor.CodeGen
 
             var networkHandlerDelegateType = typeof(Action<NetworkedBehaviour, BitReader, ulong>);
             NetworkHandlerDelegateCtor_MethodRef = moduleDefinition.ImportReference(
-                networkHandlerDelegateType
-                    .GetConstructor(new[] {typeof(object), typeof(IntPtr)}));
+                networkHandlerDelegateType.GetConstructor(new[] { typeof(object), typeof(IntPtr) }));
 
             var serverRpcParamsType = typeof(ServerRpcParams);
             ServerRpcParams_TypeRef = moduleDefinition.ImportReference(serverRpcParamsType);
@@ -477,33 +498,33 @@ namespace MLAPI.Editor.CodeGen
 
                     if (methodDefinition.IsStatic)
                     {
-                        _diagnostics.AddError(methodDefinition, "RPC method must not be static!");
+                        m_Diagnostics.AddError(methodDefinition, "RPC method must not be static!");
                         isValid = false;
                     }
 
                     if (methodDefinition.IsAbstract)
                     {
-                        _diagnostics.AddError(methodDefinition, "RPC method must not be abstract!");
+                        m_Diagnostics.AddError(methodDefinition, "RPC method must not be abstract!");
                         isValid = false;
                     }
 
                     if (methodDefinition.ReturnType != methodDefinition.Module.TypeSystem.Void)
                     {
-                        _diagnostics.AddError(methodDefinition, "RPC method must return `void`!");
+                        m_Diagnostics.AddError(methodDefinition, "RPC method must return `void`!");
                         isValid = false;
                     }
 
                     if (customAttributeType_FullName == CodeGenHelpers.ServerRpcAttribute_FullName &&
                         !methodDefinition.Name.EndsWith("ServerRpc", StringComparison.OrdinalIgnoreCase))
                     {
-                        _diagnostics.AddError(methodDefinition, "ServerRpc method must end with 'ServerRpc' suffix!");
+                        m_Diagnostics.AddError(methodDefinition, "ServerRpc method must end with 'ServerRpc' suffix!");
                         isValid = false;
                     }
 
                     if (customAttributeType_FullName == CodeGenHelpers.ClientRpcAttribute_FullName &&
                         !methodDefinition.Name.EndsWith("ClientRpc", StringComparison.OrdinalIgnoreCase))
                     {
-                        _diagnostics.AddError(methodDefinition, "ClientRpc method must end with 'ClientRpc' suffix!");
+                        m_Diagnostics.AddError(methodDefinition, "ClientRpc method must end with 'ClientRpc' suffix!");
                         isValid = false;
                     }
 
@@ -519,11 +540,11 @@ namespace MLAPI.Editor.CodeGen
             {
                 if (methodDefinition.Name.EndsWith("ServerRpc", StringComparison.OrdinalIgnoreCase))
                 {
-                    _diagnostics.AddError(methodDefinition, "ServerRpc method must be marked with 'ServerRpc' attribute!");
+                    m_Diagnostics.AddError(methodDefinition, "ServerRpc method must be marked with 'ServerRpc' attribute!");
                 }
                 else if (methodDefinition.Name.EndsWith("ClientRpc", StringComparison.OrdinalIgnoreCase))
                 {
-                    _diagnostics.AddError(methodDefinition, "ClientRpc method must be marked with 'ClientRpc' attribute!");
+                    m_Diagnostics.AddError(methodDefinition, "ClientRpc method must be marked with 'ClientRpc' attribute!");
                 }
 
                 return null;
@@ -542,7 +563,7 @@ namespace MLAPI.Editor.CodeGen
                 // ClientRpcParams
                 if (paramType.FullName == CodeGenHelpers.ClientRpcParams_FullName && !isServerRpc && paramIndex == paramCount - 1) continue;
 
-                _diagnostics.AddError(methodDefinition, $"RPC method parameter does not support serialization: {paramType.FullName}");
+                m_Diagnostics.AddError(methodDefinition, $"RPC method parameter does not support serialization: {paramType.FullName}");
                 rpcAttribute = null;
             }
 
@@ -611,7 +632,9 @@ namespace MLAPI.Editor.CodeGen
                 // if (__nexec != NExec.Client) -> ClientRpc
                 instructions.Add(processor.Create(OpCodes.Ldarg_0));
                 instructions.Add(processor.Create(OpCodes.Ldfld, NetworkBehaviour_nexec_FieldRef));
-                instructions.Add(processor.Create(OpCodes.Ldc_I4, (int)(isServerRpc ? NetworkedBehaviour.NExec.Server : NetworkedBehaviour.NExec.Client)));
+#pragma warning disable 618
+                instructions.Add(processor.Create(OpCodes.Ldc_I4, (int)(isServerRpc ? NetworkedBehaviour.__NExec.Server : NetworkedBehaviour.__NExec.Client)));
+#pragma warning restore 618
                 instructions.Add(processor.Create(OpCodes.Ceq));
                 instructions.Add(processor.Create(OpCodes.Ldc_I4, 0));
                 instructions.Add(processor.Create(OpCodes.Ceq));
@@ -976,7 +999,9 @@ namespace MLAPI.Editor.CodeGen
                 // if (__nexec == NExec.Client) -> ClientRpc
                 instructions.Add(processor.Create(OpCodes.Ldarg_0));
                 instructions.Add(processor.Create(OpCodes.Ldfld, NetworkBehaviour_nexec_FieldRef));
-                instructions.Add(processor.Create(OpCodes.Ldc_I4, (int)(isServerRpc ? NetworkedBehaviour.NExec.Server : NetworkedBehaviour.NExec.Client)));
+#pragma warning disable 618
+                instructions.Add(processor.Create(OpCodes.Ldc_I4, (int)(isServerRpc ? NetworkedBehaviour.__NExec.Server : NetworkedBehaviour.__NExec.Client)));
+#pragma warning restore 618
                 instructions.Add(processor.Create(OpCodes.Ceq));
                 instructions.Add(processor.Create(OpCodes.Brfalse, returnInstr));
 
@@ -1261,7 +1286,9 @@ namespace MLAPI.Editor.CodeGen
             // NetworkBehaviour.__nexec = NExec.Server; -> ServerRpc
             // NetworkBehaviour.__nexec = NExec.Client; -> ClientRpc
             processor.Emit(OpCodes.Ldarg_0);
-            processor.Emit(OpCodes.Ldc_I4, (int)(isServerRpc ? NetworkedBehaviour.NExec.Server : NetworkedBehaviour.NExec.Client));
+#pragma warning disable 618
+            processor.Emit(OpCodes.Ldc_I4, (int)(isServerRpc ? NetworkedBehaviour.__NExec.Server : NetworkedBehaviour.__NExec.Client));
+#pragma warning restore 618
             processor.Emit(OpCodes.Stfld, NetworkBehaviour_nexec_FieldRef);
 
             // NetworkBehaviour.XXXRpc(...);
@@ -1272,7 +1299,9 @@ namespace MLAPI.Editor.CodeGen
 
             // NetworkBehaviour.__nexec = NExec.None;
             processor.Emit(OpCodes.Ldarg_0);
-            processor.Emit(OpCodes.Ldc_I4, (int)NetworkedBehaviour.NExec.None);
+#pragma warning disable 618
+            processor.Emit(OpCodes.Ldc_I4, (int)NetworkedBehaviour.__NExec.None);
+#pragma warning restore 618
             processor.Emit(OpCodes.Stfld, NetworkBehaviour_nexec_FieldRef);
 
             processor.Emit(OpCodes.Ret);
