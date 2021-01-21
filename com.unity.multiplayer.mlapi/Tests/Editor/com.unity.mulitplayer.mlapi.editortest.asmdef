@@ -1,8 +1,6 @@
 {
     "name": "Unity.Multiplayer.MLAPI.EditorTests",
     "references": [
-        "Unity.Collections",
-        "Unity.Mathematics",
         "Unity.Multiplayer.MLAPI.Runtime"
     ],
     "optionalUnityReferences": [
@@ -11,6 +9,5 @@
     "includePlatforms": [
         "Editor"
     ],
-    "excludePlatforms": [],
-    "allowUnsafeCode": true
+    "excludePlatforms": []
 }
