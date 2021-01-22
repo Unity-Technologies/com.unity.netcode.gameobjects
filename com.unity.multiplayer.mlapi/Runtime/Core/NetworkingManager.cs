@@ -670,7 +670,7 @@ namespace MLAPI
         {
             OnNetworkLoopSystemRemove();
             //NSS: This is ok to leave this check here
-            rpcQueueContainer?.OnExiting();
+            rpcQueueContainer?.Shutdown();
 
             if (Singleton != null && Singleton == this)
             {
@@ -693,7 +693,8 @@ namespace MLAPI
             SpawnManager.DestroyNonSceneObjects();
             SpawnManager.ServerResetShudownStateForSceneObjects();
 
-            if (NetworkConfig != null && NetworkConfig.NetworkTransport != null) //The Transport is set during Init time, thus it is possible for the Transport to be null
+            //The Transport is set during Init time, thus it is possible for the Transport to be null
+            if (NetworkConfig != null && NetworkConfig.NetworkTransport != null)
                 NetworkConfig.NetworkTransport.Shutdown();
 
             if (rpcQueueContainer != null)

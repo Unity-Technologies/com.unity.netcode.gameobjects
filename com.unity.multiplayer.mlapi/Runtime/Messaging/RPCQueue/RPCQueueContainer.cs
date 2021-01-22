@@ -649,8 +649,9 @@ namespace MLAPI.Messaging
             return m_IsTestingEnabled;
         }
 
+
         /// <summary>
-        /// Clears all declared parameters
+        /// Clears the stream indices and frames process properties
         /// </summary>
         private void ClearParameters()
         {
@@ -661,10 +662,12 @@ namespace MLAPI.Messaging
         }
 
         /// <summary>
-        /// OnExiting
-        /// Called upon exiting to assure any last messages are delivered.
+        /// Shutdown
+        /// Flushes the internal messages
+        /// Removes itself from the network update loop
+        /// Disposes readers, writers, clears the queue history, and resets any parameters
         /// </summary>
-        public void OnExiting()
+        public void Shutdown()
         {
             //We need to make sure all internal messages (i.e. object destroy) are sent
             rpcQueueProcessing.InternalMessagesSendAndFlush();
@@ -675,14 +678,8 @@ namespace MLAPI.Messaging
                 //Remove ourself from the network loop update system
                 OnNetworkLoopSystemRemove();
             }
-        }
 
-        /// <summary>
-        /// There might be a case where we want to make this class non-static and in that case we would replace this with Dispose and add the IDisposable interface
-        /// For now, this should be called upon shutdown
-        /// </summary>
-        public void Shutdown()
-        {
+            //Dispose of any readers and writers
             foreach (KeyValuePair<QueueHistoryFrame.QueueFrameType, Dictionary<int, Dictionary<NetworkUpdateManager.NetworkUpdateStages, QueueHistoryFrame>>> queueHistorySection in QueueHistory)
             {
                 foreach (KeyValuePair<int, Dictionary<NetworkUpdateManager.NetworkUpdateStages, QueueHistoryFrame>> queueHistoryItemByStage in queueHistorySection.Value)
@@ -696,6 +693,7 @@ namespace MLAPI.Messaging
                 }
             }
 
+            //Clear history and parameters
             QueueHistory.Clear();
 
             ClearParameters();
