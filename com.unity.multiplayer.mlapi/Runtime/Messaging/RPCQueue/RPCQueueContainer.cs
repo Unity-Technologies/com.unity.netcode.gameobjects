@@ -562,7 +562,10 @@ namespace MLAPI.Messaging
         /// <param name="maxFrameHistory"></param>
         public void Initialize(uint maxFrameHistory)
         {
-            ClearParameters();
+            m_InboundStreamBufferIndex  = 0;
+            m_OutBoundStreamBufferIndex = 0;
+            m_OutboundFramesProcessed   = 0;
+            m_InboundFramesProcessed    = 0;
 
             rpcQueueProcessing = new RpcQueueProcessing();
 
