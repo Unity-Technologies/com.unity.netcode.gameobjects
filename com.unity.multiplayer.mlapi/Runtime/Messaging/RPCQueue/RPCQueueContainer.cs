@@ -562,10 +562,7 @@ namespace MLAPI.Messaging
         /// <param name="maxFrameHistory"></param>
         public void Initialize(uint maxFrameHistory)
         {
-            m_InboundStreamBufferIndex  = 0;
-            m_OutBoundStreamBufferIndex = 0;
-            m_OutboundFramesProcessed   = 0;
-            m_InboundFramesProcessed    = 0;
+            ClearParameters();
 
             rpcQueueProcessing = new RpcQueueProcessing();
 
@@ -652,6 +649,18 @@ namespace MLAPI.Messaging
             return m_IsTestingEnabled;
         }
 
+
+        /// <summary>
+        /// Clears the stream indices and frames process properties
+        /// </summary>
+        private void ClearParameters()
+        {
+            m_InboundStreamBufferIndex  = 0;
+            m_OutBoundStreamBufferIndex = 0;
+            m_OutboundFramesProcessed   = 0;
+            m_InboundFramesProcessed    = 0;
+        }
+
         /// <summary>
         /// Shutdown
         /// Flushes the internal messages
@@ -687,10 +696,7 @@ namespace MLAPI.Messaging
             //Clear history and parameters
             QueueHistory.Clear();
 
-            m_InboundStreamBufferIndex  = 0;
-            m_OutBoundStreamBufferIndex = 0;
-            m_OutboundFramesProcessed   = 0;
-            m_InboundFramesProcessed    = 0;
+            ClearParameters();
         }
 
         /// <summary>
