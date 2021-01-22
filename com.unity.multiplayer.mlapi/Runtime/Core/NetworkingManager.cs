@@ -670,7 +670,7 @@ namespace MLAPI
         {
             OnNetworkLoopSystemRemove();
             //NSS: This is ok to leave this check here
-            rpcQueueContainer?.OnExiting();
+            rpcQueueContainer?.Shutdown();
 
             if (Singleton != null && Singleton == this)
             {
@@ -699,7 +699,6 @@ namespace MLAPI
 
             if (rpcQueueContainer != null)
             {
-                rpcQueueContainer.OnExiting();
                 rpcQueueContainer.Shutdown();
                 rpcQueueContainer = null;
             }
