@@ -1,6 +1,7 @@
 using System;
 using MLAPI.Serialization;
 using MLAPI.Serialization.Pooled;
+using MLAPI.Spawning;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -8,6 +9,43 @@ namespace MLAPI.Tests
 {
     public class BitSerializerTests
     {
+        private GameObject m_GameObjectA;
+        private GameObject m_GameObjectB;
+        private NetworkedObject m_NetworkObjectA;
+        private NetworkedObject m_NetworkObjectB;
+        private NetworkedBehaviour m_NetworkBehaviourA;
+        private NetworkedBehaviour m_NetworkBehaviourB;
+
+        private class TestNetworkBehaviour : NetworkedBehaviour
+        {
+        }
+
+        [SetUp]
+        public void Setup()
+        {
+            m_GameObjectA = new GameObject($"Dummy A [{nameof(BitSerializerTests)}]");
+            m_GameObjectB = new GameObject($"Dummy B [{nameof(BitSerializerTests)}]");
+
+            m_NetworkObjectA = m_GameObjectA.AddComponent<NetworkedObject>();
+            m_NetworkObjectB = m_GameObjectB.AddComponent<NetworkedObject>();
+            m_NetworkObjectB.NetworkId = 1234;
+            SpawnManager.SpawnedObjects.Add(m_NetworkObjectB.NetworkId, m_NetworkObjectB);
+            SpawnManager.SpawnedObjectsList.Add(m_NetworkObjectB);
+            m_NetworkObjectB.IsSpawned = true;
+
+            m_NetworkBehaviourA = m_GameObjectA.AddComponent<TestNetworkBehaviour>();
+            m_NetworkBehaviourB = m_GameObjectB.AddComponent<TestNetworkBehaviour>();
+        }
+
+        [TearDown]
+        public void Teardown()
+        {
+            UnityEngine.Object.DestroyImmediate(m_GameObjectA);
+            SpawnManager.SpawnedObjects.Remove(m_NetworkObjectB.NetworkId);
+            SpawnManager.SpawnedObjectsList.Remove(m_NetworkObjectB);
+            UnityEngine.Object.DestroyImmediate(m_GameObjectB);
+        }
+
         [Test]
         public void SerializeBool()
         {
@@ -738,21 +776,21 @@ namespace MLAPI.Tests
             }
         }
 
-        enum EnumA // int
+        private enum EnumA // int
         {
             A,
             B,
             C
         }
 
-        enum EnumB : byte
+        private enum EnumB : byte
         {
             X,
             Y,
             Z
         }
 
-        enum EnumC : ushort
+        private enum EnumC : ushort
         {
             U,
             N,
@@ -761,7 +799,7 @@ namespace MLAPI.Tests
             Y
         }
 
-        enum EnumD : ulong
+        private enum EnumD : ulong
         {
             N,
             E,
@@ -810,6 +848,62 @@ namespace MLAPI.Tests
                 Assert.AreEqual(inValueC, outValueC);
                 Assert.AreEqual(inValueD, outValueD);
                 Assert.AreEqual(inValueX, outValueX);
+            }
+        }
+
+        [Test]
+        public void SerializeNetworkObject()
+        {
+            using (var outStream = PooledBitStream.Get())
+            using (var outWriter = PooledBitWriter.Get(outStream))
+            using (var inStream = PooledBitStream.Get())
+            using (var inReader = PooledBitReader.Get(inStream))
+            {
+                // serialize
+                var outSerializer = new BitSerializer(outWriter);
+                outSerializer.Serialize(ref m_NetworkObjectA);
+                outSerializer.Serialize(ref m_NetworkObjectB);
+
+                // deserialize
+                NetworkedObject inNetworkObjectA = default;
+                NetworkedObject inNetworkObjectB = default;
+                inStream.Write(outStream.ToArray());
+                inStream.Position = 0;
+                var inSerializer = new BitSerializer(inReader);
+                inSerializer.Serialize(ref inNetworkObjectA);
+                inSerializer.Serialize(ref inNetworkObjectB);
+
+                // validate
+                Assert.AreEqual(inNetworkObjectA?.NetworkId ?? 0, m_NetworkObjectA.NetworkId);
+                Assert.AreEqual(inNetworkObjectB?.NetworkId ?? 0, m_NetworkObjectB.NetworkId);
+            }
+        }
+
+        [Test]
+        public void SerializeNetworkBehaviour()
+        {
+            using (var outStream = PooledBitStream.Get())
+            using (var outWriter = PooledBitWriter.Get(outStream))
+            using (var inStream = PooledBitStream.Get())
+            using (var inReader = PooledBitReader.Get(inStream))
+            {
+                // serialize
+                var outSerializer = new BitSerializer(outWriter);
+                outSerializer.Serialize(ref m_NetworkBehaviourA);
+                outSerializer.Serialize(ref m_NetworkBehaviourB);
+
+                // deserialize
+                NetworkedBehaviour inNetworkBehaviourA = default;
+                NetworkedBehaviour inNetworkBehaviourB = default;
+                inStream.Write(outStream.ToArray());
+                inStream.Position = 0;
+                var inSerializer = new BitSerializer(inReader);
+                inSerializer.Serialize(ref inNetworkBehaviourA);
+                inSerializer.Serialize(ref inNetworkBehaviourB);
+
+                // validate
+                Assert.AreEqual(inNetworkBehaviourA?.GetBehaviourId() ?? 0, m_NetworkBehaviourA.GetBehaviourId());
+                Assert.AreEqual(inNetworkBehaviourB?.GetBehaviourId() ?? 0, m_NetworkBehaviourB.GetBehaviourId());
             }
         }
     }
