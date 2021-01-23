@@ -20,11 +20,6 @@ using MLAPI.Transports;
 using BitStream = MLAPI.Serialization.BitStream;
 using Unity.Profiling;
 
-#if UNITY_2020_2_OR_NEWER && UNITY_EDITOR
-using System.Runtime.CompilerServices;
-[assembly: InternalsVisibleTo("Unity.Multiplayer.MLAPI.Editor.CodeGen")]
-#endif
-
 namespace MLAPI
 {
     /// <summary>
