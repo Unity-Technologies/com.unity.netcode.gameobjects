@@ -681,8 +681,8 @@ namespace MLAPI.Tests
             {
                 // serialize
                 Quaternion outValueA = Quaternion.identity;
-                Quaternion outValueB = Quaternion.Euler(Vector3.negativeInfinity);
-                Quaternion outValueC = Quaternion.Euler(Vector3.positiveInfinity);
+                Quaternion outValueB = Quaternion.Euler(new Vector3(30, 45, -60));
+                Quaternion outValueC = Quaternion.Euler(new Vector3(90, -90, 180));
                 var outSerializer = new BitSerializer(outWriter);
                 outSerializer.Serialize(ref outValueA);
                 outSerializer.Serialize(ref outValueB);
@@ -700,9 +700,9 @@ namespace MLAPI.Tests
                 inSerializer.Serialize(ref inValueC);
 
                 // validate
-                Assert.AreEqual(inValueA, outValueA);
-                Assert.AreEqual(inValueB, outValueB);
-                Assert.AreEqual(inValueC, outValueC);
+                Assert.Greater(Mathf.Abs(Quaternion.Dot(inValueA, outValueA)), 0.999f);
+                Assert.Greater(Mathf.Abs(Quaternion.Dot(inValueB, outValueB)), 0.999f);
+                Assert.Greater(Mathf.Abs(Quaternion.Dot(inValueC, outValueC)), 0.999f);
             }
         }
 
@@ -716,8 +716,8 @@ namespace MLAPI.Tests
             {
                 // serialize
                 Ray outValueA = new Ray(Vector3.zero, Vector3.forward);
-                Ray outValueB = new Ray(Vector3.zero, Vector3.negativeInfinity);
-                Ray outValueC = new Ray(Vector3.zero, Vector3.positiveInfinity);
+                Ray outValueB = new Ray(Vector3.zero, Vector3.left);
+                Ray outValueC = new Ray(Vector3.zero, Vector3.up);
                 var outSerializer = new BitSerializer(outWriter);
                 outSerializer.Serialize(ref outValueA);
                 outSerializer.Serialize(ref outValueB);
@@ -751,8 +751,8 @@ namespace MLAPI.Tests
             {
                 // serialize
                 Ray2D outValueA = new Ray2D(Vector2.zero, Vector2.up);
-                Ray2D outValueB = new Ray2D(Vector2.zero, Vector2.negativeInfinity);
-                Ray2D outValueC = new Ray2D(Vector2.zero, Vector2.positiveInfinity);
+                Ray2D outValueB = new Ray2D(Vector2.zero, Vector2.left);
+                Ray2D outValueC = new Ray2D(Vector2.zero, Vector2.right);
                 var outSerializer = new BitSerializer(outWriter);
                 outSerializer.Serialize(ref outValueA);
                 outSerializer.Serialize(ref outValueB);
