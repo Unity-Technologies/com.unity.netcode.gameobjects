@@ -168,7 +168,7 @@ namespace MLAPI.Serialization
                 if (IsReading)
                 {
                     int intValue = m_Reader.ReadInt32Packed();
-                    value = *(TEnum*)(&intValue);
+                    value = *(TEnum*)&intValue;
                 }
                 else
                 {
@@ -181,7 +181,7 @@ namespace MLAPI.Serialization
                 if (IsReading)
                 {
                     byte intValue = m_Reader.ReadByteDirect();
-                    value = *(TEnum*)(&intValue);
+                    value = *(TEnum*)&intValue;
                 }
                 else
                 {
@@ -194,7 +194,7 @@ namespace MLAPI.Serialization
                 if (IsReading)
                 {
                     short intValue = m_Reader.ReadInt16Packed();
-                    value = *(TEnum*)(&intValue);
+                    value = *(TEnum*)&intValue;
                 }
                 else
                 {
@@ -207,7 +207,7 @@ namespace MLAPI.Serialization
                 if (IsReading)
                 {
                     long intValue = m_Reader.ReadInt64Packed();
-                    value = *(TEnum*)(&intValue);
+                    value = *(TEnum*)&intValue;
                 }
                 else
                 {
@@ -551,7 +551,8 @@ namespace MLAPI.Serialization
                 array = length > -1 ? new string[length] : null;
                 for (var i = 0; i < length; ++i)
                 {
-                    array[i] = m_Reader.ReadStringPacked();
+                    var isSet = m_Reader.ReadBool();
+                    array[i] = isSet ? m_Reader.ReadStringPacked() : null;
                 }
             }
             else
@@ -560,7 +561,12 @@ namespace MLAPI.Serialization
                 m_Writer.WriteInt32Packed(length);
                 for (var i = 0; i < length; ++i)
                 {
-                    m_Writer.WriteStringPacked(array[i]);
+                    var isSet = array[i] != null;
+                    m_Writer.WriteBool(isSet);
+                    if (isSet)
+                    {
+                        m_Writer.WriteStringPacked(array[i]);
+                    }
                 }
             }
         }
@@ -741,22 +747,178 @@ namespace MLAPI.Serialization
             }
         }
 
-        public void Serialize<TEnum>(ref TEnum[] array) where TEnum : Enum
+        public unsafe void Serialize<TEnum>(ref TEnum[] array) where TEnum : unmanaged, Enum
         {
-            var enumType = typeof(TEnum);
-            var intType = Enum.GetUnderlyingType(enumType);
+            int length;
+            if (IsReading)
+            {
+                length = m_Reader.ReadInt32Packed();
+                array = length > -1 ? new TEnum[length] : null;
+            }
+            else
+            {
+                length = array?.Length ?? -1;
+                m_Writer.WriteInt32Packed(length);
+            }
 
-            // todo
+            if (sizeof(TEnum) == sizeof(int))
+            {
+                if (IsReading)
+                {
+                    for (var i = 0; i < length; ++i)
+                    {
+                        int intValue = m_Reader.ReadInt32Packed();
+                        array[i] = *(TEnum*)&intValue;
+                    }
+                }
+                else
+                {
+                    for (var i = 0; i < length; ++i)
+                    {
+                        TEnum enumValue = array[i];
+                        m_Writer.WriteInt32Packed(*(int*)&enumValue);
+                    }
+                }
+            }
+            else if (sizeof(TEnum) == sizeof(byte))
+            {
+                if (IsReading)
+                {
+                    for (var i = 0; i < length; ++i)
+                    {
+                        byte intValue = m_Reader.ReadByteDirect();
+                        array[i] = *(TEnum*)&intValue;
+                    }
+                }
+                else
+                {
+                    for (var i = 0; i < length; ++i)
+                    {
+                        TEnum enumValue = array[i];
+                        m_Writer.WriteByte(*(byte*)&enumValue);
+                    }
+                }
+            }
+            else if (sizeof(TEnum) == sizeof(short))
+            {
+                if (IsReading)
+                {
+                    for (var i = 0; i < length; ++i)
+                    {
+                        short intValue = m_Reader.ReadInt16Packed();
+                        array[i] = *(TEnum*)&intValue;
+                    }
+                }
+                else
+                {
+                    for (var i = 0; i < length; ++i)
+                    {
+                        TEnum enumValue = array[i];
+                        m_Writer.WriteInt16Packed(*(short*)&enumValue);
+                    }
+                }
+            }
+            else if (sizeof(TEnum) == sizeof(long))
+            {
+                if (IsReading)
+                {
+                    for (var i = 0; i < length; ++i)
+                    {
+                        long intValue = m_Reader.ReadInt64Packed();
+                        array[i] = *(TEnum*)&intValue;
+                    }
+                }
+                else
+                {
+                    for (var i = 0; i < length; ++i)
+                    {
+                        TEnum enumValue = array[i];
+                        m_Writer.WriteInt64Packed(*(long*)&enumValue);
+                    }
+                }
+            }
+            else if (IsReading)
+            {
+                array = default;
+            }
         }
 
         public void Serialize(ref NetworkedObject[] array)
         {
-            // todo
+            if (IsReading)
+            {
+                var length = m_Reader.ReadInt32Packed();
+                array = length > -1 ? new NetworkedObject[length] : null;
+                for (var i = 0; i < length; ++i)
+                {
+                    var isSet = m_Reader.ReadBool();
+                    if (isSet)
+                    {
+                        var objectId = m_Reader.ReadUInt64Packed();
+                        SpawnManager.SpawnedObjects.TryGetValue(objectId, out array[i]);
+                    }
+                    else
+                    {
+                        array[i] = null;
+                    }
+                }
+            }
+            else
+            {
+                var length = array?.Length ?? -1;
+                m_Writer.WriteInt32Packed(length);
+                for (var i = 0; i < length; ++i)
+                {
+                    var isSet = array[i] != null && array[i].IsSpawned;
+                    m_Writer.WriteBool(isSet);
+                    if (isSet)
+                    {
+                        var objectId = array[i].NetworkId;
+                        m_Writer.WriteUInt64Packed(objectId);
+                    }
+                }
+            }
         }
 
         public void Serialize(ref NetworkedBehaviour[] array)
         {
-            // todo
+            if (IsReading)
+            {
+                var length = m_Reader.ReadInt32Packed();
+                array = length > -1 ? new NetworkedBehaviour[length] : null;
+                for (var i = 0; i < length; ++i)
+                {
+                    var isSet = m_Reader.ReadBool();
+                    if (isSet)
+                    {
+                        var objectId = m_Reader.ReadUInt64Packed();
+                        var behaviourId = m_Reader.ReadUInt16Packed();
+                        SpawnManager.SpawnedObjects.TryGetValue(objectId, out var netObject);
+                        array[i] = netObject != null ? netObject.GetBehaviourAtOrderIndex(behaviourId) : null;
+                    }
+                    else
+                    {
+                        array[i] = null;
+                    }
+                }
+            }
+            else
+            {
+                var length = array?.Length ?? -1;
+                m_Writer.WriteInt32Packed(length);
+                for (var i = 0; i < length; ++i)
+                {
+                    var isSet = array[i] != null && array[i].HasNetworkedObject;
+                    m_Writer.WriteBool(isSet);
+                    if (isSet)
+                    {
+                        var objectId = array[i].NetworkedObject.NetworkId;
+                        var behaviourId = array[i].GetBehaviourId();
+                        m_Writer.WriteUInt64Packed(objectId);
+                        m_Writer.WriteUInt16Packed(behaviourId);
+                    }
+                }
+            }
         }
     }
 }
