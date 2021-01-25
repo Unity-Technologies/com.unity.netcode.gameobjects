@@ -10,6 +10,7 @@ using Mono.Cecil.Cil;
 using Mono.Cecil.Rocks;
 using Unity.CompilationPipeline.Common.Diagnostics;
 using Unity.CompilationPipeline.Common.ILPostProcessing;
+using UnityEngine;
 using MethodAttributes = Mono.Cecil.MethodAttributes;
 using ParameterAttributes = Mono.Cecil.ParameterAttributes;
 
@@ -25,9 +26,7 @@ namespace MLAPI.Editor.CodeGen
     {
         public override ILPPInterface GetInstance() => this;
 
-        public override bool WillProcess(ICompiledAssembly compiledAssembly) =>
-            compiledAssembly.References.Any(
-                filePath => Path.GetFileNameWithoutExtension(filePath) == CodeGenHelpers.RuntimeAssemblyName);
+        public override bool WillProcess(ICompiledAssembly compiledAssembly) => compiledAssembly.References.Any(filePath => Path.GetFileNameWithoutExtension(filePath) == CodeGenHelpers.RuntimeAssemblyName);
 
         private readonly List<DiagnosticMessage> m_Diagnostics = new List<DiagnosticMessage>();
 
@@ -102,48 +101,53 @@ namespace MLAPI.Editor.CodeGen
         private FieldReference ClientRpcParams_Receive_FieldRef;
         private TypeReference ClientRpcSendParams_TypeRef;
         private TypeReference ClientRpcReceiveParams_TypeRef;
-        private TypeReference BitWriter_TypeRef;
-        private MethodReference BitWriter_WriteBool_MethodRef;
-        private MethodReference BitWriter_WriteChar_MethodRef;
-        private MethodReference BitWriter_WriteSByte_MethodRef;
-        private MethodReference BitWriter_WriteByte_MethodRef;
-        private MethodReference BitWriter_WriteInt16Packed_MethodRef;
-        private MethodReference BitWriter_WriteUInt16Packed_MethodRef;
-        private MethodReference BitWriter_WriteInt32Packed_MethodRef;
-        private MethodReference BitWriter_WriteUInt32Packed_MethodRef;
-        private MethodReference BitWriter_WriteInt64Packed_MethodRef;
-        private MethodReference BitWriter_WriteUInt64Packed_MethodRef;
-        private MethodReference BitWriter_WriteSinglePacked_MethodRef;
-        private MethodReference BitWriter_WriteDoublePacked_MethodRef;
-        private MethodReference BitWriter_WriteStringPacked_MethodRef;
-        private MethodReference BitWriter_WriteColorPacked_MethodRef;
-        private MethodReference BitWriter_WriteVector2Packed_MethodRef;
-        private MethodReference BitWriter_WriteVector3Packed_MethodRef;
-        private MethodReference BitWriter_WriteVector4Packed_MethodRef;
-        private MethodReference BitWriter_WriteRotationPacked_MethodRef;
-        private MethodReference BitWriter_WriteRayPacked_MethodRef;
-        private MethodReference BitWriter_WriteRay2DPacked_MethodRef;
-        private TypeReference BitReader_TypeRef;
-        private MethodReference BitReader_ReadBool_MethodRef;
-        private MethodReference BitReader_ReadChar_MethodRef;
-        private MethodReference BitReader_ReadSByte_MethodRef;
-        private MethodReference BitReader_ReadByte_MethodRef;
-        private MethodReference BitReader_ReadInt16Packed_MethodRef;
-        private MethodReference BitReader_ReadUInt16Packed_MethodRef;
-        private MethodReference BitReader_ReadInt32Packed_MethodRef;
-        private MethodReference BitReader_ReadUInt32Packed_MethodRef;
-        private MethodReference BitReader_ReadInt64Packed_MethodRef;
-        private MethodReference BitReader_ReadUInt64Packed_MethodRef;
-        private MethodReference BitReader_ReadSinglePacked_MethodRef;
-        private MethodReference BitReader_ReadDoublePacked_MethodRef;
-        private MethodReference BitReader_ReadStringPacked_MethodRef;
-        private MethodReference BitReader_ReadColorPacked_MethodRef;
-        private MethodReference BitReader_ReadVector2Packed_MethodRef;
-        private MethodReference BitReader_ReadVector3Packed_MethodRef;
-        private MethodReference BitReader_ReadVector4Packed_MethodRef;
-        private MethodReference BitReader_ReadRotationPacked_MethodRef;
-        private MethodReference BitReader_ReadRayPacked_MethodRef;
-        private MethodReference BitReader_ReadRay2DPacked_MethodRef;
+        private TypeReference BitSerializer_TypeRef;
+        private MethodReference BitSerializer_SerializeBool_MethodRef;
+        private MethodReference BitSerializer_SerializeChar_MethodRef;
+        private MethodReference BitSerializer_SerializeSbyte_MethodRef;
+        private MethodReference BitSerializer_SerializeByte_MethodRef;
+        private MethodReference BitSerializer_SerializeShort_MethodRef;
+        private MethodReference BitSerializer_SerializeUshort_MethodRef;
+        private MethodReference BitSerializer_SerializeInt_MethodRef;
+        private MethodReference BitSerializer_SerializeUint_MethodRef;
+        private MethodReference BitSerializer_SerializeLong_MethodRef;
+        private MethodReference BitSerializer_SerializeUlong_MethodRef;
+        private MethodReference BitSerializer_SerializeFloat_MethodRef;
+        private MethodReference BitSerializer_SerializeDouble_MethodRef;
+        private MethodReference BitSerializer_SerializeString_MethodRef;
+        private MethodReference BitSerializer_SerializeColor_MethodRef;
+        private MethodReference BitSerializer_SerializeColor32_MethodRef;
+        private MethodReference BitSerializer_SerializeVector2_MethodRef;
+        private MethodReference BitSerializer_SerializeVector3_MethodRef;
+        private MethodReference BitSerializer_SerializeVector4_MethodRef;
+        private MethodReference BitSerializer_SerializeQuaternion_MethodRef;
+        private MethodReference BitSerializer_SerializeRay_MethodRef;
+        private MethodReference BitSerializer_SerializeRay2D_MethodRef;
+        private MethodReference BitSerializer_SerializeNetObject_MethodRef;
+        private MethodReference BitSerializer_SerializeNetBehaviour_MethodRef;
+        private MethodReference BitSerializer_SerializeBoolArray_MethodRef;
+        private MethodReference BitSerializer_SerializeCharArray_MethodRef;
+        private MethodReference BitSerializer_SerializeSbyteArray_MethodRef;
+        private MethodReference BitSerializer_SerializeByteArray_MethodRef;
+        private MethodReference BitSerializer_SerializeShortArray_MethodRef;
+        private MethodReference BitSerializer_SerializeUshortArray_MethodRef;
+        private MethodReference BitSerializer_SerializeIntArray_MethodRef;
+        private MethodReference BitSerializer_SerializeUintArray_MethodRef;
+        private MethodReference BitSerializer_SerializeLongArray_MethodRef;
+        private MethodReference BitSerializer_SerializeUlongArray_MethodRef;
+        private MethodReference BitSerializer_SerializeFloatArray_MethodRef;
+        private MethodReference BitSerializer_SerializeDoubleArray_MethodRef;
+        private MethodReference BitSerializer_SerializeStringArray_MethodRef;
+        private MethodReference BitSerializer_SerializeColorArray_MethodRef;
+        private MethodReference BitSerializer_SerializeColor32Array_MethodRef;
+        private MethodReference BitSerializer_SerializeVector2Array_MethodRef;
+        private MethodReference BitSerializer_SerializeVector3Array_MethodRef;
+        private MethodReference BitSerializer_SerializeVector4Array_MethodRef;
+        private MethodReference BitSerializer_SerializeQuaternionArray_MethodRef;
+        private MethodReference BitSerializer_SerializeRayArray_MethodRef;
+        private MethodReference BitSerializer_SerializeRay2DArray_MethodRef;
+        private MethodReference BitSerializer_SerializeNetObjectArray_MethodRef;
+        private MethodReference BitSerializer_SerializeNetBehaviourArray_MethodRef;
 
         private const string k_NetworkingManager_Singleton = nameof(NetworkingManager.Singleton);
         private const string k_NetworkingManager_IsListening = nameof(NetworkingManager.IsListening);
@@ -228,9 +232,8 @@ namespace MLAPI.Editor.CodeGen
                 }
             }
 
-            var networkHandlerDelegateType = typeof(Action<NetworkedBehaviour, BitReader, ulong>);
-            NetworkHandlerDelegateCtor_MethodRef = moduleDefinition.ImportReference(
-                networkHandlerDelegateType.GetConstructor(new[] { typeof(object), typeof(IntPtr) }));
+            var networkHandlerDelegateType = typeof(Action<NetworkedBehaviour, BitSerializer, ulong>);
+            NetworkHandlerDelegateCtor_MethodRef = moduleDefinition.ImportReference(networkHandlerDelegateType.GetConstructor(new[] { typeof(object), typeof(IntPtr) }));
 
             var serverRpcParamsType = typeof(ServerRpcParams);
             ServerRpcParams_TypeRef = moduleDefinition.ImportReference(serverRpcParamsType);
@@ -283,142 +286,63 @@ namespace MLAPI.Editor.CodeGen
             var clientRpcReceiveParamsType = typeof(ClientRpcReceiveParams);
             ClientRpcReceiveParams_TypeRef = moduleDefinition.ImportReference(clientRpcReceiveParamsType);
 
-            var bitWriterType = typeof(BitWriter);
-            BitWriter_TypeRef = moduleDefinition.ImportReference(bitWriterType);
-            foreach (var methodInfo in bitWriterType.GetMethods())
+            var bitSerializerType = typeof(BitSerializer);
+            BitSerializer_TypeRef = moduleDefinition.ImportReference(bitSerializerType);
+            foreach (var methodInfo in bitSerializerType.GetMethods())
             {
-                switch (methodInfo.Name)
-                {
-                    case nameof(BitWriter.WriteBool):
-                        BitWriter_WriteBool_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitWriter.WriteChar):
-                        BitWriter_WriteChar_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitWriter.WriteSByte):
-                        BitWriter_WriteSByte_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitWriter.WriteByte):
-                        BitWriter_WriteByte_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitWriter.WriteInt16Packed):
-                        BitWriter_WriteInt16Packed_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitWriter.WriteUInt16Packed):
-                        BitWriter_WriteUInt16Packed_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitWriter.WriteInt32Packed):
-                        BitWriter_WriteInt32Packed_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitWriter.WriteUInt32Packed):
-                        BitWriter_WriteUInt32Packed_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitWriter.WriteInt64Packed):
-                        BitWriter_WriteInt64Packed_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitWriter.WriteUInt64Packed):
-                        BitWriter_WriteUInt64Packed_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitWriter.WriteSinglePacked):
-                        BitWriter_WriteSinglePacked_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitWriter.WriteDoublePacked):
-                        BitWriter_WriteDoublePacked_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitWriter.WriteStringPacked):
-                        BitWriter_WriteStringPacked_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitWriter.WriteColorPacked):
-                        BitWriter_WriteColorPacked_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitWriter.WriteVector2Packed):
-                        BitWriter_WriteVector2Packed_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitWriter.WriteVector3Packed):
-                        BitWriter_WriteVector3Packed_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitWriter.WriteVector4Packed):
-                        BitWriter_WriteVector4Packed_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitWriter.WriteRotationPacked):
-                        BitWriter_WriteRotationPacked_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitWriter.WriteRayPacked):
-                        BitWriter_WriteRayPacked_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitWriter.WriteRay2DPacked):
-                        BitWriter_WriteRay2DPacked_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                }
-            }
+                if (methodInfo.Name != nameof(BitSerializer.Serialize)) continue;
+                var methodParams = methodInfo.GetParameters();
+                if (methodParams.Length != 1) continue;
+                var paramType = methodParams[0].ParameterType;
+                if (paramType.IsByRef == false) continue;
+                var paramTypeName = paramType.Name;
 
-            var bitReaderType = typeof(BitReader);
-            BitReader_TypeRef = moduleDefinition.ImportReference(bitReaderType);
-            foreach (var methodInfo in bitReaderType.GetMethods())
-            {
-                switch (methodInfo.Name)
-                {
-                    case nameof(BitReader.ReadBool):
-                        BitReader_ReadBool_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitReader.ReadChar):
-                        BitReader_ReadChar_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitReader.ReadSByte):
-                        BitReader_ReadSByte_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitReader.ReadByte):
-                        BitReader_ReadByte_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitReader.ReadInt16Packed):
-                        BitReader_ReadInt16Packed_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitReader.ReadUInt16Packed):
-                        BitReader_ReadUInt16Packed_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitReader.ReadInt32Packed):
-                        BitReader_ReadInt32Packed_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitReader.ReadUInt32Packed):
-                        BitReader_ReadUInt32Packed_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitReader.ReadInt64Packed):
-                        BitReader_ReadInt64Packed_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitReader.ReadUInt64Packed):
-                        BitReader_ReadUInt64Packed_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitReader.ReadSinglePacked):
-                        BitReader_ReadSinglePacked_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitReader.ReadDoublePacked):
-                        BitReader_ReadDoublePacked_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitReader.ReadStringPacked):
-                        BitReader_ReadStringPacked_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitReader.ReadColorPacked):
-                        BitReader_ReadColorPacked_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitReader.ReadVector2Packed):
-                        BitReader_ReadVector2Packed_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitReader.ReadVector3Packed):
-                        BitReader_ReadVector3Packed_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitReader.ReadVector4Packed):
-                        BitReader_ReadVector4Packed_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitReader.ReadRotationPacked):
-                        BitReader_ReadRotationPacked_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitReader.ReadRayPacked):
-                        BitReader_ReadRayPacked_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                    case nameof(BitReader.ReadRay2DPacked):
-                        BitReader_ReadRay2DPacked_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                        break;
-                }
+                if (paramTypeName == typeof(bool).MakeByRefType().Name) BitSerializer_SerializeBool_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(char).MakeByRefType().Name) BitSerializer_SerializeChar_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(sbyte).MakeByRefType().Name) BitSerializer_SerializeSbyte_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(byte).MakeByRefType().Name) BitSerializer_SerializeByte_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(short).MakeByRefType().Name) BitSerializer_SerializeShort_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(ushort).MakeByRefType().Name) BitSerializer_SerializeUshort_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(int).MakeByRefType().Name) BitSerializer_SerializeInt_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(uint).MakeByRefType().Name) BitSerializer_SerializeUint_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(long).MakeByRefType().Name) BitSerializer_SerializeLong_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(ulong).MakeByRefType().Name) BitSerializer_SerializeUlong_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(float).MakeByRefType().Name) BitSerializer_SerializeFloat_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(double).MakeByRefType().Name) BitSerializer_SerializeDouble_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(string).MakeByRefType().Name) BitSerializer_SerializeString_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(Color).MakeByRefType().Name) BitSerializer_SerializeColor_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(Color32).MakeByRefType().Name) BitSerializer_SerializeColor32_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(Vector2).MakeByRefType().Name) BitSerializer_SerializeVector2_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(Vector3).MakeByRefType().Name) BitSerializer_SerializeVector3_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(Vector4).MakeByRefType().Name) BitSerializer_SerializeVector4_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(Quaternion).MakeByRefType().Name) BitSerializer_SerializeQuaternion_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(Ray).MakeByRefType().Name) BitSerializer_SerializeRay_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(Ray2D).MakeByRefType().Name) BitSerializer_SerializeRay2D_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(NetworkedObject).MakeByRefType().Name) BitSerializer_SerializeNetObject_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(NetworkedBehaviour).MakeByRefType().Name) BitSerializer_SerializeNetBehaviour_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(bool[]).MakeByRefType().Name) BitSerializer_SerializeBoolArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(char[]).MakeByRefType().Name) BitSerializer_SerializeCharArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(sbyte[]).MakeByRefType().Name) BitSerializer_SerializeSbyteArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(byte[]).MakeByRefType().Name) BitSerializer_SerializeByteArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(short[]).MakeByRefType().Name) BitSerializer_SerializeShortArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(ushort[]).MakeByRefType().Name) BitSerializer_SerializeUshortArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(int[]).MakeByRefType().Name) BitSerializer_SerializeIntArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(uint[]).MakeByRefType().Name) BitSerializer_SerializeUintArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(long[]).MakeByRefType().Name) BitSerializer_SerializeLongArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(ulong[]).MakeByRefType().Name) BitSerializer_SerializeUlongArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(float[]).MakeByRefType().Name) BitSerializer_SerializeFloatArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(double[]).MakeByRefType().Name) BitSerializer_SerializeDoubleArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(string[]).MakeByRefType().Name) BitSerializer_SerializeStringArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(Color[]).MakeByRefType().Name) BitSerializer_SerializeColorArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(Color32[]).MakeByRefType().Name) BitSerializer_SerializeColor32Array_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(Vector2[]).MakeByRefType().Name) BitSerializer_SerializeVector2Array_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(Vector3[]).MakeByRefType().Name) BitSerializer_SerializeVector3Array_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(Vector4[]).MakeByRefType().Name) BitSerializer_SerializeVector4Array_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(Quaternion[]).MakeByRefType().Name) BitSerializer_SerializeQuaternionArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(Ray[]).MakeByRefType().Name) BitSerializer_SerializeRayArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(Ray2D[]).MakeByRefType().Name) BitSerializer_SerializeRay2DArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(NetworkedObject[]).MakeByRefType().Name) BitSerializer_SerializeNetObjectArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
+                else if (paramTypeName == typeof(NetworkedBehaviour[]).MakeByRefType().Name) BitSerializer_SerializeNetBehaviourArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
             }
 
             return true;
@@ -556,8 +480,8 @@ namespace MLAPI.Editor.CodeGen
                 var paramDef = methodDefinition.Parameters[paramIndex];
                 var paramType = paramDef.ParameterType;
 
-                if (paramType.IsSupportedType()) continue;
-
+                // Serializable
+                if (paramType.IsSerializable()) continue;
                 // ServerRpcParams
                 if (paramType.FullName == CodeGenHelpers.ServerRpcParams_FullName && isServerRpc && paramIndex == paramCount - 1) continue;
                 // ClientRpcParams
@@ -597,9 +521,12 @@ namespace MLAPI.Editor.CodeGen
             // NetworkManager networkManager;
             methodDefinition.Body.Variables.Add(new VariableDefinition(NetworkManager_TypeRef));
             int netManLocIdx = methodDefinition.Body.Variables.Count - 1;
-            // BitWriter writer;
-            methodDefinition.Body.Variables.Add(new VariableDefinition(BitWriter_TypeRef));
-            int writerLocIdx = methodDefinition.Body.Variables.Count - 1;
+            // BitSerializer serializer;
+            methodDefinition.Body.Variables.Add(new VariableDefinition(BitSerializer_TypeRef));
+            int serializerLocIdx = methodDefinition.Body.Variables.Count - 1;
+            // uint methodHash;
+            methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.UInt32));
+            int methodHashLocIdx = methodDefinition.Body.Variables.Count - 1;
             // XXXRpcSendParams
             if (!hasRpcParams) methodDefinition.Body.Variables.Add(new VariableDefinition(isServerRpc ? ServerRpcSendParams_TypeRef : ClientRpcSendParams_TypeRef));
             int sendParamsIdx = !hasRpcParams ? methodDefinition.Body.Variables.Count - 1 : -1;
@@ -651,12 +578,12 @@ namespace MLAPI.Editor.CodeGen
 
                 instructions.Add(beginInstr);
 
-                // var writer = BeginSendServerRpc(sendParams, isReliable) -> ServerRpc
-                // var writer = BeginSendClientRpc(sendParams, isReliable) -> ClientRpc
+                // var serializer = BeginSendServerRpc(sendParams, isReliable) -> ServerRpc
+                // var serializer = BeginSendClientRpc(sendParams, isReliable) -> ClientRpc
                 if (isServerRpc)
                 {
                     // ServerRpc
-                    // var writer = BeginSendServerRpc(sendParams, isReliable);
+                    // var serializer = BeginSendServerRpc(sendParams, isReliable);
                     instructions.Add(processor.Create(OpCodes.Ldarg_0));
 
                     if (hasRpcParams)
@@ -678,12 +605,12 @@ namespace MLAPI.Editor.CodeGen
 
                     // BeginSendServerRpc
                     instructions.Add(processor.Create(OpCodes.Call, NetworkBehaviour_BeginSendServerRpc_MethodRef));
-                    instructions.Add(processor.Create(OpCodes.Stloc, writerLocIdx));
+                    instructions.Add(processor.Create(OpCodes.Stloc, serializerLocIdx));
                 }
                 else
                 {
                     // ClientRpc
-                    // var writer = BeginSendClientRpc(sendParams, isReliable);
+                    // var serializer = BeginSendClientRpc(sendParams, isReliable);
                     instructions.Add(processor.Create(OpCodes.Ldarg_0));
 
                     if (hasRpcParams)
@@ -705,224 +632,482 @@ namespace MLAPI.Editor.CodeGen
 
                     // BeginSendClientRpc
                     instructions.Add(processor.Create(OpCodes.Call, NetworkBehaviour_BeginSendClientRpc_MethodRef));
-                    instructions.Add(processor.Create(OpCodes.Stloc, writerLocIdx));
+                    instructions.Add(processor.Create(OpCodes.Stloc, serializerLocIdx));
                 }
 
-                // if (writer != null)
-                instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
+                // if (serializer != null)
+                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                 instructions.Add(processor.Create(OpCodes.Brfalse, endInstr));
 
-                // writer.WriteUInt32Packed(123123); // NetworkMethodId
-                instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
+                // methodHash = methodDefHash
                 instructions.Add(processor.Create(OpCodes.Ldc_I4, unchecked((int)methodDefHash)));
-                instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteUInt32Packed_MethodRef));
+                instructions.Add(processor.Create(OpCodes.Stloc, methodHashLocIdx));
+                // serializer.Serialize(ref methodHash); // NetworkMethodId
+                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                instructions.Add(processor.Create(OpCodes.Ldloca, methodHashLocIdx));
+                instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeUint_MethodRef));
+
                 // write method parameters into stream
                 for (int paramIndex = 0; paramIndex < paramCount; ++paramIndex)
                 {
                     var paramDef = methodDefinition.Parameters[paramIndex];
                     var paramType = paramDef.ParameterType;
 
+                    // C# primitives (+arrays)
+
                     if (paramType == typeSystem.Boolean)
                     {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteBool_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeBool_MethodRef));
+                        continue;
+                    }
+
+                    if (paramType.IsArray && paramType.GetElementType() == typeSystem.Boolean)
+                    {
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeBoolArray_MethodRef));
                         continue;
                     }
 
                     if (paramType == typeSystem.Char)
                     {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteChar_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeChar_MethodRef));
+                        continue;
+                    }
+
+                    if (paramType.IsArray && paramType.GetElementType() == typeSystem.Char)
+                    {
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeCharArray_MethodRef));
                         continue;
                     }
 
                     if (paramType == typeSystem.SByte)
                     {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteSByte_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeSbyte_MethodRef));
+                        continue;
+                    }
+
+                    if (paramType.IsArray && paramType.GetElementType() == typeSystem.SByte)
+                    {
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeSbyteArray_MethodRef));
                         continue;
                     }
 
                     if (paramType == typeSystem.Byte)
                     {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteByte_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeByte_MethodRef));
+                        continue;
+                    }
+
+                    if (paramType.IsArray && paramType.GetElementType() == typeSystem.Byte)
+                    {
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeByteArray_MethodRef));
                         continue;
                     }
 
                     if (paramType == typeSystem.Int16)
                     {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteInt16Packed_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeShort_MethodRef));
+                        continue;
+                    }
+
+                    if (paramType.IsArray && paramType.GetElementType() == typeSystem.Int16)
+                    {
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeShortArray_MethodRef));
                         continue;
                     }
 
                     if (paramType == typeSystem.UInt16)
                     {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteUInt16Packed_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeUshort_MethodRef));
+                        continue;
+                    }
+
+                    if (paramType.IsArray && paramType.GetElementType() == typeSystem.UInt16)
+                    {
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeUshortArray_MethodRef));
                         continue;
                     }
 
                     if (paramType == typeSystem.Int32)
                     {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteInt32Packed_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeInt_MethodRef));
+                        continue;
+                    }
+
+                    if (paramType.IsArray && paramType.GetElementType() == typeSystem.Int32)
+                    {
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeIntArray_MethodRef));
                         continue;
                     }
 
                     if (paramType == typeSystem.UInt32)
                     {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteUInt32Packed_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeUint_MethodRef));
+                        continue;
+                    }
+
+                    if (paramType.IsArray && paramType.GetElementType() == typeSystem.UInt32)
+                    {
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeUintArray_MethodRef));
                         continue;
                     }
 
                     if (paramType == typeSystem.Int64)
                     {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteInt64Packed_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeLong_MethodRef));
+                        continue;
+                    }
+
+                    if (paramType.IsArray && paramType.GetElementType() == typeSystem.Int64)
+                    {
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeLongArray_MethodRef));
                         continue;
                     }
 
                     if (paramType == typeSystem.UInt64)
                     {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteUInt64Packed_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeUlong_MethodRef));
+                        continue;
+                    }
+
+                    if (paramType.IsArray && paramType.GetElementType() == typeSystem.UInt64)
+                    {
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeUlongArray_MethodRef));
                         continue;
                     }
 
                     if (paramType == typeSystem.Single)
                     {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteSinglePacked_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeFloat_MethodRef));
+                        continue;
+                    }
+
+                    if (paramType.IsArray && paramType.GetElementType() == typeSystem.Single)
+                    {
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeFloatArray_MethodRef));
                         continue;
                     }
 
                     if (paramType == typeSystem.Double)
                     {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteDoublePacked_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeDouble_MethodRef));
+                        continue;
+                    }
+
+                    if (paramType.IsArray && paramType.GetElementType() == typeSystem.Double)
+                    {
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeDoubleArray_MethodRef));
                         continue;
                     }
 
                     if (paramType == typeSystem.String)
                     {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteStringPacked_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeString_MethodRef));
                         continue;
                     }
 
+                    if (paramType.IsArray && paramType.GetElementType() == typeSystem.String)
+                    {
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeStringArray_MethodRef));
+                        continue;
+                    }
+
+                    // Unity primitives (+arrays)
+
                     if (paramType.FullName == CodeGenHelpers.UnityColor_FullName)
                     {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteColorPacked_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeColor_MethodRef));
+                        continue;
+                    }
+
+                    if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityColor_FullName)
+                    {
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeColorArray_MethodRef));
+                        continue;
+                    }
+
+                    if (paramType.FullName == CodeGenHelpers.UnityColor32_FullName)
+                    {
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeColor32_MethodRef));
+                        continue;
+                    }
+
+                    if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityColor32_FullName)
+                    {
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeColor32Array_MethodRef));
                         continue;
                     }
 
                     if (paramType.FullName == CodeGenHelpers.UnityVector2_FullName)
                     {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteVector2Packed_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeVector2_MethodRef));
+                        continue;
+                    }
+
+                    if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityVector2_FullName)
+                    {
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeVector2Array_MethodRef));
                         continue;
                     }
 
                     if (paramType.FullName == CodeGenHelpers.UnityVector3_FullName)
                     {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteVector3Packed_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeVector3_MethodRef));
+                        continue;
+                    }
+
+                    if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityVector3_FullName)
+                    {
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeVector3Array_MethodRef));
                         continue;
                     }
 
                     if (paramType.FullName == CodeGenHelpers.UnityVector4_FullName)
                     {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteVector4Packed_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeVector4_MethodRef));
+                        continue;
+                    }
+
+                    if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityVector4_FullName)
+                    {
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeVector4Array_MethodRef));
                         continue;
                     }
 
                     if (paramType.FullName == CodeGenHelpers.UnityQuaternion_FullName)
                     {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteRotationPacked_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeQuaternion_MethodRef));
+                        continue;
+                    }
+
+                    if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityQuaternion_FullName)
+                    {
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeQuaternionArray_MethodRef));
                         continue;
                     }
 
                     if (paramType.FullName == CodeGenHelpers.UnityRay_FullName)
                     {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteRayPacked_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeRay_MethodRef));
+                        continue;
+                    }
+
+                    if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityRay_FullName)
+                    {
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeRayArray_MethodRef));
                         continue;
                     }
 
                     if (paramType.FullName == CodeGenHelpers.UnityRay2D_FullName)
                     {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteRay2DPacked_MethodRef));
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeRay2D_MethodRef));
                         continue;
                     }
 
-                    // INetworkSerializable
+                    if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityRay2D_FullName)
+                    {
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeRay2DArray_MethodRef));
+                        continue;
+                    }
+
+                    // Enum // todo: (+arrays)
+
+                    {
+                        var paramEnumIntType = paramType.GetEnumAsInt();
+                        if (paramEnumIntType != null)
+                        {
+                            instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                            instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+
+                            if (paramEnumIntType == typeSystem.Int32)
+                            {
+                                instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeInt_MethodRef));
+                                continue;
+                            }
+
+                            if (paramEnumIntType == typeSystem.UInt32)
+                            {
+                                instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeUint_MethodRef));
+                                continue;
+                            }
+
+                            if (paramEnumIntType == typeSystem.Byte)
+                            {
+                                instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeByte_MethodRef));
+                                continue;
+                            }
+
+                            if (paramEnumIntType == typeSystem.SByte)
+                            {
+                                instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeSbyte_MethodRef));
+                                continue;
+                            }
+
+                            if (paramEnumIntType == typeSystem.Int16)
+                            {
+                                instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeShort_MethodRef));
+                                continue;
+                            }
+
+                            if (paramEnumIntType == typeSystem.UInt16)
+                            {
+                                instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeUshort_MethodRef));
+                                continue;
+                            }
+
+                            if (paramEnumIntType == typeSystem.Int64)
+                            {
+                                instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeLong_MethodRef));
+                                continue;
+                            }
+
+                            if (paramEnumIntType == typeSystem.UInt64)
+                            {
+                                instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeUlong_MethodRef));
+                                continue;
+                            }
+                        }
+                    }
+
+                    // NetworkObject & NetworkBehaviour (+arrays)
+
+                    if (paramType.FullName == CodeGenHelpers.NetworkObject_FullName)
+                    {
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeNetObject_MethodRef));
+                        continue;
+                    }
+
+                    if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.NetworkObject_FullName)
+                    {
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeNetObjectArray_MethodRef));
+                        continue;
+                    }
+
+                    if (paramType.FullName == CodeGenHelpers.NetworkBehaviour_FullName)
+                    {
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeNetBehaviour_MethodRef));
+                        continue;
+                    }
+
+                    if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.NetworkBehaviour_FullName)
+                    {
+                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
+                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeNetBehaviourArray_MethodRef));
+                        continue;
+                    }
+
+                    // INetworkSerializable // todo: (+arrays)
+
                     if (paramType.HasInterface(CodeGenHelpers.INetworkSerializable_FullName))
                     {
                         var paramTypeDef = paramType.Resolve();
-                        var paramTypeNetworkWrite_MethodDef = paramTypeDef.Methods.FirstOrDefault(m => m.Name == CodeGenHelpers.INetworkSerializable_NetworkWrite_Name);
-                        if (paramTypeNetworkWrite_MethodDef != null)
+                        var paramTypeNetworkSerialize_MethodDef = paramTypeDef.Methods.FirstOrDefault(m => m.Name == CodeGenHelpers.INetworkSerializable_NetworkSerialize_Name);
+                        if (paramTypeNetworkSerialize_MethodDef != null)
                         {
                             if (paramType.IsValueType)
                             {
                                 // struct (pass by value)
                                 instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                                instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
-                                instructions.Add(processor.Create(OpCodes.Call, paramTypeNetworkWrite_MethodDef));
+                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                                instructions.Add(processor.Create(OpCodes.Call, paramTypeNetworkSerialize_MethodDef));
                             }
                             else
                             {
                                 // class (pass by reference)
                                 instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                                instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
-                                instructions.Add(processor.Create(OpCodes.Callvirt, paramTypeNetworkWrite_MethodDef));
+                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                                instructions.Add(processor.Create(OpCodes.Callvirt, paramTypeNetworkSerialize_MethodDef));
                             }
-
-                            continue;
-                        }
-                    }
-
-                    // Enum
-                    {
-                        var paramEnumType = paramType.GetEnumAsInt();
-                        if (paramEnumType != null)
-                        {
-                            instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
-                            instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
-                            if (paramEnumType == typeSystem.SByte) instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteSByte_MethodRef));
-                            if (paramEnumType == typeSystem.Byte) instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteByte_MethodRef));
-                            if (paramEnumType == typeSystem.Int16) instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteInt16Packed_MethodRef));
-                            if (paramEnumType == typeSystem.UInt16) instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteUInt16Packed_MethodRef));
-                            if (paramEnumType == typeSystem.Int32) instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteInt32Packed_MethodRef));
-                            if (paramEnumType == typeSystem.UInt32) instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteUInt32Packed_MethodRef));
-                            if (paramEnumType == typeSystem.Int64) instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteInt64Packed_MethodRef));
-                            if (paramEnumType == typeSystem.UInt64) instructions.Add(processor.Create(OpCodes.Callvirt, BitWriter_WriteUInt64Packed_MethodRef));
 
                             continue;
                         }
@@ -931,16 +1116,16 @@ namespace MLAPI.Editor.CodeGen
 
                 instructions.Add(endInstr);
 
-                // EndSendServerRpc(writer, sendParams, isReliable) -> ServerRpc
-                // EndSendClientRpc(writer, sendParams, isReliable) -> ClientRpc
+                // EndSendServerRpc(serializer, sendParams, isReliable) -> ServerRpc
+                // EndSendClientRpc(serializer, sendParams, isReliable) -> ClientRpc
                 if (isServerRpc)
                 {
                     // ServerRpc
-                    // EndSendServerRpc(writer, sendParams, isReliable);
+                    // EndSendServerRpc(serializer, sendParams, isReliable);
                     instructions.Add(processor.Create(OpCodes.Ldarg_0));
 
-                    // writer
-                    instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
+                    // serializer
+                    instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
 
                     if (hasRpcParams)
                     {
@@ -963,11 +1148,11 @@ namespace MLAPI.Editor.CodeGen
                 else
                 {
                     // ClientRpc
-                    // EndSendClientRpc(writer, sendParams, isReliable);
+                    // EndSendClientRpc(serializer, sendParams, isReliable);
                     instructions.Add(processor.Create(OpCodes.Ldarg_0));
 
-                    // writer
-                    instructions.Add(processor.Create(OpCodes.Ldloc, writerLocIdx));
+                    // serializer
+                    instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
 
                     if (hasRpcParams)
                     {
@@ -1030,7 +1215,7 @@ namespace MLAPI.Editor.CodeGen
                 MethodAttributes.Private | MethodAttributes.Static | MethodAttributes.HideBySig,
                 methodDefinition.Module.TypeSystem.Void);
             nhandler.Parameters.Add(new ParameterDefinition("target", ParameterAttributes.None, NetworkBehaviour_TypeRef));
-            nhandler.Parameters.Add(new ParameterDefinition("reader", ParameterAttributes.None, BitReader_TypeRef));
+            nhandler.Parameters.Add(new ParameterDefinition("serializer", ParameterAttributes.None, BitSerializer_TypeRef));
             nhandler.Parameters.Add(new ParameterDefinition("sender", ParameterAttributes.None, typeSystem.UInt64));
 
             var processor = nhandler.Body.GetILProcessor();
@@ -1047,180 +1232,453 @@ namespace MLAPI.Editor.CodeGen
                 // local variable to storage argument
                 nhandler.Body.Variables.Add(new VariableDefinition(paramType));
 
+                // C# primitives (+arrays)
+
                 if (paramType == typeSystem.Boolean)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Callvirt, BitReader_ReadBool_MethodRef);
-                    processor.Emit(OpCodes.Stloc, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeBool_MethodRef);
+                    continue;
+                }
+
+                if (paramType.IsArray && paramType.GetElementType() == typeSystem.Boolean)
+                {
+                    processor.Emit(OpCodes.Ldarg_1);
+                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeBoolArray_MethodRef);
                     continue;
                 }
 
                 if (paramType == typeSystem.Char)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Callvirt, BitReader_ReadChar_MethodRef);
-                    processor.Emit(OpCodes.Stloc, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeChar_MethodRef);
+                    continue;
+                }
+
+                if (paramType.IsArray && paramType.GetElementType() == typeSystem.Char)
+                {
+                    processor.Emit(OpCodes.Ldarg_1);
+                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeCharArray_MethodRef);
                     continue;
                 }
 
                 if (paramType == typeSystem.SByte)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Callvirt, BitReader_ReadSByte_MethodRef);
-                    processor.Emit(OpCodes.Stloc, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeSbyte_MethodRef);
+                    continue;
+                }
+
+                if (paramType.IsArray && paramType.GetElementType() == typeSystem.SByte)
+                {
+                    processor.Emit(OpCodes.Ldarg_1);
+                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeSbyteArray_MethodRef);
                     continue;
                 }
 
                 if (paramType == typeSystem.Byte)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Callvirt, BitReader_ReadByte_MethodRef);
-                    processor.Emit(OpCodes.Stloc, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeByte_MethodRef);
+                    continue;
+                }
+
+                if (paramType.IsArray && paramType.GetElementType() == typeSystem.Byte)
+                {
+                    processor.Emit(OpCodes.Ldarg_1);
+                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeByteArray_MethodRef);
                     continue;
                 }
 
                 if (paramType == typeSystem.Int16)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Callvirt, BitReader_ReadInt16Packed_MethodRef);
-                    processor.Emit(OpCodes.Stloc, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeShort_MethodRef);
+                    continue;
+                }
+
+                if (paramType.IsArray && paramType.GetElementType() == typeSystem.Int16)
+                {
+                    processor.Emit(OpCodes.Ldarg_1);
+                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeShortArray_MethodRef);
                     continue;
                 }
 
                 if (paramType == typeSystem.UInt16)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Callvirt, BitReader_ReadUInt16Packed_MethodRef);
-                    processor.Emit(OpCodes.Stloc, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeUshort_MethodRef);
+                    continue;
+                }
+
+                if (paramType.IsArray && paramType.GetElementType() == typeSystem.UInt16)
+                {
+                    processor.Emit(OpCodes.Ldarg_1);
+                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeUshortArray_MethodRef);
                     continue;
                 }
 
                 if (paramType == typeSystem.Int32)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Callvirt, BitReader_ReadInt32Packed_MethodRef);
-                    processor.Emit(OpCodes.Stloc, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeInt_MethodRef);
+                    continue;
+                }
+
+                if (paramType.IsArray && paramType.GetElementType() == typeSystem.Int32)
+                {
+                    processor.Emit(OpCodes.Ldarg_1);
+                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeIntArray_MethodRef);
                     continue;
                 }
 
                 if (paramType == typeSystem.UInt32)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Callvirt, BitReader_ReadUInt32Packed_MethodRef);
-                    processor.Emit(OpCodes.Stloc, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeUint_MethodRef);
+                    continue;
+                }
+
+                if (paramType.IsArray && paramType.GetElementType() == typeSystem.UInt32)
+                {
+                    processor.Emit(OpCodes.Ldarg_1);
+                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeUintArray_MethodRef);
                     continue;
                 }
 
                 if (paramType == typeSystem.Int64)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Callvirt, BitReader_ReadInt64Packed_MethodRef);
-                    processor.Emit(OpCodes.Stloc, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeLong_MethodRef);
+                    continue;
+                }
+
+                if (paramType.IsArray && paramType.GetElementType() == typeSystem.Int64)
+                {
+                    processor.Emit(OpCodes.Ldarg_1);
+                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeLongArray_MethodRef);
                     continue;
                 }
 
                 if (paramType == typeSystem.UInt64)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Callvirt, BitReader_ReadUInt64Packed_MethodRef);
-                    processor.Emit(OpCodes.Stloc, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeUlong_MethodRef);
+                    continue;
+                }
+
+                if (paramType.IsArray && paramType.GetElementType() == typeSystem.UInt64)
+                {
+                    processor.Emit(OpCodes.Ldarg_1);
+                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeUlongArray_MethodRef);
                     continue;
                 }
 
                 if (paramType == typeSystem.Single)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Callvirt, BitReader_ReadSinglePacked_MethodRef);
-                    processor.Emit(OpCodes.Stloc, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeFloat_MethodRef);
+                    continue;
+                }
+
+                if (paramType.IsArray && paramType.GetElementType() == typeSystem.Single)
+                {
+                    processor.Emit(OpCodes.Ldarg_1);
+                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeFloatArray_MethodRef);
                     continue;
                 }
 
                 if (paramType == typeSystem.Double)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Callvirt, BitReader_ReadDoublePacked_MethodRef);
-                    processor.Emit(OpCodes.Stloc, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeDouble_MethodRef);
+                    continue;
+                }
+
+                if (paramType.IsArray && paramType.GetElementType() == typeSystem.Double)
+                {
+                    processor.Emit(OpCodes.Ldarg_1);
+                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeDoubleArray_MethodRef);
                     continue;
                 }
 
                 if (paramType == typeSystem.String)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldnull);
-                    processor.Emit(OpCodes.Callvirt, BitReader_ReadStringPacked_MethodRef);
-                    processor.Emit(OpCodes.Stloc, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeString_MethodRef);
                     continue;
                 }
+
+                if (paramType.IsArray && paramType.GetElementType() == typeSystem.String)
+                {
+                    processor.Emit(OpCodes.Ldarg_1);
+                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeStringArray_MethodRef);
+                    continue;
+                }
+
+                // Unity primitives (+arrays)
 
                 if (paramType.FullName == CodeGenHelpers.UnityColor_FullName)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Callvirt, BitReader_ReadColorPacked_MethodRef);
-                    processor.Emit(OpCodes.Stloc, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeColor_MethodRef);
+                    continue;
+                }
+
+                if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityColor_FullName)
+                {
+                    processor.Emit(OpCodes.Ldarg_1);
+                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeColorArray_MethodRef);
+                    continue;
+                }
+
+                if (paramType.FullName == CodeGenHelpers.UnityColor32_FullName)
+                {
+                    processor.Emit(OpCodes.Ldarg_1);
+                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeColor32_MethodRef);
+                    continue;
+                }
+
+                if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityColor32_FullName)
+                {
+                    processor.Emit(OpCodes.Ldarg_1);
+                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeColor32Array_MethodRef);
                     continue;
                 }
 
                 if (paramType.FullName == CodeGenHelpers.UnityVector2_FullName)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Callvirt, BitReader_ReadVector2Packed_MethodRef);
-                    processor.Emit(OpCodes.Stloc, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeVector2_MethodRef);
+                    continue;
+                }
+
+                if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityVector2_FullName)
+                {
+                    processor.Emit(OpCodes.Ldarg_1);
+                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeVector2Array_MethodRef);
                     continue;
                 }
 
                 if (paramType.FullName == CodeGenHelpers.UnityVector3_FullName)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Callvirt, BitReader_ReadVector3Packed_MethodRef);
-                    processor.Emit(OpCodes.Stloc, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeVector3_MethodRef);
+                    continue;
+                }
+
+                if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityVector3_FullName)
+                {
+                    processor.Emit(OpCodes.Ldarg_1);
+                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeVector3Array_MethodRef);
                     continue;
                 }
 
                 if (paramType.FullName == CodeGenHelpers.UnityVector4_FullName)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Callvirt, BitReader_ReadVector4Packed_MethodRef);
-                    processor.Emit(OpCodes.Stloc, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeVector4_MethodRef);
+                    continue;
+                }
+
+                if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityVector4_FullName)
+                {
+                    processor.Emit(OpCodes.Ldarg_1);
+                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeVector4Array_MethodRef);
                     continue;
                 }
 
                 if (paramType.FullName == CodeGenHelpers.UnityQuaternion_FullName)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Callvirt, BitReader_ReadRotationPacked_MethodRef);
-                    processor.Emit(OpCodes.Stloc, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeQuaternion_MethodRef);
+                    continue;
+                }
+
+                if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityQuaternion_FullName)
+                {
+                    processor.Emit(OpCodes.Ldarg_1);
+                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeQuaternionArray_MethodRef);
                     continue;
                 }
 
                 if (paramType.FullName == CodeGenHelpers.UnityRay_FullName)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Callvirt, BitReader_ReadRayPacked_MethodRef);
-                    processor.Emit(OpCodes.Stloc, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeRay_MethodRef);
+                    continue;
+                }
+
+                if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityRay_FullName)
+                {
+                    processor.Emit(OpCodes.Ldarg_1);
+                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeRayArray_MethodRef);
                     continue;
                 }
 
                 if (paramType.FullName == CodeGenHelpers.UnityRay2D_FullName)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Callvirt, BitReader_ReadRay2DPacked_MethodRef);
-                    processor.Emit(OpCodes.Stloc, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeRay2D_MethodRef);
                     continue;
                 }
 
-                // INetworkSerializable
+                if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityRay2D_FullName)
+                {
+                    processor.Emit(OpCodes.Ldarg_1);
+                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeRay2DArray_MethodRef);
+                    continue;
+                }
+
+                // Enum // todo: (+arrays)
+
+                {
+                    var paramEnumIntType = paramType.GetEnumAsInt();
+                    if (paramEnumIntType != null)
+                    {
+                        processor.Emit(OpCodes.Ldarg_1);
+                        processor.Emit(OpCodes.Ldloca, paramIndex);
+
+                        if (paramEnumIntType == typeSystem.Int32)
+                        {
+                            processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeInt_MethodRef);
+                            continue;
+                        }
+
+                        if (paramEnumIntType == typeSystem.UInt32)
+                        {
+                            processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeUint_MethodRef);
+                            continue;
+                        }
+
+                        if (paramEnumIntType == typeSystem.Byte)
+                        {
+                            processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeByte_MethodRef);
+                            continue;
+                        }
+
+                        if (paramEnumIntType == typeSystem.SByte)
+                        {
+                            processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeSbyte_MethodRef);
+                            continue;
+                        }
+
+                        if (paramEnumIntType == typeSystem.Int16)
+                        {
+                            processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeShort_MethodRef);
+                            continue;
+                        }
+
+                        if (paramEnumIntType == typeSystem.UInt16)
+                        {
+                            processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeUshort_MethodRef);
+                            continue;
+                        }
+
+                        if (paramEnumIntType == typeSystem.Int64)
+                        {
+                            processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeLong_MethodRef);
+                            continue;
+                        }
+
+                        if (paramEnumIntType == typeSystem.UInt64)
+                        {
+                            processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeUlong_MethodRef);
+                            continue;
+                        }
+                    }
+                }
+
+                // NetworkObject & NetworkBehaviour (+arrays)
+
+                if (paramType.FullName == CodeGenHelpers.NetworkObject_FullName)
+                {
+                    processor.Emit(OpCodes.Ldarg_1);
+                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeNetObject_MethodRef);
+                    continue;
+                }
+
+                if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.NetworkObject_FullName)
+                {
+                    processor.Emit(OpCodes.Ldarg_1);
+                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeNetObjectArray_MethodRef);
+                    continue;
+                }
+
+                if (paramType.FullName == CodeGenHelpers.NetworkBehaviour_FullName)
+                {
+                    processor.Emit(OpCodes.Ldarg_1);
+                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeNetBehaviour_MethodRef);
+                    continue;
+                }
+
+                if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.NetworkBehaviour_FullName)
+                {
+                    processor.Emit(OpCodes.Ldarg_1);
+                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeNetBehaviourArray_MethodRef);
+                    continue;
+                }
+
+                // INetworkSerializable // todo: (+arrays)
+
                 if (paramType.HasInterface(CodeGenHelpers.INetworkSerializable_FullName))
                 {
                     var paramTypeDef = paramType.Resolve();
-                    var paramTypeNetworkRead_MethodDef = paramTypeDef.Methods.FirstOrDefault(m => m.Name == CodeGenHelpers.INetworkSerializable_NetworkRead_Name);
-                    if (paramTypeNetworkRead_MethodDef != null)
+                    var paramTypeNetworkSerialize_MethodDef = paramTypeDef.Methods.FirstOrDefault(m => m.Name == CodeGenHelpers.INetworkSerializable_NetworkSerialize_Name);
+                    if (paramTypeNetworkSerialize_MethodDef != null)
                     {
                         if (paramType.IsValueType)
                         {
                             // struct (pass by value)
                             processor.Emit(OpCodes.Ldloca, paramIndex);
                             processor.Emit(OpCodes.Ldarg_1);
-                            processor.Emit(OpCodes.Call, paramTypeNetworkRead_MethodDef);
+                            processor.Emit(OpCodes.Call, paramTypeNetworkSerialize_MethodDef);
                         }
                         else
                         {
@@ -1232,32 +1690,12 @@ namespace MLAPI.Editor.CodeGen
                                 processor.Emit(OpCodes.Newobj, paramTypeDefCtor);
                                 processor.Emit(OpCodes.Stloc, paramIndex);
 
-                                // INetworkSerializable.NetworkRead(reader)
+                                // INetworkSerializable.NetworkSerialize(serializer)
                                 processor.Emit(OpCodes.Ldloc, paramIndex);
                                 processor.Emit(OpCodes.Ldarg_1);
-                                processor.Emit(OpCodes.Callvirt, paramTypeNetworkRead_MethodDef);
+                                processor.Emit(OpCodes.Callvirt, paramTypeNetworkSerialize_MethodDef);
                             }
                         }
-
-                        continue;
-                    }
-                }
-
-                // Enum
-                {
-                    var paramEnumType = paramType.GetEnumAsInt();
-                    if (paramEnumType != null)
-                    {
-                        processor.Emit(OpCodes.Ldarg_1);
-                        if (paramEnumType == typeSystem.SByte) processor.Emit(OpCodes.Callvirt, BitReader_ReadSByte_MethodRef);
-                        if (paramEnumType == typeSystem.Byte) processor.Emit(OpCodes.Callvirt, BitReader_ReadByte_MethodRef);
-                        if (paramEnumType == typeSystem.Int16) processor.Emit(OpCodes.Callvirt, BitReader_ReadInt16Packed_MethodRef);
-                        if (paramEnumType == typeSystem.UInt16) processor.Emit(OpCodes.Callvirt, BitReader_ReadUInt16Packed_MethodRef);
-                        if (paramEnumType == typeSystem.Int32) processor.Emit(OpCodes.Callvirt, BitReader_ReadInt32Packed_MethodRef);
-                        if (paramEnumType == typeSystem.UInt32) processor.Emit(OpCodes.Callvirt, BitReader_ReadUInt32Packed_MethodRef);
-                        if (paramEnumType == typeSystem.Int64) processor.Emit(OpCodes.Callvirt, BitReader_ReadInt64Packed_MethodRef);
-                        if (paramEnumType == typeSystem.UInt64) processor.Emit(OpCodes.Callvirt, BitReader_ReadUInt64Packed_MethodRef);
-                        processor.Emit(OpCodes.Stloc, paramIndex);
 
                         continue;
                     }

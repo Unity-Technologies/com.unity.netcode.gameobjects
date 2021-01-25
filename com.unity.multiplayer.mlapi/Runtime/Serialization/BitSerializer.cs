@@ -9,15 +9,18 @@ namespace MLAPI.Serialization
         private readonly BitReader m_Reader;
         private readonly BitWriter m_Writer;
 
+        public BitReader Reader => m_Reader;
+        public BitWriter Writer => m_Writer;
+
         public bool IsReading { get; }
 
-        internal BitSerializer(BitReader reader)
+        public BitSerializer(BitReader reader)
         {
             m_Reader = reader;
             IsReading = true;
         }
 
-        internal BitSerializer(BitWriter writer)
+        public BitSerializer(BitWriter writer)
         {
             m_Writer = writer;
             IsReading = false;
