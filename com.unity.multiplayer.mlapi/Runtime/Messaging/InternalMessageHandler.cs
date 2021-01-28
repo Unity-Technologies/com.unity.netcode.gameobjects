@@ -221,18 +221,7 @@ namespace MLAPI.Messaging
                     return;
                 }
 
-                if (NetworkingManager.Singleton.NetworkConfig.ConnectionApproval)
-                {
-                    byte[] connectionBuffer = reader.ReadByteArray();
-                    NetworkingManager.Singleton.InvokeConnectionApproval(connectionBuffer, clientId, (createPlayerObject, playerPrefabHash, approved, position, rotation) =>
-                    {
-                        NetworkingManager.Singleton.HandleApproval(clientId, createPlayerObject, playerPrefabHash, approved, position, rotation);
-                    });
-                }
-                else
-                {
-                    NetworkingManager.Singleton.HandleApproval(clientId, NetworkingManager.Singleton.NetworkConfig.CreatePlayerPrefab, null, true, null, null);
-                }
+                NetworkingManager.Singleton.HandleConnectionApproval(reader.ReadByteArray(), clientId);
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleConnectionRequest.End();

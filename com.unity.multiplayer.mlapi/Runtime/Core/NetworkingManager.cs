@@ -618,26 +618,8 @@ namespace MLAPI
             IsServer = true;
             IsClient = true;
             IsListening = true;
-
-            ulong hostClientId = NetworkConfig.NetworkTransport.ServerClientId;
-
-            ConnectedClients.Add(hostClientId, new NetworkedClient()
-            {
-                ClientId = hostClientId
-            });
-
-            ConnectedClientsList.Add(ConnectedClients[hostClientId]);
-
-            if ((createPlayerObject == null && NetworkConfig.CreatePlayerPrefab) || (createPlayerObject != null && createPlayerObject.Value))
-            {
-                NetworkedObject netObject = SpawnManager.CreateLocalNetworkedObject(false, 0, (prefabHash == null ? NetworkConfig.PlayerPrefabHash.Value : prefabHash.Value), null, position, rotation);
-                SpawnManager.SpawnNetworkedObjectLocally(netObject, SpawnManager.GetNetworkObjectId(), false, true, hostClientId, payloadStream, payloadStream != null, payloadStream == null ? 0 : (int)payloadStream.Length, false, false);
-
-                if (netObject.CheckObjectVisibility == null || netObject.CheckObjectVisibility(hostClientId))
-                {
-                    netObject.observers.Add(hostClientId);
-                }
-            }
+            
+            HandleConnectionApproval(NetworkConfig.ConnectionData, ServerClientId);
 
             SpawnManager.ServerSpawnSceneObjectsOnStartSweep();
 
@@ -1442,7 +1424,22 @@ namespace MLAPI
 
         private readonly List<NetworkedObject> _observedObjects = new List<NetworkedObject>();
 
-        internal void HandleApproval(ulong clientId, bool createPlayerObject, ulong? playerPrefabHash, bool approved, Vector3? position, Quaternion? rotation)
+        internal void HandleConnectionApproval(byte[] connectionBuffer, ulong clientId)
+        {
+            if (NetworkConfig.ConnectionApproval)
+            {
+                InvokeConnectionApproval(connectionBuffer, clientId, (createPlayerObject, playerPrefabHash, approved, position, rotation) =>
+                {
+                    HandleApproval(clientId, createPlayerObject, playerPrefabHash, approved, position, rotation);
+                });
+            }
+            else
+            {
+                HandleApproval(clientId, NetworkingManager.Singleton.NetworkConfig.CreatePlayerPrefab, null, true, null, null);
+            }
+        }
+        
+        private void HandleApproval(ulong clientId, bool createPlayerObject, ulong? playerPrefabHash, bool approved, Vector3? position, Quaternion? rotation)
         {
             if (approved)
             {
