@@ -197,10 +197,10 @@ namespace MLAPI.Editor.CodeGen
                         switch (message.DiagnosticType)
                         {
                             case DiagnosticType.Error:
-                                Debug.LogError($"ILPostProcessor Error - {message.MessageData} {message.File} {message.Line} {message.Column}");
+                                Debug.LogError($"ILPostProcessor Error - {message.MessageData} {message.File}:{message.Line}");
                                 break;
                             case DiagnosticType.Warning:
-                                Debug.LogWarning($"ILPostProcessor Warning - {message.MessageData} {message.File} {message.Line} {message.Column}");
+                                Debug.LogWarning($"ILPostProcessor Warning - {message.MessageData} {message.File}:{message.Line}");
                                 break;
                         }
                     }

@@ -22,7 +22,6 @@ namespace MLAPI.Editor.CodeGen
     {
         public const string RuntimeAssemblyName = "Unity.Multiplayer.MLAPI.Runtime";
 
-        public static readonly string NetworkObject_FullName = typeof(NetworkedObject).FullName;
         public static readonly string NetworkBehaviour_FullName = typeof(NetworkedBehaviour).FullName;
         public static readonly string ServerRpcAttribute_FullName = typeof(ServerRpcAttribute).FullName;
         public static readonly string ClientRpcAttribute_FullName = typeof(ClientRpcAttribute).FullName;
@@ -124,10 +123,6 @@ namespace MLAPI.Editor.CodeGen
             // Enum
             if (typeReference.GetEnumAsInt() != null) return true;
 
-            // NetworkObject & NetworkBehaviour
-            if (typeReference.FullName == NetworkObject_FullName) return true;
-            if (typeReference.FullName == NetworkBehaviour_FullName) return true;
-
             // INetworkSerializable
             if (typeReference.HasInterface(INetworkSerializable_FullName)) return true;
 
@@ -139,6 +134,8 @@ namespace MLAPI.Editor.CodeGen
 
         public static TypeReference GetEnumAsInt(this TypeReference typeReference)
         {
+            if (typeReference.IsArray) return null;
+
             try
             {
                 var typeDef = typeReference.Resolve();

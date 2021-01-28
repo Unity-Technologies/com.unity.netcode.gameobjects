@@ -123,8 +123,6 @@ namespace MLAPI.Editor.CodeGen
         private MethodReference BitSerializer_SerializeQuaternion_MethodRef;
         private MethodReference BitSerializer_SerializeRay_MethodRef;
         private MethodReference BitSerializer_SerializeRay2D_MethodRef;
-        private MethodReference BitSerializer_SerializeNetObject_MethodRef;
-        private MethodReference BitSerializer_SerializeNetBehaviour_MethodRef;
         private MethodReference BitSerializer_SerializeBoolArray_MethodRef;
         private MethodReference BitSerializer_SerializeCharArray_MethodRef;
         private MethodReference BitSerializer_SerializeSbyteArray_MethodRef;
@@ -146,8 +144,6 @@ namespace MLAPI.Editor.CodeGen
         private MethodReference BitSerializer_SerializeQuaternionArray_MethodRef;
         private MethodReference BitSerializer_SerializeRayArray_MethodRef;
         private MethodReference BitSerializer_SerializeRay2DArray_MethodRef;
-        private MethodReference BitSerializer_SerializeNetObjectArray_MethodRef;
-        private MethodReference BitSerializer_SerializeNetBehaviourArray_MethodRef;
 
         private const string k_NetworkingManager_Singleton = nameof(NetworkingManager.Singleton);
         private const string k_NetworkingManager_IsListening = nameof(NetworkingManager.IsListening);
@@ -318,8 +314,6 @@ namespace MLAPI.Editor.CodeGen
                 else if (paramTypeName == typeof(Quaternion).MakeByRefType().Name) BitSerializer_SerializeQuaternion_MethodRef = moduleDefinition.ImportReference(methodInfo);
                 else if (paramTypeName == typeof(Ray).MakeByRefType().Name) BitSerializer_SerializeRay_MethodRef = moduleDefinition.ImportReference(methodInfo);
                 else if (paramTypeName == typeof(Ray2D).MakeByRefType().Name) BitSerializer_SerializeRay2D_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(NetworkedObject).MakeByRefType().Name) BitSerializer_SerializeNetObject_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(NetworkedBehaviour).MakeByRefType().Name) BitSerializer_SerializeNetBehaviour_MethodRef = moduleDefinition.ImportReference(methodInfo);
                 else if (paramTypeName == typeof(bool[]).MakeByRefType().Name) BitSerializer_SerializeBoolArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
                 else if (paramTypeName == typeof(char[]).MakeByRefType().Name) BitSerializer_SerializeCharArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
                 else if (paramTypeName == typeof(sbyte[]).MakeByRefType().Name) BitSerializer_SerializeSbyteArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
@@ -341,8 +335,6 @@ namespace MLAPI.Editor.CodeGen
                 else if (paramTypeName == typeof(Quaternion[]).MakeByRefType().Name) BitSerializer_SerializeQuaternionArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
                 else if (paramTypeName == typeof(Ray[]).MakeByRefType().Name) BitSerializer_SerializeRayArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
                 else if (paramTypeName == typeof(Ray2D[]).MakeByRefType().Name) BitSerializer_SerializeRay2DArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(NetworkedObject[]).MakeByRefType().Name) BitSerializer_SerializeNetObjectArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
-                else if (paramTypeName == typeof(NetworkedBehaviour[]).MakeByRefType().Name) BitSerializer_SerializeNetBehaviourArray_MethodRef = moduleDefinition.ImportReference(methodInfo);
             }
 
             return true;
@@ -993,97 +985,290 @@ namespace MLAPI.Editor.CodeGen
                         continue;
                     }
 
-                    // Enum // todo: (+arrays)
+                    // Enum
 
                     {
                         var paramEnumIntType = paramType.GetEnumAsInt();
                         if (paramEnumIntType != null)
                         {
-                            instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                            instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-
                             if (paramEnumIntType == typeSystem.Int32)
                             {
+                                methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.Int32));
+                                int localIndex = methodDefinition.Body.Variables.Count - 1;
+
+                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
+                                instructions.Add(processor.Create(OpCodes.Stloc, localIndex));
+
+                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                                instructions.Add(processor.Create(OpCodes.Ldloca, localIndex));
                                 instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeInt_MethodRef));
                                 continue;
                             }
 
                             if (paramEnumIntType == typeSystem.UInt32)
                             {
+                                methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.UInt32));
+                                int localIndex = methodDefinition.Body.Variables.Count - 1;
+
+                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
+                                instructions.Add(processor.Create(OpCodes.Stloc, localIndex));
+
+                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                                instructions.Add(processor.Create(OpCodes.Ldloca, localIndex));
                                 instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeUint_MethodRef));
                                 continue;
                             }
 
                             if (paramEnumIntType == typeSystem.Byte)
                             {
+                                methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.Byte));
+                                int localIndex = methodDefinition.Body.Variables.Count - 1;
+
+                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
+                                instructions.Add(processor.Create(OpCodes.Stloc, localIndex));
+
+                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                                instructions.Add(processor.Create(OpCodes.Ldloca, localIndex));
                                 instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeByte_MethodRef));
                                 continue;
                             }
 
                             if (paramEnumIntType == typeSystem.SByte)
                             {
+                                methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.SByte));
+                                int localIndex = methodDefinition.Body.Variables.Count - 1;
+
+                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
+                                instructions.Add(processor.Create(OpCodes.Stloc, localIndex));
+
+                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                                instructions.Add(processor.Create(OpCodes.Ldloca, localIndex));
                                 instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeSbyte_MethodRef));
                                 continue;
                             }
 
                             if (paramEnumIntType == typeSystem.Int16)
                             {
+                                methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.Int16));
+                                int localIndex = methodDefinition.Body.Variables.Count - 1;
+
+                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
+                                instructions.Add(processor.Create(OpCodes.Stloc, localIndex));
+
+                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                                instructions.Add(processor.Create(OpCodes.Ldloca, localIndex));
                                 instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeShort_MethodRef));
                                 continue;
                             }
 
                             if (paramEnumIntType == typeSystem.UInt16)
                             {
+                                methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.UInt16));
+                                int localIndex = methodDefinition.Body.Variables.Count - 1;
+
+                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
+                                instructions.Add(processor.Create(OpCodes.Stloc, localIndex));
+
+                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                                instructions.Add(processor.Create(OpCodes.Ldloca, localIndex));
                                 instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeUshort_MethodRef));
                                 continue;
                             }
 
                             if (paramEnumIntType == typeSystem.Int64)
                             {
+                                methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.Int64));
+                                int localIndex = methodDefinition.Body.Variables.Count - 1;
+
+                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
+                                instructions.Add(processor.Create(OpCodes.Stloc, localIndex));
+
+                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                                instructions.Add(processor.Create(OpCodes.Ldloca, localIndex));
                                 instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeLong_MethodRef));
                                 continue;
                             }
 
                             if (paramEnumIntType == typeSystem.UInt64)
                             {
+                                methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.UInt64));
+                                int localIndex = methodDefinition.Body.Variables.Count - 1;
+
+                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
+                                instructions.Add(processor.Create(OpCodes.Stloc, localIndex));
+
+                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                                instructions.Add(processor.Create(OpCodes.Ldloca, localIndex));
                                 instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeUlong_MethodRef));
                                 continue;
                             }
                         }
                     }
 
-                    // NetworkObject & NetworkBehaviour (+arrays)
+                    // Enum array
 
-                    if (paramType.FullName == CodeGenHelpers.NetworkObject_FullName)
+                    if (paramType.IsArray)
                     {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeNetObject_MethodRef));
-                        continue;
-                    }
+                        var paramElemEnumIntType = paramType.GetElementType().GetEnumAsInt();
+                        if (paramElemEnumIntType != null)
+                        {
+                            methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.Int32));
+                            int arrLenLocalIndex = methodDefinition.Body.Variables.Count - 1;
 
-                    if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.NetworkObject_FullName)
-                    {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeNetObjectArray_MethodRef));
-                        continue;
-                    }
+                            var endifInstr = processor.Create(OpCodes.Nop);
+                            var arrLenInstr = processor.Create(OpCodes.Nop);
 
-                    if (paramType.FullName == CodeGenHelpers.NetworkBehaviour_FullName)
-                    {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeNetBehaviour_MethodRef));
-                        continue;
-                    }
+                            instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
+                            instructions.Add(processor.Create(OpCodes.Brtrue, arrLenInstr));
+                            instructions.Add(processor.Create(OpCodes.Ldc_I4_M1));
+                            instructions.Add(processor.Create(OpCodes.Br, endifInstr));
+                            instructions.Add(arrLenInstr);
+                            instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
+                            instructions.Add(processor.Create(OpCodes.Ldlen));
+                            instructions.Add(processor.Create(OpCodes.Conv_I4));
+                            instructions.Add(endifInstr);
+                            instructions.Add(processor.Create(OpCodes.Stloc, arrLenLocalIndex));
 
-                    if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.NetworkBehaviour_FullName)
-                    {
-                        instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
-                        instructions.Add(processor.Create(OpCodes.Ldarga, paramIndex + 1));
-                        instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeNetBehaviourArray_MethodRef));
-                        continue;
+                            instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                            instructions.Add(processor.Create(OpCodes.Ldloca, arrLenLocalIndex));
+                            instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeInt_MethodRef));
+                            
+                            methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.Int32));
+                            int counterLocalIndex = methodDefinition.Body.Variables.Count - 1;
+
+                            var forBodyInstr = processor.Create(OpCodes.Nop);
+                            var forCheckInstr = processor.Create(OpCodes.Nop);
+
+                            instructions.Add(processor.Create(OpCodes.Ldc_I4_0));
+                            instructions.Add(processor.Create(OpCodes.Stloc, counterLocalIndex));
+                            instructions.Add(processor.Create(OpCodes.Br, forCheckInstr));
+                            instructions.Add(forBodyInstr);
+
+                            if (paramElemEnumIntType == typeSystem.Int32)
+                            {
+                                methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.Int32));
+                                int enumValLocalIndex = methodDefinition.Body.Variables.Count - 1;
+
+                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
+                                instructions.Add(processor.Create(OpCodes.Ldloc, counterLocalIndex));
+                                instructions.Add(processor.Create(OpCodes.Ldelem_I4));
+                                instructions.Add(processor.Create(OpCodes.Stloc, enumValLocalIndex));
+
+                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                                instructions.Add(processor.Create(OpCodes.Ldloca, enumValLocalIndex));
+                                instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeInt_MethodRef));
+                            }
+                            else if (paramElemEnumIntType == typeSystem.UInt32)
+                            {
+                                methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.UInt32));
+                                int enumValLocalIndex = methodDefinition.Body.Variables.Count - 1;
+
+                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
+                                instructions.Add(processor.Create(OpCodes.Ldloc, counterLocalIndex));
+                                instructions.Add(processor.Create(OpCodes.Ldelem_U4));
+                                instructions.Add(processor.Create(OpCodes.Stloc, enumValLocalIndex));
+
+                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                                instructions.Add(processor.Create(OpCodes.Ldloca, enumValLocalIndex));
+                                instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeUint_MethodRef));
+                            }
+                            else if (paramElemEnumIntType == typeSystem.Byte)
+                            {
+                                methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.Byte));
+                                int enumValLocalIndex = methodDefinition.Body.Variables.Count - 1;
+
+                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
+                                instructions.Add(processor.Create(OpCodes.Ldloc, counterLocalIndex));
+                                instructions.Add(processor.Create(OpCodes.Ldelem_U1));
+                                instructions.Add(processor.Create(OpCodes.Stloc, enumValLocalIndex));
+
+                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                                instructions.Add(processor.Create(OpCodes.Ldloca, enumValLocalIndex));
+                                instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeByte_MethodRef));
+                            }
+                            else if (paramElemEnumIntType == typeSystem.SByte)
+                            {
+                                methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.SByte));
+                                int enumValLocalIndex = methodDefinition.Body.Variables.Count - 1;
+
+                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
+                                instructions.Add(processor.Create(OpCodes.Ldloc, counterLocalIndex));
+                                instructions.Add(processor.Create(OpCodes.Ldelem_I1));
+                                instructions.Add(processor.Create(OpCodes.Stloc, enumValLocalIndex));
+
+                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                                instructions.Add(processor.Create(OpCodes.Ldloca, enumValLocalIndex));
+                                instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeSbyte_MethodRef));
+                            }
+                            else if (paramElemEnumIntType == typeSystem.Int16)
+                            {
+                                methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.Int16));
+                                int enumValLocalIndex = methodDefinition.Body.Variables.Count - 1;
+
+                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
+                                instructions.Add(processor.Create(OpCodes.Ldloc, counterLocalIndex));
+                                instructions.Add(processor.Create(OpCodes.Ldelem_I2));
+                                instructions.Add(processor.Create(OpCodes.Stloc, enumValLocalIndex));
+
+                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                                instructions.Add(processor.Create(OpCodes.Ldloca, enumValLocalIndex));
+                                instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeShort_MethodRef));
+                            }
+                            else if (paramElemEnumIntType == typeSystem.UInt16)
+                            {
+                                methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.UInt16));
+                                int enumValLocalIndex = methodDefinition.Body.Variables.Count - 1;
+
+                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
+                                instructions.Add(processor.Create(OpCodes.Ldloc, counterLocalIndex));
+                                instructions.Add(processor.Create(OpCodes.Ldelem_U2));
+                                instructions.Add(processor.Create(OpCodes.Stloc, enumValLocalIndex));
+
+                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                                instructions.Add(processor.Create(OpCodes.Ldloca, enumValLocalIndex));
+                                instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeUshort_MethodRef));
+                            }
+                            else if (paramElemEnumIntType == typeSystem.Int64)
+                            {
+                                methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.Int64));
+                                int enumValLocalIndex = methodDefinition.Body.Variables.Count - 1;
+
+                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
+                                instructions.Add(processor.Create(OpCodes.Ldloc, counterLocalIndex));
+                                instructions.Add(processor.Create(OpCodes.Ldelem_I8));
+                                instructions.Add(processor.Create(OpCodes.Stloc, enumValLocalIndex));
+
+                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                                instructions.Add(processor.Create(OpCodes.Ldloca, enumValLocalIndex));
+                                instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeLong_MethodRef));
+                            }
+                            else if (paramElemEnumIntType == typeSystem.UInt64)
+                            {
+                                methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.UInt64));
+                                int enumValLocalIndex = methodDefinition.Body.Variables.Count - 1;
+
+                                instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
+                                instructions.Add(processor.Create(OpCodes.Ldloc, counterLocalIndex));
+                                instructions.Add(processor.Create(OpCodes.Ldelem_I8));
+                                instructions.Add(processor.Create(OpCodes.Stloc, enumValLocalIndex));
+
+                                instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
+                                instructions.Add(processor.Create(OpCodes.Ldloca, enumValLocalIndex));
+                                instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeUlong_MethodRef));
+                            }
+
+                            instructions.Add(processor.Create(OpCodes.Ldloc, counterLocalIndex));
+                            instructions.Add(processor.Create(OpCodes.Ldc_I4_1));
+                            instructions.Add(processor.Create(OpCodes.Add));
+                            instructions.Add(processor.Create(OpCodes.Stloc, counterLocalIndex));
+                            instructions.Add(forCheckInstr);
+                            instructions.Add(processor.Create(OpCodes.Ldloc, counterLocalIndex));
+                            instructions.Add(processor.Create(OpCodes.Ldloc, arrLenLocalIndex));
+                            instructions.Add(processor.Create(OpCodes.Clt));
+                            instructions.Add(processor.Create(OpCodes.Brtrue, forBodyInstr));
+
+                            continue;
+                        }
                     }
 
                     // INetworkSerializable // todo: (+arrays)
@@ -1224,20 +1409,23 @@ namespace MLAPI.Editor.CodeGen
             nhandler.Body.InitLocals = true;
             // read method parameters from stream
             int paramCount = methodDefinition.Parameters.Count;
+            int[] paramLocalMap = new int[paramCount];
             for (int paramIndex = 0; paramIndex < paramCount; ++paramIndex)
             {
                 var paramDef = methodDefinition.Parameters[paramIndex];
                 var paramType = paramDef.ParameterType;
 
-                // local variable to storage argument
+                // local variable
                 nhandler.Body.Variables.Add(new VariableDefinition(paramType));
+                int localIndex = nhandler.Body.Variables.Count - 1;
+                paramLocalMap[paramIndex] = localIndex;
 
                 // C# primitives (+arrays)
 
                 if (paramType == typeSystem.Boolean)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
                     processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeBool_MethodRef);
                     continue;
                 }
@@ -1245,7 +1433,7 @@ namespace MLAPI.Editor.CodeGen
                 if (paramType.IsArray && paramType.GetElementType() == typeSystem.Boolean)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
                     processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeBoolArray_MethodRef);
                     continue;
                 }
@@ -1253,7 +1441,7 @@ namespace MLAPI.Editor.CodeGen
                 if (paramType == typeSystem.Char)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
                     processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeChar_MethodRef);
                     continue;
                 }
@@ -1261,7 +1449,7 @@ namespace MLAPI.Editor.CodeGen
                 if (paramType.IsArray && paramType.GetElementType() == typeSystem.Char)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
                     processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeCharArray_MethodRef);
                     continue;
                 }
@@ -1269,7 +1457,7 @@ namespace MLAPI.Editor.CodeGen
                 if (paramType == typeSystem.SByte)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
                     processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeSbyte_MethodRef);
                     continue;
                 }
@@ -1277,7 +1465,7 @@ namespace MLAPI.Editor.CodeGen
                 if (paramType.IsArray && paramType.GetElementType() == typeSystem.SByte)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
                     processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeSbyteArray_MethodRef);
                     continue;
                 }
@@ -1285,7 +1473,7 @@ namespace MLAPI.Editor.CodeGen
                 if (paramType == typeSystem.Byte)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
                     processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeByte_MethodRef);
                     continue;
                 }
@@ -1293,7 +1481,7 @@ namespace MLAPI.Editor.CodeGen
                 if (paramType.IsArray && paramType.GetElementType() == typeSystem.Byte)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
                     processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeByteArray_MethodRef);
                     continue;
                 }
@@ -1301,7 +1489,7 @@ namespace MLAPI.Editor.CodeGen
                 if (paramType == typeSystem.Int16)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
                     processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeShort_MethodRef);
                     continue;
                 }
@@ -1309,7 +1497,7 @@ namespace MLAPI.Editor.CodeGen
                 if (paramType.IsArray && paramType.GetElementType() == typeSystem.Int16)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
                     processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeShortArray_MethodRef);
                     continue;
                 }
@@ -1317,7 +1505,7 @@ namespace MLAPI.Editor.CodeGen
                 if (paramType == typeSystem.UInt16)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
                     processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeUshort_MethodRef);
                     continue;
                 }
@@ -1325,7 +1513,7 @@ namespace MLAPI.Editor.CodeGen
                 if (paramType.IsArray && paramType.GetElementType() == typeSystem.UInt16)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
                     processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeUshortArray_MethodRef);
                     continue;
                 }
@@ -1333,7 +1521,7 @@ namespace MLAPI.Editor.CodeGen
                 if (paramType == typeSystem.Int32)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
                     processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeInt_MethodRef);
                     continue;
                 }
@@ -1341,7 +1529,7 @@ namespace MLAPI.Editor.CodeGen
                 if (paramType.IsArray && paramType.GetElementType() == typeSystem.Int32)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
                     processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeIntArray_MethodRef);
                     continue;
                 }
@@ -1349,7 +1537,7 @@ namespace MLAPI.Editor.CodeGen
                 if (paramType == typeSystem.UInt32)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
                     processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeUint_MethodRef);
                     continue;
                 }
@@ -1357,7 +1545,7 @@ namespace MLAPI.Editor.CodeGen
                 if (paramType.IsArray && paramType.GetElementType() == typeSystem.UInt32)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
                     processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeUintArray_MethodRef);
                     continue;
                 }
@@ -1365,7 +1553,7 @@ namespace MLAPI.Editor.CodeGen
                 if (paramType == typeSystem.Int64)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
                     processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeLong_MethodRef);
                     continue;
                 }
@@ -1373,7 +1561,7 @@ namespace MLAPI.Editor.CodeGen
                 if (paramType.IsArray && paramType.GetElementType() == typeSystem.Int64)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
                     processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeLongArray_MethodRef);
                     continue;
                 }
@@ -1381,7 +1569,7 @@ namespace MLAPI.Editor.CodeGen
                 if (paramType == typeSystem.UInt64)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
                     processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeUlong_MethodRef);
                     continue;
                 }
@@ -1389,7 +1577,7 @@ namespace MLAPI.Editor.CodeGen
                 if (paramType.IsArray && paramType.GetElementType() == typeSystem.UInt64)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
                     processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeUlongArray_MethodRef);
                     continue;
                 }
@@ -1397,7 +1585,7 @@ namespace MLAPI.Editor.CodeGen
                 if (paramType == typeSystem.Single)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
                     processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeFloat_MethodRef);
                     continue;
                 }
@@ -1405,7 +1593,7 @@ namespace MLAPI.Editor.CodeGen
                 if (paramType.IsArray && paramType.GetElementType() == typeSystem.Single)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
                     processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeFloatArray_MethodRef);
                     continue;
                 }
@@ -1413,7 +1601,7 @@ namespace MLAPI.Editor.CodeGen
                 if (paramType == typeSystem.Double)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
                     processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeDouble_MethodRef);
                     continue;
                 }
@@ -1421,7 +1609,7 @@ namespace MLAPI.Editor.CodeGen
                 if (paramType.IsArray && paramType.GetElementType() == typeSystem.Double)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
                     processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeDoubleArray_MethodRef);
                     continue;
                 }
@@ -1429,7 +1617,7 @@ namespace MLAPI.Editor.CodeGen
                 if (paramType == typeSystem.String)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
                     processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeString_MethodRef);
                     continue;
                 }
@@ -1437,7 +1625,7 @@ namespace MLAPI.Editor.CodeGen
                 if (paramType.IsArray && paramType.GetElementType() == typeSystem.String)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
                     processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeStringArray_MethodRef);
                     continue;
                 }
@@ -1447,7 +1635,7 @@ namespace MLAPI.Editor.CodeGen
                 if (paramType.FullName == CodeGenHelpers.UnityColor_FullName)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
                     processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeColor_MethodRef);
                     continue;
                 }
@@ -1455,7 +1643,7 @@ namespace MLAPI.Editor.CodeGen
                 if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityColor_FullName)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
                     processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeColorArray_MethodRef);
                     continue;
                 }
@@ -1463,7 +1651,7 @@ namespace MLAPI.Editor.CodeGen
                 if (paramType.FullName == CodeGenHelpers.UnityColor32_FullName)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
                     processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeColor32_MethodRef);
                     continue;
                 }
@@ -1471,7 +1659,7 @@ namespace MLAPI.Editor.CodeGen
                 if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityColor32_FullName)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
                     processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeColor32Array_MethodRef);
                     continue;
                 }
@@ -1479,7 +1667,7 @@ namespace MLAPI.Editor.CodeGen
                 if (paramType.FullName == CodeGenHelpers.UnityVector2_FullName)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
                     processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeVector2_MethodRef);
                     continue;
                 }
@@ -1487,7 +1675,7 @@ namespace MLAPI.Editor.CodeGen
                 if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityVector2_FullName)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
                     processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeVector2Array_MethodRef);
                     continue;
                 }
@@ -1495,7 +1683,7 @@ namespace MLAPI.Editor.CodeGen
                 if (paramType.FullName == CodeGenHelpers.UnityVector3_FullName)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
                     processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeVector3_MethodRef);
                     continue;
                 }
@@ -1503,7 +1691,7 @@ namespace MLAPI.Editor.CodeGen
                 if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityVector3_FullName)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
                     processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeVector3Array_MethodRef);
                     continue;
                 }
@@ -1511,7 +1699,7 @@ namespace MLAPI.Editor.CodeGen
                 if (paramType.FullName == CodeGenHelpers.UnityVector4_FullName)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
                     processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeVector4_MethodRef);
                     continue;
                 }
@@ -1519,7 +1707,7 @@ namespace MLAPI.Editor.CodeGen
                 if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityVector4_FullName)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
                     processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeVector4Array_MethodRef);
                     continue;
                 }
@@ -1527,7 +1715,7 @@ namespace MLAPI.Editor.CodeGen
                 if (paramType.FullName == CodeGenHelpers.UnityQuaternion_FullName)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
                     processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeQuaternion_MethodRef);
                     continue;
                 }
@@ -1535,7 +1723,7 @@ namespace MLAPI.Editor.CodeGen
                 if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityQuaternion_FullName)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
                     processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeQuaternionArray_MethodRef);
                     continue;
                 }
@@ -1543,7 +1731,7 @@ namespace MLAPI.Editor.CodeGen
                 if (paramType.FullName == CodeGenHelpers.UnityRay_FullName)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
                     processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeRay_MethodRef);
                     continue;
                 }
@@ -1551,7 +1739,7 @@ namespace MLAPI.Editor.CodeGen
                 if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityRay_FullName)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
                     processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeRayArray_MethodRef);
                     continue;
                 }
@@ -1559,7 +1747,7 @@ namespace MLAPI.Editor.CodeGen
                 if (paramType.FullName == CodeGenHelpers.UnityRay2D_FullName)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
                     processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeRay2D_MethodRef);
                     continue;
                 }
@@ -1567,102 +1755,293 @@ namespace MLAPI.Editor.CodeGen
                 if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.UnityRay2D_FullName)
                 {
                     processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, paramIndex);
+                    processor.Emit(OpCodes.Ldloca, localIndex);
                     processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeRay2DArray_MethodRef);
                     continue;
                 }
 
-                // Enum // todo: (+arrays)
+                // Enum
 
                 {
                     var paramEnumIntType = paramType.GetEnumAsInt();
                     if (paramEnumIntType != null)
                     {
-                        processor.Emit(OpCodes.Ldarg_1);
-                        processor.Emit(OpCodes.Ldloca, paramIndex);
-
                         if (paramEnumIntType == typeSystem.Int32)
                         {
+                            nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.Int32));
+                            int enumLocalIndex = nhandler.Body.Variables.Count - 1;
+
+                            processor.Emit(OpCodes.Ldarg_1);
+                            processor.Emit(OpCodes.Ldloca, enumLocalIndex);
                             processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeInt_MethodRef);
+
+                            processor.Emit(OpCodes.Ldloc, enumLocalIndex);
+                            processor.Emit(OpCodes.Stloc, localIndex);
                             continue;
                         }
 
                         if (paramEnumIntType == typeSystem.UInt32)
                         {
+                            nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.UInt32));
+                            int enumLocalIndex = nhandler.Body.Variables.Count - 1;
+
+                            processor.Emit(OpCodes.Ldarg_1);
+                            processor.Emit(OpCodes.Ldloca, enumLocalIndex);
                             processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeUint_MethodRef);
+
+                            processor.Emit(OpCodes.Ldloc, enumLocalIndex);
+                            processor.Emit(OpCodes.Stloc, localIndex);
                             continue;
                         }
 
                         if (paramEnumIntType == typeSystem.Byte)
                         {
+                            nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.Byte));
+                            int enumLocalIndex = nhandler.Body.Variables.Count - 1;
+
+                            processor.Emit(OpCodes.Ldarg_1);
+                            processor.Emit(OpCodes.Ldloca, enumLocalIndex);
                             processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeByte_MethodRef);
+
+                            processor.Emit(OpCodes.Ldloc, enumLocalIndex);
+                            processor.Emit(OpCodes.Stloc, localIndex);
                             continue;
                         }
 
                         if (paramEnumIntType == typeSystem.SByte)
                         {
+                            nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.SByte));
+                            int enumLocalIndex = nhandler.Body.Variables.Count - 1;
+
+                            processor.Emit(OpCodes.Ldarg_1);
+                            processor.Emit(OpCodes.Ldloca, enumLocalIndex);
                             processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeSbyte_MethodRef);
+
+                            processor.Emit(OpCodes.Ldloc, enumLocalIndex);
+                            processor.Emit(OpCodes.Stloc, localIndex);
                             continue;
                         }
 
                         if (paramEnumIntType == typeSystem.Int16)
                         {
+                            nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.Int16));
+                            int enumLocalIndex = nhandler.Body.Variables.Count - 1;
+
+                            processor.Emit(OpCodes.Ldarg_1);
+                            processor.Emit(OpCodes.Ldloca, enumLocalIndex);
                             processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeShort_MethodRef);
+
+                            processor.Emit(OpCodes.Ldloc, enumLocalIndex);
+                            processor.Emit(OpCodes.Stloc, localIndex);
                             continue;
                         }
 
                         if (paramEnumIntType == typeSystem.UInt16)
                         {
+                            nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.UInt16));
+                            int enumLocalIndex = nhandler.Body.Variables.Count - 1;
+
+                            processor.Emit(OpCodes.Ldarg_1);
+                            processor.Emit(OpCodes.Ldloca, enumLocalIndex);
                             processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeUshort_MethodRef);
+
+                            processor.Emit(OpCodes.Ldloc, enumLocalIndex);
+                            processor.Emit(OpCodes.Stloc, localIndex);
                             continue;
                         }
 
                         if (paramEnumIntType == typeSystem.Int64)
                         {
+                            nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.Int64));
+                            int enumLocalIndex = nhandler.Body.Variables.Count - 1;
+
+                            processor.Emit(OpCodes.Ldarg_1);
+                            processor.Emit(OpCodes.Ldloca, enumLocalIndex);
                             processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeLong_MethodRef);
+
+                            processor.Emit(OpCodes.Ldloc, enumLocalIndex);
+                            processor.Emit(OpCodes.Stloc, localIndex);
                             continue;
                         }
 
                         if (paramEnumIntType == typeSystem.UInt64)
                         {
+                            nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.UInt64));
+                            int enumLocalIndex = nhandler.Body.Variables.Count - 1;
+
+                            processor.Emit(OpCodes.Ldarg_1);
+                            processor.Emit(OpCodes.Ldloca, enumLocalIndex);
                             processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeUlong_MethodRef);
+
+                            processor.Emit(OpCodes.Ldloc, enumLocalIndex);
+                            processor.Emit(OpCodes.Stloc, localIndex);
                             continue;
                         }
                     }
                 }
+                
+                // Enum array
 
-                // NetworkObject & NetworkBehaviour (+arrays)
-
-                if (paramType.FullName == CodeGenHelpers.NetworkObject_FullName)
+                if (paramType.IsArray)
                 {
-                    processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, paramIndex);
-                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeNetObject_MethodRef);
-                    continue;
-                }
+                    var paramElemEnumIntType = paramType.GetElementType().GetEnumAsInt();
+                    if (paramElemEnumIntType != null)
+                    {
+                        nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.Int32));
+                        int arrLenLocalIndex = nhandler.Body.Variables.Count - 1;
+                        
+                        processor.Emit(OpCodes.Ldarg_1);
+                        processor.Emit(OpCodes.Ldloca, arrLenLocalIndex);
+                        processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeInt_MethodRef);
 
-                if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.NetworkObject_FullName)
-                {
-                    processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, paramIndex);
-                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeNetObjectArray_MethodRef);
-                    continue;
-                }
+                        var postForInstr = processor.Create(OpCodes.Nop);
+                        
+                        processor.Emit(OpCodes.Ldloc, arrLenLocalIndex);
+                        processor.Emit(OpCodes.Ldc_I4_M1);
+                        processor.Emit(OpCodes.Cgt);
+                        processor.Emit(OpCodes.Brfalse, postForInstr);
 
-                if (paramType.FullName == CodeGenHelpers.NetworkBehaviour_FullName)
-                {
-                    processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, paramIndex);
-                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeNetBehaviour_MethodRef);
-                    continue;
-                }
+                        processor.Emit(OpCodes.Ldloc, arrLenLocalIndex);
+                        processor.Emit(OpCodes.Newarr, paramType.GetElementType());
+                        processor.Emit(OpCodes.Stloc, localIndex);
+                        
+                        nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.Int32));
+                        int counterLocalIndex = nhandler.Body.Variables.Count - 1;
 
-                if (paramType.IsArray && paramType.GetElementType().FullName == CodeGenHelpers.NetworkBehaviour_FullName)
-                {
-                    processor.Emit(OpCodes.Ldarg_1);
-                    processor.Emit(OpCodes.Ldloca, paramIndex);
-                    processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeNetBehaviourArray_MethodRef);
-                    continue;
+                        var forBodyInstr = processor.Create(OpCodes.Nop);
+                        var forCheckInstr = processor.Create(OpCodes.Nop);
+
+                        processor.Emit(OpCodes.Ldc_I4_0);
+                        processor.Emit(OpCodes.Stloc, counterLocalIndex);
+                        processor.Emit(OpCodes.Br, forCheckInstr);
+                        processor.Append(forBodyInstr);
+
+                        if (paramElemEnumIntType == typeSystem.Int32)
+                        {
+                            nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.Int32));
+                            int enumValLocalIndex = nhandler.Body.Variables.Count - 1;
+
+                            processor.Emit(OpCodes.Ldarg_1);
+                            processor.Emit(OpCodes.Ldloca, enumValLocalIndex);
+                            processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeInt_MethodRef);
+
+                            processor.Emit(OpCodes.Ldloc, localIndex);
+                            processor.Emit(OpCodes.Ldloc, counterLocalIndex);
+                            processor.Emit(OpCodes.Ldloc, enumValLocalIndex);
+                            processor.Emit(OpCodes.Stelem_I4);
+                        }
+                        else if (paramElemEnumIntType == typeSystem.UInt32)
+                        {
+                            nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.UInt32));
+                            int enumValLocalIndex = nhandler.Body.Variables.Count - 1;
+
+                            processor.Emit(OpCodes.Ldarg_1);
+                            processor.Emit(OpCodes.Ldloca, enumValLocalIndex);
+                            processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeUint_MethodRef);
+
+                            processor.Emit(OpCodes.Ldloc, localIndex);
+                            processor.Emit(OpCodes.Ldloc, counterLocalIndex);
+                            processor.Emit(OpCodes.Ldloc, enumValLocalIndex);
+                            processor.Emit(OpCodes.Stelem_I4);
+                        }
+                        else if (paramElemEnumIntType == typeSystem.Byte)
+                        {
+                            nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.Byte));
+                            int enumValLocalIndex = nhandler.Body.Variables.Count - 1;
+
+                            processor.Emit(OpCodes.Ldarg_1);
+                            processor.Emit(OpCodes.Ldloca, enumValLocalIndex);
+                            processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeByte_MethodRef);
+
+                            processor.Emit(OpCodes.Ldloc, localIndex);
+                            processor.Emit(OpCodes.Ldloc, counterLocalIndex);
+                            processor.Emit(OpCodes.Ldloc, enumValLocalIndex);
+                            processor.Emit(OpCodes.Stelem_I1);
+                        }
+                        else if (paramElemEnumIntType == typeSystem.SByte)
+                        {
+                            nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.SByte));
+                            int enumValLocalIndex = nhandler.Body.Variables.Count - 1;
+
+                            processor.Emit(OpCodes.Ldarg_1);
+                            processor.Emit(OpCodes.Ldloca, enumValLocalIndex);
+                            processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeSbyte_MethodRef);
+
+                            processor.Emit(OpCodes.Ldloc, localIndex);
+                            processor.Emit(OpCodes.Ldloc, counterLocalIndex);
+                            processor.Emit(OpCodes.Ldloc, enumValLocalIndex);
+                            processor.Emit(OpCodes.Stelem_I1);
+                        }
+                        else if (paramElemEnumIntType == typeSystem.Int16)
+                        {
+                            nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.Int16));
+                            int enumValLocalIndex = nhandler.Body.Variables.Count - 1;
+
+                            processor.Emit(OpCodes.Ldarg_1);
+                            processor.Emit(OpCodes.Ldloca, enumValLocalIndex);
+                            processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeShort_MethodRef);
+
+                            processor.Emit(OpCodes.Ldloc, localIndex);
+                            processor.Emit(OpCodes.Ldloc, counterLocalIndex);
+                            processor.Emit(OpCodes.Ldloc, enumValLocalIndex);
+                            processor.Emit(OpCodes.Stelem_I2);
+                        }
+                        else if (paramElemEnumIntType == typeSystem.UInt16)
+                        {
+                            nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.UInt16));
+                            int enumValLocalIndex = nhandler.Body.Variables.Count - 1;
+
+                            processor.Emit(OpCodes.Ldarg_1);
+                            processor.Emit(OpCodes.Ldloca, enumValLocalIndex);
+                            processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeUshort_MethodRef);
+
+                            processor.Emit(OpCodes.Ldloc, localIndex);
+                            processor.Emit(OpCodes.Ldloc, counterLocalIndex);
+                            processor.Emit(OpCodes.Ldloc, enumValLocalIndex);
+                            processor.Emit(OpCodes.Stelem_I2);
+                        }
+                        else if (paramElemEnumIntType == typeSystem.Int64)
+                        {
+                            nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.Int64));
+                            int enumValLocalIndex = nhandler.Body.Variables.Count - 1;
+
+                            processor.Emit(OpCodes.Ldarg_1);
+                            processor.Emit(OpCodes.Ldloca, enumValLocalIndex);
+                            processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeLong_MethodRef);
+
+                            processor.Emit(OpCodes.Ldloc, localIndex);
+                            processor.Emit(OpCodes.Ldloc, counterLocalIndex);
+                            processor.Emit(OpCodes.Ldloc, enumValLocalIndex);
+                            processor.Emit(OpCodes.Stelem_I8);
+                        }
+                        else if (paramElemEnumIntType == typeSystem.UInt64)
+                        {
+                            nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.UInt64));
+                            int enumValLocalIndex = nhandler.Body.Variables.Count - 1;
+
+                            processor.Emit(OpCodes.Ldarg_1);
+                            processor.Emit(OpCodes.Ldloca, enumValLocalIndex);
+                            processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeUlong_MethodRef);
+
+                            processor.Emit(OpCodes.Ldloc, localIndex);
+                            processor.Emit(OpCodes.Ldloc, counterLocalIndex);
+                            processor.Emit(OpCodes.Ldloc, enumValLocalIndex);
+                            processor.Emit(OpCodes.Stelem_I8);
+                        }
+
+                        processor.Emit(OpCodes.Ldloc, counterLocalIndex);
+                        processor.Emit(OpCodes.Ldc_I4_1);
+                        processor.Emit(OpCodes.Add);
+                        processor.Emit(OpCodes.Stloc, counterLocalIndex);
+                        processor.Append(forCheckInstr);
+                        processor.Emit(OpCodes.Ldloc, counterLocalIndex);
+                        processor.Emit(OpCodes.Ldloc, arrLenLocalIndex);
+                        processor.Emit(OpCodes.Clt);
+                        processor.Emit(OpCodes.Brtrue, forBodyInstr);
+
+                        processor.Append(postForInstr);
+                        continue;
+                    }
                 }
 
                 // INetworkSerializable // todo: (+arrays)
@@ -1676,7 +2055,7 @@ namespace MLAPI.Editor.CodeGen
                         if (paramType.IsValueType)
                         {
                             // struct (pass by value)
-                            processor.Emit(OpCodes.Ldloca, paramIndex);
+                            processor.Emit(OpCodes.Ldloca, localIndex);
                             processor.Emit(OpCodes.Ldarg_1);
                             processor.Emit(OpCodes.Call, paramTypeNetworkSerialize_MethodDef);
                         }
@@ -1688,10 +2067,10 @@ namespace MLAPI.Editor.CodeGen
                             {
                                 // new INetworkSerializable()
                                 processor.Emit(OpCodes.Newobj, paramTypeDefCtor);
-                                processor.Emit(OpCodes.Stloc, paramIndex);
+                                processor.Emit(OpCodes.Stloc, localIndex);
 
                                 // INetworkSerializable.NetworkSerialize(serializer)
-                                processor.Emit(OpCodes.Ldloc, paramIndex);
+                                processor.Emit(OpCodes.Ldloc, localIndex);
                                 processor.Emit(OpCodes.Ldarg_1);
                                 processor.Emit(OpCodes.Callvirt, paramTypeNetworkSerialize_MethodDef);
                             }
@@ -1706,7 +2085,7 @@ namespace MLAPI.Editor.CodeGen
                     // ServerRpcParams
                     if (paramType.FullName == CodeGenHelpers.ServerRpcParams_FullName)
                     {
-                        processor.Emit(OpCodes.Ldloca, paramIndex);
+                        processor.Emit(OpCodes.Ldloca, localIndex);
                         processor.Emit(OpCodes.Ldflda, ServerRpcParams_Receive_FieldRef);
                         processor.Emit(OpCodes.Ldarg_2);
                         processor.Emit(OpCodes.Stfld, ServerRpcReceiveParams_SenderClientId_FieldRef);
@@ -1732,7 +2111,7 @@ namespace MLAPI.Editor.CodeGen
             // NetworkBehaviour.XXXRpc(...);
             processor.Emit(OpCodes.Ldarg_0);
             processor.Emit(OpCodes.Castclass, methodDefinition.DeclaringType);
-            Enumerable.Range(0, paramCount).ToList().ForEach(paramIndex => processor.Emit(OpCodes.Ldloc, paramIndex));
+            Enumerable.Range(0, paramCount).ToList().ForEach(paramIndex => processor.Emit(OpCodes.Ldloc, paramLocalMap[paramIndex]));
             processor.Emit(OpCodes.Callvirt, methodDefinition);
 
             // NetworkBehaviour.__nexec = NExec.None;
