@@ -716,7 +716,7 @@ namespace MLAPI
         /// Awake
         /// Currently this only creates the RpcQueueContainer instance and initializes it.
         /// </summary>
-        private void Awake()
+        protected virtual void Awake()
         {
             rpcQueueContainer = new RpcQueueContainer(false, LoopbackEnabled);
             //Note: Since frame history is not being used, this is set to 0
