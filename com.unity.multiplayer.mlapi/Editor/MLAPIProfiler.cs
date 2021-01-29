@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.IO;
 using MLAPI.Profiling;
 using MLAPI.Serialization;
@@ -40,36 +40,38 @@ namespace UnityEditor
             public ProfilerTick[] ticks;
 
             public byte[] ToBytes()
-			{
-				BitStream stream = new BitStream();
-				BitWriter writer = new BitWriter(stream);
-				writer.WriteUInt16Packed((ushort)ticks.Length);
+            {
+                BitStream stream = new BitStream();
+                BitWriter writer = new BitWriter(stream);
+                writer.WriteUInt16Packed((ushort)ticks.Length);
 
-				for (int i = 0; i < ticks.Length; i++)
-				{
-					ticks[i].SerializeToStream(stream);
-				}
+                for (int i = 0; i < ticks.Length; i++)
+                {
+                    ticks[i].SerializeToStream(stream);
+                }
 
-				return stream.ToArray();
-			}
+                return stream.ToArray();
+            }
 
-			public static ProfilerContainer FromBytes(byte[] bytes)
-			{
-				ProfilerContainer container = new ProfilerContainer();
-				BitStream stream = new BitStream(bytes);
-				BitReader reader = new BitReader(stream);
-				ushort count = reader.ReadUInt16Packed();
-				container.ticks = new ProfilerTick[count];
+            public static ProfilerContainer FromBytes(byte[] bytes)
+            {
+                MLAPI.NetworkingManager manager = NetworkingManagerEditor.GetAnyNetworkingManager();
+
+                ProfilerContainer container = new ProfilerContainer();
+                BitStream stream = new BitStream(bytes);
+                BitReader reader = new BitReader(manager, stream);
+                ushort count = reader.ReadUInt16Packed();
+                container.ticks = new ProfilerTick[count];
                 for (int i = 0; i < count; i++)
-				{
-					container.ticks[i] = ProfilerTick.FromStream(stream);
-				}
+                {
+                    container.ticks[i] = ProfilerTick.FromStream(manager, stream);
+                }
 
-				return container;
-			}
-		}
+                return container;
+            }
+        }
 
-		private void StopRecording()
+        private void StopRecording()
         {
             NetworkProfiler.Stop();
         }
@@ -124,7 +126,7 @@ namespace UnityEditor
                 string path = EditorUtility.OpenFilePanel("Choose a NetworkProfiler file", "", "");
                 if (!string.IsNullOrEmpty(path))
                 {
-					ProfilerTick[] ticks = ProfilerContainer.FromBytes(File.ReadAllBytes(path)).ticks;
+                    ProfilerTick[] ticks = ProfilerContainer.FromBytes(File.ReadAllBytes(path)).ticks;
                     if (ticks.Length >= 2)
                     {
                         curve = AnimationCurve.Constant(ticks[0].EventId, ticks[(ticks.Length - 1)].EventId, 0);
@@ -160,7 +162,7 @@ namespace UnityEditor
                 ProfilerTick[] ticks = new ProfilerTick[ticksInRange];
                 for (int i = min; i < max; i++) ticks[i - min] = currentTicks[i];
                 string path = EditorUtility.SaveFilePanel("Save NetworkProfiler data", "", "networkProfilerData", "");
-				if (!string.IsNullOrEmpty(path)) File.WriteAllBytes(path, new ProfilerContainer() { ticks = ticks }.ToBytes());
+                if (!string.IsNullOrEmpty(path)) File.WriteAllBytes(path, new ProfilerContainer() { ticks = ticks }.ToBytes());
             }
 
             EditorGUILayout.EndHorizontal();

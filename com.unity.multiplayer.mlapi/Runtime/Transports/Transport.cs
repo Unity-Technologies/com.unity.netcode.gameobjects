@@ -24,6 +24,7 @@ namespace MLAPI.Transports
     /// <summary>
     /// A network transport
     /// </summary>
+    [RequireComponent(typeof(NetworkingManager))]
     public abstract class Transport : MonoBehaviour
     {
         /// <summary>
@@ -35,6 +36,9 @@ namespace MLAPI.Transports
         /// Delegate called when the transport wants to know what channels to register.
         /// </summary>
         public event RequestChannelsDelegate OnChannelRegistration;
+
+        [SerializeField]
+        protected NetworkingManager NetManager;
 
         /// <summary>
         /// A constant clientId that represents the server.

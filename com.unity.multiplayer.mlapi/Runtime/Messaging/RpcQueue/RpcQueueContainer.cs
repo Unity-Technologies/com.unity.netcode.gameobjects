@@ -46,6 +46,7 @@ namespace MLAPI.Messaging
         private bool m_IsTestingEnabled;
         private bool m_ProcessUpdateStagesExternally;
         private bool m_IsNotUsingBatching;
+        private NetworkingManager m_NetManager;
 
         public bool IsUsingBatching()
         {
@@ -327,7 +328,7 @@ namespace MLAPI.Messaging
         internal void AddQueueItemToInboundFrame(QueueItemType qItemType, float timeStamp, ulong sourceNetworkId, BitStream message)
         {
             long originalPosition = message.Position;
-            PooledBitReader BR = PooledBitReader.Get(message);
+            PooledBitReader BR = m_NetManager.PooledBitReaders.GetReader(message);
 
             var longValue = BR.ReadUInt64Packed(); // NetworkObjectId (temporary, we reset position just below)
 
@@ -700,7 +701,7 @@ namespace MLAPI.Messaging
         {
             ClearParameters();
 
-            m_RpcQueueProcessor = new RpcQueueProcessor();
+            m_RpcQueueProcessor = new RpcQueueProcessor(m_NetManager);
 
             m_MaxFrameHistory = maxFrameHistory + k_MinQueueHistory;
 
@@ -718,12 +719,12 @@ namespace MLAPI.Messaging
             {
                 if (!QueueHistory[QueueHistoryFrame.QueueFrameType.Outbound].ContainsKey(i))
                 {
-                    QueueHistory[QueueHistoryFrame.QueueFrameType.Outbound].Add(i, new Dictionary<NetworkUpdateManager.NetworkUpdateStage, QueueHistoryFrame>());
-                    QueueHistoryFrame queueHistoryFrame = new QueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateManager.NetworkUpdateStage.LateUpdate);
+                    QueueHistory[QueueHistoryFrame.QueueFrameType.Outbound].Add(i, new Dictionary<NetworkUpdateManager.NetworkUpdateStage, QueueHistoryFrame>() );
+                    QueueHistoryFrame queueHistoryFrame = new QueueHistoryFrame(m_NetManager, QueueHistoryFrame.QueueFrameType.Outbound,NetworkUpdateManager.NetworkUpdateStage.LateUpdate);
                     queueHistoryFrame.queueStream = PooledBitStream.Get();
                     queueHistoryFrame.queueStream.Position = 0;
                     queueHistoryFrame.queueWriter = PooledBitWriter.Get(queueHistoryFrame.queueStream);
-                    queueHistoryFrame.queueReader = PooledBitReader.Get(queueHistoryFrame.queueStream);
+                    queueHistoryFrame.queueReader = m_NetManager.PooledBitReaders.GetReader(queueHistoryFrame.queueStream);
                     queueHistoryFrame.queueItemOffsets = new List<uint>();
 
                     //For now all outbound, we will always have a single update in which they are processed (LATEUPDATE)
@@ -737,11 +738,11 @@ namespace MLAPI.Messaging
                     //For inbound, we create a queue history frame per update stage
                     foreach (NetworkUpdateManager.NetworkUpdateStage stage in Enum.GetValues(typeof(NetworkUpdateManager.NetworkUpdateStage)))
                     {
-                        QueueHistoryFrame queueHistoryFrame = new QueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Inbound, stage);
+                        QueueHistoryFrame queueHistoryFrame = new QueueHistoryFrame(m_NetManager, QueueHistoryFrame.QueueFrameType.Inbound,stage);
                         queueHistoryFrame.queueStream = PooledBitStream.Get();
                         queueHistoryFrame.queueStream.Position = 0;
                         queueHistoryFrame.queueWriter = PooledBitWriter.Get(queueHistoryFrame.queueStream);
-                        queueHistoryFrame.queueReader = PooledBitReader.Get(queueHistoryFrame.queueStream);
+                        queueHistoryFrame.queueReader = m_NetManager.PooledBitReaders.GetReader(queueHistoryFrame.queueStream);
                         queueHistoryFrame.queueItemOffsets = new List<uint>();
                         QueueHistory[QueueHistoryFrame.QueueFrameType.Inbound][i].Add(stage, queueHistoryFrame);
                     }
@@ -818,11 +819,12 @@ namespace MLAPI.Messaging
         /// <summary>
         /// RpcQueueContainer - Constructor
         /// </summary>
+        /// <param name="networkingManager">The NetworkingManager instance we are associated with.</param>
         /// <param name="processInternally">determines if it handles processing internally or if it will be done externally</param>
-        /// <param name="isLoopBackEnabled">turns loopback on or off (primarily debugging purposes)</param>
-        public RpcQueueContainer(bool processExternally)
+        public RpcQueueContainer(NetworkingManager networkingManager, bool processExternally)
         {
-            m_ProcessUpdateStagesExternally = processExternally;
+            m_NetManager = networkingManager;
+            m_processUpdateStagesExternally = processExternally;
         }
     }
 }

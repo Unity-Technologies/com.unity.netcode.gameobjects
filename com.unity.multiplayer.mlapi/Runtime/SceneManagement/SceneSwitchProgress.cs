@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using UnityEngine;
@@ -18,7 +18,7 @@ namespace MLAPI.SceneManagement
         /// <summary>
         /// The NetworkTime time at the moment the scene switch was initiated by the server.
         /// </summary>
-        public float TimeAtInitiation { get; } = NetworkingManager.Singleton.NetworkTime;
+        public float TimeAtInitiation { get; private set; }
         /// <summary>
         /// Delegate type for when the switch scene progress is completed. Either by all clients done loading the scene or by time out.
         /// </summary>
@@ -55,15 +55,19 @@ namespace MLAPI.SceneManagement
         /// The callback invoked when a client is done loading the scene.
         /// </summary>
         public event OnClientLoadedSceneDelegate OnClientLoadedScene;
+
+        private NetworkingManager networkingManager;
         
         internal Guid guid { get; } = Guid.NewGuid();
 
         private Coroutine timeOutCoroutine;
         private AsyncOperation sceneLoadOperation;
 
-        internal SceneSwitchProgress()
+        internal SceneSwitchProgress(NetworkingManager manager)
         {
-            timeOutCoroutine = NetworkingManager.Singleton.StartCoroutine(NetworkingManager.Singleton.TimeOutSwitchSceneProgress(this));
+            networkingManager = manager;
+            TimeAtInitiation = networkingManager.NetworkTime;
+            timeOutCoroutine = networkingManager.StartCoroutine(networkingManager.TimeOutSwitchSceneProgress(this));
         }
 
         internal void AddClientAsDone(ulong clientId)
@@ -88,15 +92,15 @@ namespace MLAPI.SceneManagement
 
         internal void CheckCompletion()
         {
-            if (!IsCompleted && DoneClients.Count == NetworkingManager.Singleton.ConnectedClientsList.Count && sceneLoadOperation.isDone)
+            if (!IsCompleted && DoneClients.Count == networkingManager.ConnectedClientsList.Count && sceneLoadOperation.isDone)
             {
                 IsCompleted = true;
                 IsAllClientsDoneLoading = true;
-                NetworkSceneManager.sceneSwitchProgresses.Remove(guid);
+                networkingManager.NetworkSceneManager.sceneSwitchProgresses.Remove(guid);
                 if (OnComplete != null)
                     OnComplete.Invoke(false);
 
-                NetworkingManager.Singleton.StopCoroutine(timeOutCoroutine);
+                networkingManager.StopCoroutine(timeOutCoroutine);
             }
         }
 
@@ -105,7 +109,7 @@ namespace MLAPI.SceneManagement
             if (!IsCompleted)
             {
                 IsCompleted = true;
-                NetworkSceneManager.sceneSwitchProgresses.Remove(guid);
+                networkingManager.NetworkSceneManager.sceneSwitchProgresses.Remove(guid);
                 if (OnComplete != null)
                     OnComplete.Invoke(true);
             }

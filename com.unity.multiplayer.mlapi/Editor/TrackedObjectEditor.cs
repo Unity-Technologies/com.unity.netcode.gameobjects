@@ -1,4 +1,4 @@
-﻿using MLAPI;
+using MLAPI;
 using MLAPI.LagCompensation;
 
 namespace UnityEditor
@@ -23,7 +23,11 @@ namespace UnityEditor
         {
             Init();
             base.OnInspectorGUI();
-            if(NetworkingManager.Singleton != null && NetworkingManager.Singleton.IsServer)
+
+            //FIXME: Singleton Conversion, get all of them and be sure to get the server!
+            NetworkingManager manager = NetworkingManagerEditor.GetNetworkingManager(true);
+
+            if(manager != null )
             {
                 EditorGUILayout.LabelField("Total points: ", trackedObject.TotalPoints.ToString(), EditorStyles.label);
                 EditorGUILayout.LabelField("Avg time between points: ", trackedObject.AvgTimeBetweenPointsMs.ToString() + " ms", EditorStyles.label);

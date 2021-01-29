@@ -21,13 +21,16 @@ namespace MLAPI.Serialization
     {
         private Stream source;
         private BitStream bitSource;
+        protected NetworkingManager networkingManager;
 
         /// <summary>
         /// Creates a new BitReader backed by a given stream
         /// </summary>
+        /// <param name="networkingManager">The NetworkingManager instance we are deserializing in the context of.</param>
         /// <param name="stream">The stream to read from</param>
-        public BitReader(Stream stream)
+        public BitReader(NetworkingManager manager, Stream stream)
         {
+            networkingManager = manager;
             source = stream;
             bitSource = stream as BitStream;
         }
@@ -168,13 +171,13 @@ namespace MLAPI.Serialization
             {
                 ulong networkId = ReadUInt64Packed();
 
-                if (SpawnManager.SpawnedObjects.ContainsKey(networkId))
+                if (networkingManager.SpawnManager.SpawnedObjects.ContainsKey(networkId))
                 {
-                    return SpawnManager.SpawnedObjects[networkId].gameObject;
+                    return networkingManager.SpawnManager.SpawnedObjects[networkId].gameObject;
                 }
                 else
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                    if (NetworkingManager.LogLevel <= LogLevel.Normal)
                         NetworkLog.LogWarning("BitReader cannot find the GameObject sent in the SpawnedObjects list, it may have been destroyed. NetworkId: " + networkId.ToString());
                     return null;
                 }
@@ -183,13 +186,13 @@ namespace MLAPI.Serialization
             {
                 ulong networkId = ReadUInt64Packed();
 
-                if (SpawnManager.SpawnedObjects.ContainsKey(networkId))
+                if (networkingManager.SpawnManager.SpawnedObjects.ContainsKey(networkId))
                 {
-                    return SpawnManager.SpawnedObjects[networkId];
+                    return networkingManager.SpawnManager.SpawnedObjects[networkId];
                 }
                 else
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                    if (NetworkingManager.LogLevel <= LogLevel.Normal)
                         NetworkLog.LogWarning("BitReader cannot find the NetworkedObject sent in the SpawnedObjects list, it may have been destroyed. NetworkId: " + networkId.ToString());
                     return null;
                 }
@@ -198,13 +201,13 @@ namespace MLAPI.Serialization
             {
                 ulong networkId = ReadUInt64Packed();
                 ushort behaviourId = ReadUInt16Packed();
-                if (SpawnManager.SpawnedObjects.ContainsKey(networkId))
+                if (networkingManager.SpawnManager.SpawnedObjects.ContainsKey(networkId))
                 {
-                    return SpawnManager.SpawnedObjects[networkId].GetBehaviourAtOrderIndex(behaviourId);
+                    return networkingManager.SpawnManager.SpawnedObjects[networkId].GetBehaviourAtOrderIndex(behaviourId);
                 }
                 else
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                    if (NetworkingManager.LogLevel <= LogLevel.Normal)
                         NetworkLog.LogWarning("BitReader cannot find the NetworkedBehaviour sent in the SpawnedObjects list, it may have been destroyed. NetworkId: " + networkId.ToString());
                     return null;
                 }

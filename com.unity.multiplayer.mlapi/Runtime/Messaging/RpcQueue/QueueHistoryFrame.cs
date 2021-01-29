@@ -28,7 +28,7 @@ namespace MLAPI.Messaging
 
 
         public PooledBitReader queueReader;
-
+        private NetworkingManager                        m_NetworkingManager;
         private int                                      m_QueueItemOffsetIndex;
         private RpcFrameQueueItem                        m_CurrentQueueItem;
         private readonly QueueFrameType                  m_QueueFrameType;
@@ -199,7 +199,7 @@ namespace MLAPI.Messaging
 
                     if(m_CurrentQueueItem.streamReader == null)
                     {
-                        m_CurrentQueueItem.streamReader = PooledBitReader.Get(m_CurrentQueueItem.itemStream);
+                        m_CurrentQueueItem.streamReader = m_NetworkingManager.PooledBitReaders.GetReader(m_CurrentQueueItem.itemStream);
                     }
 
                 }
@@ -243,13 +243,15 @@ namespace MLAPI.Messaging
         /// <summary>
         /// QueueHistoryFrame Constructor
         /// </summary>
+        /// <param name="manager">The NetworkingManager context used by this QueueHistoryFrame</param>
         /// <param name="queueType">type of queue history frame (Inbound/Outbound)</param>
-        public QueueHistoryFrame(QueueFrameType queueType, NetworkUpdateManager.NetworkUpdateStage updateStage, int maxClients = 512)
+        public QueueHistoryFrame(NetworkingManager manager, QueueFrameType queueType, NetworkUpdateManager.NetworkUpdateStages updateStage, int maxClients = 512)
         {
             m_MaximumClients = maxClients;
             m_QueueFrameType = queueType;
             m_CurrentQueueItem = new RpcFrameQueueItem();
             m_StreamUpdateStage = updateStage;
+            m_NetworkingManager = manager;
         }
     }
 }

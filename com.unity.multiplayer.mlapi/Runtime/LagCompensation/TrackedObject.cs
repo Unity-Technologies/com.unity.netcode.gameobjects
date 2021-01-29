@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using MLAPI.Collections;
 using UnityEngine;
 
@@ -11,12 +11,21 @@ namespace MLAPI.LagCompensation
     /// A component used for lag compensation. Each object with this component will get tracked
     /// </summary>
     [AddComponentMenu("MLAPI/TrackedObject", -98)]
+    [RequireComponent(typeof(NetworkedObject))]
     public class TrackedObject : MonoBehaviour
     {
         internal Dictionary<float, TrackedPointData> FrameData = new Dictionary<float, TrackedPointData>();
         internal FixedQueue<float> Framekeys;
         private Vector3 savedPosition;
         private Quaternion savedRotation;
+
+        [SerializeField]
+        private NetworkedObject networkedObject;
+
+        /// <summary>
+        /// The NetworkedObject associated with this TrackedObject. 
+        /// </summary>
+        public NetworkedObject NetObject => networkedObject;
 
         /// <summary>
         /// Gets the total amount of points stored in the component
@@ -58,7 +67,7 @@ namespace MLAPI.LagCompensation
         {
             get
             {
-                return (int)(NetworkingManager.Singleton.NetworkConfig.SecondsHistory / (1f / NetworkingManager.Singleton.NetworkConfig.EventTickrate));
+                return (int)(networkedObject.NetManager.NetworkConfig.SecondsHistory / (1f / networkedObject.NetManager.NetworkConfig.EventTickrate));
             }
         }
 
@@ -67,7 +76,7 @@ namespace MLAPI.LagCompensation
             savedPosition = transform.position;
             savedRotation = transform.rotation;
 
-            float currentTime = NetworkingManager.Singleton.NetworkTime;
+            float currentTime = networkedObject.NetManager.NetworkTime;
             float targetTime = currentTime - secondsAgo;
 
             float previousTime = 0f;
@@ -112,12 +121,12 @@ namespace MLAPI.LagCompensation
             if (Framekeys.Count == maxPoints)
                 FrameData.Remove(Framekeys.Dequeue());
 
-            FrameData.Add(NetworkingManager.Singleton.NetworkTime, new TrackedPointData()
+            FrameData.Add(networkedObject.NetManager.NetworkTime, new TrackedPointData()
             {
                 position = transform.position,
                 rotation = transform.rotation
             });
-            Framekeys.Enqueue(NetworkingManager.Singleton.NetworkTime);
+            Framekeys.Enqueue(networkedObject.NetManager.NetworkTime);
         }
     }
 }

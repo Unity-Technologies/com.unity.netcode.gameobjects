@@ -57,6 +57,29 @@ public class NetworkingManagerEditor : Editor
     private readonly List<Type> transportTypes = new List<Type>();
     private string[] transportNames = new string[] { "Select transport..." };
 
+    /// <summary>
+    /// Helper method that gets either the server or non-server NetworkingManager in the scene, or null if not present. 
+    /// </summary>
+    public static NetworkingManager GetNetworkingManager(bool isServer)
+    {
+        foreach (var manager in FindObjectsOfType<NetworkingManager>())
+        {
+            if (manager.IsServer == isServer)
+            {
+                return manager;
+            }
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// Gets the first NetworkingManager in the scene, of any type. 
+    /// </summary>
+    public static NetworkingManager GetAnyNetworkingManager()
+    {
+        return FindObjectOfType<NetworkingManager>();
+    }
+
     private void ReloadTransports()
     {
         transportTypes.Clear();

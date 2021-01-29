@@ -11,21 +11,10 @@ namespace MLAPI.Serialization.Pooled
         private BitSerializer m_Serializer;
         public BitSerializer Serializer => m_Serializer ?? (m_Serializer = new BitSerializer(this));
 
-        private bool isDisposed = false;
+        internal bool isDisposed = false;
 
-        internal PooledBitReader(Stream stream) : base(stream)
+        internal PooledBitReader(NetworkingManager manager, Stream stream) : base(manager, stream)
         {
-        }
-
-        /// <summary>
-        /// Gets a PooledBitReader from the static BitReaderPool
-        /// </summary>
-        /// <returns>PooledBitReader</returns>
-        public static PooledBitReader Get(Stream stream)
-        {
-            PooledBitReader reader = BitReaderPool.GetReader(stream);
-            reader.isDisposed = false;
-            return reader;
         }
 
         /// <summary>
@@ -36,7 +25,7 @@ namespace MLAPI.Serialization.Pooled
             if (!isDisposed)
             {
                 isDisposed = true;
-                BitReaderPool.PutBackInPool(this);
+                networkingManager.PooledBitReaders.PutBackInPool(this);
             }
             else
             {

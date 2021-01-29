@@ -20,11 +20,14 @@ namespace UnityEditor
             networkedObject = (NetworkedObject)target;
         }
 
+        //FIXME:SINGLETONCONVERSION. What is the proper way to get the NetworkingManager in the active scene in editor code?
+        private bool IsServer {  get { return false;  } }
+
         public override void OnInspectorGUI()
         {
             Init();
 
-            if (!networkedObject.IsSpawned && NetworkingManager.Singleton != null && NetworkingManager.Singleton.IsServer)
+            if (!networkedObject.IsSpawned && IsServer )
             {
                 EditorGUILayout.BeginHorizontal();
                 EditorGUILayout.LabelField(new GUIContent("Spawn", "Spawns the object across the network"));
@@ -45,11 +48,11 @@ namespace UnityEditor
                 EditorGUILayout.LabelField("IsSpawned: ", networkedObject.IsSpawned.ToString(), EditorStyles.label);
                 EditorGUILayout.LabelField("IsLocalPlayer: ", networkedObject.IsLocalPlayer.ToString(), EditorStyles.label);
                 EditorGUILayout.LabelField("IsOwner: ", networkedObject.IsOwner.ToString(), EditorStyles.label);
-				EditorGUILayout.LabelField("IsOwnedByServer: ", networkedObject.IsOwnedByServer.ToString(), EditorStyles.label);
+                EditorGUILayout.LabelField("IsOwnedByServer: ", networkedObject.IsOwnedByServer.ToString(), EditorStyles.label);
                 EditorGUILayout.LabelField("IsPlayerObject: ", networkedObject.IsPlayerObject.ToString(), EditorStyles.label);
                 EditorGUILayout.LabelField("IsSceneObject: ", (networkedObject.IsSceneObject == null ? "Null" : networkedObject.IsSceneObject.Value.ToString()), EditorStyles.label);
 
-                if (NetworkingManager.Singleton != null && NetworkingManager.Singleton.IsServer)
+                if (IsServer)
                 {
                     showObservers = EditorGUILayout.Foldout(showObservers, "Observers");
 
@@ -61,10 +64,11 @@ namespace UnityEditor
 
                         while (observerClientIds.MoveNext())
                         {
-                            if (NetworkingManager.Singleton.ConnectedClients[observerClientIds.Current].PlayerObject != null)
-                                EditorGUILayout.ObjectField("ClientId: " + observerClientIds.Current, NetworkingManager.Singleton.ConnectedClients[observerClientIds.Current].PlayerObject, typeof(GameObject), false);
-                            else
-                                EditorGUILayout.TextField("ClientId: " + observerClientIds.Current, EditorStyles.label);
+                            //FIXME:SINGLETONCONVERSION
+                            //if (NetworkingManager.Singleton.ConnectedClients[observerClientIds.Current].PlayerObject != null)
+                            //    EditorGUILayout.ObjectField("ClientId: " + observerClientIds.Current, NetworkingManager.Singleton.ConnectedClients[observerClientIds.Current].PlayerObject, typeof(GameObject), false);
+                            //else
+                            //    EditorGUILayout.TextField("ClientId: " + observerClientIds.Current, EditorStyles.label);
                         }
 
                         EditorGUI.indentLevel -= 1;

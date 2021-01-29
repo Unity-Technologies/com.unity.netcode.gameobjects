@@ -1,4 +1,4 @@
-﻿using MLAPI.Logging;
+using MLAPI.Logging;
 using MLAPI.Serialization;
 using System;
 using MLAPI.Configuration;
@@ -18,15 +18,15 @@ namespace MLAPI.Internal
 
         // This method is responsible for unwrapping a message, that is extracting the messagebody.
         // Could include decrypting and/or authentication.
-        internal static BitStream UnwrapMessage(BitStream inputStream, ulong clientId, out byte messageType, out SecuritySendFlags security)
+        internal static BitStream UnwrapMessage(NetworkingManager networkingManager, BitStream inputStream, ulong clientId, out byte messageType, out SecuritySendFlags security)
         {      
-            using (PooledBitReader inputHeaderReader = PooledBitReader.Get(inputStream))
+            using (PooledBitReader inputHeaderReader = networkingManager.PooledBitReaders.GetReader(inputStream))
             {
                 try
                 {
                     if (inputStream.Length < 1)
                     {
-                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogError("The incoming message was too small");
+                        if (NetworkingManager.LogLevel <= LogLevel.Normal) NetworkLog.LogError("The incoming message was too small");
                         messageType = MLAPIConstants.INVALID;
                         security = SecuritySendFlags.None;
                         return null;
@@ -44,7 +44,7 @@ namespace MLAPI.Internal
 #if !DISABLE_CRYPTOGRAPHY
                     if (isEncrypted || isAuthenticated)
                     {
-                        if (!NetworkingManager.Singleton.NetworkConfig.EnableEncryption)
+                        if (!networkingManager.NetworkConfig.EnableEncryption)
                         {
                             if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError("Got a encrypted and/or authenticated message but key exchange (\"encryption\") was not enabled");
                             messageType = MLAPIConstants.INVALID;
@@ -71,7 +71,7 @@ namespace MLAPI.Internal
                             inputStream.Position = hmacStartPos;
                             inputStream.Write(HMAC_PLACEHOLDER, 0, HMAC_PLACEHOLDER.Length);
 
-                            byte[] key = NetworkingManager.Singleton.IsServer ? CryptographyHelper.GetClientKey(clientId) : CryptographyHelper.GetServerKey();
+                            byte[] key = networkingManager.IsServer ? CryptographyHelper.GetClientKey(clientId) : CryptographyHelper.GetServerKey();
 
                             if (key == null)
                             {
@@ -112,7 +112,7 @@ namespace MLAPI.Internal
                                 rijndael.IV = IV_BUFFER;
                                 rijndael.Padding = PaddingMode.PKCS7;
 
-                                byte[] key = NetworkingManager.Singleton.IsServer ? CryptographyHelper.GetClientKey(clientId) : CryptographyHelper.GetServerKey();
+                                byte[] key = networkingManager.IsServer ? CryptographyHelper.GetClientKey(clientId) : CryptographyHelper.GetServerKey();
 
                                 if (key == null)
                                 {
@@ -169,8 +169,8 @@ namespace MLAPI.Internal
                 }
                 catch (Exception e)
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogError("Error while unwrapping headers");
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError(e.ToString());
+                    if (NetworkingManager.LogLevel <= LogLevel.Normal) NetworkLog.LogError("Error while unwrapping headers");
+                    if (NetworkingManager.LogLevel <= LogLevel.Error) NetworkLog.LogError(e.ToString());
 
                     security = SecuritySendFlags.None;
                     messageType = MLAPIConstants.INVALID;
@@ -179,12 +179,12 @@ namespace MLAPI.Internal
             }
         }
 
-        internal static BitStream WrapMessage(byte messageType, ulong clientId, BitStream messageBody, SecuritySendFlags flags)
+        internal static BitStream WrapMessage(NetworkingManager networkingManager, byte messageType, ulong clientId, BitStream messageBody, SecuritySendFlags flags)
         {
             try
             {
-                bool encrypted = ((flags & SecuritySendFlags.Encrypted) == SecuritySendFlags.Encrypted) && NetworkingManager.Singleton.NetworkConfig.EnableEncryption;
-                bool authenticated = (flags & SecuritySendFlags.Authenticated) == SecuritySendFlags.Authenticated && NetworkingManager.Singleton.NetworkConfig.EnableEncryption;
+                bool encrypted = ((flags & SecuritySendFlags.Encrypted) == SecuritySendFlags.Encrypted) && networkingManager.NetworkConfig.EnableEncryption;
+                bool authenticated = (flags & SecuritySendFlags.Authenticated) == SecuritySendFlags.Authenticated && networkingManager.NetworkConfig.EnableEncryption;
 
                 PooledBitStream outStream = PooledBitStream.Get();
 
@@ -208,7 +208,7 @@ namespace MLAPI.Internal
                                 rijndael.GenerateIV();
                                 rijndael.Padding = PaddingMode.PKCS7;
 
-                                byte[] key = NetworkingManager.Singleton.IsServer ? CryptographyHelper.GetClientKey(clientId) : CryptographyHelper.GetServerKey();
+                                byte[] key = networkingManager.IsServer ? CryptographyHelper.GetClientKey(clientId) : CryptographyHelper.GetServerKey();
 
                                 if (key == null)
                                 {
@@ -235,7 +235,7 @@ namespace MLAPI.Internal
 
                         if (authenticated)
                         {
-                            byte[] key = NetworkingManager.Singleton.IsServer ? CryptographyHelper.GetClientKey(clientId) : CryptographyHelper.GetServerKey();
+                            byte[] key = networkingManager.IsServer ? CryptographyHelper.GetClientKey(clientId) : CryptographyHelper.GetServerKey();
 
                             if (key == null)
                             {
@@ -266,8 +266,8 @@ namespace MLAPI.Internal
             }
             catch (Exception e)
             {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogError("Error while wrapping headers");
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError(e.ToString());
+                if (NetworkingManager.LogLevel <= LogLevel.Normal) NetworkLog.LogError("Error while wrapping headers");
+                if (NetworkingManager.LogLevel <= LogLevel.Error) NetworkLog.LogError(e.ToString());
 
                 return null;
             }

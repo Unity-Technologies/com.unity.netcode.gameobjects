@@ -30,45 +30,47 @@ namespace MLAPI.Messaging
         /// </summary>
         public static event UnnamedMessageDelegate OnUnnamedMessage;
 
-        internal static void InvokeUnnamedMessage(ulong clientId, Stream stream)
+        internal static void InvokeUnnamedMessage(NetworkingManager networkingManager, ulong clientId, Stream stream)
         {
             if (OnUnnamedMessage != null)
             {
                 OnUnnamedMessage(clientId, stream);
             }
 
-            NetworkingManager.Singleton.InvokeOnIncomingCustomMessage(clientId, stream);
+            networkingManager.InvokeOnIncomingCustomMessage(clientId, stream);
         }
 
 
         /// <summary>
         /// Sends unnamed message to a list of clients
         /// </summary>
+        /// <param name="networkingManager">The NetworkingManager instance to use for sending.</param>
         /// <param name="clientIds">The clients to send to, sends to everyone if null</param>
         /// <param name="stream">The message stream containing the data</param>
         /// <param name="channel">The channel to send the data on</param>
         /// <param name="security">The security settings to apply to the message</param>
-        public static void SendUnnamedMessage(List<ulong> clientIds, BitStream stream, Channel channel = Channel.Internal, SecuritySendFlags security = SecuritySendFlags.None)
+        public static void SendUnnamedMessage(NetworkingManager networkingManager, List<ulong> clientIds, BitStream stream, Channel channel = Channel.Internal, SecuritySendFlags security = SecuritySendFlags.None)
         {
-            if (!NetworkingManager.Singleton.IsServer)
+            if (!networkingManager.IsServer)
             {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogWarning("Can not send unnamed messages to multiple users as a client");
+                if (NetworkingManager.LogLevel <= LogLevel.Error) NetworkLog.LogWarning("Can not send unnamed messages to multiple users as a client");
                 return;
             }
 
-            InternalMessageSender.Send(MLAPIConstants.MLAPI_UNNAMED_MESSAGE, channel, clientIds, stream, security);
+            networkingManager.MessageSender.Send(MLAPIConstants.MLAPI_UNNAMED_MESSAGE, channel, clientIds, stream, security);
         }
 
         /// <summary>
         /// Sends a unnamed message to a specific client
         /// </summary>
+        /// <param name="networkingManager">The NetworkingManager instance to use for sending.</param>
         /// <param name="clientId">The client to send the message to</param>
         /// <param name="stream">The message stream containing the data</param>
         /// <param name="channel">The channel tos end the data on</param>
         /// <param name="security">The security settings to apply to the message</param>
-        public static void SendUnnamedMessage(ulong clientId, BitStream stream, Channel channel = Channel.Internal, SecuritySendFlags security = SecuritySendFlags.None)
+        public static void SendUnnamedMessage(NetworkingManager networkingManager, ulong clientId, BitStream stream, Channel channel = Channel.Internal, SecuritySendFlags security = SecuritySendFlags.None)
         {
-            InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_UNNAMED_MESSAGE, channel, stream, security);
+            networkingManager.MessageSender.Send(clientId, MLAPIConstants.MLAPI_UNNAMED_MESSAGE, channel, stream, security);
         }
         #endregion
         #region Named
@@ -82,9 +84,9 @@ namespace MLAPI.Messaging
         private static readonly Dictionary<ulong, HandleNamedMessageDelegate> namedMessageHandlers64 = new Dictionary<ulong, HandleNamedMessageDelegate>();
 
 
-        internal static void InvokeNamedMessage(ulong hash, ulong sender, Stream stream)
+        internal static void InvokeNamedMessage(NetworkingManager networkingManager, ulong hash, ulong sender, Stream stream)
         {
-            if (NetworkingManager.Singleton == null)
+            if (networkingManager == null)
             {
                 // We dont know what size to use. Try every (more collision prone)
                 if (namedMessageHandlers16.ContainsKey(hash))
@@ -105,21 +107,21 @@ namespace MLAPI.Messaging
             else
             {
                 // Only check the right size.
-                if (NetworkingManager.Singleton.NetworkConfig.RpcHashSize == HashSize.VarIntTwoBytes)
+                if (networkingManager.NetworkConfig.RpcHashSize == HashSize.VarIntTwoBytes)
                 {
                     if (namedMessageHandlers16.ContainsKey(hash))
                     {
                         namedMessageHandlers16[hash](sender, stream);
                     }
                 }
-                else if (NetworkingManager.Singleton.NetworkConfig.RpcHashSize == HashSize.VarIntFourBytes)
+                else if (networkingManager.NetworkConfig.RpcHashSize == HashSize.VarIntFourBytes)
                 {
                     if (namedMessageHandlers32.ContainsKey(hash))
                     {
                         namedMessageHandlers32[hash](sender, stream);
                     }
                 }
-                else if (NetworkingManager.Singleton.NetworkConfig.RpcHashSize == HashSize.VarIntEightBytes)
+                else if (networkingManager.NetworkConfig.RpcHashSize == HashSize.VarIntEightBytes)
                 {
                     if (namedMessageHandlers64.ContainsKey(hash))
                     {
@@ -155,15 +157,16 @@ namespace MLAPI.Messaging
         /// <summary>
         /// Sends a named message
         /// </summary>
+        /// <param name="networkingManager">The NetworkingManager to send this message over. </param>
         /// <param name="name">The message name to send</param>
         /// <param name="clientId">The client to send the message to</param>
         /// <param name="stream">The message stream containing the data</param>
         /// <param name="channel">The channel to send the data on</param>
         /// <param name="security">The security settings to apply to the message</param>
-        public static void SendNamedMessage(string name, ulong clientId, Stream stream, Channel channel = Channel.Internal, SecuritySendFlags security = SecuritySendFlags.None)
+        public static void SendNamedMessage(NetworkingManager networkingManager, string name, ulong clientId, Stream stream, Channel channel = Channel.Internal, SecuritySendFlags security = SecuritySendFlags.None)
         {
             ulong hash = 0;
-            switch (NetworkingManager.Singleton.NetworkConfig.RpcHashSize)
+            switch (networkingManager.NetworkConfig.RpcHashSize)
             {
                 case HashSize.VarIntTwoBytes:
                     hash = name.GetStableHash16();
@@ -185,22 +188,23 @@ namespace MLAPI.Messaging
 
                 messageStream.CopyFrom(stream);
 
-                InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_NAMED_MESSAGE, channel, messageStream, security);
+                InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_NAMED_MESSAGE, channelId, messageStream, security);
             }
         }
 
         /// <summary>
         /// Sends the named message
         /// </summary>
+        /// <param name="networkingManager">The NetworkingManager to send this message over.</param>
         /// <param name="name">The message name to send</param>
         /// <param name="clientIds">The clients to send to, sends to everyone if null</param>
         /// <param name="stream">The message stream containing the data</param>
         /// <param name="channel">The channel to send the data on</param>
         /// <param name="security">The security settings to apply to the message</param>
-        public static void SendNamedMessage(string name, List<ulong> clientIds, Stream stream, Channel channel = Channel.Internal, SecuritySendFlags security = SecuritySendFlags.None)
+        public static void SendNamedMessage(NetworkingManager networkingManager, string name, List<ulong> clientIds, Stream stream, Channel channel = Channel.Internal, SecuritySendFlags security = SecuritySendFlags.None)
         {
             ulong hash = 0;
-            switch (NetworkingManager.Singleton.NetworkConfig.RpcHashSize)
+            switch (networkingManager.NetworkConfig.RpcHashSize)
             {
                 case HashSize.VarIntTwoBytes:
                     hash = name.GetStableHash16();
@@ -222,13 +226,13 @@ namespace MLAPI.Messaging
 
                 messageStream.CopyFrom(stream);
 
-                if (!NetworkingManager.Singleton.IsServer)
+                if (!networkingManager.IsServer)
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogWarning("Can not send named messages to multiple users as a client");
+                    if (NetworkingManager.LogLevel <= LogLevel.Error) NetworkLog.LogWarning("Can not send named messages to multiple users as a client");
                     return;
                 }
 
-                InternalMessageSender.Send(MLAPIConstants.MLAPI_NAMED_MESSAGE, channel, clientIds, messageStream, security);
+                networkingManager.MessageSender.Send(MLAPIConstants.MLAPI_NAMED_MESSAGE, channel, clientIds, messageStream, security);
             }
         }
         #endregion

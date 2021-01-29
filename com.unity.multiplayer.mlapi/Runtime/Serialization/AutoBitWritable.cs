@@ -8,7 +8,14 @@ namespace MLAPI.Serialization
     /// AutoBitWritable implements IBitWritable and automatically serializes fields using reflection
     /// </summary>
     public abstract class AutoBitWritable : IBitWritable
-    {        
+    {
+        protected NetworkingManager networkingManager;
+
+        public AutoBitWritable(NetworkingManager manager)
+        {
+            networkingManager = manager;
+        }
+
         /// <summary>
         /// Writes the contents of the type instance to the stream
         /// </summary>
@@ -34,7 +41,7 @@ namespace MLAPI.Serialization
         {
             FieldInfo[] fields = SerializationManager.GetFieldsForType(GetType());
 
-            using (PooledBitReader reader = PooledBitReader.Get(stream))
+            using (PooledBitReader reader = networkingManager.PooledBitReaders.GetReader(stream))
             {
                 for (int i = 0; i < fields.Length; i++)
                 {

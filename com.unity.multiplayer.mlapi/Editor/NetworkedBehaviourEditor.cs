@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 using MLAPI;
@@ -91,7 +91,9 @@ namespace UnityEditor
             object val = var.Value;
             string name = networkedVarNames[index];
 
-            if (NetworkingManager.Singleton != null && NetworkingManager.Singleton.IsListening)
+            NetworkingManager manager = NetworkingManagerEditor.GetNetworkingManager(true);
+
+            if (manager != null && manager.IsListening)
             {
                 if (type == typeof(int))
                     val = EditorGUILayout.IntField(name, (int)val);

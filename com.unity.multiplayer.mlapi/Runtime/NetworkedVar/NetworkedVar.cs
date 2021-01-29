@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
 using System;
@@ -102,7 +102,7 @@ namespace MLAPI.NetworkedVar
         public void ResetDirty()
         {
             isDirty = false;
-            LastSyncedTime = NetworkingManager.Singleton.NetworkTime;
+            LastSyncedTime = networkedBehaviour.NetManager.NetworkTime;
         }
 
         /// <inheritdoc />
@@ -111,7 +111,7 @@ namespace MLAPI.NetworkedVar
             if (!isDirty) return false;
             if (Settings.SendTickrate == 0) return true;
             if (Settings.SendTickrate < 0) return false;
-            if (NetworkingManager.Singleton.NetworkTime - LastSyncedTime >= (1f / Settings.SendTickrate)) return true;
+            if (networkedBehaviour.NetManager.NetworkTime - LastSyncedTime >= (1f / Settings.SendTickrate)) return true;
             return false;
         }
 
@@ -169,7 +169,7 @@ namespace MLAPI.NetworkedVar
         /// <param name="keepDirtyDelta">Whether or not the container should keep the dirty delta, or mark the delta as consumed</param>
         public void ReadDelta(Stream stream, bool keepDirtyDelta)
         {
-            using (PooledBitReader reader = PooledBitReader.Get(stream))
+            using (PooledBitReader reader = networkedBehaviour.NetManager.PooledBitReaders.GetReader(stream))
             {
                 T previousValue = InternalValue;
                 InternalValue = (T)reader.ReadObjectPacked((typeof(T)));

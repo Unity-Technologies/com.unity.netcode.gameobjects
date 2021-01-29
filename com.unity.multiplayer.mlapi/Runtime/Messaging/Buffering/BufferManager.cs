@@ -70,14 +70,14 @@ namespace MLAPI.Messaging.Buffering
         }
 
         private static readonly List<ulong> _keysToDestroy = new List<ulong>();
-        internal static void CleanBuffer()
+        internal static void CleanBuffer(float messageBufferTimeout)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_CleanBuffer.Begin();
 #endif
             foreach (KeyValuePair<ulong, Queue<BufferedMessage>> pair in bufferQueues)
             {
-                while (pair.Value.Count > 0 && Time.realtimeSinceStartup - pair.Value.Peek().bufferTime >= NetworkingManager.Singleton.NetworkConfig.MessageBufferTimeout)
+                while (pair.Value.Count > 0 && Time.realtimeSinceStartup - pair.Value.Peek().bufferTime >= messageBufferTimeout)
                 {
                     BufferedMessage message = pair.Value.Dequeue();
 

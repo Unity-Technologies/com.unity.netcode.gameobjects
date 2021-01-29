@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using MLAPI.Serialization;
@@ -79,7 +79,7 @@ namespace MLAPI.NetworkedVar.Collections
         public void ResetDirty()
         {
             dirtyEvents.Clear();
-            LastSyncedTime = NetworkingManager.Singleton.NetworkTime;
+            LastSyncedTime = networkedBehaviour.NetManager.NetworkTime;
         }
 
         /// <inheritdoc />
@@ -88,7 +88,7 @@ namespace MLAPI.NetworkedVar.Collections
             if (dirtyEvents.Count == 0) return false;
             if (Settings.SendTickrate == 0) return true;
             if (Settings.SendTickrate < 0) return false;
-            if (NetworkingManager.Singleton.NetworkTime - LastSyncedTime >= (1f / Settings.SendTickrate)) return true;
+            if (networkedBehaviour.NetManager.NetworkTime - LastSyncedTime >= (1f / Settings.SendTickrate)) return true;
             return false;
         }
 
@@ -205,7 +205,7 @@ namespace MLAPI.NetworkedVar.Collections
         /// <inheritdoc />
         public void ReadField(Stream stream)
         {
-            using (PooledBitReader reader = PooledBitReader.Get(stream))
+            using (PooledBitReader reader = networkedBehaviour.NetManager.PooledBitReaders.GetReader(stream))
             {
                 list.Clear();
                 ushort count = reader.ReadUInt16Packed();
@@ -219,7 +219,7 @@ namespace MLAPI.NetworkedVar.Collections
         /// <inheritdoc />
         public void ReadDelta(Stream stream, bool keepDirtyDelta)
         {
-            using (PooledBitReader reader = PooledBitReader.Get(stream))
+            using (PooledBitReader reader = networkedBehaviour.NetManager.PooledBitReaders.GetReader(stream))
             {
                 ushort deltaCount = reader.ReadUInt16Packed();
                 for (int i = 0; i < deltaCount; i++)
@@ -406,7 +406,7 @@ namespace MLAPI.NetworkedVar.Collections
         /// <inheritdoc />
         public void Add(T item)
         {
-            if (NetworkingManager.Singleton.IsServer)
+            if (networkedBehaviour.NetManager.IsServer)
                 list.Add(item);
 
             NetworkedListEvent<T> listEvent = new NetworkedListEvent<T>()
@@ -422,7 +422,7 @@ namespace MLAPI.NetworkedVar.Collections
         /// <inheritdoc />
         public void Clear()
         {
-            if (NetworkingManager.Singleton.IsServer)
+            if (networkedBehaviour.NetManager.IsServer)
                 list.Clear();
 
             NetworkedListEvent<T> listEvent = new NetworkedListEvent<T>()
@@ -448,7 +448,7 @@ namespace MLAPI.NetworkedVar.Collections
         /// <inheritdoc />
         public bool Remove(T item)
         {
-            if (NetworkingManager.Singleton.IsServer)
+            if (networkedBehaviour.NetManager.IsServer)
                 list.Remove(item);
 
             NetworkedListEvent<T> listEvent = new NetworkedListEvent<T>()
@@ -476,7 +476,7 @@ namespace MLAPI.NetworkedVar.Collections
         /// <inheritdoc />
         public void Insert(int index, T item)
         {
-            if (NetworkingManager.Singleton.IsServer)
+            if (networkedBehaviour.NetManager.IsServer)
                 list.Insert(index, item);
 
             NetworkedListEvent<T> listEvent = new NetworkedListEvent<T>()
@@ -492,7 +492,7 @@ namespace MLAPI.NetworkedVar.Collections
         /// <inheritdoc />
         public void RemoveAt(int index)
         {
-            if (NetworkingManager.Singleton.IsServer)
+            if (networkedBehaviour.NetManager.IsServer)
                 list.RemoveAt(index);
 
             NetworkedListEvent<T> listEvent = new NetworkedListEvent<T>()
@@ -511,7 +511,7 @@ namespace MLAPI.NetworkedVar.Collections
             get { return list[index]; }
             set
             {
-                if (NetworkingManager.Singleton.IsServer)
+                if (networkedBehaviour.NetManager.IsServer)
                     list[index] = value;
 
                 NetworkedListEvent<T> listEvent = new NetworkedListEvent<T>()
@@ -527,9 +527,9 @@ namespace MLAPI.NetworkedVar.Collections
 
         private void HandleAddListEvent(NetworkedListEvent<T> listEvent)
         {
-            if (NetworkingManager.Singleton.IsServer)
+            if (NetManager.IsServer)
             {
-                if (NetworkingManager.Singleton.ConnectedClients.Count > 0)
+                if (NetManager.ConnectedClients.Count > 0)
                 {
                     dirtyEvents.Add(listEvent);
                 }
