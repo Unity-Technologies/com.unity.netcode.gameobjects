@@ -71,10 +71,26 @@ namespace MLAPI
 #endif
         {
             var rpcQueueContainer = NetworkingManager.Singleton.rpcQueueContainer;
+            PooledBitWriter writer;
+            var IsUsingBatching = rpcQueueContainer.IsUsingBatching();
+            if(IsServer && IsHost)
+            {
+                if(sendParams.UpdateStage == NetworkUpdateManager.NetworkUpdateStages.Default)
+                {
+                    sendParams.UpdateStage = NetworkUpdateManager.NetworkUpdateStages.Update;
+                }
+                writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ServerRpc, Time.realtimeSinceStartup, Transport.MLAPI_STDRPC_CHANNEL, 0,
+                    NetworkingManager.Singleton.ServerClientId, null, QueueHistoryFrame.QueueFrameType.Inbound,sendParams.UpdateStage );
+                //We want to directly write the header information to keep the same offsets when it is being processed by inbound
+                IsUsingBatching = false;
+            }
+            else
+            {
+                writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ServerRpc, Time.realtimeSinceStartup, Transport.MLAPI_STDRPC_CHANNEL, 0,
+                    NetworkingManager.Singleton.ServerClientId, null, QueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateManager.NetworkUpdateStages.LateUpdate);
+            }
 
-            var writer = rpcQueueContainer.BeginAddQueueItemToOutboundFrame(RpcQueueContainer.QueueItemType.ServerRpc, Time.realtimeSinceStartup, Transport.MLAPI_STDRPC_CHANNEL, 0, NetworkingManager.Singleton.ServerClientId, null);
-
-            if(!rpcQueueContainer.IsUsingBatching())
+            if(!IsUsingBatching)
             {
                 writer.WriteBit(false); // Encrypted
                 writer.WriteBit(false); // Authenticated
@@ -93,7 +109,6 @@ namespace MLAPI
             {
                 writer.WriteUInt16Packed((ushort)sendParams.UpdateStage);
             }
-
             return writer;
         }
 
@@ -110,7 +125,15 @@ namespace MLAPI
             if (writer == null) return;
 
             var rpcQueueContainer = NetworkingManager.Singleton.rpcQueueContainer;
-            rpcQueueContainer.EndAddQueueItemToOutboundFrame(writer);
+            if(IsServer && IsHost)
+            {
+                rpcQueueContainer.EndAddQueueItemToFrame(writer, QueueHistoryFrame.QueueFrameType.Inbound, sendParams.UpdateStage == NetworkUpdateManager.NetworkUpdateStages.Default ? NetworkUpdateManager.NetworkUpdateStages.Update:sendParams.UpdateStage );
+            }
+            else
+            {
+                rpcQueueContainer.EndAddQueueItemToFrame(writer, QueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateManager.NetworkUpdateStages.LateUpdate);
+            }
+
         }
 
         [Browsable(false)]
@@ -126,9 +149,34 @@ namespace MLAPI
             //This will start a new queue item entry and will then return the writer to the current frame's stream
             var rpcQueueContainer = NetworkingManager.Singleton.rpcQueueContainer;
 
-            var writer = rpcQueueContainer.BeginAddQueueItemToOutboundFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, Transport.MLAPI_STDRPC_CHANNEL, 0, NetworkId, sendParams.TargetClientIds ?? NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray());
+            PooledBitWriter writer;
+            var IsUsingBatching = rpcQueueContainer.IsUsingBatching();
+            bool IsSendingToHost = false;
+            ulong[] ClientIds = sendParams.TargetClientIds ?? NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray();
 
-            if(!rpcQueueContainer.IsUsingBatching())
+            if(IsServer && IsHost && ClientIds.Contains(NetworkingManager.Singleton.ServerClientId))
+            {
+                IsSendingToHost = true;
+            }
+
+            if(IsServer && IsHost && IsSendingToHost)
+            {
+                if(sendParams.UpdateStage == NetworkUpdateManager.NetworkUpdateStages.Default)
+                {
+                    sendParams.UpdateStage = NetworkUpdateManager.NetworkUpdateStages.Update;
+                }
+                writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, Transport.MLAPI_STDRPC_CHANNEL, 0,
+                    NetworkingManager.Singleton.ServerClientId, null, QueueHistoryFrame.QueueFrameType.Inbound,sendParams.UpdateStage );
+                //We want to directly write the header information to keep the same offsets when it is being processed by inbound
+                IsUsingBatching = false;
+            }
+            else
+            {
+                writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, Transport.MLAPI_STDRPC_CHANNEL, 0, NetworkId,
+                ClientIds, QueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateManager.NetworkUpdateStages.LateUpdate);
+            }
+
+            if(!IsUsingBatching)
             {
                 writer.WriteBit(false); // Encrypted
                 writer.WriteBit(false); // Authenticated
@@ -164,7 +212,15 @@ namespace MLAPI
             if (writer == null) return;
 
             var rpcQueueContainer = NetworkingManager.Singleton.rpcQueueContainer;
-            rpcQueueContainer.EndAddQueueItemToOutboundFrame(writer);
+            ulong[] ClientIds = sendParams.TargetClientIds ?? NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray();
+            if(IsServer && IsHost && ClientIds.Contains(NetworkingManager.Singleton.ServerClientId))
+            {
+                rpcQueueContainer.EndAddQueueItemToFrame(writer, QueueHistoryFrame.QueueFrameType.Inbound, sendParams.UpdateStage == NetworkUpdateManager.NetworkUpdateStages.Default ? NetworkUpdateManager.NetworkUpdateStages.Update:sendParams.UpdateStage );
+            }
+            else
+            {
+                rpcQueueContainer.EndAddQueueItemToFrame(writer, QueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateManager.NetworkUpdateStages.LateUpdate);
+            }
         }
 
         /// <summary>

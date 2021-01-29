@@ -327,6 +327,7 @@ namespace MLAPI.Messaging
         }
 
 
+
         /// <summary>
         /// AddQueueItemToInboundFrame
         /// Adds an RPC queue item to the outbound frame
@@ -390,9 +391,10 @@ namespace MLAPI.Messaging
         /// <param name="sourceNetworkId">who is sending the rpc</param>
         /// <param name="targetNetworkIds">who the rpc is being sent to</param>
         /// <returns></returns>
-        public PooledBitWriter BeginAddQueueItemToOutboundFrame(QueueItemType qItemType, float timeStamp, byte channel, ushort sendflags, ulong sourceNetworkId, ulong[] targetNetworkIds)
+        public PooledBitWriter BeginAddQueueItemToFrame(QueueItemType qItemType, float timeStamp, byte channel, ushort sendflags, ulong sourceNetworkId, ulong[] targetNetworkIds,
+            QueueHistoryFrame.QueueFrameType queueFrameType,NetworkUpdateManager.NetworkUpdateStages updateStage )
         {
-            QueueHistoryFrame queueHistoryItem = GetCurrentQueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateManager.NetworkUpdateStages.LateUpdate);
+            QueueHistoryFrame queueHistoryItem = GetCurrentQueueHistoryFrame(queueFrameType,updateStage);
 
             //Write the packed version of the queueItem to our current queue history buffer
             queueHistoryItem.queueWriter.WriteUInt16((ushort)qItemType);
@@ -400,21 +402,24 @@ namespace MLAPI.Messaging
             queueHistoryItem.queueWriter.WriteSingle(timeStamp);
             queueHistoryItem.queueWriter.WriteUInt64(sourceNetworkId);
 
-            //NSS-TODO: Determine if we need to store the channel
-            queueHistoryItem.queueWriter.WriteByte(channel);
-
-            if (targetNetworkIds != null && targetNetworkIds.Length != 0)
+            if(queueFrameType != QueueHistoryFrame.QueueFrameType.Inbound)
             {
-                queueHistoryItem.queueWriter.WriteInt32(targetNetworkIds.Length);
+                //NSS-TODO: Determine if we need to store the channel
+                queueHistoryItem.queueWriter.WriteByte(channel);
 
-                for (int i = 0; i < targetNetworkIds.Length; i++)
+                if (targetNetworkIds != null && targetNetworkIds.Length != 0)
                 {
-                    queueHistoryItem.queueWriter.WriteUInt64(targetNetworkIds[i]);
+                    queueHistoryItem.queueWriter.WriteInt32(targetNetworkIds.Length);
+
+                    for (int i = 0; i < targetNetworkIds.Length; i++)
+                    {
+                        queueHistoryItem.queueWriter.WriteUInt64(targetNetworkIds[i]);
+                    }
                 }
-            }
-            else
-            {
-                queueHistoryItem.queueWriter.WriteInt32(0);
+                else
+                {
+                    queueHistoryItem.queueWriter.WriteInt32(0);
+                }
             }
 
             //Mark where we started in the stream to later determine the actual RPC message size (position before writing RPC message vs position after write has completed)
@@ -422,6 +427,10 @@ namespace MLAPI.Messaging
 
             //Write a filler dummy size of 0 to hold this position in order to write to it once the RPC is done writing.
             queueHistoryItem.queueWriter.WriteInt64(0);
+            if(NetworkingManager.Singleton.IsServer && NetworkingManager.Singleton.IsHost && queueFrameType == QueueHistoryFrame.QueueFrameType.Inbound)
+            {
+                queueHistoryItem.queueWriter.WriteInt64(1); //Write the stream position offset for inbound as 1
+            }
 
             //Return the writer to the invoking method.
             return queueHistoryItem.queueWriter;
@@ -433,15 +442,16 @@ namespace MLAPI.Messaging
         /// We store final MSG size and track the total current frame queue size
         /// </summary>
         /// <param name="writer">writer that was used</param>
-        public void EndAddQueueItemToOutboundFrame(BitWriter writer)
+        public void EndAddQueueItemToFrame(BitWriter writer, QueueHistoryFrame.QueueFrameType queueFrameType, NetworkUpdateManager.NetworkUpdateStages updateStage)
         {
-            QueueHistoryFrame queueHistoryItem = GetCurrentQueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateManager.NetworkUpdateStages.LateUpdate);
+
+            QueueHistoryFrame queueHistoryItem = GetCurrentQueueHistoryFrame(queueFrameType, updateStage);
             PooledBitWriter pbWriter = (PooledBitWriter)writer;
 
             //Sanity check
             if (pbWriter != queueHistoryItem.queueWriter)
             {
-                UnityEngine.Debug.LogError("RpcQueueContainer " + QueueHistoryFrame.QueueFrameType.Outbound + " passed writer is not the same as the current PooledBitWrite for the " + QueueHistoryFrame.QueueFrameType.Outbound + "]!");
+                UnityEngine.Debug.LogError("RpcQueueContainer " + queueFrameType.ToString() + " passed writer is not the same as the current PooledBitWrite for the " +  queueFrameType.ToString() + "]!");
             }
 
             //The total size of the frame is the last known position of the stream
