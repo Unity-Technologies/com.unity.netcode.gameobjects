@@ -215,9 +215,7 @@ namespace MLAPI.Messaging
             var bytes = sendStream.Stream.GetBuffer();
             ArraySegment<byte> sendBuffer = new ArraySegment<byte>(bytes, 0, length);
 
-            // [MTT-433] refactor so that the transports receive a byte, not a string
-            //  saving for a separate effort since transports live in their own package
-            NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(clientId, sendBuffer, Transport.GetChannelString(sendStream.channel));
+            NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(clientId, sendBuffer, sendStream.channel);
         }
 
         /// <summary>
@@ -231,9 +229,7 @@ namespace MLAPI.Messaging
             {
                 case RpcQueueContainer.QueueItemType.ServerRpc:
                 {
-                    // [MTT-433] refactor so that the transports receive a byte, not a string
-                    //  saving for a separate effort since transports live in their own package
-                    NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(queueItem.networkId, queueItem.messageData, Transport.GetChannelString(queueItem.channel));
+                    NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(queueItem.networkId, queueItem.messageData, queueItem.channel);
 
                     //For each packet sent, we want to record how much data we have sent
                     ProfilerStatManager.bytesSent.Record((int)queueItem.streamSize);
@@ -244,9 +240,7 @@ namespace MLAPI.Messaging
                 {
                     foreach (ulong clientid in queueItem.clientIds)
                     {
-                        // [MTT-433] refactor so that the transports receive a byte, not a string
-                        //  saving for a separate effort since transports live in their own package
-                        NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(clientid, queueItem.messageData, Transport.GetChannelString(queueItem.channel));
+                        NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(clientid, queueItem.messageData, queueItem.channel);
 
                         //For each packet sent, we want to record how much data we have sent
                         ProfilerStatManager.bytesSent.Record((int)queueItem.streamSize);

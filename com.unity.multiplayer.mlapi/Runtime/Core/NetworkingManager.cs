@@ -760,10 +760,7 @@ namespace MLAPI
                         do
                         {
                             processedEvents++;
-                            eventType = NetworkConfig.NetworkTransport.PollEvent(out ulong clientId, out string channelName, out ArraySegment<byte> payload, out float receiveTime);
-                            // [MTT-443] This can be improved if the Transport implementations return the channel as a byte vs. string
-                            //  Holding off on this; refactoring the Transport package will be a separate step
-                            byte channel = Transport.GetChannelByte(channelName);
+                            eventType = NetworkConfig.NetworkTransport.PollEvent(out ulong clientId, out byte channel, out ArraySegment<byte> payload, out float receiveTime);
                             HandleRawTransportPoll(eventType, clientId, channel, payload, receiveTime);
 
                             // Only do another iteration if: there are no more messages AND (there is no limit to max events or we have processed less than the maximum)

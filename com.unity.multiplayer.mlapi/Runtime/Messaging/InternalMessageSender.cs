@@ -24,10 +24,7 @@ namespace MLAPI.Messaging
                 NetworkProfiler.StartEvent(TickType.Send, (uint) stream.Length, channel,
                     MLAPIConstants.MESSAGE_NAMES[messageType]);
 
-                // [MTT-433] refactor so that the transports receive a byte, not a string
-                //  saving for a separate effort since transports live in their own package
-                string channelName = Transport.GetChannelString(channel);
-                NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(clientId, new ArraySegment<byte>(stream.GetBuffer(), 0, (int)stream.Length), channelName);
+                NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(clientId, new ArraySegment<byte>(stream.GetBuffer(), 0, (int)stream.Length), channel);
                 ProfilerStatManager.bytesSent.Record((int)stream.Length);
 
                 NetworkProfiler.EndEvent();
@@ -58,10 +55,7 @@ namespace MLAPI.Messaging
                         if (NetworkingManager.Singleton.IsServer && NetworkingManager.Singleton.ConnectedClientsList[i].ClientId == NetworkingManager.Singleton.ServerClientId)
                             continue;
 
-                        // [MTT-433] refactor so that the transports receive a byte, not a string
-                        //  saving for a separate effort since transports live in their own package
-                        string channelName = Transport.GetChannelString(channel);
-                        NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId, new ArraySegment<byte>(stream.GetBuffer(), 0, (int)stream.Length), channelName);
+                        NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId, new ArraySegment<byte>(stream.GetBuffer(), 0, (int)stream.Length), channel);
                         ProfilerStatManager.bytesSent.Record((int)stream.Length);
                     }
                     NetworkProfiler.EndEvent();
@@ -99,10 +93,7 @@ namespace MLAPI.Messaging
                         if (NetworkingManager.Singleton.IsServer && clientIds[i] == NetworkingManager.Singleton.ServerClientId)
                             continue;
 
-                        // [MTT-433] refactor so that the transports receive a byte, not a string
-                        //  saving for a separate effort since transports live in their own package
-                        string channelName = Transport.GetChannelString(channel);
-                        NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(clientIds[i], new ArraySegment<byte>(stream.GetBuffer(), 0, (int)stream.Length), channelName);
+                        NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(clientIds[i], new ArraySegment<byte>(stream.GetBuffer(), 0, (int)stream.Length), channel);
                         ProfilerStatManager.bytesSent.Record((int)stream.Length);
                     }
                     NetworkProfiler.EndEvent();
@@ -138,10 +129,7 @@ namespace MLAPI.Messaging
                             (NetworkingManager.Singleton.IsServer && NetworkingManager.Singleton.ConnectedClientsList[i].ClientId == NetworkingManager.Singleton.ServerClientId))
                             continue;
 
-                        // [MTT-433] refactor so that the transports receive a byte, not a string
-                        //  saving for a separate effort since transports live in their own package
-                        string channelName = Transport.GetChannelString(channel);
-                        NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId, new ArraySegment<byte>(stream.GetBuffer(), 0, (int)stream.Length), channelName);
+                        NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId, new ArraySegment<byte>(stream.GetBuffer(), 0, (int)stream.Length), channel);
                         ProfilerStatManager.bytesSent.Record((int)stream.Length);
                     }
                     NetworkProfiler.EndEvent();

@@ -41,8 +41,8 @@ namespace MLAPI.Transports.UNET
         private WeakReference temporaryBufferReference;
 
         // Lookup / translation
-        private readonly Dictionary<string, int> channelNameToId = new Dictionary<string, int>();
-        private readonly Dictionary<int, string> channelIdToName = new Dictionary<int, string>();
+        private readonly Dictionary<byte, int> channelNameToId = new Dictionary<byte, int>();
+        private readonly Dictionary<int, byte> channelIdToName = new Dictionary<int, byte>();
         private int serverConnectionId;
         private int serverHostId;
 
@@ -63,19 +63,19 @@ namespace MLAPI.Transports.UNET
             }
         }
 
-        public override void Send(ulong clientId, ArraySegment<byte> data, string channelName)
+        public override void Send(ulong clientId, ArraySegment<byte> data, byte channel)
         {
             GetUnetConnectionDetails(clientId, out byte hostId, out ushort connectionId);
 
             int channelId = 0;
 
-            if (channelNameToId.ContainsKey(channelName))
+            if (channelNameToId.ContainsKey(channel))
             {
-                channelId = channelNameToId[channelName];
+                channelId = channelNameToId[channel];
             }
             else
             {
-                channelId = channelNameToId["MLAPI_INTERNAL"];
+                channelId = channelNameToId[MLAPI_INTERNAL_CHANNEL];
             }
 
             byte[] buffer;
@@ -125,7 +125,7 @@ namespace MLAPI.Transports.UNET
             RelayTransport.SendQueuedMessages(hostId, connectionId, out byte error);
         }
 
-        public override NetEventType PollEvent(out ulong clientId, out string channelName, out ArraySegment<byte> payload, out float receiveTime)
+        public override NetEventType PollEvent(out ulong clientId, out byte channel, out ArraySegment<byte> payload, out float receiveTime)
         {
             NetworkEventType eventType = RelayTransport.Receive(out int hostId, out int connectionId, out int channelId, messageBuffer, messageBuffer.Length, out int receivedSize, out byte error);
 
@@ -159,11 +159,11 @@ namespace MLAPI.Transports.UNET
 
             if (channelIdToName.ContainsKey(channelId))
             {
-                channelName = channelIdToName[channelId];
+                channel = channelIdToName[channelId];
             }
             else
             {
-                channelName = "MLAPI_INTERNAL";
+                channel = MLAPI_INTERNAL_CHANNEL;
             }
 
             if (connectTask != null && hostId == serverHostId && connectionId == serverConnectionId)
@@ -349,16 +349,16 @@ namespace MLAPI.Transports.UNET
             {
                 int channelId = AddMLAPIChannel(MLAPI_CHANNELS[i].Type, config);
 
-                channelIdToName.Add(channelId, MLAPI_CHANNELS[i].Name);
-                channelNameToId.Add(MLAPI_CHANNELS[i].Name, channelId);
+                channelIdToName.Add(channelId, MLAPI_CHANNELS[i].Id);
+                channelNameToId.Add(MLAPI_CHANNELS[i].Id, channelId);
             }
 
             for (int i = 0; i < Channels.Count; i++)
             {
                 int channelId = AddUNETChannel(Channels[i].Type, config);
 
-                channelIdToName.Add(channelId, Channels[i].Name);
-                channelNameToId.Add(Channels[i].Name, channelId);
+                channelIdToName.Add(channelId, Channels[i].Id);
+                channelNameToId.Add(Channels[i].Id, channelId);
             }
 
             config.MaxSentMessageQueueSize = (ushort)MaxSentMessageQueueSize;
