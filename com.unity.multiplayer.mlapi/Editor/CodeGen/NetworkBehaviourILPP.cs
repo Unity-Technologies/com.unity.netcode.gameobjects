@@ -90,12 +90,14 @@ namespace MLAPI.Editor.CodeGen
         private MethodReference NetworkBehaviour_EndSendClientRpc_MethodRef;
         private FieldReference NetworkBehaviour_nexec_FieldRef;
         private MethodReference NetworkHandlerDelegateCtor_MethodRef;
+        private TypeReference RpcParams_TypeRef;
+        private FieldReference RpcParams_Server_FieldRef;
+        private FieldReference RpcParams_Client_FieldRef;
         private TypeReference ServerRpcParams_TypeRef;
         private FieldReference ServerRpcParams_Send_FieldRef;
         private FieldReference ServerRpcParams_Receive_FieldRef;
         private TypeReference ServerRpcSendParams_TypeRef;
         private TypeReference ServerRpcReceiveParams_TypeRef;
-        private FieldReference ServerRpcReceiveParams_SenderClientId_FieldRef;
         private TypeReference ClientRpcParams_TypeRef;
         private FieldReference ClientRpcParams_Send_FieldRef;
         private FieldReference ClientRpcParams_Receive_FieldRef;
@@ -228,8 +230,25 @@ namespace MLAPI.Editor.CodeGen
                 }
             }
 
-            var networkHandlerDelegateType = typeof(Action<NetworkedBehaviour, BitSerializer, ulong>);
+#pragma warning disable 618
+            var networkHandlerDelegateType = typeof(Action<NetworkedBehaviour, BitSerializer, __RpcParams>);
             NetworkHandlerDelegateCtor_MethodRef = moduleDefinition.ImportReference(networkHandlerDelegateType.GetConstructor(new[] { typeof(object), typeof(IntPtr) }));
+
+            var rpcParamsType = typeof(__RpcParams);
+            RpcParams_TypeRef = moduleDefinition.ImportReference(rpcParamsType);
+            foreach (var fieldInfo in rpcParamsType.GetFields())
+            {
+                switch (fieldInfo.Name)
+                {
+                    case nameof(__RpcParams.Server):
+                        RpcParams_Server_FieldRef = moduleDefinition.ImportReference(fieldInfo);
+                        break;
+                    case nameof(__RpcParams.Client):
+                        RpcParams_Client_FieldRef = moduleDefinition.ImportReference(fieldInfo);
+                        break;
+                }
+            }
+#pragma warning restore 618
 
             var serverRpcParamsType = typeof(ServerRpcParams);
             ServerRpcParams_TypeRef = moduleDefinition.ImportReference(serverRpcParamsType);
@@ -251,15 +270,6 @@ namespace MLAPI.Editor.CodeGen
 
             var serverRpcReceiveParamsType = typeof(ServerRpcReceiveParams);
             ServerRpcReceiveParams_TypeRef = moduleDefinition.ImportReference(serverRpcReceiveParamsType);
-            foreach (var fieldInfo in serverRpcReceiveParamsType.GetFields())
-            {
-                switch (fieldInfo.Name)
-                {
-                    case nameof(ServerRpcReceiveParams.SenderClientId):
-                        ServerRpcReceiveParams_SenderClientId_FieldRef = moduleDefinition.ImportReference(fieldInfo);
-                        break;
-                }
-            }
 
             var clientRpcParamsType = typeof(ClientRpcParams);
             ClientRpcParams_TypeRef = moduleDefinition.ImportReference(clientRpcParamsType);
@@ -1514,7 +1524,7 @@ namespace MLAPI.Editor.CodeGen
                 methodDefinition.Module.TypeSystem.Void);
             nhandler.Parameters.Add(new ParameterDefinition("target", ParameterAttributes.None, NetworkBehaviour_TypeRef));
             nhandler.Parameters.Add(new ParameterDefinition("serializer", ParameterAttributes.None, BitSerializer_TypeRef));
-            nhandler.Parameters.Add(new ParameterDefinition("sender", ParameterAttributes.None, typeSystem.UInt64));
+            nhandler.Parameters.Add(new ParameterDefinition("rpcParams", ParameterAttributes.None, RpcParams_TypeRef));
 
             var processor = nhandler.Body.GetILProcessor();
             var isServerRpc = rpcAttribute.AttributeType.FullName == CodeGenHelpers.ServerRpcAttribute_FullName;
@@ -2306,16 +2316,18 @@ namespace MLAPI.Editor.CodeGen
                     // ServerRpcParams
                     if (paramType.FullName == CodeGenHelpers.ServerRpcParams_FullName)
                     {
-                        processor.Emit(OpCodes.Ldloca, localIndex);
-                        processor.Emit(OpCodes.Ldflda, ServerRpcParams_Receive_FieldRef);
                         processor.Emit(OpCodes.Ldarg_2);
-                        processor.Emit(OpCodes.Stfld, ServerRpcReceiveParams_SenderClientId_FieldRef);
+                        processor.Emit(OpCodes.Ldfld, RpcParams_Server_FieldRef);
+                        processor.Emit(OpCodes.Stloc, localIndex);
                         continue;
                     }
 
                     // ClientRpcParams
                     if (paramType.FullName == CodeGenHelpers.ClientRpcParams_FullName)
                     {
+                        processor.Emit(OpCodes.Ldarg_2);
+                        processor.Emit(OpCodes.Ldfld, RpcParams_Client_FieldRef);
+                        processor.Emit(OpCodes.Stloc, localIndex);
                         continue;
                     }
                 }

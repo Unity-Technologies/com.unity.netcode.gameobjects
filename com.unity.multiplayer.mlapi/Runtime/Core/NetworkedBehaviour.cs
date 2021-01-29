@@ -43,6 +43,7 @@ namespace MLAPI
         }
 
 #pragma warning disable 414
+        [NonSerialized]
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]

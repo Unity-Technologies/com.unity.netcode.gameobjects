@@ -1,3 +1,5 @@
+using System;
+
 namespace MLAPI.Messaging
 {
     public struct ServerRpcSendParams
@@ -34,7 +36,13 @@ namespace MLAPI.Messaging
         public ClientRpcReceiveParams Receive;
     }
 
-    internal struct RpcParams
+#if UNITY_2020_2_OR_NEWER
+    // RuntimeAccessModifiersILPP will make this `public`
+    internal struct __RpcParams
+#else
+    [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
+    public struct __RpcParams
+#endif
     {
         public ServerRpcParams Server;
         public ClientRpcParams Client;
