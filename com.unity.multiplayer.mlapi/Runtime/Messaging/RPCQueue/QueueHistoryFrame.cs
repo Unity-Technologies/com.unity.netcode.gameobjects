@@ -29,7 +29,7 @@ namespace MLAPI.Messaging
         private readonly QueueFrameType                  m_QueueFrameType;
         private int                                      m_MaximumClients;
         private long                                     m_CurrentStreamSizeMark;
-        private NetworkUpdateManager.NetworkUpdateStage _mStreamUpdateStage; //Update stage specific to RPCs (typically inbound has most potential for variation)
+        private NetworkUpdateManager.NetworkUpdateStage  m_StreamUpdateStage; //Update stage specific to RPCs (typically inbound has most potential for variation)
         private const int                                m_MaxStreamBounds = 131072;
         private const int                                m_MinStreamBounds = 0;
 
@@ -109,7 +109,7 @@ namespace MLAPI.Messaging
                 }
             }
 
-            m_CurrentQueueItem.updateStage = _mStreamUpdateStage;
+            m_CurrentQueueItem.updateStage = m_StreamUpdateStage;
 
             //Get the stream size
             m_CurrentQueueItem.streamSize = queueReader.ReadInt64();
@@ -242,7 +242,7 @@ namespace MLAPI.Messaging
             m_MaximumClients = maxClients;
             m_QueueFrameType = queueType;
             m_CurrentQueueItem = new FrameQueueItem();
-            _mStreamUpdateStage = updateStage;
+            m_StreamUpdateStage = updateStage;
         }
     }
 }
