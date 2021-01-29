@@ -78,6 +78,8 @@ namespace MLAPI.Editor.CodeGen
 
         public static bool HasInterface(this TypeReference typeReference, string InterfaceTypeFullName)
         {
+            if (typeReference.IsArray) return false;
+
             try
             {
                 var typeDef = typeReference.Resolve();
