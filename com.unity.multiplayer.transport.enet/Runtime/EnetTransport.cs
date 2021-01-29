@@ -13,7 +13,7 @@ namespace EnetTransport
     [DefaultExecutionOrder(1000)]
     public class EnetTransport : Transport
     {
-#if DEVELOPMENT_BUILD || UNITY_EDITOR 
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
         static ProfilerMarker s_PollEvent =
             new ProfilerMarker("Enet.PollEvent");
         static ProfilerMarker s_Service =
@@ -70,8 +70,8 @@ namespace EnetTransport
 
         private readonly Dictionary<uint, Peer> connectedEnetPeers = new Dictionary<uint, Peer>();
 
-        private readonly Dictionary<string, byte> channelNameToId = new Dictionary<string, byte>();
-        private readonly Dictionary<byte, string> channelIdToName = new Dictionary<byte, string>();
+        private readonly Dictionary<byte, byte> channelNameToId = new Dictionary<byte, byte>();
+        private readonly Dictionary<byte, byte> channelIdToName = new Dictionary<byte, byte>();
         private readonly Dictionary<byte, EnetChannel> internalChannels = new Dictionary<byte, EnetChannel>();
 
         private Host host;
@@ -84,15 +84,15 @@ namespace EnetTransport
 
         public override ulong ServerClientId => GetMLAPIClientId(0, true);
 
-        public override void Send(ulong clientId, ArraySegment<byte> data, string channelName)
+        public override void Send(ulong clientId, ArraySegment<byte> data, byte channel)
         {
             Packet packet = default(Packet);
 
-            packet.Create(data.Array, data.Offset, data.Count, PacketFlagFromDelivery(internalChannels[channelNameToId[channelName]].Flags));
+            packet.Create(data.Array, data.Offset, data.Count, PacketFlagFromDelivery(internalChannels[channelNameToId[channel]].Flags));
 
             GetEnetConnectionDetails(clientId, out uint peerId);
 
-            connectedEnetPeers[peerId].Send(channelNameToId[channelName], ref packet);
+            connectedEnetPeers[peerId].Send(channelNameToId[channel], ref packet);
         }
 
         public void Update()
@@ -107,7 +107,7 @@ namespace EnetTransport
 #endif
         }
 
-        public override NetEventType PollEvent(out ulong clientId, out string channelName, out ArraySegment<byte> payload, out float receiveTime)
+        public override NetEventType PollEvent(out ulong clientId, out byte channel, out ArraySegment<byte> payload, out float receiveTime)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_PollEvent.Begin();
@@ -126,7 +126,7 @@ namespace EnetTransport
                         if (hasServiced || host.Service(0, out @event) <= 0)
                         {
                             clientId = 0;
-                            channelName = null;
+                            channel = 0;
                             payload = new ArraySegment<byte>();
                             receiveTime = Time.realtimeSinceStartup;
 
@@ -140,7 +140,7 @@ namespace EnetTransport
                         s_Service.End();
 #endif
                     }
-                  
+
                 }
 
                 clientId = GetMLAPIClientId(@event.Peer.ID, false);
@@ -152,7 +152,7 @@ namespace EnetTransport
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                         s_Connect.Begin();
 #endif
-                        channelName = null;
+                        channel = 0;
                         payload = new ArraySegment<byte>();
                         receiveTime = Time.realtimeSinceStartup;
 
@@ -177,7 +177,7 @@ namespace EnetTransport
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                         s_Disconnect.Begin();
 #endif
-                        channelName = null;
+                        channel = 0;
                         payload = new ArraySegment<byte>();
                         receiveTime = Time.realtimeSinceStartup;
 
@@ -199,7 +199,7 @@ namespace EnetTransport
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                         s_Receive.Begin();
 #endif
-                        channelName = channelIdToName[@event.ChannelID];
+                        channel = channelIdToName[@event.ChannelID];
                         receiveTime = Time.realtimeSinceStartup;
                         int size = @event.Packet.Length;
 
@@ -237,7 +237,7 @@ namespace EnetTransport
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                         s_Timeout.Begin();
 #endif
-                        channelName = null;
+                        channel = 0;
                         payload = new ArraySegment<byte>();
                         receiveTime = Time.realtimeSinceStartup;
 
@@ -253,7 +253,7 @@ namespace EnetTransport
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                         s_NoEvent.Begin();
 #endif
-                        channelName = null;
+                        channel = 0;
                         payload = new ArraySegment<byte>();
                         receiveTime = Time.realtimeSinceStartup;
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -357,8 +357,8 @@ namespace EnetTransport
             // MLAPI Channels
             for (byte i = 0; i < MLAPI_CHANNELS.Length; i++)
             {
-                channelIdToName.Add(i, MLAPI_CHANNELS[i].Name);
-                channelNameToId.Add(MLAPI_CHANNELS[i].Name, i);
+                channelIdToName.Add(i, MLAPI_CHANNELS[i].Id);
+                channelNameToId.Add(MLAPI_CHANNELS[i].Id, i);
                 internalChannels.Add(i, new EnetChannel()
                 {
                     Id = i,
@@ -372,8 +372,8 @@ namespace EnetTransport
             {
                 byte id = (byte)(i + MLAPI_CHANNELS.Length);
 
-                channelIdToName.Add(id, Channels[i].Name);
-                channelNameToId.Add(Channels[i].Name, id);
+                channelIdToName.Add(id, Channels[i].Id);
+                channelNameToId.Add(Channels[i].Id, id);
                 internalChannels.Add(id, new EnetChannel()
                 {
                     Id = id,

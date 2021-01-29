@@ -138,7 +138,7 @@ namespace MLAPI.Transports
         /// <param name="clientId">The clientId to send to</param>
         /// <param name="data">The data to send</param>
         /// <param name="channelName">The channel to send data to</param>
-        public abstract void Send(ulong clientId, ArraySegment<byte> data, string channelName);
+        public abstract void Send(ulong clientId, ArraySegment<byte> data, byte channel);
 
         /// <summary>
         /// Polls for incoming events, with an extra output parameter to report the precise time the event was received.
@@ -148,7 +148,7 @@ namespace MLAPI.Transports
         /// <param name="payload">The incoming data payload</param>
         /// <param name="receiveTime">The time the event was received, as reported by Time.realtimeSinceStartup.</param>
         /// <returns>Returns the event type</returns>
-        public abstract NetEventType PollEvent(out ulong clientId, out string channelName, out ArraySegment<byte> payload, out float receiveTime);
+        public abstract NetEventType PollEvent(out ulong clientId, out byte channel, out ArraySegment<byte> payload, out float receiveTime);
 
         /// <summary>
         /// Connects client to server
