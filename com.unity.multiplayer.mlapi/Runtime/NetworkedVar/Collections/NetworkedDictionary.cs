@@ -385,7 +385,14 @@ namespace MLAPI.NetworkedVar.Collections
             set
             {
                 if (NetworkingManager.Singleton.IsServer)
+                {
                     dictionary[key] = value;
+                    if (NetworkingManager.Singleton.ConnectedClients.Count == 0)
+                    {
+                        dirtyEvents.Clear();
+                        return;
+                    }
+                }
 
                 NetworkedDictionaryEvent<TKey, TValue> dictionaryEvent = new NetworkedDictionaryEvent<TKey, TValue>()
                 {
@@ -416,7 +423,14 @@ namespace MLAPI.NetworkedVar.Collections
         public void Add(TKey key, TValue value)
         {
             if (NetworkingManager.Singleton.IsServer)
+            {
                 dictionary.Add(key, value);
+                if (NetworkingManager.Singleton.ConnectedClients.Count == 0)
+                {
+                    dirtyEvents.Clear();
+                    return;
+                }
+            }
 
             NetworkedDictionaryEvent<TKey, TValue> dictionaryEvent = new NetworkedDictionaryEvent<TKey, TValue>()
             {
@@ -434,7 +448,14 @@ namespace MLAPI.NetworkedVar.Collections
         public void Add(KeyValuePair<TKey, TValue> item)
         {
             if (NetworkingManager.Singleton.IsServer)
+            {
                 dictionary.Add(item);
+                if (NetworkingManager.Singleton.ConnectedClients.Count == 0)
+                {
+                    dirtyEvents.Clear();
+                    return;
+                }
+            }
 
             NetworkedDictionaryEvent<TKey, TValue> dictionaryEvent = new NetworkedDictionaryEvent<TKey, TValue>()
             {
@@ -452,7 +473,14 @@ namespace MLAPI.NetworkedVar.Collections
         public void Clear()
         {
             if (NetworkingManager.Singleton.IsServer)
+            {
                 dictionary.Clear();
+                if (NetworkingManager.Singleton.ConnectedClients.Count == 0)
+                {
+                    dirtyEvents.Clear();
+                    return;
+                }
+            }
 
             NetworkedDictionaryEvent<TKey, TValue> dictionaryEvent = new NetworkedDictionaryEvent<TKey, TValue>()
             {
@@ -492,7 +520,14 @@ namespace MLAPI.NetworkedVar.Collections
         public bool Remove(TKey key)
         {
             if (NetworkingManager.Singleton.IsServer)
+            {
                 dictionary.Remove(key);
+                if (NetworkingManager.Singleton.ConnectedClients.Count == 0)
+                {
+                    dirtyEvents.Clear();
+                    return true;
+                }
+            }
 
             TValue value;
             dictionary.TryGetValue(key, out value);
@@ -516,7 +551,14 @@ namespace MLAPI.NetworkedVar.Collections
         public bool Remove(KeyValuePair<TKey, TValue> item)
         {
             if (NetworkingManager.Singleton.IsServer)
+            {
                 dictionary.Remove(item);
+                if (NetworkingManager.Singleton.ConnectedClients.Count == 0)
+                {
+                    dirtyEvents.Clear();
+                    return true;
+                }
+            }
 
             NetworkedDictionaryEvent<TKey, TValue> dictionaryEvent = new NetworkedDictionaryEvent<TKey, TValue>()
             {

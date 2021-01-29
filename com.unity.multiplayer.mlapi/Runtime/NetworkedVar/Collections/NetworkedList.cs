@@ -1,8 +1,9 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using MLAPI.Serialization;
 using MLAPI.Serialization.Pooled;
+using UnityEngine;
 
 namespace MLAPI.NetworkedVar.Collections
 {
@@ -406,7 +407,15 @@ namespace MLAPI.NetworkedVar.Collections
         public void Add(T item)
         {
             if (NetworkingManager.Singleton.IsServer)
+            {
                 list.Add(item);
+                if (NetworkingManager.Singleton.ConnectedClients.Count == 0)
+                {
+                    dirtyEvents.Clear();
+                    return;
+                }
+            }
+
 
             NetworkedListEvent<T> listEvent = new NetworkedListEvent<T>()
             {
@@ -424,7 +433,14 @@ namespace MLAPI.NetworkedVar.Collections
         public void Clear()
         {
             if (NetworkingManager.Singleton.IsServer)
+            {
                 list.Clear();
+                if (NetworkingManager.Singleton.ConnectedClients.Count == 0)
+                {
+                    dirtyEvents.Clear();
+                    return;
+                }
+            }
 
             NetworkedListEvent<T> listEvent = new NetworkedListEvent<T>()
             {
@@ -452,7 +468,14 @@ namespace MLAPI.NetworkedVar.Collections
         public bool Remove(T item)
         {
             if (NetworkingManager.Singleton.IsServer)
+            {
                 list.Remove(item);
+                if (NetworkingManager.Singleton.ConnectedClients.Count == 0)
+                {
+                    dirtyEvents.Clear();
+                    return true;
+                }
+            }
 
             NetworkedListEvent<T> listEvent = new NetworkedListEvent<T>()
             {
@@ -483,7 +506,14 @@ namespace MLAPI.NetworkedVar.Collections
         public void Insert(int index, T item)
         {
             if (NetworkingManager.Singleton.IsServer)
+            {
                 list.Insert(index, item);
+                if (NetworkingManager.Singleton.ConnectedClients.Count == 0)
+                {
+                    dirtyEvents.Clear();
+                    return;
+                }
+            }
 
             NetworkedListEvent<T> listEvent = new NetworkedListEvent<T>()
             {
@@ -501,7 +531,14 @@ namespace MLAPI.NetworkedVar.Collections
         public void RemoveAt(int index)
         {
             if (NetworkingManager.Singleton.IsServer)
+            {
                 list.RemoveAt(index);
+                if (NetworkingManager.Singleton.ConnectedClients.Count == 0)
+                {
+                    dirtyEvents.Clear();
+                    return;
+                }
+            }
 
             NetworkedListEvent<T> listEvent = new NetworkedListEvent<T>()
             {
@@ -522,7 +559,14 @@ namespace MLAPI.NetworkedVar.Collections
             set
             {
                 if (NetworkingManager.Singleton.IsServer)
+                {
                     list[index] = value;
+                    if (NetworkingManager.Singleton.ConnectedClients.Count == 0)
+                    {
+                        dirtyEvents.Clear();
+                        return;
+                    }
+                }
 
                 NetworkedListEvent<T> listEvent = new NetworkedListEvent<T>()
                 {
