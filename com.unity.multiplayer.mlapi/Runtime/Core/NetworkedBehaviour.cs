@@ -60,10 +60,10 @@ namespace MLAPI
         [EditorBrowsable(EditorBrowsableState.Never)]
 #if UNITY_2020_2_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `protected`
-        internal BitSerializer __beginSendServerRpc(ServerRpcSendParams sendParams, bool isReliable)
+        internal BitSerializer __beginSendServerRpc(ServerRpcParams serverRpcParams, bool isReliable)
 #else
         [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
-        public BitSerializer __beginSendServerRpc(ServerRpcSendParams sendParams, bool isReliable)
+        public BitSerializer __beginSendServerRpc(ServerRpcParams serverRpcParams, bool isReliable)
 #endif
         {
             var rpcQueueContainer = NetworkingManager.Singleton.rpcQueueContainer;
@@ -85,13 +85,13 @@ namespace MLAPI
             writer.WriteUInt16Packed(GetBehaviourId()); // NetworkBehaviourId
 
             // Write the update stage in front of RPC related information
-            if (sendParams.UpdateStage == NetworkUpdateManager.NetworkUpdateStage.Default)
+            if (serverRpcParams.Send.UpdateStage == NetworkUpdateManager.NetworkUpdateStage.Default)
             {
                 writer.WriteUInt16Packed((ushort)NetworkUpdateManager.NetworkUpdateStage.Update);
             }
             else
             {
-                writer.WriteUInt16Packed((ushort)sendParams.UpdateStage);
+                writer.WriteUInt16Packed((ushort)serverRpcParams.Send.UpdateStage);
             }
 
             return new BitSerializer(writer);
@@ -101,10 +101,10 @@ namespace MLAPI
         [EditorBrowsable(EditorBrowsableState.Never)]
 #if UNITY_2020_2_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `protected`
-        internal void __endSendServerRpc(BitSerializer serializer, ServerRpcSendParams sendParams, bool isReliable)
+        internal void __endSendServerRpc(BitSerializer serializer, ServerRpcParams serverRpcParams, bool isReliable)
 #else
         [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
-        public void __endSendServerRpc(BitSerializer serializer, ServerRpcSendParams sendParams, bool isReliable)
+        public void __endSendServerRpc(BitSerializer serializer, ServerRpcParams serverRpcParams, bool isReliable)
 #endif
         {
             if (serializer == null) return;
@@ -117,10 +117,10 @@ namespace MLAPI
         [EditorBrowsable(EditorBrowsableState.Never)]
 #if UNITY_2020_2_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `protected`
-        internal BitSerializer __beginSendClientRpc(ClientRpcSendParams sendParams, bool isReliable)
+        internal BitSerializer __beginSendClientRpc(ClientRpcParams clientRpcParams, bool isReliable)
 #else
         [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
-        public BitSerializer __beginSendClientRpc(ClientRpcSendParams sendParams, bool isReliable)
+        public BitSerializer __beginSendClientRpc(ClientRpcParams clientRpcParams, bool isReliable)
 #endif
         {
             // This will start a new queue item entry and will then return the writer to the current frame's stream
@@ -131,7 +131,7 @@ namespace MLAPI
                 Transport.MLAPI_STDRPC_CHANNEL,
                 /* sendFlags = */ 0,
                 NetworkId,
-                sendParams.TargetClientIds ?? NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray());
+                clientRpcParams.Send.TargetClientIds ?? NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray());
             if (!rpcQueueContainer.IsUsingBatching())
             {
                 writer.WriteBit(false); // Encrypted
@@ -143,13 +143,13 @@ namespace MLAPI
             writer.WriteUInt16Packed(GetBehaviourId()); // NetworkBehaviourId
 
             // Write the update stage in front of RPC related information
-            if (sendParams.UpdateStage == NetworkUpdateManager.NetworkUpdateStage.Default)
+            if (clientRpcParams.Send.UpdateStage == NetworkUpdateManager.NetworkUpdateStage.Default)
             {
                 writer.WriteUInt16Packed((ushort)NetworkUpdateManager.NetworkUpdateStage.Update);
             }
             else
             {
-                writer.WriteUInt16Packed((ushort)sendParams.UpdateStage);
+                writer.WriteUInt16Packed((ushort)clientRpcParams.Send.UpdateStage);
             }
 
             return new BitSerializer(writer);
@@ -159,10 +159,10 @@ namespace MLAPI
         [EditorBrowsable(EditorBrowsableState.Never)]
 #if UNITY_2020_2_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `protected`
-        internal void __endSendClientRpc(BitSerializer serializer, ClientRpcSendParams sendParams, bool isReliable)
+        internal void __endSendClientRpc(BitSerializer serializer, ClientRpcParams clientRpcParams, bool isReliable)
 #else
         [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
-        public void __endSendClientRpc(BitSerializer serializer, ClientRpcSendParams sendParams, bool isReliable)
+        public void __endSendClientRpc(BitSerializer serializer, ClientRpcParams clientRpcParams, bool isReliable)
 #endif
         {
             if (serializer == null) return;

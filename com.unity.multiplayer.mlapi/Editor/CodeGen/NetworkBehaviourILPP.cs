@@ -94,15 +94,7 @@ namespace MLAPI.Editor.CodeGen
         private FieldReference RpcParams_Server_FieldRef;
         private FieldReference RpcParams_Client_FieldRef;
         private TypeReference ServerRpcParams_TypeRef;
-        private FieldReference ServerRpcParams_Send_FieldRef;
-        private FieldReference ServerRpcParams_Receive_FieldRef;
-        private TypeReference ServerRpcSendParams_TypeRef;
-        private TypeReference ServerRpcReceiveParams_TypeRef;
         private TypeReference ClientRpcParams_TypeRef;
-        private FieldReference ClientRpcParams_Send_FieldRef;
-        private FieldReference ClientRpcParams_Receive_FieldRef;
-        private TypeReference ClientRpcSendParams_TypeRef;
-        private TypeReference ClientRpcReceiveParams_TypeRef;
         private TypeReference BitSerializer_TypeRef;
         private MethodReference BitSerializer_SerializeBool_MethodRef;
         private MethodReference BitSerializer_SerializeChar_MethodRef;
@@ -252,45 +244,9 @@ namespace MLAPI.Editor.CodeGen
 
             var serverRpcParamsType = typeof(ServerRpcParams);
             ServerRpcParams_TypeRef = moduleDefinition.ImportReference(serverRpcParamsType);
-            foreach (var fieldInfo in serverRpcParamsType.GetFields())
-            {
-                switch (fieldInfo.Name)
-                {
-                    case nameof(ServerRpcParams.Send):
-                        ServerRpcParams_Send_FieldRef = moduleDefinition.ImportReference(fieldInfo);
-                        break;
-                    case nameof(ServerRpcParams.Receive):
-                        ServerRpcParams_Receive_FieldRef = moduleDefinition.ImportReference(fieldInfo);
-                        break;
-                }
-            }
-
-            var serverRpcSendParamsType = typeof(ServerRpcSendParams);
-            ServerRpcSendParams_TypeRef = moduleDefinition.ImportReference(serverRpcSendParamsType);
-
-            var serverRpcReceiveParamsType = typeof(ServerRpcReceiveParams);
-            ServerRpcReceiveParams_TypeRef = moduleDefinition.ImportReference(serverRpcReceiveParamsType);
 
             var clientRpcParamsType = typeof(ClientRpcParams);
             ClientRpcParams_TypeRef = moduleDefinition.ImportReference(clientRpcParamsType);
-            foreach (var fieldInfo in clientRpcParamsType.GetFields())
-            {
-                switch (fieldInfo.Name)
-                {
-                    case nameof(ClientRpcParams.Send):
-                        ClientRpcParams_Send_FieldRef = moduleDefinition.ImportReference(fieldInfo);
-                        break;
-                    case nameof(ClientRpcParams.Receive):
-                        ClientRpcParams_Receive_FieldRef = moduleDefinition.ImportReference(fieldInfo);
-                        break;
-                }
-            }
-
-            var clientRpcSendParamsType = typeof(ClientRpcSendParams);
-            ClientRpcSendParams_TypeRef = moduleDefinition.ImportReference(clientRpcSendParamsType);
-
-            var clientRpcReceiveParamsType = typeof(ClientRpcReceiveParams);
-            ClientRpcReceiveParams_TypeRef = moduleDefinition.ImportReference(clientRpcReceiveParamsType);
 
             var bitSerializerType = typeof(BitSerializer);
             BitSerializer_TypeRef = moduleDefinition.ImportReference(bitSerializerType);
@@ -529,9 +485,9 @@ namespace MLAPI.Editor.CodeGen
             // uint methodHash;
             methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.UInt32));
             int methodHashLocIdx = methodDefinition.Body.Variables.Count - 1;
-            // XXXRpcSendParams
-            if (!hasRpcParams) methodDefinition.Body.Variables.Add(new VariableDefinition(isServerRpc ? ServerRpcSendParams_TypeRef : ClientRpcSendParams_TypeRef));
-            int sendParamsIdx = !hasRpcParams ? methodDefinition.Body.Variables.Count - 1 : -1;
+            // XXXRpcParams
+            if (!hasRpcParams) methodDefinition.Body.Variables.Add(new VariableDefinition(isServerRpc ? ServerRpcParams_TypeRef : ClientRpcParams_TypeRef));
+            int rpcParamsIdx = !hasRpcParams ? methodDefinition.Body.Variables.Count - 1 : -1;
 
             {
                 var returnInstr = processor.Create(OpCodes.Ret);
@@ -580,26 +536,23 @@ namespace MLAPI.Editor.CodeGen
 
                 instructions.Add(beginInstr);
 
-                // var serializer = BeginSendServerRpc(sendParams, isReliable) -> ServerRpc
-                // var serializer = BeginSendClientRpc(sendParams, isReliable) -> ClientRpc
+                // var serializer = BeginSendServerRpc(serverRpcParams, isReliable) -> ServerRpc
+                // var serializer = BeginSendClientRpc(clientRpcParams, isReliable) -> ClientRpc
                 if (isServerRpc)
                 {
                     // ServerRpc
-                    // var serializer = BeginSendServerRpc(sendParams, isReliable);
+                    // var serializer = BeginSendServerRpc(serverRpcParams, isReliable);
                     instructions.Add(processor.Create(OpCodes.Ldarg_0));
 
                     if (hasRpcParams)
                     {
-                        // rpcParams.Send
+                        // rpcParams
                         instructions.Add(processor.Create(OpCodes.Ldarg, paramCount));
-                        instructions.Add(processor.Create(OpCodes.Ldfld, ServerRpcParams_Send_FieldRef));
                     }
                     else
                     {
                         // default
-                        instructions.Add(processor.Create(OpCodes.Ldloca, sendParamsIdx));
-                        instructions.Add(processor.Create(OpCodes.Initobj, ServerRpcSendParams_TypeRef));
-                        instructions.Add(processor.Create(OpCodes.Ldloc, sendParamsIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldloc, rpcParamsIdx));
                     }
 
                     // isReliable
@@ -612,21 +565,18 @@ namespace MLAPI.Editor.CodeGen
                 else
                 {
                     // ClientRpc
-                    // var serializer = BeginSendClientRpc(sendParams, isReliable);
+                    // var serializer = BeginSendClientRpc(clientRpcParams, isReliable);
                     instructions.Add(processor.Create(OpCodes.Ldarg_0));
 
                     if (hasRpcParams)
                     {
-                        // rpcParams.Send
+                        // rpcParams
                         instructions.Add(processor.Create(OpCodes.Ldarg, paramCount));
-                        instructions.Add(processor.Create(OpCodes.Ldfld, ClientRpcParams_Send_FieldRef));
                     }
                     else
                     {
                         // default
-                        instructions.Add(processor.Create(OpCodes.Ldloca, sendParamsIdx));
-                        instructions.Add(processor.Create(OpCodes.Initobj, ClientRpcSendParams_TypeRef));
-                        instructions.Add(processor.Create(OpCodes.Ldloc, sendParamsIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldloc, rpcParamsIdx));
                     }
 
                     // isReliable
@@ -1424,12 +1374,12 @@ namespace MLAPI.Editor.CodeGen
 
                 instructions.Add(endInstr);
 
-                // EndSendServerRpc(serializer, sendParams, isReliable) -> ServerRpc
-                // EndSendClientRpc(serializer, sendParams, isReliable) -> ClientRpc
+                // EndSendServerRpc(serializer, serverRpcParams, isReliable) -> ServerRpc
+                // EndSendClientRpc(serializer, clientRpcParams, isReliable) -> ClientRpc
                 if (isServerRpc)
                 {
                     // ServerRpc
-                    // EndSendServerRpc(serializer, sendParams, isReliable);
+                    // EndSendServerRpc(serializer, serverRpcParams, isReliable);
                     instructions.Add(processor.Create(OpCodes.Ldarg_0));
 
                     // serializer
@@ -1437,14 +1387,13 @@ namespace MLAPI.Editor.CodeGen
 
                     if (hasRpcParams)
                     {
-                        // rpcParams.Send
+                        // rpcParams
                         instructions.Add(processor.Create(OpCodes.Ldarg, paramCount));
-                        instructions.Add(processor.Create(OpCodes.Ldfld, ServerRpcParams_Send_FieldRef));
                     }
                     else
                     {
                         // default
-                        instructions.Add(processor.Create(OpCodes.Ldloc, sendParamsIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldloc, rpcParamsIdx));
                     }
 
                     // isReliable
@@ -1456,7 +1405,7 @@ namespace MLAPI.Editor.CodeGen
                 else
                 {
                     // ClientRpc
-                    // EndSendClientRpc(serializer, sendParams, isReliable);
+                    // EndSendClientRpc(serializer, clientRpcParams, isReliable);
                     instructions.Add(processor.Create(OpCodes.Ldarg_0));
 
                     // serializer
@@ -1464,14 +1413,13 @@ namespace MLAPI.Editor.CodeGen
 
                     if (hasRpcParams)
                     {
-                        // rpcParams.Send
+                        // rpcParams
                         instructions.Add(processor.Create(OpCodes.Ldarg, paramCount));
-                        instructions.Add(processor.Create(OpCodes.Ldfld, ClientRpcParams_Send_FieldRef));
                     }
                     else
                     {
                         // default
-                        instructions.Add(processor.Create(OpCodes.Ldloc, sendParamsIdx));
+                        instructions.Add(processor.Create(OpCodes.Ldloc, rpcParamsIdx));
                     }
 
                     // isReliable
