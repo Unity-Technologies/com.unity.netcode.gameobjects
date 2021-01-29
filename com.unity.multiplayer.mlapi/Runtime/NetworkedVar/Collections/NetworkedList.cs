@@ -1,9 +1,8 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using MLAPI.Serialization;
 using MLAPI.Serialization.Pooled;
-using UnityEngine;
 
 namespace MLAPI.NetworkedVar.Collections
 {
@@ -407,15 +406,7 @@ namespace MLAPI.NetworkedVar.Collections
         public void Add(T item)
         {
             if (NetworkingManager.Singleton.IsServer)
-            {
                 list.Add(item);
-                if (NetworkingManager.Singleton.ConnectedClients.Count == 0)
-                {
-                    dirtyEvents.Clear();
-                    return;
-                }
-            }
-
 
             NetworkedListEvent<T> listEvent = new NetworkedListEvent<T>()
             {
@@ -423,33 +414,22 @@ namespace MLAPI.NetworkedVar.Collections
                 value = item,
                 index = list.Count - 1
             };
-            dirtyEvents.Add(listEvent);
 
-            if (NetworkingManager.Singleton.IsServer && OnListChanged != null)
-                OnListChanged(listEvent);
+            HandleAddListEvent(listEvent);
         }
 
         /// <inheritdoc />
         public void Clear()
         {
             if (NetworkingManager.Singleton.IsServer)
-            {
                 list.Clear();
-                if (NetworkingManager.Singleton.ConnectedClients.Count == 0)
-                {
-                    dirtyEvents.Clear();
-                    return;
-                }
-            }
 
             NetworkedListEvent<T> listEvent = new NetworkedListEvent<T>()
             {
                 eventType = NetworkedListEvent<T>.EventType.Clear
             };
-            dirtyEvents.Add(listEvent);
 
-            if (NetworkingManager.Singleton.IsServer && OnListChanged != null)
-                OnListChanged(listEvent);
+            HandleAddListEvent(listEvent);
         }
 
         /// <inheritdoc />
@@ -468,25 +448,15 @@ namespace MLAPI.NetworkedVar.Collections
         public bool Remove(T item)
         {
             if (NetworkingManager.Singleton.IsServer)
-            {
                 list.Remove(item);
-                if (NetworkingManager.Singleton.ConnectedClients.Count == 0)
-                {
-                    dirtyEvents.Clear();
-                    return true;
-                }
-            }
 
             NetworkedListEvent<T> listEvent = new NetworkedListEvent<T>()
             {
                 eventType = NetworkedListEvent<T>.EventType.Remove,
                 value = item
             };
-            dirtyEvents.Add(listEvent);
 
-            if (NetworkingManager.Singleton.IsServer && OnListChanged != null)
-                OnListChanged(listEvent);
-
+            HandleAddListEvent(listEvent);
             return true;
         }
 
@@ -506,14 +476,7 @@ namespace MLAPI.NetworkedVar.Collections
         public void Insert(int index, T item)
         {
             if (NetworkingManager.Singleton.IsServer)
-            {
                 list.Insert(index, item);
-                if (NetworkingManager.Singleton.ConnectedClients.Count == 0)
-                {
-                    dirtyEvents.Clear();
-                    return;
-                }
-            }
 
             NetworkedListEvent<T> listEvent = new NetworkedListEvent<T>()
             {
@@ -521,34 +484,23 @@ namespace MLAPI.NetworkedVar.Collections
                 index = index,
                 value = item
             };
-            dirtyEvents.Add(listEvent);
 
-            if (NetworkingManager.Singleton.IsServer && OnListChanged != null)
-                OnListChanged(listEvent);
+            HandleAddListEvent(listEvent);
         }
 
         /// <inheritdoc />
         public void RemoveAt(int index)
         {
             if (NetworkingManager.Singleton.IsServer)
-            {
                 list.RemoveAt(index);
-                if (NetworkingManager.Singleton.ConnectedClients.Count == 0)
-                {
-                    dirtyEvents.Clear();
-                    return;
-                }
-            }
 
             NetworkedListEvent<T> listEvent = new NetworkedListEvent<T>()
             {
                 eventType = NetworkedListEvent<T>.EventType.RemoveAt,
                 index = index
             };
-            dirtyEvents.Add(listEvent);
 
-            if (NetworkingManager.Singleton.IsServer && OnListChanged != null)
-                OnListChanged(listEvent);
+            HandleAddListEvent(listEvent);
         }
 
 
@@ -559,14 +511,7 @@ namespace MLAPI.NetworkedVar.Collections
             set
             {
                 if (NetworkingManager.Singleton.IsServer)
-                {
                     list[index] = value;
-                    if (NetworkingManager.Singleton.ConnectedClients.Count == 0)
-                    {
-                        dirtyEvents.Clear();
-                        return;
-                    }
-                }
 
                 NetworkedListEvent<T> listEvent = new NetworkedListEvent<T>()
                 {
@@ -574,10 +519,25 @@ namespace MLAPI.NetworkedVar.Collections
                     index = index,
                     value = value
                 };
-                dirtyEvents.Add(listEvent);
 
-                if (NetworkingManager.Singleton.IsServer && OnListChanged != null)
-                    OnListChanged(listEvent);
+                HandleAddListEvent(listEvent);
+            }
+        }
+
+        private void HandleAddListEvent(NetworkedListEvent<T> listEvent)
+        {
+            if (NetworkingManager.Singleton.IsServer)
+            {
+                if (NetworkingManager.Singleton.ConnectedClients.Count > 0)
+                {
+                    dirtyEvents.Add(listEvent);
+                }
+
+                OnListChanged?.Invoke(listEvent);
+            }
+            else
+            {
+                dirtyEvents.Add(listEvent);
             }
         }
     }
@@ -589,7 +549,7 @@ namespace MLAPI.NetworkedVar.Collections
     public struct NetworkedListEvent<T>
     {
         /// <summary>
-        /// Enum representing the different operations available for triggering an event. 
+        /// Enum representing the different operations available for triggering an event.
         /// </summary>
         public enum EventType
         {
