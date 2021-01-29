@@ -79,7 +79,7 @@ namespace MLAPI.NetworkedVar.Collections
         public void ResetDirty()
         {
             dirtyEvents.Clear();
-            LastSyncedTime = NetworkingManager.Singleton.NetworkTime;
+            LastSyncedTime = networkedBehaviour.NetManager.NetworkTime;
         }
 
         /// <inheritdoc />
@@ -88,7 +88,7 @@ namespace MLAPI.NetworkedVar.Collections
             if (dirtyEvents.Count == 0) return false;
             if (Settings.SendTickrate == 0) return true;
             if (Settings.SendTickrate < 0) return false;
-            if (NetworkingManager.Singleton.NetworkTime - LastSyncedTime >= (1f / Settings.SendTickrate)) return true;
+            if (networkedBehaviour.NetManager.NetworkTime - LastSyncedTime >= (1f / Settings.SendTickrate)) return true;
             return false;
         }
 
@@ -189,7 +189,7 @@ namespace MLAPI.NetworkedVar.Collections
         /// <inheritdoc />
         public void ReadField(Stream stream)
         {
-            using (PooledBitReader reader = PooledBitReader.Get(stream))
+            using (PooledBitReader reader = networkedBehaviour.NetManager.PooledBitReaders.GetReader(stream))
             {
                 set.Clear();
                 ushort count = reader.ReadUInt16Packed();
@@ -204,7 +204,7 @@ namespace MLAPI.NetworkedVar.Collections
         /// <inheritdoc />
         public void ReadDelta(Stream stream, bool keepDirtyDelta)
         {
-            using (PooledBitReader reader = PooledBitReader.Get(stream))
+            using (PooledBitReader reader = networkedBehaviour.NetManager.PooledBitReaders.GetReader(stream))
             {
                 ushort deltaCount = reader.ReadUInt16Packed();
                 for (int i = 0; i < deltaCount; i++)
@@ -308,7 +308,7 @@ namespace MLAPI.NetworkedVar.Collections
         /// <inheritdoc />
         void ICollection<T>.Add(T item)
         {
-            if (NetworkingManager.Singleton.IsServer)
+            if (networkedBehaviour.NetManager.IsServer)
                 set.Add(item);
 
             NetworkedSetEvent<T> setEvent = new NetworkedSetEvent<T>()
@@ -318,7 +318,7 @@ namespace MLAPI.NetworkedVar.Collections
             };
             dirtyEvents.Add(setEvent);
 
-            if (NetworkingManager.Singleton.IsServer && OnSetChanged != null)
+            if (networkedBehaviour.NetManager.IsServer && OnSetChanged != null)
                 OnSetChanged(setEvent);
         }
 
@@ -395,7 +395,7 @@ namespace MLAPI.NetworkedVar.Collections
                 }
                 else
                 {
-                    if (NetworkingManager.Singleton.IsServer)
+                    if (networkedBehaviour.NetManager.IsServer)
                         set.Add(value);
 
                     NetworkedSetEvent<T> setEvent = new NetworkedSetEvent<T>()
@@ -405,7 +405,7 @@ namespace MLAPI.NetworkedVar.Collections
                     };
                     dirtyEvents.Add(setEvent);
 
-                    if (NetworkingManager.Singleton.IsServer && OnSetChanged != null)
+                    if (networkedBehaviour.NetManager.IsServer && OnSetChanged != null)
                         OnSetChanged(setEvent);
                 }
             }
@@ -418,7 +418,7 @@ namespace MLAPI.NetworkedVar.Collections
             {
                 if (!set.Contains(value))
                 {
-                    if (NetworkingManager.Singleton.IsServer)
+                    if (networkedBehaviour.NetManager.IsServer)
                         set.Add(value);
 
                     NetworkedSetEvent<T> setEvent = new NetworkedSetEvent<T>()
@@ -428,7 +428,7 @@ namespace MLAPI.NetworkedVar.Collections
                     };
                     dirtyEvents.Add(setEvent);
 
-                    if (NetworkingManager.Singleton.IsServer && OnSetChanged != null)
+                    if (networkedBehaviour.NetManager.IsServer && OnSetChanged != null)
                         OnSetChanged(setEvent);
                 }
             }
@@ -437,7 +437,7 @@ namespace MLAPI.NetworkedVar.Collections
         /// <inheritdoc />
         bool ISet<T>.Add(T item)
         {
-            if (NetworkingManager.Singleton.IsServer)
+            if (networkedBehaviour.NetManager.IsServer)
                 set.Add(item);
 
             NetworkedSetEvent<T> setEvent = new NetworkedSetEvent<T>()
@@ -447,7 +447,7 @@ namespace MLAPI.NetworkedVar.Collections
             };
             dirtyEvents.Add(setEvent);
 
-            if (NetworkingManager.Singleton.IsServer && OnSetChanged != null)
+            if (networkedBehaviour.NetManager.IsServer && OnSetChanged != null)
                 OnSetChanged(setEvent);
 
             return true;
@@ -456,7 +456,7 @@ namespace MLAPI.NetworkedVar.Collections
         /// <inheritdoc />
         public void Clear()
         {
-            if (NetworkingManager.Singleton.IsServer)
+            if (networkedBehaviour.NetManager.IsServer)
                 set.Clear();
 
             NetworkedSetEvent<T> setEvent = new NetworkedSetEvent<T>()
@@ -465,7 +465,7 @@ namespace MLAPI.NetworkedVar.Collections
             };
             dirtyEvents.Add(setEvent);
 
-            if (NetworkingManager.Singleton.IsServer && OnSetChanged != null)
+            if (networkedBehaviour.NetManager.IsServer && OnSetChanged != null)
                 OnSetChanged(setEvent);
         }
 
@@ -484,7 +484,7 @@ namespace MLAPI.NetworkedVar.Collections
         /// <inheritdoc />
         public bool Remove(T item)
         {
-            if (NetworkingManager.Singleton.IsServer)
+            if (networkedBehaviour.NetManager.IsServer)
                 set.Remove(item);
 
             NetworkedSetEvent<T> setEvent = new NetworkedSetEvent<T>()
@@ -494,7 +494,7 @@ namespace MLAPI.NetworkedVar.Collections
             };
             dirtyEvents.Add(setEvent);
 
-            if (NetworkingManager.Singleton.IsServer && OnSetChanged != null)
+            if (networkedBehaviour.NetManager.IsServer && OnSetChanged != null)
                 OnSetChanged(setEvent);
 
             return true;

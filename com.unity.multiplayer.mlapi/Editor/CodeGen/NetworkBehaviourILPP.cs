@@ -79,7 +79,6 @@ namespace MLAPI.Editor.CodeGen
         private TypeReference NetworkManager_TypeRef;
         private FieldReference NetworkManager_ntable_FieldRef;
         private MethodReference NetworkManager_ntable_Add_MethodRef;
-        private MethodReference NetworkManager_getSingleton_MethodRef;
         private MethodReference NetworkManager_getIsListening_MethodRef;
         private MethodReference NetworkManager_getIsHost_MethodRef;
         private MethodReference NetworkManager_getIsServer_MethodRef;
@@ -145,7 +144,6 @@ namespace MLAPI.Editor.CodeGen
         private MethodReference BitReader_ReadRayPacked_MethodRef;
         private MethodReference BitReader_ReadRay2DPacked_MethodRef;
 
-        private const string k_NetworkingManager_Singleton = nameof(NetworkingManager.Singleton);
         private const string k_NetworkingManager_IsListening = nameof(NetworkingManager.IsListening);
         private const string k_NetworkingManager_IsHost = nameof(NetworkingManager.IsHost);
         private const string k_NetworkingManager_IsServer = nameof(NetworkingManager.IsServer);
@@ -162,15 +160,13 @@ namespace MLAPI.Editor.CodeGen
 
         private bool ImportReferences(ModuleDefinition moduleDefinition)
         {
+            UnityEngine.Debug.Log("ImportReferences called");
             var networkManagerType = typeof(NetworkingManager);
             NetworkManager_TypeRef = moduleDefinition.ImportReference(networkManagerType);
             foreach (var propertyInfo in networkManagerType.GetProperties())
             {
                 switch (propertyInfo.Name)
                 {
-                    case k_NetworkingManager_Singleton:
-                        NetworkManager_getSingleton_MethodRef = moduleDefinition.ImportReference(propertyInfo.GetMethod);
-                        break;
                     case k_NetworkingManager_IsListening:
                         NetworkManager_getIsListening_MethodRef = moduleDefinition.ImportReference(propertyInfo.GetMethod);
                         break;

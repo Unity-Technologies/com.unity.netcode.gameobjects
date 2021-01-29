@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using MLAPI.Logging;
 using UnityEngine;
 
@@ -16,12 +16,12 @@ namespace MLAPI.Configuration
             {
                 if (Prefab == null)
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkedPrefab is not assigned");
+                    NetworkLog.LogWarning("NetworkedPrefab is not assigned");
                     return 0;
                 }
                 else if (Prefab.GetComponent<NetworkedObject>() == null)
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("The NetworkedPrefab " + Prefab.name + " does not have a NetworkedObject");
+                    NetworkLog.LogWarning("The NetworkedPrefab " + Prefab.name + " does not have a NetworkedObject");
                     return 0;
                 }
                 else return Prefab.GetComponent<NetworkedObject>().PrefabHash;

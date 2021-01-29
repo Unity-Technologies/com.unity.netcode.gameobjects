@@ -18,7 +18,7 @@ namespace MLAPI.SceneManagement
     /// <summary>
     /// Main class for managing network scenes
     /// </summary>
-    public static class NetworkSceneManager
+    public class NetworkSceneManager
     {
         /// <summary>
         /// Delegate for when the scene has been switched
@@ -31,35 +31,42 @@ namespace MLAPI.SceneManagement
         /// <summary>
         /// Event that is invoked when the scene is switched
         /// </summary>
-        public static event SceneSwitchedDelegate OnSceneSwitched;
+        public event SceneSwitchedDelegate OnSceneSwitched;
         /// <summary>
         /// Event that is invoked when a local scene switch has started
         /// </summary>
-        public static event SceneSwitchStartedDelegate OnSceneSwitchStarted;
+        public event SceneSwitchStartedDelegate OnSceneSwitchStarted;
 
-        internal static readonly HashSet<string> registeredSceneNames = new HashSet<string>();
-        internal static readonly Dictionary<string, uint> sceneNameToIndex = new Dictionary<string, uint>();
-        internal static readonly Dictionary<uint, string> sceneIndexToString = new Dictionary<uint, string>();
-        internal static readonly Dictionary<Guid, SceneSwitchProgress> sceneSwitchProgresses = new Dictionary<Guid, SceneSwitchProgress>();
-        private static Scene lastScene;
-        private static string nextSceneName;
-        private static bool isSwitching = false;
-        internal static uint currentSceneIndex = 0;
-        internal static Guid currentSceneSwitchProgressGuid = new Guid();
-        internal static bool isSpawnedObjectsPendingInDontDestroyOnLoad = false;
+        internal readonly HashSet<string> registeredSceneNames = new HashSet<string>();
+        internal readonly Dictionary<string, uint> sceneNameToIndex = new Dictionary<string, uint>();
+        internal readonly Dictionary<uint, string> sceneIndexToString = new Dictionary<uint, string>();
+        internal readonly Dictionary<Guid, SceneSwitchProgress> sceneSwitchProgresses = new Dictionary<Guid, SceneSwitchProgress>();
+        private Scene lastScene;
+        private string nextSceneName;
+        private bool isSwitching = false;
+        internal uint currentSceneIndex = 0;
+        internal Guid currentSceneSwitchProgressGuid = new Guid();
+        internal bool isSpawnedObjectsPendingInDontDestroyOnLoad = false;
 
-        internal static void SetCurrentSceneIndex()
+        private NetworkingManager networkingManager;
+
+        internal NetworkSceneManager(NetworkingManager manager)
+        {
+            networkingManager = manager;
+        }
+
+        internal void SetCurrentSceneIndex()
         {
             if (!sceneNameToIndex.ContainsKey(SceneManager.GetActiveScene().name))
             {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("The current scene (" + SceneManager.GetActiveScene().name + ") is not regisered as a network scene.");
+                if (NetworkingManager.LogLevel <= LogLevel.Normal) NetworkLog.LogWarning("The current scene (" + SceneManager.GetActiveScene().name + ") is not regisered as a network scene.");
                 return;
             }
             currentSceneIndex = sceneNameToIndex[SceneManager.GetActiveScene().name];
             CurrentActiveSceneIndex = currentSceneIndex;
         }
 
-        internal static uint CurrentActiveSceneIndex { get; private set; } = 0;
+        internal uint CurrentActiveSceneIndex { get; private set; } = 0;
 
         /// <summary>
         /// Adds a scene during runtime.
@@ -67,9 +74,9 @@ namespace MLAPI.SceneManagement
         /// </summary>
         /// <param name="sceneName">Scene name.</param>
         /// <param name="index">Index.</param>
-        public static void AddRuntimeSceneName(string sceneName, uint index)
+        public void AddRuntimeSceneName(string sceneName, uint index)
         {
-            if (!NetworkingManager.Singleton.NetworkConfig.AllowRuntimeSceneChanges)
+            if (!networkingManager.NetworkConfig.AllowRuntimeSceneChanges)
             {
                 throw new NetworkConfigurationException("Cannot change the scene configuration when AllowRuntimeSceneChanges is false");
             }
@@ -83,28 +90,28 @@ namespace MLAPI.SceneManagement
         /// Switches to a scene with a given name. Can only be called from Server
         /// </summary>
         /// <param name="sceneName">The name of the scene to switch to</param>
-        public static SceneSwitchProgress SwitchScene(string sceneName)
+        public SceneSwitchProgress SwitchScene(string sceneName)
         {
-            if (!NetworkingManager.Singleton.IsServer)
+            if (!networkingManager.IsServer)
             {
                 throw new NotServerException("Only server can start a scene switch");
             }
             else if (isSwitching)
             {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Scene switch already in progress");
+                if (NetworkingManager.LogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Scene switch already in progress");
                 return null;
             }
             else if (!registeredSceneNames.Contains(sceneName))
             {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("The scene " + sceneName + " is not registered as a switchable scene.");
+                if (NetworkingManager.LogLevel <= LogLevel.Normal) NetworkLog.LogWarning("The scene " + sceneName + " is not registered as a switchable scene.");
                 return null;
             }
 
-            SpawnManager.ServerDestroySpawnedSceneObjects(); //Destroy current scene objects before switching.
+            networkingManager.SpawnManager.ServerDestroySpawnedSceneObjects(); //Destroy current scene objects before switching.
             isSwitching = true;
             lastScene = SceneManager.GetActiveScene();
 
-            SceneSwitchProgress switchSceneProgress = new SceneSwitchProgress();
+            SceneSwitchProgress switchSceneProgress = new SceneSwitchProgress(networkingManager);
             sceneSwitchProgresses.Add(switchSceneProgress.guid, switchSceneProgress);
             currentSceneSwitchProgressGuid = switchSceneProgress.guid;
 
@@ -131,11 +138,11 @@ namespace MLAPI.SceneManagement
         }
 
         // Called on client
-        internal static void OnSceneSwitch(uint sceneIndex, Guid switchSceneGuid, Stream objectStream)
+        internal void OnSceneSwitch(uint sceneIndex, Guid switchSceneGuid, Stream objectStream)
         {
             if (!sceneIndexToString.ContainsKey(sceneIndex) || !registeredSceneNames.Contains(sceneIndexToString[sceneIndex]))
             {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Server requested a scene switch to a non registered scene");
+                if (NetworkingManager.LogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Server requested a scene switch to a non registered scene");
                 return;
             }
 
@@ -163,11 +170,11 @@ namespace MLAPI.SceneManagement
             }
         }
 
-        internal static void OnFirstSceneSwitchSync(uint sceneIndex, Guid switchSceneGuid)
+        internal void OnFirstSceneSwitchSync(uint sceneIndex, Guid switchSceneGuid)
         {
             if (!sceneIndexToString.ContainsKey(sceneIndex) || !registeredSceneNames.Contains(sceneIndexToString[sceneIndex]))
             {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Server requested a scene switch to a non registered scene");
+                if (NetworkingManager.LogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Server requested a scene switch to a non registered scene");
                 return;
             }
             else if (SceneManager.GetActiveScene().name == sceneIndexToString[sceneIndex])
@@ -188,14 +195,14 @@ namespace MLAPI.SceneManagement
                 using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                 {
                     writer.WriteByteArray(switchSceneGuid.ToByteArray());
-                    InternalMessageSender.Send(NetworkingManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_CLIENT_SWITCH_SCENE_COMPLETED, Transport.MLAPI_INTERNAL_CHANNEL, stream, SecuritySendFlags.None);
+                    networkingManager.MessageSender.Send(networkingManager.ServerClientId, MLAPIConstants.MLAPI_CLIENT_SWITCH_SCENE_COMPLETED, Transport.MLAPI_INTERNAL_CHANNEL, stream, SecuritySendFlags.None);
                 }
             }
 
             isSwitching = false;
         }
 
-        private static void OnSceneLoaded(Guid switchSceneGuid, Stream objectStream)
+        private void OnSceneLoaded(Guid switchSceneGuid, Stream objectStream)
         {
             CurrentActiveSceneIndex = sceneNameToIndex[nextSceneName];
             Scene nextScene = SceneManager.GetSceneByName(nextSceneName);
@@ -208,7 +215,7 @@ namespace MLAPI.SceneManagement
 
             currentSceneIndex = CurrentActiveSceneIndex;
 
-            if (NetworkingManager.Singleton.IsServer)
+            if (networkingManager.IsServer)
             {
                 OnSceneUnloadServer(switchSceneGuid);
             }
@@ -218,7 +225,7 @@ namespace MLAPI.SceneManagement
             }
         }
 
-        private static void OnSceneUnloadServer(Guid switchSceneGuid)
+        private void OnSceneUnloadServer(Guid switchSceneGuid)
         {
             // Justification: Rare alloc, could(should?) reuse
             List<NetworkedObject> newSceneObjects = new List<NetworkedObject>();
@@ -230,7 +237,8 @@ namespace MLAPI.SceneManagement
                 {
                     if (networkedObjects[i].IsSceneObject == null)
                     {
-                        SpawnManager.SpawnNetworkedObjectLocally(networkedObjects[i], SpawnManager.GetNetworkObjectId(), true, false, null, null, false, 0, false, true);
+                        networkingManager.SpawnManager.SpawnNetworkedObjectLocally(networkedObjects[i],
+                            networkingManager.SpawnManager.GetNetworkObjectId(), true, false, null, null, false, 0, false, true);
 
                         newSceneObjects.Add(networkedObjects[i]);
                     }
@@ -238,9 +246,9 @@ namespace MLAPI.SceneManagement
             }
 
 
-            for (int j = 0; j < NetworkingManager.Singleton.ConnectedClientsList.Count; j++)
+            for (int j = 0; j < networkingManager.ConnectedClientsList.Count; j++)
             {
-                if (NetworkingManager.Singleton.ConnectedClientsList[j].ClientId != NetworkingManager.Singleton.ServerClientId)
+                if (networkingManager.ConnectedClientsList[j].ClientId != networkingManager.ServerClientId)
                 {
                     using (PooledBitStream stream = PooledBitStream.Get())
                     {
@@ -252,7 +260,7 @@ namespace MLAPI.SceneManagement
                             uint sceneObjectsToSpawn = 0;
                             for (int i = 0; i < newSceneObjects.Count; i++)
                             {
-                                if (newSceneObjects[i].observers.Contains(NetworkingManager.Singleton.ConnectedClientsList[j].ClientId))
+                                if (newSceneObjects[i].observers.Contains(networkingManager.ConnectedClientsList[j].ClientId))
                                     sceneObjectsToSpawn++;
                             }
 
@@ -260,7 +268,7 @@ namespace MLAPI.SceneManagement
 
                             for (int i = 0; i < newSceneObjects.Count; i++)
                             {
-                                if (newSceneObjects[i].observers.Contains(NetworkingManager.Singleton.ConnectedClientsList[j].ClientId))
+                                if (newSceneObjects[i].observers.Contains(networkingManager.ConnectedClientsList[j].ClientId))
                                 {
                                     writer.WriteBool(newSceneObjects[i].IsPlayerObject);
                                     writer.WriteUInt64Packed(newSceneObjects[i].NetworkId);
@@ -283,7 +291,7 @@ namespace MLAPI.SceneManagement
                                         writer.WriteUInt64Packed(parent.NetworkId);
                                     }
 
-                                    if (!NetworkingManager.Singleton.NetworkConfig.EnableSceneManagement || NetworkingManager.Singleton.NetworkConfig.UsePrefabSync)
+                                    if (!networkingManager.NetworkConfig.EnableSceneManagement || networkingManager.NetworkConfig.UsePrefabSync)
                                     {
                                         writer.WriteUInt64Packed(newSceneObjects[i].PrefabHash);
 
@@ -300,23 +308,23 @@ namespace MLAPI.SceneManagement
                                         writer.WriteUInt64Packed(newSceneObjects[i].NetworkedInstanceId);
                                     }
 
-                                    if (NetworkingManager.Singleton.NetworkConfig.EnableNetworkedVar)
+                                    if (networkingManager.NetworkConfig.EnableNetworkedVar)
                                     {
-                                        newSceneObjects[i].WriteNetworkedVarData(stream, NetworkingManager.Singleton.ConnectedClientsList[j].ClientId);
+                                        newSceneObjects[i].WriteNetworkedVarData(stream, networkingManager.ConnectedClientsList[j].ClientId);
                                     }
                                 }
                             }
                         }
 
-                        InternalMessageSender.Send(NetworkingManager.Singleton.ConnectedClientsList[j].ClientId, MLAPIConstants.MLAPI_SWITCH_SCENE, Transport.MLAPI_INTERNAL_CHANNEL, stream, SecuritySendFlags.None);
+                        networkingManager.MessageSender.Send(networkingManager.ConnectedClientsList[j].ClientId, MLAPIConstants.MLAPI_SWITCH_SCENE, Transport.MLAPI_INTERNAL_CHANNEL, stream, SecuritySendFlags.None);
                     }
                 }
             }
 
             //Tell server that scene load is completed
-            if (NetworkingManager.Singleton.IsHost)
+            if (networkingManager.IsHost)
             {
-                OnClientSwitchSceneCompleted(NetworkingManager.Singleton.LocalClientId, switchSceneGuid);
+                OnClientSwitchSceneCompleted(networkingManager.LocalClientId, switchSceneGuid);
             }
 
             isSwitching = false;
@@ -327,13 +335,13 @@ namespace MLAPI.SceneManagement
             }
         }
 
-        private static void OnSceneUnloadClient(Guid switchSceneGuid, Stream objectStream)
+        private void OnSceneUnloadClient(Guid switchSceneGuid, Stream objectStream)
         {
-            if (!NetworkingManager.Singleton.NetworkConfig.EnableSceneManagement || NetworkingManager.Singleton.NetworkConfig.UsePrefabSync)
+            if (!networkingManager.NetworkConfig.EnableSceneManagement || networkingManager.NetworkConfig.UsePrefabSync)
             {
-                SpawnManager.DestroySceneObjects();
+                networkingManager.SpawnManager.DestroySceneObjects();
 
-                using (PooledBitReader reader = PooledBitReader.Get(objectStream))
+                using (PooledBitReader reader = networkingManager.PooledBitReaders.GetReader(objectStream))
                 {
                     uint newObjectsCount = reader.ReadUInt32Packed();
 
@@ -360,8 +368,8 @@ namespace MLAPI.SceneManagement
                             rotation = Quaternion.Euler(reader.ReadSinglePacked(), reader.ReadSinglePacked(), reader.ReadSinglePacked());
                         }
 
-                        NetworkedObject networkedObject = SpawnManager.CreateLocalNetworkedObject(false, 0, prefabHash, parentNetworkId, position, rotation);
-                        SpawnManager.SpawnNetworkedObjectLocally(networkedObject, networkId, true, isPlayerObject, owner, objectStream, false, 0, true, false);
+                        NetworkedObject networkedObject = networkingManager.SpawnManager.CreateLocalNetworkedObject(false, 0, prefabHash, parentNetworkId, position, rotation);
+                        networkingManager.SpawnManager.SpawnNetworkedObjectLocally(networkedObject, networkId, true, isPlayerObject, owner, objectStream, false, 0, true, false);
 
                         Queue<BufferManager.BufferedMessage> bufferQueue = BufferManager.ConsumeBuffersForNetworkId(networkId);
 
@@ -372,7 +380,7 @@ namespace MLAPI.SceneManagement
                             {
                                 BufferManager.BufferedMessage message = bufferQueue.Dequeue();
 
-                                NetworkingManager.Singleton.HandleIncomingData(message.sender, message.channel, new ArraySegment<byte>(message.payload.GetBuffer(), (int)message.payload.Position, (int)message.payload.Length), message.receiveTime, false);
+                                networkingManager.HandleIncomingData(message.sender, message.channel, new ArraySegment<byte>(message.payload.GetBuffer(), (int)message.payload.Position, (int)message.payload.Length), message.receiveTime, false);
 
                                 BufferManager.RecycleConsumedBufferedMessage(message);
                             }
@@ -384,9 +392,9 @@ namespace MLAPI.SceneManagement
             {
                 NetworkedObject[] networkedObjects = MonoBehaviour.FindObjectsOfType<NetworkedObject>();
 
-                SpawnManager.ClientCollectSoftSyncSceneObjectSweep(networkedObjects);
+                networkingManager.SpawnManager.ClientCollectSoftSyncSceneObjectSweep(networkedObjects);
 
-                using (PooledBitReader reader = PooledBitReader.Get(objectStream))
+                using (PooledBitReader reader = networkingManager.PooledBitReaders.GetReader(objectStream))
                 {
                     uint newObjectsCount = reader.ReadUInt32Packed();
 
@@ -405,8 +413,8 @@ namespace MLAPI.SceneManagement
 
                         ulong instanceId = reader.ReadUInt64Packed();
 
-                        NetworkedObject networkedObject = SpawnManager.CreateLocalNetworkedObject(true, instanceId, 0, parentNetworkId, null, null);
-                        SpawnManager.SpawnNetworkedObjectLocally(networkedObject, networkId, true, isPlayerObject, owner, objectStream, false, 0, true, false);
+                        NetworkedObject networkedObject = networkingManager.SpawnManager.CreateLocalNetworkedObject(true, instanceId, 0, parentNetworkId, null, null);
+                        networkingManager.SpawnManager.SpawnNetworkedObjectLocally(networkedObject, networkId, true, isPlayerObject, owner, objectStream, false, 0, true, false);
 
                         Queue<BufferManager.BufferedMessage> bufferQueue = BufferManager.ConsumeBuffersForNetworkId(networkId);
 
@@ -417,7 +425,7 @@ namespace MLAPI.SceneManagement
                             {
                                 BufferManager.BufferedMessage message = bufferQueue.Dequeue();
 
-                                NetworkingManager.Singleton.HandleIncomingData(message.sender, message.channel, new ArraySegment<byte>(message.payload.GetBuffer(), (int)message.payload.Position, (int)message.payload.Length), message.receiveTime, false);
+                                networkingManager.HandleIncomingData(message.sender, message.channel, new ArraySegment<byte>(message.payload.GetBuffer(), (int)message.payload.Position, (int)message.payload.Length), message.receiveTime, false);
 
                                 BufferManager.RecycleConsumedBufferedMessage(message);
                             }
@@ -431,7 +439,8 @@ namespace MLAPI.SceneManagement
                 using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                 {
                     writer.WriteByteArray(switchSceneGuid.ToByteArray());
-                    InternalMessageSender.Send(NetworkingManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_CLIENT_SWITCH_SCENE_COMPLETED, Transport.MLAPI_INTERNAL_CHANNEL, stream, SecuritySendFlags.None);
+                    networkingManager.MessageSender.Send(networkingManager.ServerClientId,
+                        MLAPIConstants.MLAPI_CLIENT_SWITCH_SCENE_COMPLETED, Transport.MLAPI_INTERNAL_CHANNEL, stream, SecuritySendFlags.None);
                 }
             }
 
@@ -443,13 +452,13 @@ namespace MLAPI.SceneManagement
             }
         }
 
-        internal static bool HasSceneMismatch(uint sceneIndex)
+        internal bool HasSceneMismatch(uint sceneIndex)
         {
             return SceneManager.GetActiveScene().name != sceneIndexToString[sceneIndex];
         }
 
         // Called on server
-        internal static void OnClientSwitchSceneCompleted(ulong clientId, Guid switchSceneGuid)
+        internal void OnClientSwitchSceneCompleted(ulong clientId, Guid switchSceneGuid)
         {
             if (switchSceneGuid == Guid.Empty)
             {
@@ -465,7 +474,7 @@ namespace MLAPI.SceneManagement
         }
 
 
-        internal static void RemoveClientFromSceneSwitchProgresses(ulong clientId)
+        internal void RemoveClientFromSceneSwitchProgresses(ulong clientId)
         {
             foreach (SceneSwitchProgress switchSceneProgress in sceneSwitchProgresses.Values)
             {
@@ -473,10 +482,10 @@ namespace MLAPI.SceneManagement
             }
         }
 
-        private static void MoveObjectsToDontDestroyOnLoad()
+        private void MoveObjectsToDontDestroyOnLoad()
         {
             // Move ALL networked objects to the temp scene
-            HashSet<NetworkedObject> objectsToKeep = SpawnManager.SpawnedObjectsList;
+            HashSet<NetworkedObject> objectsToKeep = networkingManager.SpawnManager.SpawnedObjectsList;
 
             foreach (var sobj in objectsToKeep)
             {
@@ -490,10 +499,10 @@ namespace MLAPI.SceneManagement
             }
         }
 
-        private static void MoveObjectsToScene(Scene scene)
+        private void MoveObjectsToScene(Scene scene)
         {
             // Move ALL networked objects to the temp scene
-            HashSet<NetworkedObject> objectsToKeep = SpawnManager.SpawnedObjectsList;
+            HashSet<NetworkedObject> objectsToKeep = networkingManager.SpawnManager.SpawnedObjectsList;
 
             foreach (var sobj in objectsToKeep)
             {

@@ -52,13 +52,13 @@ namespace MLAPI.Transports.UNET
         protected void LateUpdate()
         {
             if (NetworkTransport.IsStarted  && MessageSendMode == SendMode.Queued) {
-                if (NetworkingManager.Singleton.IsServer) {
-                    for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++) {
-                        SendQueued(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId);
+                if (NetManager.IsServer) {
+                    for (int i = 0; i < NetManager.ConnectedClientsList.Count; i++) {
+                        SendQueued(NetManager.ConnectedClientsList[i].ClientId);
                     }
                 }
                 else {
-                    SendQueued(NetworkingManager.Singleton.LocalClientId);
+                    SendQueued(NetManager.LocalClientId);
                 }
             }
         }
@@ -263,7 +263,7 @@ namespace MLAPI.Transports.UNET
                 }
                 else
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError("Cannot create websocket host when using MLAPI relay");
+                    if (NetworkingManager.LogLevel <= LogLevel.Error) NetworkLog.LogError("Cannot create websocket host when using MLAPI relay");
                 }
 
             }

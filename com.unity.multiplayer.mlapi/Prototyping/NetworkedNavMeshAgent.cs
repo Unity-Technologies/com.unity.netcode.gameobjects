@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using MLAPI.Connection;
 using MLAPI.Messaging;
 using UnityEngine;
@@ -64,7 +64,7 @@ namespace MLAPI.Prototyping
                 else
                 {
                     List<ulong> proximityClients = new List<ulong>();
-                    foreach (KeyValuePair<ulong, NetworkedClient> client in NetworkingManager.Singleton.ConnectedClients)
+                    foreach (KeyValuePair<ulong, NetworkedClient> client in NetManager.ConnectedClients)
                     {
                         if (client.Value.PlayerObject == null || Vector3.Distance(client.Value.PlayerObject.transform.position, transform.position) <= ProximityRange)
                             proximityClients.Add(client.Key);
@@ -75,7 +75,7 @@ namespace MLAPI.Prototyping
                 }
             }
 
-            if (NetworkingManager.Singleton.NetworkTime - lastCorrectionTime >= CorrectionDelay)
+            if (NetManager.NetworkTime - lastCorrectionTime >= CorrectionDelay)
             {
                 if (!EnableProximity)
                 {
@@ -84,7 +84,7 @@ namespace MLAPI.Prototyping
                 else
                 {
                     List<ulong> proximityClients = new List<ulong>();
-                    foreach (KeyValuePair<ulong, NetworkedClient> client in NetworkingManager.Singleton.ConnectedClients)
+                    foreach (KeyValuePair<ulong, NetworkedClient> client in NetManager.ConnectedClients)
                     {
                         if (client.Value.PlayerObject == null || Vector3.Distance(client.Value.PlayerObject.transform.position, transform.position) <= ProximityRange)
                             proximityClients.Add(client.Key);
@@ -94,7 +94,7 @@ namespace MLAPI.Prototyping
                         new ClientRpcParams {Send = new ClientRpcSendParams {TargetClientIds = proximityClients.ToArray()}});
                 }
 
-                lastCorrectionTime = NetworkingManager.Singleton.NetworkTime;
+                lastCorrectionTime = NetManager.NetworkTime;
             }
         }
 

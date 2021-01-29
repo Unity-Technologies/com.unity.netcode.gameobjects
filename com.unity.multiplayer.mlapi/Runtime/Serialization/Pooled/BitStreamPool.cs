@@ -27,7 +27,7 @@ namespace MLAPI.Serialization.Pooled
             {
                 if (overflowStreams.Count > 0)
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo("Retrieving PooledBitStream from overflow pool. Recent burst?");
+                    if (NetworkingManager.LogLevel <= LogLevel.Developer) NetworkLog.LogInfo("Retrieving PooledBitStream from overflow pool. Recent burst?");
 
                     object weakStream = null;
                     while (overflowStreams.Count > 0 && ((weakStream = overflowStreams.Dequeue().Target) == null)) ;
@@ -45,7 +45,7 @@ namespace MLAPI.Serialization.Pooled
 
                 if (createdStreams == MaxBitPoolStreams)
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning(MaxBitPoolStreams.ToString() + " streams have been created. Did you forget to dispose?");
+                    if (NetworkingManager.LogLevel <= LogLevel.Normal) NetworkLog.LogWarning(MaxBitPoolStreams.ToString() + " streams have been created. Did you forget to dispose?");
                 }
                 else if (createdStreams < MaxBitPoolStreams) createdStreams++;
 
@@ -72,7 +72,7 @@ namespace MLAPI.Serialization.Pooled
                 // Streams are essentially byte array wrappers. This is valuable memory.
                 // Thus we put this stream as a weak reference incase of another burst
                 // But still leave it to GC
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo("Putting PooledBitStream into overflow pool. Did you forget to dispose?");
+                if (NetworkingManager.LogLevel <= LogLevel.Developer) NetworkLog.LogInfo("Putting PooledBitStream into overflow pool. Did you forget to dispose?");
                 overflowStreams.Enqueue(new WeakReference(stream));
             }
             else

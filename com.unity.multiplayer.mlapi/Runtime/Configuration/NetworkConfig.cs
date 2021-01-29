@@ -187,6 +187,9 @@ namespace MLAPI.Configuration
         [Tooltip("The certificate in base64 encoded PFX format")]
         [TextArea]
         public string ServerBase64PfxCertificate;
+        [HideInInspector]
+        internal NetworkingManager NetManager { get; set; }
+
         /// <summary>
         /// Gets the currently in use certificate
         /// </summary>
@@ -279,7 +282,7 @@ namespace MLAPI.Configuration
             byte[] binary = Convert.FromBase64String(base64);
             using (BitStream stream = new BitStream(binary))
             {
-                using (PooledBitReader reader = PooledBitReader.Get(stream))
+                using (PooledBitReader reader = NetManager.PooledBitReaders.GetReader(stream))
                 {
                     config.ProtocolVersion = reader.ReadUInt16Packed();
 

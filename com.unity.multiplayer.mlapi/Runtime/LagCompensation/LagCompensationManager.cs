@@ -40,9 +40,12 @@ namespace MLAPI.LagCompensation
         /// <param name="action">The action to invoke when time is turned back</param>
         public static void Simulate(float secondsAgo, IList<TrackedObject> simulatedObjects, Action action)
         {
-            if (!NetworkingManager.Singleton.IsServer)
+            if( simulatedObjects.Count > 0 )
             {
-                throw new NotServerException("Only the server can perform lag compensation");
+                if( !simulatedObjects[0].NetObject.NetManager.IsServer )
+                {
+                    throw new NotServerException("Only the server can perform lag compensation");
+                }
             }
 
             for (int i = 0; i < simulatedObjects.Count; i++)
@@ -61,16 +64,17 @@ namespace MLAPI.LagCompensation
         /// <summary>
         /// Turns time back a given amount of seconds, invokes an action and turns it back. The time is based on the estimated RTT of a clientId
         /// </summary>
+        /// <param name="networkingManager">The NetworkingManager on which the lag compensator should operator.</param>
         /// <param name="clientId">The clientId's RTT to use</param>
         /// <param name="action">The action to invoke when time is turned back</param>
-        public static void Simulate(ulong clientId, Action action)
+        public static void Simulate(NetworkingManager networkingManager, ulong clientId, Action action)
         {
-            if (!NetworkingManager.Singleton.IsServer)
+            if (!networkingManager.IsServer)
             {
                 throw new NotServerException("Only the server can perform lag compensation");
             }
             
-            float millisecondsDelay = NetworkingManager.Singleton.NetworkConfig.NetworkTransport.GetCurrentRtt(clientId) / 2f;
+            float millisecondsDelay = networkingManager.NetworkConfig.NetworkTransport.GetCurrentRtt(clientId) / 2f;
             Simulate(millisecondsDelay * 1000f, action);
         }
 

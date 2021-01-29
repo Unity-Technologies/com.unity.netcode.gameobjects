@@ -10,52 +10,59 @@ using BitStream = MLAPI.Serialization.BitStream;
 
 namespace MLAPI.Messaging
 {
-    internal static class InternalMessageSender
+    internal class InternalMessageSender
     {
-        internal static void Send(ulong clientId, byte messageType, byte channel, BitStream messageStream, SecuritySendFlags flags)
+        private NetworkingManager networkingManager;
+
+        internal InternalMessageSender(NetworkingManager manager )
+        {
+            networkingManager = manager;
+        }
+
+        internal void Send(ulong clientId, byte messageType, byte channel, BitStream messageStream, SecuritySendFlags flags)
         {
             messageStream.PadStream();
 
-            if (NetworkingManager.Singleton.IsServer && clientId == NetworkingManager.Singleton.ServerClientId)
+            if (networkingManager.IsServer && clientId == networkingManager.ServerClientId)
                 return;
 
-            using (BitStream stream = MessagePacker.WrapMessage(messageType, clientId, messageStream, flags))
+            using (BitStream stream = MessagePacker.WrapMessage(networkingManager, messageType, clientId, messageStream, flags))
             {
                 NetworkProfiler.StartEvent(TickType.Send, (uint) stream.Length, channel,
                     MLAPIConstants.MESSAGE_NAMES[messageType]);
 
-                NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(clientId, new ArraySegment<byte>(stream.GetBuffer(), 0, (int)stream.Length), channel);
+                networkingManager.NetworkConfig.NetworkTransport.Send(clientId, new ArraySegment<byte>(stream.GetBuffer(), 0, (int)stream.Length), channel);
                 ProfilerStatManager.bytesSent.Record((int)stream.Length);
 
                 NetworkProfiler.EndEvent();
             }
         }
 
-        internal static void Send(byte messageType, byte channel, BitStream messageStream, SecuritySendFlags flags)
+        internal void Send(byte messageType, byte channel, BitStream messageStream, SecuritySendFlags flags)
         {
-            bool encrypted = ((flags & SecuritySendFlags.Encrypted) == SecuritySendFlags.Encrypted) && NetworkingManager.Singleton.NetworkConfig.EnableEncryption;
-            bool authenticated = ((flags & SecuritySendFlags.Authenticated) == SecuritySendFlags.Authenticated) && NetworkingManager.Singleton.NetworkConfig.EnableEncryption;
+            bool encrypted = ((flags & SecuritySendFlags.Encrypted) == SecuritySendFlags.Encrypted) && networkingManager.NetworkConfig.EnableEncryption;
+            bool authenticated = ((flags & SecuritySendFlags.Authenticated) == SecuritySendFlags.Authenticated) && networkingManager.NetworkConfig.EnableEncryption;
 
             if (authenticated || encrypted)
             {
-                for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)
+                for (int i = 0; i < networkingManager.ConnectedClientsList.Count; i++)
                 {
-                    Send(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId, messageType, channel, messageStream, flags);
+                    Send(networkingManager.ConnectedClientsList[i].ClientId, messageType, channel, messageStream, flags);
                 }
             }
             else
             {
                 messageStream.PadStream();
 
-                using (BitStream stream = MessagePacker.WrapMessage(messageType, 0, messageStream, flags))
+                using (BitStream stream = MessagePacker.WrapMessage(networkingManager, messageType, 0, messageStream, flags))
                 {
                     NetworkProfiler.StartEvent(TickType.Send, (uint)stream.Length, channel, MLAPIConstants.MESSAGE_NAMES[messageType]);
-                    for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)
+                    for (int i = 0; i < networkingManager.ConnectedClientsList.Count; i++)
                     {
-                        if (NetworkingManager.Singleton.IsServer && NetworkingManager.Singleton.ConnectedClientsList[i].ClientId == NetworkingManager.Singleton.ServerClientId)
+                        if (networkingManager.IsServer && networkingManager.ConnectedClientsList[i].ClientId == networkingManager.ServerClientId)
                             continue;
 
-                        NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId, new ArraySegment<byte>(stream.GetBuffer(), 0, (int)stream.Length), channel);
+                        networkingManager.NetworkConfig.NetworkTransport.Send(networkingManager.ConnectedClientsList[i].ClientId, new ArraySegment<byte>(stream.GetBuffer(), 0, (int)stream.Length), channel);
                         ProfilerStatManager.bytesSent.Record((int)stream.Length);
                     }
                     NetworkProfiler.EndEvent();
@@ -63,7 +70,7 @@ namespace MLAPI.Messaging
             }
         }
 
-        internal static void Send(byte messageType, byte channel, List<ulong> clientIds, BitStream messageStream, SecuritySendFlags flags)
+        internal void Send(byte messageType, byte channel, List<ulong> clientIds, BitStream messageStream, SecuritySendFlags flags)
         {
             if (clientIds == null)
             {
@@ -71,8 +78,8 @@ namespace MLAPI.Messaging
                 return;
             }
 
-            bool encrypted = ((flags & SecuritySendFlags.Encrypted) == SecuritySendFlags.Encrypted) && NetworkingManager.Singleton.NetworkConfig.EnableEncryption;
-            bool authenticated = ((flags & SecuritySendFlags.Authenticated) == SecuritySendFlags.Authenticated) && NetworkingManager.Singleton.NetworkConfig.EnableEncryption;
+            bool encrypted = ((flags & SecuritySendFlags.Encrypted) == SecuritySendFlags.Encrypted) && networkingManager.NetworkConfig.EnableEncryption;
+            bool authenticated = ((flags & SecuritySendFlags.Authenticated) == SecuritySendFlags.Authenticated) && networkingManager.NetworkConfig.EnableEncryption;
 
             if (authenticated || encrypted)
             {
@@ -85,15 +92,15 @@ namespace MLAPI.Messaging
             {
                 messageStream.PadStream();
 
-                using (BitStream stream = MessagePacker.WrapMessage(messageType, 0, messageStream, flags))
+                using (BitStream stream = MessagePacker.WrapMessage(networkingManager, messageType, 0, messageStream, flags))
                 {
                     NetworkProfiler.StartEvent(TickType.Send, (uint)stream.Length, channel, MLAPIConstants.MESSAGE_NAMES[messageType]);
                     for (int i = 0; i < clientIds.Count; i++)
                     {
-                        if (NetworkingManager.Singleton.IsServer && clientIds[i] == NetworkingManager.Singleton.ServerClientId)
+                        if (networkingManager.IsServer && clientIds[i] == networkingManager.ServerClientId)
                             continue;
 
-                        NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(clientIds[i], new ArraySegment<byte>(stream.GetBuffer(), 0, (int)stream.Length), channel);
+                        networkingManager.NetworkConfig.NetworkTransport.Send(clientIds[i], new ArraySegment<byte>(stream.GetBuffer(), 0, (int)stream.Length), channel);
                         ProfilerStatManager.bytesSent.Record((int)stream.Length);
                     }
                     NetworkProfiler.EndEvent();
@@ -101,35 +108,35 @@ namespace MLAPI.Messaging
             }
         }
 
-        internal static void Send(byte messageType, byte channel, ulong clientIdToIgnore, BitStream messageStream, SecuritySendFlags flags)
+        internal void Send(byte messageType, byte channel, ulong clientIdToIgnore, BitStream messageStream, SecuritySendFlags flags)
         {
-            bool encrypted = ((flags & SecuritySendFlags.Encrypted) == SecuritySendFlags.Encrypted) && NetworkingManager.Singleton.NetworkConfig.EnableEncryption;
-            bool authenticated = ((flags & SecuritySendFlags.Authenticated) == SecuritySendFlags.Authenticated) && NetworkingManager.Singleton.NetworkConfig.EnableEncryption;
+            bool encrypted = ((flags & SecuritySendFlags.Encrypted) == SecuritySendFlags.Encrypted) && networkingManager.NetworkConfig.EnableEncryption;
+            bool authenticated = ((flags & SecuritySendFlags.Authenticated) == SecuritySendFlags.Authenticated) && networkingManager.NetworkConfig.EnableEncryption;
 
             if (encrypted || authenticated)
             {
-                for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)
+                for (int i = 0; i < networkingManager.ConnectedClientsList.Count; i++)
                 {
-                    if (NetworkingManager.Singleton.ConnectedClientsList[i].ClientId == clientIdToIgnore)
+                    if (networkingManager.ConnectedClientsList[i].ClientId == clientIdToIgnore)
                         continue;
 
-                    Send(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId, messageType, channel, messageStream, flags);
+                    Send(networkingManager.ConnectedClientsList[i].ClientId, messageType, channel, messageStream, flags);
                 }
             }
             else
             {
                 messageStream.PadStream();
 
-                using (BitStream stream = MessagePacker.WrapMessage(messageType, 0, messageStream, flags))
+                using (BitStream stream = MessagePacker.WrapMessage(networkingManager, messageType, 0, messageStream, flags))
                 {
                     NetworkProfiler.StartEvent(TickType.Send, (uint)stream.Length, channel, MLAPIConstants.MESSAGE_NAMES[messageType]);
-                    for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)
+                    for (int i = 0; i < networkingManager.ConnectedClientsList.Count; i++)
                     {
-                        if (NetworkingManager.Singleton.ConnectedClientsList[i].ClientId == clientIdToIgnore ||
-                            (NetworkingManager.Singleton.IsServer && NetworkingManager.Singleton.ConnectedClientsList[i].ClientId == NetworkingManager.Singleton.ServerClientId))
+                        if (networkingManager.ConnectedClientsList[i].ClientId == clientIdToIgnore ||
+                            (networkingManager.IsServer && networkingManager.ConnectedClientsList[i].ClientId == networkingManager.ServerClientId))
                             continue;
 
-                        NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId, new ArraySegment<byte>(stream.GetBuffer(), 0, (int)stream.Length), channel);
+                        networkingManager.NetworkConfig.NetworkTransport.Send(networkingManager.ConnectedClientsList[i].ClientId, new ArraySegment<byte>(stream.GetBuffer(), 0, (int)stream.Length), channel);
                         ProfilerStatManager.bytesSent.Record((int)stream.Length);
                     }
                     NetworkProfiler.EndEvent();

@@ -10,20 +10,24 @@ namespace MLAPI.Logging
     /// <summary>
     /// Helper class for logging
     /// </summary>
-    public static class NetworkLog
+    public class NetworkLog
     {
+        private NetworkingManager networkingManager;
+
+        internal NetworkLog(NetworkingManager manager)
+        {
+            networkingManager = manager;
+        }
+
         /// <summary>
         /// Gets the current log level.
         /// </summary>
         /// <value>The current log level.</value>
-        internal static LogLevel CurrentLogLevel
+        internal LogLevel CurrentLogLevel
         {
             get
             {
-                if (NetworkingManager.Singleton == null)
-                    return LogLevel.Normal;
-                else
-                    return NetworkingManager.Singleton.LogLevel;
+                return NetworkingManager.LogLevel;
             }
         }
 
@@ -36,22 +40,22 @@ namespace MLAPI.Logging
         /// Logs an info log locally and on the server if possible.
         /// </summary>
         /// <param name="message">The message to log</param>
-        public static void LogInfoServer(string message) => LogServer(message, LogType.Info);
+        public void LogInfoServer(string message) => LogServer(message, LogType.Info);
         /// <summary>
         /// Logs a warning log locally and on the server if possible.
         /// </summary>
         /// <param name="message">The message to log</param>
-        public static void LogWarningServer(string message) => LogServer(message, LogType.Warning);
+        public void LogWarningServer(string message) => LogServer(message, LogType.Warning);
         /// <summary>
         /// Logs an error log locally and on the server if possible.
         /// </summary>
         /// <param name="message">The message to log</param>
-        public static void LogErrorServer(string message) => LogServer(message, LogType.Error);
+        public void LogErrorServer(string message) => LogServer(message, LogType.Error);
 
-        private static void LogServer(string message, LogType logType)
+        private void LogServer(string message, LogType logType)
         {
             // Get the sender of the local log
-            ulong localId = NetworkingManager.Singleton != null ? NetworkingManager.Singleton.LocalClientId : 0;
+            ulong localId = networkingManager.LocalClientId;
 
             switch (logType)
             {
@@ -66,7 +70,7 @@ namespace MLAPI.Logging
                     break;
             }
 
-            if (NetworkingManager.Singleton != null && !NetworkingManager.Singleton.IsServer && NetworkingManager.Singleton.NetworkConfig.EnableNetworkLogs)
+            if ( !networkingManager.IsServer && networkingManager.NetworkConfig.EnableNetworkLogs)
             {
                 using (PooledBitStream stream = PooledBitStream.Get())
                 {
@@ -76,7 +80,7 @@ namespace MLAPI.Logging
 
                         writer.WriteStringPacked(message);
 
-                        InternalMessageSender.Send(NetworkingManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_SERVER_LOG, Transport.MLAPI_INTERNAL_CHANNEL, stream, SecuritySendFlags.None);
+                        networkingManager.MessageSender.Send(networkingManager.ServerClientId, MLAPIConstants.MLAPI_SERVER_LOG, Transport.MLAPI_INTERNAL_CHANNEL, stream, SecuritySendFlags.None);
                     }
                 }
             }
