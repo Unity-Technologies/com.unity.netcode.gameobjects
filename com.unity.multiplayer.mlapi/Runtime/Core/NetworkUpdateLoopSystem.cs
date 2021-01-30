@@ -122,7 +122,7 @@ namespace MLAPI
     /// </summary>
     public interface INetworkUpdateLoopSystem
     {
-        Action RegisterUpdate(NetworkUpdateManager.NetworkUpdateStages stage );
+        Action RegisterUpdate(NetworkUpdateManager.NetworkUpdateStages stage);
 
         void RegisterUpdateLoopSystemDestroyCallback(Action<INetworkUpdateLoopSystem>  networkLoopSystemDestroyedCallbsack);
     }
