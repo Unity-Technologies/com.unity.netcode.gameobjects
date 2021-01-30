@@ -45,8 +45,14 @@ namespace MLAPI.Messaging
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                 s_MLAPIRPCQueueProcess.Begin();
 #endif
-                var CurrentFrame = rpcQueueContainer.GetCurrentFrame(QueueHistoryFrame.QueueFrameType.Inbound,currentStage);
-                if (CurrentFrame != null)
+                var CurrentFrame = rpcQueueContainer.GetQueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Inbound,currentStage);
+                var NextFrame = rpcQueueContainer.GetQueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Inbound,currentStage,true);
+                if(NextFrame.isDirty && NextFrame.hasLoopbackData)
+                {
+                    AdvanceFrameHistory = true;
+                }
+
+                if (CurrentFrame != null && CurrentFrame.isDirty)
                 {
                     var currentQueueItem = CurrentFrame.GetFirstQueueItem();
                     while (currentQueueItem.queueItemType != RpcQueueContainer.QueueItemType.None)
