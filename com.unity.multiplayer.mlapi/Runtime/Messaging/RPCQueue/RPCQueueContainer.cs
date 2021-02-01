@@ -378,7 +378,7 @@ namespace MLAPI.Messaging
             QueueHistoryFrame.QueueFrameType queueFrameType,NetworkUpdateManager.NetworkUpdateStages updateStage )
         {
             bool getNextFrame = false;
-            if (NetworkingManager.Singleton.IsServer && NetworkingManager.Singleton.IsHost && queueFrameType == QueueHistoryFrame.QueueFrameType.Inbound)
+            if (NetworkingManager.Singleton.IsHost && queueFrameType == QueueHistoryFrame.QueueFrameType.Inbound)
             {
                 getNextFrame = true;
             }
@@ -402,6 +402,11 @@ namespace MLAPI.Messaging
 
                     for (int i = 0; i < targetNetworkIds.Length; i++)
                     {
+                        if (NetworkingManager.Singleton.IsHost && targetNetworkIds[i] == NetworkingManager.Singleton.ServerClientId)
+                        {
+                            continue;
+                        }
+
                         queueHistoryItem.queueWriter.WriteUInt64(targetNetworkIds[i]);
                     }
                 }
@@ -416,7 +421,7 @@ namespace MLAPI.Messaging
 
             //Write a filler dummy size of 0 to hold this position in order to write to it once the RPC is done writing.
             queueHistoryItem.queueWriter.WriteInt64(0);
-            if (NetworkingManager.Singleton.IsServer && NetworkingManager.Singleton.IsHost && queueFrameType == QueueHistoryFrame.QueueFrameType.Inbound)
+            if (NetworkingManager.Singleton.IsHost && queueFrameType == QueueHistoryFrame.QueueFrameType.Inbound)
             {
                 queueHistoryItem.queueWriter.WriteInt64(1); //Write the stream position offset for inbound as 1
                 queueHistoryItem.hasLoopbackData = true;    //The only case for this is when it is the Host
@@ -435,7 +440,7 @@ namespace MLAPI.Messaging
         public void EndAddQueueItemToFrame(BitWriter writer, QueueHistoryFrame.QueueFrameType queueFrameType, NetworkUpdateManager.NetworkUpdateStages updateStage)
         {
             bool getNextFrame = false;
-            if (NetworkingManager.Singleton.IsServer && NetworkingManager.Singleton.IsHost && queueFrameType == QueueHistoryFrame.QueueFrameType.Inbound)
+            if (NetworkingManager.Singleton.IsHost && queueFrameType == QueueHistoryFrame.QueueFrameType.Inbound)
             {
                 getNextFrame = true;
             }
