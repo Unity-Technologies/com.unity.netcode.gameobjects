@@ -89,6 +89,7 @@ namespace MLAPI.Editor.CodeGen
         private MethodReference NetworkBehaviour_BeginSendClientRpc_MethodRef;
         private MethodReference NetworkBehaviour_EndSendClientRpc_MethodRef;
         private FieldReference NetworkBehaviour_nexec_FieldRef;
+        private MethodReference NetworkBehaviour_getNetManager_MethodRef;
         private MethodReference NetworkHandlerDelegateCtor_MethodRef;
         private TypeReference ServerRpcParams_TypeRef;
         private FieldReference ServerRpcParams_Send_FieldRef;
@@ -144,39 +145,39 @@ namespace MLAPI.Editor.CodeGen
         private MethodReference BitReader_ReadRayPacked_MethodRef;
         private MethodReference BitReader_ReadRay2DPacked_MethodRef;
 
-        private const string k_NetworkingManager_IsListening = nameof(NetworkingManager.IsListening);
-        private const string k_NetworkingManager_IsHost = nameof(NetworkingManager.IsHost);
-        private const string k_NetworkingManager_IsServer = nameof(NetworkingManager.IsServer);
-        private const string k_NetworkingManager_IsClient = nameof(NetworkingManager.IsClient);
+        private const string k_NetworkManager_IsListening = nameof(NetworkingManager.IsListening);
+        private const string k_NetworkManager_IsHost = nameof(NetworkingManager.IsHost);
+        private const string k_NetworkManager_IsServer = nameof(NetworkingManager.IsServer);
+        private const string k_NetworkManager_IsClient = nameof(NetworkingManager.IsClient);
 #pragma warning disable 618
-        private const string k_NetworkingManager_ntable = nameof(NetworkingManager.__ntable);
+        private const string k_NetworkManager_ntable = nameof(NetworkingManager.__ntable);
 
-        private const string k_NetworkedBehaviour_BeginSendServerRpc = nameof(NetworkedBehaviour.__beginSendServerRpc);
-        private const string k_NetworkedBehaviour_EndSendServerRpc = nameof(NetworkedBehaviour.__endSendServerRpc);
-        private const string k_NetworkedBehaviour_BeginSendClientRpc = nameof(NetworkedBehaviour.__beginSendClientRpc);
-        private const string k_NetworkedBehaviour_EndSendClientRpc = nameof(NetworkedBehaviour.__endSendClientRpc);
-        private const string k_NetworkedBehaviour_nexec = nameof(NetworkedBehaviour.__nexec);
+        private const string k_NetworkBehaviour_BeginSendServerRpc = nameof(NetworkedBehaviour.__beginSendServerRpc);
+        private const string k_NetworkBehaviour_EndSendServerRpc = nameof(NetworkedBehaviour.__endSendServerRpc);
+        private const string k_NetworkBehaviour_BeginSendClientRpc = nameof(NetworkedBehaviour.__beginSendClientRpc);
+        private const string k_NetworkBehaviour_EndSendClientRpc = nameof(NetworkedBehaviour.__endSendClientRpc);
+        private const string k_NetworkBehaviour_nexec = nameof(NetworkedBehaviour.__nexec);
 #pragma warning restore 618
+        private const string k_NetworkBehaviour_NetManager = nameof(NetworkedBehaviour.NetManager);
 
         private bool ImportReferences(ModuleDefinition moduleDefinition)
         {
-            UnityEngine.Debug.Log("ImportReferences called");
             var networkManagerType = typeof(NetworkingManager);
             NetworkManager_TypeRef = moduleDefinition.ImportReference(networkManagerType);
             foreach (var propertyInfo in networkManagerType.GetProperties())
             {
                 switch (propertyInfo.Name)
                 {
-                    case k_NetworkingManager_IsListening:
+                    case k_NetworkManager_IsListening:
                         NetworkManager_getIsListening_MethodRef = moduleDefinition.ImportReference(propertyInfo.GetMethod);
                         break;
-                    case k_NetworkingManager_IsHost:
+                    case k_NetworkManager_IsHost:
                         NetworkManager_getIsHost_MethodRef = moduleDefinition.ImportReference(propertyInfo.GetMethod);
                         break;
-                    case k_NetworkingManager_IsServer:
+                    case k_NetworkManager_IsServer:
                         NetworkManager_getIsServer_MethodRef = moduleDefinition.ImportReference(propertyInfo.GetMethod);
                         break;
-                    case k_NetworkingManager_IsClient:
+                    case k_NetworkManager_IsClient:
                         NetworkManager_getIsClient_MethodRef = moduleDefinition.ImportReference(propertyInfo.GetMethod);
                         break;
                 }
@@ -186,7 +187,7 @@ namespace MLAPI.Editor.CodeGen
             {
                 switch (fieldInfo.Name)
                 {
-                    case k_NetworkingManager_ntable:
+                    case k_NetworkManager_ntable:
                         NetworkManager_ntable_FieldRef = moduleDefinition.ImportReference(fieldInfo);
                         NetworkManager_ntable_Add_MethodRef = moduleDefinition.ImportReference(fieldInfo.FieldType.GetMethod("Add"));
                         break;
@@ -195,20 +196,30 @@ namespace MLAPI.Editor.CodeGen
 
             var networkBehaviourType = typeof(NetworkedBehaviour);
             NetworkBehaviour_TypeRef = moduleDefinition.ImportReference(networkBehaviourType);
+            foreach (var propertyInfo in networkBehaviourType.GetProperties())
+            {
+                switch (propertyInfo.Name)
+                {
+                    case k_NetworkBehaviour_NetManager:
+                        NetworkBehaviour_getNetManager_MethodRef = moduleDefinition.ImportReference(propertyInfo.GetMethod);
+                        break;
+                }
+            }
+            
             foreach (var methodInfo in networkBehaviourType.GetMethods(BindingFlags.Static | BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public))
             {
                 switch (methodInfo.Name)
                 {
-                    case k_NetworkedBehaviour_BeginSendServerRpc:
+                    case k_NetworkBehaviour_BeginSendServerRpc:
                         NetworkBehaviour_BeginSendServerRpc_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
-                    case k_NetworkedBehaviour_EndSendServerRpc:
+                    case k_NetworkBehaviour_EndSendServerRpc:
                         NetworkBehaviour_EndSendServerRpc_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
-                    case k_NetworkedBehaviour_BeginSendClientRpc:
+                    case k_NetworkBehaviour_BeginSendClientRpc:
                         NetworkBehaviour_BeginSendClientRpc_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
-                    case k_NetworkedBehaviour_EndSendClientRpc:
+                    case k_NetworkBehaviour_EndSendClientRpc:
                         NetworkBehaviour_EndSendClientRpc_MethodRef = moduleDefinition.ImportReference(methodInfo);
                         break;
                 }
@@ -218,7 +229,7 @@ namespace MLAPI.Editor.CodeGen
             {
                 switch (fieldInfo.Name)
                 {
-                    case k_NetworkedBehaviour_nexec:
+                    case k_NetworkBehaviour_nexec:
                         NetworkBehaviour_nexec_FieldRef = moduleDefinition.ImportReference(fieldInfo);
                         break;
                 }
@@ -604,8 +615,9 @@ namespace MLAPI.Editor.CodeGen
                 var returnInstr = processor.Create(OpCodes.Ret);
                 var lastInstr = processor.Create(OpCodes.Nop);
 
-                // networkManager = NetworkManager.Singleton;
-                instructions.Add(processor.Create(OpCodes.Call, NetworkManager_getSingleton_MethodRef));
+                // networkManager = this.NetManager;
+                instructions.Add(processor.Create(OpCodes.Ldarg_0));
+                instructions.Add(processor.Create(OpCodes.Call, NetworkBehaviour_getNetManager_MethodRef));
                 instructions.Add(processor.Create(OpCodes.Stloc, netManLocIdx));
 
                 // if (networkManager == null || !networkManager.IsListening) return;
