@@ -12,7 +12,7 @@ namespace MLAPI.Messaging
     /// </summary>
     public class RpcQueueContainer:GenericUpdateLoopSystem
     {
-        const int m_MinQueueHistory = 2;
+        const int m_MinQueueHistory = 2;  //We need a minimum of 2 queue history buffers in order to properly handle looping back Rpcs when a host
         public enum QueueItemType
         {
             ServerRpc,
@@ -29,7 +29,9 @@ namespace MLAPI.Messaging
             Receive,
         }
 
-        private readonly Dictionary<QueueHistoryFrame.QueueFrameType, Dictionary<int, Dictionary<NetworkUpdateManager.NetworkUpdateStages, QueueHistoryFrame>>> QueueHistory = new Dictionary<QueueHistoryFrame.QueueFrameType, Dictionary<int, Dictionary<NetworkUpdateManager.NetworkUpdateStages, QueueHistoryFrame>>>();
+        //Inbound and Outbound QueueHistoryFrames
+        private readonly Dictionary<QueueHistoryFrame.QueueFrameType, Dictionary<int, Dictionary<NetworkUpdateManager.NetworkUpdateStages, QueueHistoryFrame>>> QueueHistory =
+            new Dictionary<QueueHistoryFrame.QueueFrameType, Dictionary<int, Dictionary<NetworkUpdateManager.NetworkUpdateStages, QueueHistoryFrame>>>();
 
 
         private RpcQueueProcessing  rpcQueueProcessing;
@@ -39,10 +41,9 @@ namespace MLAPI.Messaging
         private uint    m_MaxFrameHistory;
         private int     m_InboundStreamBufferIndex;
         private int     m_OutBoundStreamBufferIndex;
-        private bool    m_IsLoopbackEnabled;
         private bool    m_IsTestingEnabled;
         private bool    m_processUpdateStagesExternally;
-        private bool    m_IsNotUsingBatching = false;
+        private bool    m_IsNotUsingBatching;
 
         public bool IsUsingBatching()
         {
@@ -52,16 +53,6 @@ namespace MLAPI.Messaging
         public void EnableBatchedRpcs(bool isbatchingEnabled)
         {
             m_IsNotUsingBatching = !isbatchingEnabled;
-        }
-
-        /// <summary>
-        /// IsLoopBack
-        /// Whether we are in loopback mode or not (generally used for testing or debugging)
-        /// </summary>
-        /// <returns>true or false</returns>
-        public bool IsLoopBack()
-        {
-            return m_IsLoopbackEnabled;
         }
 
         /// <summary>
@@ -246,7 +237,6 @@ namespace MLAPI.Messaging
                 return;
             }
 
-
             foreach(KeyValuePair<NetworkUpdateManager.NetworkUpdateStages, QueueHistoryFrame> queueHistoryByUpdates in QueueHistory[queueType][StreamBufferIndex])
             {
                 QueueHistoryFrame queueHistoryItem = queueHistoryByUpdates.Value;
@@ -266,7 +256,6 @@ namespace MLAPI.Messaging
 
                 ResetQueueHistoryFrame(queueHistoryItem);
                 IncrementAndSetQueueHistoryFrame(queueHistoryItem);
-
             }
 
             //Roll to the next stream buffer
@@ -286,19 +275,6 @@ namespace MLAPI.Messaging
             {
                 m_OutBoundStreamBufferIndex = StreamBufferIndex;
             }
-
-            //            //If we already have a frame stored in this next queue history item, then clear it out for
-            ////next frame when processed
-            //if (QueueHistory[queueType].ContainsKey(StreamBufferIndex))
-            //{
-            //    foreach(KeyValuePair<NetworkUpdateManager.NetworkUpdateStages, QueueHistoryFrame> queueHistoryByUpdates in QueueHistory[queueType][StreamBufferIndex])
-            //    {
-            //        QueueHistoryFrame queueHistoryItem = queueHistoryByUpdates.Value;
-            //        ResetQueueHistoryFrame(queueHistoryItem);
-            //        IncrementAndSetQueueHistoryFrame(queueHistoryItem);
-            //    }
-            //}
-
          }
 
         /// <summary>
@@ -335,8 +311,6 @@ namespace MLAPI.Messaging
             }
         }
 
-
-
         /// <summary>
         /// AddQueueItemToInboundFrame
         /// Adds an RPC queue item to the outbound frame
@@ -363,7 +337,6 @@ namespace MLAPI.Messaging
             {
                 updateStage = (NetworkUpdateManager.NetworkUpdateStages)updateStageValue;
             }
-
 
             message.Position = originalPosition;
             QueueHistoryFrame queueHistoryItem = GetQueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Inbound, updateStage);
@@ -558,11 +531,12 @@ namespace MLAPI.Messaging
         /// <summary>
         /// LoopbackSendFrame
         /// Will copy the contents of the current outbound QueueHistoryFrame to the current inbound QueueHistoryFrame
+        /// [NSS]: Leaving this here in the event a portion of this code is useful for doing Batch testing
         /// </summary>
         public void LoopbackSendFrame()
         {
             //If we do not have loop back or testing mode enabled then ignore the call
-            if (m_IsLoopbackEnabled || m_IsTestingEnabled)
+            if (m_IsTestingEnabled)
             {
                 QueueHistoryFrame queueHistoryItemOutbound = GetQueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Outbound,NetworkUpdateManager.NetworkUpdateStages.LateUpdate);
                 if (queueHistoryItemOutbound.queueItemOffsets.Count > 0)
@@ -610,14 +584,6 @@ namespace MLAPI.Messaging
             rpcQueueProcessing = new RpcQueueProcessing();
 
             m_MaxFrameHistory = maxFrameHistory + m_MinQueueHistory;
-
-            if (m_IsLoopbackEnabled && m_MaxFrameHistory > m_MinQueueHistory)
-            {
-                string MSG = "Loopback is enabled but there are (" + m_MaxFrameHistory + ") frames allocated for history!\n";
-                MSG += "Adjusting to use 1 frames for loopback mode.  (Initialize RPC Queue Manager with 0 history frame buffers for LoopBack mode)\n";
-                UnityEngine.Debug.LogWarning(MSG);
-                m_MaxFrameHistory = m_MinQueueHistory;
-            }
 
             if (!QueueHistory.ContainsKey(QueueHistoryFrame.QueueFrameType.Inbound))
             {
@@ -671,17 +637,6 @@ namespace MLAPI.Messaging
             }
         }
 
-        /// <summary>
-        /// SetLoopbackState
-        /// Primarily used for testing Rpc, this will loopback any ServerRpcs invoked by a Host
-        /// This allows one to test an Rpc locally without having to have both a client and a host/server.
-        /// </summary>
-        /// <param name="enabled">true or false</param>
-        public void SetLoopbackState(bool enabled)
-        {
-            m_IsLoopbackEnabled = enabled;
-        }
-
         public void SetTestingState(bool enabled)
         {
             m_IsTestingEnabled = enabled;
@@ -691,7 +646,6 @@ namespace MLAPI.Messaging
         {
             return m_IsTestingEnabled;
         }
-
 
         /// <summary>
         /// Clears the stream indices and frames process properties
@@ -747,10 +701,9 @@ namespace MLAPI.Messaging
         /// </summary>
         /// <param name="processInternally">determines if it handles processing internally or if it will be done externally</param>
         /// <param name="isLoopBackEnabled">turns loopback on or off (primarily debugging purposes)</param>
-        public RpcQueueContainer(bool processExternally, bool isLoopBackEnabled = false)
+        public RpcQueueContainer(bool processExternally)
         {
             m_processUpdateStagesExternally = processExternally;
-            m_IsLoopbackEnabled = isLoopBackEnabled;
         }
     }
 }

@@ -58,14 +58,12 @@ namespace MLAPI.Messaging
                     while (currentQueueItem.queueItemType != RpcQueueContainer.QueueItemType.None)
                     {
                         AdvanceFrameHistory = true;
-                        if (rpcQueueContainer.IsLoopBack() && !rpcQueueContainer.IsUsingBatching())
-                        {
-                            currentQueueItem.itemStream.Position = 1;
-                        }
+
                         if (rpcQueueContainer.IsTesting())
                         {
                             Debug.Log("RPC invoked during the " + currentStage.ToString() + " update stage.");
                         }
+
                         NetworkingManager.InvokeRpc(currentQueueItem);
                         ProfilerStatManager.rpcsQueueProc.Record();
                         currentQueueItem = CurrentFrame.GetNextQueueItem();
@@ -159,47 +157,39 @@ namespace MLAPI.Messaging
         /// </summary>
         private void RPCQueueSendAndFlush()
         {
-            bool AdvanceFrameHistory = false;
+            var AdvanceFrameHistory = false;
             var rpcQueueContainer = NetworkingManager.Singleton.rpcQueueContainer;
             if (rpcQueueContainer != null)
             {
                 var CurrentFrame = rpcQueueContainer.GetCurrentFrame(QueueHistoryFrame.QueueFrameType.Outbound,NetworkUpdateManager.NetworkUpdateStages.LateUpdate);
-                //If loopback is enabled
-                if (rpcQueueContainer.IsLoopBack())
+
+                if (CurrentFrame != null)
                 {
-                    //Migrate the outbound buffer to the inbound buffer
-                    rpcQueueContainer.LoopbackSendFrame();
-                    AdvanceFrameHistory = true;
-                }
-                else
-                {
-                    if (CurrentFrame != null)
+                    var currentQueueItem = CurrentFrame.GetFirstQueueItem();
+                    while (currentQueueItem.queueItemType != RpcQueueContainer.QueueItemType.None)
                     {
-                        var currentQueueItem = CurrentFrame.GetFirstQueueItem();
-                        while (currentQueueItem.queueItemType != RpcQueueContainer.QueueItemType.None)
+                        AdvanceFrameHistory = true;
+                        if(rpcQueueContainer.IsUsingBatching())
                         {
-                            AdvanceFrameHistory = true;
-                            if(rpcQueueContainer.IsUsingBatching())
-                            {
-                                m_batcher.QueueItem(currentQueueItem);
+                            m_batcher.QueueItem(currentQueueItem);
 
-                                m_batcher.SendItems(m_BatchThreshold, SendCallback);
-                            }
-                            else
-                            {
-                                SendFrameQueueItem(currentQueueItem);
-                            }
-                            currentQueueItem = CurrentFrame.GetNextQueueItem();
+                            m_batcher.SendItems(m_BatchThreshold, SendCallback);
                         }
-
-                        //If the size is < m_BatchThreshold then just send the messages
-                        if(AdvanceFrameHistory && rpcQueueContainer.IsUsingBatching())
+                        else
                         {
-                            m_batcher.SendItems(0, SendCallback);
+                            SendFrameQueueItem(currentQueueItem);
                         }
+                        currentQueueItem = CurrentFrame.GetNextQueueItem();
+                    }
+
+                    //If the size is < m_BatchThreshold then just send the messages
+                    if(AdvanceFrameHistory && rpcQueueContainer.IsUsingBatching())
+                    {
+                        m_batcher.SendItems(0, SendCallback);
                     }
                 }
 
+                //If we processed any RPCs, then advance to the next frame
                 if (AdvanceFrameHistory)
                 {
                     rpcQueueContainer.AdvanceFrameHistory(QueueHistoryFrame.QueueFrameType.Outbound);
