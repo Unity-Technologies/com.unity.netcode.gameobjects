@@ -94,7 +94,7 @@ namespace MLAPI
                 writer.WriteUInt16Packed((ushort)serverRpcParams.Send.UpdateStage);
             }
 
-            return new BitSerializer(writer);
+            return writer.Serializer;
         }
 
         [Browsable(false)]
@@ -152,7 +152,7 @@ namespace MLAPI
                 writer.WriteUInt16Packed((ushort)clientRpcParams.Send.UpdateStage);
             }
 
-            return new BitSerializer(writer);
+            return writer.Serializer;
         }
 
         [Browsable(false)]
