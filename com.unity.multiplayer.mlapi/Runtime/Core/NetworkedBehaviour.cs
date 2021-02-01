@@ -73,9 +73,9 @@ namespace MLAPI
             var rpcQueueContainer = NetworkingManager.Singleton.rpcQueueContainer;
             PooledBitWriter writer;
             var IsUsingBatching = rpcQueueContainer.IsUsingBatching();
-            if(IsServer && IsHost)
+            if (IsServer && IsHost)
             {
-                if(sendParams.UpdateStage == NetworkUpdateManager.NetworkUpdateStages.Default)
+                if (sendParams.UpdateStage == NetworkUpdateManager.NetworkUpdateStages.Default)
                 {
                     sendParams.UpdateStage = NetworkUpdateManager.NetworkUpdateStages.Update;
                 }
@@ -90,7 +90,7 @@ namespace MLAPI
                     NetworkingManager.Singleton.ServerClientId, null, QueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateManager.NetworkUpdateStages.LateUpdate);
             }
 
-            if(!IsUsingBatching)
+            if (!IsUsingBatching)
             {
                 writer.WriteBit(false); // Encrypted
                 writer.WriteBit(false); // Authenticated
@@ -101,7 +101,7 @@ namespace MLAPI
             writer.WriteUInt16Packed(GetBehaviourId()); // NetworkBehaviourId
 
             //Write the update stage in front of RPC related information
-            if(sendParams.UpdateStage == NetworkUpdateManager.NetworkUpdateStages.Default)
+            if (sendParams.UpdateStage == NetworkUpdateManager.NetworkUpdateStages.Default)
             {
                 writer.WriteUInt16Packed((ushort)NetworkUpdateManager.NetworkUpdateStages.Update);
             }
@@ -125,7 +125,7 @@ namespace MLAPI
             if (writer == null) return;
 
             var rpcQueueContainer = NetworkingManager.Singleton.rpcQueueContainer;
-            if(IsServer && IsHost)
+            if (IsServer && IsHost)
             {
                 rpcQueueContainer.EndAddQueueItemToFrame(writer, QueueHistoryFrame.QueueFrameType.Inbound, sendParams.UpdateStage == NetworkUpdateManager.NetworkUpdateStages.Default ? NetworkUpdateManager.NetworkUpdateStages.Update:sendParams.UpdateStage );
             }
@@ -154,12 +154,12 @@ namespace MLAPI
             bool IsSendingToHost = false;
             ulong[] ClientIds = sendParams.TargetClientIds ?? NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray();
 
-            if(IsServer && IsHost && ClientIds.Contains(NetworkingManager.Singleton.ServerClientId))
+            if (IsServer && IsHost && ClientIds.Contains(NetworkingManager.Singleton.ServerClientId))
             {
                 IsSendingToHost = true;
             }
 
-            if(IsServer && IsHost && IsSendingToHost)
+            if (IsServer && IsHost && IsSendingToHost)
             {
                 if(sendParams.UpdateStage == NetworkUpdateManager.NetworkUpdateStages.Default)
                 {
@@ -176,7 +176,7 @@ namespace MLAPI
                 ClientIds, QueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateManager.NetworkUpdateStages.LateUpdate);
             }
 
-            if(!IsUsingBatching)
+            if (!IsUsingBatching)
             {
                 writer.WriteBit(false); // Encrypted
                 writer.WriteBit(false); // Authenticated
@@ -187,7 +187,7 @@ namespace MLAPI
             writer.WriteUInt16Packed(GetBehaviourId()); // NetworkBehaviourId
 
             //Write the update stage in front of RPC related information
-            if(sendParams.UpdateStage == NetworkUpdateManager.NetworkUpdateStages.Default)
+            if (sendParams.UpdateStage == NetworkUpdateManager.NetworkUpdateStages.Default)
             {
                 writer.WriteUInt16Packed((ushort)NetworkUpdateManager.NetworkUpdateStages.Update);
             }
@@ -213,7 +213,7 @@ namespace MLAPI
 
             var rpcQueueContainer = NetworkingManager.Singleton.rpcQueueContainer;
             ulong[] ClientIds = sendParams.TargetClientIds ?? NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray();
-            if(IsServer && IsHost && ClientIds.Contains(NetworkingManager.Singleton.ServerClientId))
+            if (IsServer && IsHost && ClientIds.Contains(NetworkingManager.Singleton.ServerClientId))
             {
                 rpcQueueContainer.EndAddQueueItemToFrame(writer, QueueHistoryFrame.QueueFrameType.Inbound, sendParams.UpdateStage == NetworkUpdateManager.NetworkUpdateStages.Default ? NetworkUpdateManager.NetworkUpdateStages.Update:sendParams.UpdateStage );
             }

@@ -95,7 +95,7 @@ namespace MLAPI.Messaging
         protected override Action InternalRegisterNetworkUpdateStage(NetworkUpdateManager.NetworkUpdateStages stage)
         {
             Action updateStageAction = null;
-            if(!m_processUpdateStagesExternally)
+            if (!m_processUpdateStagesExternally)
             {
                 switch(stage)
                 {
@@ -194,7 +194,7 @@ namespace MLAPI.Messaging
 
                 if (QueueHistory[qType].ContainsKey(StreamBufferIndex))
                 {
-                    if(QueueHistory[qType][StreamBufferIndex].ContainsKey(currentUpdateStage))
+                    if (QueueHistory[qType][StreamBufferIndex].ContainsKey(currentUpdateStage))
                     {
                         return QueueHistory[qType][StreamBufferIndex][currentUpdateStage];
                     }
@@ -302,7 +302,7 @@ namespace MLAPI.Messaging
         private static void ResetQueueHistoryFrame(QueueHistoryFrame queueFrame)
         {
             //If we are dirt and have loopback data then don't clear this frame
-            if(queueFrame.isDirty && !queueFrame.hasLoopbackData)
+            if (queueFrame.isDirty && !queueFrame.hasLoopbackData)
             {
                 queueFrame.totalSize = 0;
                 queueFrame.queueItemOffsets.Clear();
@@ -333,7 +333,7 @@ namespace MLAPI.Messaging
             BR = null;
 
             NetworkUpdateManager.NetworkUpdateStages updateStage = NetworkUpdateManager.NetworkUpdateStages.Update;
-            if(System.Enum.IsDefined(typeof(NetworkUpdateManager.NetworkUpdateStages),(int)updateStageValue))
+            if (System.Enum.IsDefined(typeof(NetworkUpdateManager.NetworkUpdateStages),(int)updateStageValue))
             {
                 updateStage = (NetworkUpdateManager.NetworkUpdateStages)updateStageValue;
             }
@@ -391,7 +391,7 @@ namespace MLAPI.Messaging
             queueHistoryItem.queueWriter.WriteSingle(timeStamp);
             queueHistoryItem.queueWriter.WriteUInt64(sourceNetworkId);
 
-            if(queueFrameType != QueueHistoryFrame.QueueFrameType.Inbound)
+            if (queueFrameType != QueueHistoryFrame.QueueFrameType.Inbound)
             {
                 //NSS-TODO: Determine if we need to store the channel
                 queueHistoryItem.queueWriter.WriteByte(channel);
@@ -416,7 +416,7 @@ namespace MLAPI.Messaging
 
             //Write a filler dummy size of 0 to hold this position in order to write to it once the RPC is done writing.
             queueHistoryItem.queueWriter.WriteInt64(0);
-            if(NetworkingManager.Singleton.IsServer && NetworkingManager.Singleton.IsHost && queueFrameType == QueueHistoryFrame.QueueFrameType.Inbound)
+            if (NetworkingManager.Singleton.IsServer && NetworkingManager.Singleton.IsHost && queueFrameType == QueueHistoryFrame.QueueFrameType.Inbound)
             {
                 queueHistoryItem.queueWriter.WriteInt64(1); //Write the stream position offset for inbound as 1
                 queueHistoryItem.hasLoopbackData = true;    //The only case for this is when it is the Host
@@ -463,7 +463,7 @@ namespace MLAPI.Messaging
             //subtracting 8 byte to account for the value of the size of the RPC
             long MSGSize = (long)(queueHistoryItem.totalSize - (queueHistoryItem.GetCurrentMarkedPosition() + 8));
 
-            if(MSGSize > 0)
+            if (MSGSize > 0)
             {
                 //Write the actual size of the RPC message
                 queueHistoryItem.queueWriter.WriteInt64(MSGSize);
@@ -496,7 +496,7 @@ namespace MLAPI.Messaging
             int StreamBufferIndex = GetStreamBufferIndex(frameType);
 
             //We want to write into the future/next frame
-            if(getNextFrame)
+            if (getNextFrame)
             {
                 StreamBufferIndex++;
                 //If we have hit our maximum history, roll back over to the first one
@@ -518,7 +518,7 @@ namespace MLAPI.Messaging
                 return null;
             }
 
-            if(!QueueHistory[frameType][StreamBufferIndex].ContainsKey(updateStage))
+            if (!QueueHistory[frameType][StreamBufferIndex].ContainsKey(updateStage))
             {
                 UnityEngine.Debug.LogError("RPCQueueManager " + updateStage.ToString() + " update type does not exist!");
                 return null;
@@ -558,7 +558,7 @@ namespace MLAPI.Messaging
                         byte[] pooledBitStreamArray = pooledBitStream.GetBuffer();
                         Buffer.BlockCopy(frameQueueItem.messageData.Array ?? Array.Empty<byte>(), frameQueueItem.messageData.Offset, pooledBitStreamArray, 0, (int)frameQueueItem.streamSize);
 
-                        if(!IsUsingBatching())
+                        if (!IsUsingBatching())
                         {
                             pooledBitStream.Position = 1;
                         }

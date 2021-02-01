@@ -47,7 +47,7 @@ namespace MLAPI.Messaging
 #endif
                 var CurrentFrame = rpcQueueContainer.GetQueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Inbound,currentStage);
                 var NextFrame = rpcQueueContainer.GetQueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Inbound,currentStage,true);
-                if(NextFrame.isDirty && NextFrame.hasLoopbackData)
+                if (NextFrame.isDirty && NextFrame.hasLoopbackData)
                 {
                     AdvanceFrameHistory = true;
                 }
@@ -169,7 +169,7 @@ namespace MLAPI.Messaging
                     while (currentQueueItem.queueItemType != RpcQueueContainer.QueueItemType.None)
                     {
                         AdvanceFrameHistory = true;
-                        if(rpcQueueContainer.IsUsingBatching())
+                        if (rpcQueueContainer.IsUsingBatching())
                         {
                             m_batcher.QueueItem(currentQueueItem);
 
@@ -183,7 +183,7 @@ namespace MLAPI.Messaging
                     }
 
                     //If the size is < m_BatchThreshold then just send the messages
-                    if(AdvanceFrameHistory && rpcQueueContainer.IsUsingBatching())
+                    if (AdvanceFrameHistory && rpcQueueContainer.IsUsingBatching())
                     {
                         m_batcher.SendItems(0, SendCallback);
                     }
