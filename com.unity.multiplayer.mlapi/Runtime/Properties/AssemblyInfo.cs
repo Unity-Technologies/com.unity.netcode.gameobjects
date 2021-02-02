@@ -1,12 +1,9 @@
-﻿using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
+﻿using System.Runtime.CompilerServices;
 
-// Setting ComVisible to false makes the types in this assembly not visible
-// to COM components.  If you need to access a type in this assembly from
-// COM, set the ComVisible attribute to true on that type.
-[assembly: ComVisible(false)]
+#if UNITY_2020_2_OR_NEWER && UNITY_EDITOR
+[assembly: InternalsVisibleTo("Unity.Multiplayer.MLAPI.Editor.CodeGen")]
+#endif
 
-// The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("ee431720-a9ed-43dc-9e74-10b693816d38")]
-[assembly: InternalsVisibleTo("MLAPI-Tests")]
+#if UNITY_EDITOR
+[assembly: InternalsVisibleTo("Unity.Multiplayer.MLAPI.EditorTests")]
+#endif

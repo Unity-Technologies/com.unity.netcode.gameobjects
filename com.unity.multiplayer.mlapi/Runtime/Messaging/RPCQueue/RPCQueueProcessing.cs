@@ -36,7 +36,7 @@ namespace MLAPI.Messaging
         /// ProcessReceiveQueue
         /// Public facing interface method to start processing all RPCs in the current inbound frame
         /// </summary>
-        public void ProcessReceiveQueue(NetworkUpdateManager.NetworkUpdateStages currentStage)
+        public void ProcessReceiveQueue(NetworkUpdateManager.NetworkUpdateStage currentStage)
         {
             bool AdvanceFrameHistory = false;
             var rpcQueueContainer = NetworkingManager.Singleton.rpcQueueContainer;
@@ -157,7 +157,7 @@ namespace MLAPI.Messaging
             var rpcQueueContainer = NetworkingManager.Singleton.rpcQueueContainer;
             if (rpcQueueContainer != null)
             {
-                var CurrentFrame = rpcQueueContainer.GetCurrentFrame(QueueHistoryFrame.QueueFrameType.Outbound,NetworkUpdateManager.NetworkUpdateStages.LateUpdate);
+                var CurrentFrame = rpcQueueContainer.GetCurrentFrame(QueueHistoryFrame.QueueFrameType.Outbound,NetworkUpdateManager.NetworkUpdateStage.LateUpdate);
                 //If loopback is enabled
                 if (rpcQueueContainer.IsLoopBack())
                 {
