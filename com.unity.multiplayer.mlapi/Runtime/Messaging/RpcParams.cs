@@ -1,12 +1,15 @@
+using System;
+
 namespace MLAPI.Messaging
 {
     public struct ServerRpcSendParams
     {
-        public NetworkUpdateManager.NetworkUpdateStages UpdateStage;
+        public NetworkUpdateManager.NetworkUpdateStage UpdateStage;
     }
 
     public struct ServerRpcReceiveParams
     {
+        public NetworkUpdateManager.NetworkUpdateStage UpdateStage;
         public ulong SenderClientId;
     }
 
@@ -18,17 +21,30 @@ namespace MLAPI.Messaging
 
     public struct ClientRpcSendParams
     {
-        public NetworkUpdateManager.NetworkUpdateStages UpdateStage;
+        public NetworkUpdateManager.NetworkUpdateStage UpdateStage;
         public ulong[] TargetClientIds;
     }
 
     public struct ClientRpcReceiveParams
     {
+        public NetworkUpdateManager.NetworkUpdateStage UpdateStage;
     }
 
     public struct ClientRpcParams
     {
         public ClientRpcSendParams Send;
         public ClientRpcReceiveParams Receive;
+    }
+
+#if UNITY_2020_2_OR_NEWER
+    // RuntimeAccessModifiersILPP will make this `public`
+    internal struct __RpcParams
+#else
+    [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
+    public struct __RpcParams
+#endif
+    {
+        public ServerRpcParams Server;
+        public ClientRpcParams Client;
     }
 }

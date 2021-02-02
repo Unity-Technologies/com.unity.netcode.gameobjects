@@ -29,11 +29,6 @@ using MLAPI.Transports.Tasks;
 using MLAPI.Messaging.Buffering;
 using Unity.Profiling;
 
-#if UNITY_2020_2_OR_NEWER && UNITY_EDITOR
-using System.Runtime.CompilerServices;
-[assembly: InternalsVisibleTo("Unity.Multiplayer.MLAPI.Editor.CodeGen")]
-#endif
-
 namespace MLAPI
 {
     /// <summary>
@@ -47,15 +42,11 @@ namespace MLAPI
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
 #if UNITY_2020_2_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `public`
-        internal static readonly Dictionary<uint, Action<NetworkedBehaviour, BitReader, ulong>> __ntable = new Dictionary<uint, Action<NetworkedBehaviour, BitReader, ulong>>();
+        internal static readonly Dictionary<uint, Action<NetworkedBehaviour, BitSerializer, __RpcParams>> __ntable = new Dictionary<uint, Action<NetworkedBehaviour, BitSerializer, __RpcParams>>();
 #else
         [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
-        public static readonly Dictionary<uint, Action<NetworkedBehaviour, BitReader, ulong>> __ntable = new Dictionary<uint, Action<NetworkedBehaviour, BitReader, ulong>>();
+        public static readonly Dictionary<uint, Action<NetworkedBehaviour, BitSerializer, __RpcParams>> __ntable = new Dictionary<uint, Action<NetworkedBehaviour, BitSerializer, __RpcParams>>();
 #endif
-
-        // @mfatihmar (Unity) Begin: Temporary, inbound RPC queue will replace this workaround
-        internal readonly Queue<(ArraySegment<byte> payload, float receiveTime)> __loopbackRpcQueue = new Queue<(ArraySegment<byte> payload, float receiveTime)>();
-        // @mfatihmar (Unity) End: Temporary, inbound RPC queue will replace this workaround
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
         static ProfilerMarker s_EventTick = new ProfilerMarker("Event");
@@ -78,8 +69,6 @@ namespace MLAPI
         static ProfilerMarker s_MLAPIClientSTDRPC = new ProfilerMarker("MLAPIClientSTDRPC");
         static ProfilerMarker s_MLAPIClientSTDRPCQueued = new ProfilerMarker("MLAPIClientSTDRPCQueued");
         static ProfilerMarker s_InvokeRPC = new ProfilerMarker("InvokeRPC");
-
-
 #endif
         public RpcQueueContainer rpcQueueContainer { get; private set; }
 
@@ -390,10 +379,6 @@ namespace MLAPI
             NetworkSceneManager.sceneNameToIndex.Clear();
             NetworkSceneManager.sceneSwitchProgresses.Clear();
 
-            // @mfatihmar (Unity) Begin: Temporary, inbound RPC queue will replace this workaround
-            __loopbackRpcQueue.Clear();
-            // @mfatihmar (Unity) End: Temporary, inbound RPC queue will replace this workaround
-
             if (NetworkConfig.NetworkTransport == null)
             {
                 if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError("No transport has been selected!");
@@ -683,9 +668,6 @@ namespace MLAPI
             IsListening = false;
             IsServer = false;
             IsClient = false;
-            // @mfatihmar (Unity) Begin: Temporary, inbound RPC queue will replace this workaround
-            __loopbackRpcQueue.Clear();
-            // @mfatihmar (Unity) End: Temporary, inbound RPC queue will replace this workaround
             NetworkConfig.NetworkTransport.OnTransportEvent -= HandleRawTransportPoll;
             SpawnManager.DestroyNonSceneObjects();
             SpawnManager.ServerResetShudownStateForSceneObjects();
@@ -707,17 +689,17 @@ namespace MLAPI
         /// </summary>
         /// <param name="stage">update stage to get callback for</param>
         /// <returns></returns>
-        protected override Action InternalRegisterNetworkUpdateStage(NetworkUpdateManager.NetworkUpdateStages stage)
+        protected override Action InternalRegisterNetworkUpdateStage(NetworkUpdateManager.NetworkUpdateStage stage)
         {
             Action updateStageCallback = null;
             switch (stage)
             {
-                case NetworkUpdateManager.NetworkUpdateStages.PreUpdate:
+                case NetworkUpdateManager.NetworkUpdateStage.PreUpdate:
                     {
                         updateStageCallback = NetworkPreUpdate;
                         break;
                     }
-                case NetworkUpdateManager.NetworkUpdateStages.Update:
+                case NetworkUpdateManager.NetworkUpdateStage.Update:
                     {
                         updateStageCallback = NetworkUpdate;
                         break;
@@ -760,17 +742,6 @@ namespace MLAPI
                     s_ReceiveTick.Begin();
 #endif
                     var IsLoopBack = false;
-
-                    // @mfatihmar (Unity) Begin: Temporary, inbound RPC queue will replace this workaround
-                    if (IsHost)
-                    {
-                        while (__loopbackRpcQueue.Count > 0)
-                        {
-                            var (payload, receiveTime) = __loopbackRpcQueue.Dequeue();
-                            HandleRawTransportPoll(NetEventType.Data, ServerClientId, Transport.MLAPI_STDRPC_CHANNEL, payload, receiveTime);
-                        }
-                    }
-                    // @mfatihmar (Unity) End: Temporary, inbound RPC queue will replace this workaround
 
                     NetworkProfiler.StartTick(TickType.Receive);
 
@@ -1278,7 +1249,7 @@ namespace MLAPI
 #endif
             var networkObjectId = queueItem.streamReader.ReadUInt64Packed();
             var networkBehaviourId = queueItem.streamReader.ReadUInt16Packed();
-            var UpdateStage = queueItem.streamReader.ReadUInt16Packed();
+            var networkUpdateStage = queueItem.streamReader.ReadUInt16Packed();
             var networkMethodId = queueItem.streamReader.ReadUInt32Packed();
 
             if (__ntable.ContainsKey(networkMethodId))
@@ -1289,7 +1260,31 @@ namespace MLAPI
                 var networkBehaviour = networkObject.GetBehaviourAtOrderIndex(networkBehaviourId);
                 if (ReferenceEquals(networkBehaviour, null)) return;
 
-                __ntable[networkMethodId](networkBehaviour, queueItem.streamReader, queueItem.networkId);
+                var rpcParams = new __RpcParams();
+                switch (queueItem.queueItemType)
+                {
+                    case RpcQueueContainer.QueueItemType.ServerRpc:
+                        rpcParams.Server = new ServerRpcParams
+                        {
+                            Receive = new ServerRpcReceiveParams
+                            {
+                                UpdateStage = (NetworkUpdateManager.NetworkUpdateStage)networkUpdateStage,
+                                SenderClientId = queueItem.networkId
+                            }
+                        };
+                        break;
+                    case RpcQueueContainer.QueueItemType.ClientRpc:
+                        rpcParams.Client = new ClientRpcParams
+                        {
+                            Receive = new ClientRpcReceiveParams
+                            {
+                                UpdateStage = (NetworkUpdateManager.NetworkUpdateStage)networkUpdateStage
+                            }
+                        };
+                        break;
+                }
+
+                __ntable[networkMethodId](networkBehaviour, new BitSerializer(queueItem.streamReader), rpcParams);
             }
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR

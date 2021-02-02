@@ -419,7 +419,7 @@ namespace MLAPI.Spawning
 
             var QueueItem = new FrameQueueItem
             {
-                updateStage = NetworkUpdateManager.NetworkUpdateStages.Update,
+                updateStage = NetworkUpdateManager.NetworkUpdateStage.Update,
                 queueItemType = RpcQueueContainer.QueueItemType.CreateObject,
                 networkId = 0,
                 itemStream = stream,

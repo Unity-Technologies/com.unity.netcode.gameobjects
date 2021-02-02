@@ -20,11 +20,6 @@ using MLAPI.Transports;
 using BitStream = MLAPI.Serialization.BitStream;
 using Unity.Profiling;
 
-#if UNITY_2020_2_OR_NEWER && UNITY_EDITOR
-using System.Runtime.CompilerServices;
-[assembly: InternalsVisibleTo("Unity.Multiplayer.MLAPI.Editor.CodeGen")]
-#endif
-
 namespace MLAPI
 {
     /// <summary>
@@ -48,6 +43,7 @@ namespace MLAPI
         }
 
 #pragma warning disable 414
+        [NonSerialized]
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
         [DebuggerBrowsable(DebuggerBrowsableState.Never)]
@@ -64,10 +60,10 @@ namespace MLAPI
         [EditorBrowsable(EditorBrowsableState.Never)]
 #if UNITY_2020_2_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `protected`
-        internal BitWriter __beginSendServerRpc(ServerRpcSendParams sendParams, bool isReliable)
+        internal BitSerializer __beginSendServerRpc(ServerRpcParams serverRpcParams, bool isReliable)
 #else
         [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
-        public BitWriter __beginSendServerRpc(ServerRpcSendParams sendParams, bool isReliable)
+        public BitSerializer __beginSendServerRpc(ServerRpcParams serverRpcParams, bool isReliable)
 #endif
         {
             var rpcQueueContainer = NetworkingManager.Singleton.rpcQueueContainer;
@@ -106,26 +102,27 @@ namespace MLAPI
             //Write the update stage in front of RPC related information
             if (sendParams.UpdateStage == NetworkUpdateManager.NetworkUpdateStages.Default)
             {
-                writer.WriteUInt16Packed((ushort)NetworkUpdateManager.NetworkUpdateStages.Update);
+                writer.WriteUInt16Packed((ushort)NetworkUpdateManager.NetworkUpdateStage.Update);
             }
             else
             {
-                writer.WriteUInt16Packed((ushort)sendParams.UpdateStage);
+                writer.WriteUInt16Packed((ushort)serverRpcParams.Send.UpdateStage);
             }
-            return writer;
+
+            return writer.Serializer;
         }
 
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
 #if UNITY_2020_2_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `protected`
-        internal void __endSendServerRpc(BitWriter writer, ServerRpcSendParams sendParams, bool isReliable)
+        internal void __endSendServerRpc(BitSerializer serializer, ServerRpcParams serverRpcParams, bool isReliable)
 #else
         [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
-        public void __endSendServerRpc(BitWriter writer, ServerRpcSendParams sendParams, bool isReliable)
+        public void __endSendServerRpc(BitSerializer serializer, ServerRpcParams serverRpcParams, bool isReliable)
 #endif
         {
-            if (writer == null) return;
+            if (serializer == null) return;
 
             var rpcQueueContainer = NetworkingManager.Singleton.rpcQueueContainer;
             if (IsHost)
@@ -143,13 +140,13 @@ namespace MLAPI
         [EditorBrowsable(EditorBrowsableState.Never)]
 #if UNITY_2020_2_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `protected`
-        internal BitWriter __beginSendClientRpc(ClientRpcSendParams sendParams, bool isReliable)
+        internal BitSerializer __beginSendClientRpc(ClientRpcParams clientRpcParams, bool isReliable)
 #else
         [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
-        public BitWriter __beginSendClientRpc(ClientRpcSendParams sendParams, bool isReliable)
+        public BitSerializer __beginSendClientRpc(ClientRpcParams clientRpcParams, bool isReliable)
 #endif
         {
-            //This will start a new queue item entry and will then return the writer to the current frame's stream
+            // This will start a new queue item entry and will then return the writer to the current frame's stream
             var rpcQueueContainer = NetworkingManager.Singleton.rpcQueueContainer;
 
             PooledBitWriter writer;
@@ -207,16 +204,17 @@ namespace MLAPI
             writer.WriteUInt64Packed(NetworkId); // NetworkObjectId
             writer.WriteUInt16Packed(GetBehaviourId()); // NetworkBehaviourId
 
-            //Write the update stage in front of RPC related information
-            if (sendParams.UpdateStage == NetworkUpdateManager.NetworkUpdateStages.Default)
+            // Write the update stage in front of RPC related information
+            if (clientRpcParams.Send.UpdateStage == NetworkUpdateManager.NetworkUpdateStage.Default)
             {
-                writer.WriteUInt16Packed((ushort)NetworkUpdateManager.NetworkUpdateStages.Update);
+                writer.WriteUInt16Packed((ushort)NetworkUpdateManager.NetworkUpdateStage.Update);
             }
             else
             {
-                writer.WriteUInt16Packed((ushort)sendParams.UpdateStage);
+                writer.WriteUInt16Packed((ushort)clientRpcParams.Send.UpdateStage);
             }
-            return writer;
+
+            return writer.Serializer;
         }
 
 
@@ -224,13 +222,13 @@ namespace MLAPI
         [EditorBrowsable(EditorBrowsableState.Never)]
 #if UNITY_2020_2_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `protected`
-        internal void __endSendClientRpc(BitWriter writer, ClientRpcSendParams sendParams, bool isReliable)
+        internal void __endSendClientRpc(BitSerializer serializer, ClientRpcParams clientRpcParams, bool isReliable)
 #else
         [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
-        public void __endSendClientRpc(BitWriter writer, ClientRpcSendParams sendParams, bool isReliable)
+        public void __endSendClientRpc(BitSerializer serializer, ClientRpcParams clientRpcParams, bool isReliable)
 #endif
         {
-            if (writer == null) return;
+            if (serializer == null) return;
 
             var rpcQueueContainer = NetworkingManager.Singleton.rpcQueueContainer;
             ulong[] ClientIds = sendParams.TargetClientIds ?? NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray();
