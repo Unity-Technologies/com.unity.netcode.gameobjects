@@ -84,7 +84,7 @@ namespace MLAPI.NetworkedVar.Collections
         }
 
         /// <inheritdoc />
-        public string GetChannel()
+        public byte GetChannel()
         {
             return Settings.SendChannel;
         }

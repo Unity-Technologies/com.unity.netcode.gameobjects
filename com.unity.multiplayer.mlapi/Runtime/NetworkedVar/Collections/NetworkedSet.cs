@@ -93,7 +93,7 @@ namespace MLAPI.NetworkedVar.Collections
         }
 
         /// <inheritdoc />
-        public string GetChannel()
+        public byte GetChannel()
         {
             return Settings.SendChannel;
         }
@@ -514,7 +514,7 @@ namespace MLAPI.NetworkedVar.Collections
     public struct NetworkedSetEvent<T>
     {
         /// <summary>
-        /// Enum representing the different operations available for triggering an event. 
+        /// Enum representing the different operations available for triggering an event.
         /// </summary>
         public enum EventType
         {

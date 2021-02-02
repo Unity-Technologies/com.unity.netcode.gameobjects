@@ -527,11 +527,7 @@ namespace MLAPI
 
                 for (int i = 0; i < networkedVarFields.Count; i++)
                 {
-                    // this could be cleaner.  The GetChannel() methods look for the SendChannel string channel name
-                    //  from the settings file, which could be easily misconfigured.  If a bogus channel is specified,
-                    //  GetChannelByte() will return the default, MLAPI_INTERNAL_CHANNEL
-                    string channelName = networkedVarFields[i].GetChannel();
-                    byte channel = Transport.GetChannelByte(channelName);
+                    byte channel = networkedVarFields[i].GetChannel();
 
                     if (!firstLevelIndex.ContainsKey(channel))
                     {
