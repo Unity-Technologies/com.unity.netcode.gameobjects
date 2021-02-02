@@ -17,7 +17,6 @@ using ParameterAttributes = Mono.Cecil.ParameterAttributes;
 using ILPPInterface = Unity.CompilationPipeline.Common.ILPostProcessing.ILPostProcessor;
 #else
 using ILPPInterface = MLAPI.Editor.CodeGen.ILPostProcessor;
-
 #endif
 
 namespace MLAPI.Editor.CodeGen
@@ -556,16 +555,6 @@ namespace MLAPI.Editor.CodeGen
                     }
 
                     // rpcDelivery
-                    // todo: instructions.Add(processor.Create(rpcDelivery ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0));
-                    switch (rpcDelivery)
-                    {
-                        default:
-                        case RpcDelivery.Reliable:
-                            break;
-                        case RpcDelivery.Unreliable:
-                            break;
-                    }
-
                     instructions.Add(processor.Create(OpCodes.Ldc_I4, (int)rpcDelivery));
 
                     // BeginSendServerRpc
@@ -590,16 +579,6 @@ namespace MLAPI.Editor.CodeGen
                     }
 
                     // rpcDelivery
-                    // todo: instructions.Add(processor.Create(rpcDelivery ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0));
-                    switch (rpcDelivery)
-                    {
-                        default:
-                        case RpcDelivery.Reliable:
-                            break;
-                        case RpcDelivery.Unreliable:
-                            break;
-                    }
-
                     instructions.Add(processor.Create(OpCodes.Ldc_I4, (int)rpcDelivery));
 
                     // BeginSendClientRpc
@@ -1417,16 +1396,6 @@ namespace MLAPI.Editor.CodeGen
                     }
 
                     // rpcDelivery
-                    // todo: instructions.Add(processor.Create(rpcDelivery ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0));
-                    switch (rpcDelivery)
-                    {
-                        default:
-                        case RpcDelivery.Reliable:
-                            break;
-                        case RpcDelivery.Unreliable:
-                            break;
-                    }
-
                     instructions.Add(processor.Create(OpCodes.Ldc_I4, (int)rpcDelivery));
 
                     // EndSendServerRpc
@@ -1453,16 +1422,6 @@ namespace MLAPI.Editor.CodeGen
                     }
 
                     // rpcDelivery
-                    // todo: instructions.Add(processor.Create(rpcDelivery ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0));
-                    switch (rpcDelivery)
-                    {
-                        default:
-                        case RpcDelivery.Reliable:
-                            break;
-                        case RpcDelivery.Unreliable:
-                            break;
-                    }
-
                     instructions.Add(processor.Create(OpCodes.Ldc_I4, (int)rpcDelivery));
 
                     // EndSendClientRpc
