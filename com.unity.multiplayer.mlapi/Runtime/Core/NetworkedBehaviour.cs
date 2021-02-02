@@ -60,17 +60,17 @@ namespace MLAPI
         [EditorBrowsable(EditorBrowsableState.Never)]
 #if UNITY_2020_2_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `protected`
-        internal BitSerializer __beginSendServerRpc(ServerRpcParams serverRpcParams, bool isReliable)
+        internal BitSerializer __beginSendServerRpc(ServerRpcParams serverRpcParams, RpcDelivery rpcDelivery)
 #else
         [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
-        public BitSerializer __beginSendServerRpc(ServerRpcParams serverRpcParams, bool isReliable)
+        public BitSerializer __beginSendServerRpc(ServerRpcParams serverRpcParams, RpcDelivery rpcDelivery)
 #endif
         {
             var rpcQueueContainer = NetworkingManager.Singleton.rpcQueueContainer;
             var writer = rpcQueueContainer.BeginAddQueueItemToOutboundFrame(
                 RpcQueueContainer.QueueItemType.ServerRpc,
                 Time.realtimeSinceStartup,
-                Transport.MLAPI_STDRPC_CHANNEL,
+                rpcDelivery == RpcDelivery.Reliable ? Transport.MLAPI_RELIABLE_RPC_CHANNEL : Transport.MLAPI_UNRELIABLE_RPC_CHANNEL,
                 /* sendFlags = */ 0,
                 NetworkingManager.Singleton.ServerClientId,
                 /* targetNetworkIds = */ null);
@@ -101,10 +101,10 @@ namespace MLAPI
         [EditorBrowsable(EditorBrowsableState.Never)]
 #if UNITY_2020_2_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `protected`
-        internal void __endSendServerRpc(BitSerializer serializer, ServerRpcParams serverRpcParams, bool isReliable)
+        internal void __endSendServerRpc(BitSerializer serializer, ServerRpcParams serverRpcParams, RpcDelivery rpcDelivery)
 #else
         [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
-        public void __endSendServerRpc(BitSerializer serializer, ServerRpcParams serverRpcParams, bool isReliable)
+        public void __endSendServerRpc(BitSerializer serializer, ServerRpcParams serverRpcParams, RpcDelivery rpcDelivery)
 #endif
         {
             if (serializer == null) return;
@@ -117,10 +117,10 @@ namespace MLAPI
         [EditorBrowsable(EditorBrowsableState.Never)]
 #if UNITY_2020_2_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `protected`
-        internal BitSerializer __beginSendClientRpc(ClientRpcParams clientRpcParams, bool isReliable)
+        internal BitSerializer __beginSendClientRpc(ClientRpcParams clientRpcParams, RpcDelivery rpcDelivery)
 #else
         [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
-        public BitSerializer __beginSendClientRpc(ClientRpcParams clientRpcParams, bool isReliable)
+        public BitSerializer __beginSendClientRpc(ClientRpcParams clientRpcParams, RpcDelivery rpcDelivery)
 #endif
         {
             // This will start a new queue item entry and will then return the writer to the current frame's stream
@@ -128,7 +128,7 @@ namespace MLAPI
             var writer = rpcQueueContainer.BeginAddQueueItemToOutboundFrame(
                 RpcQueueContainer.QueueItemType.ClientRpc,
                 Time.realtimeSinceStartup,
-                Transport.MLAPI_STDRPC_CHANNEL,
+                rpcDelivery == RpcDelivery.Reliable ? Transport.MLAPI_RELIABLE_RPC_CHANNEL : Transport.MLAPI_UNRELIABLE_RPC_CHANNEL,
                 /* sendFlags = */ 0,
                 NetworkId,
                 clientRpcParams.Send.TargetClientIds ?? NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray());
@@ -159,10 +159,10 @@ namespace MLAPI
         [EditorBrowsable(EditorBrowsableState.Never)]
 #if UNITY_2020_2_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `protected`
-        internal void __endSendClientRpc(BitSerializer serializer, ClientRpcParams clientRpcParams, bool isReliable)
+        internal void __endSendClientRpc(BitSerializer serializer, ClientRpcParams clientRpcParams, RpcDelivery rpcDelivery)
 #else
         [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
-        public void __endSendClientRpc(BitSerializer serializer, ClientRpcParams clientRpcParams, bool isReliable)
+        public void __endSendClientRpc(BitSerializer serializer, ClientRpcParams clientRpcParams, RpcDelivery rpcDelivery)
 #endif
         {
             if (serializer == null) return;
