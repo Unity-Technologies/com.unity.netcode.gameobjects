@@ -43,7 +43,7 @@ namespace MLAPI.Messaging
         private int     m_OutBoundStreamBufferIndex;
         private bool    m_IsTestingEnabled;
         private bool    m_processUpdateStagesExternally;
-        private bool    m_IsNotUsingBatching = true;
+        private bool    m_IsNotUsingBatching;
 
         public bool IsUsingBatching()
         {
