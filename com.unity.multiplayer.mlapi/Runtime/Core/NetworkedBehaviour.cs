@@ -87,14 +87,15 @@ namespace MLAPI
             {
                 writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ServerRpc, Time.realtimeSinceStartup, Transport.MLAPI_STDRPC_CHANNEL, 0,
                     NetworkingManager.Singleton.ServerClientId, null, QueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateManager.NetworkUpdateStage.LateUpdate);
+                if (!IsUsingBatching)
+                {
+                    writer.WriteBit(false); // Encrypted
+                    writer.WriteBit(false); // Authenticated
+                    writer.WriteBits(MLAPIConstants.MLAPI_SERVER_RPC, 6); // MessageType
+                }
             }
 
-            if (!IsUsingBatching)
-            {
-                writer.WriteBit(false); // Encrypted
-                writer.WriteBit(false); // Authenticated
-                writer.WriteBits(MLAPIConstants.MLAPI_SERVER_RPC, 6); // MessageType
-            }
+
 
             writer.WriteUInt64Packed(NetworkId); // NetworkObjectId
             writer.WriteUInt16Packed(GetBehaviourId()); // NetworkBehaviourId
