@@ -43,7 +43,7 @@ namespace MLAPI.Messaging
         private int     m_OutBoundStreamBufferIndex;
         private bool    m_IsTestingEnabled;
         private bool    m_processUpdateStagesExternally;
-        private bool    m_IsNotUsingBatching;
+        private bool    m_IsNotUsingBatching = true;
 
         public bool IsUsingBatching()
         {
@@ -308,6 +308,7 @@ namespace MLAPI.Messaging
                 queueFrame.queueItemOffsets.Clear();
                 queueFrame.queueStream.Position = 0;
                 queueFrame.MarkCurrentStreamPosition();
+                queueFrame.isDirty = false;
             }
         }
 
@@ -364,6 +365,47 @@ namespace MLAPI.Messaging
         }
 
         /// <summary>
+        /// SetLoopBackWriter
+        /// ***Temporary fix for host mode loopback RPC writer work-around
+        /// Sets the loop back writer
+        /// </summary>
+        /// <param name="loopwriter"></param>
+        /// <param name="queueFrameType"></param>
+        /// <param name="updateStage"></param>
+        public void SetLoopBackWriter(PooledBitWriter loopwriter,  QueueHistoryFrame.QueueFrameType queueFrameType,NetworkUpdateManager.NetworkUpdateStages updateStage)
+        {
+            QueueHistoryFrame queueHistoryItem = GetQueueHistoryFrame(queueFrameType,updateStage,false);
+            queueHistoryItem.queueWriterLoopback = loopwriter;
+        }
+
+        /// <summary>
+        /// GetLoopBackWriter
+        /// Gets the loop back writer for the history frame (if one exists)
+        /// ***Temporary fix for host mode loopback RPC writer work-around
+        /// </summary>
+        /// <param name="queueFrameType"></param>
+        /// <param name="updateStage"></param>
+        /// <returns></returns>
+        public PooledBitWriter GetLoopBackWriter( QueueHistoryFrame.QueueFrameType queueFrameType,NetworkUpdateManager.NetworkUpdateStages updateStage)
+        {
+            QueueHistoryFrame queueHistoryItem = GetQueueHistoryFrame(queueFrameType,updateStage,false);
+            return queueHistoryItem.queueWriterLoopback;
+        }
+
+        /// <summary>
+        /// ClearLoopBackWriter
+        /// Clears the loopback writer from the QueueHistoryFrame
+        /// ***Temporary fix for host mode loopback RPC writer work-around
+        /// </summary>
+        /// <param name="queueFrameType"></param>
+        /// <param name="updateStage"></param>
+        public void ClearLoopBackWriter(QueueHistoryFrame.QueueFrameType queueFrameType,NetworkUpdateManager.NetworkUpdateStages updateStage)
+        {
+            QueueHistoryFrame queueHistoryItem = GetQueueHistoryFrame(queueFrameType,updateStage,false);
+            queueHistoryItem.queueWriterLoopback = null;
+        }
+
+        /// <summary>
         /// BeginAddQueueItemToOutboundFrame
         /// Adds a queue item to the outbound queue frame
         /// </summary>
@@ -393,13 +435,25 @@ namespace MLAPI.Messaging
 
             if (queueFrameType != QueueHistoryFrame.QueueFrameType.Inbound)
             {
-                //NSS-TODO: Determine if we need to store the channel
                 queueHistoryItem.queueWriter.WriteByte(channel);
 
                 if (targetNetworkIds != null && targetNetworkIds.Length != 0)
                 {
-                    queueHistoryItem.queueWriter.WriteInt32(targetNetworkIds.Length);
+                    //In the event the host is one of the networkIds, for outbound we want to ignore it (at this spot only!!)
+                    //Get a count of clients we are going to send to (and write into the buffer)
+                    var numberOfClients = 0;
+                    for (int i = 0; i < targetNetworkIds.Length; i++)
+                    {
+                        if (NetworkingManager.Singleton.IsHost && targetNetworkIds[i] == NetworkingManager.Singleton.ServerClientId)
+                        {
+                            continue;
+                        }
+                        numberOfClients++;
+                    }
+                    //Write our total number of clients
+                    queueHistoryItem.queueWriter.WriteInt32(numberOfClients);
 
+                    //Now write the cliend ids
                     for (int i = 0; i < targetNetworkIds.Length; i++)
                     {
                         if (NetworkingManager.Singleton.IsHost && targetNetworkIds[i] == NetworkingManager.Singleton.ServerClientId)
@@ -449,7 +503,7 @@ namespace MLAPI.Messaging
             PooledBitWriter pbWriter = (PooledBitWriter)writer;
 
             //Sanity check
-            if (pbWriter != queueHistoryItem.queueWriter)
+            if (pbWriter != queueHistoryItem.queueWriter && !getNextFrame)
             {
                 UnityEngine.Debug.LogError("RpcQueueContainer " + queueFrameType.ToString() + " passed writer is not the same as the current PooledBitWrite for the " +  queueFrameType.ToString() + "]!");
             }

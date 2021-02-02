@@ -81,8 +81,11 @@ namespace MLAPI
                 }
                 writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ServerRpc, Time.realtimeSinceStartup, Transport.MLAPI_STDRPC_CHANNEL, 0,
                     NetworkingManager.Singleton.ServerClientId, null, QueueHistoryFrame.QueueFrameType.Inbound,sendParams.UpdateStage );
-                //We want to directly write the header information to keep the same offsets when it is being processed by inbound
-                IsUsingBatching = false;
+
+                //Under this condition we always treat this like there is no batching
+                writer.WriteBit(false); // Encrypted
+                writer.WriteBit(false); // Authenticated
+                writer.WriteBits(MLAPIConstants.MLAPI_SERVER_RPC, 6); // MessageType
             }
             else
             {
@@ -151,7 +154,13 @@ namespace MLAPI
 
             PooledBitWriter writer;
             var IsUsingBatching = rpcQueueContainer.IsUsingBatching();
+
             ulong[] ClientIds = sendParams.TargetClientIds ?? NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray();
+            if(sendParams.TargetClientIds != null && sendParams.TargetClientIds.Length == 0)
+            {
+                ClientIds = NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray();
+            }
+
             var ContainsServerClientId = ClientIds.Contains(NetworkingManager.Singleton.ServerClientId);
             if (IsHost && ContainsServerClientId)
             {
@@ -162,27 +171,37 @@ namespace MLAPI
 
                 writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, Transport.MLAPI_STDRPC_CHANNEL, 0,
                     NetworkingManager.Singleton.ServerClientId, null, QueueHistoryFrame.QueueFrameType.Inbound,sendParams.UpdateStage );
-                //We want to directly write the header information to keep the same offsets when it is being processed by inbound
-                IsUsingBatching = false;
+
+                writer.WriteBit(false); // Encrypted
+                writer.WriteBit(false); // Authenticated
+                writer.WriteBits(MLAPIConstants.MLAPI_CLIENT_RPC, 6); // MessageType
 
                 //Handle sending to the other clients
-                if (ClientIds.Length > 1 || !ContainsServerClientId )
+                if (ClientIds.Length > 1 )
                 {
+                    rpcQueueContainer.SetLoopBackWriter(writer, QueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateManager.NetworkUpdateStages.LateUpdate);
                     writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, Transport.MLAPI_STDRPC_CHANNEL, 0, NetworkId,
                         ClientIds, QueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateManager.NetworkUpdateStages.LateUpdate);
+
+                    if (!IsUsingBatching)
+                    {
+                        writer.WriteBit(false); // Encrypted
+                        writer.WriteBit(false); // Authenticated
+                        writer.WriteBits(MLAPIConstants.MLAPI_CLIENT_RPC, 6); // MessageType
+                    }
                 }
             }
             else
             {
                 writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, Transport.MLAPI_STDRPC_CHANNEL, 0, NetworkId,
                     ClientIds, QueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateManager.NetworkUpdateStages.LateUpdate);
-            }
 
-            if (!IsUsingBatching)
-            {
-                writer.WriteBit(false); // Encrypted
-                writer.WriteBit(false); // Authenticated
-                writer.WriteBits(MLAPIConstants.MLAPI_CLIENT_RPC, 6); // MessageType
+                if (!IsUsingBatching)
+                {
+                    writer.WriteBit(false); // Encrypted
+                    writer.WriteBit(false); // Authenticated
+                    writer.WriteBits(MLAPIConstants.MLAPI_CLIENT_RPC, 6); // MessageType
+                }
             }
 
             writer.WriteUInt64Packed(NetworkId); // NetworkObjectId
@@ -197,9 +216,9 @@ namespace MLAPI
             {
                 writer.WriteUInt16Packed((ushort)sendParams.UpdateStage);
             }
-
             return writer;
         }
+
 
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
@@ -215,14 +234,26 @@ namespace MLAPI
 
             var rpcQueueContainer = NetworkingManager.Singleton.rpcQueueContainer;
             ulong[] ClientIds = sendParams.TargetClientIds ?? NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray();
+            if(sendParams.TargetClientIds != null && sendParams.TargetClientIds.Length == 0)
+            {
+                ClientIds = NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray();
+            }
             var ContainsServerClientId = ClientIds.Contains(NetworkingManager.Singleton.ServerClientId);
 
-            if (IsHost && ClientIds.Contains(NetworkingManager.Singleton.ServerClientId))
+            if (IsHost && ContainsServerClientId)
             {
-                rpcQueueContainer.EndAddQueueItemToFrame(writer, QueueHistoryFrame.QueueFrameType.Inbound, sendParams.UpdateStage == NetworkUpdateManager.NetworkUpdateStages.Default ? NetworkUpdateManager.NetworkUpdateStages.Update:sendParams.UpdateStage );
-                if (ClientIds.Length > 1 || !ContainsServerClientId)
+                PooledBitWriter loopbackWriter = writer as PooledBitWriter;
+                if (ClientIds.Length > 1 )
                 {
                     rpcQueueContainer.EndAddQueueItemToFrame(writer, QueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateManager.NetworkUpdateStages.LateUpdate);
+
+                    loopbackWriter = rpcQueueContainer.GetLoopBackWriter(QueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateManager.NetworkUpdateStages.LateUpdate);
+                    rpcQueueContainer.ClearLoopBackWriter(QueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateManager.NetworkUpdateStages.LateUpdate);
+                }
+
+                if(ContainsServerClientId)
+                {
+                    rpcQueueContainer.EndAddQueueItemToFrame(loopbackWriter, QueueHistoryFrame.QueueFrameType.Inbound, sendParams.UpdateStage == NetworkUpdateManager.NetworkUpdateStages.Default ? NetworkUpdateManager.NetworkUpdateStages.Update:sendParams.UpdateStage );
                 }
             }
             else
