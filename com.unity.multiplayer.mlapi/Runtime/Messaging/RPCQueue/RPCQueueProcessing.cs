@@ -120,31 +120,35 @@ namespace MLAPI.Messaging
         {
             foreach (FrameQueueItem queueItem in m_InternalMLAPISendQueue)
             {
+
                 var PoolStream = queueItem.itemStream;
-                switch (queueItem.queueItemType)
+
+                if(NetworkingManager.Singleton.IsListening)
                 {
-                    case RpcQueueContainer.QueueItemType.CreateObject:
+                    switch (queueItem.queueItemType)
                     {
-                        foreach (ulong clientId in queueItem.clientIds)
+                        case RpcQueueContainer.QueueItemType.CreateObject:
                         {
-                            InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_ADD_OBJECT, queueItem.channel, PoolStream, queueItem.sendFlags);
-                        }
+                            foreach (ulong clientId in queueItem.clientIds)
+                            {
+                                InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_ADD_OBJECT, queueItem.channel, PoolStream, queueItem.sendFlags);
+                            }
 
-                        ProfilerStatManager.rpcsSent.Record(queueItem.clientIds.Length);
-                        break;
-                    }
-                    case RpcQueueContainer.QueueItemType.DestroyObject:
-                    {
-                        foreach (ulong clientId in queueItem.clientIds)
+                            ProfilerStatManager.rpcsSent.Record(queueItem.clientIds.Length);
+                            break;
+                        }
+                        case RpcQueueContainer.QueueItemType.DestroyObject:
                         {
-                            InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_DESTROY_OBJECT, queueItem.channel, PoolStream, queueItem.sendFlags);
-                        }
+                            foreach (ulong clientId in queueItem.clientIds)
+                            {
+                                InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_DESTROY_OBJECT, queueItem.channel, PoolStream, queueItem.sendFlags);
+                            }
 
-                        ProfilerStatManager.rpcsSent.Record(queueItem.clientIds.Length);
-                        break;
+                            ProfilerStatManager.rpcsSent.Record(queueItem.clientIds.Length);
+                            break;
+                        }
                     }
                 }
-
                 PoolStream.Dispose();
             }
 
