@@ -28,9 +28,9 @@ namespace MLAPI.Editor.CodeGen
         public static readonly string ServerRpcParams_FullName = typeof(ServerRpcParams).FullName;
         public static readonly string ClientRpcParams_FullName = typeof(ClientRpcParams).FullName;
         public static readonly string INetworkSerializable_FullName = typeof(INetworkSerializable).FullName;
-        public static readonly string INetworkSerializable_NetworkRead_Name = nameof(INetworkSerializable.NetworkRead);
-        public static readonly string INetworkSerializable_NetworkWrite_Name = nameof(INetworkSerializable.NetworkWrite);
+        public static readonly string INetworkSerializable_NetworkSerialize_Name = nameof(INetworkSerializable.NetworkSerialize);
         public static readonly string UnityColor_FullName = typeof(Color).FullName;
+        public static readonly string UnityColor32_FullName = typeof(Color32).FullName;
         public static readonly string UnityVector2_FullName = typeof(Vector2).FullName;
         public static readonly string UnityVector3_FullName = typeof(Vector3).FullName;
         public static readonly string UnityVector4_FullName = typeof(Vector4).FullName;
@@ -78,6 +78,8 @@ namespace MLAPI.Editor.CodeGen
 
         public static bool HasInterface(this TypeReference typeReference, string InterfaceTypeFullName)
         {
+            if (typeReference.IsArray) return false;
+
             try
             {
                 var typeDef = typeReference.Resolve();
@@ -91,11 +93,11 @@ namespace MLAPI.Editor.CodeGen
             return false;
         }
 
-        public static bool IsSupportedType(this TypeReference typeReference)
+        public static bool IsSerializable(this TypeReference typeReference)
         {
             var typeSystem = typeReference.Module.TypeSystem;
 
-            // common primitives
+            // C# primitives
             if (typeReference == typeSystem.Boolean) return true;
             if (typeReference == typeSystem.Char) return true;
             if (typeReference == typeSystem.SByte) return true;
@@ -112,6 +114,7 @@ namespace MLAPI.Editor.CodeGen
 
             // Unity primitives
             if (typeReference.FullName == UnityColor_FullName) return true;
+            if (typeReference.FullName == UnityColor32_FullName) return true;
             if (typeReference.FullName == UnityVector2_FullName) return true;
             if (typeReference.FullName == UnityVector3_FullName) return true;
             if (typeReference.FullName == UnityVector4_FullName) return true;
@@ -119,24 +122,22 @@ namespace MLAPI.Editor.CodeGen
             if (typeReference.FullName == UnityRay_FullName) return true;
             if (typeReference.FullName == UnityRay2D_FullName) return true;
 
-            // INetworkSerializable
-            if (typeReference.HasInterface(INetworkSerializable_FullName)) return true;
-
             // Enum
             if (typeReference.GetEnumAsInt() != null) return true;
 
-            // todo: [RFC] Serializable Types
-            // StaticArray[]
-            // IEnumerable<T>
-            // IEnumerable<KeyValuePair<K, V>>
-            // IEnumerable<Tuple<T1, T2, T3...T7>>
-            // IEnumerable<Tuple<T1, T2...TRest>>
+            // INetworkSerializable
+            if (typeReference.HasInterface(INetworkSerializable_FullName)) return true;
+
+            // Static array
+            if (typeReference.IsArray) return typeReference.GetElementType().IsSerializable();
 
             return false;
         }
 
         public static TypeReference GetEnumAsInt(this TypeReference typeReference)
         {
+            if (typeReference.IsArray) return null;
+
             try
             {
                 var typeDef = typeReference.Resolve();

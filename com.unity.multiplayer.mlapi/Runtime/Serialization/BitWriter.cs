@@ -356,10 +356,10 @@ namespace MLAPI.Serialization
         /// <param name="color32">Color32 to write</param>
         public void WriteColor32(Color32 color32)
         {
-            WriteSingle(color32.r);
-            WriteSingle(color32.g);
-            WriteSingle(color32.b);
-            WriteSingle(color32.a);
+            WriteByte(color32.r);
+            WriteByte(color32.g);
+            WriteByte(color32.b);
+            WriteByte(color32.a);
         }
 
         /// <summary>

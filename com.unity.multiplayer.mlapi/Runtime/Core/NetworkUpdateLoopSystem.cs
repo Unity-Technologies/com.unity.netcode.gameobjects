@@ -10,12 +10,12 @@ namespace MLAPI
     /// </summary>
     public class NetworkUpdateLoopBehaviour:NetworkedBehaviour, INetworkUpdateLoopSystem
     {
-        protected virtual Action InternalRegisterNetworkUpdateStage(NetworkUpdateManager.NetworkUpdateStages stage )
+        protected virtual Action InternalRegisterNetworkUpdateStage(NetworkUpdateManager.NetworkUpdateStage stage )
         {
             return null;
         }
 
-        public Action RegisterUpdate(NetworkUpdateManager.NetworkUpdateStages stage )
+        public Action RegisterUpdate(NetworkUpdateManager.NetworkUpdateStage stage )
         {
             return InternalRegisterNetworkUpdateStage(stage);
         }
@@ -47,12 +47,12 @@ namespace MLAPI
     /// </summary>
     public class UpdateLoopBehaviour:MonoBehaviour, INetworkUpdateLoopSystem
     {
-        protected virtual Action InternalRegisterNetworkUpdateStage(NetworkUpdateManager.NetworkUpdateStages stage )
+        protected virtual Action InternalRegisterNetworkUpdateStage(NetworkUpdateManager.NetworkUpdateStage stage )
         {
             return null;
         }
 
-        public Action RegisterUpdate(NetworkUpdateManager.NetworkUpdateStages stage )
+        public Action RegisterUpdate(NetworkUpdateManager.NetworkUpdateStage stage )
         {
             return InternalRegisterNetworkUpdateStage(stage);
         }
@@ -84,12 +84,12 @@ namespace MLAPI
     /// </summary>
     public class GenericUpdateLoopSystem:INetworkUpdateLoopSystem
     {
-        protected virtual Action InternalRegisterNetworkUpdateStage(NetworkUpdateManager.NetworkUpdateStages stage )
+        protected virtual Action InternalRegisterNetworkUpdateStage(NetworkUpdateManager.NetworkUpdateStage stage )
         {
             return null;
         }
 
-        public Action RegisterUpdate(NetworkUpdateManager.NetworkUpdateStages stage )
+        public Action RegisterUpdate(NetworkUpdateManager.NetworkUpdateStage stage )
         {
             return InternalRegisterNetworkUpdateStage(stage);
         }
@@ -122,7 +122,7 @@ namespace MLAPI
     /// </summary>
     public interface INetworkUpdateLoopSystem
     {
-        Action RegisterUpdate(NetworkUpdateManager.NetworkUpdateStages stage);
+        Action RegisterUpdate(NetworkUpdateManager.NetworkUpdateStage stage );
 
         void RegisterUpdateLoopSystemDestroyCallback(Action<INetworkUpdateLoopSystem>  networkLoopSystemDestroyedCallbsack);
     }

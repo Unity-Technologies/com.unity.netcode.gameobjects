@@ -8,6 +8,9 @@ namespace MLAPI.Serialization.Pooled
     /// </summary>
     public sealed class PooledBitReader : BitReader, IDisposable
     {
+        private BitSerializer m_Serializer;
+        public BitSerializer Serializer => m_Serializer ?? (m_Serializer = new BitSerializer(this));
+
         private bool isDisposed = false;
 
         internal PooledBitReader(Stream stream) : base(stream)

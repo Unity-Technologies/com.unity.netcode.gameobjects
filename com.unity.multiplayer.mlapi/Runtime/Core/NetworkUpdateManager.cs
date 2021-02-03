@@ -17,16 +17,16 @@ namespace MLAPI
     /// </summary>
     public class NetworkUpdateManager
     {
-        public enum NetworkUpdateStages
+        public enum NetworkUpdateStage
         {
-            Default,        //Will default to the UPDATE stage if no setting was made
-            PreUpdate,      //Invoked after EarlyUpdate.UnityWebRequestUpdate
-            FixedUpdate,    //Invoked after FixedUpdate.AudioFixedUpdate (prior to any physics being applied or simulated)
-            Update,         //Invoked after PreUpdate.UpdateVideo   (just before the primary Update is invoked)
-            LateUpdate      //Invoked after PostLateUpdate.ProcessWebSendMessages (after all updates)
+            Default, //Will default to the UPDATE stage if no setting was made
+            PreUpdate, //Invoked after EarlyUpdate.UnityWebRequestUpdate
+            FixedUpdate, //Invoked after FixedUpdate.AudioFixedUpdate (prior to any physics being applied or simulated)
+            Update, //Invoked after PreUpdate.UpdateVideo   (just before the primary Update is invoked)
+            LateUpdate //Invoked after PostLateUpdate.ProcessWebSendMessages (after all updates)
         }
 
-        private static Dictionary<INetworkUpdateLoopSystem,Dictionary<NetworkUpdateStages,PlayerLoopSystem>>  s_RegisteredUpdateLoopSystems = new Dictionary<INetworkUpdateLoopSystem, Dictionary<NetworkUpdateStages, PlayerLoopSystem>>();
+        private static Dictionary<INetworkUpdateLoopSystem, Dictionary<NetworkUpdateStage, PlayerLoopSystem>> s_RegisteredUpdateLoopSystems = new Dictionary<INetworkUpdateLoopSystem, Dictionary<NetworkUpdateStage, PlayerLoopSystem>>();
 
 
         /// <summary>
@@ -34,38 +34,38 @@ namespace MLAPI
         /// Registers all of the defined update stages
         /// </summary>
         /// <param name="systems"></param>
-        static void RegisterSystem(Dictionary<NetworkUpdateStages,PlayerLoopSystem> systems)
+        private static void RegisterSystem(Dictionary<NetworkUpdateStage, PlayerLoopSystem> systems)
         {
             var def = PlayerLoop.GetCurrentPlayerLoop();
 
-            foreach(KeyValuePair<NetworkUpdateStages,PlayerLoopSystem> updateStage in systems)
+            foreach (var updateStage in systems)
             {
-                Type InsertAfterType = typeof(EarlyUpdate.UnityWebRequestUpdate);
-                switch(updateStage.Key)
+                var InsertAfterType = typeof(EarlyUpdate.UnityWebRequestUpdate);
+                switch (updateStage.Key)
                 {
-                    case NetworkUpdateStages.PreUpdate:
-                        {
-                            InsertAfterType = typeof(EarlyUpdate.UnityWebRequestUpdate);
-                            break;
-                        }
-                    case NetworkUpdateStages.FixedUpdate:
-                        {
-                            InsertAfterType = typeof(FixedUpdate.AudioFixedUpdate);
-                            break;
-                        }
-                    case NetworkUpdateStages.Update:
-                        {
-                            InsertAfterType = typeof(PreUpdate.UpdateVideo);
-                            break;
-                        }
-                    case NetworkUpdateStages.LateUpdate:
-                        {
-                            InsertAfterType = typeof(PostLateUpdate.ProcessWebSendMessages);
-                            break;
-                        }
+                    case NetworkUpdateStage.PreUpdate:
+                    {
+                        InsertAfterType = typeof(EarlyUpdate.UnityWebRequestUpdate);
+                        break;
+                    }
+                    case NetworkUpdateStage.FixedUpdate:
+                    {
+                        InsertAfterType = typeof(FixedUpdate.AudioFixedUpdate);
+                        break;
+                    }
+                    case NetworkUpdateStage.Update:
+                    {
+                        InsertAfterType = typeof(PreUpdate.UpdateVideo);
+                        break;
+                    }
+                    case NetworkUpdateStage.LateUpdate:
+                    {
+                        InsertAfterType = typeof(PostLateUpdate.ProcessWebSendMessages);
+                        break;
+                    }
                 }
 
-                 InsertSystem(ref def, updateStage.Value, InsertAfterType);
+                InsertSystem(ref def, updateStage.Value, InsertAfterType);
             }
 
 #if UNITY_EDITOR
@@ -80,14 +80,14 @@ namespace MLAPI
         /// This should be invoked by the registered INetworkUpdateLoopSystem when the class is being destroyed or it no longer wants to receive updates
         /// </summary>
         /// <param name="networkLoopSystem"></param>
-        public static void OnNetworkLoopSystemDestroyed(INetworkUpdateLoopSystem networkLoopSystem)
+        private static void OnNetworkLoopSystemDestroyed(INetworkUpdateLoopSystem networkLoopSystem)
         {
             if (s_RegisteredUpdateLoopSystems.ContainsKey(networkLoopSystem))
             {
                 var def = PlayerLoop.GetCurrentPlayerLoop();
-                foreach (KeyValuePair<NetworkUpdateStages,PlayerLoopSystem> updateStage in s_RegisteredUpdateLoopSystems[networkLoopSystem])
+                foreach (KeyValuePair<NetworkUpdateStage, PlayerLoopSystem> updateStage in s_RegisteredUpdateLoopSystems[networkLoopSystem])
                 {
-                    if(!RemoveSystem(ref def,updateStage.Value))
+                    if (!RemoveSystem(ref def, updateStage.Value))
                     {
                         Debug.LogWarning(updateStage.Value.type.Name + " tried to remove itself but no instsance was found!!!");
                     }
@@ -110,16 +110,16 @@ namespace MLAPI
         {
             if (!s_RegisteredUpdateLoopSystems.ContainsKey(networkLoopSystem))
             {
-                Dictionary<NetworkUpdateStages,PlayerLoopSystem> RegisterPlayerLoopSystems = new Dictionary<NetworkUpdateStages, PlayerLoopSystem>();
+                Dictionary<NetworkUpdateStage, PlayerLoopSystem> RegisterPlayerLoopSystems = new Dictionary<NetworkUpdateStage, PlayerLoopSystem>();
 
-                foreach (NetworkUpdateStages stage in Enum.GetValues(typeof(NetworkUpdateStages)))
+                foreach (NetworkUpdateStage stage in Enum.GetValues(typeof(NetworkUpdateStage)))
                 {
                     Action updateFunction = networkLoopSystem.RegisterUpdate(stage);
-                    if(updateFunction != null)
+                    if (updateFunction != null)
                     {
                         PlayerLoopSystem.UpdateFunction callback = new PlayerLoopSystem.UpdateFunction(updateFunction);
                         PlayerLoopSystem stageLoop = new PlayerLoopSystem() { updateDelegate = callback, type = networkLoopSystem.GetType() };
-                        if(stageLoop.updateDelegate != null)
+                        if (stageLoop.updateDelegate != null)
                         {
                             RegisterPlayerLoopSystems.Add(stage, stageLoop);
                         }
@@ -182,14 +182,15 @@ namespace MLAPI
         /// <param name="toRemove">PlayerLoopSystem to insert</param>
         private static void RemoveSystemAt(ref PlayerLoopSystem system, PlayerLoopSystem toRemove)
         {
-            PlayerLoopSystem[] newSubSystems = new PlayerLoopSystem[system.subSystemList.Length-1];
-            for (int i = 0, newSystemIdx = 0; i < newSubSystems.Length-1; ++i)
+            PlayerLoopSystem[] newSubSystems = new PlayerLoopSystem[system.subSystemList.Length - 1];
+            for (int i = 0, newSystemIdx = 0; i < newSubSystems.Length - 1; ++i)
             {
-                if ( system.subSystemList[i].type != toRemove.type && system.subSystemList[i].updateFunction != toRemove.updateFunction )
+                if (system.subSystemList[i].type != toRemove.type && system.subSystemList[i].updateFunction != toRemove.updateFunction)
                 {
-                    newSubSystems[newSystemIdx++] =  system.subSystemList[i];
+                    newSubSystems[newSystemIdx++] = system.subSystemList[i];
                 }
             }
+
             system.subSystemList = newSubSystems;
         }
 

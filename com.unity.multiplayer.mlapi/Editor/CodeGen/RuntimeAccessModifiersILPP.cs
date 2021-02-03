@@ -47,6 +47,9 @@ namespace MLAPI.Editor.CodeGen
                         case nameof(NetworkedBehaviour):
                             ProcessNetworkBehaviour(typeDefinition);
                             break;
+                        case nameof(Messaging.__RpcParams):
+                            typeDefinition.IsPublic = true;
+                            break;
                     }
                 }
             }
