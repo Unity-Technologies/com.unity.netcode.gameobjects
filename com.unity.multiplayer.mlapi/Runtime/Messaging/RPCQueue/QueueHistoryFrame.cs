@@ -16,13 +16,17 @@ namespace MLAPI.Messaging
             Outbound,
         }
 
-        public uint            TotalSize;
+        public bool            isDirty; //Used to determine if this queue history frame has been reset (cleaned) yet
+        public bool            hasLoopbackData; //Used to determine if a dirt frame is dirty because rpcs are being looped back betwen HostClient and HostServer
+        public uint            totalSize;
         public List<uint>      queueItemOffsets;
 
         public PooledBitStream queueStream;
         public PooledBitWriter queueWriter;
-        public PooledBitReader queueReader;
+        public PooledBitWriter queueWriterLoopback;  //Temporary fix for Host mode loopback work around.
 
+
+        public PooledBitReader queueReader;
 
         private int                                      m_QueueItemOffsetIndex;
         private FrameQueueItem                           m_CurrentQueueItem;

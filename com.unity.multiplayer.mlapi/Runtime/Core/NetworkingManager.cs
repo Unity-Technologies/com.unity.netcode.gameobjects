@@ -70,9 +70,6 @@ namespace MLAPI
         static ProfilerMarker s_MLAPIClientSTDRPCQueued = new ProfilerMarker("MLAPIClientSTDRPCQueued");
         static ProfilerMarker s_InvokeRPC = new ProfilerMarker("InvokeRPC");
 #endif
-        [HideInInspector]
-        public bool LoopbackEnabled;
-
         public RpcQueueContainer rpcQueueContainer { get; private set; }
 
         /// <summary>
@@ -718,7 +715,7 @@ namespace MLAPI
         /// </summary>
         private void Awake()
         {
-            rpcQueueContainer = new RpcQueueContainer(false, LoopbackEnabled);
+            rpcQueueContainer = new RpcQueueContainer(false);
             //Note: Since frame history is not being used, this is set to 0
             //To test frame history, increase the number to (n) where n > 0
             rpcQueueContainer.Initialize(0);
@@ -744,11 +741,7 @@ namespace MLAPI
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_ReceiveTick.Begin();
 #endif
-                    bool IsLoopBack = false;
-                    if (rpcQueueContainer != null)
-                    {
-                        IsLoopBack = rpcQueueContainer.IsLoopBack();
-                    }
+                    var IsLoopBack = false;
 
                     NetworkProfiler.StartTick(TickType.Receive);
 
