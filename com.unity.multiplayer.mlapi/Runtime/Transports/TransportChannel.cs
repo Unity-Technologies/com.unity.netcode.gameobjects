@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace MLAPI.Transports
 {
@@ -9,29 +10,35 @@ namespace MLAPI.Transports
     [Serializable]
     public class TransportChannel
     {
-        public TransportChannel(string name, ChannelType type, byte id)
+        public TransportChannel(Transport.TransportType id, ChannelType type)
         {
-            Name = name;
+            Id = (byte)id;
             Type = type;
-            Id = id;
+            Name = id.ToString();
+
+            Debug.Log("Name: " + Name);
 
             ChannelByteToString[Id] = Name;
             ChannelStringToByte[Name] = Id;
         }
 
         /// <summary>
-        /// The name of the channel
+        /// Channel identifier
         /// </summary>
-        public string Name;
-
         public byte Id;
 
         /// <summary>
-        /// The type of channel
+        /// Channel type
         /// </summary>
         public ChannelType Type;
 
-        public static Dictionary<byte, string> ChannelByteToString = new Dictionary<byte, string>();
-        public static Dictionary<string, byte> ChannelStringToByte = new Dictionary<string, byte>();
+        /// <summary>
+        /// Pretty-print name of the channel
+        /// </summary>
+        public string Name;
+
+
+        public static Dictionary<byte, string> ChannelByteToString = new Dictionary<byte, string>(); // demo?
+        public static Dictionary<string, byte> ChannelStringToByte = new Dictionary<string, byte>(); // demo?
     }
 }

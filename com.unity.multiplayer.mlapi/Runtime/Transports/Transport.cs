@@ -70,6 +70,18 @@ namespace MLAPI.Transports
             }
         }
 
+        public enum TransportType : byte
+        {
+            MLAPI_INTERNAL_CHANNEL,
+            MLAPI_STDRPC_CHANNEL,
+            MLAPI_TIME_SYNC_CHANNEL,
+            MLAPI_DEFAULT_MESSAGE_CHANNEL,
+            MLAPI_POSITION_UPDATE_CHANNEL,
+            MLAPI_ANIMATION_UPDATE_CHANNEL,
+            MLAPI_NAV_AGENT_STATE_CHANNEL,
+            MLAPI_NAV_AGENT_CORRECTION_CHANNEL
+        };
+
         public const byte MLAPI_INTERNAL_CHANNEL = 0;
         public const byte MLAPI_TIME_SYNC_CHANNEL = 2;
         public const byte MLAPI_RELIABLE_RPC_CHANNEL = 100;
@@ -86,6 +98,11 @@ namespace MLAPI.Transports
             TransportChannel.ChannelByteToString.TryGetValue(channel, out channelName);
             return channelName;
         }
+        private static Tuple<TransportType, string> helper(TransportType tt)
+      {
+         return Tuple.Create(tt, nameof(tt));
+      }
+
 
         /// <summary>
         /// The channels the MLAPI will use when sending internal messages.
@@ -93,6 +110,7 @@ namespace MLAPI.Transports
         /// </summary>
         private readonly TransportChannel[] MLAPI_INTERNAL_CHANNELS =
         {
+
             new TransportChannel("MLAPI_INTERNAL", ChannelType.ReliableFragmentedSequenced, MLAPI_INTERNAL_CHANNEL),
             new TransportChannel("MLAPI_TIME_SYNC", ChannelType.Unreliable, MLAPI_TIME_SYNC_CHANNEL),
             new TransportChannel("MLAPI_DEFAULT_MESSAGE", ChannelType.Reliable, 3),
@@ -110,6 +128,16 @@ namespace MLAPI.Transports
             new TransportChannel("ANIMATION_UPDATE", ChannelType.ReliableSequenced,MLAPI_ANIMATION_UPDATE_CHANNEL ),
             new TransportChannel("NAV_AGENT_STATE", ChannelType.ReliableSequenced,MLAPI_NAV_AGENT_STATE_CHANNEL),
             new TransportChannel("NAV_AGENT_CORRECTION", ChannelType.UnreliableSequenced, MLAPI_NAV_AGENT_CORRECTION_CHANNEL),
+
+            new TransportChannel(TransportType.MLAPI_INTERNAL_CHANNEL, ChannelType.ReliableFragmentedSequenced),
+            new TransportChannel(TransportType.MLAPI_STDRPC_CHANNEL, ChannelType.ReliableSequenced),
+            new TransportChannel(TransportType.MLAPI_TIME_SYNC_CHANNEL, ChannelType.Unreliable),
+            new TransportChannel(TransportType.MLAPI_DEFAULT_MESSAGE_CHANNEL, ChannelType.Reliable),
+            new TransportChannel(TransportType.MLAPI_POSITION_UPDATE_CHANNEL, ChannelType.UnreliableSequenced),
+            new TransportChannel(TransportType.MLAPI_ANIMATION_UPDATE_CHANNEL, ChannelType.ReliableSequenced),
+            new TransportChannel(TransportType.MLAPI_NAV_AGENT_STATE_CHANNEL, ChannelType.ReliableSequenced),
+            new TransportChannel(TransportType.MLAPI_NAV_AGENT_CORRECTION_CHANNEL, ChannelType.UnreliableSequenced),
+
         };
 
         /// <summary>
