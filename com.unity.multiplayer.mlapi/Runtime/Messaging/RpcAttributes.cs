@@ -36,6 +36,10 @@ namespace MLAPI.Messaging
     [AttributeUsage(AttributeTargets.Method)]
     public class ServerRpcAttribute : RpcAttribute
     {
+        /// <summary>
+        /// Whether or not the ServerRpc should only be run if executed by the owner of the object
+        /// </summary>
+        public bool RequireOwnership = true;
     }
 
     /// <summary>
