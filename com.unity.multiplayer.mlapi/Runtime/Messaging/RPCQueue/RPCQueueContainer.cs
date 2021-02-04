@@ -366,17 +366,17 @@ namespace MLAPI.Messaging
         }
 
         /// <summary>
-        /// SetLoopBackWriter
+        /// SetLoopBackFrameItem
         /// ***Temporary fix for host mode loopback RPC writer work-around
-        /// Sets the loop back writer
+        /// Sets the next frame inbond buffer as the loopback queue history frame in the current frame's outbound buffer
         /// </summary>
-        /// <param name="loopwriter"></param>
         /// <param name="queueFrameType"></param>
         /// <param name="updateStage"></param>
-        public void SetLoopBackWriter(PooledBitWriter loopwriter,  QueueHistoryFrame.QueueFrameType queueFrameType,NetworkUpdateManager.NetworkUpdateStage updateStage)
+        public void SetLoopBackFrameItem(QueueHistoryFrame.QueueFrameType queueFrameType,NetworkUpdateManager.NetworkUpdateStage updateStage)
         {
+             QueueHistoryFrame loopbackHistoryframe =  GetQueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Inbound,updateStage,false);
             QueueHistoryFrame queueHistoryItem = GetQueueHistoryFrame(queueFrameType,updateStage,false);
-            queueHistoryItem.queueWriterLoopback = loopwriter;
+            queueHistoryItem.loopbackHistoryFrame = loopbackHistoryframe;
         }
 
         /// <summary>
@@ -387,23 +387,9 @@ namespace MLAPI.Messaging
         /// <param name="queueFrameType"></param>
         /// <param name="updateStage"></param>
         /// <returns></returns>
-        public PooledBitWriter GetLoopBackWriter( QueueHistoryFrame.QueueFrameType queueFrameType,NetworkUpdateManager.NetworkUpdateStage updateStage)
+        public QueueHistoryFrame GetLoopBackHistoryFrame( QueueHistoryFrame.QueueFrameType queueFrameType,NetworkUpdateManager.NetworkUpdateStage updateStage)
         {
-            QueueHistoryFrame queueHistoryItem = GetQueueHistoryFrame(queueFrameType,updateStage,false);
-            return queueHistoryItem.queueWriterLoopback;
-        }
-
-        /// <summary>
-        /// ClearLoopBackWriter
-        /// Clears the loopback writer from the QueueHistoryFrame
-        /// ***Temporary fix for host mode loopback RPC writer work-around
-        /// </summary>
-        /// <param name="queueFrameType"></param>
-        /// <param name="updateStage"></param>
-        public void ClearLoopBackWriter(QueueHistoryFrame.QueueFrameType queueFrameType,NetworkUpdateManager.NetworkUpdateStage updateStage)
-        {
-            QueueHistoryFrame queueHistoryItem = GetQueueHistoryFrame(queueFrameType,updateStage,false);
-            queueHistoryItem.queueWriterLoopback = null;
+            return GetQueueHistoryFrame(queueFrameType,updateStage,false);
         }
 
         /// <summary>
@@ -500,13 +486,17 @@ namespace MLAPI.Messaging
                 getNextFrame = true;
             }
 
+
             QueueHistoryFrame queueHistoryItem = GetQueueHistoryFrame(queueFrameType, updateStage, getNextFrame);
+            QueueHistoryFrame loopBackHistoryFrame = queueHistoryItem.loopbackHistoryFrame;
+
+
             PooledBitWriter pbWriter = (PooledBitWriter)writer;
 
             //Sanity check
             if (pbWriter != queueHistoryItem.queueWriter && !getNextFrame)
             {
-                UnityEngine.Debug.LogError("RpcQueueContainer " + queueFrameType.ToString() + " passed writer is not the same as the current PooledBitWrite for the " +  queueFrameType.ToString() + "]!");
+                UnityEngine.Debug.LogError("RpcQueueContainer " + queueFrameType.ToString() + " passed writer is not the same as the current PooledBitWriter for the " +  queueFrameType.ToString() + "]!");
             }
 
             //The total size of the frame is the last known position of the stream
@@ -519,14 +509,20 @@ namespace MLAPI.Messaging
             //>>>> REPOSITIONING STREAM TO RPC MESSAGE SIZE LOCATION <<<<
             //////////////////////////////////////////////////////////////
             queueHistoryItem.queueStream.Position = queueHistoryItem.GetCurrentMarkedPosition();
+            if(loopBackHistoryFrame != null)
+            {
+                loopBackHistoryFrame.queueStream.Position = queueHistoryItem.GetCurrentMarkedPosition();
+            }
 
             //subtracting 8 byte to account for the value of the size of the RPC
             long MSGSize = (long)(queueHistoryItem.totalSize - (queueHistoryItem.GetCurrentMarkedPosition() + 8));
 
             if (MSGSize > 0)
             {
+
                 //Write the actual size of the RPC message
                 queueHistoryItem.queueWriter.WriteInt64(MSGSize);
+
             }
             else
             {
@@ -534,6 +530,23 @@ namespace MLAPI.Messaging
                 //Write the actual size of the RPC message
                 queueHistoryItem.queueWriter.WriteInt64(0);
             }
+
+            if(loopBackHistoryFrame != null)
+            {
+                if (MSGSize > 0)
+                {
+                    //Write the actual size of the RPC message
+                    loopBackHistoryFrame.queueWriter.WriteInt64(MSGSize);
+                    loopBackHistoryFrame.queueWriter.WriteBytes(queueHistoryItem.queueStream.GetBuffer(), MSGSize, (int)loopBackHistoryFrame.GetCurrentMarkedPosition());
+                }
+                else
+                {
+                    UnityEngine.Debug.LogWarning("[LoopBack] MSGSize of < zero detected!!  Setting message size to zero!");
+                    //Write the actual size of the RPC message
+                    queueHistoryItem.queueWriter.WriteInt64(0);
+                }
+            }
+
 
             //////////////////////////////////////////////////////////////
             //<<<< REPOSITIONING STREAM BACK TO THE CURRENT TAIL >>>>
@@ -543,6 +556,15 @@ namespace MLAPI.Messaging
 
             //Add the packed size to the offsets for parsing over various entries
             queueHistoryItem.queueItemOffsets.Add((uint)queueHistoryItem.queueStream.Position);
+
+            //Loopback
+            if(loopBackHistoryFrame != null)
+            {
+                //Add the packed size to the offsets for parsing over various entries
+                loopBackHistoryFrame.queueItemOffsets.Add((uint)loopBackHistoryFrame.queueStream.Position);
+                queueHistoryItem.loopbackHistoryFrame = null;
+            }
+
         }
 
         /// <summary>
