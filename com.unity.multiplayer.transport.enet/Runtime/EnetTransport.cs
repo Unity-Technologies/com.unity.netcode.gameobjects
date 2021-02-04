@@ -1,14 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using ENet;
-using MLAPI.Transports;
 using MLAPI.Transports.Tasks;
 using Unity.Profiling;
 using UnityEngine;
 using Event = ENet.Event;
 using EventType = ENet.EventType;
 
-namespace EnetTransport
+namespace MLAPI.Transports.Enet
 {
     [DefaultExecutionOrder(1000)]
     public class EnetTransport : Transport
@@ -36,7 +35,7 @@ namespace EnetTransport
         public struct EnetChannel
         {
             [UnityEngine.HideInInspector]
-            public byte Id;
+            public Channel Id;
             public EnetDelivery Flags;
         }
 
@@ -353,31 +352,30 @@ namespace EnetTransport
 
             connectedEnetPeers.Clear();
 
-            // MLAPI Channels
+            // MLAPI built-in channels
             for (byte i = 0; i < MLAPI_CHANNELS.Length; i++)
             {
                 channelIdToName.Add(i, MLAPI_CHANNELS[i].Id);
                 channelNameToId.Add(MLAPI_CHANNELS[i].Id, i);
                 internalChannels.Add(i, new EnetChannel()
                 {
-                    Id = i,
+                    Id = MLAPI_CHANNELS[i].Id,
                     Flags = MLAPIChannelTypeToPacketFlag(MLAPI_CHANNELS[i].Type)
                 });
             }
 
-            // Internal Channels
+            // Custom user-added channels
             for (int i = 0; i < Channels.Count; i++)
             {
-                byte id = (byte)(i + MLAPI_CHANNELS.Length); // ugh
+                byte id = (byte)(i + MLAPI_CHANNELS.Length);
 
-// ugh                channelIdToName.Add(id, Channels[i].Id);
-// ugh                channelNameToId.Add(Channels[i].Id, id);
-// ugh                internalChannels.Add(id, new EnetChannel()
-// ugh                {
-// ugh                    Id = id,
-// ugh                    Name = Channels[i].Name,
-// ugh                    Flags = Channels[i].Flags
-// ugh                });
+                channelIdToName.Add(id, Channels[i].Id);
+                channelNameToId.Add(Channels[i].Id, id);
+                internalChannels.Add(id, new EnetChannel()
+                {
+                    Id = Channels[i].Id,
+                    Flags = Channels[i].Flags
+                });
             }
 
             messageBuffer = new byte[MessageBufferSize];

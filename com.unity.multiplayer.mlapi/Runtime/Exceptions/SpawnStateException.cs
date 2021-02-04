@@ -12,7 +12,7 @@ namespace MLAPI.Exceptions
         /// </summary>
         public SpawnStateException()
         {
-            
+
         }
 
         /// <summary>
@@ -21,7 +21,7 @@ namespace MLAPI.Exceptions
         /// <param name="message">The exception message</param>
         public SpawnStateException(string message) : base(message)
         {
-            
+
         }
 
         /// <summary>
@@ -31,7 +31,15 @@ namespace MLAPI.Exceptions
         /// <param name="inner">The inner exception</param>
         public SpawnStateException(string message, Exception inner) : base(message, inner)
         {
-            
+
+        }
+    }
+
+    public class InvalidChannelException : Exception
+    {
+        public InvalidChannelException(string message) : base(message)
+        {
+
         }
     }
 }

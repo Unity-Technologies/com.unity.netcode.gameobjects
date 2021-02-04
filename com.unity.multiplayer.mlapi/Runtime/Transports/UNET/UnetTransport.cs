@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-
+using MLAPI.Exceptions;
 using MLAPI.Logging;
 using MLAPI.Transports.Tasks;
 using UnityEngine.Networking;
@@ -27,6 +27,17 @@ namespace MLAPI.Transports.UNET
         public int ServerListenPort = 7777;
         public int ServerWebsocketListenPort = 8887;
         public bool SupportWebsocket = false;
+
+        // user-definable channels.  To add your own channel, do something of the form:
+        //  #define MY_CHANNEL 0
+        //  ...
+        //  transport.Channels.Add(
+        //     new UnetChannel()
+        //       {
+        //         Id = Channel.ChannelUnused + MY_CHANNEL,  <<-- must offset from reserved channel offset in MLAPI SDK
+        //         Type = QosType.Unreliable
+        //       }
+        //  );
         public List<UnetChannel> Channels = new List<UnetChannel>();
 
         // Relay
@@ -345,6 +356,7 @@ namespace MLAPI.Transports.UNET
         {
             ConnectionConfig config = new ConnectionConfig();
 
+            // MLAPI built-in channels
             for (int i = 0; i < MLAPI_CHANNELS.Length; i++)
             {
                 int channelId = AddMLAPIChannel(MLAPI_CHANNELS[i].Type, config);
@@ -353,10 +365,15 @@ namespace MLAPI.Transports.UNET
                 channelNameToId.Add(MLAPI_CHANNELS[i].Id, channelId);
             }
 
+            // Custom user-added channels
             for (int i = 0; i < Channels.Count; i++)
             {
                 int channelId = AddUNETChannel(Channels[i].Type, config);
 
+                if (channelNameToId.ContainsKey(Channels[i].Id))
+                {
+                    throw new InvalidChannelException("Channel " + channelId + " already exists");
+                }
                 channelIdToName.Add(channelId, Channels[i].Id);
                 channelNameToId.Add(Channels[i].Id, channelId);
             }
