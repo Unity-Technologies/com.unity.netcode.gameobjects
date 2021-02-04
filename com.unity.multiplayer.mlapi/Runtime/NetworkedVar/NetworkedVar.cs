@@ -3,6 +3,7 @@ using UnityEngine;
 using System.IO;
 using System;
 using MLAPI.Serialization.Pooled;
+using MLAPI.Transports;
 
 namespace MLAPI.NetworkedVar
 {
@@ -202,7 +203,7 @@ namespace MLAPI.NetworkedVar
         }
 
         /// <inheritdoc />
-        public byte GetChannel()
+        public Channel GetChannel()
         {
             return Settings.SendChannel;
         }

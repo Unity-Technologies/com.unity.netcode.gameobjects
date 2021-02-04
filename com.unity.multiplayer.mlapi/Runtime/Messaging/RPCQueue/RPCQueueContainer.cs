@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using MLAPI.Serialization;
 using MLAPI.Serialization.Pooled;
 using MLAPI.Profiling;
+using MLAPI.Transports;
 
 namespace MLAPI.Messaging
 {
@@ -415,7 +416,7 @@ namespace MLAPI.Messaging
         /// <param name="sourceNetworkId">who is sending the rpc</param>
         /// <param name="targetNetworkIds">who the rpc is being sent to</param>
         /// <returns></returns>
-        public PooledBitWriter BeginAddQueueItemToFrame(QueueItemType qItemType, float timeStamp, byte channel, ushort sendflags, ulong sourceNetworkId, ulong[] targetNetworkIds,
+        public PooledBitWriter BeginAddQueueItemToFrame(QueueItemType qItemType, float timeStamp, Channel channel, ushort sendflags, ulong sourceNetworkId, ulong[] targetNetworkIds,
             QueueHistoryFrame.QueueFrameType queueFrameType, NetworkUpdateManager.NetworkUpdateStage updateStage)
         {
             bool getNextFrame = false;
@@ -435,7 +436,7 @@ namespace MLAPI.Messaging
 
             if (queueFrameType != QueueHistoryFrame.QueueFrameType.Inbound)
             {
-                queueHistoryItem.queueWriter.WriteByte(channel);
+                queueHistoryItem.queueWriter.WriteByte((byte)channel);
 
                 if (targetNetworkIds != null && targetNetworkIds.Length != 0)
                 {

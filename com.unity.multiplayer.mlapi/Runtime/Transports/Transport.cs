@@ -5,6 +5,18 @@ using UnityEngine;
 
 namespace MLAPI.Transports
 {
+    public enum Channel : byte
+    {
+        Internal,
+        StdRpc,
+        SyncChannel,
+        DefaultMessage,
+        PositionUpdate,
+        AnimationUpdate,
+        NavAgentState,
+        NavAgentCorrection,
+    };
+
     /// <summary>
     /// A network transport
     /// </summary>
@@ -110,7 +122,6 @@ namespace MLAPI.Transports
         /// </summary>
         private readonly TransportChannel[] MLAPI_INTERNAL_CHANNELS =
         {
-
             new TransportChannel("MLAPI_INTERNAL", ChannelType.ReliableFragmentedSequenced, MLAPI_INTERNAL_CHANNEL),
             new TransportChannel("MLAPI_TIME_SYNC", ChannelType.Unreliable, MLAPI_TIME_SYNC_CHANNEL),
             new TransportChannel("MLAPI_DEFAULT_MESSAGE", ChannelType.Reliable, 3),
@@ -138,12 +149,21 @@ namespace MLAPI.Transports
             new TransportChannel(TransportType.MLAPI_NAV_AGENT_STATE_CHANNEL, ChannelType.ReliableSequenced),
             new TransportChannel(TransportType.MLAPI_NAV_AGENT_CORRECTION_CHANNEL, ChannelType.UnreliableSequenced),
 
+
+            new TransportChannel(Channel.Internal, ChannelType.ReliableFragmentedSequenced),
+            new TransportChannel(Channel.StdRpc, ChannelType.ReliableSequenced),
+            new TransportChannel(Channel.SyncChannel, ChannelType.Unreliable),
+            new TransportChannel(Channel.DefaultMessage, ChannelType.Reliable),
+            new TransportChannel(Channel.PositionUpdate, ChannelType.UnreliableSequenced),
+            new TransportChannel(Channel.AnimationUpdate, ChannelType.ReliableSequenced),
+            new TransportChannel(Channel.NavAgentState, ChannelType.ReliableSequenced),
+            new TransportChannel(Channel.NavAgentCorrection, ChannelType.UnreliableSequenced),
         };
 
         /// <summary>
         /// Delegate for transport events.
         /// </summary>
-        public delegate void TransportEventDelegate(NetEventType type, ulong clientId, byte channel, ArraySegment<byte> payload, float receiveTime);
+        public delegate void TransportEventDelegate(NetEventType type, ulong clientId, Channel channel, ArraySegment<byte> payload, float receiveTime);
 
         /// <summary>
         /// Occurs when the transport has a new transport event. Can be used to make an event based transport instead of a poll based.
@@ -159,7 +179,7 @@ namespace MLAPI.Transports
         /// <param name="channelName">The channel the data arrived at. This is usually used when responding to things like RPCs</param>
         /// <param name="payload">The incoming data payload</param>
         /// <param name="receiveTime">The time the event was received, as reported by Time.realtimeSinceStartup.</param>
-        protected void InvokeOnTransportEvent(NetEventType type, ulong clientId, byte channel, ArraySegment<byte> payload, float receiveTime)
+        protected void InvokeOnTransportEvent(NetEventType type, ulong clientId, Channel channel, ArraySegment<byte> payload, float receiveTime) // ??
         {
             OnTransportEvent?.Invoke(type, clientId, channel, payload, receiveTime);
         }
@@ -170,7 +190,7 @@ namespace MLAPI.Transports
         /// <param name="clientId">The clientId to send to</param>
         /// <param name="data">The data to send</param>
         /// <param name="channelName">The channel to send data to</param>
-        public abstract void Send(ulong clientId, ArraySegment<byte> data, byte channel);
+        public abstract void Send(ulong clientId, ArraySegment<byte> data, Channel channel);
 
         /// <summary>
         /// Polls for incoming events, with an extra output parameter to report the precise time the event was received.
@@ -180,7 +200,7 @@ namespace MLAPI.Transports
         /// <param name="payload">The incoming data payload</param>
         /// <param name="receiveTime">The time the event was received, as reported by Time.realtimeSinceStartup.</param>
         /// <returns>Returns the event type</returns>
-        public abstract NetEventType PollEvent(out ulong clientId, out byte channel, out ArraySegment<byte> payload, out float receiveTime);
+        public abstract NetEventType PollEvent(out ulong clientId, out Channel channel, out ArraySegment<byte> payload, out float receiveTime);
 
         /// <summary>
         /// Connects client to server

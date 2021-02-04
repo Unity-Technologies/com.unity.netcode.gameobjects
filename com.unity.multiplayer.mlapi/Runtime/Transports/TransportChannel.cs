@@ -10,35 +10,20 @@ namespace MLAPI.Transports
     [Serializable]
     public class TransportChannel
     {
-        public TransportChannel(Transport.TransportType id, ChannelType type)
+        public TransportChannel(Channel id, ChannelType type)
         {
-            Id = (byte)id;
+            Id = id;
             Type = type;
-            Name = id.ToString();
-
-            Debug.Log("Name: " + Name);
-
-            ChannelByteToString[Id] = Name;
-            ChannelStringToByte[Name] = Id;
         }
 
         /// <summary>
         /// Channel identifier
         /// </summary>
-        public byte Id;
+        public Channel Id;
 
         /// <summary>
         /// Channel type
         /// </summary>
         public ChannelType Type;
-
-        /// <summary>
-        /// Pretty-print name of the channel
-        /// </summary>
-        public string Name;
-
-
-        public static Dictionary<byte, string> ChannelByteToString = new Dictionary<byte, string>(); // demo?
-        public static Dictionary<string, byte> ChannelStringToByte = new Dictionary<string, byte>(); // demo?
     }
 }

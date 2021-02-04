@@ -1,4 +1,5 @@
 using System;
+using MLAPI.Transports;
 using MLAPI.Security;
 using MLAPI.Serialization.Pooled;
 
@@ -17,7 +18,7 @@ namespace  MLAPI.Messaging
         public RpcQueueContainer.QueueItemType           queueItemType;
         public SecuritySendFlags                         sendFlags;
         public ulong                                     networkId;          //Sender's network Identifier
-        public byte                                      channel;
+        public Channel                             channel;
         public ulong[]                                   clientIds;          //Server invoked Client RPCs only
         public long                                      streamSize;
         public float                                     timeStamp;

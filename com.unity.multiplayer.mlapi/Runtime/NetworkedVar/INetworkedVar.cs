@@ -1,4 +1,5 @@
 using System.IO;
+using MLAPI.Transports;
 
 namespace MLAPI.NetworkedVar
 {
@@ -11,7 +12,7 @@ namespace MLAPI.NetworkedVar
         /// Returns the name of the channel to be used for syncing
         /// </summary>
         /// <returns>The name of the channel to be used for syncing</returns>
-        byte GetChannel();
+        Channel GetChannel();
         /// <summary>
         /// Resets the dirty state and marks the variable as synced / clean
         /// </summary>

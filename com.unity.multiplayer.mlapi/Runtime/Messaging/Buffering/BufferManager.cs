@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using MLAPI.Serialization.Pooled;
+using MLAPI.Transports;
 using Unity.Profiling;
 using UnityEngine;
 
@@ -11,13 +12,13 @@ namespace MLAPI.Messaging.Buffering
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
         public static ProfilerMarker s_CleanBuffer = new ProfilerMarker("MLAPI.BufferManager.CleanBuffer");
 #endif
-        
+
         private static readonly Dictionary<ulong, Queue<BufferedMessage>> bufferQueues = new Dictionary<ulong, Queue<BufferedMessage>>();
 
         internal struct BufferedMessage
         {
             internal ulong sender;
-            internal byte channel;
+            internal Channel channel;
             internal PooledBitStream payload;
             internal float receiveTime;
             internal float bufferTime;
@@ -44,7 +45,7 @@ namespace MLAPI.Messaging.Buffering
             message.payload.Dispose();
         }
 
-        internal static void BufferMessageForNetworkId(ulong networkId, ulong sender, byte channel, float receiveTime, ArraySegment<byte> payload)
+        internal static void BufferMessageForNetworkId(ulong networkId, ulong sender, Channel channel, float receiveTime, ArraySegment<byte> payload)
         {
             if (!bufferQueues.ContainsKey(networkId))
             {

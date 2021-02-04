@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using MLAPI.Serialization;
 using MLAPI.Serialization.Pooled;
+using MLAPI.Transports;
 
 namespace MLAPI.NetworkedVar.Collections
 {
@@ -93,7 +94,7 @@ namespace MLAPI.NetworkedVar.Collections
         }
 
         /// <inheritdoc />
-        public byte GetChannel()
+        public Channel GetChannel()
         {
             return Settings.SendChannel;
         }

@@ -41,8 +41,8 @@ namespace MLAPI.Transports.UNET
         private WeakReference temporaryBufferReference;
 
         // Lookup / translation
-        private readonly Dictionary<byte, int> channelNameToId = new Dictionary<byte, int>();
-        private readonly Dictionary<int, byte> channelIdToName = new Dictionary<int, byte>();
+        private readonly Dictionary<Channel, int> channelNameToId = new Dictionary<Channel, int>();
+        private readonly Dictionary<int, Channel> channelIdToName = new Dictionary<int, Channel>();
         private int serverConnectionId;
         private int serverHostId;
 
@@ -63,7 +63,7 @@ namespace MLAPI.Transports.UNET
             }
         }
 
-        public override void Send(ulong clientId, ArraySegment<byte> data, byte channel)
+        public override void Send(ulong clientId, ArraySegment<byte> data, Channel channel)
         {
             GetUnetConnectionDetails(clientId, out byte hostId, out ushort connectionId);
 
@@ -75,7 +75,7 @@ namespace MLAPI.Transports.UNET
             }
             else
             {
-                channelId = channelNameToId[MLAPI_INTERNAL_CHANNEL];
+                channelId = channelNameToId[Channel.Internal];
             }
 
             byte[] buffer;
@@ -125,7 +125,7 @@ namespace MLAPI.Transports.UNET
             RelayTransport.SendQueuedMessages(hostId, connectionId, out byte error);
         }
 
-        public override NetEventType PollEvent(out ulong clientId, out byte channel, out ArraySegment<byte> payload, out float receiveTime)
+        public override NetEventType PollEvent(out ulong clientId, out Channel channel, out ArraySegment<byte> payload, out float receiveTime)
         {
             NetworkEventType eventType = RelayTransport.Receive(out int hostId, out int connectionId, out int channelId, messageBuffer, messageBuffer.Length, out int receivedSize, out byte error);
 
@@ -163,7 +163,7 @@ namespace MLAPI.Transports.UNET
             }
             else
             {
-                channel = MLAPI_INTERNAL_CHANNEL;
+                channel = Channel.Internal;
             }
 
             if (connectTask != null && hostId == serverHostId && connectionId == serverConnectionId)

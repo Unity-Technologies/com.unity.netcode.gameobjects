@@ -12,7 +12,7 @@ namespace MLAPI.Messaging
 {
     internal static class InternalMessageSender
     {
-        internal static void Send(ulong clientId, byte messageType, byte channel, BitStream messageStream, SecuritySendFlags flags)
+        internal static void Send(ulong clientId, byte messageType, Channel channel, BitStream messageStream, SecuritySendFlags flags)
         {
             messageStream.PadStream();
 
@@ -31,7 +31,7 @@ namespace MLAPI.Messaging
             }
         }
 
-        internal static void Send(byte messageType, byte channel, BitStream messageStream, SecuritySendFlags flags)
+        internal static void Send(byte messageType, Channel channel, BitStream messageStream, SecuritySendFlags flags)
         {
             bool encrypted = ((flags & SecuritySendFlags.Encrypted) == SecuritySendFlags.Encrypted) && NetworkingManager.Singleton.NetworkConfig.EnableEncryption;
             bool authenticated = ((flags & SecuritySendFlags.Authenticated) == SecuritySendFlags.Authenticated) && NetworkingManager.Singleton.NetworkConfig.EnableEncryption;
@@ -63,7 +63,7 @@ namespace MLAPI.Messaging
             }
         }
 
-        internal static void Send(byte messageType, byte channel, List<ulong> clientIds, BitStream messageStream, SecuritySendFlags flags)
+        internal static void Send(byte messageType, Channel channel, List<ulong> clientIds, BitStream messageStream, SecuritySendFlags flags)
         {
             if (clientIds == null)
             {
@@ -101,7 +101,7 @@ namespace MLAPI.Messaging
             }
         }
 
-        internal static void Send(byte messageType, byte channel, ulong clientIdToIgnore, BitStream messageStream, SecuritySendFlags flags)
+        internal static void Send(byte messageType, Channel channel, ulong clientIdToIgnore, BitStream messageStream, SecuritySendFlags flags)
         {
             bool encrypted = ((flags & SecuritySendFlags.Encrypted) == SecuritySendFlags.Encrypted) && NetworkingManager.Singleton.NetworkConfig.EnableEncryption;
             bool authenticated = ((flags & SecuritySendFlags.Authenticated) == SecuritySendFlags.Authenticated) && NetworkingManager.Singleton.NetworkConfig.EnableEncryption;

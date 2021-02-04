@@ -1,4 +1,6 @@
 using System;
+using MLAPI.Transports;
+
 namespace MLAPI.Messaging.Buffering
 {
     internal struct PreBufferPreset
@@ -6,7 +8,7 @@ namespace MLAPI.Messaging.Buffering
         public byte MessageType;
         public bool AllowBuffer;
         public ulong ClientId;
-        public byte Channel;
+        public Channel Channel;
         public float ReceiveTime;
         public ArraySegment<byte> Data;
     }

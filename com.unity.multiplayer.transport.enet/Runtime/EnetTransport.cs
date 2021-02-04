@@ -37,7 +37,6 @@ namespace EnetTransport
         {
             [UnityEngine.HideInInspector]
             public byte Id;
-            public string Name;
             public EnetDelivery Flags;
         }
 
@@ -70,8 +69,8 @@ namespace EnetTransport
 
         private readonly Dictionary<uint, Peer> connectedEnetPeers = new Dictionary<uint, Peer>();
 
-        private readonly Dictionary<byte, byte> channelNameToId = new Dictionary<byte, byte>();
-        private readonly Dictionary<byte, byte> channelIdToName = new Dictionary<byte, byte>();
+        private readonly Dictionary<Channel, byte> channelNameToId = new Dictionary<Channel, byte>(); // clean rename
+        private readonly Dictionary<byte, Channel> channelIdToName = new Dictionary<byte, Channel>();
         private readonly Dictionary<byte, EnetChannel> internalChannels = new Dictionary<byte, EnetChannel>();
 
         private Host host;
@@ -84,7 +83,7 @@ namespace EnetTransport
 
         public override ulong ServerClientId => GetMLAPIClientId(0, true);
 
-        public override void Send(ulong clientId, ArraySegment<byte> data, byte channel)
+        public override void Send(ulong clientId, ArraySegment<byte> data, Channel channel)
         {
             Packet packet = default(Packet);
 
@@ -107,7 +106,7 @@ namespace EnetTransport
 #endif
         }
 
-        public override NetEventType PollEvent(out ulong clientId, out byte channel, out ArraySegment<byte> payload, out float receiveTime)
+        public override NetEventType PollEvent(out ulong clientId, out Channel channel, out ArraySegment<byte> payload, out float receiveTime)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_PollEvent.Begin();
@@ -362,7 +361,6 @@ namespace EnetTransport
                 internalChannels.Add(i, new EnetChannel()
                 {
                     Id = i,
-                    Name = MLAPI_CHANNELS[i].Name,
                     Flags = MLAPIChannelTypeToPacketFlag(MLAPI_CHANNELS[i].Type)
                 });
             }
@@ -370,16 +368,16 @@ namespace EnetTransport
             // Internal Channels
             for (int i = 0; i < Channels.Count; i++)
             {
-                byte id = (byte)(i + MLAPI_CHANNELS.Length);
+                byte id = (byte)(i + MLAPI_CHANNELS.Length); // ugh
 
-                channelIdToName.Add(id, Channels[i].Id);
-                channelNameToId.Add(Channels[i].Id, id);
-                internalChannels.Add(id, new EnetChannel()
-                {
-                    Id = id,
-                    Name = Channels[i].Name,
-                    Flags = Channels[i].Flags
-                });
+// ugh                channelIdToName.Add(id, Channels[i].Id);
+// ugh                channelNameToId.Add(Channels[i].Id, id);
+// ugh                internalChannels.Add(id, new EnetChannel()
+// ugh                {
+// ugh                    Id = id,
+// ugh                    Name = Channels[i].Name,
+// ugh                    Flags = Channels[i].Flags
+// ugh                });
             }
 
             messageBuffer = new byte[MessageBufferSize];

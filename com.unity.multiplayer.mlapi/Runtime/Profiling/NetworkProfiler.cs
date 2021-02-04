@@ -122,7 +122,7 @@ namespace MLAPI.Profiling
             CurrentTick = null;
         }
 
-        internal static void StartEvent(TickType eventType, uint bytes, byte channel, byte messageType)
+        internal static void StartEvent(TickType eventType, uint bytes, Channel channel, byte messageType)
         {
             if (!IsRunning)
                 return;
@@ -131,18 +131,18 @@ namespace MLAPI.Profiling
 
             string messageName = messageType < MLAPIConstants.MESSAGE_NAMES.Length ? MLAPIConstants.MESSAGE_NAMES[messageType] : "INVALID_MESSAGE_TYPE";
 
-            string channelName = Transport.GetChannelString(channel);
+            string channelName = channel.ToString();
             CurrentTick.StartEvent(eventType, bytes, channelName, messageName);
         }
 
-        internal static void StartEvent(TickType eventType, uint bytes, byte channel, string messageName)
+        internal static void StartEvent(TickType eventType, uint bytes, Channel channel, string messageName)
         {
             if (!IsRunning)
                 return;
             if (CurrentTick == null)
                 return;
 
-            string channelName = Transport.GetChannelString(channel);
+            string channelName = channel.ToString();
             CurrentTick.StartEvent(eventType, bytes, channelName, messageName);
         }
 

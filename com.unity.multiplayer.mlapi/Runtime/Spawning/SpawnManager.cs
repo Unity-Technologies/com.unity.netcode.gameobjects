@@ -195,7 +195,7 @@ namespace MLAPI.Spawning
                     writer.WriteUInt64Packed(netObject.NetworkId);
                     writer.WriteUInt64Packed(netObject.OwnerClientId);
 
-                    InternalMessageSender.Send(MLAPIConstants.MLAPI_CHANGE_OWNER, Transport.MLAPI_INTERNAL_CHANNEL, stream, SecuritySendFlags.None);
+                    InternalMessageSender.Send(MLAPIConstants.MLAPI_CHANGE_OWNER, Channel.Internal, stream, SecuritySendFlags.None);
                 }
             }
         }
@@ -231,7 +231,7 @@ namespace MLAPI.Spawning
                     writer.WriteUInt64Packed(netObject.NetworkId);
                     writer.WriteUInt64Packed(clientId);
 
-                    InternalMessageSender.Send(MLAPIConstants.MLAPI_CHANGE_OWNER, Transport.MLAPI_INTERNAL_CHANNEL, stream, SecuritySendFlags.None);
+                    InternalMessageSender.Send(MLAPIConstants.MLAPI_CHANGE_OWNER, Channel.Internal, stream, SecuritySendFlags.None);
                 }
             }
         }
@@ -423,7 +423,7 @@ namespace MLAPI.Spawning
                 queueItemType = RpcQueueContainer.QueueItemType.CreateObject,
                 networkId = 0,
                 itemStream = stream,
-                channel = Transport.MLAPI_INTERNAL_CHANNEL,
+                channel = Channel.Internal,
                 sendFlags = SecuritySendFlags.None,
                 clientIds = new[] {clientId}
             };
@@ -696,7 +696,7 @@ namespace MLAPI.Spawning
                                     queueItemType = RpcQueueContainer.QueueItemType.DestroyObject,
                                     networkId = networkId,
                                     itemStream = stream,
-                                    channel = Transport.MLAPI_INTERNAL_CHANNEL,
+                                    channel = Channel.Internal,
                                     sendFlags = SecuritySendFlags.None,
                                     clientIds = NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray()
                                 };

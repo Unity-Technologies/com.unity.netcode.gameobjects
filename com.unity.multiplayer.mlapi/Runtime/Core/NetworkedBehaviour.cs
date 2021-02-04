@@ -155,11 +155,14 @@ namespace MLAPI
 
             // This will start a new queue item entry and will then return the writer to the current frame's stream
             var rpcQueueContainer = NetworkingManager.Singleton.rpcQueueContainer;
-            var isUsingBatching = rpcQueueContainer.IsUsingBatching();
-            var transportChannel = rpcDelivery == RpcDelivery.Reliable ? Transport.MLAPI_RELIABLE_RPC_CHANNEL : Transport.MLAPI_UNRELIABLE_RPC_CHANNEL;
-
-            ulong[] ClientIds = clientRpcParams.Send.TargetClientIds ?? NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray();
-            if (clientRpcParams.Send.TargetClientIds != null && clientRpcParams.Send.TargetClientIds.Length == 0)
+            var writer = rpcQueueContainer.BeginAddQueueItemToOutboundFrame(
+                RpcQueueContainer.QueueItemType.ClientRpc,
+                Time.realtimeSinceStartup,
+                Channel.StdRpc,
+                /* sendFlags = */ 0,
+                NetworkId,
+                clientRpcParams.Send.TargetClientIds ?? NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray());
+            if (!rpcQueueContainer.IsUsingBatching())
             {
                 ClientIds = NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray();
             }
@@ -457,7 +460,7 @@ namespace MLAPI
         private bool varInit = false;
 
         private readonly List<HashSet<int>> channelMappedNetworkedVarIndexes = new List<HashSet<int>>();
-        private readonly List<byte> channelsForNetworkedVarGroups = new List<byte>();
+        private readonly List<Channel> channelsForNetworkedVarGroups = new List<Channel>();
         internal readonly List<INetworkedVar> networkedVarFields = new List<INetworkedVar>();
 
         private static HashSet<MLAPI.NetworkedObject> touched = new HashSet<MLAPI.NetworkedObject>();
@@ -522,12 +525,12 @@ namespace MLAPI
 
             {
                 // Create index map for channels
-                Dictionary<byte, int> firstLevelIndex = new Dictionary<byte, int>();
+                Dictionary<Channel, int> firstLevelIndex = new Dictionary<Channel, int>();
                 int secondLevelCounter = 0;
 
                 for (int i = 0; i < networkedVarFields.Count; i++)
                 {
-                    byte channel = networkedVarFields[i].GetChannel();
+                    Channel channel = networkedVarFields[i].GetChannel();
 
                     if (!firstLevelIndex.ContainsKey(channel))
                     {
