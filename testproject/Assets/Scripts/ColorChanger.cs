@@ -2,37 +2,37 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class ColourChanger : MonoBehaviour
+public class ColorChanger : MonoBehaviour
 {
   private Renderer render;
-  private Color prevColour;
+  private Color prevColor;
 
   void Start()
   {
     render = GetComponent<Renderer>();
   }
-  
+
   void OnCollisionEnter(Collision collision)
   {
-    prevColour = render.material.color;
+    prevColor = render.material.color;
     render.material.color = Color.green;
   }
 
   void OnCollisionExit()
   {
-    render.material.color = prevColour;
+    render.material.color = prevColor;
   }
 
   void Update()
   {
-    // Reset Colour after 2 seconds
+    // Reset Color after 2 seconds
     if (render.material.color != Color.white)
     {
-      StartCoroutine(ResetColour(2));
+      StartCoroutine(ResetColor(2));
     }
   }
 
-  IEnumerator ResetColour(float waitTime)
+  IEnumerator ResetColor(float waitTime)
   {
     yield return new WaitForSeconds(waitTime);
 
