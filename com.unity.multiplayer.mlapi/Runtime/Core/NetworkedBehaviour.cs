@@ -748,7 +748,7 @@ namespace MLAPI
                             continue;
                     }
 
-                    if (!IsServer && !networkedVarList[i].CanClientWrite(clientId))
+                    if (IsServer && !networkedVarList[i].CanClientWrite(clientId))
                     {
                         if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
                         {
