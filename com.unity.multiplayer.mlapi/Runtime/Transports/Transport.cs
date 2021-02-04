@@ -15,6 +15,7 @@ namespace MLAPI.Transports
         AnimationUpdate,
         NavAgentState,
         NavAgentCorrection,
+        ChannelUnused,
     };
 
     /// <summary>
