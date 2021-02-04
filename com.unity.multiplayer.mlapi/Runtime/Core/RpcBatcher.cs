@@ -10,7 +10,7 @@ using System.IO;
 
 namespace MLAPI
 {
-    internal class MessageBatcher
+    internal class RpcBatcher
     {
         public class SendStream
         {
@@ -83,19 +83,19 @@ namespace MLAPI
         /// FillTargetList
         /// Fills a list with the ClientId's an item is targeted to
         /// </summary>
-        /// <param name="item">the FrameQueueItem we want targets for</param>
+        /// <param name="queueItem">the FrameQueueItem we want targets for</param>
         /// <param name="networkIdList">the list to fill</param>
-        private static void FillTargetList(in FrameQueueItem item, ref ulong[] networkIdList)
+        private static void FillTargetList(in RpcFrameQueueItem queueItem, ref ulong[] networkIdList)
         {
-            switch (item.queueItemType)
+            switch (queueItem.queueItemType)
             {
                 case RpcQueueContainer.QueueItemType.ServerRpc:
                     Array.Resize(ref networkIdList, 1);
-                    networkIdList[0] = item.networkId;
+                    networkIdList[0] = queueItem.networkId;
                     break;
                 case RpcQueueContainer.QueueItemType.ClientRpc:
                     // copy the list
-                    networkIdList = item.clientIds.ToArray();
+                    networkIdList = queueItem.clientIds.ToArray();
                     break;
             }
         }
@@ -104,10 +104,10 @@ namespace MLAPI
         /// QueueItem
         /// Add a FrameQueueItem to be sent
         /// </summary>queueItem
-        /// <param name="item">the threshold in bytes</param>
-        public void QueueItem(in FrameQueueItem item)
+        /// <param name="queueItem">the threshold in bytes</param>
+        public void QueueItem(in RpcFrameQueueItem queueItem)
         {
-            FillTargetList(item, ref TargetList);
+            FillTargetList(queueItem, ref TargetList);
 
             foreach (ulong clientId in TargetList)
             {
@@ -121,12 +121,12 @@ namespace MLAPI
                 if (SendDict[clientId].IsEmpty)
                 {
                     SendDict[clientId].IsEmpty = false;
-                    SendDict[clientId].Channel = item.channel;
+                    SendDict[clientId].Channel = queueItem.channel;
 
                     SendDict[clientId].Writer.WriteBit(false); // Encrypted
                     SendDict[clientId].Writer.WriteBit(false); // Authenticated
 
-                    switch (item.queueItemType)
+                    switch (queueItem.queueItemType)
                     {
                         // 6 bits are used for the message type, which is an MLAPIConstants
                         case RpcQueueContainer.QueueItemType.ServerRpc:
@@ -139,18 +139,17 @@ namespace MLAPI
                 }
 
                 // write the amounts of bytes that are coming up
-                PushLength(item.messageData.Count, ref SendDict[clientId].Writer);
+                PushLength(queueItem.messageData.Count, ref SendDict[clientId].Writer);
 
                 // write the message to send
-                SendDict[clientId].Writer.WriteBytes(item.messageData.Array, item.messageData.Count, item.messageData.Offset);
+                SendDict[clientId].Writer.WriteBytes(queueItem.messageData.Array, queueItem.messageData.Count, queueItem.messageData.Offset);
 
-                ProfilerStatManager.bytesSent.Record(item.messageData.Count);
+                ProfilerStatManager.bytesSent.Record(queueItem.messageData.Count);
                 ProfilerStatManager.rpcsSent.Record();
             }
         }
 
         public delegate void SendCallbackType(ulong clientId, SendStream messageStream);
-
         public delegate void ReceiveCallbackType(BitStream messageStream, RpcQueueContainer.QueueItemType messageType, ulong clientId, float receiveTime);
 
         /// <summary>
@@ -180,7 +179,6 @@ namespace MLAPI
                 }
             }
         }
-
 
         /// <summary>
         /// ReceiveItems

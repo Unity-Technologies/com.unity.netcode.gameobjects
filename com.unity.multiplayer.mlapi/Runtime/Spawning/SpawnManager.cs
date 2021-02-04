@@ -417,7 +417,7 @@ namespace MLAPI.Spawning
             var stream = PooledBitStream.Get();
             WriteSpawnCallForObject(stream, clientId, netObject, payload);
 
-            var QueueItem = new FrameQueueItem
+            var queueItem = new RpcFrameQueueItem
             {
                 updateStage = NetworkUpdateManager.NetworkUpdateStage.Update,
                 queueItemType = RpcQueueContainer.QueueItemType.CreateObject,
@@ -427,7 +427,7 @@ namespace MLAPI.Spawning
                 sendFlags = SecuritySendFlags.None,
                 clientIds = new[] {clientId}
             };
-            rpcQueueContainer.AddToInternalMLAPISendQueue(QueueItem);
+            rpcQueueContainer.AddToInternalMLAPISendQueue(queueItem);
         }
 
         internal static void WriteSpawnCallForObject(Serialization.BitStream stream, ulong clientId, NetworkedObject netObject, Stream payload)
@@ -691,7 +691,7 @@ namespace MLAPI.Spawning
                             {
                                 writer.WriteUInt64Packed(networkId);
 
-                                var QueueItem = new FrameQueueItem
+                                var queueItem = new RpcFrameQueueItem
                                 {
                                     queueItemType = RpcQueueContainer.QueueItemType.DestroyObject,
                                     networkId = networkId,
@@ -700,7 +700,7 @@ namespace MLAPI.Spawning
                                     sendFlags = SecuritySendFlags.None,
                                     clientIds = NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray()
                                 };
-                                rpcQueueContainer.AddToInternalMLAPISendQueue(QueueItem);
+                                rpcQueueContainer.AddToInternalMLAPISendQueue(queueItem);
                             }
                         }
                     }

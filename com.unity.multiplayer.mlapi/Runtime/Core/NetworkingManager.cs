@@ -1039,7 +1039,7 @@ namespace MLAPI
         }
 
         private readonly BitStream m_InputStreamWrapper = new BitStream(new byte[0]);
-        private readonly MessageBatcher m_Batcher = new MessageBatcher();
+        private readonly RpcBatcher m_RpcBatcher = new RpcBatcher();
 
         internal void HandleIncomingData(ulong clientId, byte channel, ArraySegment<byte> data, float receiveTime, bool allowBuffer)
         {
@@ -1161,7 +1161,7 @@ namespace MLAPI
                             {
                                 if(rpcQueueContainer.IsUsingBatching())
                                 {
-                                    m_Batcher.ReceiveItems(messageStream, ReceiveCallback, RpcQueueContainer.QueueItemType.ServerRpc, clientId, receiveTime);
+                                    m_RpcBatcher.ReceiveItems(messageStream, ReceiveCallback, RpcQueueContainer.QueueItemType.ServerRpc, clientId, receiveTime);
                                     ProfilerStatManager.rpcBatchesRcvd.Record();
                                 }
                                 else
@@ -1183,7 +1183,7 @@ namespace MLAPI
                             {
                                 if(rpcQueueContainer.IsUsingBatching())
                                 {
-                                    m_Batcher.ReceiveItems(messageStream, ReceiveCallback, RpcQueueContainer.QueueItemType.ClientRpc, clientId, receiveTime);
+                                    m_RpcBatcher.ReceiveItems(messageStream, ReceiveCallback, RpcQueueContainer.QueueItemType.ClientRpc, clientId, receiveTime);
                                     ProfilerStatManager.rpcBatchesRcvd.Record();
                                 }
                                 else
@@ -1243,7 +1243,7 @@ namespace MLAPI
         /// Called when an inbound queued RPC is invoked
         /// </summary>
         /// <param name="queueItem">frame queue item to invoke</param>
-        public static void InvokeRpc(FrameQueueItem queueItem)
+        public static void InvokeRpc(RpcFrameQueueItem queueItem)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_InvokeRPC.Begin();
