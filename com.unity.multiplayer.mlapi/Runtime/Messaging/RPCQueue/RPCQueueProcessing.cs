@@ -4,8 +4,6 @@ using UnityEngine;
 using Unity.Profiling;
 using MLAPI.Configuration;
 using MLAPI.Profiling;
-using MLAPI.Transports;
-
 
 namespace MLAPI.Messaging
 {
@@ -24,8 +22,8 @@ namespace MLAPI.Messaging
 #endif
 
         // Batcher object used to manage the RPC batching on the send side
-        private MessageBatcher m_batcher = new MessageBatcher();
-        private int m_BatchThreshold = 512;
+        private readonly MessageBatcher m_Batcher = new MessageBatcher();
+        private const int k_BatchThreshold = 512;
 
 
         //NSS-TODO: Need to determine how we want to handle all other MLAPI send types
@@ -175,9 +173,9 @@ namespace MLAPI.Messaging
                         AdvanceFrameHistory = true;
                         if (rpcQueueContainer.IsUsingBatching())
                         {
-                            m_batcher.QueueItem(currentQueueItem);
+                            m_Batcher.QueueItem(currentQueueItem);
 
-                            m_batcher.SendItems(m_BatchThreshold, SendCallback);
+                            m_Batcher.SendItems(k_BatchThreshold, SendCallback);
                         }
                         else
                         {
@@ -189,7 +187,7 @@ namespace MLAPI.Messaging
                     //If the size is < m_BatchThreshold then just send the messages
                     if (AdvanceFrameHistory && rpcQueueContainer.IsUsingBatching())
                     {
-                        m_batcher.SendItems(0, SendCallback);
+                        m_Batcher.SendItems(0, SendCallback);
                     }
                 }
 
@@ -215,7 +213,7 @@ namespace MLAPI.Messaging
             var bytes = sendStream.Stream.GetBuffer();
             ArraySegment<byte> sendBuffer = new ArraySegment<byte>(bytes, 0, length);
 
-            NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(clientId, sendBuffer, sendStream.channel);
+            NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(clientId, sendBuffer, sendStream.Channel);
         }
 
         /// <summary>

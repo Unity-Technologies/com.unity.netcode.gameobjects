@@ -1038,8 +1038,8 @@ namespace MLAPI
             }
         }
 
-        private readonly BitStream inputStreamWrapper = new BitStream(new byte[0]);
-        private MessageBatcher batcher = new MessageBatcher();
+        private readonly BitStream m_InputStreamWrapper = new BitStream(new byte[0]);
+        private readonly MessageBatcher m_Batcher = new MessageBatcher();
 
         internal void HandleIncomingData(ulong clientId, byte channel, ArraySegment<byte> data, float receiveTime, bool allowBuffer)
         {
@@ -1048,18 +1048,19 @@ namespace MLAPI
 #endif
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo("Unwrapping Data Header");
 
-            inputStreamWrapper.SetTarget(data.Array);
-            inputStreamWrapper.SetLength(data.Count + data.Offset);
-            inputStreamWrapper.Position = data.Offset;
+            m_InputStreamWrapper.SetTarget(data.Array);
+            m_InputStreamWrapper.SetLength(data.Count + data.Offset);
+            m_InputStreamWrapper.Position = data.Offset;
 
-            using (BitStream messageStream = MessagePacker.UnwrapMessage(inputStreamWrapper, clientId, out byte messageType, out SecuritySendFlags security))
+            using (var messageStream = MessagePacker.UnwrapMessage(m_InputStreamWrapper, clientId, out byte messageType, out SecuritySendFlags security))
             {
                 if (messageStream == null)
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError("Message unwrap could not be completed. Was the header corrupt? Crypto error?");
                     return;
                 }
-                else if (messageType == MLAPIConstants.INVALID)
+
+                if (messageType == MLAPIConstants.INVALID)
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError("Message unwrap read an invalid messageType");
                     return;
@@ -1160,7 +1161,7 @@ namespace MLAPI
                             {
                                 if(rpcQueueContainer.IsUsingBatching())
                                 {
-                                    batcher.ReceiveItems(messageStream, ReceiveCallback, RpcQueueContainer.QueueItemType.ServerRpc, clientId, receiveTime);
+                                    m_Batcher.ReceiveItems(messageStream, ReceiveCallback, RpcQueueContainer.QueueItemType.ServerRpc, clientId, receiveTime);
                                     ProfilerStatManager.rpcBatchesRcvd.Record();
                                 }
                                 else
@@ -1182,7 +1183,7 @@ namespace MLAPI
                             {
                                 if(rpcQueueContainer.IsUsingBatching())
                                 {
-                                    batcher.ReceiveItems(messageStream, ReceiveCallback, RpcQueueContainer.QueueItemType.ClientRpc, clientId, receiveTime);
+                                    m_Batcher.ReceiveItems(messageStream, ReceiveCallback, RpcQueueContainer.QueueItemType.ClientRpc, clientId, receiveTime);
                                     ProfilerStatManager.rpcBatchesRcvd.Record();
                                 }
                                 else
