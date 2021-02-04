@@ -7,7 +7,7 @@ using NUnit.Framework;
 
 namespace MLAPI.Tests
 {
-    public class MessageBatcherTests
+    public class RpcBatcherTests
     {
         [Test]
         public void SendWithThreshold()
