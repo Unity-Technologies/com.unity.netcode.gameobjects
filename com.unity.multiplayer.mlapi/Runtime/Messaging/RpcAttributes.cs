@@ -3,11 +3,30 @@ using System;
 namespace MLAPI.Messaging
 {
     /// <summary>
+    /// RPC delivery types
+    /// </summary>
+    public enum RpcDelivery
+    {
+        /// <summary>
+        /// Reliable delivery
+        /// </summary>
+        Reliable = 0,
+
+        /// <summary>
+        /// Unreliable delivery
+        /// </summary>
+        Unreliable
+    }
+
+    /// <summary>
     /// <para>Represents the common base class for Rpc attributes.</para>
     /// </summary>
     public abstract class RpcAttribute : Attribute
     {
-        public bool IsReliable = true;
+        /// <summary>
+        /// Type of RPC delivery method
+        /// </summary>
+        public RpcDelivery Delivery = RpcDelivery.Reliable;
     }
 
     /// <summary>
