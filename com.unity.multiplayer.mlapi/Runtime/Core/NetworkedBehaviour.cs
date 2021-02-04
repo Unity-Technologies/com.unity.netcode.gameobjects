@@ -177,7 +177,7 @@ namespace MLAPI
                 //Handle sending to the other clients
                 if (ClientIds.Length > 1 )
                 {
-                    rpcQueueContainer.SetLoopBackFrameItem(QueueHistoryFrame.QueueFrameType.Outbound, clientRpcParams.Send.UpdateStage);
+                    rpcQueueContainer.SetLoopBackFrameItem(clientRpcParams.Send.UpdateStage);
                     writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, Transport.MLAPI_STDRPC_CHANNEL, 0, NetworkId,
                         ClientIds, QueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateManager.NetworkUpdateStage.LateUpdate);
 
@@ -748,11 +748,17 @@ namespace MLAPI
                             continue;
                     }
 
-                    if (IsServer && !networkedVarList[i].CanClientWrite(clientId))
+                    if (!IsServer && !networkedVarList[i].CanClientWrite(clientId))
                     {
                         if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
                         {
-                            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Client wrote to NetworkedVar without permission. " + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
+                            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                            {
+                                NetworkLog.LogWarning("Client wrote to NetworkedVar without permission. " + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
+                                NetworkLog.LogError("[" + networkedVarList[i].GetType().Name + "]");
+                            }
+
+
                             stream.Position += varSize;
                             continue;
                         }
@@ -766,7 +772,11 @@ namespace MLAPI
                             //This is after all a developer fault. A critical error should be fine.
                             // - TwoTen
 
-                            if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError("Client wrote to NetworkedVar without permission. No more variables can be read. This is critical. " + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
+                            if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
+                            {
+                                NetworkLog.LogError("Client wrote to NetworkedVar without permission. No more variables can be read. This is critical. " + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
+                                NetworkLog.LogError("[" + networkedVarList[i].GetType().Name + "]");
+                            }
                             return;
                         }
                     }

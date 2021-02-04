@@ -372,11 +372,19 @@ namespace MLAPI.Messaging
         /// </summary>
         /// <param name="queueFrameType"></param>
         /// <param name="updateStage"></param>
-        public void SetLoopBackFrameItem(QueueHistoryFrame.QueueFrameType queueFrameType,NetworkUpdateManager.NetworkUpdateStage updateStage)
+        public void SetLoopBackFrameItem(NetworkUpdateManager.NetworkUpdateStage updateStage)
         {
-             QueueHistoryFrame loopbackHistoryframe =  GetQueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Inbound,updateStage,false);
-            QueueHistoryFrame queueHistoryItem = GetQueueHistoryFrame(queueFrameType,updateStage,false);
-            queueHistoryItem.loopbackHistoryFrame = loopbackHistoryframe;
+             QueueHistoryFrame loopbackHistoryframe =  GetQueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Inbound,updateStage,true);
+            QueueHistoryFrame queueHistoryItem = GetQueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Outbound,NetworkUpdateManager.NetworkUpdateStage.LateUpdate,false);
+            if(queueHistoryItem != null)
+            {
+                queueHistoryItem.loopbackHistoryFrame = loopbackHistoryframe;
+            }
+            else
+            {
+                UnityEngine.Debug.LogError("No QueueHistoryFrame!");
+            }
+
         }
 
         /// <summary>
