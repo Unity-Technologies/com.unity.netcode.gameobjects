@@ -366,16 +366,17 @@ namespace MLAPI.Messaging
         }
 
         /// <summary>
-        /// SetLoopBackFrameItem
+        /// SetLoopBackWriter
         /// ***Temporary fix for host mode loopback RPC writer work-around
-        /// Sets the next frame inbond buffer as the loopback queue history frame in the current frame's outbound buffer
+        /// Sets the loop back writer
         /// </summary>
+        /// <param name="loopwriter"></param>
+        /// <param name="queueFrameType"></param>
         /// <param name="updateStage"></param>
-        public void SetLoopBackFrameItem(NetworkUpdateManager.NetworkUpdateStage updateStage)
+        public void SetLoopBackWriter(PooledBitWriter loopwriter,  QueueHistoryFrame.QueueFrameType queueFrameType,NetworkUpdateManager.NetworkUpdateStage updateStage)
         {
-            QueueHistoryFrame loopbackHistoryframe =  GetQueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Inbound,updateStage,true);
-            QueueHistoryFrame queueHistoryItem = GetQueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Outbound,NetworkUpdateManager.NetworkUpdateStage.LateUpdate,false);
-            queueHistoryItem.loopbackHistoryFrame = loopbackHistoryframe;
+            QueueHistoryFrame queueHistoryItem = GetQueueHistoryFrame(queueFrameType,updateStage,false);
+            queueHistoryItem.queueWriterLoopback = loopwriter;
         }
 
         /// <summary>
