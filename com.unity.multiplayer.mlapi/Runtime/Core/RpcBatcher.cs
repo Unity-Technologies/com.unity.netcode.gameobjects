@@ -33,7 +33,7 @@ namespace MLAPI
         private ulong[] TargetList = new ulong[0];
 
         // Used to mark longer lengths. Works because we can't have zero-sized messages
-        private const byte LongLengthMarker = 0;
+        private const byte k_LongLenMarker = 0;
 
         private void PushLength(int length, ref PooledBitWriter writer)
         {
@@ -45,7 +45,7 @@ namespace MLAPI
             else
             {
                 // otherwise we write a two-byte length
-                writer.WriteByte(LongLengthMarker); // mark larger size
+                writer.WriteByte(k_LongLenMarker); // mark larger size
                 writer.WriteByte((byte)(length % 256)); // write the length modulo 256
                 writer.WriteByte((byte)(length / 256)); // write the length divided by 256
             }
@@ -56,7 +56,7 @@ namespace MLAPI
             int read = messageStream.ReadByte();
             // if we read a non-zero value, we have a single byte length
             // or a -1 error we can return
-            if (read != LongLengthMarker)
+            if (read != k_LongLenMarker)
             {
                 return read;
             }
