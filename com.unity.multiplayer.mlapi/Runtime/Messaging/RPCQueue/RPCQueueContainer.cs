@@ -370,12 +370,11 @@ namespace MLAPI.Messaging
         /// ***Temporary fix for host mode loopback RPC writer work-around
         /// Sets the next frame inbond buffer as the loopback queue history frame in the current frame's outbound buffer
         /// </summary>
-        /// <param name="queueFrameType"></param>
         /// <param name="updateStage"></param>
-        public void SetLoopBackFrameItem(QueueHistoryFrame.QueueFrameType queueFrameType,NetworkUpdateManager.NetworkUpdateStage updateStage)
+        public void SetLoopBackFrameItem(NetworkUpdateManager.NetworkUpdateStage updateStage)
         {
-             QueueHistoryFrame loopbackHistoryframe =  GetQueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Inbound,updateStage,false);
-            QueueHistoryFrame queueHistoryItem = GetQueueHistoryFrame(queueFrameType,updateStage,false);
+            QueueHistoryFrame loopbackHistoryframe =  GetQueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Inbound,updateStage,true);
+            QueueHistoryFrame queueHistoryItem = GetQueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Outbound,NetworkUpdateManager.NetworkUpdateStage.LateUpdate,false);
             queueHistoryItem.loopbackHistoryFrame = loopbackHistoryframe;
         }
 
