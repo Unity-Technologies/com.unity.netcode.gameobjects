@@ -79,6 +79,11 @@ namespace MLAPI.Messaging
         /// <returns>FrameQueueItem</returns>
         private FrameQueueItem GetCurrentQueueItem()
         {
+            if(hasLoopbackData)
+            {
+                UnityEngine.Debug.Log("Detected loopback Data!");
+            }
+
             //Write the packed version of the queueItem to our current queue history buffer
             m_CurrentQueueItem.queueItemType = (RpcQueueContainer.QueueItemType)queueReader.ReadUInt16();
             m_CurrentQueueItem.sendFlags = (Security.SecuritySendFlags)queueReader.ReadUInt16();
@@ -199,6 +204,7 @@ namespace MLAPI.Messaging
                     {
                         m_CurrentQueueItem.streamReader = PooledBitReader.Get(m_CurrentQueueItem.itemStream);
                     }
+
                 }
 
                 return GetCurrentQueueItem();

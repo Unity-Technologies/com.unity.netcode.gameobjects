@@ -170,17 +170,25 @@ namespace MLAPI
                 writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, Transport.MLAPI_STDRPC_CHANNEL, 0,
                     NetworkingManager.Singleton.ServerClientId, null, QueueHistoryFrame.QueueFrameType.Inbound,clientRpcParams.Send.UpdateStage );
 
-                writer.WriteBit(false); // Encrypted
-                writer.WriteBit(false); // Authenticated
-                writer.WriteBits(MLAPIConstants.MLAPI_CLIENT_RPC, 6); // MessageType
-
                 //Handle sending to the other clients
                 if (ClientIds.Length > 1 )
                 {
+                    //Set the loopback frame
                     rpcQueueContainer.SetLoopBackFrameItem(clientRpcParams.Send.UpdateStage);
+
+                    //Switch to the outbound queue
                     writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, Transport.MLAPI_STDRPC_CHANNEL, 0, NetworkId,
                         ClientIds, QueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateManager.NetworkUpdateStage.LateUpdate);
 
+                    if (!IsUsingBatching)
+                    {
+                        writer.WriteBit(false); // Encrypted
+                        writer.WriteBit(false); // Authenticated
+                        writer.WriteBits(MLAPIConstants.MLAPI_CLIENT_RPC, 6); // MessageType
+                    }
+                }
+                else
+                {
                     if (!IsUsingBatching)
                     {
                         writer.WriteBit(false); // Encrypted
