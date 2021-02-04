@@ -16,7 +16,7 @@ public class Raygun : MonoBehaviour
   }
   void Update()
   {
-    Vector3 forward = transform.TransformDirection(Vector3.forward) * range;
+    Vector3 forward = transform.forward * range;
     Debug.DrawRay(transform.position, forward, Color.yellow);
   }
 
@@ -35,7 +35,7 @@ public class Raygun : MonoBehaviour
   {
     GameObject[] targets = GameObject.FindGameObjectsWithTag("Target");
 
-    System.Collections.Generic.List<GameObject> list = new System.Collections.Generic.List<GameObject>(targets);
+    List<GameObject> list = new List<GameObject>(targets);
     list.Remove(gameObject);
 
     if (list.Count == 0)
