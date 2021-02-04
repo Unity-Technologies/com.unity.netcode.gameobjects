@@ -60,23 +60,27 @@ namespace MLAPI
         [EditorBrowsable(EditorBrowsableState.Never)]
 #if UNITY_2020_2_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `protected`
-        internal BitSerializer __beginSendServerRpc(ServerRpcParams serverRpcParams, bool isReliable)
+        internal BitSerializer __beginSendServerRpc(ServerRpcParams serverRpcParams, RpcDelivery rpcDelivery)
 #else
         [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
-        public BitSerializer __beginSendServerRpc(ServerRpcParams serverRpcParams, bool isReliable)
+        public BitSerializer __beginSendServerRpc(ServerRpcParams serverRpcParams, RpcDelivery rpcDelivery)
 #endif
         {
-            var rpcQueueContainer = NetworkingManager.Singleton.rpcQueueContainer;
             PooledBitWriter writer;
-            var IsUsingBatching = rpcQueueContainer.IsUsingBatching();
+
+            var rpcQueueContainer = NetworkingManager.Singleton.rpcQueueContainer;
+            var isUsingBatching = rpcQueueContainer.IsUsingBatching();
+            var transportChannel = rpcDelivery == RpcDelivery.Reliable ? Transport.MLAPI_RELIABLE_RPC_CHANNEL : Transport.MLAPI_UNRELIABLE_RPC_CHANNEL;
+
             if (IsHost)
             {
                 if (serverRpcParams.Send.UpdateStage == NetworkUpdateManager.NetworkUpdateStage.Default)
                 {
                     serverRpcParams.Send.UpdateStage = NetworkUpdateManager.NetworkUpdateStage.Update;
                 }
-                writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ServerRpc, Time.realtimeSinceStartup, Transport.MLAPI_STDRPC_CHANNEL, 0,
-                    NetworkingManager.Singleton.ServerClientId, null, QueueHistoryFrame.QueueFrameType.Inbound,serverRpcParams.Send.UpdateStage );
+
+                writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ServerRpc, Time.realtimeSinceStartup, transportChannel, 0,
+                    NetworkingManager.Singleton.ServerClientId, null, QueueHistoryFrame.QueueFrameType.Inbound, serverRpcParams.Send.UpdateStage);
 
                 //Under this condition we always treat this like there is no batching
                 writer.WriteBit(false); // Encrypted
@@ -85,9 +89,9 @@ namespace MLAPI
             }
             else
             {
-                writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ServerRpc, Time.realtimeSinceStartup, Transport.MLAPI_STDRPC_CHANNEL, 0,
+                writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ServerRpc, Time.realtimeSinceStartup, transportChannel, 0,
                     NetworkingManager.Singleton.ServerClientId, null, QueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateManager.NetworkUpdateStage.LateUpdate);
-                if (!IsUsingBatching)
+                if (!isUsingBatching)
                 {
                     writer.WriteBit(false); // Encrypted
                     writer.WriteBit(false); // Authenticated
@@ -117,10 +121,10 @@ namespace MLAPI
         [EditorBrowsable(EditorBrowsableState.Never)]
 #if UNITY_2020_2_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `protected`
-        internal void __endSendServerRpc(BitSerializer serializer, ServerRpcParams serverRpcParams, bool isReliable)
+        internal void __endSendServerRpc(BitSerializer serializer, ServerRpcParams serverRpcParams, RpcDelivery rpcDelivery)
 #else
         [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
-        public void __endSendServerRpc(BitSerializer serializer, ServerRpcParams serverRpcParams, bool isReliable)
+        public void __endSendServerRpc(BitSerializer serializer, ServerRpcParams serverRpcParams, RpcDelivery rpcDelivery)
 #endif
         {
             if (serializer == null) return;
@@ -141,20 +145,21 @@ namespace MLAPI
         [EditorBrowsable(EditorBrowsableState.Never)]
 #if UNITY_2020_2_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `protected`
-        internal BitSerializer __beginSendClientRpc(ClientRpcParams clientRpcParams, bool isReliable)
+        internal BitSerializer __beginSendClientRpc(ClientRpcParams clientRpcParams, RpcDelivery rpcDelivery)
 #else
         [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
-        public BitSerializer __beginSendClientRpc(ClientRpcParams clientRpcParams, bool isReliable)
+        public BitSerializer __beginSendClientRpc(ClientRpcParams clientRpcParams, RpcDelivery rpcDelivery)
 #endif
         {
+            PooledBitWriter writer;
+
             // This will start a new queue item entry and will then return the writer to the current frame's stream
             var rpcQueueContainer = NetworkingManager.Singleton.rpcQueueContainer;
-
-            PooledBitWriter writer;
-            var IsUsingBatching = rpcQueueContainer.IsUsingBatching();
+            var isUsingBatching = rpcQueueContainer.IsUsingBatching();
+            var transportChannel = rpcDelivery == RpcDelivery.Reliable ? Transport.MLAPI_RELIABLE_RPC_CHANNEL : Transport.MLAPI_UNRELIABLE_RPC_CHANNEL;
 
             ulong[] ClientIds = clientRpcParams.Send.TargetClientIds ?? NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray();
-            if(clientRpcParams.Send.TargetClientIds != null && clientRpcParams.Send.TargetClientIds.Length == 0)
+            if (clientRpcParams.Send.TargetClientIds != null && clientRpcParams.Send.TargetClientIds.Length == 0)
             {
                 ClientIds = NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray();
             }
@@ -162,26 +167,26 @@ namespace MLAPI
             var ContainsServerClientId = ClientIds.Contains(NetworkingManager.Singleton.ServerClientId);
             if (IsHost && ContainsServerClientId)
             {
-                if(clientRpcParams.Send.UpdateStage == NetworkUpdateManager.NetworkUpdateStage.Default)
+                if (clientRpcParams.Send.UpdateStage == NetworkUpdateManager.NetworkUpdateStage.Default)
                 {
                     clientRpcParams.Send.UpdateStage = NetworkUpdateManager.NetworkUpdateStage.Update;
                 }
 
-                writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, Transport.MLAPI_STDRPC_CHANNEL, 0,
-                    NetworkingManager.Singleton.ServerClientId, null, QueueHistoryFrame.QueueFrameType.Inbound,clientRpcParams.Send.UpdateStage );
+                writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, transportChannel, 0,
+                    NetworkingManager.Singleton.ServerClientId, null, QueueHistoryFrame.QueueFrameType.Inbound, clientRpcParams.Send.UpdateStage);
 
                 writer.WriteBit(false); // Encrypted
                 writer.WriteBit(false); // Authenticated
                 writer.WriteBits(MLAPIConstants.MLAPI_CLIENT_RPC, 6); // MessageType
 
                 //Handle sending to the other clients
-                if (ClientIds.Length > 1 )
+                if (ClientIds.Length > 1)
                 {
                     rpcQueueContainer.SetLoopBackWriter(writer, QueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateManager.NetworkUpdateStage.LateUpdate);
-                    writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, Transport.MLAPI_STDRPC_CHANNEL, 0, NetworkId,
+                    writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, transportChannel, 0, NetworkId,
                         ClientIds, QueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateManager.NetworkUpdateStage.LateUpdate);
 
-                    if (!IsUsingBatching)
+                    if (!isUsingBatching)
                     {
                         writer.WriteBit(false); // Encrypted
                         writer.WriteBit(false); // Authenticated
@@ -191,10 +196,10 @@ namespace MLAPI
             }
             else
             {
-                writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, Transport.MLAPI_STDRPC_CHANNEL, 0, NetworkId,
+                writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, transportChannel, 0, NetworkId,
                     ClientIds, QueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateManager.NetworkUpdateStage.LateUpdate);
 
-                if (!IsUsingBatching)
+                if (!isUsingBatching)
                 {
                     writer.WriteBit(false); // Encrypted
                     writer.WriteBit(false); // Authenticated
@@ -218,15 +223,14 @@ namespace MLAPI
             return writer.Serializer;
         }
 
-
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
 #if UNITY_2020_2_OR_NEWER
         // RuntimeAccessModifiersILPP will make this `protected`
-        internal void __endSendClientRpc(BitSerializer serializer, ClientRpcParams clientRpcParams, bool isReliable)
+        internal void __endSendClientRpc(BitSerializer serializer, ClientRpcParams clientRpcParams, RpcDelivery rpcDelivery)
 #else
         [Obsolete("Please do not use, will no longer be exposed in the future versions (framework internal)")]
-        public void __endSendClientRpc(BitSerializer serializer, ClientRpcParams clientRpcParams, bool isReliable)
+        public void __endSendClientRpc(BitSerializer serializer, ClientRpcParams clientRpcParams, RpcDelivery rpcDelivery)
 #endif
         {
             if (serializer == null) return;

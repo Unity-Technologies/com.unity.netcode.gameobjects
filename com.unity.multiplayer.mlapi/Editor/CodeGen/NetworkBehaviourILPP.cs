@@ -13,7 +13,6 @@ using Unity.CompilationPipeline.Common.ILPostProcessing;
 using UnityEngine;
 using MethodAttributes = Mono.Cecil.MethodAttributes;
 using ParameterAttributes = Mono.Cecil.ParameterAttributes;
-
 #if UNITY_2020_2_OR_NEWER
 using ILPPInterface = Unity.CompilationPipeline.Common.ILPostProcessing.ILPostProcessor;
 #else
@@ -458,13 +457,13 @@ namespace MLAPI.Editor.CodeGen
             var instructions = new List<Instruction>();
             var processor = methodDefinition.Body.GetILProcessor();
             var isServerRpc = rpcAttribute.AttributeType.FullName == CodeGenHelpers.ServerRpcAttribute_FullName;
-            var isReliableRpc = true;
+            var rpcDelivery = RpcDelivery.Reliable;
             foreach (var attrField in rpcAttribute.Fields)
             {
                 switch (attrField.Name)
                 {
-                    case nameof(RpcAttribute.IsReliable):
-                        isReliableRpc = attrField.Argument.Type == typeSystem.Boolean && (bool)attrField.Argument.Value;
+                    case nameof(RpcAttribute.Delivery):
+                        rpcDelivery = (RpcDelivery)attrField.Argument.Value;
                         break;
                 }
             }
@@ -536,12 +535,12 @@ namespace MLAPI.Editor.CodeGen
 
                 instructions.Add(beginInstr);
 
-                // var serializer = BeginSendServerRpc(serverRpcParams, isReliable) -> ServerRpc
-                // var serializer = BeginSendClientRpc(clientRpcParams, isReliable) -> ClientRpc
+                // var serializer = BeginSendServerRpc(serverRpcParams, rpcDelivery) -> ServerRpc
+                // var serializer = BeginSendClientRpc(clientRpcParams, rpcDelivery) -> ClientRpc
                 if (isServerRpc)
                 {
                     // ServerRpc
-                    // var serializer = BeginSendServerRpc(serverRpcParams, isReliable);
+                    // var serializer = BeginSendServerRpc(serverRpcParams, rpcDelivery);
                     instructions.Add(processor.Create(OpCodes.Ldarg_0));
 
                     if (hasRpcParams)
@@ -555,8 +554,8 @@ namespace MLAPI.Editor.CodeGen
                         instructions.Add(processor.Create(OpCodes.Ldloc, rpcParamsIdx));
                     }
 
-                    // isReliable
-                    instructions.Add(processor.Create(isReliableRpc ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0));
+                    // rpcDelivery
+                    instructions.Add(processor.Create(OpCodes.Ldc_I4, (int)rpcDelivery));
 
                     // BeginSendServerRpc
                     instructions.Add(processor.Create(OpCodes.Call, NetworkBehaviour_BeginSendServerRpc_MethodRef));
@@ -565,7 +564,7 @@ namespace MLAPI.Editor.CodeGen
                 else
                 {
                     // ClientRpc
-                    // var serializer = BeginSendClientRpc(clientRpcParams, isReliable);
+                    // var serializer = BeginSendClientRpc(clientRpcParams, rpcDelivery);
                     instructions.Add(processor.Create(OpCodes.Ldarg_0));
 
                     if (hasRpcParams)
@@ -579,8 +578,8 @@ namespace MLAPI.Editor.CodeGen
                         instructions.Add(processor.Create(OpCodes.Ldloc, rpcParamsIdx));
                     }
 
-                    // isReliable
-                    instructions.Add(processor.Create(isReliableRpc ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0));
+                    // rpcDelivery
+                    instructions.Add(processor.Create(OpCodes.Ldc_I4, (int)rpcDelivery));
 
                     // BeginSendClientRpc
                     instructions.Add(processor.Create(OpCodes.Call, NetworkBehaviour_BeginSendClientRpc_MethodRef));
@@ -1092,7 +1091,7 @@ namespace MLAPI.Editor.CodeGen
                             instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                             instructions.Add(processor.Create(OpCodes.Ldloca, arrLenLocalIndex));
                             instructions.Add(processor.Create(OpCodes.Callvirt, BitSerializer_SerializeInt_MethodRef));
-                            
+
                             methodDefinition.Body.Variables.Add(new VariableDefinition(typeSystem.Int32));
                             int counterLocalIndex = methodDefinition.Body.Variables.Count - 1;
 
@@ -1269,7 +1268,7 @@ namespace MLAPI.Editor.CodeGen
                                 instructions.Add(processor.Create(OpCodes.Ldarg, paramIndex + 1));
                                 instructions.Add(processor.Create(OpCodes.Ldloc, serializerLocIdx));
                                 instructions.Add(processor.Create(OpCodes.Callvirt, paramTypeNetworkSerialize_MethodDef));
-                                
+
                                 instructions.Add(notSetInstr);
                             }
 
@@ -1374,12 +1373,12 @@ namespace MLAPI.Editor.CodeGen
 
                 instructions.Add(endInstr);
 
-                // EndSendServerRpc(serializer, serverRpcParams, isReliable) -> ServerRpc
-                // EndSendClientRpc(serializer, clientRpcParams, isReliable) -> ClientRpc
+                // EndSendServerRpc(serializer, serverRpcParams, rpcDelivery) -> ServerRpc
+                // EndSendClientRpc(serializer, clientRpcParams, rpcDelivery) -> ClientRpc
                 if (isServerRpc)
                 {
                     // ServerRpc
-                    // EndSendServerRpc(serializer, serverRpcParams, isReliable);
+                    // EndSendServerRpc(serializer, serverRpcParams, rpcDelivery);
                     instructions.Add(processor.Create(OpCodes.Ldarg_0));
 
                     // serializer
@@ -1396,8 +1395,8 @@ namespace MLAPI.Editor.CodeGen
                         instructions.Add(processor.Create(OpCodes.Ldloc, rpcParamsIdx));
                     }
 
-                    // isReliable
-                    instructions.Add(processor.Create(isReliableRpc ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0));
+                    // rpcDelivery
+                    instructions.Add(processor.Create(OpCodes.Ldc_I4, (int)rpcDelivery));
 
                     // EndSendServerRpc
                     instructions.Add(processor.Create(OpCodes.Call, NetworkBehaviour_EndSendServerRpc_MethodRef));
@@ -1405,7 +1404,7 @@ namespace MLAPI.Editor.CodeGen
                 else
                 {
                     // ClientRpc
-                    // EndSendClientRpc(serializer, clientRpcParams, isReliable);
+                    // EndSendClientRpc(serializer, clientRpcParams, rpcDelivery);
                     instructions.Add(processor.Create(OpCodes.Ldarg_0));
 
                     // serializer
@@ -1422,8 +1421,8 @@ namespace MLAPI.Editor.CodeGen
                         instructions.Add(processor.Create(OpCodes.Ldloc, rpcParamsIdx));
                     }
 
-                    // isReliable
-                    instructions.Add(processor.Create(isReliableRpc ? OpCodes.Ldc_I4_1 : OpCodes.Ldc_I4_0));
+                    // rpcDelivery
+                    instructions.Add(processor.Create(OpCodes.Ldc_I4, (int)rpcDelivery));
 
                     // EndSendClientRpc
                     instructions.Add(processor.Create(OpCodes.Call, NetworkBehaviour_EndSendClientRpc_MethodRef));
@@ -1950,7 +1949,7 @@ namespace MLAPI.Editor.CodeGen
                         }
                     }
                 }
-                
+
                 // Enum array
 
                 if (paramType.IsArray)
@@ -1960,13 +1959,13 @@ namespace MLAPI.Editor.CodeGen
                     {
                         nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.Int32));
                         int arrLenLocalIndex = nhandler.Body.Variables.Count - 1;
-                        
+
                         processor.Emit(OpCodes.Ldarg_1);
                         processor.Emit(OpCodes.Ldloca, arrLenLocalIndex);
                         processor.Emit(OpCodes.Callvirt, BitSerializer_SerializeInt_MethodRef);
 
                         var postForInstr = processor.Create(OpCodes.Nop);
-                        
+
                         processor.Emit(OpCodes.Ldloc, arrLenLocalIndex);
                         processor.Emit(OpCodes.Ldc_I4_M1);
                         processor.Emit(OpCodes.Cgt);
@@ -1975,7 +1974,7 @@ namespace MLAPI.Editor.CodeGen
                         processor.Emit(OpCodes.Ldloc, arrLenLocalIndex);
                         processor.Emit(OpCodes.Newarr, paramType.GetElementType());
                         processor.Emit(OpCodes.Stloc, localIndex);
-                        
+
                         nhandler.Body.Variables.Add(new VariableDefinition(typeSystem.Int32));
                         int counterLocalIndex = nhandler.Body.Variables.Count - 1;
 
@@ -2156,7 +2155,7 @@ namespace MLAPI.Editor.CodeGen
                                 processor.Emit(OpCodes.Ldloc, localIndex);
                                 processor.Emit(OpCodes.Ldarg_1);
                                 processor.Emit(OpCodes.Callvirt, paramTypeNetworkSerialize_MethodDef);
-                                
+
                                 processor.Append(notSetInstr);
                             }
                         }
