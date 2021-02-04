@@ -23,7 +23,7 @@ namespace MLAPI.Messaging
 
         public PooledBitStream queueStream;
         public PooledBitWriter queueWriter;
-        public PooledBitWriter queueWriterLoopback;  //Temporary fix for Host mode loopback work around.
+        public QueueHistoryFrame loopbackHistoryFrame;  //Temporary fix for Host mode loopback work around.
 
 
         public PooledBitReader queueReader;
