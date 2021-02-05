@@ -112,15 +112,8 @@ namespace MLAPI
         /// </summary>
         public ulong LocalClientId
         {
-            get
-            {
-                if (IsServer) return NetworkConfig.NetworkTransport.ServerClientId;
-				else return localClientId;
-            }
-            internal set
-            {
-                localClientId = value;
-            }
+            get => IsServer ? NetworkConfig.NetworkTransport.ServerClientId : localClientId;
+            internal set => localClientId = value;
         }
         private ulong localClientId;
         /// <summary>
