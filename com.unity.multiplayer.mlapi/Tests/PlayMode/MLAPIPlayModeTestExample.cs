@@ -23,7 +23,7 @@ namespace MLAPI.Tests.PlayMode
         /// </summary>
         /// <returns>IEnumerator</returns>
         [UnityTest]
-        public IEnumerator YieldPlayModeUnitTestExample()
+        public IEnumerator YieldTestExample()
         {
             if(NetworkingManager.Singleton == null)
             {
@@ -63,10 +63,6 @@ namespace MLAPI.Tests.PlayMode
                 //Example Instantiate the player object
                 //GameObject playerObject = GameObject.Instantiate(playerObjectPrefab);
             }
-
-            // Use the Assert class to test conditions.
-            // Use yield to skip a frame.
-            yield return null;
         }
 
 

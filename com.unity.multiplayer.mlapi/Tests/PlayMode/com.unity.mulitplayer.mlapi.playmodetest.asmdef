@@ -2,11 +2,10 @@
     "name": "Unity.Multiplayer.MLAPI.PlayModeTests",
     "rootNamespace": "",
     "references": [
-        "UnityEngine.TestRunner",
-        "UnityEditor.TestRunner",
-        "Core",
         "Unity.Multiplayer.MLAPI.Runtime",
-        "Unity.Multiplayer.MLAPI.Editor"
+        "Unity.Multiplayer.MLAPI.Editor",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
@@ -16,7 +15,7 @@
         "nunit.framework.dll",
         "Mono.Cecil.dll"
     ],
-    "autoReferenced": false,
+    "autoReferenced": true,
     "defineConstraints": [
         "UNITY_INCLUDE_TESTS"
     ],
