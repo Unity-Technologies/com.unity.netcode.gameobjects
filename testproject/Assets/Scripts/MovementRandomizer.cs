@@ -6,9 +6,9 @@ public class MovementRandomizer : MonoBehaviour
 {
     public Vector3 targetLocation;
     public float speed = 1;
-    
+
     private Rigidbody rb;
-    
+
     void Start()
     {
         rb = GetComponent<Rigidbody>();
@@ -24,7 +24,7 @@ public class MovementRandomizer : MonoBehaviour
 
         if (distance > 0.5f)
         {
-            Vector3 stepPosition = Vector3.MoveTowards(transform.position, targetLocation, speed);
+            Vector3 stepPosition = Vector3.MoveTowards(transform.position, targetLocation, speed * Time.fixedDeltaTime);
             rb.MovePosition(stepPosition);
         }
         else
