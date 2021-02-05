@@ -1,41 +1,40 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
+using System.Collections;
 
 public class ColorChanger : MonoBehaviour
 {
-  private Renderer render;
-  private Color prevColor;
+    private Material m_Material;
+    private Color m_PrevColor;
 
-  void Start()
-  {
-    render = GetComponent<Renderer>();
-  }
-
-  void OnCollisionEnter(Collision collision)
-  {
-    prevColor = render.material.color;
-    render.material.color = Color.green;
-  }
-
-  void OnCollisionExit()
-  {
-    render.material.color = prevColor;
-  }
-
-  void Update()
-  {
-    // Reset Color after 2 seconds
-    if (render.material.color != Color.white)
+    private void Start()
     {
-      StartCoroutine(ResetColor(2));
+        m_Material = GetComponent<Renderer>().material;
     }
-  }
 
-  IEnumerator ResetColor(float waitTime)
-  {
-    yield return new WaitForSeconds(waitTime);
+    private void OnCollisionEnter(Collision collision)
+    {
+        m_PrevColor = m_Material.color;
+        m_Material.color = Color.green;
+    }
 
-    render.material.color = Color.white;
-  }
+    private void OnCollisionExit()
+    {
+        m_Material.color = m_PrevColor;
+    }
+
+    private void Update()
+    {
+        // Reset Color after 2 seconds
+        if (m_Material.color != Color.white)
+        {
+            StartCoroutine(ResetColor(2));
+        }
+    }
+
+    private IEnumerator ResetColor(float waitTime)
+    {
+        yield return new WaitForSeconds(waitTime);
+
+        m_Material.color = Color.white;
+    }
 }

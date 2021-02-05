@@ -1,34 +1,31 @@
-using System.Collections;
-using System.Collections.Generic;
-using MLAPI;
 using UnityEngine;
+using MLAPI;
 
 public class UIController : MonoBehaviour
 {
-  public NetworkingManager network;
+    public NetworkingManager network;
+    public GameObject buttonsUI;
 
-  public GameObject buttonsUI;
+    public void CreateServer()
+    {
+        network.StartServer();
+        HideButtons();
+    }
 
-  public void CreateServer()
-  {
-    network.StartServer();
-    HideButtons();
-  }
+    public void CreateHost()
+    {
+        network.StartHost();
+        HideButtons();
+    }
 
-  public void CreateHost()
-  {
-    network.StartHost();
-    HideButtons();
-  }
+    public void JoinGame()
+    {
+        network.StartClient();
+        HideButtons();
+    }
 
-  public void JoinGame()
-  {
-    network.StartClient();
-    HideButtons();
-  }
-
-  void HideButtons()
-  {
-    buttonsUI.SetActive(false);
-  }
+    private void HideButtons()
+    {
+        buttonsUI.SetActive(false);
+    }
 }

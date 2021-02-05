@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class MovementRandomizer : MonoBehaviour
@@ -7,25 +5,24 @@ public class MovementRandomizer : MonoBehaviour
     public Vector3 targetLocation;
     public float speed = 1;
 
-    private Rigidbody rb;
+    private Rigidbody m_Rigidbody;
 
-    void Start()
+    private void Start()
     {
-        rb = GetComponent<Rigidbody>();
-        Vector3 temp = transform.position;
+        m_Rigidbody = GetComponent<Rigidbody>();
+        var temp = transform.position;
         temp.y = 0.5f;
         transform.position = temp;
         targetLocation = GetRandomLocation();
     }
 
-    void FixedUpdate()
+    private void FixedUpdate()
     {
         float distance = Vector3.Distance(transform.position, targetLocation);
-
         if (distance > 0.5f)
         {
-            Vector3 stepPosition = Vector3.MoveTowards(transform.position, targetLocation, speed * Time.fixedDeltaTime);
-            rb.MovePosition(stepPosition);
+            var stepPosition = Vector3.MoveTowards(transform.position, targetLocation, speed * Time.fixedDeltaTime);
+            m_Rigidbody.MovePosition(stepPosition);
         }
         else
         {
