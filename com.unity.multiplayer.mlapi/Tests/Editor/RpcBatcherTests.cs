@@ -5,7 +5,7 @@ using MLAPI.Messaging;
 using MLAPI.Serialization;
 using NUnit.Framework;
 
-namespace MLAPI.Tests
+namespace MLAPI.EditorTests
 {
     public class RpcBatcherTests
     {

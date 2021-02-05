@@ -4,7 +4,7 @@ using MLAPI.Serialization.Pooled;
 using NUnit.Framework;
 using UnityEngine;
 
-namespace MLAPI.Tests
+namespace MLAPI.EditorTests
 {
     public class BitSerializerTests
     {
