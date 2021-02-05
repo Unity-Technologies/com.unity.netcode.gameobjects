@@ -79,11 +79,6 @@ namespace MLAPI.Messaging
         /// <returns>FrameQueueItem</returns>
         private FrameQueueItem GetCurrentQueueItem()
         {
-            if(hasLoopbackData)
-            {
-                UnityEngine.Debug.Log("Detected loopback Data!");
-            }
-
             //Write the packed version of the queueItem to our current queue history buffer
             m_CurrentQueueItem.queueItemType = (RpcQueueContainer.QueueItemType)queueReader.ReadUInt16();
             m_CurrentQueueItem.sendFlags = (Security.SecuritySendFlags)queueReader.ReadUInt16();
@@ -131,6 +126,7 @@ namespace MLAPI.Messaging
                 {
                     //Get our offset
                     long Position = queueReader.ReadInt64();
+
                     //Always make sure we are positioned at the start of the stream before we write
                     m_CurrentQueueItem.itemStream.Position = 0;
 

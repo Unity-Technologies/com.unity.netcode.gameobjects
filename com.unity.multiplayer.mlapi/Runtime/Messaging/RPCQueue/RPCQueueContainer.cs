@@ -43,7 +43,7 @@ namespace MLAPI.Messaging
         private int     m_OutBoundStreamBufferIndex;
         private bool    m_IsTestingEnabled;
         private bool    m_processUpdateStagesExternally;
-        private bool    m_IsNotUsingBatching = true;
+        private bool    m_IsNotUsingBatching;
 
         public bool IsUsingBatching()
         {
@@ -473,7 +473,14 @@ namespace MLAPI.Messaging
 
             if (NetworkingManager.Singleton.IsHost && queueFrameType == QueueHistoryFrame.QueueFrameType.Inbound)
             {
-                queueHistoryItem.queueWriter.WriteInt64(1); //Write the stream position offset for inbound as 1
+                if(!IsUsingBatching())
+                {
+                    queueHistoryItem.queueWriter.WriteInt64(1);
+                }
+                else
+                {
+                    queueHistoryItem.queueWriter.WriteInt64(0);
+                }
                 queueHistoryItem.hasLoopbackData = true;    //The only case for this is when it is the Host
             }
 
@@ -494,7 +501,6 @@ namespace MLAPI.Messaging
             {
                 getNextFrame = true;
             }
-
 
             QueueHistoryFrame queueHistoryItem = GetQueueHistoryFrame(queueFrameType, updateStage, getNextFrame);
             QueueHistoryFrame loopBackHistoryFrame = queueHistoryItem.loopbackHistoryFrame;
@@ -519,21 +525,22 @@ namespace MLAPI.Messaging
             //////////////////////////////////////////////////////////////
             queueHistoryItem.queueStream.Position = queueHistoryItem.GetCurrentMarkedPosition();
 
-
+            long MSGOffset = 8;
+            if(getNextFrame && IsUsingBatching())
+            {
+                MSGOffset += 8;
+            }
             //subtracting 8 byte to account for the value of the size of the RPC
-            long MSGSize = (long)(queueHistoryItem.totalSize - (queueHistoryItem.GetCurrentMarkedPosition() + 8));
+            long MSGSize = (long)(queueHistoryItem.totalSize - (queueHistoryItem.GetCurrentMarkedPosition() + MSGOffset));
 
             if (MSGSize > 0)
             {
-
                 //Write the actual size of the RPC message
                 queueHistoryItem.queueWriter.WriteInt64(MSGSize);
-
             }
             else
             {
                 UnityEngine.Debug.LogWarning("MSGSize of < zero detected!!  Setting message size to zero!");
-                //Write the actual size of the RPC message
                 queueHistoryItem.queueWriter.WriteInt64(0);
             }
 
@@ -553,6 +560,11 @@ namespace MLAPI.Messaging
                         //Write the offset for the header info copied
                         loopBackHistoryFrame.queueWriter.WriteInt64(1);
                     }
+                    else
+                    {
+                        //Write the offset for the header info copied
+                        loopBackHistoryFrame.queueWriter.WriteInt64(0);
+                    }
 
                     //Write RPC data
                     loopBackHistoryFrame.queueWriter.WriteBytes(queueHistoryItem.queueStream.GetBuffer(), MSGSize,(int)queueHistoryItem.queueStream.Position);
@@ -562,7 +574,7 @@ namespace MLAPI.Messaging
 
                     //Add the total size to the offsets for parsing over various entries
                     loopBackHistoryFrame.queueItemOffsets.Add((uint)loopBackHistoryFrame.queueStream.Position);
-                    queueHistoryItem.loopbackHistoryFrame = null;
+
                 }
                 else
                 {
@@ -570,6 +582,7 @@ namespace MLAPI.Messaging
                     //Write the actual size of the RPC message
                     loopBackHistoryFrame.queueWriter.WriteInt64(0);
                 }
+                queueHistoryItem.loopbackHistoryFrame = null;
             }
 
 
