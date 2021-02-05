@@ -9,9 +9,9 @@ namespace  MLAPI.Messaging
     /// Container structure for RPCs written to the Queue Frame
     /// Used for both Inbound and Outbound RPCs
     /// NOTE: This structure will change in the near future and is in a state of flux.
-    /// This will include removing specific properties or changing property types (i.e. Channel could become a byte value)
+    /// This will include removing specific properties or changing property types
     /// </summary>
-    public struct FrameQueueItem
+    public struct RpcFrameQueueItem
     {
         public NetworkUpdateManager.NetworkUpdateStage   updateStage;
         public RpcQueueContainer.QueueItemType           queueItemType;
