@@ -29,7 +29,7 @@ namespace MLAPI.Messaging
         public PooledBitReader queueReader;
 
         private int                                      m_QueueItemOffsetIndex;
-        private FrameQueueItem                           m_CurrentQueueItem;
+        private RpcFrameQueueItem                        m_CurrentQueueItem;
         private readonly QueueFrameType                  m_QueueFrameType;
         private int                                      m_MaximumClients;
         private long                                     m_CurrentStreamSizeMark;
@@ -77,7 +77,7 @@ namespace MLAPI.Messaging
         /// Internal method to get the current Queue Item from the stream at its current position
         /// </summary>
         /// <returns>FrameQueueItem</returns>
-        private FrameQueueItem GetCurrentQueueItem()
+        private RpcFrameQueueItem GetCurrentQueueItem()
         {
             //Write the packed version of the queueItem to our current queue history buffer
             m_CurrentQueueItem.queueItemType = (RpcQueueContainer.QueueItemType)queueReader.ReadUInt16();
@@ -157,7 +157,7 @@ namespace MLAPI.Messaging
         /// If none are remaining, then it returns a queue item type of NONE
         /// </summary>
         /// <returns>FrameQueueItem</returns>
-        public FrameQueueItem GetNextQueueItem()
+        public RpcFrameQueueItem GetNextQueueItem()
         {
             queueStream.Position = queueItemOffsets[m_QueueItemOffsetIndex];
             m_QueueItemOffsetIndex++;
@@ -176,7 +176,7 @@ namespace MLAPI.Messaging
         /// This will reset the frame's stream indices and add a new stream and stream writer to the m_CurrentQueueItem instance.
         /// </summary>
         /// <returns>FrameQueueItem</returns>
-        public FrameQueueItem GetFirstQueueItem()
+        public RpcFrameQueueItem GetFirstQueueItem()
         {
             if (queueStream.Position > 0)
             {
@@ -245,7 +245,7 @@ namespace MLAPI.Messaging
         {
             m_MaximumClients = maxClients;
             m_QueueFrameType = queueType;
-            m_CurrentQueueItem = new FrameQueueItem();
+            m_CurrentQueueItem = new RpcFrameQueueItem();
             m_StreamUpdateStage = updateStage;
         }
     }
