@@ -1,7 +1,7 @@
 using UnityEngine;
 using MLAPI;
 using MLAPI.Messaging;
-namespace MLAPI.Tests
+namespace MLAPI.Tests.PlayMode
 {
     public interface IMLAPIUnitTestObject
     {
