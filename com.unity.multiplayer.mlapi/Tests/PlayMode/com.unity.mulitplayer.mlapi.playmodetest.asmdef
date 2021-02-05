@@ -1,19 +1,20 @@
 {
-    "name": "Unity.Multiplayer.MLAPI.EditorTests",
+    "name": "Unity.Multiplayer.MLAPI.PlayModeTests",
     "rootNamespace": "",
     "references": [
-        "Unity.Multiplayer.MLAPI.Runtime",
         "UnityEngine.TestRunner",
-        "UnityEditor.TestRunner"
+        "UnityEditor.TestRunner",
+        "Core",
+        "Unity.Multiplayer.MLAPI.Runtime",
+        "Unity.Multiplayer.MLAPI.Editor"
     ],
-    "includePlatforms": [
-        "Editor"
-    ],
+    "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": true,
     "precompiledReferences": [
-        "nunit.framework.dll"
+        "nunit.framework.dll",
+        "Mono.Cecil.dll"
     ],
     "autoReferenced": false,
     "defineConstraints": [

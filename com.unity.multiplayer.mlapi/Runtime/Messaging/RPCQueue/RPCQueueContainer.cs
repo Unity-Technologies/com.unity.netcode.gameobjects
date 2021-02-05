@@ -370,12 +370,21 @@ namespace MLAPI.Messaging
         /// ***Temporary fix for host mode loopback RPC writer work-around
         /// Sets the next frame inbond buffer as the loopback queue history frame in the current frame's outbound buffer
         /// </summary>
+        /// <param name="queueFrameType"></param>
         /// <param name="updateStage"></param>
         public void SetLoopBackFrameItem(NetworkUpdateManager.NetworkUpdateStage updateStage)
         {
-            QueueHistoryFrame loopbackHistoryframe =  GetQueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Inbound,updateStage,true);
+             QueueHistoryFrame loopbackHistoryframe =  GetQueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Inbound,updateStage,true);
             QueueHistoryFrame queueHistoryItem = GetQueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Outbound,NetworkUpdateManager.NetworkUpdateStage.LateUpdate,false);
-            queueHistoryItem.loopbackHistoryFrame = loopbackHistoryframe;
+            if(queueHistoryItem != null)
+            {
+                queueHistoryItem.loopbackHistoryFrame = loopbackHistoryframe;
+            }
+            else
+            {
+                UnityEngine.Debug.LogError("No QueueHistoryFrame!");
+            }
+
         }
 
         /// <summary>
@@ -461,9 +470,17 @@ namespace MLAPI.Messaging
 
             //Write a filler dummy size of 0 to hold this position in order to write to it once the RPC is done writing.
             queueHistoryItem.queueWriter.WriteInt64(0);
+
             if (NetworkingManager.Singleton.IsHost && queueFrameType == QueueHistoryFrame.QueueFrameType.Inbound)
             {
-                queueHistoryItem.queueWriter.WriteInt64(1); //Write the stream position offset for inbound as 1
+                if(!IsUsingBatching())
+                {
+                    queueHistoryItem.queueWriter.WriteInt64(1);
+                }
+                else
+                {
+                    queueHistoryItem.queueWriter.WriteInt64(0);
+                }
                 queueHistoryItem.hasLoopbackData = true;    //The only case for this is when it is the Host
             }
 
@@ -484,7 +501,6 @@ namespace MLAPI.Messaging
             {
                 getNextFrame = true;
             }
-
 
             QueueHistoryFrame queueHistoryItem = GetQueueHistoryFrame(queueFrameType, updateStage, getNextFrame);
             QueueHistoryFrame loopBackHistoryFrame = queueHistoryItem.loopbackHistoryFrame;
@@ -508,25 +524,23 @@ namespace MLAPI.Messaging
             //>>>> REPOSITIONING STREAM TO RPC MESSAGE SIZE LOCATION <<<<
             //////////////////////////////////////////////////////////////
             queueHistoryItem.queueStream.Position = queueHistoryItem.GetCurrentMarkedPosition();
-            if(loopBackHistoryFrame != null)
-            {
-                loopBackHistoryFrame.queueStream.Position = queueHistoryItem.GetCurrentMarkedPosition();
-            }
 
+            long MSGOffset = 8;
+            if(getNextFrame && IsUsingBatching())
+            {
+                MSGOffset += 8;
+            }
             //subtracting 8 byte to account for the value of the size of the RPC
-            long MSGSize = (long)(queueHistoryItem.totalSize - (queueHistoryItem.GetCurrentMarkedPosition() + 8));
+            long MSGSize = (long)(queueHistoryItem.totalSize - (queueHistoryItem.GetCurrentMarkedPosition() + MSGOffset));
 
             if (MSGSize > 0)
             {
-
                 //Write the actual size of the RPC message
                 queueHistoryItem.queueWriter.WriteInt64(MSGSize);
-
             }
             else
             {
                 UnityEngine.Debug.LogWarning("MSGSize of < zero detected!!  Setting message size to zero!");
-                //Write the actual size of the RPC message
                 queueHistoryItem.queueWriter.WriteInt64(0);
             }
 
@@ -534,16 +548,41 @@ namespace MLAPI.Messaging
             {
                 if (MSGSize > 0)
                 {
+
+                    //Point to where the size of the message is stored
+                    loopBackHistoryFrame.queueStream.Position = loopBackHistoryFrame.GetCurrentMarkedPosition();
+
                     //Write the actual size of the RPC message
                     loopBackHistoryFrame.queueWriter.WriteInt64(MSGSize);
-                    loopBackHistoryFrame.queueWriter.WriteBytes(queueHistoryItem.queueStream.GetBuffer(), MSGSize, (int)loopBackHistoryFrame.GetCurrentMarkedPosition());
+
+                    if(!IsUsingBatching())
+                    {
+                        //Write the offset for the header info copied
+                        loopBackHistoryFrame.queueWriter.WriteInt64(1);
+                    }
+                    else
+                    {
+                        //Write the offset for the header info copied
+                        loopBackHistoryFrame.queueWriter.WriteInt64(0);
+                    }
+
+                    //Write RPC data
+                    loopBackHistoryFrame.queueWriter.WriteBytes(queueHistoryItem.queueStream.GetBuffer(), MSGSize,(int)queueHistoryItem.queueStream.Position);
+
+                    //Set the total size for this stream
+                    loopBackHistoryFrame.totalSize = (uint)loopBackHistoryFrame.queueStream.Position;
+
+                    //Add the total size to the offsets for parsing over various entries
+                    loopBackHistoryFrame.queueItemOffsets.Add((uint)loopBackHistoryFrame.queueStream.Position);
+
                 }
                 else
                 {
                     UnityEngine.Debug.LogWarning("[LoopBack] MSGSize of < zero detected!!  Setting message size to zero!");
                     //Write the actual size of the RPC message
-                    queueHistoryItem.queueWriter.WriteInt64(0);
+                    loopBackHistoryFrame.queueWriter.WriteInt64(0);
                 }
+                queueHistoryItem.loopbackHistoryFrame = null;
             }
 
 
@@ -556,13 +595,7 @@ namespace MLAPI.Messaging
             //Add the packed size to the offsets for parsing over various entries
             queueHistoryItem.queueItemOffsets.Add((uint)queueHistoryItem.queueStream.Position);
 
-            //Loopback
-            if(loopBackHistoryFrame != null)
-            {
-                //Add the packed size to the offsets for parsing over various entries
-                loopBackHistoryFrame.queueItemOffsets.Add((uint)loopBackHistoryFrame.queueStream.Position);
-                queueHistoryItem.loopbackHistoryFrame = null;
-            }
+
 
         }
 

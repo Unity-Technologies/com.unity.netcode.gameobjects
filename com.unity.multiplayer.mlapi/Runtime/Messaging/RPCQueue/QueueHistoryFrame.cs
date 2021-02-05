@@ -126,6 +126,7 @@ namespace MLAPI.Messaging
                 {
                     //Get our offset
                     long Position = queueReader.ReadInt64();
+
                     //Always make sure we are positioned at the start of the stream before we write
                     m_CurrentQueueItem.itemStream.Position = 0;
 
@@ -199,6 +200,7 @@ namespace MLAPI.Messaging
                     {
                         m_CurrentQueueItem.streamReader = PooledBitReader.Get(m_CurrentQueueItem.itemStream);
                     }
+
                 }
 
                 return GetCurrentQueueItem();
