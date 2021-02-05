@@ -39,6 +39,10 @@ namespace MLAPI
         }
 
         /// <summary>
+        /// Gets the NetworkingManager that owns this NetworkedObject instance
+        /// </summary>
+        public NetworkingManager NetworkManager => NetworkingManager.Singleton;
+        /// <summary>
         /// Gets the unique ID of this object that is synced across the network
         /// </summary>
         public ulong NetworkId { get; internal set; }
