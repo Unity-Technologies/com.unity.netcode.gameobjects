@@ -4,8 +4,6 @@ using UnityEngine;
 using Unity.Profiling;
 using MLAPI.Configuration;
 using MLAPI.Profiling;
-using MLAPI.Transports;
-
 
 namespace MLAPI.Messaging
 {
@@ -15,22 +13,20 @@ namespace MLAPI.Messaging
     /// Inbound to invocation
     /// Outbound to send
     /// </summary>
-    internal class RpcQueueProcessing
+    internal class RpcQueueProcessor
     {
-
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
         static ProfilerMarker s_MLAPIRPCQueueProcess = new ProfilerMarker("MLAPIRPCQueueProcess");
         static ProfilerMarker s_MLAPIRPCQueueSend = new ProfilerMarker("MLAPIRPCQueueSend");
 #endif
 
         // Batcher object used to manage the RPC batching on the send side
-        private MessageBatcher m_batcher = new MessageBatcher();
-        private int m_BatchThreshold = 512;
-
+        private readonly RpcBatcher m_RpcBatcher = new RpcBatcher();
+        private const int k_BatchThreshold = 512;
 
         //NSS-TODO: Need to determine how we want to handle all other MLAPI send types
         //Temporary place to keep internal MLAPI messages
-        private readonly List<FrameQueueItem> m_InternalMLAPISendQueue = new List<FrameQueueItem>();
+        private readonly List<RpcFrameQueueItem> m_InternalMLAPISendQueue = new List<RpcFrameQueueItem>();
 
         /// <summary>
         /// ProcessReceiveQueue
@@ -106,7 +102,7 @@ namespace MLAPI.Messaging
         ///  Added this as an example of how to add internal messages to the outbound send queue
         /// </summary>
         /// <param name="queueItem">message queue item to add<</param>
-        public void QueueInternalMLAPICommand(FrameQueueItem queueItem)
+        public void QueueInternalMLAPICommand(RpcFrameQueueItem queueItem)
         {
             m_InternalMLAPISendQueue.Add(queueItem);
         }
@@ -118,7 +114,7 @@ namespace MLAPI.Messaging
         /// </summary>
         public void InternalMessagesSendAndFlush()
         {
-            foreach (FrameQueueItem queueItem in m_InternalMLAPISendQueue)
+            foreach (RpcFrameQueueItem queueItem in m_InternalMLAPISendQueue)
             {
 
                 var PoolStream = queueItem.itemStream;
@@ -175,9 +171,9 @@ namespace MLAPI.Messaging
                         AdvanceFrameHistory = true;
                         if (rpcQueueContainer.IsUsingBatching())
                         {
-                            m_batcher.QueueItem(currentQueueItem);
+                            m_RpcBatcher.QueueItem(currentQueueItem);
 
-                            m_batcher.SendItems(m_BatchThreshold, SendCallback);
+                            m_RpcBatcher.SendItems(k_BatchThreshold, SendCallback);
                         }
                         else
                         {
@@ -189,7 +185,7 @@ namespace MLAPI.Messaging
                     //If the size is < m_BatchThreshold then just send the messages
                     if (AdvanceFrameHistory && rpcQueueContainer.IsUsingBatching())
                     {
-                        m_batcher.SendItems(0, SendCallback);
+                        m_RpcBatcher.SendItems(0, SendCallback);
                     }
                 }
 
@@ -209,13 +205,13 @@ namespace MLAPI.Messaging
         /// </summary>
         /// <param name="clientId"> clientId to send to</param>
         /// <param name="sendStream"> the stream to send</param>
-        private static void SendCallback(ulong clientId, MLAPI.MessageBatcher.SendStream sendStream)
+        private static void SendCallback(ulong clientId, MLAPI.RpcBatcher.SendStream sendStream)
         {
             var length = (int)sendStream.Stream.Length;
             var bytes = sendStream.Stream.GetBuffer();
             ArraySegment<byte> sendBuffer = new ArraySegment<byte>(bytes, 0, length);
 
-            NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(clientId, sendBuffer, sendStream.channel);
+            NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(clientId, sendBuffer, sendStream.Channel);
         }
 
         /// <summary>
@@ -223,7 +219,7 @@ namespace MLAPI.Messaging
         /// Sends the RPC Queue Item to the specified destination
         /// </summary>
         /// <param name="queueItem">Information on what to send</param>
-        private void SendFrameQueueItem(FrameQueueItem queueItem)
+        private void SendFrameQueueItem(RpcFrameQueueItem queueItem)
         {
             switch (queueItem.queueItemType)
             {
