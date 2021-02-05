@@ -268,6 +268,10 @@ namespace MLAPI
         }
 
         /// <summary>
+        /// Gets the NetworkingManager that owns this NetworkedBehaviour instance
+        /// </summary>
+        public NetworkingManager NetworkManager => NetworkedObject.NetworkManager;
+        /// <summary>
         /// Gets if the object is the the personal clients player object
         /// </summary>
         [EditorBrowsable(EditorBrowsableState.Never)]
