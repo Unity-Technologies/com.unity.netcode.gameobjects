@@ -164,6 +164,10 @@ namespace MLAPI
                 ClientIds = NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray();
             }
 
+            //NOTES ON BELOW CHANGES:
+            //The following checks for IsHost and whether the host client id is part of the clients to recieve the RPC
+            //Is part of a patch-fix to handle looping back RPCs into the next frame's inbound queue.
+            //!!! This code is temporary and will change (soon) when bitserializer can be configured for mutliple BitWriters!!!
             var ContainsServerClientId = ClientIds.Contains(NetworkingManager.Singleton.ServerClientId);
             if (IsHost && ContainsServerClientId)
             {
@@ -171,11 +175,11 @@ namespace MLAPI
                 {
                     clientRpcParams.Send.UpdateStage = NetworkUpdateManager.NetworkUpdateStage.Update;
                 }
-
+                //Always write to the next frame's inbound queue
                 writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, transportChannel, 0,
                     NetworkingManager.Singleton.ServerClientId, null, QueueHistoryFrame.QueueFrameType.Inbound, clientRpcParams.Send.UpdateStage);
 
-                //Handle sending to the other clients
+                //Handle sending to the other clients, if so the above notes explain why this code is here (a temporary patch-fix)
                 if (ClientIds.Length > 1)
                 {
                     //Set the loopback frame
@@ -245,7 +249,7 @@ namespace MLAPI
 
             var rpcQueueContainer = NetworkingManager.Singleton.rpcQueueContainer;
 
-            if ( IsHost )
+            if (IsHost)
             {
                 ulong[] ClientIds = clientRpcParams.Send.TargetClientIds ?? NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray();
                 if (clientRpcParams.Send.TargetClientIds != null && clientRpcParams.Send.TargetClientIds.Length == 0)
@@ -254,9 +258,9 @@ namespace MLAPI
                 }
                 var ContainsServerClientId = ClientIds.Contains(NetworkingManager.Singleton.ServerClientId);
 
-                if(ContainsServerClientId && ClientIds.Length == 1)
+                if (ContainsServerClientId && ClientIds.Length == 1)
                 {
-                    if(clientRpcParams.Send.UpdateStage == NetworkUpdateManager.NetworkUpdateStage.Default)
+                    if (clientRpcParams.Send.UpdateStage == NetworkUpdateManager.NetworkUpdateStage.Default)
                     {
                         clientRpcParams.Send.UpdateStage = NetworkUpdateManager.NetworkUpdateStage.Update;
                     }

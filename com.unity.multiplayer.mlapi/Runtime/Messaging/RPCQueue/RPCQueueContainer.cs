@@ -372,21 +372,23 @@ namespace MLAPI.Messaging
         /// ***Temporary fix for host mode loopback RPC writer work-around
         /// Sets the next frame inbond buffer as the loopback queue history frame in the current frame's outbound buffer
         /// </summary>
-        /// <param name="queueFrameType"></param>
         /// <param name="updateStage"></param>
         public void SetLoopBackFrameItem(NetworkUpdateManager.NetworkUpdateStage updateStage)
         {
-             QueueHistoryFrame loopbackHistoryframe =  GetQueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Inbound,updateStage,true);
+            //Get the next frame's inbound queue history frame
+            QueueHistoryFrame loopbackHistoryframe =  GetQueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Inbound,updateStage,true);
+
+            //Get the current frame's outbound queue history frame
             QueueHistoryFrame queueHistoryItem = GetQueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Outbound,NetworkUpdateManager.NetworkUpdateStage.LateUpdate,false);
-            if(queueHistoryItem != null)
+
+            if (queueHistoryItem != null)
             {
                 queueHistoryItem.loopbackHistoryFrame = loopbackHistoryframe;
             }
             else
             {
-                UnityEngine.Debug.LogError("No QueueHistoryFrame!");
+                UnityEngine.Debug.LogError("Could not find the outbound QueueHistoryFrame!");
             }
-
         }
 
         /// <summary>
@@ -478,7 +480,7 @@ namespace MLAPI.Messaging
 
             if (NetworkingManager.Singleton.IsHost && queueFrameType == QueueHistoryFrame.QueueFrameType.Inbound)
             {
-                if(!IsUsingBatching())
+                if (!IsUsingBatching())
                 {
                     queueHistoryItem.queueWriter.WriteInt64(1);
                 }
@@ -531,7 +533,7 @@ namespace MLAPI.Messaging
             queueHistoryItem.queueStream.Position = queueHistoryItem.GetCurrentMarkedPosition();
 
             long MSGOffset = 8;
-            if(getNextFrame && IsUsingBatching())
+            if (getNextFrame && IsUsingBatching())
             {
                 MSGOffset += 8;
             }
@@ -549,7 +551,7 @@ namespace MLAPI.Messaging
                 queueHistoryItem.queueWriter.WriteInt64(0);
             }
 
-            if(loopBackHistoryFrame != null)
+            if (loopBackHistoryFrame != null)
             {
                 if (MSGSize > 0)
                 {
@@ -560,7 +562,7 @@ namespace MLAPI.Messaging
                     //Write the actual size of the RPC message
                     loopBackHistoryFrame.queueWriter.WriteInt64(MSGSize);
 
-                    if(!IsUsingBatching())
+                    if (!IsUsingBatching())
                     {
                         //Write the offset for the header info copied
                         loopBackHistoryFrame.queueWriter.WriteInt64(1);
@@ -599,9 +601,6 @@ namespace MLAPI.Messaging
 
             //Add the packed size to the offsets for parsing over various entries
             queueHistoryItem.queueItemOffsets.Add((uint)queueHistoryItem.queueStream.Position);
-
-
-
         }
 
         /// <summary>
