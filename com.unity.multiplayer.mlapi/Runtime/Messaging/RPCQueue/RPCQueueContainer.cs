@@ -368,17 +368,27 @@ namespace MLAPI.Messaging
         }
 
         /// <summary>
-        /// SetLoopBackWriter
+        /// SetLoopBackFrameItem
         /// ***Temporary fix for host mode loopback RPC writer work-around
-        /// Sets the loop back writer
+        /// Sets the next frame inbond buffer as the loopback queue history frame in the current frame's outbound buffer
         /// </summary>
-        /// <param name="loopwriter"></param>
-        /// <param name="queueFrameType"></param>
         /// <param name="updateStage"></param>
-        public void SetLoopBackWriter(PooledBitWriter loopwriter, QueueHistoryFrame.QueueFrameType queueFrameType, NetworkUpdateManager.NetworkUpdateStage updateStage)
+        public void SetLoopBackFrameItem(NetworkUpdateManager.NetworkUpdateStage updateStage)
         {
-            QueueHistoryFrame queueHistoryItem = GetQueueHistoryFrame(queueFrameType, updateStage, false);
-            queueHistoryItem.queueWriterLoopback = loopwriter;
+            //Get the next frame's inbound queue history frame
+            QueueHistoryFrame loopbackHistoryframe =  GetQueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Inbound,updateStage,true);
+
+            //Get the current frame's outbound queue history frame
+            QueueHistoryFrame queueHistoryItem = GetQueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Outbound,NetworkUpdateManager.NetworkUpdateStage.LateUpdate,false);
+
+            if (queueHistoryItem != null)
+            {
+                queueHistoryItem.loopbackHistoryFrame = loopbackHistoryframe;
+            }
+            else
+            {
+                UnityEngine.Debug.LogError("Could not find the outbound QueueHistoryFrame!");
+            }
         }
 
         /// <summary>
@@ -389,23 +399,9 @@ namespace MLAPI.Messaging
         /// <param name="queueFrameType"></param>
         /// <param name="updateStage"></param>
         /// <returns></returns>
-        public PooledBitWriter GetLoopBackWriter(QueueHistoryFrame.QueueFrameType queueFrameType, NetworkUpdateManager.NetworkUpdateStage updateStage)
+        public QueueHistoryFrame GetLoopBackHistoryFrame( QueueHistoryFrame.QueueFrameType queueFrameType,NetworkUpdateManager.NetworkUpdateStage updateStage)
         {
-            QueueHistoryFrame queueHistoryItem = GetQueueHistoryFrame(queueFrameType, updateStage, false);
-            return queueHistoryItem.queueWriterLoopback;
-        }
-
-        /// <summary>
-        /// ClearLoopBackWriter
-        /// Clears the loopback writer from the QueueHistoryFrame
-        /// ***Temporary fix for host mode loopback RPC writer work-around
-        /// </summary>
-        /// <param name="queueFrameType"></param>
-        /// <param name="updateStage"></param>
-        public void ClearLoopBackWriter(QueueHistoryFrame.QueueFrameType queueFrameType, NetworkUpdateManager.NetworkUpdateStage updateStage)
-        {
-            QueueHistoryFrame queueHistoryItem = GetQueueHistoryFrame(queueFrameType, updateStage, false);
-            queueHistoryItem.queueWriterLoopback = null;
+            return GetQueueHistoryFrame(queueFrameType,updateStage,false);
         }
 
         /// <summary>
@@ -481,10 +477,18 @@ namespace MLAPI.Messaging
 
             //Write a filler dummy size of 0 to hold this position in order to write to it once the RPC is done writing.
             queueHistoryItem.queueWriter.WriteInt64(0);
+
             if (NetworkingManager.Singleton.IsHost && queueFrameType == QueueHistoryFrame.QueueFrameType.Inbound)
             {
-                queueHistoryItem.queueWriter.WriteInt64(1); //Write the stream position offset for inbound as 1
-                queueHistoryItem.hasLoopbackData = true; //The only case for this is when it is the Host
+                if (!IsUsingBatching())
+                {
+                    queueHistoryItem.queueWriter.WriteInt64(1);
+                }
+                else
+                {
+                    queueHistoryItem.queueWriter.WriteInt64(0);
+                }
+                queueHistoryItem.hasLoopbackData = true;    //The only case for this is when it is the Host
             }
 
             //Return the writer to the invoking method.
@@ -506,12 +510,15 @@ namespace MLAPI.Messaging
             }
 
             QueueHistoryFrame queueHistoryItem = GetQueueHistoryFrame(queueFrameType, updateStage, getNextFrame);
+            QueueHistoryFrame loopBackHistoryFrame = queueHistoryItem.loopbackHistoryFrame;
+
+
             PooledBitWriter pbWriter = (PooledBitWriter)writer;
 
             //Sanity check
             if (pbWriter != queueHistoryItem.queueWriter && !getNextFrame)
             {
-                UnityEngine.Debug.LogError("RpcQueueContainer " + queueFrameType.ToString() + " passed writer is not the same as the current PooledBitWrite for the " + queueFrameType.ToString() + "]!");
+                UnityEngine.Debug.LogError("RpcQueueContainer " + queueFrameType.ToString() + " passed writer is not the same as the current PooledBitWriter for the " +  queueFrameType.ToString() + "]!");
             }
 
             //The total size of the frame is the last known position of the stream
@@ -525,8 +532,13 @@ namespace MLAPI.Messaging
             //////////////////////////////////////////////////////////////
             queueHistoryItem.queueStream.Position = queueHistoryItem.GetCurrentMarkedPosition();
 
+            long MSGOffset = 8;
+            if (getNextFrame && IsUsingBatching())
+            {
+                MSGOffset += 8;
+            }
             //subtracting 8 byte to account for the value of the size of the RPC
-            long MSGSize = (long)(queueHistoryItem.totalSize - (queueHistoryItem.GetCurrentMarkedPosition() + 8));
+            long MSGSize = (long)(queueHistoryItem.totalSize - (queueHistoryItem.GetCurrentMarkedPosition() + MSGOffset));
 
             if (MSGSize > 0)
             {
@@ -536,9 +548,50 @@ namespace MLAPI.Messaging
             else
             {
                 UnityEngine.Debug.LogWarning("MSGSize of < zero detected!!  Setting message size to zero!");
-                //Write the actual size of the RPC message
                 queueHistoryItem.queueWriter.WriteInt64(0);
             }
+
+            if (loopBackHistoryFrame != null)
+            {
+                if (MSGSize > 0)
+                {
+
+                    //Point to where the size of the message is stored
+                    loopBackHistoryFrame.queueStream.Position = loopBackHistoryFrame.GetCurrentMarkedPosition();
+
+                    //Write the actual size of the RPC message
+                    loopBackHistoryFrame.queueWriter.WriteInt64(MSGSize);
+
+                    if (!IsUsingBatching())
+                    {
+                        //Write the offset for the header info copied
+                        loopBackHistoryFrame.queueWriter.WriteInt64(1);
+                    }
+                    else
+                    {
+                        //Write the offset for the header info copied
+                        loopBackHistoryFrame.queueWriter.WriteInt64(0);
+                    }
+
+                    //Write RPC data
+                    loopBackHistoryFrame.queueWriter.WriteBytes(queueHistoryItem.queueStream.GetBuffer(), MSGSize,(int)queueHistoryItem.queueStream.Position);
+
+                    //Set the total size for this stream
+                    loopBackHistoryFrame.totalSize = (uint)loopBackHistoryFrame.queueStream.Position;
+
+                    //Add the total size to the offsets for parsing over various entries
+                    loopBackHistoryFrame.queueItemOffsets.Add((uint)loopBackHistoryFrame.queueStream.Position);
+
+                }
+                else
+                {
+                    UnityEngine.Debug.LogWarning("[LoopBack] MSGSize of < zero detected!!  Setting message size to zero!");
+                    //Write the actual size of the RPC message
+                    loopBackHistoryFrame.queueWriter.WriteInt64(0);
+                }
+                queueHistoryItem.loopbackHistoryFrame = null;
+            }
+
 
             //////////////////////////////////////////////////////////////
             //<<<< REPOSITIONING STREAM BACK TO THE CURRENT TAIL >>>>
