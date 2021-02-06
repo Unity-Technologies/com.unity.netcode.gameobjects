@@ -23,7 +23,7 @@ namespace MLAPI.Messaging
 
         public PooledBitStream queueStream;
         public PooledBitWriter queueWriter;
-        public PooledBitWriter queueWriterLoopback;  //Temporary fix for Host mode loopback work around.
+        public QueueHistoryFrame loopbackHistoryFrame;  //Temporary fix for Host mode loopback work around.
 
 
         public PooledBitReader queueReader;
@@ -126,6 +126,7 @@ namespace MLAPI.Messaging
                 {
                     //Get our offset
                     long Position = queueReader.ReadInt64();
+
                     //Always make sure we are positioned at the start of the stream before we write
                     m_CurrentQueueItem.itemStream.Position = 0;
 
@@ -199,6 +200,7 @@ namespace MLAPI.Messaging
                     {
                         m_CurrentQueueItem.streamReader = PooledBitReader.Get(m_CurrentQueueItem.itemStream);
                     }
+
                 }
 
                 return GetCurrentQueueItem();

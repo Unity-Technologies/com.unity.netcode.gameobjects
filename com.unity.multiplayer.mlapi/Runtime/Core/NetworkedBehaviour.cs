@@ -82,10 +82,12 @@ namespace MLAPI
                 writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ServerRpc, Time.realtimeSinceStartup, transportChannel, 0,
                     NetworkingManager.Singleton.ServerClientId, null, QueueHistoryFrame.QueueFrameType.Inbound, serverRpcParams.Send.UpdateStage);
 
-                //Under this condition we always treat this like there is no batching
-                writer.WriteBit(false); // Encrypted
-                writer.WriteBit(false); // Authenticated
-                writer.WriteBits(MLAPIConstants.MLAPI_SERVER_RPC, 6); // MessageType
+                if (!isUsingBatching)
+                {
+                    writer.WriteBit(false); // Encrypted
+                    writer.WriteBit(false); // Authenticated
+                    writer.WriteBits(MLAPIConstants.MLAPI_SERVER_RPC, 6); // MessageType
+                }
             }
             else
             {
@@ -98,8 +100,6 @@ namespace MLAPI
                     writer.WriteBits(MLAPIConstants.MLAPI_SERVER_RPC, 6); // MessageType
                 }
             }
-
-
 
             writer.WriteUInt64Packed(NetworkId); // NetworkObjectId
             writer.WriteUInt16Packed(GetBehaviourId()); // NetworkBehaviourId
@@ -164,6 +164,10 @@ namespace MLAPI
                 ClientIds = NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray();
             }
 
+            //NOTES ON BELOW CHANGES:
+            //The following checks for IsHost and whether the host client id is part of the clients to recieve the RPC
+            //Is part of a patch-fix to handle looping back RPCs into the next frame's inbound queue.
+            //!!! This code is temporary and will change (soon) when bitserializer can be configured for mutliple BitWriters!!!
             var ContainsServerClientId = ClientIds.Contains(NetworkingManager.Singleton.ServerClientId);
             if (IsHost && ContainsServerClientId)
             {
@@ -171,21 +175,29 @@ namespace MLAPI
                 {
                     clientRpcParams.Send.UpdateStage = NetworkUpdateManager.NetworkUpdateStage.Update;
                 }
-
+                //Always write to the next frame's inbound queue
                 writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, transportChannel, 0,
                     NetworkingManager.Singleton.ServerClientId, null, QueueHistoryFrame.QueueFrameType.Inbound, clientRpcParams.Send.UpdateStage);
 
-                writer.WriteBit(false); // Encrypted
-                writer.WriteBit(false); // Authenticated
-                writer.WriteBits(MLAPIConstants.MLAPI_CLIENT_RPC, 6); // MessageType
-
-                //Handle sending to the other clients
+                //Handle sending to the other clients, if so the above notes explain why this code is here (a temporary patch-fix)
                 if (ClientIds.Length > 1)
                 {
-                    rpcQueueContainer.SetLoopBackWriter(writer, QueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateManager.NetworkUpdateStage.LateUpdate);
-                    writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, transportChannel, 0, NetworkId,
+                    //Set the loopback frame
+                    rpcQueueContainer.SetLoopBackFrameItem(clientRpcParams.Send.UpdateStage);
+
+                    //Switch to the outbound queue
+                    writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, Transport.MLAPI_RELIABLE_RPC_CHANNEL, 0, NetworkId,
                         ClientIds, QueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateManager.NetworkUpdateStage.LateUpdate);
 
+                    if (!isUsingBatching)
+                    {
+                        writer.WriteBit(false); // Encrypted
+                        writer.WriteBit(false); // Authenticated
+                        writer.WriteBits(MLAPIConstants.MLAPI_CLIENT_RPC, 6); // MessageType
+                    }
+                }
+                else
+                {
                     if (!isUsingBatching)
                     {
                         writer.WriteBit(false); // Encrypted
@@ -236,33 +248,27 @@ namespace MLAPI
             if (serializer == null) return;
 
             var rpcQueueContainer = NetworkingManager.Singleton.rpcQueueContainer;
-            ulong[] ClientIds = clientRpcParams.Send.TargetClientIds ?? NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray();
-            if(clientRpcParams.Send.TargetClientIds != null && clientRpcParams.Send.TargetClientIds.Length == 0)
-            {
-                ClientIds = NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray();
-            }
-            var ContainsServerClientId = ClientIds.Contains(NetworkingManager.Singleton.ServerClientId);
 
-            if (IsHost && ContainsServerClientId)
+            if (IsHost)
             {
-                PooledBitWriter loopbackWriter = serializer.Writer as PooledBitWriter;
-                if (ClientIds.Length > 1 )
+                ulong[] ClientIds = clientRpcParams.Send.TargetClientIds ?? NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray();
+                if (clientRpcParams.Send.TargetClientIds != null && clientRpcParams.Send.TargetClientIds.Length == 0)
                 {
-                    rpcQueueContainer.EndAddQueueItemToFrame(serializer.Writer, QueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateManager.NetworkUpdateStage.LateUpdate);
-
-                    loopbackWriter = rpcQueueContainer.GetLoopBackWriter(QueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateManager.NetworkUpdateStage.LateUpdate);
-                    rpcQueueContainer.ClearLoopBackWriter(QueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateManager.NetworkUpdateStage.LateUpdate);
+                    ClientIds = NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray();
                 }
+                var ContainsServerClientId = ClientIds.Contains(NetworkingManager.Singleton.ServerClientId);
 
-                if(ContainsServerClientId)
+                if (ContainsServerClientId && ClientIds.Length == 1)
                 {
-                    rpcQueueContainer.EndAddQueueItemToFrame(loopbackWriter, QueueHistoryFrame.QueueFrameType.Inbound, clientRpcParams.Send.UpdateStage == NetworkUpdateManager.NetworkUpdateStage.Default ? NetworkUpdateManager.NetworkUpdateStage.Update:clientRpcParams.Send.UpdateStage );
+                    if (clientRpcParams.Send.UpdateStage == NetworkUpdateManager.NetworkUpdateStage.Default)
+                    {
+                        clientRpcParams.Send.UpdateStage = NetworkUpdateManager.NetworkUpdateStage.Update;
+                    }
+                    rpcQueueContainer.EndAddQueueItemToFrame(serializer.Writer, QueueHistoryFrame.QueueFrameType.Inbound, clientRpcParams.Send.UpdateStage);
+                    return;
                 }
             }
-            else
-            {
-                rpcQueueContainer.EndAddQueueItemToFrame(serializer.Writer, QueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateManager.NetworkUpdateStage.LateUpdate);
-            }
+            rpcQueueContainer.EndAddQueueItemToFrame(serializer.Writer, QueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateManager.NetworkUpdateStage.LateUpdate);
         }
 
         /// <summary>
@@ -766,7 +772,13 @@ namespace MLAPI
                     {
                         if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
                         {
-                            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Client wrote to NetworkedVar without permission. " + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
+                            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                            {
+                                NetworkLog.LogWarning("Client wrote to NetworkedVar without permission. " + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
+                                NetworkLog.LogError("[" + networkedVarList[i].GetType().Name + "]");
+                            }
+
+
                             stream.Position += varSize;
                             continue;
                         }
@@ -780,7 +792,11 @@ namespace MLAPI
                             //This is after all a developer fault. A critical error should be fine.
                             // - TwoTen
 
-                            if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError("Client wrote to NetworkedVar without permission. No more variables can be read. This is critical. " + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
+                            if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
+                            {
+                                NetworkLog.LogError("Client wrote to NetworkedVar without permission. No more variables can be read. This is critical. " + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkedObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
+                                NetworkLog.LogError("[" + networkedVarList[i].GetType().Name + "]");
+                            }
                             return;
                         }
                     }
