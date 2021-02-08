@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using ENet;
+using MLAPI.Transports;
 using MLAPI.Transports.Tasks;
 using Unity.Profiling;
 using UnityEngine;
 using Event = ENet.Event;
 using EventType = ENet.EventType;
 
-namespace MLAPI.Transports.Enet
+namespace EnetTransport
 {
     [DefaultExecutionOrder(1000)]
     public class EnetTransport : Transport

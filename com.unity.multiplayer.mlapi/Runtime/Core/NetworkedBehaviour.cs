@@ -70,7 +70,7 @@ namespace MLAPI
 
             var rpcQueueContainer = NetworkingManager.Singleton.rpcQueueContainer;
             var isUsingBatching = rpcQueueContainer.IsUsingBatching();
-            var transportChannel = rpcDelivery == RpcDelivery.Reliable ? Transport.MLAPI_RELIABLE_RPC_CHANNEL : Transport.MLAPI_UNRELIABLE_RPC_CHANNEL;
+            var transportChannel = rpcDelivery == RpcDelivery.Reliable ? Channel.ReliableRPC : Channel.UnreliableRPC;
 
             if (IsHost)
             {
@@ -155,14 +155,11 @@ namespace MLAPI
 
             // This will start a new queue item entry and will then return the writer to the current frame's stream
             var rpcQueueContainer = NetworkingManager.Singleton.rpcQueueContainer;
-            var writer = rpcQueueContainer.BeginAddQueueItemToOutboundFrame(
-                RpcQueueContainer.QueueItemType.ClientRpc,
-                Time.realtimeSinceStartup,
-                Channel.StdRpc,
-                /* sendFlags = */ 0,
-                NetworkId,
-                clientRpcParams.Send.TargetClientIds ?? NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray());
-            if (!rpcQueueContainer.IsUsingBatching())
+            var isUsingBatching = rpcQueueContainer.IsUsingBatching();
+            var transportChannel = rpcDelivery == RpcDelivery.Reliable ? Channel.ReliableRPC : Channel.UnreliableRPC;
+
+            ulong[] ClientIds = clientRpcParams.Send.TargetClientIds ?? NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray();
+            if (clientRpcParams.Send.TargetClientIds != null && clientRpcParams.Send.TargetClientIds.Length == 0)
             {
                 ClientIds = NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray();
             }
@@ -189,7 +186,7 @@ namespace MLAPI
                     rpcQueueContainer.SetLoopBackFrameItem(clientRpcParams.Send.UpdateStage);
 
                     //Switch to the outbound queue
-                    writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, Transport.MLAPI_RELIABLE_RPC_CHANNEL, 0, NetworkId,
+                    writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, Channel.ReliableRPC, 0, NetworkId,
                         ClientIds, QueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateManager.NetworkUpdateStage.LateUpdate);
 
                     if (!isUsingBatching)

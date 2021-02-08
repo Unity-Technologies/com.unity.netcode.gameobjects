@@ -9,6 +9,9 @@ namespace MLAPI.Transports
     {
         Internal,
         StdRpc,
+        TimeSync,
+        ReliableRPC,
+        UnreliableRPC,
         SyncChannel,
         DefaultMessage,
         PositionUpdate,
@@ -83,70 +86,16 @@ namespace MLAPI.Transports
             }
         }
 
-        public enum TransportType : byte
-        {
-            MLAPI_STDRPC_CHANNEL,
-            MLAPI_TIME_SYNC_CHANNEL,
-            MLAPI_DEFAULT_MESSAGE_CHANNEL,
-            MLAPI_POSITION_UPDATE_CHANNEL,
-            MLAPI_ANIMATION_UPDATE_CHANNEL,
-            MLAPI_NAV_AGENT_STATE_CHANNEL,
-            MLAPI_NAV_AGENT_CORRECTION_CHANNEL
-        };
-
-        public const byte MLAPI_TIME_SYNC_CHANNEL = 2;
-        public const byte MLAPI_RELIABLE_RPC_CHANNEL = 100;
-        public const byte MLAPI_UNRELIABLE_RPC_CHANNEL = 101;
-        public const byte MLAPI_DEFAULT_MESSAGE_CHANNEL = 3;
-        public const byte MLAPI_POSITION_UPDATE_CHANNEL = 4;
-        public const byte MLAPI_ANIMATION_UPDATE_CHANNEL = 5;
-        public const byte MLAPI_NAV_AGENT_STATE_CHANNEL= 6;
-        public const byte MLAPI_NAV_AGENT_CORRECTION_CHANNEL = 7;
-
-        public static string GetChannelString(byte channel)
-        {
-            string channelName = "";
-            TransportChannel.ChannelByteToString.TryGetValue(channel, out channelName);
-            return channelName;
-        }
-        private static Tuple<TransportType, string> helper(TransportType tt)
-      {
-         return Tuple.Create(tt, nameof(tt));
-      }
-
-
         /// <summary>
         /// The channels the MLAPI will use when sending internal messages.
         /// </summary>
         private readonly TransportChannel[] MLAPI_INTERNAL_CHANNELS =
         {
-            new TransportChannel("MLAPI_TIME_SYNC", ChannelType.Unreliable, MLAPI_TIME_SYNC_CHANNEL),
-            new TransportChannel("MLAPI_DEFAULT_MESSAGE", ChannelType.Reliable, 3),
-            new TransportChannel("MLAPI_POSITION_UPDATE", ChannelType.UnreliableSequenced, 4),
-            new TransportChannel("MLAPI_ANIMATION_UPDATE", ChannelType.ReliableSequenced, 5),
-            new TransportChannel("MLAPI_NAV_AGENT_STATE", ChannelType.ReliableSequenced, 6),
-            new TransportChannel("MLAPI_NAV_AGENT_CORRECTION", ChannelType.UnreliableSequenced, 7),
-            new TransportChannel(nameof(MLAPI_RELIABLE_RPC_CHANNEL), ChannelType.ReliableSequenced, MLAPI_RELIABLE_RPC_CHANNEL),
-            new TransportChannel(nameof(MLAPI_UNRELIABLE_RPC_CHANNEL), ChannelType.Unreliable, MLAPI_UNRELIABLE_RPC_CHANNEL),
-            new TransportChannel("STDRPC", ChannelType.ReliableSequenced, MLAPI_STDRPC_CHANNEL),
-            new TransportChannel("TIME_SYNC", ChannelType.Unreliable, MLAPI_TIME_SYNC_CHANNEL),
-            new TransportChannel("DEFAULT_MESSAGE", ChannelType.Reliable, MLAPI_DEFAULT_MESSAGE_CHANNEL),
-            new TransportChannel("POSITION_UPDATE", ChannelType.UnreliableSequenced, MLAPI_POSITION_UPDATE_CHANNEL),
-            new TransportChannel("ANIMATION_UPDATE", ChannelType.ReliableSequenced,MLAPI_ANIMATION_UPDATE_CHANNEL ),
-            new TransportChannel("NAV_AGENT_STATE", ChannelType.ReliableSequenced,MLAPI_NAV_AGENT_STATE_CHANNEL),
-            new TransportChannel("NAV_AGENT_CORRECTION", ChannelType.UnreliableSequenced, MLAPI_NAV_AGENT_CORRECTION_CHANNEL),
-
-            new TransportChannel(TransportType.MLAPI_STDRPC_CHANNEL, ChannelType.ReliableSequenced),
-            new TransportChannel(TransportType.MLAPI_TIME_SYNC_CHANNEL, ChannelType.Unreliable),
-            new TransportChannel(TransportType.MLAPI_DEFAULT_MESSAGE_CHANNEL, ChannelType.Reliable),
-            new TransportChannel(TransportType.MLAPI_POSITION_UPDATE_CHANNEL, ChannelType.UnreliableSequenced),
-            new TransportChannel(TransportType.MLAPI_ANIMATION_UPDATE_CHANNEL, ChannelType.ReliableSequenced),
-            new TransportChannel(TransportType.MLAPI_NAV_AGENT_STATE_CHANNEL, ChannelType.ReliableSequenced),
-            new TransportChannel(TransportType.MLAPI_NAV_AGENT_CORRECTION_CHANNEL, ChannelType.UnreliableSequenced),
-
-
             new TransportChannel(Channel.Internal, ChannelType.ReliableFragmentedSequenced),
             new TransportChannel(Channel.StdRpc, ChannelType.ReliableSequenced),
+            new TransportChannel(Channel.ReliableRPC, ChannelType.ReliableSequenced),
+            new TransportChannel(Channel.UnreliableRPC, ChannelType.UnreliableSequenced),
+            new TransportChannel(Channel.TimeSync, ChannelType.Unreliable),
             new TransportChannel(Channel.SyncChannel, ChannelType.Unreliable),
             new TransportChannel(Channel.DefaultMessage, ChannelType.Reliable),
             new TransportChannel(Channel.PositionUpdate, ChannelType.UnreliableSequenced),
