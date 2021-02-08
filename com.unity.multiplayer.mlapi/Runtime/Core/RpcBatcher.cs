@@ -89,10 +89,13 @@ namespace MLAPI
         {
             switch (queueItem.queueItemType)
             {
+                // todo: revisit .resize() and .ToArry() usage, for performance
                 case RpcQueueContainer.QueueItemType.ServerRpc:
                     Array.Resize(ref networkIdList, 1);
                     networkIdList[0] = queueItem.networkId;
                     break;
+                default:
+                    // todo: consider the implications of default usage of queueItem.clientIds
                 case RpcQueueContainer.QueueItemType.ClientRpc:
                     // copy the list
                     networkIdList = queueItem.clientIds.ToArray();
