@@ -3,6 +3,7 @@ using MLAPI.Serialization;
 using MLAPI.Configuration;
 using MLAPI.Profiling;
 using MLAPI.Messaging;
+using MLAPI.Transports;
 using System.Collections.Generic;
 using System.Linq;
 using System;
@@ -14,7 +15,7 @@ namespace MLAPI
     {
         public class SendStream
         {
-            public byte Channel;
+            public Channel Channel;
             public PooledBitStream Stream;
             public PooledBitWriter Writer;
             public bool IsEmpty = true;

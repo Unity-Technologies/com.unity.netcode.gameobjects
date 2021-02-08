@@ -48,7 +48,7 @@ namespace MLAPI.Messaging
         /// <param name="stream">The message stream containing the data</param>
         /// <param name="channel">The channel to send the data on</param>
         /// <param name="security">The security settings to apply to the message</param>
-        public static void SendUnnamedMessage(List<ulong> clientIds, BitStream stream, byte channel = Transport.MLAPI_INTERNAL_CHANNEL, SecuritySendFlags security = SecuritySendFlags.None)
+        public static void SendUnnamedMessage(List<ulong> clientIds, BitStream stream, Channel channel = Channel.Internal, SecuritySendFlags security = SecuritySendFlags.None)
         {
             if (!NetworkingManager.Singleton.IsServer)
             {
@@ -66,7 +66,7 @@ namespace MLAPI.Messaging
         /// <param name="stream">The message stream containing the data</param>
         /// <param name="channel">The channel tos end the data on</param>
         /// <param name="security">The security settings to apply to the message</param>
-        public static void SendUnnamedMessage(ulong clientId, BitStream stream, byte channel = Transport.MLAPI_INTERNAL_CHANNEL, SecuritySendFlags security = SecuritySendFlags.None)
+        public static void SendUnnamedMessage(ulong clientId, BitStream stream, Channel channel = Channel.Internal, SecuritySendFlags security = SecuritySendFlags.None)
         {
             InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_UNNAMED_MESSAGE, channel, stream, security);
         }
@@ -160,7 +160,7 @@ namespace MLAPI.Messaging
         /// <param name="stream">The message stream containing the data</param>
         /// <param name="channel">The channel to send the data on</param>
         /// <param name="security">The security settings to apply to the message</param>
-        public static void SendNamedMessage(string name, ulong clientId, Stream stream, byte channelId = Transport.MLAPI_INTERNAL_CHANNEL, SecuritySendFlags security = SecuritySendFlags.None)
+        public static void SendNamedMessage(string name, ulong clientId, Stream stream, Channel channel = Channel.Internal, SecuritySendFlags security = SecuritySendFlags.None)
         {
             ulong hash = 0;
             switch (NetworkingManager.Singleton.NetworkConfig.RpcHashSize)
@@ -185,7 +185,7 @@ namespace MLAPI.Messaging
 
                 messageStream.CopyFrom(stream);
 
-                InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_NAMED_MESSAGE, channelId, messageStream, security);
+                InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_NAMED_MESSAGE, channel, messageStream, security);
             }
         }
 
@@ -197,7 +197,7 @@ namespace MLAPI.Messaging
         /// <param name="stream">The message stream containing the data</param>
         /// <param name="channel">The channel to send the data on</param>
         /// <param name="security">The security settings to apply to the message</param>
-        public static void SendNamedMessage(string name, List<ulong> clientIds, Stream stream, byte channel = Transport.MLAPI_INTERNAL_CHANNEL, SecuritySendFlags security = SecuritySendFlags.None)
+        public static void SendNamedMessage(string name, List<ulong> clientIds, Stream stream, Channel channel = Channel.Internal, SecuritySendFlags security = SecuritySendFlags.None)
         {
             ulong hash = 0;
             switch (NetworkingManager.Singleton.NetworkConfig.RpcHashSize)
