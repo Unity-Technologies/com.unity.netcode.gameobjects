@@ -165,7 +165,7 @@ namespace MLAPI.Messaging
                 }
 
                 // Send HailResponse
-                InternalMessageSender.Send(NetworkingManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_CERTIFICATE_HAIL_RESPONSE, Transport.MLAPI_INTERNAL_CHANNEL, outStream, SecuritySendFlags.None);
+                InternalMessageSender.Send(NetworkingManager.Singleton.ServerClientId, MLAPIConstants.MLAPI_CERTIFICATE_HAIL_RESPONSE, Channel.Internal, outStream, SecuritySendFlags.None);
             }
         }
 

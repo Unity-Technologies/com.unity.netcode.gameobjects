@@ -85,7 +85,6 @@ namespace MLAPI.Transports
 
         public enum TransportType : byte
         {
-            MLAPI_INTERNAL_CHANNEL,
             MLAPI_STDRPC_CHANNEL,
             MLAPI_TIME_SYNC_CHANNEL,
             MLAPI_DEFAULT_MESSAGE_CHANNEL,
@@ -95,7 +94,6 @@ namespace MLAPI.Transports
             MLAPI_NAV_AGENT_CORRECTION_CHANNEL
         };
 
-        public const byte MLAPI_INTERNAL_CHANNEL = 0;
         public const byte MLAPI_TIME_SYNC_CHANNEL = 2;
         public const byte MLAPI_RELIABLE_RPC_CHANNEL = 100;
         public const byte MLAPI_UNRELIABLE_RPC_CHANNEL = 101;
@@ -122,7 +120,6 @@ namespace MLAPI.Transports
         /// </summary>
         private readonly TransportChannel[] MLAPI_INTERNAL_CHANNELS =
         {
-            new TransportChannel("MLAPI_INTERNAL", ChannelType.ReliableFragmentedSequenced, MLAPI_INTERNAL_CHANNEL),
             new TransportChannel("MLAPI_TIME_SYNC", ChannelType.Unreliable, MLAPI_TIME_SYNC_CHANNEL),
             new TransportChannel("MLAPI_DEFAULT_MESSAGE", ChannelType.Reliable, 3),
             new TransportChannel("MLAPI_POSITION_UPDATE", ChannelType.UnreliableSequenced, 4),
@@ -131,7 +128,6 @@ namespace MLAPI.Transports
             new TransportChannel("MLAPI_NAV_AGENT_CORRECTION", ChannelType.UnreliableSequenced, 7),
             new TransportChannel(nameof(MLAPI_RELIABLE_RPC_CHANNEL), ChannelType.ReliableSequenced, MLAPI_RELIABLE_RPC_CHANNEL),
             new TransportChannel(nameof(MLAPI_UNRELIABLE_RPC_CHANNEL), ChannelType.Unreliable, MLAPI_UNRELIABLE_RPC_CHANNEL),
-            new TransportChannel("INTERNAL", ChannelType.ReliableFragmentedSequenced, MLAPI_INTERNAL_CHANNEL),
             new TransportChannel("STDRPC", ChannelType.ReliableSequenced, MLAPI_STDRPC_CHANNEL),
             new TransportChannel("TIME_SYNC", ChannelType.Unreliable, MLAPI_TIME_SYNC_CHANNEL),
             new TransportChannel("DEFAULT_MESSAGE", ChannelType.Reliable, MLAPI_DEFAULT_MESSAGE_CHANNEL),
@@ -140,7 +136,6 @@ namespace MLAPI.Transports
             new TransportChannel("NAV_AGENT_STATE", ChannelType.ReliableSequenced,MLAPI_NAV_AGENT_STATE_CHANNEL),
             new TransportChannel("NAV_AGENT_CORRECTION", ChannelType.UnreliableSequenced, MLAPI_NAV_AGENT_CORRECTION_CHANNEL),
 
-            new TransportChannel(TransportType.MLAPI_INTERNAL_CHANNEL, ChannelType.ReliableFragmentedSequenced),
             new TransportChannel(TransportType.MLAPI_STDRPC_CHANNEL, ChannelType.ReliableSequenced),
             new TransportChannel(TransportType.MLAPI_TIME_SYNC_CHANNEL, ChannelType.Unreliable),
             new TransportChannel(TransportType.MLAPI_DEFAULT_MESSAGE_CHANNEL, ChannelType.Reliable),
