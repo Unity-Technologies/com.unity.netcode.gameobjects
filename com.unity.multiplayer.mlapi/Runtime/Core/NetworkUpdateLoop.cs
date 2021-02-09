@@ -342,21 +342,13 @@ namespace MLAPI
             }
         }
 
-        public static uint FrameCount = 0;
         public static NetworkUpdateStage UpdateStage;
-
-        private static void AdvanceFrame()
-        {
-            ++FrameCount;
-        }
 
         private static readonly List<INetworkUpdateSystem> m_Initialization_List = new List<INetworkUpdateSystem>();
         private static INetworkUpdateSystem[] m_Initialization_Array = new INetworkUpdateSystem[0];
 
         private static void RunNetworkInitialization()
         {
-            AdvanceFrame();
-
             UpdateStage = NetworkUpdateStage.Initialization;
             int arrayLength = m_Initialization_Array.Length;
             for (int i = 0; i < arrayLength; i++)
