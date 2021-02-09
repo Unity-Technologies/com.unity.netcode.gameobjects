@@ -70,7 +70,7 @@ namespace MLAPI
 
             var rpcQueueContainer = NetworkingManager.Singleton.rpcQueueContainer;
             var isUsingBatching = rpcQueueContainer.IsUsingBatching();
-            var transportChannel = rpcDelivery == RpcDelivery.Reliable ? Transport.MLAPI_RELIABLE_RPC_CHANNEL : Transport.MLAPI_UNRELIABLE_RPC_CHANNEL;
+            var transportChannel = rpcDelivery == RpcDelivery.Reliable ? Channel.ReliableRPC : Channel.UnreliableRPC;
 
             if (IsHost)
             {
@@ -156,7 +156,7 @@ namespace MLAPI
             // This will start a new queue item entry and will then return the writer to the current frame's stream
             var rpcQueueContainer = NetworkingManager.Singleton.rpcQueueContainer;
             var isUsingBatching = rpcQueueContainer.IsUsingBatching();
-            var transportChannel = rpcDelivery == RpcDelivery.Reliable ? Transport.MLAPI_RELIABLE_RPC_CHANNEL : Transport.MLAPI_UNRELIABLE_RPC_CHANNEL;
+            var transportChannel = rpcDelivery == RpcDelivery.Reliable ? Channel.ReliableRPC : Channel.UnreliableRPC;
 
             ulong[] ClientIds = clientRpcParams.Send.TargetClientIds ?? NetworkingManager.Singleton.ConnectedClientsList.Select(c => c.ClientId).ToArray();
             if (clientRpcParams.Send.TargetClientIds != null && clientRpcParams.Send.TargetClientIds.Length == 0)
@@ -186,7 +186,7 @@ namespace MLAPI
                     rpcQueueContainer.SetLoopBackFrameItem(clientRpcParams.Send.UpdateStage);
 
                     //Switch to the outbound queue
-                    writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, Transport.MLAPI_RELIABLE_RPC_CHANNEL, 0, NetworkId,
+                    writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, Channel.ReliableRPC, 0, NetworkId,
                         ClientIds, QueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateManager.NetworkUpdateStage.LateUpdate);
 
                     if (!isUsingBatching)
@@ -457,7 +457,7 @@ namespace MLAPI
         private bool varInit = false;
 
         private readonly List<HashSet<int>> channelMappedNetworkedVarIndexes = new List<HashSet<int>>();
-        private readonly List<byte> channelsForNetworkedVarGroups = new List<byte>();
+        private readonly List<Channel> channelsForNetworkedVarGroups = new List<Channel>();
         internal readonly List<INetworkedVar> networkedVarFields = new List<INetworkedVar>();
 
         private static HashSet<MLAPI.NetworkedObject> touched = new HashSet<MLAPI.NetworkedObject>();
@@ -522,16 +522,12 @@ namespace MLAPI
 
             {
                 // Create index map for channels
-                Dictionary<byte, int> firstLevelIndex = new Dictionary<byte, int>();
+                Dictionary<Channel, int> firstLevelIndex = new Dictionary<Channel, int>();
                 int secondLevelCounter = 0;
 
                 for (int i = 0; i < networkedVarFields.Count; i++)
                 {
-                    // this could be cleaner.  The GetChannel() methods look for the SendChannel string channel name
-                    //  from the settings file, which could be easily misconfigured.  If a bogus channel is specified,
-                    //  GetChannelByte() will return the default, MLAPI_INTERNAL_CHANNEL
-                    string channelName = networkedVarFields[i].GetChannel();
-                    byte channel = Transport.GetChannelByte(channelName);
+                    Channel channel = networkedVarFields[i].GetChannel();
 
                     if (!firstLevelIndex.ContainsKey(channel))
                     {

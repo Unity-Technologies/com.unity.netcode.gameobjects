@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-
+using MLAPI.Exceptions;
 using MLAPI.Logging;
 using MLAPI.Transports.Tasks;
 using UnityEngine.Networking;
@@ -27,6 +27,17 @@ namespace MLAPI.Transports.UNET
         public int ServerListenPort = 7777;
         public int ServerWebsocketListenPort = 8887;
         public bool SupportWebsocket = false;
+
+        // user-definable channels.  To add your own channel, do something of the form:
+        //  #define MY_CHANNEL 0
+        //  ...
+        //  transport.Channels.Add(
+        //     new UnetChannel()
+        //       {
+        //         Id = Channel.ChannelUnused + MY_CHANNEL,  <<-- must offset from reserved channel offset in MLAPI SDK
+        //         Type = QosType.Unreliable
+        //       }
+        //  );
         public List<UnetChannel> Channels = new List<UnetChannel>();
 
         // Relay
@@ -41,8 +52,8 @@ namespace MLAPI.Transports.UNET
         private WeakReference temporaryBufferReference;
 
         // Lookup / translation
-        private readonly Dictionary<byte, int> channelNameToId = new Dictionary<byte, int>();
-        private readonly Dictionary<int, byte> channelIdToName = new Dictionary<int, byte>();
+        private readonly Dictionary<Channel, int> channelNameToId = new Dictionary<Channel, int>();
+        private readonly Dictionary<int, Channel> channelIdToName = new Dictionary<int, Channel>();
         private int serverConnectionId;
         private int serverHostId;
 
@@ -63,7 +74,7 @@ namespace MLAPI.Transports.UNET
             }
         }
 
-        public override void Send(ulong clientId, ArraySegment<byte> data, byte channel)
+        public override void Send(ulong clientId, ArraySegment<byte> data, Channel channel)
         {
             GetUnetConnectionDetails(clientId, out byte hostId, out ushort connectionId);
 
@@ -75,7 +86,7 @@ namespace MLAPI.Transports.UNET
             }
             else
             {
-                channelId = channelNameToId[MLAPI_INTERNAL_CHANNEL];
+                channelId = channelNameToId[Channel.Internal];
             }
 
             byte[] buffer;
@@ -125,7 +136,7 @@ namespace MLAPI.Transports.UNET
             RelayTransport.SendQueuedMessages(hostId, connectionId, out byte error);
         }
 
-        public override NetEventType PollEvent(out ulong clientId, out byte channel, out ArraySegment<byte> payload, out float receiveTime)
+        public override NetEventType PollEvent(out ulong clientId, out Channel channel, out ArraySegment<byte> payload, out float receiveTime)
         {
             NetworkEventType eventType = RelayTransport.Receive(out int hostId, out int connectionId, out int channelId, messageBuffer, messageBuffer.Length, out int receivedSize, out byte error);
 
@@ -163,7 +174,7 @@ namespace MLAPI.Transports.UNET
             }
             else
             {
-                channel = MLAPI_INTERNAL_CHANNEL;
+                channel = Channel.Internal;
             }
 
             if (connectTask != null && hostId == serverHostId && connectionId == serverConnectionId)
@@ -345,6 +356,7 @@ namespace MLAPI.Transports.UNET
         {
             ConnectionConfig config = new ConnectionConfig();
 
+            // MLAPI built-in channels
             for (int i = 0; i < MLAPI_CHANNELS.Length; i++)
             {
                 int channelId = AddMLAPIChannel(MLAPI_CHANNELS[i].Type, config);
@@ -353,10 +365,15 @@ namespace MLAPI.Transports.UNET
                 channelNameToId.Add(MLAPI_CHANNELS[i].Id, channelId);
             }
 
+            // Custom user-added channels
             for (int i = 0; i < Channels.Count; i++)
             {
                 int channelId = AddUNETChannel(Channels[i].Type, config);
 
+                if (channelNameToId.ContainsKey(Channels[i].Id))
+                {
+                    throw new InvalidChannelException("Channel " + channelId + " already exists");
+                }
                 channelIdToName.Add(channelId, Channels[i].Id);
                 channelNameToId.Add(Channels[i].Id, channelId);
             }

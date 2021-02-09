@@ -1,20 +1,20 @@
+using System;
+using System.IO;
+using System.Linq;
+using System.Collections.Generic;
 using MLAPI.Serialization.Pooled;
 using MLAPI.Serialization;
 using MLAPI.Configuration;
 using MLAPI.Profiling;
-using MLAPI.Messaging;
-using System.Collections.Generic;
-using System.Linq;
-using System;
-using System.IO;
+using MLAPI.Transports;
 
-namespace MLAPI
+namespace MLAPI.Messaging
 {
     internal class RpcBatcher
     {
         public class SendStream
         {
-            public byte Channel;
+            public Channel Channel;
             public PooledBitStream Stream;
             public PooledBitWriter Writer;
             public bool IsEmpty = true;

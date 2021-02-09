@@ -82,7 +82,7 @@ namespace MLAPI.Transports.Multiplex
             }
         }
 
-        public override NetEventType PollEvent(out ulong clientId, out byte channel, out ArraySegment<byte> payload, out float receiveTime)
+        public override NetEventType PollEvent(out ulong clientId, out Channel channel, out ArraySegment<byte> payload, out float receiveTime)
         {
             if (_lastProcessedTransportIndex >= Transports.Length - 1)
                 _lastProcessedTransportIndex = 0;
@@ -112,7 +112,7 @@ namespace MLAPI.Transports.Multiplex
             return NetEventType.Nothing;
         }
 
-        public override void Send(ulong clientId, ArraySegment<byte> data, byte channel)
+        public override void Send(ulong clientId, ArraySegment<byte> data, Channel channel)
         {
             GetMultiplexTransportDetails(clientId, out byte transportId, out ulong connectionId);
 

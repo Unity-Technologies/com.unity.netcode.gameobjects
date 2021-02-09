@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using MLAPI.Messaging;
 using MLAPI.Serialization;
+using MLAPI.Transports;
 using NUnit.Framework;
 
 namespace MLAPI.EditorTests
@@ -24,7 +25,7 @@ namespace MLAPI.EditorTests
                 {
                     networkId = 123,
                     clientIds = new ulong[] { 123 },
-                    channel = 123,
+                    channel = Channel.ChannelUnused + 123,
                     queueItemType = i % 2 == 0 ? RpcQueueContainer.QueueItemType.ServerRpc : RpcQueueContainer.QueueItemType.ClientRpc,
                     messageData = new ArraySegment<byte>(randomData, 0, randomData.Length)
                 };
@@ -84,7 +85,7 @@ namespace MLAPI.EditorTests
                 {
                     networkId = 123,
                     clientIds = new ulong[] { 123 },
-                    channel = 123,
+                    channel = Channel.ChannelUnused + 123,
                     queueItemType = i % 2 == 0 ? RpcQueueContainer.QueueItemType.ServerRpc : RpcQueueContainer.QueueItemType.ClientRpc,
                     messageData = new ArraySegment<byte>(randomData, 0, randomData.Length)
                 };
