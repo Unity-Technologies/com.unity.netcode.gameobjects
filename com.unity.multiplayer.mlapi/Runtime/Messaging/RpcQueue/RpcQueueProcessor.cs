@@ -205,7 +205,7 @@ namespace MLAPI.Messaging
         /// </summary>
         /// <param name="clientId"> clientId to send to</param>
         /// <param name="sendStream"> the stream to send</param>
-        private static void SendCallback(ulong clientId, MLAPI.RpcBatcher.SendStream sendStream)
+        private static void SendCallback(ulong clientId, RpcBatcher.SendStream sendStream)
         {
             var length = (int)sendStream.Stream.Length;
             var bytes = sendStream.Stream.GetBuffer();
