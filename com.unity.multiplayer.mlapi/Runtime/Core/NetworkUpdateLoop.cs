@@ -8,7 +8,7 @@ namespace MLAPI
 {
     public interface INetworkUpdateSystem
     {
-        void NetworkUpdate();
+        void NetworkUpdate(NetworkUpdateStage updateStage);
     }
 
     public enum NetworkUpdateStage : byte
@@ -36,43 +36,106 @@ namespace MLAPI
                 if (playerLoopSystem.type == typeof(Initialization))
                 {
                     var subsystems = playerLoopSystem.subSystemList.ToList();
-                    subsystems.Add(NetworkInitialization.CreateLoopSystem());
+                    {
+                        // insert at the bottom of `Initialization`
+                        subsystems.Add(NetworkInitialization.CreateLoopSystem());
+                    }
                     playerLoopSystem.subSystemList = subsystems.ToArray();
                 }
                 else if (playerLoopSystem.type == typeof(EarlyUpdate))
                 {
                     var subsystems = playerLoopSystem.subSystemList.ToList();
-                    subsystems.Insert(0, NetworkEarlyUpdate.CreateLoopSystem());
+                    {
+                        int indexOfScriptRunDelayedStartupFrame = subsystems.FindIndex(s => s.type == typeof(EarlyUpdate.ScriptRunDelayedStartupFrame));
+                        if (indexOfScriptRunDelayedStartupFrame < 0)
+                        {
+                            Debug.LogError($"{nameof(NetworkUpdateLoop)}.{nameof(Initialize)}: Cannot find index of `{nameof(EarlyUpdate.ScriptRunDelayedStartupFrame)}` loop system in `{nameof(EarlyUpdate)}`'s subsystem list!");
+                            return;
+                        }
+
+                        // insert before `EarlyUpdate.ScriptRunDelayedStartupFrame`
+                        subsystems.Insert(indexOfScriptRunDelayedStartupFrame, NetworkEarlyUpdate.CreateLoopSystem());
+                    }
                     playerLoopSystem.subSystemList = subsystems.ToArray();
                 }
                 else if (playerLoopSystem.type == typeof(FixedUpdate))
                 {
                     var subsystems = playerLoopSystem.subSystemList.ToList();
-                    subsystems.Insert(0, NetworkFixedUpdate.CreateLoopSystem());
+                    {
+                        int indexOfScriptRunBehaviourFixedUpdate = subsystems.FindIndex(s => s.type == typeof(FixedUpdate.ScriptRunBehaviourFixedUpdate));
+                        if (indexOfScriptRunBehaviourFixedUpdate < 0)
+                        {
+                            Debug.LogError($"{nameof(NetworkUpdateLoop)}.{nameof(Initialize)}: Cannot find index of `{nameof(FixedUpdate.ScriptRunBehaviourFixedUpdate)}` loop system in `{nameof(FixedUpdate)}`'s subsystem list!");
+                            return;
+                        }
+
+                        // insert before `FixedUpdate.ScriptRunBehaviourFixedUpdate`
+                        subsystems.Insert(indexOfScriptRunBehaviourFixedUpdate, NetworkFixedUpdate.CreateLoopSystem());
+                    }
                     playerLoopSystem.subSystemList = subsystems.ToArray();
                 }
                 else if (playerLoopSystem.type == typeof(PreUpdate))
                 {
                     var subsystems = playerLoopSystem.subSystemList.ToList();
-                    subsystems.Insert(0, NetworkPreUpdate.CreateLoopSystem());
+                    {
+                        int indexOfPhysicsUpdate = subsystems.FindIndex(s => s.type == typeof(PreUpdate.PhysicsUpdate));
+                        if (indexOfPhysicsUpdate < 0)
+                        {
+                            Debug.LogError($"{nameof(NetworkUpdateLoop)}.{nameof(Initialize)}: Cannot find index of `{nameof(PreUpdate.PhysicsUpdate)}` loop system in `{nameof(PreUpdate)}`'s subsystem list!");
+                            return;
+                        }
+
+                        // insert before `PreUpdate.PhysicsUpdate`
+                        subsystems.Insert(indexOfPhysicsUpdate, NetworkPreUpdate.CreateLoopSystem());
+                    }
                     playerLoopSystem.subSystemList = subsystems.ToArray();
                 }
                 else if (playerLoopSystem.type == typeof(Update))
                 {
                     var subsystems = playerLoopSystem.subSystemList.ToList();
-                    subsystems.Insert(0, NetworkUpdate.CreateLoopSystem());
+                    {
+                        int indexOfScriptRunBehaviourUpdate = subsystems.FindIndex(s => s.type == typeof(Update.ScriptRunBehaviourUpdate));
+                        if (indexOfScriptRunBehaviourUpdate < 0)
+                        {
+                            Debug.LogError($"{nameof(NetworkUpdateLoop)}.{nameof(Initialize)}: Cannot find index of `{nameof(Update.ScriptRunBehaviourUpdate)}` loop system in `{nameof(Update)}`'s subsystem list!");
+                            return;
+                        }
+
+                        // insert before `Update.ScriptRunBehaviourUpdate`
+                        subsystems.Insert(indexOfScriptRunBehaviourUpdate, NetworkUpdate.CreateLoopSystem());
+                    }
                     playerLoopSystem.subSystemList = subsystems.ToArray();
                 }
                 else if (playerLoopSystem.type == typeof(PreLateUpdate))
                 {
                     var subsystems = playerLoopSystem.subSystemList.ToList();
-                    subsystems.Insert(0, NetworkPreLateUpdate.CreateLoopSystem());
+                    {
+                        int indexOfScriptRunBehaviourLateUpdate = subsystems.FindIndex(s => s.type == typeof(PreLateUpdate.ScriptRunBehaviourLateUpdate));
+                        if (indexOfScriptRunBehaviourLateUpdate < 0)
+                        {
+                            Debug.LogError($"{nameof(NetworkUpdateLoop)}.{nameof(Initialize)}: Cannot find index of `{nameof(PreLateUpdate.ScriptRunBehaviourLateUpdate)}` loop system in `{nameof(PreLateUpdate)}`'s subsystem list!");
+                            return;
+                        }
+
+                        // insert before `PreLateUpdate.ScriptRunBehaviourLateUpdate`
+                        subsystems.Insert(indexOfScriptRunBehaviourLateUpdate, NetworkPreLateUpdate.CreateLoopSystem());
+                    }
                     playerLoopSystem.subSystemList = subsystems.ToArray();
                 }
                 else if (playerLoopSystem.type == typeof(PostLateUpdate))
                 {
                     var subsystems = playerLoopSystem.subSystemList.ToList();
-                    subsystems.Add(NetworkPostLateUpdate.CreateLoopSystem());
+                    {
+                        int indexOfPlayerSendFrameComplete = subsystems.FindIndex(s => s.type == typeof(PostLateUpdate.PlayerSendFrameComplete));
+                        if (indexOfPlayerSendFrameComplete < 0)
+                        {
+                            Debug.LogError($"{nameof(NetworkUpdateLoop)}.{nameof(Initialize)}: Cannot find index of `{nameof(PostLateUpdate.PlayerSendFrameComplete)}` loop system in `{nameof(PostLateUpdate)}`'s subsystem list!");
+                            return;
+                        }
+
+                        // insert after `PostLateUpdate.PlayerSendFrameComplete`
+                        subsystems.Insert(indexOfPlayerSendFrameComplete + 1, NetworkPostLateUpdate.CreateLoopSystem());
+                    }
                     playerLoopSystem.subSystemList = subsystems.ToArray();
                 }
 
@@ -353,7 +416,7 @@ namespace MLAPI
             int arrayLength = m_Initialization_Array.Length;
             for (int i = 0; i < arrayLength; i++)
             {
-                m_Initialization_Array[i].NetworkUpdate();
+                m_Initialization_Array[i].NetworkUpdate(UpdateStage);
             }
         }
 
@@ -366,7 +429,7 @@ namespace MLAPI
             int arrayLength = m_EarlyUpdate_Array.Length;
             for (int i = 0; i < arrayLength; i++)
             {
-                m_EarlyUpdate_Array[i].NetworkUpdate();
+                m_EarlyUpdate_Array[i].NetworkUpdate(UpdateStage);
             }
         }
 
@@ -379,7 +442,7 @@ namespace MLAPI
             int arrayLength = m_FixedUpdate_Array.Length;
             for (int i = 0; i < arrayLength; i++)
             {
-                m_FixedUpdate_Array[i].NetworkUpdate();
+                m_FixedUpdate_Array[i].NetworkUpdate(UpdateStage);
             }
         }
 
@@ -392,7 +455,7 @@ namespace MLAPI
             int arrayLength = m_PreUpdate_Array.Length;
             for (int i = 0; i < arrayLength; i++)
             {
-                m_PreUpdate_Array[i].NetworkUpdate();
+                m_PreUpdate_Array[i].NetworkUpdate(UpdateStage);
             }
         }
 
@@ -405,7 +468,7 @@ namespace MLAPI
             int arrayLength = m_Update_Array.Length;
             for (int i = 0; i < arrayLength; i++)
             {
-                m_Update_Array[i].NetworkUpdate();
+                m_Update_Array[i].NetworkUpdate(UpdateStage);
             }
         }
 
@@ -418,7 +481,7 @@ namespace MLAPI
             int arrayLength = m_PreLateUpdate_Array.Length;
             for (int i = 0; i < arrayLength; i++)
             {
-                m_PreLateUpdate_Array[i].NetworkUpdate();
+                m_PreLateUpdate_Array[i].NetworkUpdate(UpdateStage);
             }
         }
 
@@ -431,7 +494,7 @@ namespace MLAPI
             int arrayLength = m_PostLateUpdate_Array.Length;
             for (int i = 0; i < arrayLength; i++)
             {
-                m_PostLateUpdate_Array[i].NetworkUpdate();
+                m_PostLateUpdate_Array[i].NetworkUpdate(UpdateStage);
             }
         }
     }
