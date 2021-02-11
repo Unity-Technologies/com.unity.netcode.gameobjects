@@ -93,6 +93,10 @@ namespace MLAPI
         /// </summary>
         [HideInInspector]
         public static LogLevel LogLevel = LogLevel.Normal;
+
+        [SerializeField]
+        private LogLevel LogLevelLocal = LogLevel.Normal;
+
         /// <summary>
         /// Gets the networkId of the server
         /// </summary>
@@ -360,6 +364,11 @@ namespace MLAPI
             SpawnManager = new SpawnManager(this);
             PooledBitReaders = new BitReaderPool(this);
             NetworkConfig.NetManager = this;
+
+            rpcQueueContainer = new RpcQueueContainer(this, false, LoopbackEnabled);
+            //Note: Since frame history is not being used, this is set to 0
+            //To test frame history, increase the number to (n) where n > 0
+            rpcQueueContainer.Initialize(0);
 
             if (LogLevel <= LogLevel.Developer) NetworkLog.LogInfo("Init()");
 
@@ -722,6 +731,10 @@ namespace MLAPI
             //Note: Since frame history is not being used, this is set to 0
             //To test frame history, increase the number to (n) where n > 0
             rpcQueueContainer.Initialize(0);
+
+            //LogLevel is shared by all instances of NetworkingManager. If multiple NetworkingManagers start up
+            //with different LogLevels, the last one to initialize wins. 
+            LogLevel = LogLevelLocal;
         }
 
         private float m_LastReceiveTickTime;

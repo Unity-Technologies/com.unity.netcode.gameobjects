@@ -57,6 +57,8 @@ namespace MLAPI.Transports.UNET
         private int serverConnectionId;
         private int serverHostId;
 
+        private RelayTransport relayTransport = new RelayTransport();
+
         private SocketTask connectTask;
         public override ulong ServerClientId => GetMLAPIClientId(0, 0, true);
 
@@ -121,10 +123,10 @@ namespace MLAPI.Transports.UNET
             }
 
             if (MessageSendMode == SendMode.Queued) {
-                RelayTransport.QueueMessageForSending(hostId, connectionId, channelId, buffer, data.Count, out byte error);
+                relayTransport.QueueMessageForSending(hostId, connectionId, channelId, buffer, data.Count, out byte error);
             }
             else {
-                RelayTransport.Send(hostId, connectionId, channelId, buffer, data.Count, out byte error);
+                relayTransport.Send(hostId, connectionId, channelId, buffer, data.Count, out byte error);
             }
         }
 
@@ -133,12 +135,18 @@ namespace MLAPI.Transports.UNET
         {
             GetUnetConnectionDetails(clientId, out byte hostId, out ushort connectionId);
 
-            RelayTransport.SendQueuedMessages(hostId, connectionId, out byte error);
+            relayTransport.SendQueuedMessages(hostId, connectionId, out byte error);
         }
 
         public override NetEventType PollEvent(out ulong clientId, out Channel channel, out ArraySegment<byte> payload, out float receiveTime)
         {
-            NetworkEventType eventType = RelayTransport.Receive(out int hostId, out int connectionId, out int channelId, messageBuffer, messageBuffer.Length, out int receivedSize, out byte error);
+            NetworkEventType eventType = relayTransport.Receive(out int hostId, out int connectionId, out int channelId, messageBuffer, messageBuffer.Length, out int receivedSize, out byte error);
+
+            if(eventType != NetworkEventType.Nothing )
+            {
+                string serverclient = NetManager.IsServer ? "SERVER" : "CLIENT";
+                UnityEngine.Debug.Log($"[{serverclient}]: Received from client {hostId},{connectionId} event {eventType}");
+            }
 
             clientId = GetMLAPIClientId((byte) hostId, (ushort) connectionId, false);
 
@@ -160,7 +168,7 @@ namespace MLAPI.Transports.UNET
                     temporaryBufferReference = new WeakReference(tempBuffer);
                 }
 
-                eventType = RelayTransport.Receive(out hostId, out connectionId, out channelId, tempBuffer, tempBuffer.Length, out receivedSize, out error);
+                eventType = relayTransport.Receive(out hostId, out connectionId, out channelId, tempBuffer, tempBuffer.Length, out receivedSize, out error);
                 payload = new ArraySegment<byte>(tempBuffer, 0, receivedSize);
             }
             else
@@ -235,8 +243,8 @@ namespace MLAPI.Transports.UNET
         {
             SocketTask task = SocketTask.Working;
 
-            serverHostId = RelayTransport.AddHost(new HostTopology(GetConfig(), 1), false);
-            serverConnectionId = RelayTransport.Connect(serverHostId, ConnectAddress, ConnectPort, 0, out byte error);
+            serverHostId = relayTransport.AddHost(new HostTopology(GetConfig(), 2), false);
+            serverConnectionId = relayTransport.Connect(serverHostId, ConnectAddress, ConnectPort, 0, out byte error);
 
             NetworkError connectError = (NetworkError)error;
 
@@ -279,7 +287,7 @@ namespace MLAPI.Transports.UNET
 
             }
 
-            int normalHostId = RelayTransport.AddHost(topology, ServerListenPort, true);
+            int normalHostId = relayTransport.AddHost(topology, ServerListenPort, true);
 
             return SocketTask.Done.AsTasks();
         }
@@ -288,12 +296,12 @@ namespace MLAPI.Transports.UNET
         {
             GetUnetConnectionDetails(clientId, out byte hostId, out ushort connectionId);
 
-            RelayTransport.Disconnect((int) hostId, (int) connectionId, out byte error);
+            relayTransport.Disconnect((int) hostId, (int) connectionId, out byte error);
         }
 
         public override void DisconnectLocalClient()
         {
-            RelayTransport.Disconnect(serverHostId, serverConnectionId, out byte error);
+            relayTransport.Disconnect(serverHostId, serverConnectionId, out byte error);
         }
 
         public override ulong GetCurrentRtt(ulong clientId)
@@ -435,9 +443,9 @@ namespace MLAPI.Transports.UNET
 
         private void UpdateRelay()
         {
-            RelayTransport.Enabled = UseMLAPIRelay;
-            RelayTransport.RelayAddress = MLAPIRelayAddress;
-            RelayTransport.RelayPort = (ushort)MLAPIRelayPort;
+            relayTransport.Enabled = UseMLAPIRelay;
+            relayTransport.RelayAddress = MLAPIRelayAddress;
+            relayTransport.RelayPort = (ushort)MLAPIRelayPort;
         }
     }
 }

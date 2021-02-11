@@ -32,7 +32,7 @@ namespace MLAPI.Logging
         }
 
         // MLAPI internal logging
-        internal static void LogInfo(string message) => Debug.Log("[MLAPI] " + message);
+        internal static void LogInfo(string message) => Debug.Log($"[MLAPI]" + message);
         internal static void LogWarning(string message) => Debug.LogWarning("[MLAPI] " + message);
         internal static void LogError(string message) => Debug.LogError("[MLAPI] " + message);
 

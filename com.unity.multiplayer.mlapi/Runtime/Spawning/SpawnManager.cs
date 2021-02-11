@@ -7,11 +7,11 @@ using MLAPI.Exceptions;
 using MLAPI.Hashing;
 using MLAPI.Logging;
 using MLAPI.Messaging;
-using MLAPI.SceneManagement;
 using MLAPI.Security;
 using MLAPI.Serialization.Pooled;
 using MLAPI.Transports;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace MLAPI.Spawning
 {
@@ -290,7 +290,19 @@ namespace MLAPI.Spawning
                     {
                         GameObject prefab = networkingManager.NetworkConfig.NetworkedPrefabs[prefabIndex].Prefab;
 
-                        NetworkedObject networkedObject = ((position == null && rotation == null) ? MonoBehaviour.Instantiate(prefab) : MonoBehaviour.Instantiate(prefab, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity))).GetComponent<NetworkedObject>();
+                        Scene old_scene = SceneManager.GetActiveScene();
+                        NetworkedObject networkedObject;
+                        try
+                        {
+                            SceneManager.SetActiveScene(networkingManager.gameObject.scene);
+                            networkedObject = ((position == null && rotation == null) ?
+                                MonoBehaviour.Instantiate(prefab) :
+                                MonoBehaviour.Instantiate(prefab, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity))).GetComponent<NetworkedObject>();
+                        }
+                        finally
+                        {
+                            SceneManager.SetActiveScene(old_scene);
+                        }
 
                         if (parent != null)
                         {
