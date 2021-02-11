@@ -122,7 +122,7 @@ public class NetworkingManagerEditor : Editor
         runInLoopbackModeProperty = serializedObject.FindProperty("LoopbackEnabled");
         dontDestroyOnLoadProperty = serializedObject.FindProperty("DontDestroy");
         runInBackgroundProperty = serializedObject.FindProperty("RunInBackground");
-        logLevelProperty = serializedObject.FindProperty("LogLevel");
+        logLevelProperty = serializedObject.FindProperty("LogLevelLocal");
         networkConfigProperty = serializedObject.FindProperty("NetworkConfig");
 
         // NetworkConfig properties
@@ -163,7 +163,7 @@ public class NetworkingManagerEditor : Editor
         runInLoopbackModeProperty = serializedObject.FindProperty("LoopbackEnabled");
         dontDestroyOnLoadProperty = serializedObject.FindProperty("DontDestroy");
         runInBackgroundProperty = serializedObject.FindProperty("RunInBackground");
-        logLevelProperty = serializedObject.FindProperty("LogLevel");
+        logLevelProperty = serializedObject.FindProperty("LogLevelLocal");
         networkConfigProperty = serializedObject.FindProperty("NetworkConfig");
 
         // NetworkConfig properties

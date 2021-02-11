@@ -7,7 +7,7 @@ using UnityEngine.Networking;
 
 namespace MLAPI.Transports.UNET
 {
-    public static class RelayTransport
+    public class RelayTransport
     {
         private enum MessageType
         {
@@ -18,64 +18,64 @@ namespace MLAPI.Transports.UNET
             AddressReport
         }
 
-        private static byte defaultChannelId;
-        private static int relayConnectionId;
-        private static bool isClient = false;
-        private static string address;
-        private static ushort port;
-        private static List<ChannelQOS> channels = new List<ChannelQOS>();
+        private byte defaultChannelId;
+        private int relayConnectionId;
+        private bool isClient = false;
+        private string address;
+        private ushort port;
+        private List<ChannelQOS> channels = new List<ChannelQOS>();
 
-        public static bool Enabled { get; set; } = true;
-        public static string RelayAddress { get; set; } = "127.0.0.1";
-        public static ushort RelayPort { get; set; } = 8888;
+        public bool Enabled { get; set; } = true;
+        public string RelayAddress { get; set; } = "127.0.0.1";
+        public ushort RelayPort { get; set; } = 8888;
 
-        public static event Action<IPEndPoint> OnRemoteEndpointReported;
+        public event Action<IPEndPoint> OnRemoteEndpointReported;
 
-        public static int Connect(int hostId, string serverAddress, int serverPort, int exceptionConnectionId, out byte error)
+        public int Connect(int hostId, string serverAddress, int serverPort, int exceptionConnectionId, out byte error)
         {
             if (!Enabled) return NetworkTransport.Connect(hostId, serverAddress, serverPort, exceptionConnectionId, out error);
 
             isClient = true;
 
-            RelayTransport.address = serverAddress;
-            RelayTransport.port = (ushort)serverPort;
+            address = serverAddress;
+            port = (ushort)serverPort;
 
             relayConnectionId = NetworkTransport.Connect(hostId, RelayAddress, RelayPort, exceptionConnectionId, out error); // Requests connection
 
             return relayConnectionId;
         }
 
-        public static int ConnectWithSimulator(int hostId, string serverAddress, int serverPort, int exceptionConnectionId, out byte error, ConnectionSimulatorConfig conf)
+        public int ConnectWithSimulator(int hostId, string serverAddress, int serverPort, int exceptionConnectionId, out byte error, ConnectionSimulatorConfig conf)
         {
             if (!Enabled) return NetworkTransport.ConnectWithSimulator(hostId, serverAddress, serverPort, exceptionConnectionId, out error, conf);
 
             isClient = true;
 
-            RelayTransport.address = serverAddress;
-            RelayTransport.port = (ushort)serverPort;
+            address = serverAddress;
+            port = (ushort)serverPort;
 
             relayConnectionId = NetworkTransport.ConnectWithSimulator(hostId, RelayAddress, RelayPort, exceptionConnectionId, out error, conf); // Requests connection
 
             return relayConnectionId;
         }
 
-        public static int ConnectEndPoint(int hostId, EndPoint endPoint, int exceptionConnectionId, out byte error)
+        public int ConnectEndPoint(int hostId, EndPoint endPoint, int exceptionConnectionId, out byte error)
         {
             if (!Enabled) return NetworkTransport.ConnectEndPoint(hostId, endPoint, exceptionConnectionId, out error);
 
             isClient = true;
 
-            RelayTransport.address = ((IPEndPoint)endPoint).Address.ToString();
-            RelayTransport.port = (ushort)((IPEndPoint)endPoint).Port;
+            address = ((IPEndPoint)endPoint).Address.ToString();
+            port = (ushort)((IPEndPoint)endPoint).Port;
 
             relayConnectionId = NetworkTransport.Connect(hostId, RelayAddress, RelayPort, exceptionConnectionId, out error); // Requests connection
 
             return relayConnectionId;
         }
 
-        private static void SetChannelsFromTopology(HostTopology topology) => channels = topology.DefaultConfig.Channels;
+        private void SetChannelsFromTopology(HostTopology topology) => channels = topology.DefaultConfig.Channels;
 
-        public static int AddHost(HostTopology topology, bool createServer)
+        public int AddHost(HostTopology topology, bool createServer)
         {
             if (!Enabled) return NetworkTransport.AddHost(topology, 0, null);
 
@@ -91,7 +91,7 @@ namespace MLAPI.Transports.UNET
 
             return ret;
         }
-        public static int AddHost(HostTopology topology, int port, bool createServer)
+        public int AddHost(HostTopology topology, int port, bool createServer)
         {
             if (!Enabled) return NetworkTransport.AddHost(topology, port);
 
@@ -107,7 +107,7 @@ namespace MLAPI.Transports.UNET
 
             return ret;
         }
-        public static int AddHost(HostTopology topology, int port, string ip, bool createServer)
+        public int AddHost(HostTopology topology, int port, string ip, bool createServer)
         {
             if (!Enabled) return NetworkTransport.AddHost(topology, port, ip);
 
@@ -124,7 +124,7 @@ namespace MLAPI.Transports.UNET
             return ret;
         }
 
-        public static int AddHostWithSimulator(HostTopology topology, int minTimeout, int maxTimeout, int port, string ip, bool createServer)
+        public int AddHostWithSimulator(HostTopology topology, int minTimeout, int maxTimeout, int port, string ip, bool createServer)
         {
             if (!Enabled) return NetworkTransport.AddHostWithSimulator(topology, minTimeout, maxTimeout);
 
@@ -141,7 +141,7 @@ namespace MLAPI.Transports.UNET
             return ret;
         }
 
-        public static int AddHostWithSimulator(HostTopology topology, int minTimeout, int maxTimeout, bool createServer)
+        public int AddHostWithSimulator(HostTopology topology, int minTimeout, int maxTimeout, bool createServer)
         {
             if (!Enabled) return NetworkTransport.AddHostWithSimulator(topology, minTimeout, maxTimeout);
 
@@ -158,7 +158,7 @@ namespace MLAPI.Transports.UNET
             return ret;
         }
 
-        public static int AddHostWithSimulator(HostTopology topology, int minTimeout, int maxTimeout, int port, bool createServer)
+        public int AddHostWithSimulator(HostTopology topology, int minTimeout, int maxTimeout, int port, bool createServer)
         {
             if (!Enabled) return NetworkTransport.AddHostWithSimulator(topology, minTimeout, maxTimeout, port);
 
@@ -173,7 +173,7 @@ namespace MLAPI.Transports.UNET
             return ret;
         }
 
-        public static int AddWebsocketHost(HostTopology topology, int port, bool createServer)
+        public int AddWebsocketHost(HostTopology topology, int port, bool createServer)
         {
             if (!Enabled) return NetworkTransport.AddWebsocketHost(topology, port);
 
@@ -190,7 +190,7 @@ namespace MLAPI.Transports.UNET
             return ret;
         }
 
-        public static int AddWebsocketHost(HostTopology topology, int port, string ip, bool createServer)
+        public int AddWebsocketHost(HostTopology topology, int port, string ip, bool createServer)
         {
             if (!Enabled) return NetworkTransport.AddWebsocketHost(topology, port, ip);
 
@@ -208,7 +208,7 @@ namespace MLAPI.Transports.UNET
         }
 
         private static readonly byte[] disconnectBuffer = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0, (byte)MessageType.ClientDisconnect };
-        public static bool Disconnect(int hostId, int connectionId, out byte error)
+        public bool Disconnect(int hostId, int connectionId, out byte error)
         {
             if (!Enabled) return NetworkTransport.Disconnect(hostId, connectionId, out error);
 
@@ -222,7 +222,7 @@ namespace MLAPI.Transports.UNET
             return NetworkTransport.Disconnect(hostId, connectionId, out error);
         }
 
-        public static bool Send(int hostId, int connectionId, int channelId, byte[] buffer, int size, out byte error)
+        public bool Send(int hostId, int connectionId, int channelId, byte[] buffer, int size, out byte error)
         {
             if (!Enabled) return NetworkTransport.Send(hostId, connectionId, channelId, buffer, size, out error);
 
@@ -242,7 +242,7 @@ namespace MLAPI.Transports.UNET
             return NetworkTransport.Send(hostId, relayConnectionId, channelId, buffer, size, out error);
         }
 
-        public static bool QueueMessageForSending(int hostId, int connectionId, int channelId, byte[] buffer, int size, out byte error)
+        public bool QueueMessageForSending(int hostId, int connectionId, int channelId, byte[] buffer, int size, out byte error)
         {
             if (!Enabled) return NetworkTransport.QueueMessageForSending(hostId, connectionId, channelId, buffer, size, out error);
 
@@ -262,14 +262,14 @@ namespace MLAPI.Transports.UNET
             return NetworkTransport.QueueMessageForSending(hostId, relayConnectionId, channelId, buffer, size, out error);
         }
 
-        public static bool SendQueuedMessages(int hostId, int connectionId, out byte error)
+        public bool SendQueuedMessages(int hostId, int connectionId, out byte error)
         {
             if (!Enabled) return NetworkTransport.SendQueuedMessages(hostId, connectionId, out error);
 
             return NetworkTransport.SendQueuedMessages(hostId, relayConnectionId, out error);
         }
 
-        public static NetworkEventType ReceiveFromHost(int hostId, out int connectionId, out int channelId, byte[] buffer, int bufferSize, out int receivedSize, out byte error)
+        public NetworkEventType ReceiveFromHost(int hostId, out int connectionId, out int channelId, byte[] buffer, int bufferSize, out int receivedSize, out byte error)
         {
             if (!Enabled) return NetworkTransport.ReceiveFromHost(hostId, out connectionId, out channelId, buffer, bufferSize, out receivedSize, out error);
 
@@ -278,7 +278,7 @@ namespace MLAPI.Transports.UNET
             return BaseReceive(@event, hostId, ref connectionId, ref channelId, buffer, bufferSize, ref receivedSize, ref error);
         }
 
-        public static NetworkEventType Receive(out int hostId, out int connectionId, out int channelId, byte[] buffer, int bufferSize, out int receivedSize, out byte error)
+        public NetworkEventType Receive(out int hostId, out int connectionId, out int channelId, byte[] buffer, int bufferSize, out int receivedSize, out byte error)
         {
             if (!Enabled) return NetworkTransport.Receive(out hostId, out connectionId, out channelId, buffer, bufferSize, out receivedSize, out error);
 
@@ -287,7 +287,7 @@ namespace MLAPI.Transports.UNET
             return BaseReceive(@event, hostId, ref connectionId, ref channelId, buffer, bufferSize, ref receivedSize, ref error);
         }
 
-        private static NetworkEventType BaseReceive(NetworkEventType @event, int hostId, ref int connectionId, ref int channelId, byte[] buffer, int bufferSize, ref int receivedSize, ref byte error)
+        private NetworkEventType BaseReceive(NetworkEventType @event, int hostId, ref int connectionId, ref int channelId, byte[] buffer, int bufferSize, ref int receivedSize, ref byte error)
         {
             switch (@event)
             {
