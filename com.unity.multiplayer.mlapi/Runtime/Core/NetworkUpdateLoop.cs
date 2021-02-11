@@ -6,11 +6,15 @@ using System.Collections.Generic;
 
 namespace MLAPI
 {
+    /// <summary>
+    /// <para>The required interface of a network update system being updated by the network update loop.</para>
+    /// </summary>
     public interface INetworkUpdateSystem
     {
         void NetworkUpdate(NetworkUpdateStage updateStage);
     }
 
+    // todo: XML-doc
     public enum NetworkUpdateStage : byte
     {
         Initialization = 1,
@@ -22,6 +26,9 @@ namespace MLAPI
         PostLateUpdate = 6
     }
 
+    /// <summary>
+    /// <para>The class representing the network update loop injected into low-level player loop in Unity.</para>
+    /// </summary>
     public static class NetworkUpdateLoop
     {
         [RuntimeInitializeOnLoadMethod]
@@ -229,6 +236,7 @@ namespace MLAPI
             }
         }
 
+        // todo: XML-doc
         public static void RegisterAllNetworkUpdates(this INetworkUpdateSystem updateSystem)
         {
             RegisterNetworkUpdate(updateSystem, NetworkUpdateStage.Initialization);
@@ -240,6 +248,7 @@ namespace MLAPI
             RegisterNetworkUpdate(updateSystem, NetworkUpdateStage.PostLateUpdate);
         }
 
+        // todo: XML-doc
         public static void RegisterNetworkUpdate(this INetworkUpdateSystem updateSystem, NetworkUpdateStage updateStage = NetworkUpdateStage.Update)
         {
             switch (updateStage)
@@ -317,6 +326,7 @@ namespace MLAPI
             }
         }
 
+        // todo: XML-doc
         public static void UnregisterAllNetworkUpdates(this INetworkUpdateSystem updateSystem)
         {
             UnregisterNetworkUpdate(updateSystem, NetworkUpdateStage.Initialization);
@@ -328,6 +338,7 @@ namespace MLAPI
             UnregisterNetworkUpdate(updateSystem, NetworkUpdateStage.PostLateUpdate);
         }
 
+        // todo: XML-doc
         public static void UnregisterNetworkUpdate(this INetworkUpdateSystem updateSystem, NetworkUpdateStage updateStage = NetworkUpdateStage.Update)
         {
             switch (updateStage)
@@ -405,6 +416,7 @@ namespace MLAPI
             }
         }
 
+        // todo: XML-doc
         public static NetworkUpdateStage UpdateStage;
 
         private static readonly List<INetworkUpdateSystem> m_Initialization_List = new List<INetworkUpdateSystem>();
