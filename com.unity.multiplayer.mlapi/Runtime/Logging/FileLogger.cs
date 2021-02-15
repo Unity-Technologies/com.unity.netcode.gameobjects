@@ -1,4 +1,7 @@
+using System;
 using System.IO;
+
+#if DEVELOPMENT_BUILD || UNITY_EDITOR
 
 namespace MLAPI.Logging
 {
@@ -6,24 +9,35 @@ namespace MLAPI.Logging
     /// Helper class for logging
     /// Saves to a file identified by the process ID of each client
     /// This is useful when debugging what happens on multiple machines
-    /// ! Only recommended for debugging, not for production !
+    /// Only available for debugging on DEVELOPMENT_BUILD
     /// </summary>
-    public class FileLogger
+    public class FileLogger:IDisposable
     {
-        public static FileLogger Get() { return instance; }
-        private static FileLogger instance = new FileLogger();
-        private StreamWriter writer;
+        private static FileLogger m_Instance = null;
+        public static FileLogger Instance
+        {
+            get
+            {
+                if (m_Instance == null)
+                {
+                    m_Instance = new FileLogger();
+                }
+                return m_Instance;
+            }
+        }
+
+        private StreamWriter m_Writer;
 
         private FileLogger()
         {
             System.Diagnostics.Process p = System.Diagnostics.Process.GetCurrentProcess();
-            writer = new StreamWriter("log." + p.Id + ".txt");
-            writer.AutoFlush = true;
+            m_Writer = new StreamWriter("log." + p.Id + ".txt");
+            m_Writer.AutoFlush = true;
         }
 
-        ~FileLogger()
+        public void Dispose()
         {
-            writer.Close();
+            m_Writer.Dispose();
         }
 
         /// <summary>
@@ -32,7 +46,9 @@ namespace MLAPI.Logging
         /// </summary>
         public void Log(string line)
         {
-            writer.WriteLine(line);
+            m_Writer.WriteLine(line);
         }
     }
 }
+
+#endif
