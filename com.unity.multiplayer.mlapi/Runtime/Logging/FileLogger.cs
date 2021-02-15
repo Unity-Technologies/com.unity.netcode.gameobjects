@@ -9,7 +9,7 @@ namespace MLAPI.Logging
     /// Helper class for logging
     /// Saves to a file identified by the process ID of each client
     /// This is useful when debugging what happens on multiple machines
-    /// Only available for debugging on DEVELOPMENT_BUILD
+    /// Only available for debugging on DEVELOPMENT_BUILD or UNITY_EDITOR
     /// </summary>
     public class FileLogger:IDisposable
     {
