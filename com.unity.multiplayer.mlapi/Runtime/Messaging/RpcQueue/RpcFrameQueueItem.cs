@@ -14,7 +14,7 @@ namespace  MLAPI.Messaging
     /// </summary>
     public struct RpcFrameQueueItem
     {
-        public NetworkUpdateManager.NetworkUpdateStage   updateStage;
+        public NetworkUpdateStage                        updateStage;
         public RpcQueueContainer.QueueItemType           queueItemType;
         public SecuritySendFlags                         sendFlags;
         public ulong                                     networkId;          //Sender's network Identifier
