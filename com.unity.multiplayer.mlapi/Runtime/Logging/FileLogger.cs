@@ -7,8 +7,8 @@ namespace MLAPI.Logging
 {
     /// <summary>
     /// Helper class for logging
-    /// Saves to a file identified by the process ID of each client
-    /// This is useful when debugging what happens on multiple machines
+    /// Saves to a file identified by the current UTC epoch time. This is useful
+    /// when debugging what happens on multiple processes on the same machine
     /// Only available for debugging on DEVELOPMENT_BUILD or UNITY_EDITOR
     /// </summary>
     public class FileLogger:IDisposable
@@ -30,8 +30,7 @@ namespace MLAPI.Logging
 
         private FileLogger()
         {
-            System.Diagnostics.Process p = System.Diagnostics.Process.GetCurrentProcess();
-            m_Writer = new StreamWriter("log." + p.Id + ".txt");
+            m_Writer = new StreamWriter("log." + DateTimeOffset.UtcNow.ToUnixTimeSeconds() + ".txt");
             m_Writer.AutoFlush = true;
         }
 
