@@ -7,14 +7,16 @@ using UnityEngine.PlayerLoop;
 namespace MLAPI
 {
     /// <summary>
-    /// <para>The required interface of a network update system being updated by the network update loop.</para>
+    /// Defines the required interface of a network update system being executed by the network update loop.
     /// </summary>
     public interface INetworkUpdateSystem
     {
         void NetworkUpdate(NetworkUpdateStage updateStage);
     }
 
-    // todo: XML-doc
+    /// <summary>
+    /// Defines network update stages being executed by the network update loop.
+    /// </summary>
     public enum NetworkUpdateStage : byte
     {
         Initialization = 1,
@@ -27,7 +29,7 @@ namespace MLAPI
     }
 
     /// <summary>
-    /// <para>The class representing the network update loop injected into low-level player loop in Unity.</para>
+    /// Represents the network update loop injected into low-level player loop in Unity.
     /// </summary>
     public static class NetworkUpdateLoop
     {
@@ -236,7 +238,9 @@ namespace MLAPI
             }
         }
 
-        // todo: XML-doc
+        /// <summary>
+        /// Registers a network update system to be executed in all network update stages.
+        /// </summary>
         public static void RegisterAllNetworkUpdates(this INetworkUpdateSystem updateSystem)
         {
             RegisterNetworkUpdate(updateSystem, NetworkUpdateStage.Initialization);
@@ -248,7 +252,9 @@ namespace MLAPI
             RegisterNetworkUpdate(updateSystem, NetworkUpdateStage.PostLateUpdate);
         }
 
-        // todo: XML-doc
+        /// <summary>
+        /// Registers a network update system to be executed in a specific network update stage.
+        /// </summary>
         public static void RegisterNetworkUpdate(this INetworkUpdateSystem updateSystem, NetworkUpdateStage updateStage = NetworkUpdateStage.Update)
         {
             switch (updateStage)
@@ -326,7 +332,9 @@ namespace MLAPI
             }
         }
 
-        // todo: XML-doc
+        /// <summary>
+        /// Unregisters a network update system from all network update stages.
+        /// </summary>
         public static void UnregisterAllNetworkUpdates(this INetworkUpdateSystem updateSystem)
         {
             UnregisterNetworkUpdate(updateSystem, NetworkUpdateStage.Initialization);
@@ -338,7 +346,9 @@ namespace MLAPI
             UnregisterNetworkUpdate(updateSystem, NetworkUpdateStage.PostLateUpdate);
         }
 
-        // todo: XML-doc
+        /// <summary>
+        /// Unregisters a network update system from a specific network update stage.
+        /// </summary>
         public static void UnregisterNetworkUpdate(this INetworkUpdateSystem updateSystem, NetworkUpdateStage updateStage = NetworkUpdateStage.Update)
         {
             switch (updateStage)
@@ -416,7 +426,9 @@ namespace MLAPI
             }
         }
 
-        // todo: XML-doc
+        /// <summary>
+        /// The current network update stage being executed.
+        /// </summary>
         public static NetworkUpdateStage UpdateStage;
 
         private static readonly List<INetworkUpdateSystem> m_Initialization_List = new List<INetworkUpdateSystem>();
