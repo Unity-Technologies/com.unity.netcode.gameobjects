@@ -75,9 +75,7 @@ namespace MLAPI.RuntimeTests
             const int kNetPostLateUpdateIndex = 6;
             int[] netUpdates = new int[7];
 
-            yield return new WaitForEndOfFrame();
             bool isTesting = false;
-
             using (var plainScript = new MyPlainScript())
             {
                 plainScript.UpdateCallbacks = new NetworkUpdateCallbacks
@@ -134,20 +132,21 @@ namespace MLAPI.RuntimeTests
                 };
 
                 plainScript.Initialize();
-                yield return new WaitForEndOfFrame();
+                int nextFrameNumber = Time.frameCount + 1;
+                yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
                 isTesting = true;
 
-                for (int i = 0; i < 16; i++)
-                {
-                    Assert.AreEqual(0, netUpdates[kNetInitializationIndex]);
-                    Assert.AreEqual(i, netUpdates[kNetEarlyUpdateIndex]);
-                    Assert.AreEqual(0, netUpdates[kNetFixedUpdateIndex]);
-                    Assert.AreEqual(0, netUpdates[kNetPreUpdateIndex]);
-                    Assert.AreEqual(0, netUpdates[kNetUpdateIndex]);
-                    Assert.AreEqual(i, netUpdates[kNetPreLateUpdateIndex]);
-                    Assert.AreEqual(0, netUpdates[kNetPostLateUpdateIndex]);
-                    yield return new WaitForEndOfFrame();
-                }
+                const int kRunTotalFrames = 16;
+                int waitFrameNumber = Time.frameCount + kRunTotalFrames;
+                yield return new WaitUntil(() => Time.frameCount >= waitFrameNumber);
+
+                Assert.AreEqual(0, netUpdates[kNetInitializationIndex]);
+                Assert.AreEqual(kRunTotalFrames, netUpdates[kNetEarlyUpdateIndex]);
+                Assert.AreEqual(0, netUpdates[kNetFixedUpdateIndex]);
+                Assert.AreEqual(0, netUpdates[kNetPreUpdateIndex]);
+                Assert.AreEqual(0, netUpdates[kNetUpdateIndex]);
+                Assert.AreEqual(kRunTotalFrames, netUpdates[kNetPreLateUpdateIndex]);
+                Assert.AreEqual(0, netUpdates[kNetPostLateUpdateIndex]);
             }
         }
 
@@ -219,9 +218,7 @@ namespace MLAPI.RuntimeTests
             const int kMonoLateUpdateIndex = 2;
             int[] monoUpdates = new int[3];
 
-            yield return new WaitForEndOfFrame();
             bool isTesting = false;
-
             {
                 var gameObject = new GameObject($"{nameof(NetworkUpdateLoopTests)}.{nameof(UpdateStagesMixed)} (Dummy)");
                 var gameScript = gameObject.AddComponent<MyGameScript>();
@@ -280,15 +277,16 @@ namespace MLAPI.RuntimeTests
                     }
                 };
 
-                yield return new WaitForEndOfFrame();
+                int nextFrameNumber = Time.frameCount + 1;
+                yield return new WaitUntil(() => Time.frameCount >= nextFrameNumber);
                 isTesting = true;
 
-                for (int i = 0; i < 16; i++)
-                {
-                    Assert.AreEqual(i, netUpdates[kNetPreUpdateIndex]);
-                    Assert.AreEqual(netUpdates[kNetPreUpdateIndex], monoUpdates[kMonoUpdateIndex]);
-                    yield return new WaitForEndOfFrame();
-                }
+                const int kRunTotalFrames = 16;
+                int waitFrameNumber = Time.frameCount + kRunTotalFrames;
+                yield return new WaitUntil(() => Time.frameCount >= waitFrameNumber);
+
+                Assert.AreEqual(kRunTotalFrames, netUpdates[kNetPreUpdateIndex]);
+                Assert.AreEqual(netUpdates[kNetPreUpdateIndex], monoUpdates[kMonoUpdateIndex]);
 
                 GameObject.DestroyImmediate(gameObject);
             }
