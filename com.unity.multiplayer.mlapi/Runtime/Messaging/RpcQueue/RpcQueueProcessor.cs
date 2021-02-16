@@ -62,6 +62,7 @@ namespace MLAPI.Messaging
 
                         NetworkingManager.InvokeRpc(currentQueueItem);
                         ProfilerStatManager.rpcsQueueProc.Record();
+                        PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCQueueProcessed);
                         currentQueueItem = CurrentFrame.GetNextQueueItem();
                     }
 
@@ -130,6 +131,7 @@ namespace MLAPI.Messaging
                                 InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_ADD_OBJECT, queueItem.channel, PoolStream, queueItem.sendFlags);
                             }
 
+                            PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCsSent, queueItem.clientIds.Length);
                             ProfilerStatManager.rpcsSent.Record(queueItem.clientIds.Length);
                             break;
                         }
@@ -140,6 +142,7 @@ namespace MLAPI.Messaging
                                 InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_DESTROY_OBJECT, queueItem.channel, PoolStream, queueItem.sendFlags);
                             }
 
+                            PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCsSent, queueItem.clientIds.Length);
                             ProfilerStatManager.rpcsSent.Record(queueItem.clientIds.Length);
                             break;
                         }
@@ -228,6 +231,9 @@ namespace MLAPI.Messaging
                     NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(queueItem.networkId, queueItem.messageData, queueItem.channel);
 
                     //For each packet sent, we want to record how much data we have sent
+
+                    PerformanceDataManager.Increment(ProfilerConstants.NumberBytesSent, (int)queueItem.streamSize);
+                    PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCsSent);
                     ProfilerStatManager.bytesSent.Record((int)queueItem.streamSize);
                     ProfilerStatManager.rpcsSent.Record();
                     break;
@@ -239,10 +245,12 @@ namespace MLAPI.Messaging
                         NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(clientid, queueItem.messageData, queueItem.channel);
 
                         //For each packet sent, we want to record how much data we have sent
+                        PerformanceDataManager.Increment(ProfilerConstants.NumberBytesSent, (int)queueItem.streamSize);
                         ProfilerStatManager.bytesSent.Record((int)queueItem.streamSize);
                     }
 
                     //For each client we send to, we want to record how many RPCs we have sent
+                    PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCsSent, queueItem.clientIds.Length);
                     ProfilerStatManager.rpcsSent.Record(queueItem.clientIds.Length);
 
                     break;
