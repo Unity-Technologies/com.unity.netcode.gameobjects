@@ -72,6 +72,10 @@ namespace MLAPI
 #endif
         internal RpcQueueContainer rpcQueueContainer { get; private set; }
 
+        public delegate void PerformanceDataEventHandler(PerformanceTickData profilerData);
+
+        public event PerformanceDataEventHandler OnPerformanceDataEvent;
+
         /// <summary>
         /// A synchronized time, represents the time in seconds since the server application started. Is replicated across all clients
         /// </summary>
@@ -734,11 +738,14 @@ namespace MLAPI
 
         private void OnNetworkEarlyUpdate()
         {
+            PerformanceDataManager.BeginNewTick();
+
             if (IsListening)
             {
                 // Process received data
                 if ((NetworkTime - m_LastReceiveTickTime >= (1f / NetworkConfig.ReceiveTickrate)) || NetworkConfig.ReceiveTickrate <= 0)
                 {
+                    PerformanceDataManager.Increment(ProfilerConstants.ReceiveTickRate);
                     ProfilerStatManager.rcvTickRate.Record();
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_ReceiveTick.Begin();
@@ -848,6 +855,15 @@ namespace MLAPI
                     currentNetworkTimeOffset += Mathf.Clamp(networkTimeOffset - currentNetworkTimeOffset, -maxDelta, maxDelta);
                 }
             }
+
+            var profileTransport = NetworkConfig.NetworkTransport as ITransportProfilerData;
+            if (profileTransport != null)
+            {
+                var transportProfilerData = profileTransport.GetTransportGetData();
+                PerformanceDataManager.AddTransportData(transportProfilerData);
+            }
+
+            OnPerformanceDataEvent?.Invoke(PerformanceDataManager.GetData());
         }
 
         internal void UpdateNetworkTime(ulong clientId, float netTime, float receiveTime, bool warp = false)
@@ -901,6 +917,7 @@ namespace MLAPI
 
         private void HandleRawTransportPoll(NetEventType eventType, ulong clientId, Channel channel, ArraySegment<byte> payload, float receiveTime)
         {
+            PerformanceDataManager.Increment(ProfilerConstants.NumberBytesReceived, payload.Count);
             ProfilerStatManager.bytesRcvd.Record(payload.Count);
             switch (eventType)
             {
@@ -1161,6 +1178,7 @@ namespace MLAPI
                                 {
                                     m_RpcBatcher.ReceiveItems(messageStream, ReceiveCallback, RpcQueueContainer.QueueItemType.ServerRpc, clientId, receiveTime);
                                     ProfilerStatManager.rpcBatchesRcvd.Record();
+                                    PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCBatchesReceived);
                                 }
                                 else
                                 {
@@ -1183,6 +1201,7 @@ namespace MLAPI
                                 {
                                     m_RpcBatcher.ReceiveItems(messageStream, ReceiveCallback, RpcQueueContainer.QueueItemType.ClientRpc, clientId, receiveTime);
                                     ProfilerStatManager.rpcBatchesRcvd.Record();
+                                    PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCBatchesReceived);
                                 }
                                 else
                                 {
@@ -1334,6 +1353,7 @@ namespace MLAPI
             {
                 if (ConnectedClientsList[i].ClientId == clientId) {
                     ConnectedClientsList.RemoveAt(i);
+                    PerformanceDataManager.Increment(ProfilerConstants.NumberOfConnections, -1);
                     ProfilerStatManager.connections.Record(-1);
                 }
             }
@@ -1399,6 +1419,7 @@ namespace MLAPI
                     if (ConnectedClientsList[i].ClientId == clientId)
                     {
                         ConnectedClientsList.RemoveAt(i);
+                        PerformanceDataManager.Increment(ProfilerConstants.NumberOfConnections, -1);
                         ProfilerStatManager.connections.Record(-1);
                         break;
                     }
@@ -1447,6 +1468,7 @@ namespace MLAPI
                 ConnectedClients.Add(clientId, client);
                 ConnectedClientsList.Add(client);
 
+                PerformanceDataManager.Increment(ProfilerConstants.NumberOfConnections);
                 ProfilerStatManager.connections.Record();
 
                 // This packet is unreliable, but if it gets through it should provide a much better sync than the potentially huge approval message.
