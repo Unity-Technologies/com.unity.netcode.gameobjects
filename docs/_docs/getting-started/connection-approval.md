@@ -50,4 +50,4 @@ The MLAPI uses a callback system in order to allow for external validation. For 
 If connection approval is enabled. Any messages sent before a connection is setup are silently ignored.
 
 #### Connection Data
-If Encryption is enabled, the connection handshake with the buffer will be encrypted AND authenticated. (AES-256 encryption and HMAC-SHA-256 authentication). Please note that if the key exchange is not signed, a man in the middle attack can be done. If you plan on sending authentication tokens such as steam tickets. It's strongly suggested that you sign the handshake.
+If Encryption is enabled, the connection handshake with the buffer will be encrypted AND authenticated. (AES-256 encryption and HMAC-SHA-256 authentication). Please note that if the key exchange is not signed, a man in the middle attack can be done. If you plan on sending authentication tokens such as steam tickets, it's strongly suggested that you sign the handshake.
