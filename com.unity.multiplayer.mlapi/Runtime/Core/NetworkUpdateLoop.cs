@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.LowLevel;
@@ -154,6 +155,92 @@ namespace MLAPI
             PlayerLoop.SetPlayerLoop(customPlayerLoop);
         }
 
+        /// <summary>
+        /// The current network update stage being executed.
+        /// </summary>
+        public static NetworkUpdateStage UpdateStage;
+
+        /// <summary>
+        /// Registers a network update system to be executed in all network update stages.
+        /// </summary>
+        public static void RegisterAllNetworkUpdates(this INetworkUpdateSystem updateSystem)
+        {
+            foreach (NetworkUpdateStage updateStage in Enum.GetValues(typeof(NetworkUpdateStage)))
+            {
+                RegisterNetworkUpdate(updateSystem, updateStage);
+            }
+        }
+
+        /// <summary>
+        /// Registers a network update system to be executed in a specific network update stage.
+        /// </summary>
+        public static void RegisterNetworkUpdate(this INetworkUpdateSystem updateSystem, NetworkUpdateStage updateStage = NetworkUpdateStage.Update)
+        {
+            int updateStageIndex = (int)updateStage;
+            if (!m_UpdateSystem_Sets[updateStageIndex].Contains(updateSystem))
+            {
+                m_UpdateSystem_Sets[updateStageIndex].Add(updateSystem);
+                m_UpdateSystem_Arrays[updateStageIndex] = m_UpdateSystem_Sets[updateStageIndex].ToArray();
+            }
+        }
+
+        /// <summary>
+        /// Unregisters a network update system from all network update stages.
+        /// </summary>
+        public static void UnregisterAllNetworkUpdates(this INetworkUpdateSystem updateSystem)
+        {
+            foreach (NetworkUpdateStage updateStage in Enum.GetValues(typeof(NetworkUpdateStage)))
+            {
+                UnregisterNetworkUpdate(updateSystem, updateStage);
+            }
+        }
+
+        /// <summary>
+        /// Unregisters a network update system from a specific network update stage.
+        /// </summary>
+        public static void UnregisterNetworkUpdate(this INetworkUpdateSystem updateSystem, NetworkUpdateStage updateStage = NetworkUpdateStage.Update)
+        {
+            int updateStageIndex = (int)updateStage;
+            if (m_UpdateSystem_Sets[updateStageIndex].Contains(updateSystem))
+            {
+                m_UpdateSystem_Sets[updateStageIndex].Remove(updateSystem);
+                m_UpdateSystem_Arrays[updateStageIndex] = m_UpdateSystem_Sets[updateStageIndex].ToArray();
+            }
+        }
+
+        private static readonly HashSet<INetworkUpdateSystem>[] m_UpdateSystem_Sets =
+        {
+            new HashSet<INetworkUpdateSystem>(), // 0: Update
+            new HashSet<INetworkUpdateSystem>(), // 1: Initialization
+            new HashSet<INetworkUpdateSystem>(), // 2: EarlyUpdate
+            new HashSet<INetworkUpdateSystem>(), // 3: FixedUpdate
+            new HashSet<INetworkUpdateSystem>(), // 4: PreUpdate
+            new HashSet<INetworkUpdateSystem>(), // 5: PreLateUpdate
+            new HashSet<INetworkUpdateSystem>(), // 6: PostLateUpdate
+        };
+
+        private static readonly INetworkUpdateSystem[][] m_UpdateSystem_Arrays =
+        {
+            new INetworkUpdateSystem[0], // 0: Update
+            new INetworkUpdateSystem[0], // 1: Initialization
+            new INetworkUpdateSystem[0], // 2: EarlyUpdate
+            new INetworkUpdateSystem[0], // 3: FixedUpdate
+            new INetworkUpdateSystem[0], // 4: PreUpdate
+            new INetworkUpdateSystem[0], // 5: PreLateUpdate
+            new INetworkUpdateSystem[0], // 6: PostLateUpdate
+        };
+
+        private static void RunNetworkUpdateStage(NetworkUpdateStage updateStage)
+        {
+            UpdateStage = updateStage;
+            int updateStageIndex = (int)updateStage;
+            int arrayLength = m_UpdateSystem_Arrays[updateStageIndex].Length;
+            for (int i = 0; i < arrayLength; i++)
+            {
+                m_UpdateSystem_Arrays[updateStageIndex][i].NetworkUpdate(updateStage);
+            }
+        }
+
         private struct NetworkInitialization
         {
             public static PlayerLoopSystem CreateLoopSystem()
@@ -161,7 +248,7 @@ namespace MLAPI
                 return new PlayerLoopSystem
                 {
                     type = typeof(NetworkInitialization),
-                    updateDelegate = RunNetworkInitialization
+                    updateDelegate = () => RunNetworkUpdateStage(NetworkUpdateStage.Initialization)
                 };
             }
         }
@@ -173,7 +260,7 @@ namespace MLAPI
                 return new PlayerLoopSystem
                 {
                     type = typeof(NetworkEarlyUpdate),
-                    updateDelegate = RunNetworkEarlyUpdate
+                    updateDelegate = () => RunNetworkUpdateStage(NetworkUpdateStage.EarlyUpdate)
                 };
             }
         }
@@ -185,7 +272,7 @@ namespace MLAPI
                 return new PlayerLoopSystem
                 {
                     type = typeof(NetworkFixedUpdate),
-                    updateDelegate = RunNetworkFixedUpdate
+                    updateDelegate = () => RunNetworkUpdateStage(NetworkUpdateStage.FixedUpdate)
                 };
             }
         }
@@ -197,7 +284,7 @@ namespace MLAPI
                 return new PlayerLoopSystem
                 {
                     type = typeof(NetworkPreUpdate),
-                    updateDelegate = RunNetworkPreUpdate
+                    updateDelegate = () => RunNetworkUpdateStage(NetworkUpdateStage.PreUpdate)
                 };
             }
         }
@@ -209,7 +296,7 @@ namespace MLAPI
                 return new PlayerLoopSystem
                 {
                     type = typeof(NetworkUpdate),
-                    updateDelegate = RunNetworkUpdate
+                    updateDelegate = () => RunNetworkUpdateStage(NetworkUpdateStage.Update)
                 };
             }
         }
@@ -221,7 +308,7 @@ namespace MLAPI
                 return new PlayerLoopSystem
                 {
                     type = typeof(NetworkPreLateUpdate),
-                    updateDelegate = RunNetworkPreLateUpdate
+                    updateDelegate = () => RunNetworkUpdateStage(NetworkUpdateStage.PreLateUpdate)
                 };
             }
         }
@@ -233,292 +320,8 @@ namespace MLAPI
                 return new PlayerLoopSystem
                 {
                     type = typeof(NetworkPostLateUpdate),
-                    updateDelegate = RunNetworkPostLateUpdate
+                    updateDelegate = () => RunNetworkUpdateStage(NetworkUpdateStage.PostLateUpdate)
                 };
-            }
-        }
-
-        /// <summary>
-        /// Registers a network update system to be executed in all network update stages.
-        /// </summary>
-        public static void RegisterAllNetworkUpdates(this INetworkUpdateSystem updateSystem)
-        {
-            RegisterNetworkUpdate(updateSystem, NetworkUpdateStage.Initialization);
-            RegisterNetworkUpdate(updateSystem, NetworkUpdateStage.EarlyUpdate);
-            RegisterNetworkUpdate(updateSystem, NetworkUpdateStage.FixedUpdate);
-            RegisterNetworkUpdate(updateSystem, NetworkUpdateStage.PreUpdate);
-            RegisterNetworkUpdate(updateSystem, NetworkUpdateStage.Update);
-            RegisterNetworkUpdate(updateSystem, NetworkUpdateStage.PreLateUpdate);
-            RegisterNetworkUpdate(updateSystem, NetworkUpdateStage.PostLateUpdate);
-        }
-
-        /// <summary>
-        /// Registers a network update system to be executed in a specific network update stage.
-        /// </summary>
-        public static void RegisterNetworkUpdate(this INetworkUpdateSystem updateSystem, NetworkUpdateStage updateStage = NetworkUpdateStage.Update)
-        {
-            switch (updateStage)
-            {
-                case NetworkUpdateStage.Initialization:
-                {
-                    if (!m_Initialization_List.Contains(updateSystem))
-                    {
-                        m_Initialization_List.Add(updateSystem);
-                        m_Initialization_Array = m_Initialization_List.ToArray();
-                    }
-
-                    break;
-                }
-                case NetworkUpdateStage.EarlyUpdate:
-                {
-                    if (!m_EarlyUpdate_List.Contains(updateSystem))
-                    {
-                        m_EarlyUpdate_List.Add(updateSystem);
-                        m_EarlyUpdate_Array = m_EarlyUpdate_List.ToArray();
-                    }
-
-                    break;
-                }
-                case NetworkUpdateStage.FixedUpdate:
-                {
-                    if (!m_FixedUpdate_List.Contains(updateSystem))
-                    {
-                        m_FixedUpdate_List.Add(updateSystem);
-                        m_FixedUpdate_Array = m_FixedUpdate_List.ToArray();
-                    }
-
-                    break;
-                }
-                case NetworkUpdateStage.PreUpdate:
-                {
-                    if (!m_PreUpdate_List.Contains(updateSystem))
-                    {
-                        m_PreUpdate_List.Add(updateSystem);
-                        m_PreUpdate_Array = m_PreUpdate_List.ToArray();
-                    }
-
-                    break;
-                }
-                case NetworkUpdateStage.Update:
-                {
-                    if (!m_Update_List.Contains(updateSystem))
-                    {
-                        m_Update_List.Add(updateSystem);
-                        m_Update_Array = m_Update_List.ToArray();
-                    }
-
-                    break;
-                }
-                case NetworkUpdateStage.PreLateUpdate:
-                {
-                    if (!m_PreLateUpdate_List.Contains(updateSystem))
-                    {
-                        m_PreLateUpdate_List.Add(updateSystem);
-                        m_PreLateUpdate_Array = m_PreLateUpdate_List.ToArray();
-                    }
-
-                    break;
-                }
-                case NetworkUpdateStage.PostLateUpdate:
-                {
-                    if (!m_PostLateUpdate_List.Contains(updateSystem))
-                    {
-                        m_PostLateUpdate_List.Add(updateSystem);
-                        m_PostLateUpdate_Array = m_PostLateUpdate_List.ToArray();
-                    }
-
-                    break;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Unregisters a network update system from all network update stages.
-        /// </summary>
-        public static void UnregisterAllNetworkUpdates(this INetworkUpdateSystem updateSystem)
-        {
-            UnregisterNetworkUpdate(updateSystem, NetworkUpdateStage.Initialization);
-            UnregisterNetworkUpdate(updateSystem, NetworkUpdateStage.EarlyUpdate);
-            UnregisterNetworkUpdate(updateSystem, NetworkUpdateStage.FixedUpdate);
-            UnregisterNetworkUpdate(updateSystem, NetworkUpdateStage.PreUpdate);
-            UnregisterNetworkUpdate(updateSystem, NetworkUpdateStage.Update);
-            UnregisterNetworkUpdate(updateSystem, NetworkUpdateStage.PreLateUpdate);
-            UnregisterNetworkUpdate(updateSystem, NetworkUpdateStage.PostLateUpdate);
-        }
-
-        /// <summary>
-        /// Unregisters a network update system from a specific network update stage.
-        /// </summary>
-        public static void UnregisterNetworkUpdate(this INetworkUpdateSystem updateSystem, NetworkUpdateStage updateStage = NetworkUpdateStage.Update)
-        {
-            switch (updateStage)
-            {
-                case NetworkUpdateStage.Initialization:
-                {
-                    if (m_Initialization_List.Contains(updateSystem))
-                    {
-                        m_Initialization_List.Remove(updateSystem);
-                        m_Initialization_Array = m_Initialization_List.ToArray();
-                    }
-
-                    break;
-                }
-                case NetworkUpdateStage.EarlyUpdate:
-                {
-                    if (m_EarlyUpdate_List.Contains(updateSystem))
-                    {
-                        m_EarlyUpdate_List.Remove(updateSystem);
-                        m_EarlyUpdate_Array = m_EarlyUpdate_List.ToArray();
-                    }
-
-                    break;
-                }
-                case NetworkUpdateStage.FixedUpdate:
-                {
-                    if (m_FixedUpdate_List.Contains(updateSystem))
-                    {
-                        m_FixedUpdate_List.Remove(updateSystem);
-                        m_FixedUpdate_Array = m_FixedUpdate_List.ToArray();
-                    }
-
-                    break;
-                }
-                case NetworkUpdateStage.PreUpdate:
-                {
-                    if (m_PreUpdate_List.Contains(updateSystem))
-                    {
-                        m_PreUpdate_List.Remove(updateSystem);
-                        m_PreUpdate_Array = m_PreUpdate_List.ToArray();
-                    }
-
-                    break;
-                }
-                case NetworkUpdateStage.Update:
-                {
-                    if (m_Update_List.Contains(updateSystem))
-                    {
-                        m_Update_List.Remove(updateSystem);
-                        m_Update_Array = m_Update_List.ToArray();
-                    }
-
-                    break;
-                }
-                case NetworkUpdateStage.PreLateUpdate:
-                {
-                    if (m_PreLateUpdate_List.Contains(updateSystem))
-                    {
-                        m_PreLateUpdate_List.Remove(updateSystem);
-                        m_PreLateUpdate_Array = m_PreLateUpdate_List.ToArray();
-                    }
-
-                    break;
-                }
-                case NetworkUpdateStage.PostLateUpdate:
-                {
-                    if (m_PostLateUpdate_List.Contains(updateSystem))
-                    {
-                        m_PostLateUpdate_List.Remove(updateSystem);
-                        m_PostLateUpdate_Array = m_PostLateUpdate_List.ToArray();
-                    }
-
-                    break;
-                }
-            }
-        }
-
-        /// <summary>
-        /// The current network update stage being executed.
-        /// </summary>
-        public static NetworkUpdateStage UpdateStage;
-
-        private static readonly List<INetworkUpdateSystem> m_Initialization_List = new List<INetworkUpdateSystem>();
-        private static INetworkUpdateSystem[] m_Initialization_Array = new INetworkUpdateSystem[0];
-
-        private static void RunNetworkInitialization()
-        {
-            UpdateStage = NetworkUpdateStage.Initialization;
-            int arrayLength = m_Initialization_Array.Length;
-            for (int i = 0; i < arrayLength; i++)
-            {
-                m_Initialization_Array[i].NetworkUpdate(UpdateStage);
-            }
-        }
-
-        private static readonly List<INetworkUpdateSystem> m_EarlyUpdate_List = new List<INetworkUpdateSystem>();
-        private static INetworkUpdateSystem[] m_EarlyUpdate_Array = new INetworkUpdateSystem[0];
-
-        private static void RunNetworkEarlyUpdate()
-        {
-            UpdateStage = NetworkUpdateStage.EarlyUpdate;
-            int arrayLength = m_EarlyUpdate_Array.Length;
-            for (int i = 0; i < arrayLength; i++)
-            {
-                m_EarlyUpdate_Array[i].NetworkUpdate(UpdateStage);
-            }
-        }
-
-        private static readonly List<INetworkUpdateSystem> m_FixedUpdate_List = new List<INetworkUpdateSystem>();
-        private static INetworkUpdateSystem[] m_FixedUpdate_Array = new INetworkUpdateSystem[0];
-
-        private static void RunNetworkFixedUpdate()
-        {
-            UpdateStage = NetworkUpdateStage.FixedUpdate;
-            int arrayLength = m_FixedUpdate_Array.Length;
-            for (int i = 0; i < arrayLength; i++)
-            {
-                m_FixedUpdate_Array[i].NetworkUpdate(UpdateStage);
-            }
-        }
-
-        private static readonly List<INetworkUpdateSystem> m_PreUpdate_List = new List<INetworkUpdateSystem>();
-        private static INetworkUpdateSystem[] m_PreUpdate_Array = new INetworkUpdateSystem[0];
-
-        private static void RunNetworkPreUpdate()
-        {
-            UpdateStage = NetworkUpdateStage.PreUpdate;
-            int arrayLength = m_PreUpdate_Array.Length;
-            for (int i = 0; i < arrayLength; i++)
-            {
-                m_PreUpdate_Array[i].NetworkUpdate(UpdateStage);
-            }
-        }
-
-        private static readonly List<INetworkUpdateSystem> m_Update_List = new List<INetworkUpdateSystem>();
-        private static INetworkUpdateSystem[] m_Update_Array = new INetworkUpdateSystem[0];
-
-        private static void RunNetworkUpdate()
-        {
-            UpdateStage = NetworkUpdateStage.Update;
-            int arrayLength = m_Update_Array.Length;
-            for (int i = 0; i < arrayLength; i++)
-            {
-                m_Update_Array[i].NetworkUpdate(UpdateStage);
-            }
-        }
-
-        private static readonly List<INetworkUpdateSystem> m_PreLateUpdate_List = new List<INetworkUpdateSystem>();
-        private static INetworkUpdateSystem[] m_PreLateUpdate_Array = new INetworkUpdateSystem[0];
-
-        private static void RunNetworkPreLateUpdate()
-        {
-            UpdateStage = NetworkUpdateStage.PreLateUpdate;
-            int arrayLength = m_PreLateUpdate_Array.Length;
-            for (int i = 0; i < arrayLength; i++)
-            {
-                m_PreLateUpdate_Array[i].NetworkUpdate(UpdateStage);
-            }
-        }
-
-        private static readonly List<INetworkUpdateSystem> m_PostLateUpdate_List = new List<INetworkUpdateSystem>();
-        private static INetworkUpdateSystem[] m_PostLateUpdate_Array = new INetworkUpdateSystem[0];
-
-        private static void RunNetworkPostLateUpdate()
-        {
-            UpdateStage = NetworkUpdateStage.PostLateUpdate;
-            int arrayLength = m_PostLateUpdate_Array.Length;
-            for (int i = 0; i < arrayLength; i++)
-            {
-                m_PostLateUpdate_Array[i].NetworkUpdate(UpdateStage);
             }
         }
     }
