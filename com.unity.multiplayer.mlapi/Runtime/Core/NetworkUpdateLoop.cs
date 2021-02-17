@@ -23,7 +23,7 @@ namespace MLAPI
         EarlyUpdate = 2,
         FixedUpdate = 3,
         PreUpdate = 4,
-        Update = 0,
+        Update = 0, // Default
         PreLateUpdate = 5,
         PostLateUpdate = 6
     }
