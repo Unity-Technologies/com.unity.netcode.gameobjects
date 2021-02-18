@@ -155,6 +155,21 @@ namespace MLAPI
             PlayerLoop.SetPlayerLoop(customPlayerLoop);
         }
 
+        static NetworkUpdateLoop()
+        {
+            m_UpdateSystem_Sets = new Dictionary<NetworkUpdateStage, HashSet<INetworkUpdateSystem>>();
+            m_UpdateSystem_Arrays = new Dictionary<NetworkUpdateStage, INetworkUpdateSystem[]>();
+
+            foreach (NetworkUpdateStage updateStage in Enum.GetValues(typeof(NetworkUpdateStage)))
+            {
+                m_UpdateSystem_Sets.Add(updateStage, new HashSet<INetworkUpdateSystem>());
+                m_UpdateSystem_Arrays.Add(updateStage, new INetworkUpdateSystem[0]);
+            }
+        }
+
+        private static readonly Dictionary<NetworkUpdateStage, HashSet<INetworkUpdateSystem>> m_UpdateSystem_Sets;
+        private static readonly Dictionary<NetworkUpdateStage, INetworkUpdateSystem[]> m_UpdateSystem_Arrays;
+
         /// <summary>
         /// The current network update stage being executed.
         /// </summary>
@@ -176,11 +191,10 @@ namespace MLAPI
         /// </summary>
         public static void RegisterNetworkUpdate(this INetworkUpdateSystem updateSystem, NetworkUpdateStage updateStage = NetworkUpdateStage.Update)
         {
-            int updateStageIndex = (int)updateStage;
-            if (!m_UpdateSystem_Sets[updateStageIndex].Contains(updateSystem))
+            if (!m_UpdateSystem_Sets[updateStage].Contains(updateSystem))
             {
-                m_UpdateSystem_Sets[updateStageIndex].Add(updateSystem);
-                m_UpdateSystem_Arrays[updateStageIndex] = m_UpdateSystem_Sets[updateStageIndex].ToArray();
+                m_UpdateSystem_Sets[updateStage].Add(updateSystem);
+                m_UpdateSystem_Arrays[updateStage] = m_UpdateSystem_Sets[updateStage].ToArray();
             }
         }
 
@@ -200,44 +214,21 @@ namespace MLAPI
         /// </summary>
         public static void UnregisterNetworkUpdate(this INetworkUpdateSystem updateSystem, NetworkUpdateStage updateStage = NetworkUpdateStage.Update)
         {
-            int updateStageIndex = (int)updateStage;
-            if (m_UpdateSystem_Sets[updateStageIndex].Contains(updateSystem))
+            if (m_UpdateSystem_Sets[updateStage].Contains(updateSystem))
             {
-                m_UpdateSystem_Sets[updateStageIndex].Remove(updateSystem);
-                m_UpdateSystem_Arrays[updateStageIndex] = m_UpdateSystem_Sets[updateStageIndex].ToArray();
+                m_UpdateSystem_Sets[updateStage].Remove(updateSystem);
+                m_UpdateSystem_Arrays[updateStage] = m_UpdateSystem_Sets[updateStage].ToArray();
             }
         }
-
-        private static readonly HashSet<INetworkUpdateSystem>[] m_UpdateSystem_Sets =
-        {
-            new HashSet<INetworkUpdateSystem>(), // 0: Update
-            new HashSet<INetworkUpdateSystem>(), // 1: Initialization
-            new HashSet<INetworkUpdateSystem>(), // 2: EarlyUpdate
-            new HashSet<INetworkUpdateSystem>(), // 3: FixedUpdate
-            new HashSet<INetworkUpdateSystem>(), // 4: PreUpdate
-            new HashSet<INetworkUpdateSystem>(), // 5: PreLateUpdate
-            new HashSet<INetworkUpdateSystem>(), // 6: PostLateUpdate
-        };
-
-        private static readonly INetworkUpdateSystem[][] m_UpdateSystem_Arrays =
-        {
-            new INetworkUpdateSystem[0], // 0: Update
-            new INetworkUpdateSystem[0], // 1: Initialization
-            new INetworkUpdateSystem[0], // 2: EarlyUpdate
-            new INetworkUpdateSystem[0], // 3: FixedUpdate
-            new INetworkUpdateSystem[0], // 4: PreUpdate
-            new INetworkUpdateSystem[0], // 5: PreLateUpdate
-            new INetworkUpdateSystem[0], // 6: PostLateUpdate
-        };
 
         private static void RunNetworkUpdateStage(NetworkUpdateStage updateStage)
         {
             UpdateStage = updateStage;
-            int updateStageIndex = (int)updateStage;
-            int arrayLength = m_UpdateSystem_Arrays[updateStageIndex].Length;
+            var updateSystems = m_UpdateSystem_Arrays[updateStage];
+            int arrayLength = updateSystems.Length;
             for (int i = 0; i < arrayLength; i++)
             {
-                m_UpdateSystem_Arrays[updateStageIndex][i].NetworkUpdate(updateStage);
+                updateSystems[i].NetworkUpdate(updateStage);
             }
         }
 
