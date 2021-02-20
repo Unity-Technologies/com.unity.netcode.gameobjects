@@ -1041,7 +1041,6 @@ namespace MLAPI
             }
         }
 
-        private readonly BitStream m_InputStreamWrapper = new BitStream(new byte[0]);
         private readonly RpcBatcher m_RpcBatcher = new RpcBatcher();
 
         internal void HandleIncomingData(ulong clientId, Channel channel, ArraySegment<byte> data, float receiveTime, bool allowBuffer)
@@ -1051,6 +1050,7 @@ namespace MLAPI
 #endif
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo("Unwrapping Data Header");
 
+            var inputStreamWrapper = new BitStream();
             m_InputStreamWrapper.SetTarget(data.Array);
             m_InputStreamWrapper.SetLength(data.Count + data.Offset);
             m_InputStreamWrapper.Position = data.Offset;
