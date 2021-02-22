@@ -1050,7 +1050,7 @@ namespace MLAPI
 #endif
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo("Unwrapping Data Header");
 
-            var inputStreamWrapper = new BitStream();
+            var m_InputStreamWrapper = new BitStream();
             m_InputStreamWrapper.SetTarget(data.Array);
             m_InputStreamWrapper.SetLength(data.Count + data.Offset);
             m_InputStreamWrapper.Position = data.Offset;
