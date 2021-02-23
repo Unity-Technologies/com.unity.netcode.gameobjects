@@ -17,8 +17,5 @@ namespace MLAPI.Profiling
         NumberOfRPCQueueProcessed,
         NumberOfRPCsInQueueSize,
         NumberOfRPCsOutQueueSize,
-
-        NumberOfTransportSends,
-        NumberOfTransportSendQueues,
     }
 }

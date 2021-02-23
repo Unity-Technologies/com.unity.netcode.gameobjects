@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace MLAPI.Profiling
@@ -10,6 +11,7 @@ namespace MLAPI.Profiling
 
         internal static void BeginNewTick()
         {
+            s_TickID = Math.Max(s_TickID, 0);
             s_ProfilerData = new PerformanceTickData
             {
                 tickID = s_TickID++,
