@@ -45,6 +45,7 @@ namespace MLAPI.Transports.UNET
         private readonly Dictionary<int, byte> channelIdToName = new Dictionary<int, byte>();
         private int serverConnectionId;
         private int serverHostId;
+        private int localServerHostId;
 
         private RelayTransport relayTransport = new RelayTransport();
 
@@ -129,7 +130,10 @@ namespace MLAPI.Transports.UNET
 
         public override NetEventType PollEvent(out ulong clientId, out byte channel, out ArraySegment<byte> payload, out float receiveTime)
         {
-            NetworkEventType eventType = relayTransport.Receive(out int hostId, out int connectionId, out int channelId, messageBuffer, messageBuffer.Length, out int receivedSize, out byte error);
+
+            int hostId = NetManager.IsServer ? localServerHostId : serverHostId;
+
+            NetworkEventType eventType = relayTransport.ReceiveFromHost(hostId, out int connectionId, out int channelId, messageBuffer, messageBuffer.Length, out int receivedSize, out byte error);
 
             if(eventType != NetworkEventType.Nothing )
             {
@@ -276,7 +280,7 @@ namespace MLAPI.Transports.UNET
 
             }
 
-            int normalHostId = relayTransport.AddHost(topology, ServerListenPort, true);
+            localServerHostId = relayTransport.AddHost(topology, ServerListenPort, true);
 
             return SocketTask.Done.AsTasks();
         }
