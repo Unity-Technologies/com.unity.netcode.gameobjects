@@ -4,7 +4,7 @@
     {
         public int tickID;
 
-        public readonly KvStore tickData = new KvStore();
+        public readonly ProfilingDataStore tickData = new ProfilingDataStore();
 
         public void Increment(string fieldName, int count = 1)
         {

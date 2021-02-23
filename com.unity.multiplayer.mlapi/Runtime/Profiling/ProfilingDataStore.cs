@@ -2,7 +2,7 @@
 
 namespace MLAPI.Profiling
 {
-    public class KvStore
+    public class ProfilingDataStore
     {
         readonly Dictionary<string, int> m_Dictionary = new Dictionary<string, int>();
 
