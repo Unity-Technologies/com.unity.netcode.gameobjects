@@ -18,7 +18,7 @@ namespace MLAPI.Transports.UNET
             Queued
         }
 
-        static readonly KvStore k_TransportProfilerData = new KvStore();
+        static readonly ProfilingDataStore k_TransportProfilerData = new ProfilingDataStore();
         public static bool profilerEnabled;
 
         // Inspector / settings
