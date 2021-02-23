@@ -188,7 +188,7 @@ namespace MLAPI.Messaging
 
                 messageStream.CopyFrom(stream);
 
-                InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_NAMED_MESSAGE, channelId, messageStream, security);
+                InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_NAMED_MESSAGE, channel, messageStream, security);
             }
         }
 

@@ -245,7 +245,7 @@ namespace MLAPI.Messaging
         /// </summary>
         /// <param name="manager">The NetworkingManager context used by this QueueHistoryFrame</param>
         /// <param name="queueType">type of queue history frame (Inbound/Outbound)</param>
-        public QueueHistoryFrame(NetworkingManager manager, QueueFrameType queueType, NetworkUpdateManager.NetworkUpdateStages updateStage, int maxClients = 512)
+        public QueueHistoryFrame(NetworkingManager manager, QueueFrameType queueType, NetworkUpdateManager.NetworkUpdateStage updateStage, int maxClients = 512)
         {
             m_MaximumClients = maxClients;
             m_QueueFrameType = queueType;

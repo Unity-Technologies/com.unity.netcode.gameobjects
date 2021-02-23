@@ -29,7 +29,7 @@ namespace MLAPI.Messaging
         //Temporary place to keep internal MLAPI messages
         private readonly List<RpcFrameQueueItem> m_InternalMLAPISendQueue = new List<RpcFrameQueueItem>();
 
-        public RpcQueueProcessing(NetworkingManager netManager )
+        public RpcQueueProcessor(NetworkingManager netManager )
         {
             m_NetManager = netManager;
         }
@@ -210,14 +210,13 @@ namespace MLAPI.Messaging
         /// </summary>
         /// <param name="clientId"> clientId to send to</param>
         /// <param name="sendStream"> the stream to send</param>
-        private static void SendCallback(ulong clientId, RpcBatcher.SendStream sendStream)
         private void SendCallback(ulong clientId, RpcBatcher.SendStream sendStream)
         {
             var length = (int)sendStream.Stream.Length;
             var bytes = sendStream.Stream.GetBuffer();
             ArraySegment<byte> sendBuffer = new ArraySegment<byte>(bytes, 0, length);
 
-            m_NetManager.NetworkConfig.NetworkTransport.Send(clientId, sendBuffer, sendStream.channel);
+            m_NetManager.NetworkConfig.NetworkTransport.Send(clientId, sendBuffer, sendStream.Channel);
         }
 
         /// <summary>

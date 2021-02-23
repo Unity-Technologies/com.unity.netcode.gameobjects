@@ -421,7 +421,7 @@ namespace MLAPI.Messaging
             QueueHistoryFrame.QueueFrameType queueFrameType, NetworkUpdateManager.NetworkUpdateStage updateStage)
         {
             bool getNextFrame = false;
-            if (NetworkingManager.Singleton.IsHost && queueFrameType == QueueHistoryFrame.QueueFrameType.Inbound)
+            if (NetManager.IsHost && queueFrameType == QueueHistoryFrame.QueueFrameType.Inbound)
             {
                 getNextFrame = true;
             }
@@ -446,7 +446,7 @@ namespace MLAPI.Messaging
                     var numberOfClients = 0;
                     for (int i = 0; i < targetNetworkIds.Length; i++)
                     {
-                        if (NetworkingManager.Singleton.IsHost && targetNetworkIds[i] == NetworkingManager.Singleton.ServerClientId)
+                        if (NetManager.IsHost && targetNetworkIds[i] == NetManager.ServerClientId)
                         {
                             continue;
                         }
@@ -460,7 +460,7 @@ namespace MLAPI.Messaging
                     //Now write the cliend ids
                     for (int i = 0; i < targetNetworkIds.Length; i++)
                     {
-                        if (NetworkingManager.Singleton.IsHost && targetNetworkIds[i] == NetworkingManager.Singleton.ServerClientId)
+                        if (NetManager.IsHost && targetNetworkIds[i] == NetManager.ServerClientId)
                         {
                             continue;
                         }
@@ -480,7 +480,7 @@ namespace MLAPI.Messaging
             //Write a filler dummy size of 0 to hold this position in order to write to it once the RPC is done writing.
             queueHistoryItem.queueWriter.WriteInt64(0);
 
-            if (NetworkingManager.Singleton.IsHost && queueFrameType == QueueHistoryFrame.QueueFrameType.Inbound)
+            if (NetManager.IsHost && queueFrameType == QueueHistoryFrame.QueueFrameType.Inbound)
             {
                 if (!IsUsingBatching())
                 {
@@ -506,7 +506,7 @@ namespace MLAPI.Messaging
         public void EndAddQueueItemToFrame(BitWriter writer, QueueHistoryFrame.QueueFrameType queueFrameType, NetworkUpdateManager.NetworkUpdateStage updateStage)
         {
             bool getNextFrame = false;
-            if (NetworkingManager.Singleton.IsHost && queueFrameType == QueueHistoryFrame.QueueFrameType.Inbound)
+            if (NetManager.IsHost && queueFrameType == QueueHistoryFrame.QueueFrameType.Inbound)
             {
                 getNextFrame = true;
             }
