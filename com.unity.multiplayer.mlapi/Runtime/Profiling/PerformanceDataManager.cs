@@ -18,11 +18,16 @@ namespace MLAPI.Profiling
 
         internal static void Increment(string fieldName, int count = 1)
         {
-            s_ProfilerData.Increment(fieldName, count);
+            s_ProfilerData?.Increment(fieldName, count);
         }
 
         internal static void AddTransportData(IReadOnlyDictionary<string, int> transportProfilerData)
         {
+            if (s_ProfilerData == null)
+            {
+                return;
+            }
+
             IEnumerable<KeyValuePair<string, int>> nonDuplicates = transportProfilerData.Where(entry => !s_ProfilerData.tickData.ContainsKey(entry.Key));
             foreach (KeyValuePair<string, int> entry in nonDuplicates)
             {
