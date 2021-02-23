@@ -740,6 +740,10 @@ namespace MLAPI
         private void NetworkPreUpdate()
         {
             PerformanceDataManager.BeginNewTick();
+            if (NetworkConfig.NetworkTransport is ITransportProfilerData profileTransport)
+            {
+                profileTransport.BeginNewTick();
+            }
 
             if (IsListening)
             {

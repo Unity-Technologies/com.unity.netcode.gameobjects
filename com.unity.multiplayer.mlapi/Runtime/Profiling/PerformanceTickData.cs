@@ -1,26 +1,19 @@
-﻿using System.Collections.Generic;
-
-namespace MLAPI.Profiling
+﻿namespace MLAPI.Profiling
 {
     public class PerformanceTickData
     {
         public int tickID;
 
-        public readonly Dictionary<string, int> tickData = new Dictionary<string, int>();
+        public readonly KvStore tickData = new KvStore();
 
         public void Increment(string fieldName, int count = 1)
         {
-            if (!tickData.ContainsKey(fieldName))
-            {
-                tickData[fieldName] = 0;
-            }
-
-            tickData[fieldName] += count;
+            tickData.Increment(fieldName, count);
         }
 
         public int GetData(string fieldName)
         {
-            return tickData.ContainsKey(fieldName) ? tickData[fieldName] : 0;
+            return tickData.GetData(fieldName);
         }
     }
 }
