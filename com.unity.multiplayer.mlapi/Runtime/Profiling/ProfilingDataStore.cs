@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace MLAPI.Profiling
 {
@@ -6,19 +7,14 @@ namespace MLAPI.Profiling
     {
         readonly Dictionary<string, int> m_Dictionary = new Dictionary<string, int>();
 
-        public void Add(string entryKey, int entryValue)
+        public void Add(string fieldName, int value)
         {
-            m_Dictionary.Add(entryKey, entryValue);
+            m_Dictionary.Add(fieldName, value);
         }
 
         public void Increment(string fieldName, int count = 1)
         {
-            if (!m_Dictionary.ContainsKey(fieldName))
-            {
-                m_Dictionary[fieldName] = 0;
-            }
-
-            m_Dictionary[fieldName] += count;
+            m_Dictionary[fieldName] = m_Dictionary.ContainsKey(fieldName) ? m_Dictionary[fieldName] + count : count;
         }
 
         public bool HasData(string fieldName)

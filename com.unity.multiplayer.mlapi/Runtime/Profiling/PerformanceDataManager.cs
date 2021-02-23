@@ -23,16 +23,7 @@ namespace MLAPI.Profiling
 
         internal static void AddTransportData(IReadOnlyDictionary<string, int> transportProfilerData)
         {
-            if (s_ProfilerData == null)
-            {
-                return;
-            }
-
-            IEnumerable<KeyValuePair<string, int>> nonDuplicates = transportProfilerData.Where(entry => !s_ProfilerData.tickData.HasData(entry.Key));
-            foreach (KeyValuePair<string, int> entry in nonDuplicates)
-            {
-                s_ProfilerData.tickData.Add(entry.Key, entry.Value);
-            }
+            s_ProfilerData?.AddNonDuplicateData(transportProfilerData);
         }
 
         internal static PerformanceTickData GetData()
