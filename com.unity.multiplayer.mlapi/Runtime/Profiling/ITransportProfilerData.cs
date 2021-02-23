@@ -4,6 +4,6 @@ namespace MLAPI.Profiling
 {
     public interface ITransportProfilerData
     {
-        Dictionary<string, int> GetTransportGetData();
+        IReadOnlyDictionary<string, int> GetTransportProfilerData();
     }
 }
