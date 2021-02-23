@@ -251,12 +251,12 @@ namespace MLAPI.Messaging
                     if (queueType == QueueHistoryFrame.QueueFrameType.Inbound)
                     {
                         ProfilerStatManager.rpcInQueueSize.Record((int)queueHistoryItem.totalSize);
-                        PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCsInQueueSize, (int)queueHistoryItem.totalSize);
+                        PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCsInQueueSize.ToString(), (int)queueHistoryItem.totalSize);
                     }
                     else
                     {
                         ProfilerStatManager.rpcOutQueueSize.Record((int)queueHistoryItem.totalSize);
-                        PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCsOutQueueSize, (int)queueHistoryItem.totalSize);
+                        PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCsOutQueueSize.ToString(), (int)queueHistoryItem.totalSize);
                     }
                 }
 

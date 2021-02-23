@@ -746,7 +746,7 @@ namespace MLAPI
                 // Process received data
                 if ((NetworkTime - m_LastReceiveTickTime >= (1f / NetworkConfig.ReceiveTickrate)) || NetworkConfig.ReceiveTickrate <= 0)
                 {
-                    PerformanceDataManager.Increment(ProfilerConstants.ReceiveTickRate);
+                    PerformanceDataManager.Increment(ProfilerConstants.ReceiveTickRate.ToString());
                     ProfilerStatManager.rcvTickRate.Record();
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
                     s_ReceiveTick.Begin();
@@ -861,10 +861,9 @@ namespace MLAPI
                 }
             }
 
-            var profileTransport = NetworkConfig.NetworkTransport as ITransportProfilerData;
-            if (profileTransport != null)
+            if(NetworkConfig.NetworkTransport is ITransportProfilerData profileTransport)
             {
-                var transportProfilerData = profileTransport.GetTransportGetData();
+                var transportProfilerData = profileTransport.GetTransportProfilerData();
                 PerformanceDataManager.AddTransportData(transportProfilerData);
             }
 
@@ -922,7 +921,7 @@ namespace MLAPI
 
         private void HandleRawTransportPoll(NetEventType eventType, ulong clientId, Channel channel, ArraySegment<byte> payload, float receiveTime)
         {
-            PerformanceDataManager.Increment(ProfilerConstants.NumberBytesReceived, payload.Count);
+            PerformanceDataManager.Increment(ProfilerConstants.NumberBytesReceived.ToString(), payload.Count);
             ProfilerStatManager.bytesRcvd.Record(payload.Count);
             switch (eventType)
             {
@@ -1183,7 +1182,7 @@ namespace MLAPI
                                 {
                                     m_RpcBatcher.ReceiveItems(messageStream, ReceiveCallback, RpcQueueContainer.QueueItemType.ServerRpc, clientId, receiveTime);
                                     ProfilerStatManager.rpcBatchesRcvd.Record();
-                                    PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCBatchesReceived);
+                                    PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCBatchesReceived.ToString());
                                 }
                                 else
                                 {
@@ -1206,7 +1205,7 @@ namespace MLAPI
                                 {
                                     m_RpcBatcher.ReceiveItems(messageStream, ReceiveCallback, RpcQueueContainer.QueueItemType.ClientRpc, clientId, receiveTime);
                                     ProfilerStatManager.rpcBatchesRcvd.Record();
-                                    PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCBatchesReceived);
+                                    PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCBatchesReceived.ToString());
                                 }
                                 else
                                 {
@@ -1358,7 +1357,7 @@ namespace MLAPI
             {
                 if (ConnectedClientsList[i].ClientId == clientId) {
                     ConnectedClientsList.RemoveAt(i);
-                    PerformanceDataManager.Increment(ProfilerConstants.NumberOfConnections, -1);
+                    PerformanceDataManager.Increment(ProfilerConstants.NumberOfConnections.ToString(), -1);
                     ProfilerStatManager.connections.Record(-1);
                 }
             }
@@ -1424,7 +1423,7 @@ namespace MLAPI
                     if (ConnectedClientsList[i].ClientId == clientId)
                     {
                         ConnectedClientsList.RemoveAt(i);
-                        PerformanceDataManager.Increment(ProfilerConstants.NumberOfConnections, -1);
+                        PerformanceDataManager.Increment(ProfilerConstants.NumberOfConnections.ToString(), -1);
                         ProfilerStatManager.connections.Record(-1);
                         break;
                     }
@@ -1473,7 +1472,7 @@ namespace MLAPI
                 ConnectedClients.Add(clientId, client);
                 ConnectedClientsList.Add(client);
 
-                PerformanceDataManager.Increment(ProfilerConstants.NumberOfConnections);
+                PerformanceDataManager.Increment(ProfilerConstants.NumberOfConnections.ToString());
                 ProfilerStatManager.connections.Record();
 
                 // This packet is unreliable, but if it gets through it should provide a much better sync than the potentially huge approval message.

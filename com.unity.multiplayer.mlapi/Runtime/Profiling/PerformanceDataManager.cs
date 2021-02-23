@@ -3,12 +3,12 @@ using System.Linq;
 
 namespace MLAPI.Profiling
 {
-    public static class PerformanceDataManager
+    static class PerformanceDataManager
     {
         static PerformanceTickData s_ProfilerData;
         static int s_TickID;
 
-        public static void BeginNewTick()
+        internal static void BeginNewTick()
         {
             s_ProfilerData = new PerformanceTickData
             {
@@ -16,12 +16,12 @@ namespace MLAPI.Profiling
             };
         }
 
-        public static void Increment(ProfilerConstants fieldName, int count = 1)
+        internal static void Increment(string fieldName, int count = 1)
         {
             s_ProfilerData.Increment(fieldName, count);
         }
 
-        public static void AddTransportData(Dictionary<string, int> transportProfilerData)
+        internal static void AddTransportData(IReadOnlyDictionary<string, int> transportProfilerData)
         {
             IEnumerable<KeyValuePair<string, int>> nonDuplicates = transportProfilerData.Where(entry => !s_ProfilerData.tickData.ContainsKey(entry.Key));
             foreach (KeyValuePair<string, int> entry in nonDuplicates)
@@ -30,7 +30,7 @@ namespace MLAPI.Profiling
             }
         }
 
-        public static PerformanceTickData GetData()
+        internal static PerformanceTickData GetData()
         {
             return s_ProfilerData;
         }

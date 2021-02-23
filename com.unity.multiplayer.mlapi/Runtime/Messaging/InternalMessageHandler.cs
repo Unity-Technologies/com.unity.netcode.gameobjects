@@ -694,7 +694,7 @@ namespace MLAPI.Messaging
             }
 
             ProfilerStatManager.rpcsRcvd.Record();
-            PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCsReceived);
+            PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCsReceived.ToString());
 
             var rpcQueueContainer = NetworkingManager.Singleton.rpcQueueContainer;
             rpcQueueContainer.AddQueueItemToInboundFrame(queueItemType, receiveTime, clientId, (BitStream)stream);
@@ -702,7 +702,7 @@ namespace MLAPI.Messaging
 
         internal static void HandleUnnamedMessage(ulong clientId, Stream stream)
         {
-            PerformanceDataManager.Increment(ProfilerConstants.NumberOfUnnamedMessages);
+            PerformanceDataManager.Increment(ProfilerConstants.NumberOfUnnamedMessages.ToString());
             ProfilerStatManager.unnamedMessage.Record();
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleUnnamedMessage.Begin();
@@ -715,7 +715,7 @@ namespace MLAPI.Messaging
 
         internal static void HandleNamedMessage(ulong clientId, Stream stream)
         {
-            PerformanceDataManager.Increment(ProfilerConstants.NumberOfNamedMessages);
+            PerformanceDataManager.Increment(ProfilerConstants.NumberOfNamedMessages.ToString());
             ProfilerStatManager.namedMessage.Record();
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleNamedMessage.Begin();

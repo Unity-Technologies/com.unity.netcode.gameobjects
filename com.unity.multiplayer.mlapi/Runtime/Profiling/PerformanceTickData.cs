@@ -8,21 +8,19 @@ namespace MLAPI.Profiling
 
         public readonly Dictionary<string, int> tickData = new Dictionary<string, int>();
 
-        public void Increment(ProfilerConstants fieldName, int count = 1)
+        public void Increment(string fieldName, int count = 1)
         {
-            string fieldStr = fieldName.ToString();
-            if (!tickData.ContainsKey(fieldStr))
+            if (!tickData.ContainsKey(fieldName))
             {
-                tickData[fieldStr] = 0;
+                tickData[fieldName] = 0;
             }
 
-            tickData[fieldStr] += count;
+            tickData[fieldName] += count;
         }
 
-        public int GetData(ProfilerConstants fieldName)
+        public int GetData(string fieldName)
         {
-            string fieldString = fieldName.ToString();
-            return tickData.ContainsKey(fieldString) ? tickData[fieldString] : 0;
+            return tickData.ContainsKey(fieldName) ? tickData[fieldName] : 0;
         }
     }
 }

@@ -26,7 +26,7 @@ namespace MLAPI.Messaging
 
                 NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(clientId, new ArraySegment<byte>(stream.GetBuffer(), 0, (int)stream.Length), channel);
                 ProfilerStatManager.bytesSent.Record((int)stream.Length);
-                PerformanceDataManager.Increment(ProfilerConstants.NumberBytesSent, (int)stream.Length);
+                PerformanceDataManager.Increment(ProfilerConstants.NumberBytesSent.ToString(), (int)stream.Length);
 
                 NetworkProfiler.EndEvent();
             }
@@ -58,7 +58,7 @@ namespace MLAPI.Messaging
 
                         NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId, new ArraySegment<byte>(stream.GetBuffer(), 0, (int)stream.Length), channel);
                         ProfilerStatManager.bytesSent.Record((int)stream.Length);
-                        PerformanceDataManager.Increment(ProfilerConstants.NumberBytesSent, (int)stream.Length);
+                        PerformanceDataManager.Increment(ProfilerConstants.NumberBytesSent.ToString(), (int)stream.Length);
                     }
                     NetworkProfiler.EndEvent();
                 }
@@ -97,7 +97,7 @@ namespace MLAPI.Messaging
 
                         NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(clientIds[i], new ArraySegment<byte>(stream.GetBuffer(), 0, (int)stream.Length), channel);
                         ProfilerStatManager.bytesSent.Record((int)stream.Length);
-                        PerformanceDataManager.Increment(ProfilerConstants.NumberBytesSent, (int)stream.Length);
+                        PerformanceDataManager.Increment(ProfilerConstants.NumberBytesSent.ToString(), (int)stream.Length);
                     }
                     NetworkProfiler.EndEvent();
                 }
@@ -134,7 +134,7 @@ namespace MLAPI.Messaging
 
                         NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(NetworkingManager.Singleton.ConnectedClientsList[i].ClientId, new ArraySegment<byte>(stream.GetBuffer(), 0, (int)stream.Length), channel);
                         ProfilerStatManager.bytesSent.Record((int)stream.Length);
-                        PerformanceDataManager.Increment(ProfilerConstants.NumberBytesSent, (int)stream.Length);
+                        PerformanceDataManager.Increment(ProfilerConstants.NumberBytesSent.ToString(), (int)stream.Length);
                     }
                     NetworkProfiler.EndEvent();
                 }
