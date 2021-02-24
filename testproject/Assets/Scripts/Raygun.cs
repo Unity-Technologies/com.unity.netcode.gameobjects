@@ -1,33 +1,47 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using MLAPI;
+using UnityEditor;
 
-public class Raygun : MonoBehaviour
+public class Raygun : NetworkedBehaviour
 {
     public float range = 15;
 
     private GameObject m_CurrentTarget;
+    private LineRenderer lineRenderer;
 
     private void Start()
     {
-        StartCoroutine(Attack());
+    }
+
+    void Awake()
+    {
+        UnityEngine.Color c1 = new UnityEngine.Color(1.0f, 1.0f, 1.0f, 0.1f);
+        UnityEngine.Color c2 = new UnityEngine.Color(1.0f, 1.0f, 1.0f, 0.1f);
+
+        lineRenderer = GetComponent<LineRenderer>();
+        lineRenderer.useWorldSpace = true;
+        lineRenderer.alignment = LineAlignment.View;
+        lineRenderer.widthMultiplier = 0.1f;
+//        lineRenderer.colorGradient = c1;
+//        lineRenderer.endColor = c2;
     }
 
     private void Update()
     {
         var forward = transform.forward * range;
-        Debug.DrawRay(transform.position, forward, Color.yellow);
-    }
 
-    private IEnumerator Attack()
-    {
-        m_CurrentTarget = FindTarget();
+        lineRenderer.SetVertexCount(2);
+        lineRenderer.SetPosition(0, transform.position);
+        lineRenderer.SetPosition(1, transform.position + transform.forward * 10.0f);
 
-        ShootTarget();
+        if (IsLocalPlayer && Input.GetKeyDown(KeyCode.P))
+        {
+            m_CurrentTarget = FindTarget();
+            transform.position = m_CurrentTarget.transform.position + m_CurrentTarget.transform.forward * 10.0f;
+        }
 
-        yield return new WaitForSeconds(10);
-
-        StartCoroutine(Attack());
     }
 
     private GameObject FindTarget()
@@ -41,7 +55,10 @@ public class Raygun : MonoBehaviour
 
     private void ShootTarget()
     {
-        if (ReferenceEquals(m_CurrentTarget, null)) return;
+        // you can't do that here
+        // transform.LookAt should only change the localPlayer
+        // this breaks the position synchronization when done both sides
+/*        if (ReferenceEquals(m_CurrentTarget, null)) return;
 
         transform.LookAt(m_CurrentTarget.transform);
         var forward = transform.TransformDirection(Vector3.forward) * range;
@@ -49,5 +66,6 @@ public class Raygun : MonoBehaviour
         {
             hit.transform.GetComponent<Renderer>().material.color = Color.red;
         }
+        */
     }
 }

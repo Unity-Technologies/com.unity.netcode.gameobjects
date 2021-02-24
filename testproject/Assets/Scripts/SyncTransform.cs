@@ -1,5 +1,6 @@
-using UnityEngine;
+using MLAPI.Logging;
 using MLAPI.NetworkedVar;
+using UnityEngine;
 
 namespace MLAPI
 {
@@ -12,108 +13,141 @@ namespace MLAPI
     // todo: check inheriting from NetworkedBehaviour. Currently needed for IsLocalPlayer, to synchronize position
     public class SyncTransform : NetworkedBehaviour
     {
-        private NetworkedVar<Vector3> m_NetVarPos = new NetworkedVar<Vector3>();
-        private NetworkedVar<Quaternion> m_NetVarRot = new NetworkedVar<Quaternion>();
-        private const float k_UpdateRate = 0.1f;
-        private const float k_Epsilon = 0.001f;
+        NetworkedVar<Vector3> m_varPos = new NetworkedVar<Vector3>();
+        NetworkedVarQuaternion m_varRot = new NetworkedVarQuaternion();
+        const float k_epsilon = 0.001f;
+
+        private bool interpolate = true;
 
         // data structures for interpolation
-        private Vector3[] m_PosStore = new Vector3[2];
-        private Quaternion[] m_RotStore = new Quaternion[2];
-        private float[] m_PosTimes = new float[2];
-        private float[] m_RotTimes = new float[2];
-        private float m_LastSent = 0.0f;
+        Vector3[] m_PosStore = new Vector3[2];
+        Quaternion[] m_RotStore = new Quaternion[2];
+        float[] m_PosTimes = new float[2];
+        float[] m_RotTimes = new float[2];
+        float m_lastSent = 0.0f;
 
-        public SyncTransform()
+        SyncTransform()
         {
             m_PosTimes[0] = -1.0f;
             m_PosTimes[1] = -1.0f;
             m_RotTimes[0] = -1.0f;
             m_RotTimes[1] = -1.0f;
 
-            m_NetVarPos.OnValueChanged = SyncPosChanged;
-            m_NetVarRot.OnValueChanged = SyncRotChanged;
+            m_varPos.OnValueChanged = SyncPosChanged;
+            m_varRot.OnValueChanged = SyncRotChanged;
         }
 
-        private void SyncPosChanged(Vector3 before, Vector3 after)
+        void SyncPosChanged(Vector3 before, Vector3 after)
         {
             if (!IsLocalPlayer)
             {
                 m_PosTimes[0] = m_PosTimes[1];
-                m_PosTimes[1] = Time.fixedTime;
+                m_PosTimes[1] = Time.time;
                 m_PosStore[0] = m_PosStore[1];
                 m_PosStore[1] = after;
 
-                gameObject.transform.position = after;
+                if (!interpolate)
+                {
+                    gameObject.transform.position = after;
+                }
+                //Debug.Log("[1] received position from " + before + " to " + after);
             }
         }
 
-        private void SyncRotChanged(Quaternion before, Quaternion after)
+        void SyncRotChanged(Quaternion before, Quaternion after)
         {
             // todo: this is problematic. Why couldn't this filtering be done server-side?
             if (!IsLocalPlayer)
             {
                 m_RotTimes[0] = m_RotTimes[1];
-                m_RotTimes[1] = Time.fixedTime;
+                m_RotTimes[1] = Time.time;
                 m_RotStore[0] = m_RotStore[1];
                 m_RotStore[1] = after;
 
-                gameObject.transform.rotation = after;
+                if (!interpolate)
+                {
+                    gameObject.transform.rotation = after;
+                }
+                //Debug.Log("[2] received rotation from " + before + " to " + after);
             }
         }
 
-        private void Start()
+        void Start()
         {
-            m_NetVarPos.Settings.WritePermission = NetworkedVarPermission.Everyone;
-            m_NetVarRot.Settings.WritePermission = NetworkedVarPermission.Everyone;
+            m_varPos.Settings.WritePermission = NetworkedVarPermission.Everyone;
+            m_varRot.Settings.WritePermission = NetworkedVarPermission.Everyone;
         }
 
-        private void FixedUpdate()
+        void FixedUpdate()
         {
-            float now = Time.fixedTime;
-            if (m_LastSent == 0.0f)
+            float now = Time.time;
+            if (m_lastSent == 0.0f)
             {
-                m_LastSent = now;
+                m_lastSent = now;
             }
 
             // if this.gameObject is local let's send its position
             if (IsLocalPlayer)
             {
-                while ((now - m_LastSent) > k_UpdateRate)
-                {
-                    m_LastSent += k_UpdateRate;
-
-                    m_NetVarPos.Value = gameObject.transform.position;
-                    m_NetVarRot.Value = gameObject.transform.rotation;
-                }
+                m_varPos.Value = gameObject.transform.position;
+                m_varRot.Value = gameObject.transform.rotation;
             }
             else
             {
-                // todo: do we want to perform local interpolation on Update() instead?
+                if (!interpolate)
+                {
+                    return;
+                }
 
                 // let's interpolate the last received transform
                 if (m_PosTimes[0] >= 0.0 && m_PosTimes[1] >= 0.0)
                 {
-                    if (m_PosTimes[1] - m_PosTimes[0] > k_Epsilon)
+                    var before = gameObject.transform.position;
+
+                    if (m_PosTimes[1] - m_PosTimes[0] > k_epsilon)
                     {
-                        gameObject.transform.position = Vector3.LerpUnclamped(
-                            m_PosStore[0],
-                            m_PosStore[1],
-                            (now - m_PosTimes[0]) / (m_PosTimes[1] - m_PosTimes[0]));
+                        if ((now - m_PosTimes[0]) / (m_PosTimes[1] - m_PosTimes[0]) < 2.0)
+                        {
+                            gameObject.transform.position = Vector3.LerpUnclamped(
+                                m_PosStore[0],
+                                m_PosStore[1],
+                                (now - m_PosTimes[0]) / (m_PosTimes[1] - m_PosTimes[0]));
+                        }
                     }
+                    else
+                    {
+                        gameObject.transform.position = m_PosStore[1];
+                    }
+
+                    var after = gameObject.transform.position;
+
+                    //Debug.Log("[3] Updated position from " + before + " to " + after);
                 }
 
                 if (m_RotTimes[0] >= 0.0 && m_RotTimes[1] >= 0.0)
                 {
-                    if (m_RotTimes[1] - m_RotTimes[0] > k_Epsilon)
+                    var before = gameObject.transform.rotation;
+
+                    if (m_RotTimes[1] - m_RotTimes[0] > k_epsilon)
                     {
-                        gameObject.transform.rotation = Quaternion.SlerpUnclamped(
-                            m_RotStore[0],
-                            m_RotStore[1],
-                            (now - m_RotTimes[0]) / (m_RotTimes[1] - m_RotTimes[0]));
+                        if ((now - m_RotTimes[0]) / (m_RotTimes[1] - m_RotTimes[0]) < 2.0)
+                        {
+                            gameObject.transform.rotation = Quaternion.SlerpUnclamped(
+                                m_RotStore[0],
+                                m_RotStore[1],
+                                (now - m_RotTimes[0]) / (m_RotTimes[1] - m_RotTimes[0]));
+                        }
                     }
+                    else
+                    {
+                        gameObject.transform.rotation = m_RotStore[1];
+                    }
+
+                    var after = gameObject.transform.rotation;
+
+                    //Debug.Log("[4] Updated rotation from " + before + " to " + after);
                 }
             }
         }
-    }
+    }Assets/Scripts/SyncTransform.cs
 }
