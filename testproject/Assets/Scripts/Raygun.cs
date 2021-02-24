@@ -6,30 +6,30 @@ using UnityEditor;
 
 public class Raygun : NetworkedBehaviour
 {
-    public float range = 10;
+    public float m_Range = 10;
 
     private GameObject m_CurrentTarget;
-    private LineRenderer lineRenderer;
+    private LineRenderer m_LineRenderer;
 
     private void Start()
     {
     }
 
-    void Awake()
+    private void Awake()
     {
-        lineRenderer = GetComponent<LineRenderer>();
-        lineRenderer.useWorldSpace = true;
-        lineRenderer.alignment = LineAlignment.View;
-        lineRenderer.widthMultiplier = 0.1f;
+        m_LineRenderer = GetComponent<LineRenderer>();
+        m_LineRenderer.useWorldSpace = true;
+        m_LineRenderer.alignment = LineAlignment.View;
+        m_LineRenderer.widthMultiplier = 0.1f;
     }
 
     private void FixedUpdate()
     {
-        var forward = transform.forward * range;
+        var forward = transform.forward * m_Range;
 
-        lineRenderer.SetVertexCount(2);
-        lineRenderer.SetPosition(0, transform.position);
-        lineRenderer.SetPosition(1, transform.position + forward);
+        m_LineRenderer.SetVertexCount(2);
+        m_LineRenderer.SetPosition(0, transform.position);
+        m_LineRenderer.SetPosition(1, transform.position + forward);
 
         if (IsLocalPlayer && Input.GetKeyDown(KeyCode.P))
         {
