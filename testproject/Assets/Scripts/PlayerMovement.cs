@@ -5,7 +5,6 @@ public class PlayerMovement : NetworkedBehaviour
 {
     private float speed = 20.0f;
     private float rotSpeed = 5.0f;
-
     private Rigidbody m_Rigidbody;
 
     private void Start()
@@ -38,17 +37,13 @@ public class PlayerMovement : NetworkedBehaviour
             if (Input.GetKey(KeyCode.RightArrow))
             {
                 Quaternion rot = Quaternion.Euler(0, 90 * rotSpeed * Time.fixedDeltaTime, 0);
-
                 transform.rotation = rot * transform.rotation;
-//                m_direction = rot * m_direction;
             }
 
             if (Input.GetKey(KeyCode.LeftArrow))
             {
                 Quaternion rot = Quaternion.Euler(0, -90 * rotSpeed * Time.fixedDeltaTime, 0);
-
                 transform.rotation = rot * transform.rotation;
-//                m_direction = rot * m_direction;
             }
         }
     }

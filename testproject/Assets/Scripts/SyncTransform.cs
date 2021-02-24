@@ -149,5 +149,5 @@ namespace MLAPI
                 }
             }
         }
-    }Assets/Scripts/SyncTransform.cs
+    }
 }

@@ -24,8 +24,6 @@ public class Raygun : NetworkedBehaviour
         lineRenderer.useWorldSpace = true;
         lineRenderer.alignment = LineAlignment.View;
         lineRenderer.widthMultiplier = 0.1f;
-//        lineRenderer.colorGradient = c1;
-//        lineRenderer.endColor = c2;
     }
 
     private void Update()
@@ -51,21 +49,5 @@ public class Raygun : NetworkedBehaviour
         list.Remove(gameObject);
 
         return list.Count == 0 ? null : list[Random.Range(0, list.Count)];
-    }
-
-    private void ShootTarget()
-    {
-        // you can't do that here
-        // transform.LookAt should only change the localPlayer
-        // this breaks the position synchronization when done both sides
-/*        if (ReferenceEquals(m_CurrentTarget, null)) return;
-
-        transform.LookAt(m_CurrentTarget.transform);
-        var forward = transform.TransformDirection(Vector3.forward) * range;
-        if (Physics.Raycast(transform.position, forward, out var hit, range))
-        {
-            hit.transform.GetComponent<Renderer>().material.color = Color.red;
-        }
-        */
     }
 }
