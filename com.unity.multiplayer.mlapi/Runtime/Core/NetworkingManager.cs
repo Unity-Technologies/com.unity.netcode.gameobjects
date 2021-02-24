@@ -648,14 +648,6 @@ namespace MLAPI
                 OnSingletonReady();
         }
 
-        private void Awake()
-        {
-            rpcQueueContainer = new RpcQueueContainer(false);
-            //Note: Since frame history is not being used, this is set to 0
-            //To test frame history, increase the number to (n) where n > 0
-            rpcQueueContainer.Initialize(0);
-        }
-
         private void OnEnable()
         {
             if (Singleton != null && Singleton != this)
@@ -670,15 +662,6 @@ namespace MLAPI
             if (RunInBackground)
                 Application.runInBackground = true;
         }
-
-        /// <summary>
-        /// NSS: We might think about a way to set the update loop into a pause mode as opposed to doing this here
-        /// </summary>
-        //private void OnDisable()
-        //{
-        //    // Unregister INetworkUpdateSystem
-        //    this.UnregisterAllNetworkUpdates();
-        //}
 
         private void OnDestroy()
         {
