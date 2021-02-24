@@ -378,6 +378,15 @@ namespace MLAPI
                 return;
             }
 
+            rpcQueueContainer = new RpcQueueContainer(false);
+            //Note: Since frame history is not being used, this is set to 0
+            //To test frame history, increase the number to (n) where n > 0
+            rpcQueueContainer.Initialize(0);
+            // Register INetworkUpdateSystem
+            this.RegisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);
+            this.RegisterNetworkUpdate(NetworkUpdateStage.PreUpdate);
+
+
             try
             {
                 string pfx = null;
@@ -634,14 +643,6 @@ namespace MLAPI
                 OnSingletonReady();
         }
 
-        private void Awake()
-        {
-            rpcQueueContainer = new RpcQueueContainer(false);
-            //Note: Since frame history is not being used, this is set to 0
-            //To test frame history, increase the number to (n) where n > 0
-            rpcQueueContainer.Initialize(0);
-        }
-
         private void OnEnable()
         {
             if (Singleton != null && Singleton != this)
@@ -650,10 +651,6 @@ namespace MLAPI
                 return;
             }
 
-            // Register INetworkUpdateSystem
-            this.RegisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);
-            this.RegisterNetworkUpdate(NetworkUpdateStage.PreUpdate);
-
             SetSingleton();
             if (DontDestroy)
                 DontDestroyOnLoad(gameObject);
@@ -661,11 +658,14 @@ namespace MLAPI
                 Application.runInBackground = true;
         }
 
-        private void OnDisable()
-        {
-            // Unregister INetworkUpdateSystem
-            this.UnregisterAllNetworkUpdates();
-        }
+        /// <summary>
+        /// NSS: We might think about a way to set the update loop into a pause mode as opposed to doing this here
+        /// </summary>
+        //private void OnDisable()
+        //{
+        //    // Unregister INetworkUpdateSystem
+        //    this.UnregisterAllNetworkUpdates();
+        //}
 
         private void OnDestroy()
         {
@@ -681,6 +681,9 @@ namespace MLAPI
 
         public void Shutdown()
         {
+            // Unregister INetworkUpdateSystem
+            this.UnregisterAllNetworkUpdates();
+
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo("Shutdown()");
             NetworkProfiler.Stop();
             IsListening = false;

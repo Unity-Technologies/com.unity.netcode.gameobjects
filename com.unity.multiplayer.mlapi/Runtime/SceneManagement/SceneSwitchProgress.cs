@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using UnityEngine;
@@ -9,7 +9,7 @@ namespace MLAPI.SceneManagement
     /// <summary>
     /// Class for tracking scene switching progress by server and clients.
     /// </summary>
-    public class SceneSwitchProgress
+    public class SceneSwitchProgress:IDisposable
     {
         /// <summary>
         /// List of clientIds of those clients that is done loading the scene.
@@ -55,7 +55,7 @@ namespace MLAPI.SceneManagement
         /// The callback invoked when a client is done loading the scene.
         /// </summary>
         public event OnClientLoadedSceneDelegate OnClientLoadedScene;
-        
+
         internal Guid guid { get; } = Guid.NewGuid();
 
         private Coroutine timeOutCoroutine;
@@ -83,7 +83,13 @@ namespace MLAPI.SceneManagement
         internal void SetSceneLoadOperation(AsyncOperation sceneLoadOperation)
         {
             this.sceneLoadOperation = sceneLoadOperation;
-            this.sceneLoadOperation.completed += (AsyncOperation operation) => { CheckCompletion(); };
+            //this.sceneLoadOperation.completed += (AsyncOperation operation) => { CheckCompletion(); };
+            this.sceneLoadOperation.completed += SceneLoadOperation_completed;
+        }
+
+        private void SceneLoadOperation_completed(AsyncOperation obj)
+        {
+            CheckCompletion();
         }
 
         internal void CheckCompletion()
@@ -111,5 +117,13 @@ namespace MLAPI.SceneManagement
             }
         }
 
+        public void Dispose()
+        {
+            if(this.sceneLoadOperation != null)
+            {
+                this.sceneLoadOperation.completed -= SceneLoadOperation_completed;
+                this.sceneLoadOperation = null;
+            }
+        }
     }
 }
