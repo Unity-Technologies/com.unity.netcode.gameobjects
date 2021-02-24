@@ -11,7 +11,7 @@ namespace UnityEditor
         [PostProcessScene(int.MaxValue)]
         public static void ProcessScene()
         {
-            if(EditorApplication.isPlaying)
+            if(Application.isPlaying)
             {
                 return;
             }
