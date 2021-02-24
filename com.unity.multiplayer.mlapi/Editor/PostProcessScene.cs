@@ -11,6 +11,12 @@ namespace UnityEditor
         [PostProcessScene(int.MaxValue)]
         public static void ProcessScene()
         {
+            //If we are in playmode (editor or stand alone) we do not want this to execute 
+            if(Application.isPlaying)
+            {
+                return;
+            }        
+        
             List<NetworkedObject> traverseSortedObjects = MonoBehaviour.FindObjectsOfType<NetworkedObject>().ToList();
             
             traverseSortedObjects.Sort((x, y) =>
