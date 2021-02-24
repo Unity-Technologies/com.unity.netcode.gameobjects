@@ -6,7 +6,7 @@ using UnityEditor;
 
 public class Raygun : NetworkedBehaviour
 {
-    public float range = 15;
+    public float range = 10;
 
     private GameObject m_CurrentTarget;
     private LineRenderer lineRenderer;
@@ -17,27 +17,24 @@ public class Raygun : NetworkedBehaviour
 
     void Awake()
     {
-        UnityEngine.Color c1 = new UnityEngine.Color(1.0f, 1.0f, 1.0f, 0.1f);
-        UnityEngine.Color c2 = new UnityEngine.Color(1.0f, 1.0f, 1.0f, 0.1f);
-
         lineRenderer = GetComponent<LineRenderer>();
         lineRenderer.useWorldSpace = true;
         lineRenderer.alignment = LineAlignment.View;
         lineRenderer.widthMultiplier = 0.1f;
     }
 
-    private void Update()
+    private void FixedUpdate()
     {
         var forward = transform.forward * range;
 
         lineRenderer.SetVertexCount(2);
         lineRenderer.SetPosition(0, transform.position);
-        lineRenderer.SetPosition(1, transform.position + transform.forward * 10.0f);
+        lineRenderer.SetPosition(1, transform.position + forward);
 
         if (IsLocalPlayer && Input.GetKeyDown(KeyCode.P))
         {
             m_CurrentTarget = FindTarget();
-            transform.position = m_CurrentTarget.transform.position + m_CurrentTarget.transform.forward * 10.0f;
+            transform.position = m_CurrentTarget.transform.position + forward;
         }
 
     }
