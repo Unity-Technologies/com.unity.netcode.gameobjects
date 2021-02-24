@@ -316,7 +316,12 @@ namespace MLAPI
             {
                 if (hashes.Contains(NetworkConfig.NetworkedPrefabs[i].Hash))
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogError("PrefabHash collision! You have two prefabs with the same hash. This is not supported");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
+                    {
+                        var prefabHashGenerator = NetworkConfig.NetworkedPrefabs[i].Prefab.GetComponent<NetworkedObject>().PrefabHashGenerator;
+                        NetworkLog.LogError($"PrefabHash collision! You have two prefabs with the same hash (PrefabHashGenerator = {prefabHashGenerator}). This is not supported");
+                    }
+
                 }
 
                 hashes.Add(NetworkConfig.NetworkedPrefabs[i].Hash);
@@ -641,6 +646,14 @@ namespace MLAPI
 
             if (OnSingletonReady != null)
                 OnSingletonReady();
+        }
+
+        private void Awake()
+        {
+            rpcQueueContainer = new RpcQueueContainer(false);
+            //Note: Since frame history is not being used, this is set to 0
+            //To test frame history, increase the number to (n) where n > 0
+            rpcQueueContainer.Initialize(0);
         }
 
         private void OnEnable()
