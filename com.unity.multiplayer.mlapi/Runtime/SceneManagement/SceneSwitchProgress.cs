@@ -9,7 +9,7 @@ namespace MLAPI.SceneManagement
     /// <summary>
     /// Class for tracking scene switching progress by server and clients.
     /// </summary>
-    public class SceneSwitchProgress:IDisposable
+    public class SceneSwitchProgress
     {
         /// <summary>
         /// List of clientIds of those clients that is done loading the scene.
@@ -83,13 +83,7 @@ namespace MLAPI.SceneManagement
         internal void SetSceneLoadOperation(AsyncOperation sceneLoadOperation)
         {
             this.sceneLoadOperation = sceneLoadOperation;
-            //this.sceneLoadOperation.completed += (AsyncOperation operation) => { CheckCompletion(); };
-            this.sceneLoadOperation.completed += SceneLoadOperation_completed;
-        }
-
-        private void SceneLoadOperation_completed(AsyncOperation obj)
-        {
-            CheckCompletion();
+            this.sceneLoadOperation.completed += (AsyncOperation operation) => { CheckCompletion(); };
         }
 
         internal void CheckCompletion()
@@ -114,15 +108,6 @@ namespace MLAPI.SceneManagement
                 NetworkSceneManager.sceneSwitchProgresses.Remove(guid);
                 if (OnComplete != null)
                     OnComplete.Invoke(true);
-            }
-        }
-
-        public void Dispose()
-        {
-            if(this.sceneLoadOperation != null)
-            {
-                this.sceneLoadOperation.completed -= SceneLoadOperation_completed;
-                this.sceneLoadOperation = null;
             }
         }
     }
