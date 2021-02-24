@@ -527,9 +527,9 @@ namespace MLAPI.NetworkedVar.Collections
 
         private void HandleAddDictionaryEvent(NetworkedDictionaryEvent<TKey, TValue> dictionaryEvent)
         {
-            if (NetManager.Singleton.IsServer)
+            if (networkedBehaviour.NetManager.IsServer)
             {
-                if (NetManager.Singleton.ConnectedClients.Count > 0)
+                if (networkedBehaviour.NetManager.ConnectedClients.Count > 0)
                 {
                     dirtyEvents.Add(dictionaryEvent);
                 }

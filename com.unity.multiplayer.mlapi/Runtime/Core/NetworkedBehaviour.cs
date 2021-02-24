@@ -74,11 +74,6 @@ namespace MLAPI
 
             if (IsHost)
             {
-                if (serverRpcParams.Send.UpdateStage == NetworkUpdateManager.NetworkUpdateStage.Default)
-                {
-                    serverRpcParams.Send.UpdateStage = NetworkUpdateManager.NetworkUpdateStage.Update;
-                }
-
                 writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ServerRpc, Time.realtimeSinceStartup, transportChannel, 0,
                     NetManager.ServerClientId, null, QueueHistoryFrame.QueueFrameType.Inbound, serverRpcParams.Send.UpdateStage);
 
@@ -92,7 +87,7 @@ namespace MLAPI
             else
             {
                 writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ServerRpc, Time.realtimeSinceStartup, transportChannel, 0,
-                    NetManager.ServerClientId, null, QueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateManager.NetworkUpdateStage.LateUpdate);
+                    NetManager.ServerClientId, null, QueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
                 if (!isUsingBatching)
                 {
                     writer.WriteBit(false); // Encrypted
@@ -103,16 +98,7 @@ namespace MLAPI
 
             writer.WriteUInt64Packed(NetworkId); // NetworkObjectId
             writer.WriteUInt16Packed(GetBehaviourId()); // NetworkBehaviourId
-
-            //Write the update stage in front of RPC related information
-            if (serverRpcParams.Send.UpdateStage == NetworkUpdateManager.NetworkUpdateStage.Default)
-            {
-                writer.WriteUInt16Packed((ushort)NetworkUpdateManager.NetworkUpdateStage.Update);
-            }
-            else
-            {
-                writer.WriteUInt16Packed((ushort)serverRpcParams.Send.UpdateStage);
-            }
+            writer.WriteByte((byte)serverRpcParams.Send.UpdateStage); // NetworkUpdateStage
 
             return writer.Serializer;
         }
@@ -132,11 +118,11 @@ namespace MLAPI
             var rpcQueueContainer = NetManager.rpcQueueContainer;
             if (IsHost)
             {
-                rpcQueueContainer.EndAddQueueItemToFrame(serializer.Writer, QueueHistoryFrame.QueueFrameType.Inbound, serverRpcParams.Send.UpdateStage == NetworkUpdateManager.NetworkUpdateStage.Default ? NetworkUpdateManager.NetworkUpdateStage.Update:serverRpcParams.Send.UpdateStage );
+                rpcQueueContainer.EndAddQueueItemToFrame(serializer.Writer, QueueHistoryFrame.QueueFrameType.Inbound, serverRpcParams.Send.UpdateStage);
             }
             else
             {
-                rpcQueueContainer.EndAddQueueItemToFrame(serializer.Writer, QueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateManager.NetworkUpdateStage.LateUpdate);
+                rpcQueueContainer.EndAddQueueItemToFrame(serializer.Writer, QueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
             }
         }
 
@@ -170,10 +156,6 @@ namespace MLAPI
             var ContainsServerClientId = ClientIds.Contains(NetManager.ServerClientId);
             if (IsHost && ContainsServerClientId)
             {
-                if (clientRpcParams.Send.UpdateStage == NetworkUpdateManager.NetworkUpdateStage.Default)
-                {
-                    clientRpcParams.Send.UpdateStage = NetworkUpdateManager.NetworkUpdateStage.Update;
-                }
                 //Always write to the next frame's inbound queue
                 writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, transportChannel, 0,
                     NetManager.ServerClientId, null, QueueHistoryFrame.QueueFrameType.Inbound, clientRpcParams.Send.UpdateStage);
@@ -186,7 +168,7 @@ namespace MLAPI
 
                     //Switch to the outbound queue
                     writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, Channel.ReliableRPC, 0, NetworkId,
-                        ClientIds, QueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateManager.NetworkUpdateStage.LateUpdate);
+                        ClientIds, QueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
 
                     if (!isUsingBatching)
                     {
@@ -208,7 +190,7 @@ namespace MLAPI
             else
             {
                 writer = rpcQueueContainer.BeginAddQueueItemToFrame(RpcQueueContainer.QueueItemType.ClientRpc, Time.realtimeSinceStartup, transportChannel, 0, NetworkId,
-                    ClientIds, QueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateManager.NetworkUpdateStage.LateUpdate);
+                    ClientIds, QueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
 
                 if (!isUsingBatching)
                 {
@@ -220,16 +202,7 @@ namespace MLAPI
 
             writer.WriteUInt64Packed(NetworkId); // NetworkObjectId
             writer.WriteUInt16Packed(GetBehaviourId()); // NetworkBehaviourId
-
-            // Write the update stage in front of RPC related information
-            if (clientRpcParams.Send.UpdateStage == NetworkUpdateManager.NetworkUpdateStage.Default)
-            {
-                writer.WriteUInt16Packed((ushort)NetworkUpdateManager.NetworkUpdateStage.Update);
-            }
-            else
-            {
-                writer.WriteUInt16Packed((ushort)clientRpcParams.Send.UpdateStage);
-            }
+            writer.WriteByte((byte)clientRpcParams.Send.UpdateStage); // NetworkUpdateStage
 
             return writer.Serializer;
         }
@@ -255,25 +228,22 @@ namespace MLAPI
                 {
                     ClientIds = NetManager.ConnectedClientsList.Select(c => c.ClientId).ToArray();
                 }
-                var ContainsServerClientId = ClientIds.Contains(NetManager.ServerClientId);
 
+                var ContainsServerClientId = ClientIds.Contains(NetManager.ServerClientId);
                 if (ContainsServerClientId && ClientIds.Length == 1)
                 {
-                    if (clientRpcParams.Send.UpdateStage == NetworkUpdateManager.NetworkUpdateStage.Default)
-                    {
-                        clientRpcParams.Send.UpdateStage = NetworkUpdateManager.NetworkUpdateStage.Update;
-                    }
                     rpcQueueContainer.EndAddQueueItemToFrame(serializer.Writer, QueueHistoryFrame.QueueFrameType.Inbound, clientRpcParams.Send.UpdateStage);
                     return;
                 }
             }
-            rpcQueueContainer.EndAddQueueItemToFrame(serializer.Writer, QueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateManager.NetworkUpdateStage.LateUpdate);
+
+            rpcQueueContainer.EndAddQueueItemToFrame(serializer.Writer, QueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
         }
 
         /// <summary>
         /// Gets the NetworkingManager that owns this NetworkedBehaviour instance
         /// </summary>
-        public NetworkingManager NetworkManager => NetworkedObject.NetworkManager;
+        public NetworkingManager NetworkManager => NetworkedObject.NetManager;
         /// <summary>
         /// Gets if the object is the the personal clients player object
         /// </summary>
@@ -752,7 +722,7 @@ namespace MLAPI
         internal static void HandleNetworkedVarDeltas(NetworkingManager networkingManager,
             List<INetworkedVar> networkedVarList, Stream stream, ulong clientId, NetworkedBehaviour logInstance)
         {
-            using (PooledBitReader reader = networkingManager.PooledBitReaders.GetReader(stream))
+            using (var reader = networkingManager.PooledBitReaders.GetReader(stream))
             {
                 for (int i = 0; i < networkedVarList.Count; i++)
                 {

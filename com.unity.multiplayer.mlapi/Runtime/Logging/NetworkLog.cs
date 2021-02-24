@@ -23,13 +23,7 @@ namespace MLAPI.Logging
         /// Gets the current log level.
         /// </summary>
         /// <value>The current log level.</value>
-        internal LogLevel CurrentLogLevel
-        {
-            get
-            {
-                return NetworkingManager.LogLevel;
-            }
-        }
+        internal static LogLevel CurrentLogLevel => NetworkingManager.LogLevel;
 
         // MLAPI internal logging
         internal static void LogInfo(string message) => Debug.Log($"[MLAPI]" + message);

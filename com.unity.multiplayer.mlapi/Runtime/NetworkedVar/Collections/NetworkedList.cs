@@ -527,9 +527,9 @@ namespace MLAPI.NetworkedVar.Collections
 
         private void HandleAddListEvent(NetworkedListEvent<T> listEvent)
         {
-            if (NetManager.IsServer)
+            if (networkedBehaviour.NetManager.IsServer)
             {
-                if (NetManager.ConnectedClients.Count > 0)
+                if (networkedBehaviour.NetManager.ConnectedClients.Count > 0)
                 {
                     dirtyEvents.Add(listEvent);
                 }

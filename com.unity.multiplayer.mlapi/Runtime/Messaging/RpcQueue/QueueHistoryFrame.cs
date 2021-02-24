@@ -34,7 +34,7 @@ namespace MLAPI.Messaging
         private readonly QueueFrameType                  m_QueueFrameType;
         private int                                      m_MaximumClients;
         private long                                     m_CurrentStreamSizeMark;
-        private NetworkUpdateManager.NetworkUpdateStage  m_StreamUpdateStage; //Update stage specific to RPCs (typically inbound has most potential for variation)
+        private NetworkUpdateStage                       m_StreamUpdateStage; //Update stage specific to RPCs (typically inbound has most potential for variation)
         private const int                                m_MaxStreamBounds = 131072;
         private const int                                m_MinStreamBounds = 0;
 
@@ -245,12 +245,12 @@ namespace MLAPI.Messaging
         /// </summary>
         /// <param name="manager">The NetworkingManager context used by this QueueHistoryFrame</param>
         /// <param name="queueType">type of queue history frame (Inbound/Outbound)</param>
-        public QueueHistoryFrame(NetworkingManager manager, QueueFrameType queueType, NetworkUpdateManager.NetworkUpdateStage updateStage, int maxClients = 512)
+        public QueueHistoryFrame(NetworkingManager manager, QueueFrameType queueType, NetworkUpdateStage netUpdateStage, int maxClients = 512)
         {
             m_MaximumClients = maxClients;
             m_QueueFrameType = queueType;
             m_CurrentQueueItem = new RpcFrameQueueItem();
-            m_StreamUpdateStage = updateStage;
+            m_StreamUpdateStage = netUpdateStage;
             m_NetworkingManager = manager;
         }
     }
