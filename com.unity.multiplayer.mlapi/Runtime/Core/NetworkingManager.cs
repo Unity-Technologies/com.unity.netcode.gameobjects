@@ -35,7 +35,7 @@ namespace MLAPI
     /// The main component of the library
     /// </summary>
     [AddComponentMenu("MLAPI/NetworkingManager", -100)]
-    public class NetworkingManager : UpdateLoopBehaviour
+    public class NetworkingManager : MonoBehaviour, INetworkUpdateSystem
     {
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
@@ -639,26 +639,41 @@ namespace MLAPI
                 OnSingletonReady();
         }
 
+        private void Awake()
+        {
+            rpcQueueContainer = new RpcQueueContainer(false);
+            //Note: Since frame history is not being used, this is set to 0
+            //To test frame history, increase the number to (n) where n > 0
+            rpcQueueContainer.Initialize(0);
+        }
+
         private void OnEnable()
         {
             if (Singleton != null && Singleton != this)
             {
-                Destroy(this.gameObject);
+                Destroy(gameObject);
+                return;
             }
-            else
-            {
-                RegisterUpdateLoopSystem();
-                SetSingleton();
-                if (DontDestroy)
-                    DontDestroyOnLoad(gameObject);
-                if (RunInBackground)
-                    Application.runInBackground = true;
-            }
+
+            // Register INetworkUpdateSystem
+            this.RegisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);
+            this.RegisterNetworkUpdate(NetworkUpdateStage.PreUpdate);
+
+            SetSingleton();
+            if (DontDestroy)
+                DontDestroyOnLoad(gameObject);
+            if (RunInBackground)
+                Application.runInBackground = true;
+        }
+
+        private void OnDisable()
+        {
+            // Unregister INetworkUpdateSystem
+            this.UnregisterAllNetworkUpdates();
         }
 
         private void OnDestroy()
         {
-            OnNetworkLoopSystemRemove();
             //NSS: This is ok to leave this check here
             rpcQueueContainer?.Shutdown();
 
@@ -691,42 +706,18 @@ namespace MLAPI
             }
         }
 
-        /// <summary>
-        /// InternalRegisterNetworkUpdateStage
-        /// Registers all pertinent update stages for NetworkingManager
-        /// </summary>
-        /// <param name="stage">update stage to get callback for</param>
-        /// <returns></returns>
-        protected override Action InternalRegisterNetworkUpdateStage(NetworkUpdateManager.NetworkUpdateStage stage)
+        // INetworkUpdateSystem
+        public void NetworkUpdate(NetworkUpdateStage updateStage)
         {
-            Action updateStageCallback = null;
-            switch (stage)
+            switch (updateStage)
             {
-                case NetworkUpdateManager.NetworkUpdateStage.PreUpdate:
-                    {
-                        updateStageCallback = NetworkPreUpdate;
-                        break;
-                    }
-                case NetworkUpdateManager.NetworkUpdateStage.Update:
-                    {
-                        updateStageCallback = NetworkUpdate;
-                        break;
-                    }
+                case NetworkUpdateStage.EarlyUpdate:
+                    OnNetworkEarlyUpdate();
+                    break;
+                case NetworkUpdateStage.PreUpdate:
+                    OnNetworkPreUpdate();
+                    break;
             }
-
-            return updateStageCallback;
-        }
-
-        /// <summary>
-        /// Awake
-        /// Currently this only creates the RpcQueueContainer instance and initializes it.
-        /// </summary>
-        private void Awake()
-        {
-            rpcQueueContainer = new RpcQueueContainer(false);
-            //Note: Since frame history is not being used, this is set to 0
-            //To test frame history, increase the number to (n) where n > 0
-            rpcQueueContainer.Initialize(0);
         }
 
         private float m_LastReceiveTickTime;
@@ -734,11 +725,7 @@ namespace MLAPI
         private float m_EventOvershootCounter;
         private float m_LastTimeSyncTime;
 
-        /// <summary>
-        /// NetworkPreUpdate:
-        /// Mostly for handling the receiving of RPCs
-        /// </summary>
-        private void NetworkPreUpdate()
+        private void OnNetworkEarlyUpdate()
         {
             if (IsListening)
             {
@@ -779,11 +766,7 @@ namespace MLAPI
             }
         }
 
-        /// <summary>
-        /// NetworkUpdate:
-        /// Primarily handles all remaining messages, network variable/behavior updates
-        /// </summary>
-        private void NetworkUpdate()
+        private void OnNetworkPreUpdate()
         {
             if (IsListening)
             {
@@ -1258,7 +1241,7 @@ namespace MLAPI
 #endif
             var networkObjectId = queueItem.streamReader.ReadUInt64Packed();
             var networkBehaviourId = queueItem.streamReader.ReadUInt16Packed();
-            var networkUpdateStage = queueItem.streamReader.ReadUInt16Packed();
+            var networkUpdateStage = queueItem.streamReader.ReadByteDirect();
             var networkMethodId = queueItem.streamReader.ReadUInt32Packed();
 
             if (__ntable.ContainsKey(networkMethodId))
@@ -1277,7 +1260,7 @@ namespace MLAPI
                         {
                             Receive = new ServerRpcReceiveParams
                             {
-                                UpdateStage = (NetworkUpdateManager.NetworkUpdateStage)networkUpdateStage,
+                                UpdateStage = (NetworkUpdateStage)networkUpdateStage,
                                 SenderClientId = queueItem.networkId
                             }
                         };
@@ -1287,7 +1270,7 @@ namespace MLAPI
                         {
                             Receive = new ClientRpcReceiveParams
                             {
-                                UpdateStage = (NetworkUpdateManager.NetworkUpdateStage)networkUpdateStage
+                                UpdateStage = (NetworkUpdateStage)networkUpdateStage
                             }
                         };
                         break;
