@@ -1,33 +1,42 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using MLAPI;
+using UnityEditor;
 
-public class Raygun : MonoBehaviour
+public class Raygun : NetworkedBehaviour
 {
-    public float range = 15;
+    public float m_Range = 10;
 
     private GameObject m_CurrentTarget;
+    private LineRenderer m_LineRenderer;
 
     private void Start()
     {
-        StartCoroutine(Attack());
     }
 
-    private void Update()
+    private void Awake()
     {
-        var forward = transform.forward * range;
-        Debug.DrawRay(transform.position, forward, Color.yellow);
+        m_LineRenderer = GetComponent<LineRenderer>();
+        m_LineRenderer.useWorldSpace = true;
+        m_LineRenderer.alignment = LineAlignment.View;
+        m_LineRenderer.widthMultiplier = 0.1f;
     }
 
-    private IEnumerator Attack()
+    private void FixedUpdate()
     {
-        m_CurrentTarget = FindTarget();
+        var forward = transform.forward * m_Range;
 
-        ShootTarget();
+        m_LineRenderer.SetVertexCount(2);
+        m_LineRenderer.SetPosition(0, transform.position);
+        m_LineRenderer.SetPosition(1, transform.position + forward);
 
-        yield return new WaitForSeconds(10);
+        if (IsLocalPlayer && Input.GetKeyDown(KeyCode.P))
+        {
+            m_CurrentTarget = FindTarget();
+            transform.position = m_CurrentTarget.transform.position + forward;
+        }
 
-        StartCoroutine(Attack());
     }
 
     private GameObject FindTarget()
@@ -37,17 +46,5 @@ public class Raygun : MonoBehaviour
         list.Remove(gameObject);
 
         return list.Count == 0 ? null : list[Random.Range(0, list.Count)];
-    }
-
-    private void ShootTarget()
-    {
-        if (ReferenceEquals(m_CurrentTarget, null)) return;
-
-        transform.LookAt(m_CurrentTarget.transform);
-        var forward = transform.TransformDirection(Vector3.forward) * range;
-        if (Physics.Raycast(transform.position, forward, out var hit, range))
-        {
-            hit.transform.GetComponent<Renderer>().material.color = Color.red;
-        }
     }
 }
