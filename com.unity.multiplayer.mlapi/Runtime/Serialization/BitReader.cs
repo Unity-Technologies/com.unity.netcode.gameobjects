@@ -393,7 +393,10 @@ namespace MLAPI.Serialization
             float y = ReadSinglePacked();
             float z = ReadSinglePacked();
 
-            float w = Mathf.Sqrt(1f - Mathf.Pow(x, 2) - Mathf.Pow(y, 2) - Mathf.Pow(z, 2));
+            // numerical precision issues can make the remainder very slightly negative.
+            // In this case, use 0 for w as, otherwise, w would be NaN.
+            float remainder = 1f - Mathf.Pow(x, 2) - Mathf.Pow(y, 2) - Mathf.Pow(z, 2);
+            float w = (remainder > 0f) ? Mathf.Sqrt(remainder) : 0.0f;
 
             return new Quaternion(x, y, z, w);
         }
