@@ -27,9 +27,9 @@ public class PlayerControl : NetworkedBehaviour
 
     /// <summary>
     /// m_Health
-    /// Networked Var Use Case Scenario:  Player X-Axis Input
+    /// Networked Var Use Case Scenario:  Tracking player health
     /// Update Frequency: 100ms
-    /// Used to send the player's X-Axis input value
+    /// Used to update the player's health
     /// Everyone but the server has read only access
     /// </summary>
     [SerializeField]
