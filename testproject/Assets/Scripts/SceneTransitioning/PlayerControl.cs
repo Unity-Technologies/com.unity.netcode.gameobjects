@@ -120,6 +120,11 @@ public class PlayerControl : NetworkedBehaviour
         GlobalGameState.Singleton.gameStateChanged += GameStateChanged;
     }
 
+    /// <summary>
+    /// OnHealthChanged
+    /// </summary>
+    /// <param name="previousAmount"></param>
+    /// <param name="currentAmount"></param>
     protected void OnHealthChanged(float previousAmount, float currentAmount)
     {
         Debug.LogFormat("Health {0} ", currentAmount);

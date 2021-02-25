@@ -4,41 +4,70 @@ using MLAPI;
 using MLAPI.NetworkedVar;
 using MLAPI.SceneManagement;
 
+
+
+[ExecuteInEditMode]
 public class GlobalGameState : NetworkedBehaviour
 {
-    static public GlobalGameState Singleton { get; internal set; }
+   static public GlobalGameState Singleton { get; internal set; }
+
+    [Header("Window Resolution")]
 
     [SerializeField]
-    public string DefaultMainMenu = "StartMenu";
+    [Tooltip("Is the game going to always run in full screen?")]
+    private bool m_IsFullScreen;
 
+    [SerializeField]
+    [Tooltip("Horizontal window resolution size (if fullscreen this is ignored)")]
+    private int m_HorizontalResolution = 1024;
+
+    [SerializeField]
+    [Tooltip("Vertical window resolution size (if fullscreen this is ignored)")]
+    private int m_VerticalResolution = 768;
+
+    [Space]
+    /// <summary>
+    /// The name of the scene that is the default main menu
+    /// </summary>
+    [SerializeField]
+    private StateToSceneTransitionList SceneToStateLinks;
+
+    #region Events and Delegate Handlers
     [HideInInspector]
     public delegate void ClientLoadedSceneDelegateHandler(ulong clientId);
+
+    /// <summary>
+    /// clientLoadedScene (Event)
+    /// Usage:  typically the host-server subscribes to this event to be notified
+    /// when each individual player has loaded a scene
+    /// </summary>
     [HideInInspector]
     public event ClientLoadedSceneDelegateHandler clientLoadedScene;
 
     [HideInInspector]
     public delegate void GameStateChangedDelegateHandler(GameStates previousState, GameStates newState);
 
+    /// <summary>
+    /// gameStateChanged (Event)
+    /// Usage: everyone (clients and serve) can subscribe to this event
+    /// to be notified when the global game state changes
+    /// </summary>
     [HideInInspector]
     public event GameStateChangedDelegateHandler gameStateChanged;
 
-    //Tracks our scene switching progress
-    private SceneSwitchProgress m_SceneProgress;
+    [HideInInspector]
+    public delegate void AllPlayersLoadedSceneDelegateHandler();
 
     /// <summary>
-    /// Example scene states
+    /// allPlayersLoadedScene (Event)
+    /// Usage: typically the host-server subscribes to this event to be notified
+    /// that all players have finished loading a scene
     /// </summary>
-    public enum GameStates
-    {
-        None,               //Default
-        Init,               //Depending upon size of main menu (or first scene, could be a video or the like)
-        Menu,               //When the user has reached the main menu to the game
-        Lobby,              //When the user has entered a game session lobby
-        InGame,             //When the user has entered into the game session itself
-        ExitGame,           //When the user is exiting the game session
-        Shutdown            //When the system is shutting down
-    }
+    [HideInInspector]
+    public event AllPlayersLoadedSceneDelegateHandler allPlayersLoadedScene;
+    #endregion
 
+    #region NETWORK VARIABLES
     /// <summary>
     /// Networked Var Use Case Scenario:  State Machine
     /// Update Frequency: 0ms (immediate)
@@ -61,6 +90,25 @@ public class GlobalGameState : NetworkedBehaviour
     /// Clients only have read access
     /// </summary>
     public float inGameTime { get{ return m_InGameTime.Value; } }
+    #endregion
+
+    //Tracks our scene switching progress
+    private SceneSwitchProgress m_SceneProgress;
+
+    /// <summary>
+    /// GameStates
+    /// Relates to:  NetworkedVar<GameStates> m_GameState
+    /// Provides the different states for the networked game state machine
+    /// </summary>
+    public enum GameStates
+    {
+        Init,               //The initial state
+        Menu,               //When the user has reached the main menu to the game
+        Lobby,              //When the user has entered a game session lobby
+        InGame,             //When the user has entered into the game session itself
+        ExitGame,           //When the user is exiting the game session
+        Shutdown            //When the system is shutting down
+    }
 
     /// <summary>
     /// Awake
@@ -77,6 +125,26 @@ public class GlobalGameState : NetworkedBehaviour
 
         m_GameState.OnValueChanged += OnGameStateChanged;
     }
+
+
+        /// <summary>
+    /// Start
+    /// Kicks of the initialization state, this is where we load the first scene from the MLAPI_BootStrap
+    /// </summary>
+    private void Start()
+    {
+        Screen.SetResolution(m_HorizontalResolution, m_VerticalResolution, false);
+
+        StateToSceneTransitionLinks.Initialize();
+
+        //Only invoke this when the application is playing (i.e. do not execute this code within the editor in edit mode)
+        if(Application.isPlaying)
+        {
+            //Server and clients always execute this
+            SetGameState(GameStates.Init);
+        }
+    }
+
 
     /// <summary>
     /// OnGameStateChanged
@@ -101,10 +169,6 @@ public class GlobalGameState : NetworkedBehaviour
         //Any per frame tasks can be performed here (this is not required but can be useful for things like time outs and such)
         switch(m_GameState.Value)
         {
-            case GameStates.None:
-                {
-                    break;
-                }
             case GameStates.Init:
                 {
                     break;
@@ -115,6 +179,10 @@ public class GlobalGameState : NetworkedBehaviour
                 }
             case GameStates.Lobby:
                 {
+                    if(m_GameState.Settings.WritePermission != NetworkedVarPermission.ServerOnly)
+                    {
+                         m_GameState.Settings.WritePermission = NetworkedVarPermission.ServerOnly;
+                    }
                     break;
                 }
             case GameStates.InGame:
@@ -127,6 +195,21 @@ public class GlobalGameState : NetworkedBehaviour
                 }
             case GameStates.ExitGame:
                 {
+                    //Clean up
+                    if(m_SceneProgress != null)
+                    {
+                        m_SceneProgress = null;
+                    }
+                    if(clientLoadedScene != null)
+                    {
+                        clientLoadedScene = null;
+                    }
+
+                    //Revert back to everyone access after we leave the game session
+                    m_GameState.Settings.WritePermission = NetworkedVarPermission.Everyone;
+
+                    //one level deep recursive call to start loading the main menu again
+                    SetGameState(GameStates.Menu);
                     break;
                 }
         }
@@ -143,53 +226,10 @@ public class GlobalGameState : NetworkedBehaviour
         //We only should update once per changed state
         if(previousState != newState)
         {
-            switch(newState)
+            string SceneName = SceneToStateLinks.GetSceneNameLinkedToState(newState);
+            if(SceneName != string.Empty)
             {
-                case GameStates.None:
-                    {
-                        SceneManager.LoadScene(DefaultMainMenu);
-                        break;
-                    }
-                case GameStates.Init:
-                    {
-                        //Any "upon change" configurations go here
-                        break;
-                    }
-                case GameStates.Menu:
-                    {
-                        //Any "upon change" configurations go here
-                        break;
-                    }
-                case GameStates.Lobby:
-                    {
-                        m_GameState.Settings.WritePermission = NetworkedVarPermission.ServerOnly;
-                        break;
-                    }
-                case GameStates.InGame:
-                    {
-                        //Reset our in-game timer
-                        m_InGameTime.Value = 0.0f;
-                        break;
-                    }
-                case GameStates.ExitGame:
-                    {
-                        //Clean up
-                        if(m_SceneProgress != null)
-                        {
-                            m_SceneProgress = null;
-                        }
-                        if(clientLoadedScene != null)
-                        {
-                            clientLoadedScene = null;
-                        }
-
-                        //Revert back to everyone access after we leave the game session
-                        m_GameState.Settings.WritePermission = NetworkedVarPermission.Everyone;
-
-                        //one level deep recursive call to start loading the main menu again
-                        SetGameState(GameStates.None);
-                        break;
-                    }
+                SwitchScene(SceneName);
             }
 
             //make sure we can set this networked variable
@@ -222,15 +262,7 @@ public class GlobalGameState : NetworkedBehaviour
         return m_GameState.Value;
     }
 
-    /// <summary>
-    /// Start
-    /// Kicks of the initialization state, this is where we load the first scene from the MLAPI_BootStrap
-    /// </summary>
-    private void Start()
-    {
-        //Server and clients always execute this
-        SetGameState(GameStates.Init);
-    }
+
 
     /// <summary>
     /// Switches to a new scene
@@ -258,7 +290,7 @@ public class GlobalGameState : NetworkedBehaviour
     /// AllClientsAreLoaded
     /// Returns whether all lients are loaded
     /// </summary>
-    /// <returns></returns>
+    /// <returns>true or false (they are all loaded or they are not)</returns>
     public bool AllClientsAreLoaded()
     {
         if(m_SceneProgress != null)

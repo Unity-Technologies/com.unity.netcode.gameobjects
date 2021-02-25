@@ -11,8 +11,9 @@ GameObject:
   - component: {fileID: 3086277942538694983}
   - component: {fileID: 3086277942538694976}
   - component: {fileID: 3086277942538694977}
+  - component: {fileID: 6446314041099906429}
   m_Layer: 0
-  m_Name: NetworkManager
+  m_Name: NetworkBootStrap
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -52,6 +53,7 @@ MonoBehaviour:
     NetworkTransport: {fileID: 3086277942538694977}
     RegisteredScenes:
     - SampleScene
+    - MLAPI_BootStrap
     AllowRuntimeSceneChanges: 0
     NetworkedPrefabs:
     - Prefab: {fileID: 8685790303553767886, guid: 96e0a72e30d0c46c8a5c9a750e8f5807,
@@ -115,3 +117,21 @@ MonoBehaviour:
   MLAPIRelayAddress: 184.72.104.138
   MLAPIRelayPort: 8888
   MessageSendMode: 0
+--- !u!114 &6446314041099906429
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3086277942538694978}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ad29ee6203fd9f947b3001a730829e34, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_IsFullScreen: 0
+  m_HorizontalResolution: 1024
+  m_VerticalResolution: 768
+  SceneStateLinks:
+  - SceneToLoad: {fileID: 0}
+    StateToLoadScene: {fileID: 0}
