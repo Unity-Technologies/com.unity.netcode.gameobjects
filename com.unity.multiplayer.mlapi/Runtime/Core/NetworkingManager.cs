@@ -1029,6 +1029,11 @@ namespace MLAPI
             }
         }
 
+        private readonly BitStream m_InputStreamWrapper = new BitStream(new byte[0]);
+        bool m_InputStreamWrapperUsed;
+        // The fallback wrapper is used in case we have to handle incoming data but the InputStreamWrapper is already being used.
+        // This change is needed because MLAPI calls HandleIncomingData nested when it is applying buffered messages to an object spawned in HandleIncomingData.
+        private readonly BitStream m_FallbackInputStreamWrapper = new BitStream(new byte[0]);
         private readonly RpcBatcher m_RpcBatcher = new RpcBatcher();
 
         internal void HandleIncomingData(ulong clientId, Channel channel, ArraySegment<byte> data, float receiveTime, bool allowBuffer)
@@ -1038,12 +1043,22 @@ namespace MLAPI
 #endif
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo("Unwrapping Data Header");
 
-            var m_InputStreamWrapper = new BitStream();
-            m_InputStreamWrapper.SetTarget(data.Array);
-            m_InputStreamWrapper.SetLength(data.Count + data.Offset);
-            m_InputStreamWrapper.Position = data.Offset;
+            BitStream inputStreamWrapper;
+            if (m_InputStreamWrapperUsed)
+            {
+                inputStreamWrapper = m_FallbackInputStreamWrapper;
+            }
+            else
+            {
+                inputStreamWrapper = m_InputStreamWrapper;
+                m_InputStreamWrapperUsed = true;
+            }
 
-            using (var messageStream = MessagePacker.UnwrapMessage(m_InputStreamWrapper, clientId, out byte messageType, out SecuritySendFlags security))
+            inputStreamWrapper.SetTarget(data.Array);
+            inputStreamWrapper.SetLength(data.Count + data.Offset);
+            inputStreamWrapper.Position = data.Offset;
+
+            using (var messageStream = MessagePacker.UnwrapMessage(inputStreamWrapper, clientId, out byte messageType, out SecuritySendFlags security))
             {
                 if (messageStream == null)
                 {
@@ -1199,6 +1214,12 @@ namespace MLAPI
 
                 NetworkProfiler.EndEvent();
             }
+
+            if (inputStreamWrapper == m_InputStreamWrapper)
+            {
+                m_InputStreamWrapperUsed = false;
+            }
+
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleIncomingData.End();
 #endif
