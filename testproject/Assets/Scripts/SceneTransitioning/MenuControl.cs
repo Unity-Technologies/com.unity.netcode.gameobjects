@@ -13,9 +13,10 @@ public class MenuControl : MonoBehaviour
     [SerializeField]
     private string m_LobbySceneName = "GameLobby";
 
+    private UnetTransport m_CurrentTransport;
+
     private void Start()
     {
-
         NetworkingManager NM = NetworkingManager.Singleton;
         if(NM != null)
         {
@@ -23,17 +24,18 @@ public class MenuControl : MonoBehaviour
             if(NetConfig != null)
             {
                 //Update the host input IP Address
-                var unetTransport = (UnetTransport)NetConfig.NetworkTransport;
-                if (unetTransport)
+                m_CurrentTransport = (UnetTransport)NetConfig.NetworkTransport;
+                if (m_CurrentTransport)
                 {
-                    m_HostIpInput.text = unetTransport.ConnectAddress;
+                    m_HostIpInput.text = m_CurrentTransport.ConnectAddress;
                 }
             }
         }
-#if (UNITY_EDITOR)
-
+#if UNITY_EDITOR
         else
         {
+            //EDITOR ONLY!!
+            //This will automatically launch the MLAPIBootStrap and then transition directly to the scene this control is contained within (for easy development of scenes)
             GlobalGameState.LoadBootStrapScene();
         }
 #endif
@@ -41,21 +43,15 @@ public class MenuControl : MonoBehaviour
 
     public void StartLocalGame()
     {
-
-       //[NSS-TODO]: Fix how this is handled (See LobbyControl.cs)
-        LobbyControl.isHosting = true;
-        GlobalGameState.Singleton.SwitchScene(m_LobbySceneName);
+        GlobalGameState.Singleton.IsHostingGame = true;
+        m_CurrentTransport.ConnectAddress = m_HostIpInput.text;
+        GlobalGameState.Singleton.SetGameState(GlobalGameState.GameStates.Lobby);
     }
 
     public void JoinLocalGame()
     {
-        if (m_HostIpInput.text != "Hostname")
-        {
-            var unetTransport = (UnetTransport)NetworkingManager.Singleton.NetworkConfig.NetworkTransport;
-            if (unetTransport) unetTransport.ConnectAddress = m_HostIpInput.text;
-            //[NSS-TODO]: Fix how this is handled (See LobbyControl.cs)
-            LobbyControl.isHosting = false;
-            GlobalGameState.Singleton.SwitchScene(m_LobbySceneName);
-        }
+        GlobalGameState.Singleton.IsHostingGame = false;
+        m_CurrentTransport.ConnectAddress = m_HostIpInput.text;
+        GlobalGameState.Singleton.SetGameState(GlobalGameState.GameStates.Lobby);
     }
 }

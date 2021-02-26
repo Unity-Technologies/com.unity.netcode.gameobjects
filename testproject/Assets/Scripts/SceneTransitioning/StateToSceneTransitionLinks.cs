@@ -14,6 +14,17 @@ namespace MLAPIGlobalGameState
         [SerializeField]
         private bool m_IsEnabled;
 
+        public enum MLAPIStates
+        {
+            None,
+            Connecting,
+            InSession,
+            ExitSession
+        }
+
+        [SerializeField]
+        private MLAPIStates m_MLAPIState;
+
 
         private String  SceneToLoadName;
 
@@ -41,6 +52,8 @@ namespace MLAPIGlobalGameState
             }
         }
         public GlobalGameState.GameStates stateToLoadScene { get { return m_StateToLoadScene; } }
+
+        public  MLAPIStates MLAPIState {get { return m_MLAPIState; }}
 
     }
 
@@ -86,6 +99,23 @@ namespace MLAPIGlobalGameState
                 return results.First().stateToLoadScene;
             }
             return GlobalGameState.GameStates.None;
+        }
+
+
+        /// <summary>
+        /// GetGameStateLinkedToScene
+        /// Returns the state associated with the scene
+        /// </summary>
+        /// <param name="sceneName">Name of the scene</param>
+        /// <returns>GlobalGameState.GameStates</returns>
+        public StateToSceneTransitionLinks.MLAPIStates GetGameStateToMLAPIState(GlobalGameState.GameStates gameState)
+        {
+            var results = m_StateToSceneList.Where(entry =>  entry.stateToLoadScene == gameState);
+            if(results != null)
+            {
+                return results.First().MLAPIState;
+            }
+            return StateToSceneTransitionLinks.MLAPIStates.None;
         }
 
         public StateToSceneTransitionList()

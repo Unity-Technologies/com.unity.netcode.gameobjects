@@ -91,6 +91,12 @@ public class GlobalGameState : NetworkedBehaviour
     public float inGameTime { get{ return m_InGameTime.Value; } }
     #endregion
 
+    //This is set prior to setting any game state that activates MLAPI
+    public bool IsHostingGame;
+
+    //Used to determine the current state of MLAPI (Global Game State Relative)
+    private StateToSceneTransitionLinks.MLAPIStates CurrentMLAPIState;
+
     //Tracks our scene switching progress
     private SceneSwitchProgress m_SceneProgress;
 
@@ -145,10 +151,6 @@ public class GlobalGameState : NetworkedBehaviour
         }
     }
 
-
-
-
-
     /// <summary>
     /// OnGameStateChanged
     /// Cients and Server can register for this in order to synchronize the global game state between all clients (including the host-client)
@@ -198,23 +200,71 @@ public class GlobalGameState : NetworkedBehaviour
                 }
             case GameStates.ExitGame:
                 {
-                    //Clean up
-                    if(m_SceneProgress != null)
-                    {
-                        m_SceneProgress = null;
-                    }
-                    if(clientLoadedScene != null)
-                    {
-                        clientLoadedScene = null;
-                    }
-
-                    //Revert back to everyone access after we leave the game session
-                    m_GameState.Settings.WritePermission = NetworkedVarPermission.Everyone;
-
                     //one level deep recursive call to start loading the main menu again
                     SetGameState(GameStates.Menu);
                     break;
                 }
+        }
+    }
+
+    private void UpdateMLAPIState(GameStates newState)
+    {
+        StateToSceneTransitionLinks.MLAPIStates NewMLAPIState = SceneToStateLinks.GetGameStateToMLAPIState(newState);
+        if(CurrentMLAPIState != NewMLAPIState )
+        {
+            switch(NewMLAPIState)
+            {
+                case StateToSceneTransitionLinks.MLAPIStates.Connecting:
+                    {
+                        if(CurrentMLAPIState == StateToSceneTransitionLinks.MLAPIStates.None)
+                        {
+                            if(!NetworkingManager.Singleton.IsListening)
+                            {
+                                //If we are host, then start the host
+                                if (IsHostingGame)
+                                {
+                                    NetworkingManager.Singleton.StartHost();  //Spin up the host
+                                }
+                                else //otherwise start the client
+                                {
+                                    NetworkingManager.Singleton.StartClient();//Spin up the client
+                                }
+                            }
+                        }
+                        break;
+                    }
+                case StateToSceneTransitionLinks.MLAPIStates.ExitSession:
+                    {
+                        if(CurrentMLAPIState == StateToSceneTransitionLinks.MLAPIStates.InSession || CurrentMLAPIState == StateToSceneTransitionLinks.MLAPIStates.Connecting)
+                        {
+                            if(NetworkingManager.Singleton.IsListening)
+                            {
+                                //If we are host, then stop the host
+                                if (IsHostingGame)
+                                {
+                                    IsHostingGame = false;
+                                    NetworkingManager.Singleton.StopHost();  //shutdown the host
+                                }
+                                else //otherwise stop the client
+                                {
+                                    NetworkingManager.Singleton.StopClient();//shutdown the client
+                                }
+
+                                //Clean up scene loading and progeess handlers
+                                if(m_SceneProgress != null)
+                                {
+                                    m_SceneProgress = null;
+                                }
+                                if(clientLoadedScene != null)
+                                {
+                                    clientLoadedScene = null;
+                                }
+                            }
+                        }
+                        break;
+                    }
+            }
+            CurrentMLAPIState = NewMLAPIState;
         }
     }
 
@@ -230,14 +280,36 @@ public class GlobalGameState : NetworkedBehaviour
         if(previousState != newState)
         {
             string SceneName = SceneToStateLinks.GetSceneNameLinkedToState(newState);
+
             if(SceneName != string.Empty)
             {
-                SwitchScene(SceneName);
+                if(CurrentMLAPIState == StateToSceneTransitionLinks.MLAPIStates.InSession || CurrentMLAPIState == StateToSceneTransitionLinks.MLAPIStates.Connecting)
+                {
+                    //If we are in a session or connecting, then update the state first then switch scenes
+                    UpdateMLAPIState(newState);
+                    //Start the scene switch first
+                    SwitchScene(SceneName, newState);
+
+                }
+                else
+                {
+                    //Then update the MLAPI state
+                    UpdateMLAPIState(newState);
+
+                    //Start the scene switch first
+                    SwitchScene(SceneName, newState);
+                }
+
             }
 
             //make sure we can set this networked variable
-            if(IsServer || m_GameState.Settings.WritePermission != NetworkedVarPermission.ServerOnly)
+            if(IsServer || m_GameState.Settings.WritePermission != NetworkedVarPermission.ServerOnly || newState == GameStates.ExitGame )
             {
+                if(newState == GameStates.ExitGame)
+                {
+                    //Revert back to everyone access after we leave the game session
+                    m_GameState.Settings.WritePermission = NetworkedVarPermission.Everyone;
+                }
                 //Now set the state so all clients will receive the message
                 m_GameState.Value = newState;
             }
@@ -266,15 +338,15 @@ public class GlobalGameState : NetworkedBehaviour
     }
 
 
-
+    AsyncOperation UnitySceneTransitionOperation;
     /// <summary>
     /// Switches to a new scene
     /// </summary>
     /// <param name="scenename"></param>
-    public void SwitchScene(string scenename)
+    private void SwitchScene(string scenename,GameStates transitionState )
     {
         // If we have started our network transport (connecting, connected, in game session, etc)
-        if(NetworkingManager.Singleton.IsListening)
+        if(NetworkingManager.Singleton.IsListening && IsServer)
         {
             //Use the NetworkSceneManager
             m_SceneProgress = NetworkSceneManager.SwitchScene(scenename);
@@ -284,8 +356,17 @@ public class GlobalGameState : NetworkedBehaviour
         }
         else
         {
-            //If transport is not active then just load the scene via the normal Unity scene manager
-            SceneManager.LoadSceneAsync(scenename);
+            ////Special case for clients, if the network is started, we are not the server, and we are either entering the lobby or exiting the game
+            //if(NetworkingManager.Singleton.IsListening && !IsServer && (transitionState == GameStates.Lobby || transitionState == GameStates.ExitGame))
+            //{
+            //     SceneManager.LoadSceneAsync(scenename);
+            //}
+            //else
+            if (!NetworkingManager.Singleton.IsListening)
+            {
+                //If transport is not active then just load the scene via the normal Unity scene manager
+                SceneManager.LoadScene(scenename);
+            }
         }
     }
 
@@ -324,13 +405,13 @@ public class GlobalGameState : NetworkedBehaviour
 #endif
     }
 
-#if (UNITY_EDITOR)
+#if UNITY_EDITOR
     private static string BootStrapToScene;
 #endif
 
     public static bool CheckForBootStrappedScene()
     {
-#if (UNITY_EDITOR)
+#if UNITY_EDITOR
         if(BootStrapToScene != null && BootStrapToScene != string.Empty)
         {
             GameStates BootStrappedGameState = Singleton.SceneToStateLinks.GetGameStateLinkedToScene(BootStrapToScene);
@@ -347,7 +428,7 @@ public class GlobalGameState : NetworkedBehaviour
 
     public static void LoadBootStrapScene()
     {
-#if (UNITY_EDITOR)
+#if UNITY_EDITOR
         foreach (UnityEditor.EditorBuildSettingsScene nextscene in UnityEditor.EditorBuildSettings.scenes)
         {
             if (nextscene.enabled)

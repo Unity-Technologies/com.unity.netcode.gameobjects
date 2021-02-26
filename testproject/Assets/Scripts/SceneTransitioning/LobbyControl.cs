@@ -8,12 +8,11 @@ using UnityEngine.UI;
 
 public class LobbyControl : NetworkedBehaviour
 {
-    [HideInInspector]
-    public static bool isHosting;
-
-    [SerializeField]
-    private string m_InGameSceneName = "InGame";
     public Text LobbyText;
+
+    [Tooltip("This value only determines if the minimum numbers of players to start are present.  All players must hit the ready button to launch.")]
+    [Range(1,16)]
+    private int m_MinPlayersToStart = 2;
 
     private Dictionary<ulong,bool> m_ClientsInLobby;
     private bool m_AllPlayersInLobby;
@@ -26,36 +25,55 @@ public class LobbyControl : NetworkedBehaviour
     private void Awake()
     {
         m_ClientsInLobby = new Dictionary<ulong, bool>();
-
-        //We added this information to tell us if we are going to host a game or join an the game session
-        if (isHosting)
+        #if(UNITY_EDITOR)
+        if( NetworkingManager.Singleton == null)
         {
-            NetworkingManager.Singleton.StartHost();  //Spin up the host
+            //This will automatically launch the MLAPIBootStrap and then transition directly to the scene this control is contained within (for easy development of scenes)
+            GlobalGameState.LoadBootStrapScene();
+            return;
         }
-        else
-        {
-            NetworkingManager.Singleton.StartClient();//Spin up the client
-        }
+#endif
+        //if (GlobalGameState.Singleton.IsHostingGame)
+        //{
+        //    NetworkingManager.Singleton.StartHost();
+        //}
+        //else
+        //{
+        //    NetworkingManager.Singleton.StartClient();
+        //}
 
-        if(NetworkingManager.Singleton.IsListening)
+
+    }
+
+    private void Start()
+    {
+
+    }
+
+    public override void NetworkStart()
+    {
+        if (NetworkingManager.Singleton.IsListening)
         {
             //Always add ourselves to the list at first
             m_ClientsInLobby.Add(NetworkingManager.Singleton.LocalClientId, false);
 
+             NetworkingManager.Singleton.OnClientConnectedCallback += OnClientConnectedCallback;
             //If we are hosting, then handle the server side for detecting when clients have connected
             //and when their lobby scenes are finished loading.
             if(IsServer)
             {
                 m_AllPlayersInLobby = false;
                 //Server will be notified when a client connects
-                NetworkingManager.Singleton.OnClientConnectedCallback += OnClientConnectedCallback;
+
                 GlobalGameState.Singleton.clientLoadedScene += ClientLoadedScene;
             }
             //Update our lobby
             GenerateUserStatsForLobby();
         }
-    }
 
+
+        base.NetworkStart();
+    }
 
     /// <summary>
     /// GenerateUserStatsForLobby
@@ -94,7 +112,7 @@ public class LobbyControl : NetworkedBehaviour
     void UpdateAndCheckPlayersInLobby()
     {
         //This is game preference, but I am assuming at least 2 players?
-        m_AllPlayersInLobby = m_ClientsInLobby.Count > 1;
+        m_AllPlayersInLobby = (m_ClientsInLobby.Count >= m_MinPlayersToStart);
 
         foreach(KeyValuePair<ulong,bool> clientLobbyStatus in m_ClientsInLobby)
         {
@@ -135,16 +153,16 @@ public class LobbyControl : NetworkedBehaviour
     /// <param name="clientId">client that connected</param>
     private void OnClientConnectedCallback(ulong clientId)
     {
+        if(!m_ClientsInLobby.ContainsKey(clientId))
+        {
+            m_ClientsInLobby.Add(clientId, false);
+             GenerateUserStatsForLobby();
+        }
         if(IsServer)
         {
-            if(!m_ClientsInLobby.ContainsKey(clientId))
-            {
-                m_ClientsInLobby.Add(clientId, false);
-            }
-            GenerateUserStatsForLobby();
-
             UpdateAndCheckPlayersInLobby();
         }
+
     }
 
 
@@ -201,7 +219,7 @@ public class LobbyControl : NetworkedBehaviour
                 GlobalGameState.Singleton.clientLoadedScene -= ClientLoadedScene;
 
                 //Transition to the ingame scene
-                GlobalGameState.Singleton.SwitchScene(m_InGameSceneName);
+                GlobalGameState.Singleton.SetGameState(GlobalGameState.GameStates.InGame);
             }
         }
     }
@@ -214,13 +232,13 @@ public class LobbyControl : NetworkedBehaviour
     {
         if(IsServer)
         {
-            m_ClientsInLobby[NetworkingManager.Singleton.ServerClientId] = true;
+            m_ClientsInLobby[NetworkingManager.Singleton.ServerClientId] = !m_ClientsInLobby[NetworkingManager.Singleton.ServerClientId];
             UpdateAndCheckPlayersInLobby();
         }
         else
         {
-            m_ClientsInLobby[NetworkingManager.Singleton.LocalClientId] = true;
-            OnClientIsReadyServerRpc(NetworkingManager.Singleton.LocalClientId);
+            m_ClientsInLobby[NetworkingManager.Singleton.LocalClientId] =  !m_ClientsInLobby[NetworkingManager.Singleton.LocalClientId];
+            OnClientIsReadyServerRpc(NetworkingManager.Singleton.LocalClientId,m_ClientsInLobby[NetworkingManager.Singleton.LocalClientId]);
         }
 
         GenerateUserStatsForLobby();
@@ -232,13 +250,25 @@ public class LobbyControl : NetworkedBehaviour
     /// </summary>
     /// <param name="clientid">clientId that is ready</param>
     [ServerRpc(RequireOwnership = false)]
-    void OnClientIsReadyServerRpc(ulong clientid)
+    void OnClientIsReadyServerRpc(ulong clientid, bool isReady)
     {
         if(m_ClientsInLobby.ContainsKey(clientid))
         {
-            m_ClientsInLobby[clientid] = true;
+            m_ClientsInLobby[clientid] = isReady;
             UpdateAndCheckPlayersInLobby();
             GenerateUserStatsForLobby();
         }
+    }
+
+
+    private void OnDestroy()
+    {
+        NetworkingManager.Singleton.OnClientConnectedCallback -= OnClientConnectedCallback;
+        if(IsServer)
+        {
+            GlobalGameState.Singleton.clientLoadedScene -= ClientLoadedScene;
+        }
+
+        Debug.Log("Destroying Lobby Control Object!");
     }
 }

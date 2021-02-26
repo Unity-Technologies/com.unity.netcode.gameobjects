@@ -1,6 +1,3 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using UnityEditorInternal;
@@ -32,16 +29,18 @@ class SceneToStateOptionsEditor : PropertyDrawer
 
     private void DrawHeader(Rect rect)
     {
-        GUI.Label(rect, "Enabled | State to Scene Transition Links");
+        GUI.Label(rect, "Enabled |         MLAPI State              |    State to Scene Transition Links");
     }
 
     private void DrawOptionData(Rect rect, int index, bool isActive, bool isFocused)
     {
         SerializedProperty itemData = m_ReorderableList.serializedProperty.GetArrayElementAtIndex(index);
 
+
+        SerializedProperty itemEnabled = itemData.FindPropertyRelative("m_IsEnabled");
+        SerializedProperty itemMLAPIState = itemData.FindPropertyRelative("m_MLAPIState");
         SerializedProperty itemScene = itemData.FindPropertyRelative("m_SceneToLoad");
         SerializedProperty itemState = itemData.FindPropertyRelative("m_StateToLoadScene");
-        SerializedProperty itemEnabled = itemData.FindPropertyRelative("m_IsEnabled");
         SerializedProperty itemSceneName = itemData.FindPropertyRelative("m_SceneToLoadName");
 
         //[NSS]: This is how we get the scene name from the scene object for runtime usage (scene objects don't get exported to builds)
@@ -49,6 +48,7 @@ class SceneToStateOptionsEditor : PropertyDrawer
         {
             itemSceneName.stringValue = itemScene.objectReferenceValue.name;
             Debug.Log("Set the scene name to " + itemSceneName.stringValue);
+
         }
 
         float OriginalWidth = rect.width;
@@ -57,7 +57,9 @@ class SceneToStateOptionsEditor : PropertyDrawer
         rect.width = 32;
         EditorGUI.PropertyField(rect, itemEnabled, GUIContent.none);
         rect.x += rect.width + 8;
-        rect.width = (OriginalWidth * 0.5f) - 32;
+        rect.width = (OriginalWidth * 0.33f) - 32;
+        EditorGUI.PropertyField(rect, itemMLAPIState, GUIContent.none);
+        rect.x += rect.width + 16;
         EditorGUI.PropertyField(rect, itemScene,  GUIContent.none);
         rect.x += rect.width + 8;
         EditorGUI.PropertyField(rect, itemState,  GUIContent.none);
