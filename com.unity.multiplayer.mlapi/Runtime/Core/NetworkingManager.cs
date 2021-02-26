@@ -71,6 +71,7 @@ namespace MLAPI
         static ProfilerMarker s_InvokeRPC = new ProfilerMarker("InvokeRPC");
 #endif
         internal RpcQueueContainer rpcQueueContainer { get; private set; }
+        internal NetworkTickSystem networkTickSystem { get; private set; }
 
         /// <summary>
         /// A synchronized time, represents the time in seconds since the server application started. Is replicated across all clients
@@ -383,6 +384,12 @@ namespace MLAPI
                 return;
             }
 
+            //This 'if' should never enter
+            if (networkTickSystem != null)
+            {
+                networkTickSystem.Dispose();
+            }
+            networkTickSystem = new NetworkTickSystem();
 
             //This should never happen, but in the event that it does there should be (at a minimum) a unity error logged.
             if(rpcQueueContainer != null)
@@ -697,6 +704,12 @@ namespace MLAPI
                 rpcQueueContainer.Shutdown();
                 rpcQueueContainer = null;
             }
+
+            if (networkTickSystem != null)
+            {
+                networkTickSystem.Dispose();
+            }
+            networkTickSystem = null;
 
             NetworkProfiler.Stop();
             IsListening = false;

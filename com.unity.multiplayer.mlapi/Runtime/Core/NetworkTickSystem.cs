@@ -3,6 +3,11 @@ using UnityEngine;
 
 namespace MLAPI
 {
+    // todo: This is a pretty minimal tick system. It will be improved in the future
+    // It currently relies on Time.unscaledTime and, as such, will start suffering
+    // numerical precision issues after 2^23 ticks have passed (float have 23 bits mantissa)
+    // For future releases, we'll need to improve on this, probably by leveraging FixedUpdate
+
     public class NetworkTickSystem : INetworkUpdateSystem, IDisposable
     {
         private const float k_DefaultTickIntervalSec = 1/60f; // Defaults to 60 ticks second
@@ -16,24 +21,12 @@ namespace MLAPI
         // Number of ticks over which the tick number wraps back to 0
         public const ushort k_TickPeriod = k_NoTick - 1;
 
-        public static NetworkTickSystem Instance
-        {
-            get
-            {
-                if (m_Instance == null)
-                {
-                    m_Instance = new NetworkTickSystem();
-                }
-                return m_Instance;
-            }
-        }
-
         /// <summary>
         /// Constructor
         /// Defaults to k_DefaultTickIntervalSec if no tick duration is specified
         /// </summary>
         /// <param name="tickIntervalSec">Duration of a network tick</param>
-        private NetworkTickSystem(float tickIntervalSec = k_DefaultTickIntervalSec)
+        public NetworkTickSystem(float tickIntervalSec = k_DefaultTickIntervalSec)
         {
             this.RegisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);
 
