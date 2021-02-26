@@ -478,6 +478,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
         type: 3}
+      propertyPath: SceneToStateLinks.m_StateToSceneList.Array.data[5].m_IsEnabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
+        type: 3}
       propertyPath: SceneToStateLinks.m_StateToSceneList.Array.data[0].m_SceneToLoad
       value: 
       objectReference: {fileID: 102900000, guid: f1b57d687e6023144852eb0403e851d6,
@@ -508,6 +513,12 @@ PrefabInstance:
         type: 3}
     - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
         type: 3}
+      propertyPath: SceneToStateLinks.m_StateToSceneList.Array.data[5].m_SceneToLoad
+      value: 
+      objectReference: {fileID: 102900000, guid: ebee135e52c197349959dc7546e30261,
+        type: 3}
+    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
+        type: 3}
       propertyPath: SceneToStateLinks.m_StateToSceneList.Array.data[0].m_SceneToLoadName
       value: MLAPIBootStrap
       objectReference: {fileID: 0}
@@ -533,6 +544,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
         type: 3}
+      propertyPath: SceneToStateLinks.m_StateToSceneList.Array.data[5].m_SceneToLoadName
+      value: InGame
+      objectReference: {fileID: 0}
+    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
+        type: 3}
       propertyPath: SceneToStateLinks.m_StateToSceneList.Array.data[0].m_StateToLoadScene
       value: 0
       objectReference: {fileID: 0}
@@ -554,6 +570,11 @@ PrefabInstance:
     - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
         type: 3}
       propertyPath: SceneToStateLinks.m_StateToSceneList.Array.data[4].m_StateToLoadScene
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
+        type: 3}
+      propertyPath: SceneToStateLinks.m_StateToSceneList.Array.data[5].m_StateToLoadScene
       value: 4
       objectReference: {fileID: 0}
     m_RemovedComponents: []

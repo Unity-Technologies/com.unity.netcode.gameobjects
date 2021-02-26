@@ -6,6 +6,7 @@ using System.Collections.Generic;
 namespace MLAPIGlobalGameState
 {
     using UnityEngine;
+    using UnityEditor;
 
     [Serializable]
     public class StateToSceneTransitionLinks
@@ -20,7 +21,7 @@ namespace MLAPIGlobalGameState
         String m_SceneToLoadName;
 
         [SerializeField]
-        private Object m_SceneToLoad;
+        private SceneAsset m_SceneToLoad;
 
         [SerializeField]
         private GlobalGameState.GameStates m_StateToLoadScene;
