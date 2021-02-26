@@ -19,9 +19,10 @@ namespace MLAPIGlobalGameState
 
         [SerializeField]
         String m_SceneToLoadName;
-
+#if (UNITY_EDITOR)
         [SerializeField]
         private SceneAsset m_SceneToLoad;
+#endif
 
         [SerializeField]
         private GlobalGameState.GameStates m_StateToLoadScene;
