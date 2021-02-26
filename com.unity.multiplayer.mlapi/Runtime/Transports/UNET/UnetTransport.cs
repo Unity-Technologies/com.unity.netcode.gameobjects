@@ -4,18 +4,22 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using MLAPI.Exceptions;
 using MLAPI.Logging;
+using MLAPI.Profiling;
 using MLAPI.Transports.Tasks;
 using UnityEngine.Networking;
 
 namespace MLAPI.Transports.UNET
 {
-    public class UnetTransport : Transport
+    public class UnetTransport : Transport, ITransportProfilerData
     {
         public enum SendMode
         {
             Immediately,
             Queued
         }
+
+        static readonly ProfilingDataStore k_TransportProfilerData = new ProfilingDataStore();
+        public static bool profilerEnabled;
 
         // Inspector / settings
         public int MessageBufferSize = 1024 * 5;
@@ -76,6 +80,11 @@ namespace MLAPI.Transports.UNET
 
         public override void Send(ulong clientId, ArraySegment<byte> data, Channel channel)
         {
+            if (profilerEnabled)
+            {
+                k_TransportProfilerData.Increment(ProfilerConstants.NumberOfTransportSends);
+            }
+
             GetUnetConnectionDetails(clientId, out byte hostId, out ushort connectionId);
 
             int channelId = 0;
@@ -131,6 +140,11 @@ namespace MLAPI.Transports.UNET
 
         public void SendQueued(ulong clientId)
         {
+            if (profilerEnabled)
+            {
+                k_TransportProfilerData.Increment(ProfilerConstants.NumberOfTransportSendQueues);
+            }
+
             GetUnetConnectionDetails(clientId, out byte hostId, out ushort connectionId);
 
             RelayTransport.SendQueuedMessages(hostId, connectionId, out byte error);
@@ -323,6 +337,8 @@ namespace MLAPI.Transports.UNET
 
             messageBuffer = new byte[MessageBufferSize];
 
+            k_TransportProfilerData.Clear();
+
             NetworkTransport.Init();
         }
 
@@ -438,6 +454,16 @@ namespace MLAPI.Transports.UNET
             RelayTransport.Enabled = UseMLAPIRelay;
             RelayTransport.RelayAddress = MLAPIRelayAddress;
             RelayTransport.RelayPort = (ushort)MLAPIRelayPort;
+        }
+
+        public void BeginNewTick()
+        {
+            k_TransportProfilerData.Clear();
+        }
+
+        public IReadOnlyDictionary<string, int> GetTransportProfilerData()
+        {
+            return k_TransportProfilerData.GetReadonly();
         }
     }
 }

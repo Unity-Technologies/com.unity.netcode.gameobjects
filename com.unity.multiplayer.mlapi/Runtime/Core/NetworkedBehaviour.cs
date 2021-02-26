@@ -792,6 +792,8 @@ namespace MLAPI
                     long readStartPos = stream.Position;
 
                     networkedVarList[i].ReadDelta(stream, IsServer, localTick, remoteTick);
+                    PerformanceDataManager.Increment(ProfilerConstants.NumberNetworkVarsReceived);
+
                     ProfilerStatManager.networkVarsRcvd.Record();
 
                     if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
@@ -859,6 +861,8 @@ namespace MLAPI
                     long readStartPos = stream.Position;
 
                     networkedVarList[i].ReadField(stream, NetworkTickSystem.k_NoTick, NetworkTickSystem.k_NoTick);
+                    PerformanceDataManager.Increment(ProfilerConstants.NumberNetworkVarsReceived);
+
                     ProfilerStatManager.networkVarsRcvd.Record();
 
                     if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
