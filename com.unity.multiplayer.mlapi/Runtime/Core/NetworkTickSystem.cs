@@ -5,9 +5,9 @@ namespace MLAPI
 {
     public class NetworkTickSystem : INetworkUpdateSystem, IDisposable
     {
-        private const double k_DefaultTickDuration = 0.016;
-        private double m_TickDuration;
-        private int m_NetworkTick; //How many network ticks have passed?
+        private const float k_DefaultTickDuration = 1/60f; // Default to 60 FPS
+        private float m_TickInterval; //Duration of a tick
+        private int m_NetworkTickCount; //How many network ticks have passed?
 
         private static NetworkTickSystem m_Instance = null;
 
@@ -28,9 +28,25 @@ namespace MLAPI
             }
         }
 
+        /// <summary>
+        /// Constructor
+        /// Defaults to k_DefaultTickDuration if no tick duration is specified
+        /// </summary>
+        /// <param name="tickInterval">Duration of a network tick</param>
+        private NetworkTickSystem(float tickInterval = k_DefaultTickDuration)
+        {
+            this.RegisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);
+
+            //Assure we don't specify a value less than or equal to zero for tick frequency
+            m_TickInterval = (tickInterval <= 0f) ? k_DefaultTickDuration : tickInterval;
+
+            // ticks might not start at 0, so let's update right away at construction
+            UpdateNetworkTick();
+        }
+
         public void Dispose()
         {
-            NetworkUpdateLoop.UnregisterNetworkUpdate(this, NetworkUpdateStage.EarlyUpdate);
+            this.UnregisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);
         }
 
         /// <summary>
@@ -40,17 +56,17 @@ namespace MLAPI
         /// <returns></returns>
         public ushort GetTick()
         {
-            return (ushort)(m_NetworkTick % k_TickPeriod);
+            return (ushort)(m_NetworkTickCount % k_TickPeriod);
         }
 
         /// <summary>
         /// GetNetworkTime
-        /// Network time is calculated from m_NetworkTick and m_TickDuration (tick frequency)
+        /// Network time is calculated from m_NetworkTickCount and m_TickInterval (tick frequency)
         /// </summary>
         /// <returns>Network Time</returns>
-        public double GetNetworkTime()
+        public float GetNetworkTime()
         {
-            return m_NetworkTick * m_TickDuration;
+            return m_NetworkTickCount * m_TickInterval;
         }
 
         /// <summary>
@@ -59,23 +75,7 @@ namespace MLAPI
         /// </summary>
         private void UpdateNetworkTick()
         {
-            m_NetworkTick = (int)(Time.unscaledTime / m_TickDuration);
-        }
-
-        /// <summary>
-        /// Constructor
-        /// Defaults to k_DefaultTickDuration if no tick duration is specified
-        /// </summary>
-        /// <param name="tickDuration">Duration of a network tick</param>
-        private NetworkTickSystem(double tickDuration = k_DefaultTickDuration)
-        {
-            NetworkUpdateLoop.RegisterNetworkUpdate(this, NetworkUpdateStage.EarlyUpdate);
-
-            //Assure we don't specify a value less than or equal to zero for tick frequency
-            m_TickDuration = (tickDuration <= 0d) ? k_DefaultTickDuration : tickDuration;
-
-            // ticks might not start at 0, so let's update right away at construction
-            UpdateNetworkTick();
+            m_NetworkTickCount = (int)(Time.unscaledTime / m_TickInterval);
         }
 
         public void NetworkUpdate(NetworkUpdateStage updateStage)
