@@ -11,7 +11,7 @@ namespace MLAPI.Messaging
     /// RpcQueueContainer
     /// Handles the management of an Rpc Queue
     /// </summary>
-    public class RpcQueueContainer : INetworkUpdateSystem
+    internal class RpcQueueContainer : INetworkUpdateSystem
     {
         private const int k_MinQueueHistory = 2; //We need a minimum of 2 queue history buffers in order to properly handle looping back Rpcs when a host
 
@@ -571,7 +571,6 @@ namespace MLAPI.Messaging
             return QueueHistory[frameType][StreamBufferIndex][updateStage];
         }
 
-
         /// <summary>
         /// LoopbackSendFrame
         /// Will copy the contents of the current outbound QueueHistoryFrame to the current inbound QueueHistoryFrame
@@ -710,15 +709,15 @@ namespace MLAPI.Messaging
         /// </summary>
         public void Shutdown()
         {
-            //We need to make sure all internal messages (i.e. object destroy) are sent
-            m_RpcQueueProcessor.InternalMessagesSendAndFlush();
-
             //As long as this instance is using the pre-defined update stages
             if (!m_ProcessUpdateStagesExternally)
             {
                 //Remove ourself from the network loop update system
                 this.UnregisterAllNetworkUpdates();
             }
+
+            //We need to make sure all internal messages (i.e. object destroy) are sent
+            m_RpcQueueProcessor.InternalMessagesSendAndFlush();
 
             //Dispose of any readers and writers
             foreach (KeyValuePair<QueueHistoryFrame.QueueFrameType, Dictionary<int, Dictionary<NetworkUpdateStage, QueueHistoryFrame>>> queueHistorySection in QueueHistory)

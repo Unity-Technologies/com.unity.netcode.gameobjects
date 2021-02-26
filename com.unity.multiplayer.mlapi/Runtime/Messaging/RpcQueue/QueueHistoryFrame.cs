@@ -159,7 +159,7 @@ namespace MLAPI.Messaging
         /// If none are remaining, then it returns a queue item type of NONE
         /// </summary>
         /// <returns>FrameQueueItem</returns>
-        public RpcFrameQueueItem GetNextQueueItem()
+        internal RpcFrameQueueItem GetNextQueueItem()
         {
             queueStream.Position = queueItemOffsets[m_QueueItemOffsetIndex];
             m_QueueItemOffsetIndex++;
@@ -178,7 +178,7 @@ namespace MLAPI.Messaging
         /// This will reset the frame's stream indices and add a new stream and stream writer to the m_CurrentQueueItem instance.
         /// </summary>
         /// <returns>FrameQueueItem</returns>
-        public RpcFrameQueueItem GetFirstQueueItem()
+        internal RpcFrameQueueItem GetFirstQueueItem()
         {
             if (queueStream.Position > 0)
             {

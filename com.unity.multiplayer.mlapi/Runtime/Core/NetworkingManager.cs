@@ -70,7 +70,8 @@ namespace MLAPI
         static ProfilerMarker s_MLAPIClientSTDRPCQueued = new ProfilerMarker("MLAPIClientSTDRPCQueued");
         static ProfilerMarker s_InvokeRPC = new ProfilerMarker("InvokeRPC");
 #endif
-        public RpcQueueContainer rpcQueueContainer { get; private set; }
+        internal RpcQueueContainer rpcQueueContainer { get; private set; }
+        internal NetworkTickSystem networkTickSystem { get; private set; }
 
         /// <summary>
         /// A synchronized time, represents the time in seconds since the server application started. Is replicated across all clients
@@ -383,6 +384,33 @@ namespace MLAPI
                 return;
             }
 
+            //This 'if' should never enter
+            if (networkTickSystem != null)
+            {
+                networkTickSystem.Dispose();
+            }
+            networkTickSystem = new NetworkTickSystem();
+
+            //This should never happen, but in the event that it does there should be (at a minimum) a unity error logged.
+            if(rpcQueueContainer != null)
+            {
+                UnityEngine.Debug.LogError("Init was invoked, but rpcQueueContainer was already initialized! (destroying previous instance)");
+                rpcQueueContainer.Shutdown();
+                rpcQueueContainer = null;
+            }
+
+            //The RpcQueueContainer must be initialized within the Init method ONLY
+            //It should ONLY be shutdown and destroyed in the Shutdown method (other than just above)
+            rpcQueueContainer = new RpcQueueContainer(false);
+
+            //Note: Since frame history is not being used, this is set to 0
+            //To test frame history, increase the number to (n) where n > 0
+            rpcQueueContainer.Initialize(0);
+
+            // Register INetworkUpdateSystem (always register this after rpcQueueContainer has been instantiated)
+            this.RegisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);
+            this.RegisterNetworkUpdate(NetworkUpdateStage.PreUpdate);
+
             try
             {
                 string pfx = null;
@@ -639,14 +667,6 @@ namespace MLAPI
                 OnSingletonReady();
         }
 
-        private void Awake()
-        {
-            rpcQueueContainer = new RpcQueueContainer(false);
-            //Note: Since frame history is not being used, this is set to 0
-            //To test frame history, increase the number to (n) where n > 0
-            rpcQueueContainer.Initialize(0);
-        }
-
         private void OnEnable()
         {
             if (Singleton != null && Singleton != this)
@@ -655,10 +675,6 @@ namespace MLAPI
                 return;
             }
 
-            // Register INetworkUpdateSystem
-            this.RegisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);
-            this.RegisterNetworkUpdate(NetworkUpdateStage.PreUpdate);
-
             SetSingleton();
             if (DontDestroy)
                 DontDestroyOnLoad(gameObject);
@@ -666,17 +682,8 @@ namespace MLAPI
                 Application.runInBackground = true;
         }
 
-        private void OnDisable()
-        {
-            // Unregister INetworkUpdateSystem
-            this.UnregisterAllNetworkUpdates();
-        }
-
         private void OnDestroy()
         {
-            //NSS: This is ok to leave this check here
-            rpcQueueContainer?.Shutdown();
-
             if (Singleton != null && Singleton == this)
             {
                 Singleton = null;
@@ -687,6 +694,23 @@ namespace MLAPI
         public void Shutdown()
         {
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo("Shutdown()");
+
+            // Unregister INetworkUpdateSystem before shutting down the RpcQueueContainer
+            this.UnregisterAllNetworkUpdates();
+
+            //If an instance of the RpcQueueContainer is still around, then shut it down and remove the reference
+            if (rpcQueueContainer != null)
+            {
+                rpcQueueContainer.Shutdown();
+                rpcQueueContainer = null;
+            }
+
+            if (networkTickSystem != null)
+            {
+                networkTickSystem.Dispose();
+            }
+            networkTickSystem = null;
+
             NetworkProfiler.Stop();
             IsListening = false;
             IsServer = false;
@@ -699,11 +723,7 @@ namespace MLAPI
             if (NetworkConfig != null && NetworkConfig.NetworkTransport != null)
                 NetworkConfig.NetworkTransport.Shutdown();
 
-            if (rpcQueueContainer != null)
-            {
-                rpcQueueContainer.Shutdown();
-                rpcQueueContainer = null;
-            }
+
         }
 
         // INetworkUpdateSystem
@@ -1255,7 +1275,7 @@ namespace MLAPI
         /// Called when an inbound queued RPC is invoked
         /// </summary>
         /// <param name="queueItem">frame queue item to invoke</param>
-        public static void InvokeRpc(RpcFrameQueueItem queueItem)
+        internal static void InvokeRpc(RpcFrameQueueItem queueItem)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_InvokeRPC.Begin();

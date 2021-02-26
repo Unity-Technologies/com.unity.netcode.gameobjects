@@ -12,7 +12,7 @@ namespace  MLAPI.Messaging
     /// NOTE: This structure will change in the near future and is in a state of flux.
     /// This will include removing specific properties or changing property types
     /// </summary>
-    public struct RpcFrameQueueItem
+    internal struct RpcFrameQueueItem
     {
         public NetworkUpdateStage                        updateStage;
         public RpcQueueContainer.QueueItemType           queueItemType;
