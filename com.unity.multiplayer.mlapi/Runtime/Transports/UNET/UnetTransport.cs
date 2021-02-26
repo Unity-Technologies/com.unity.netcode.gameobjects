@@ -82,7 +82,7 @@ namespace MLAPI.Transports.UNET
         {
             if (profilerEnabled)
             {
-                k_TransportProfilerData.Increment(ProfilerConstants.NumberOfTransportSends.ToString());
+                k_TransportProfilerData.Increment(ProfilerConstants.NumberOfTransportSends);
             }
 
             GetUnetConnectionDetails(clientId, out byte hostId, out ushort connectionId);
@@ -142,7 +142,7 @@ namespace MLAPI.Transports.UNET
         {
             if (profilerEnabled)
             {
-                k_TransportProfilerData.Increment(ProfilerConstants.NumberOfTransportSendQueues.ToString());
+                k_TransportProfilerData.Increment(ProfilerConstants.NumberOfTransportSendQueues);
             }
 
             GetUnetConnectionDetails(clientId, out byte hostId, out ushort connectionId);

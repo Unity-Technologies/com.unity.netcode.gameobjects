@@ -1,8 +1,8 @@
 namespace MLAPI.Transports.UNET
 {
-    public enum ProfilerConstants
+    public static class ProfilerConstants
     {
-        NumberOfTransportSends,
-        NumberOfTransportSendQueues,
+        public const string NumberOfTransportSends = nameof(NumberOfTransportSends);
+        public const string NumberOfTransportSendQueues = nameof(NumberOfTransportSendQueues);
     }
 }
