@@ -5,9 +5,9 @@ namespace MLAPI
 {
     public class NetworkTickSystem : INetworkUpdateSystem, IDisposable
     {
-        private const float k_DefaultTickDuration = 1/60f; // Default to 60 FPS
-        private float m_TickInterval; //Duration of a tick
-        private int m_NetworkTickCount; //How many network ticks have passed?
+        private const float k_DefaultTickInterval = 1/60f; // Defaults to 60 ticks second
+        private float m_TickInterval; // Duration of a tick in seconds
+        private int m_NetworkTickCount; // How many network ticks have passed?
 
         private static NetworkTickSystem m_Instance = null;
 
@@ -30,15 +30,15 @@ namespace MLAPI
 
         /// <summary>
         /// Constructor
-        /// Defaults to k_DefaultTickDuration if no tick duration is specified
+        /// Defaults to k_DefaultTickInterval if no tick duration is specified
         /// </summary>
         /// <param name="tickInterval">Duration of a network tick</param>
-        private NetworkTickSystem(float tickInterval = k_DefaultTickDuration)
+        private NetworkTickSystem(float tickInterval = k_DefaultTickInterval)
         {
             this.RegisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);
 
             //Assure we don't specify a value less than or equal to zero for tick frequency
-            m_TickInterval = (tickInterval <= 0f) ? k_DefaultTickDuration : tickInterval;
+            m_TickInterval = (tickInterval <= 0f) ? k_DefaultTickInterval : tickInterval;
 
             // ticks might not start at 0, so let's update right away at construction
             UpdateNetworkTick();
