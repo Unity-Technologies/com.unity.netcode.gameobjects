@@ -20,6 +20,7 @@ namespace MLAPI
     /// A component used to identify that a GameObject is networked
     /// </summary>
     [AddComponentMenu("MLAPI/NetworkedObject", -99)]
+    [DisallowMultipleComponent]
     public sealed class NetworkedObject : MonoBehaviour
     {
         private void OnValidate()
