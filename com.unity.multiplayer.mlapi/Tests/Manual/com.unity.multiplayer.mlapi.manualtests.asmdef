@@ -1,0 +1,8 @@
+{
+    "name": "com.unity.mulitplayer.mlapi.manualtests",
+    "references": [
+        "Unity.Multiplayer.MLAPI.Runtime"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": []
+}
