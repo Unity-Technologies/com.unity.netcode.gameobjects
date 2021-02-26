@@ -13,14 +13,31 @@ namespace MLAPIGlobalGameState
         [SerializeField]
         private bool m_IsEnabled;
 
+
+        private String  SceneToLoadName;
+
+        [SerializeField]
+        String m_SceneToLoadName;
+
         [SerializeField]
         private Object m_SceneToLoad;
 
         [SerializeField]
         private GlobalGameState.GameStates m_StateToLoadScene;
 
+        public bool IsEnabled { get { return m_IsEnabled; } }
 
-        public Object sceneToLoad { get { return m_SceneToLoad; } }
+        public String sceneToLoad
+        {
+            get
+            {
+#if (UNITY_EDITOR)
+                return m_SceneToLoad.name;
+#else
+                return m_SceneToLoadName;
+#endif
+            }
+        }
         public GlobalGameState.GameStates stateToLoadScene { get { return m_StateToLoadScene; } }
 
     }
@@ -44,10 +61,11 @@ namespace MLAPIGlobalGameState
         /// <returns></returns>
         public String GetSceneNameLinkedToState(GlobalGameState.GameStates gameState)
         {
+
             var results = m_StateToSceneList.Where(entry => entry.stateToLoadScene == gameState);
             if(results != null)
             {
-                return results.First().sceneToLoad.name;
+                return results.First().sceneToLoad;
             }
             return String.Empty;
         }
@@ -60,7 +78,7 @@ namespace MLAPIGlobalGameState
         /// <returns>GlobalGameState.GameStates</returns>
         public GlobalGameState.GameStates GetGameStateLinkedToScene(String sceneName)
         {
-            var results = m_StateToSceneList.Where(entry => entry.sceneToLoad.name == sceneName);
+            var results = m_StateToSceneList.Where(entry => entry.sceneToLoad == sceneName);
             if(results != null)
             {
                 return results.First().stateToLoadScene;

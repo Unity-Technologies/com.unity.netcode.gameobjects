@@ -6,10 +6,7 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/SampleScene.unity
-    guid: 9fc0d4010bbf28b4594072e72b8655ab
-  - enabled: 1
-    path: Assets/Scenes/SceneTransitioning/MLAPI_BootStrap.unity
+    path: Assets/Scenes/SceneTransitioning/MLAPIBootStrap.unity
     guid: f1b57d687e6023144852eb0403e851d6
   - enabled: 1
     path: Assets/Scenes/SceneTransitioning/GameIntro.unity
@@ -23,4 +20,7 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/SceneTransitioning/InGame.unity
     guid: ebee135e52c197349959dc7546e30261
+  - enabled: 1
+    path: Assets/Scenes/SampleScene.unity
+    guid: 9fc0d4010bbf28b4594072e72b8655ab
   m_configObjects: {}

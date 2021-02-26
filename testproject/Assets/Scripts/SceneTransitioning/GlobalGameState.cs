@@ -146,6 +146,9 @@ public class GlobalGameState : NetworkedBehaviour
     }
 
 
+
+
+
     /// <summary>
     /// OnGameStateChanged
     /// Cients and Server can register for this in order to synchronize the global game state between all clients (including the host-client)
@@ -328,7 +331,7 @@ public class GlobalGameState : NetworkedBehaviour
     public static bool CheckForBootStrappedScene()
     {
 #if (UNITY_EDITOR)
-        if(BootStrapToScene != string.Empty)
+        if(BootStrapToScene != null && BootStrapToScene != string.Empty)
         {
             GameStates BootStrappedGameState = Singleton.SceneToStateLinks.GetGameStateLinkedToScene(BootStrapToScene);
             BootStrapToScene = string.Empty;
