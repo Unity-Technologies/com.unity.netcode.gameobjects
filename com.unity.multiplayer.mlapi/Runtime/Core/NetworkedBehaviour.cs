@@ -527,7 +527,7 @@ namespace MLAPI
         internal static void NetworkedBehaviourUpdate()
         {
             // Don't NetworkedBehaviourUpdate more than once per network tick
-            ushort tick = NetworkTickSystem.Instance.GetTick();
+            ushort tick = NetworkingManager.Singleton.networkTickSystem.GetTick();
             if (tick == currentTick)
             {
                 return;
