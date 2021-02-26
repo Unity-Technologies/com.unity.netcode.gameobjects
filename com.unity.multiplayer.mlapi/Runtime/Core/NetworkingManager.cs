@@ -74,7 +74,7 @@ namespace MLAPI
 
         public delegate void PerformanceDataEventHandler(PerformanceTickData profilerData);
 
-        public event PerformanceDataEventHandler OnPerformanceDataEvent;
+        public static event PerformanceDataEventHandler OnPerformanceDataEvent;
 
         /// <summary>
         /// A synchronized time, represents the time in seconds since the server application started. Is replicated across all clients
