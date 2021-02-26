@@ -5,8 +5,8 @@ namespace MLAPI
 {
     public class NetworkTickSystem : INetworkUpdateSystem, IDisposable
     {
-        private const float k_DefaultTickInterval = 1/60f; // Defaults to 60 ticks second
-        private float m_TickInterval; // Duration of a tick in seconds
+        private const float k_DefaultTickIntervalSec = 1/60f; // Defaults to 60 ticks second
+        private float m_TickIntervalSec; // Duration of a tick in seconds
         private int m_NetworkTickCount; // How many network ticks have passed?
 
         private static NetworkTickSystem m_Instance = null;
@@ -30,15 +30,15 @@ namespace MLAPI
 
         /// <summary>
         /// Constructor
-        /// Defaults to k_DefaultTickInterval if no tick duration is specified
+        /// Defaults to k_DefaultTickIntervalSec if no tick duration is specified
         /// </summary>
-        /// <param name="tickInterval">Duration of a network tick</param>
-        private NetworkTickSystem(float tickInterval = k_DefaultTickInterval)
+        /// <param name="tickIntervalSec">Duration of a network tick</param>
+        private NetworkTickSystem(float tickIntervalSec = k_DefaultTickIntervalSec)
         {
             this.RegisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);
 
             //Assure we don't specify a value less than or equal to zero for tick frequency
-            m_TickInterval = (tickInterval <= 0f) ? k_DefaultTickInterval : tickInterval;
+            m_TickIntervalSec = (tickIntervalSec <= 0f) ? k_DefaultTickIntervalSec : tickIntervalSec;
 
             // ticks might not start at 0, so let's update right away at construction
             UpdateNetworkTick();
@@ -61,12 +61,12 @@ namespace MLAPI
 
         /// <summary>
         /// GetNetworkTime
-        /// Network time is calculated from m_NetworkTickCount and m_TickInterval (tick frequency)
+        /// Network time is calculated from m_NetworkTickCount and m_TickIntervalSec (tick frequency)
         /// </summary>
         /// <returns>Network Time</returns>
         public float GetNetworkTime()
         {
-            return m_NetworkTickCount * m_TickInterval;
+            return m_NetworkTickCount * m_TickIntervalSec;
         }
 
         /// <summary>
@@ -75,7 +75,7 @@ namespace MLAPI
         /// </summary>
         private void UpdateNetworkTick()
         {
-            m_NetworkTickCount = (int)(Time.unscaledTime / m_TickInterval);
+            m_NetworkTickCount = (int)(Time.unscaledTime / m_TickIntervalSec);
         }
 
         public void NetworkUpdate(NetworkUpdateStage updateStage)
