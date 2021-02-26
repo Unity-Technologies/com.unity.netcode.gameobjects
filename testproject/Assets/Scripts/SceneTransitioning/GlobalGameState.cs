@@ -137,8 +137,11 @@ public class GlobalGameState : NetworkedBehaviour
         //Only invoke this when the application is playing (i.e. do not execute this code within the editor in edit mode)
         if(Application.isPlaying)
         {
-            //Server and clients always execute this
-            SetGameState(GameStates.Init);
+            if(!CheckForBootStrappedScene())
+            {
+                //Server and clients always execute this
+                SetGameState(GameStates.Init);
+            }
         }
     }
 
@@ -308,4 +311,58 @@ public class GlobalGameState : NetworkedBehaviour
             clientLoadedScene.Invoke(clientId);
         }
     }
+
+    public static bool IsLoadingFromEditor()
+    {
+#if (UNITY_EDITOR)
+        return true;
+#else
+        return false;
+#endif
+    }
+
+#if (UNITY_EDITOR)
+    private static string BootStrapToScene;
+#endif
+
+    public static bool CheckForBootStrappedScene()
+    {
+#if (UNITY_EDITOR)
+        if(BootStrapToScene != string.Empty)
+        {
+            GameStates BootStrappedGameState = Singleton.SceneToStateLinks.GetGameStateLinkedToScene(BootStrapToScene);
+            BootStrapToScene = string.Empty;
+            if(BootStrappedGameState != GameStates.None)
+            {
+                Singleton.SetGameState(BootStrappedGameState);
+                return true;
+            }
+        }
+#endif
+        return false;
+    }
+
+    public static void LoadBootStrapScene()
+    {
+#if (UNITY_EDITOR)
+        foreach (UnityEditor.EditorBuildSettingsScene nextscene in UnityEditor.EditorBuildSettings.scenes)
+        {
+            if (nextscene.enabled)
+            {
+                string SceneFilename = nextscene.path.Substring(nextscene.path.LastIndexOf('/')+1);
+                string[] SplitSceneFileName = SceneFilename.Split('.');
+                if(SplitSceneFileName[0] == "MLAPIBootStrap")
+                {
+                    Scene currentScene = SceneManager.GetActiveScene();
+                    if(currentScene != null)
+                    {
+                        BootStrapToScene = currentScene.name;
+                    }
+                    SceneManager.LoadScene(SplitSceneFileName[0]);
+                }
+            }
+        }
+#endif
+    }
+
 }

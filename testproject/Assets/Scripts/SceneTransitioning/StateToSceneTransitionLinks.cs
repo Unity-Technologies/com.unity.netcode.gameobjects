@@ -50,7 +50,22 @@ namespace MLAPIGlobalGameState
                 return results.First().sceneToLoad.name;
             }
             return String.Empty;
+        }
 
+        /// <summary>
+        /// GetGameStateLinkedToScene
+        /// Returns the state associated with the scene
+        /// </summary>
+        /// <param name="sceneName">Name of the scene</param>
+        /// <returns>GlobalGameState.GameStates</returns>
+        public GlobalGameState.GameStates GetGameStateLinkedToScene(String sceneName)
+        {
+            var results = m_StateToSceneList.Where(entry => entry.sceneToLoad.name == sceneName);
+            if(results != null)
+            {
+                return results.First().stateToLoadScene;
+            }
+            return GlobalGameState.GameStates.None;
         }
 
         public StateToSceneTransitionList()
