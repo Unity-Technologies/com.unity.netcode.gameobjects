@@ -25,7 +25,7 @@ public class LobbyControl : NetworkedBehaviour
     private void Awake()
     {
         m_ClientsInLobby = new Dictionary<ulong, bool>();
-        #if(UNITY_EDITOR)
+#if(UNITY_EDITOR)
         if( NetworkingManager.Singleton == null)
         {
             //This will automatically launch the MLAPIBootStrap and then transition directly to the scene this control is contained within (for easy development of scenes)
@@ -33,25 +33,7 @@ public class LobbyControl : NetworkedBehaviour
             return;
         }
 #endif
-        //if (GlobalGameState.Singleton.IsHostingGame)
-        //{
-        //    NetworkingManager.Singleton.StartHost();
-        //}
-        //else
-        //{
-        //    NetworkingManager.Singleton.StartClient();
-        //}
 
-
-    }
-
-    private void Start()
-    {
-
-    }
-
-    public override void NetworkStart()
-    {
         if (NetworkingManager.Singleton.IsListening)
         {
             //Always add ourselves to the list at first
@@ -70,6 +52,16 @@ public class LobbyControl : NetworkedBehaviour
             //Update our lobby
             GenerateUserStatsForLobby();
         }
+    }
+
+    private void Start()
+    {
+
+    }
+
+    public override void NetworkStart()
+    {
+
 
 
         base.NetworkStart();
@@ -161,6 +153,10 @@ public class LobbyControl : NetworkedBehaviour
         if(IsServer)
         {
             UpdateAndCheckPlayersInLobby();
+        }
+        else
+        {
+            OnClientIsReadyServerRpc(NetworkingManager.Singleton.LocalClientId, false);
         }
 
     }
