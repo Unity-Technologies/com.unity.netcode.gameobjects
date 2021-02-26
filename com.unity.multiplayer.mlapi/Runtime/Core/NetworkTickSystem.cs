@@ -1,8 +1,9 @@
+using System;
 using UnityEngine;
 
 namespace MLAPI
 {
-    public class NetworkTickSystem : INetworkUpdateSystem
+    public class NetworkTickSystem : INetworkUpdateSystem, IDisposable
     {
         private const double k_DefaultTickDuration = 0.016;
         private double m_TickDuration;
@@ -25,6 +26,11 @@ namespace MLAPI
                 }
                 return m_Instance;
             }
+        }
+
+        public void Dispose()
+        {
+            NetworkUpdateLoop.UnregisterNetworkUpdate(this, NetworkUpdateStage.EarlyUpdate);
         }
 
         /// <summary>
@@ -61,8 +67,10 @@ namespace MLAPI
         /// Defaults to k_DefaultTickDuration if no tick duration is specified
         /// </summary>
         /// <param name="tickDuration">Duration of a network tick</param>
-        public NetworkTickSystem(double tickDuration = k_DefaultTickDuration)
+        private NetworkTickSystem(double tickDuration = k_DefaultTickDuration)
         {
+            NetworkUpdateLoop.RegisterNetworkUpdate(this, NetworkUpdateStage.EarlyUpdate);
+
             //Assure we don't specify a value less than or equal to zero for tick frequency
             m_TickDuration = (tickDuration <= 0d) ? k_DefaultTickDuration : tickDuration;
 
