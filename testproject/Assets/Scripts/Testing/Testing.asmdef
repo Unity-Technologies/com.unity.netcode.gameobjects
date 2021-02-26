@@ -1,5 +1,5 @@
 {
-    "name": "Unity.Multiplayer.MLAPI.ManualTests",
+    "name": "Testing",
     "references": [
         "Unity.Multiplayer.MLAPI.Runtime"
     ],
