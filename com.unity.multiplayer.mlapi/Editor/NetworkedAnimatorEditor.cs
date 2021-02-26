@@ -1,12 +1,12 @@
-//using System;
-//using MLAPI.Prototyping;
-//using UnityEditor.Animations;
-//using UnityEngine;
+using System;
+using MLAPI.Prototyping;
+using UnityEditor.Animations;
+using UnityEngine;
 
 namespace UnityEditor
 {
-    //[CustomEditor(typeof(NetworkedAnimator), true)]
-    //[CanEditMultipleObjects]
+    [CustomEditor(typeof(NetworkedAnimator), true)]
+    [CanEditMultipleObjects]
     public class NetworkAnimatorEditor : Editor
     {
         // TODO @mfatihmar (Unity): Re-implement this after `NetworkedAnimator` re-implementation
