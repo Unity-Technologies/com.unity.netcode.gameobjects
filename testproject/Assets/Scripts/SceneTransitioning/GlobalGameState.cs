@@ -3,10 +3,9 @@ using UnityEngine.SceneManagement;
 using MLAPI;
 using MLAPI.NetworkedVar;
 using MLAPI.SceneManagement;
+using MLAPIGlobalGameState;
 
 
-
-[ExecuteInEditMode]
 public class GlobalGameState : NetworkedBehaviour
 {
    static public GlobalGameState Singleton { get; internal set; }
@@ -74,7 +73,7 @@ public class GlobalGameState : NetworkedBehaviour
     /// Used for a state machine that updates immediately upon the value changing.
     /// Clients only have read access to the current GlobalGameState.
     /// </summary>
-    private NetworkedVar<GameStates> m_GameState = new NetworkedVar<GameStates>(new NetworkedVarSettings(){ WritePermission = NetworkedVarPermission.ServerOnly } , GameStates.Init);
+    private NetworkedVar<GameStates> m_GameState = new NetworkedVar<GameStates>(new NetworkedVarSettings(){ WritePermission = NetworkedVarPermission.ServerOnly } , GameStates.None);
 
     /// <summary>
     /// Networked Var Use Case Scenario: (n) frequency resolution timer
@@ -102,7 +101,8 @@ public class GlobalGameState : NetworkedBehaviour
     /// </summary>
     public enum GameStates
     {
-        Init,               //The initial state
+        None,               //The initial state
+        Init,               //Optional game intro screen, video, or additional splash sceens
         Menu,               //When the user has reached the main menu to the game
         Lobby,              //When the user has entered a game session lobby
         InGame,             //When the user has entered into the game session itself
@@ -126,16 +126,13 @@ public class GlobalGameState : NetworkedBehaviour
         m_GameState.OnValueChanged += OnGameStateChanged;
     }
 
-
-        /// <summary>
+    /// <summary>
     /// Start
     /// Kicks of the initialization state, this is where we load the first scene from the MLAPI_BootStrap
     /// </summary>
     private void Start()
     {
         Screen.SetResolution(m_HorizontalResolution, m_VerticalResolution, false);
-
-        StateToSceneTransitionLinks.Initialize();
 
         //Only invoke this when the application is playing (i.e. do not execute this code within the editor in edit mode)
         if(Application.isPlaying)

@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEditor;
 using UnityEditorInternal;
-
+using MLAPIGlobalGameState;
 
 [CustomPropertyDrawer(typeof(StateToSceneTransitionList), true)]
 class SceneToStateOptionsEditor : PropertyDrawer
@@ -13,7 +13,7 @@ class SceneToStateOptionsEditor : PropertyDrawer
         if (m_ReorderableList != null)
             return;
 
-        SerializedProperty array = property.FindPropertyRelative("m_Options");
+        SerializedProperty array = property.FindPropertyRelative("m_StateToSceneList");
 
         m_ReorderableList = new ReorderableList(property.serializedObject, array);
         m_ReorderableList.drawElementCallback = DrawOptionData;
@@ -38,8 +38,6 @@ class SceneToStateOptionsEditor : PropertyDrawer
         SerializedProperty itemScene = itemData.FindPropertyRelative("m_SceneToLoad");
         SerializedProperty itemState = itemData.FindPropertyRelative("m_StateToLoadScene");
 
-        //RectOffset offset = new RectOffset(0, 0, -1, -3);
-        //rect = offset.Add(rect);
         rect.height = EditorGUIUtility.singleLineHeight;
 
         EditorGUI.PropertyField(rect, itemScene, GUIContent.none);
