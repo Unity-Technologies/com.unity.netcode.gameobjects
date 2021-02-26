@@ -11,14 +11,14 @@ namespace UnityEditor
         [PostProcessScene(int.MaxValue)]
         public static void ProcessScene()
         {
-            //If we are in playmode (editor or stand alone) we do not want this to execute 
+            //If we are in playmode (editor or stand alone) we do not want this to execute
             if(Application.isPlaying)
             {
                 return;
-            }        
-        
+            }
+
             List<NetworkedObject> traverseSortedObjects = MonoBehaviour.FindObjectsOfType<NetworkedObject>().ToList();
-            
+
             traverseSortedObjects.Sort((x, y) =>
             {
                 List<int> xSiblingIndex = x.TraversedSiblingIndex();
@@ -28,14 +28,14 @@ namespace UnityEditor
                 {
                     if (xSiblingIndex[0] < ySiblingIndex[0])
                         return -1;
-                    
+
                     if (xSiblingIndex[0] > ySiblingIndex[0])
                         return 1;
 
                     xSiblingIndex.RemoveAt(0);
                     ySiblingIndex.RemoveAt(0);
                 }
-                
+
                 return 0;
             });
 
@@ -43,15 +43,15 @@ namespace UnityEditor
                 traverseSortedObjects[(int)i].NetworkedInstanceId = i;
         }
     }
-    
+
     internal static class PrefabHelpers
     {
         internal static List<int> TraversedSiblingIndex(this NetworkedObject networkedObject)
         {
             List<int> paths = new List<int>();
-            
+
             Transform transform = networkedObject.transform;
-            
+
             while (transform != null)
             {
                 paths.Add(transform.GetSiblingIndex());
@@ -59,7 +59,7 @@ namespace UnityEditor
             }
 
             paths.Reverse();
-            
+
             return paths;
         }
     }
