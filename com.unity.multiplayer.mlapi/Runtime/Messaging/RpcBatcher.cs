@@ -149,6 +149,8 @@ namespace MLAPI.Messaging
 
                 ProfilerStatManager.bytesSent.Record(queueItem.messageData.Count);
                 ProfilerStatManager.rpcsSent.Record();
+                PerformanceDataManager.Increment(ProfilerConstants.NumberBytesSent, queueItem.messageData.Count);
+                PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCsSent);
             }
         }
 
@@ -178,6 +180,7 @@ namespace MLAPI.Messaging
                         entry.Value.Stream.Position = 0;
                         entry.Value.IsEmpty = true;
                         ProfilerStatManager.rpcBatchesSent.Record();
+                        PerformanceDataManager.Increment(ProfilerConstants.NumberOfRPCBatchesSent);
                     }
                 }
             }
