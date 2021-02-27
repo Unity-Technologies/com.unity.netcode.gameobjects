@@ -360,9 +360,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3086277942538694976, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
         type: 3}
+      propertyPath: NetworkConfig.NetworkedPrefabs.Array.data[0].Prefab
+      value: 
+      objectReference: {fileID: 8685790303553767886, guid: 6321ace3f589e0d488be478aa1ee1ae3,
+        type: 3}
+    - target: {fileID: 3086277942538694976, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
+        type: 3}
       propertyPath: NetworkConfig.NetworkedPrefabs.Array.data[1].Prefab
       value: 
-      objectReference: {fileID: 1006061257226225189, guid: 06ea830ee44b8ba489b71f92f513f6e5,
+      objectReference: {fileID: 8685790303553767886, guid: 6321ace3f589e0d488be478aa1ee1ae3,
         type: 3}
     - target: {fileID: 3086277942538694976, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
         type: 3}
@@ -372,7 +378,7 @@ PrefabInstance:
     - target: {fileID: 3086277942538694976, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
         type: 3}
       propertyPath: NetworkConfig.NetworkedPrefabs.Array.data[1].PlayerPrefab
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3086277942538694977, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
         type: 3}
@@ -446,6 +452,21 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
         type: 3}
+      propertyPath: m_IsFullScreen
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
+        type: 3}
+      propertyPath: m_IsWindowedMode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
+        type: 3}
+      propertyPath: m_MaximumResolution
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
+        type: 3}
       propertyPath: SceneStateLinks.Array.size
       value: 0
       objectReference: {fileID: 0}
@@ -505,12 +526,12 @@ PrefabInstance:
     - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
         type: 3}
       propertyPath: SceneToStateLinks.m_StateToSceneList.Array.data[1].m_IsEnabled
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
         type: 3}
       propertyPath: SceneToStateLinks.m_StateToSceneList.Array.data[2].m_IsEnabled
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6446314041099906429, guid: 49aff2c2d8a4f45429ddb6f65813e9bb,
         type: 3}

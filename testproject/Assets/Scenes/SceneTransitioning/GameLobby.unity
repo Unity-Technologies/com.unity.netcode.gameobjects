@@ -295,7 +295,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 82d2e0a7e7368ce44a0997a7dfc92035, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  m_LaunchAsHostInEditor: 1
   LobbyText: {fileID: 1003676552}
+  m_MinPlayersToStart: 1
 --- !u!114 &411967664
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -337,7 +339,6 @@ GameObject:
   m_Component:
   - component: {fileID: 538878827}
   - component: {fileID: 538878826}
-  - component: {fileID: 538878825}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -345,14 +346,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!81 &538878825
-AudioListener:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 538878824}
-  m_Enabled: 1
 --- !u!20 &538878826
 Camera:
   m_ObjectHideFlags: 0

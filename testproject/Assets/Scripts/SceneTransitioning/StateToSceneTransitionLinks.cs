@@ -11,9 +11,6 @@ namespace MLAPIGlobalGameState
     [Serializable]
     public class StateToSceneTransitionLinks
     {
-        [SerializeField]
-        private bool m_IsEnabled;
-
         public enum MLAPIStates
         {
             None,
@@ -37,8 +34,6 @@ namespace MLAPIGlobalGameState
 
         [SerializeField]
         private GlobalGameState.GameStates m_StateToLoadScene;
-
-        public bool IsEnabled { get { return m_IsEnabled; } }
 
         public String sceneToLoad
         {
@@ -72,8 +67,8 @@ namespace MLAPIGlobalGameState
         /// GetSceneLinkedToState
         /// Returns the scene associated with the state
         /// </summary>
-        /// <param name="gameState"></param>
-        /// <returns></returns>
+        /// <param name="gameState">GlobalGameState.GameStates</param>
+        /// <returns>String</returns>
         public String GetSceneNameLinkedToState(GlobalGameState.GameStates gameState)
         {
 
@@ -101,13 +96,12 @@ namespace MLAPIGlobalGameState
             return GlobalGameState.GameStates.None;
         }
 
-
         /// <summary>
         /// GetGameStateLinkedToScene
-        /// Returns the state associated with the scene
+        /// Returns the MLAPI State associated with the scene
         /// </summary>
-        /// <param name="sceneName">Name of the scene</param>
-        /// <returns>GlobalGameState.GameStates</returns>
+        /// <param name="gameState">GlobalGameState.GameStates</param>
+        /// <returns>StateToSceneTransitionLinks.MLAPIStates</returns>
         public StateToSceneTransitionLinks.MLAPIStates GetGameStateToMLAPIState(GlobalGameState.GameStates gameState)
         {
             var results = m_StateToSceneList.Where(entry =>  entry.stateToLoadScene == gameState);

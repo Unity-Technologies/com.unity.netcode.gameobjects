@@ -8,20 +8,28 @@ using MLAPIGlobalGameState;
 
 public class GlobalGameState : NetworkedBehaviour
 {
-   static public GlobalGameState Singleton { get; internal set; }
+    static public GlobalGameState Singleton { get; internal set; }
 
     [Header("Window Resolution")]
 
     [SerializeField]
-    [Tooltip("Is the game going to always run in full screen?")]
+    [Tooltip("Is the game going start in full screen mode?")]
     private bool m_IsFullScreen;
 
     [SerializeField]
-    [Tooltip("Horizontal window resolution size (if fullscreen this is ignored)")]
+    [Tooltip("If set, the user cannot hit <alt><enter> and get into windowed mode.")]
+    private bool m_IsExclusive;
+
+    [SerializeField]
+    [Tooltip("If set, the maximum resolution will be used (HorizontalResolution and VerticalResolution will be ignored).")]
+    private bool m_MaximumResolution;
+
+    [SerializeField]
+    [Tooltip("Horizontal window resolution size (if MaximumResolution this is ignored)")]
     private int m_HorizontalResolution = 1024;
 
     [SerializeField]
-    [Tooltip("Vertical window resolution size (if fullscreen this is ignored)")]
+    [Tooltip("Vertical window resolution size (if MaximumResolution this is ignored)")]
     private int m_VerticalResolution = 768;
 
     [Space]
@@ -92,6 +100,7 @@ public class GlobalGameState : NetworkedBehaviour
     #endregion
 
     //This is set prior to setting any game state that activates MLAPI
+    [HideInInspector]
     public bool IsHostingGame;
 
     //Used to determine the current state of MLAPI (Global Game State Relative)
@@ -138,12 +147,28 @@ public class GlobalGameState : NetworkedBehaviour
     /// </summary>
     private void Start()
     {
-        Screen.SetResolution(m_HorizontalResolution, m_VerticalResolution, false);
+        if (!m_IsExclusive)
+        {
+            Screen.fullScreenMode = FullScreenMode.Windowed;
+        }
+        else
+        {
+            Screen.fullScreenMode = FullScreenMode.ExclusiveFullScreen;
+        }
+
+        if (m_MaximumResolution)
+        {
+            Screen.SetResolution(Screen.currentResolution.width, Screen.currentResolution.height, m_IsFullScreen);
+        }
+        else
+        {
+            Screen.SetResolution(m_HorizontalResolution, m_VerticalResolution, m_IsFullScreen);
+        }
 
         //Only invoke this when the application is playing (i.e. do not execute this code within the editor in edit mode)
-        if(Application.isPlaying)
+        if (Application.isPlaying)
         {
-            if(!CheckForBootStrappedScene())
+            if (!CheckForBootStrappedScene())
             {
                 //Server and clients always execute this
                 SetGameState(GameStates.Init);
@@ -159,7 +184,7 @@ public class GlobalGameState : NetworkedBehaviour
     /// <param name="newState">to state</param>
     private void OnGameStateChanged(GameStates previousState, GameStates newState)
     {
-        if(gameStateChanged != null)
+        if (gameStateChanged != null)
         {
             gameStateChanged.Invoke(previousState, newState);
         }
@@ -184,7 +209,7 @@ public class GlobalGameState : NetworkedBehaviour
                 }
             case GameStates.Lobby:
                 {
-                    if(m_GameState.Settings.WritePermission != NetworkedVarPermission.ServerOnly)
+                    if (m_GameState.Settings.WritePermission != NetworkedVarPermission.ServerOnly)
                     {
                          m_GameState.Settings.WritePermission = NetworkedVarPermission.ServerOnly;
                     }
@@ -192,7 +217,7 @@ public class GlobalGameState : NetworkedBehaviour
                 }
             case GameStates.InGame:
                 {
-                    if(IsServer)
+                    if (IsServer)
                     {
                         m_InGameTime.Value += Time.deltaTime;
                     }
@@ -207,6 +232,11 @@ public class GlobalGameState : NetworkedBehaviour
         }
     }
 
+    /// <summary>
+    /// UpdateMLAPIState
+    /// Handles the spinning up and shutting down of MLAPI
+    /// </summary>
+    /// <param name="newState">new state we are transitioning to</param>
     private void UpdateMLAPIState(GameStates newState)
     {
         StateToSceneTransitionLinks.MLAPIStates NewMLAPIState = SceneToStateLinks.GetGameStateToMLAPIState(newState);
@@ -214,6 +244,7 @@ public class GlobalGameState : NetworkedBehaviour
         {
             switch(NewMLAPIState)
             {
+                case StateToSceneTransitionLinks.MLAPIStates.InSession:
                 case StateToSceneTransitionLinks.MLAPIStates.Connecting:
                     {
                         if(CurrentMLAPIState == StateToSceneTransitionLinks.MLAPIStates.None)
@@ -277,13 +308,14 @@ public class GlobalGameState : NetworkedBehaviour
     private void GameStateChangedUpdate(GameStates previousState, GameStates newState)
     {
         //We only should update once per changed state
-        if(previousState != newState)
+        if (previousState != newState)
         {
+
             string SceneName = SceneToStateLinks.GetSceneNameLinkedToState(newState);
 
-            if(SceneName != string.Empty)
+            if (SceneName != string.Empty)
             {
-                if(CurrentMLAPIState == StateToSceneTransitionLinks.MLAPIStates.InSession || CurrentMLAPIState == StateToSceneTransitionLinks.MLAPIStates.Connecting)
+                if (CurrentMLAPIState == StateToSceneTransitionLinks.MLAPIStates.InSession || CurrentMLAPIState == StateToSceneTransitionLinks.MLAPIStates.Connecting)
                 {
                     //If we are in a session or connecting, then update the state first then switch scenes
                     UpdateMLAPIState(newState);
@@ -299,13 +331,12 @@ public class GlobalGameState : NetworkedBehaviour
                     //Start the scene switch first
                     SwitchScene(SceneName, newState);
                 }
-
             }
 
             //make sure we can set this networked variable
-            if(IsServer || m_GameState.Settings.WritePermission != NetworkedVarPermission.ServerOnly || newState == GameStates.ExitGame )
+            if (IsServer || m_GameState.Settings.WritePermission != NetworkedVarPermission.ServerOnly || newState == GameStates.ExitGame )
             {
-                if(newState == GameStates.ExitGame)
+                if (newState == GameStates.ExitGame)
                 {
                     //Revert back to everyone access after we leave the game session
                     m_GameState.Settings.WritePermission = NetworkedVarPermission.Everyone;
@@ -337,8 +368,6 @@ public class GlobalGameState : NetworkedBehaviour
         return m_GameState.Value;
     }
 
-
-    AsyncOperation UnitySceneTransitionOperation;
     /// <summary>
     /// Switches to a new scene
     /// </summary>
@@ -346,26 +375,33 @@ public class GlobalGameState : NetworkedBehaviour
     private void SwitchScene(string scenename,GameStates transitionState )
     {
         // If we have started our network transport (connecting, connected, in game session, etc)
-        if(NetworkingManager.Singleton.IsListening && IsServer)
+        if (NetworkingManager.Singleton.IsListening && IsServer)
         {
             //Use the NetworkSceneManager
             m_SceneProgress = NetworkSceneManager.SwitchScene(scenename);
 
             //Use the SceneSwitchProgress OnClientLoadedScene event
             m_SceneProgress.OnClientLoadedScene += SceneProgress_OnClientLoadedScene;
+
+            m_SceneProgress.OnComplete += OnLoadingComplete;
         }
         else
         {
-            ////Special case for clients, if the network is started, we are not the server, and we are either entering the lobby or exiting the game
-            //if(NetworkingManager.Singleton.IsListening && !IsServer && (transitionState == GameStates.Lobby || transitionState == GameStates.ExitGame))
-            //{
-            //     SceneManager.LoadSceneAsync(scenename);
-            //}
-            //else
             if (!NetworkingManager.Singleton.IsListening)
             {
                 //If transport is not active then just load the scene via the normal Unity scene manager
                 SceneManager.LoadScene(scenename);
+            }
+        }
+    }
+
+    private void OnLoadingComplete(bool timedOut)
+    {
+        if (m_SceneProgress != null && m_SceneProgress.IsAllClientsDoneLoading)
+        {
+            if(allPlayersLoadedScene != null)
+            {
+                allPlayersLoadedScene.Invoke();
             }
         }
     }
@@ -377,7 +413,7 @@ public class GlobalGameState : NetworkedBehaviour
     /// <returns>true or false (they are all loaded or they are not)</returns>
     public bool AllClientsAreLoaded()
     {
-        if(m_SceneProgress != null)
+        if (m_SceneProgress != null)
         {
             return m_SceneProgress.IsAllClientsDoneLoading;
         }
@@ -390,12 +426,14 @@ public class GlobalGameState : NetworkedBehaviour
     /// <param name="clientId"></param>
     private void SceneProgress_OnClientLoadedScene(ulong clientId)
     {
-        if(clientLoadedScene != null)
+        if (clientLoadedScene != null)
         {
             clientLoadedScene.Invoke(clientId);
         }
+
     }
 
+    #region IN-EDITOR SPECIFIC METHODS
     public static bool IsLoadingFromEditor()
     {
 #if (UNITY_EDITOR)
@@ -407,6 +445,7 @@ public class GlobalGameState : NetworkedBehaviour
 
 #if UNITY_EDITOR
     private static string BootStrapToScene;
+    public static bool EditorLaunchingAsHost;
 #endif
 
     public static bool CheckForBootStrappedScene()
@@ -418,6 +457,8 @@ public class GlobalGameState : NetworkedBehaviour
             BootStrapToScene = string.Empty;
             if(BootStrappedGameState != GameStates.None)
             {
+                Singleton.IsHostingGame = EditorLaunchingAsHost;
+                Singleton.UpdateMLAPIState(BootStrappedGameState);
                 Singleton.SetGameState(BootStrappedGameState);
                 return true;
             }
@@ -448,5 +489,5 @@ public class GlobalGameState : NetworkedBehaviour
         }
 #endif
     }
-
+    #endregion
 }
