@@ -1,9 +1,7 @@
-﻿using System.Collections.Generic;
-using System.IO;
-using MLAPI.Connection;
-using MLAPI.Logging;
+﻿using System.Linq;
+using System.Collections.Generic;
 using MLAPI.Messaging;
-using MLAPI.Serialization.Pooled;
+using MLAPI.Serialization;
 using UnityEngine;
 
 namespace MLAPI.Prototyping
@@ -14,459 +12,297 @@ namespace MLAPI.Prototyping
     [AddComponentMenu("MLAPI/NetworkedAnimator")]
     public class NetworkedAnimator : NetworkedBehaviour
     {
-        /// <summary>
-        /// Is proximity enabled
-        /// </summary>
-        public bool EnableProximity = false;
-
-        /// <summary>
-        /// The proximity range
-        /// </summary>
-        public float ProximityRange = 50f;
-
-        [SerializeField]
-        private Animator _animator;
-
-        [SerializeField]
-        private uint parameterSendBits;
-
-        [SerializeField]
-        private readonly float sendRate = 0.1f;
-
-        private AnimatorControllerParameter[] animatorParameters;
-
-        private int animationHash;
-        private int transitionHash;
-        private float sendTimer;
-
-        // tracking - these should probably move to a Preview component. -- Comment from HLAPI. Needs clarification
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-        public string param0;
-        public string param1;
-        public string param2;
-        public string param3;
-        public string param4;
-        public string param5;
-#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
-
-
-        /// <summary>
-        /// Gets or sets the animator component used for syncing the animations
-        /// </summary>
-        public Animator animator
+        private struct AnimParams : INetworkSerializable
         {
-            get => _animator;
-            set
+            public Dictionary<int, (AnimatorControllerParameterType Type, object Boxed)> Parameters;
+
+            public void NetworkSerialize(BitSerializer serializer)
             {
-                _animator = value;
-                ResetParameterOptions();
+                int paramCount = serializer.IsReading ? 0 : Parameters.Count;
+                serializer.Serialize(ref paramCount);
+
+                var paramArray = serializer.IsReading ? new KeyValuePair<int, (AnimatorControllerParameterType Type, object Boxed)>[paramCount] : Parameters.ToArray();
+                for (int paramIndex = 0; paramIndex < paramCount; paramIndex++)
+                {
+                    int paramId = serializer.IsReading ? 0 : paramArray[paramIndex].Key;
+                    serializer.Serialize(ref paramId);
+
+                    byte paramType = serializer.IsReading ? (byte)0 : (byte)paramArray[paramIndex].Value.Type;
+                    serializer.Serialize(ref paramType);
+
+                    object paramBoxed = null;
+                    switch (paramType)
+                    {
+                        case (byte)AnimatorControllerParameterType.Float:
+                            float paramFloat = serializer.IsReading ? 0 : (float)paramArray[paramIndex].Value.Boxed;
+                            serializer.Serialize(ref paramFloat);
+                            paramBoxed = paramFloat;
+                            break;
+                        case (byte)AnimatorControllerParameterType.Int:
+                            float paramInt = serializer.IsReading ? 0 : (int)paramArray[paramIndex].Value.Boxed;
+                            serializer.Serialize(ref paramInt);
+                            paramBoxed = paramInt;
+                            break;
+                        case (byte)AnimatorControllerParameterType.Bool:
+                            bool paramBool = serializer.IsReading ? false : (bool)paramArray[paramIndex].Value.Boxed;
+                            serializer.Serialize(ref paramBool);
+                            paramBoxed = paramBool;
+                            break;
+                    }
+
+                    if (serializer.IsReading)
+                    {
+                        paramArray[paramIndex] = new KeyValuePair<int, (AnimatorControllerParameterType, object)>(paramId, ((AnimatorControllerParameterType)paramType, paramBoxed));
+                    }
+                }
+
+                if (serializer.IsReading)
+                {
+                    Parameters = paramArray.ToDictionary(pair => pair.Key, pair => pair.Value);
+                }
             }
         }
 
-        /// <summary>
-        /// TODO
-        /// </summary>
-        /// <param name="index"></param>
-        /// <param name="value"></param>
-        public void SetParameterAutoSend(int index, bool value)
+        public float sendRate = 0.1f;
+
+        [SerializeField]
+        private Animator m_Animator;
+
+        public Animator animator => m_Animator;
+
+        [HideInInspector]
+        [SerializeField]
+        private uint m_TrackedParamFlags = 0;
+
+        public void SetParamTracking(int paramIndex, bool isTracking)
         {
-            if (value)
+            if (paramIndex >= 32) return;
+
+            if (isTracking)
             {
-                parameterSendBits |= (uint)(1 << index);
+                m_TrackedParamFlags |= (uint)(1 << paramIndex);
             }
             else
             {
-                parameterSendBits &= (uint)(~(1 << index));
+                m_TrackedParamFlags &= (uint)~(1 << paramIndex);
             }
         }
 
-        /// <summary>
-        /// TODO
-        /// </summary>
-        /// <param name="index"></param>
-        /// <returns></returns>
-        public bool GetParameterAutoSend(int index)
+        public bool GetParamTracking(int paramIndex)
         {
-            return (parameterSendBits & (uint)(1 << index)) != 0;
+            if (paramIndex >= 32) return false;
+
+            return (m_TrackedParamFlags & (uint)(1 << paramIndex)) != 0;
         }
 
-        /// <summary>
-        /// TODO
-        /// </summary>
-        public void ResetParameterOptions()
+        public void ResetTrackedParams()
         {
-            // TODO: if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogInfo("ResetParameterOptions");
-            parameterSendBits = 0;
-            animatorParameters = null;
+            m_TrackedParamFlags = 0;
         }
 
         private void FixedUpdate()
         {
-            if (!IsOwner)
-                return;
+            if (!IsOwner) return;
 
-            CheckSendRate();
-
-            int stateHash;
-            float normalizedTime;
-            if (!CheckAnimStateChanged(out stateHash, out normalizedTime))
+            if (CheckSendRate())
             {
-                return;
+                SendTrackedParams();
             }
 
-            using (PooledBitStream stream = PooledBitStream.Get())
+            if (CheckStateChange(out int animStateHash, out float animStateTime))
             {
-                using (PooledBitWriter writer = PooledBitWriter.Get(stream))
-                {
-                    writer.WriteInt32Packed(stateHash);
-                    writer.WriteSinglePacked(normalizedTime);
-                    WriteParameters(stream, false);
-
-                    if (IsServer)
-                    {
-                        if (EnableProximity)
-                        {
-                            List<ulong> clientsInProximity = new List<ulong>();
-                            foreach (KeyValuePair<ulong, NetworkedClient> client in NetworkingManager.Singleton.ConnectedClients)
-                            {
-                                if (client.Value.PlayerObject == null || Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
-                                    clientsInProximity.Add(client.Key);
-                            }
-
-                            // TODO: InvokeClientRpcPerformance(ApplyAnimParamMsg, clientsInProximity, stream);
-                        }
-                        else
-                        {
-                            // TODO: InvokeClientRpcOnEveryoneExceptPerformance(ApplyAnimMsg, OwnerClientId, stream);
-                        }
-                    }
-                    else
-                    {
-                        // TODO: InvokeServerRpcPerformance(SubmitAnimMsg, stream);
-                    }
-                }
+                SendAllParamsAndState(animStateHash, animStateTime);
             }
         }
 
-        private bool CheckAnimStateChanged(out int stateHash, out float normalizedTime)
+        private float m_NextSendTime = 0.0f;
+
+        private bool CheckSendRate()
         {
-            stateHash = 0;
-            normalizedTime = 0;
-
-            if (animator.IsInTransition(0))
+            var networkTime = NetworkingManager.Singleton.NetworkTime;
+            if (sendRate != 0 && m_NextSendTime < networkTime)
             {
-                AnimatorTransitionInfo animationTransitionInfo = animator.GetAnimatorTransitionInfo(0);
-                if (animationTransitionInfo.fullPathHash != transitionHash)
-                {
-                    // first time in this transition
-                    transitionHash = animationTransitionInfo.fullPathHash;
-                    animationHash = 0;
-                    return true;
-                }
-
-                return false;
-            }
-
-            AnimatorStateInfo animationSateInfo = animator.GetCurrentAnimatorStateInfo(0);
-            if (animationSateInfo.fullPathHash != animationHash)
-            {
-                // first time in this animation state
-                if (animationHash != 0)
-                {
-                    // came from another animation directly - from Play()
-                    stateHash = animationSateInfo.fullPathHash;
-                    normalizedTime = animationSateInfo.normalizedTime;
-                }
-
-                transitionHash = 0;
-                animationHash = animationSateInfo.fullPathHash;
+                m_NextSendTime = networkTime + sendRate;
                 return true;
             }
 
             return false;
         }
 
-        private void CheckSendRate()
+        private int m_LastAnimStateHash = 0;
+
+        private bool CheckStateChange(out int outAnimStateHash, out float outAnimStateTime)
         {
-            if (IsOwner && sendRate != 0 && sendTimer < NetworkingManager.Singleton.NetworkTime)
+            var animStateInfo = animator.GetCurrentAnimatorStateInfo(0);
+            var animStateHash = animStateInfo.fullPathHash;
+            var animStateTime = animStateInfo.normalizedTime;
+            if (animStateHash != m_LastAnimStateHash)
             {
-                sendTimer = NetworkingManager.Singleton.NetworkTime + sendRate;
+                m_LastAnimStateHash = animStateHash;
 
-                using (PooledBitStream stream = PooledBitStream.Get())
+                outAnimStateHash = animStateHash;
+                outAnimStateTime = animStateTime;
+                return true;
+            }
+
+            outAnimStateHash = 0;
+            outAnimStateTime = 0;
+            return false;
+        }
+
+        private AnimParams GetAnimParams(bool trackedOnly = false)
+        {
+            var animParams = new AnimParams();
+            animParams.Parameters = new Dictionary<int, (AnimatorControllerParameterType, object)>(32);
+            for (int paramIndex = 0; paramIndex < 32 && paramIndex < animator.parameters.Length; paramIndex++)
+            {
+                if (trackedOnly && !GetParamTracking(paramIndex)) continue;
+
+                var animParam = animator.parameters[paramIndex];
+                var animParamHash = animParam.nameHash;
+                var animParamType = animParam.type;
+
+                object animParamBoxed = null;
+                switch (animParamType)
                 {
-                    using (PooledBitWriter writer = PooledBitWriter.Get(stream))
-                    {
-                        WriteParameters(stream, true);
+                    case AnimatorControllerParameterType.Float:
+                        animParamBoxed = animator.GetFloat(animParamHash);
+                        break;
+                    case AnimatorControllerParameterType.Int:
+                        animParamBoxed = animator.GetInteger(animParamHash);
+                        break;
+                    case AnimatorControllerParameterType.Bool:
+                        animParamBoxed = animator.GetBool(animParamHash);
+                        break;
+                }
 
-                        if (IsServer)
-                        {
-                            if (EnableProximity)
-                            {
-                                List<ulong> clientsInProximity = new List<ulong>();
-                                foreach (KeyValuePair<ulong, NetworkedClient> client in NetworkingManager.Singleton.ConnectedClients)
-                                {
-                                    if (client.Value.PlayerObject == null || Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
-                                        clientsInProximity.Add(client.Key);
-                                }
+                animParams.Parameters.Add(animParamHash, (animParamType, animParamBoxed));
+            }
 
-                                // TODO: InvokeClientRpcPerformance(ApplyAnimParamMsg, clientsInProximity, stream);
-                            }
-                            else
-                            {
-                                // TODO: InvokeClientRpcOnEveryoneExceptPerformance(ApplyAnimParamMsg, OwnerClientId, stream);
-                            }
-                        }
-                        else
-                        {
-                            // TODO: InvokeServerRpcPerformance(SubmitAnimParamMsg, stream);
-                        }
-                    }
+            return animParams;
+        }
+
+        private void SetAnimParams(AnimParams animParams)
+        {
+            foreach (var animParam in animParams.Parameters)
+            {
+                switch (animParam.Value.Type)
+                {
+                    case AnimatorControllerParameterType.Float:
+                        animator.SetFloat(animParam.Key, (float)animParam.Value.Boxed);
+                        break;
+                    case AnimatorControllerParameterType.Int:
+                        animator.SetInteger(animParam.Key, (int)animParam.Value.Boxed);
+                        break;
+                    case AnimatorControllerParameterType.Bool:
+                        animator.SetBool(animParam.Key, (bool)animParam.Value.Boxed);
+                        break;
                 }
             }
         }
 
-        private void SetSendTrackingParam(string p, int i)
+        private void SendTrackedParams()
         {
-            p = "Sent Param: " + p;
-            if (i == 0) param0 = p;
-            if (i == 1) param1 = p;
-            if (i == 2) param2 = p;
-            if (i == 3) param3 = p;
-            if (i == 4) param4 = p;
-            if (i == 5) param5 = p;
-        }
+            var animParams = GetAnimParams( /* trackedOnly = */ true);
 
-        private void SetRecvTrackingParam(string p, int i)
-        {
-            p = "Recv Param: " + p;
-            if (i == 0) param0 = p;
-            if (i == 1) param1 = p;
-            if (i == 2) param2 = p;
-            if (i == 3) param3 = p;
-            if (i == 4) param4 = p;
-            if (i == 5) param5 = p;
-        }
-
-        // TODO: [ServerRpc]
-        private void SubmitAnimMsg(ulong clientId, Stream stream)
-        {
-            // usually transitions will be triggered by parameters, if not, play anims directly.
-            // NOTE: this plays "animations", not transitions, so any transitions will be skipped.
-            // NOTE: there is no API to play a transition(?)
-
-            if (EnableProximity)
+            if (IsServer)
             {
-                List<ulong> clientsInProximity = new List<ulong>();
-                foreach (KeyValuePair<ulong, NetworkedClient> client in NetworkingManager.Singleton.ConnectedClients)
+                var clientRpcParams = new ClientRpcParams
                 {
-                    if (client.Value.PlayerObject == null || Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
-                        clientsInProximity.Add(client.Key);
-                }
-
-                // TODO: InvokeClientRpcPerformance(ApplyAnimMsg, clientsInProximity, stream);
+                    Send = new ClientRpcSendParams
+                    {
+                        TargetClientIds = NetworkingManager.Singleton.ConnectedClientsList
+                            .Where(c => c.ClientId != NetworkingManager.Singleton.ServerClientId)
+                            .Select(c => c.ClientId)
+                            .ToArray()
+                    }
+                };
+                UpdateTrackedParamsClientRpc(animParams, clientRpcParams);
             }
             else
             {
-                // TODO: InvokeClientRpcOnEveryoneExceptPerformance(ApplyAnimMsg, OwnerClientId, stream);
+                UpdateTrackedParamsServerRpc(animParams);
             }
         }
 
-        // TODO: [ClientRpc]
-        private void ApplyAnimMsg(ulong clientId, Stream stream)
+        private void SendAllParamsAndState(int animStateHash, float animStateTime)
         {
-            using (PooledBitReader reader = PooledBitReader.Get(stream))
+            var animParams = GetAnimParams();
+
+            if (IsServer)
             {
-                int stateHash = reader.ReadInt32Packed();
-                float normalizedTime = reader.ReadSinglePacked();
-                if (stateHash != 0)
+                var clientRpcParams = new ClientRpcParams
                 {
-                    animator.Play(stateHash, 0, normalizedTime);
-                }
-
-                ReadParameters(stream, false);
-            }
-        }
-
-        // TODO: [ServerRpc]
-        private void SubmitAnimParamMsg(ulong clientId, Stream stream)
-        {
-            if (EnableProximity)
-            {
-                List<ulong> clientsInProximity = new List<ulong>();
-                foreach (KeyValuePair<ulong, NetworkedClient> client in NetworkingManager.Singleton.ConnectedClients)
-                {
-                    if (client.Value.PlayerObject == null || Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
-                        clientsInProximity.Add(client.Key);
-                }
-
-                // TODO: InvokeClientRpcPerformance(ApplyAnimParamMsg, clientsInProximity, stream);
+                    Send = new ClientRpcSendParams
+                    {
+                        TargetClientIds = NetworkingManager.Singleton.ConnectedClientsList
+                            .Where(c => c.ClientId != NetworkingManager.Singleton.ServerClientId)
+                            .Select(c => c.ClientId)
+                            .ToArray()
+                    }
+                };
+                UpdateAnimStateClientRpc(animStateHash, animStateTime, clientRpcParams);
+                UpdateTrackedParamsClientRpc(animParams, clientRpcParams);
             }
             else
             {
-                // TODO: InvokeClientRpcOnEveryoneExceptPerformance(ApplyAnimParamMsg, OwnerClientId, stream);
+                UpdateAnimStateServerRpc(animStateHash, animStateTime);
+                UpdateTrackedParamsServerRpc(animParams);
             }
         }
 
-        // TODO: [ClientRpc]
-        private void ApplyAnimParamMsg(ulong clientId, Stream stream)
+        [ServerRpc]
+        private void UpdateTrackedParamsServerRpc(AnimParams animParams, ServerRpcParams serverRpcParams = default)
         {
-            ReadParameters(stream, true);
-        }
+            if (IsOwner) return;
+            SetAnimParams(animParams);
 
-        // TODO: [ServerRpc]
-        private void SubmitAnimTriggerMsg(ulong clientId, Stream stream)
-        {
-            if (EnableProximity)
+            var clientRpcParams = new ClientRpcParams
             {
-                List<ulong> clientsInProximity = new List<ulong>();
-                foreach (KeyValuePair<ulong, NetworkedClient> client in NetworkingManager.Singleton.ConnectedClients)
+                Send = new ClientRpcSendParams
                 {
-                    if (client.Value.PlayerObject == null || Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
-                        clientsInProximity.Add(client.Key);
+                    TargetClientIds = NetworkingManager.Singleton.ConnectedClientsList
+                        .Where(c => c.ClientId != serverRpcParams.Receive.SenderClientId)
+                        .Select(c => c.ClientId)
+                        .ToArray()
                 }
-
-                // TODO: InvokeClientRpcPerformance(ApplyAnimTriggerMsg, clientsInProximity, stream);
-            }
-            else
-            {
-                // TODO: InvokeClientRpcOnEveryoneExceptPerformance(ApplyAnimTriggerMsg, OwnerClientId, stream);
-            }
+            };
+            UpdateTrackedParamsClientRpc(animParams, clientRpcParams);
         }
 
-        // TODO: [ClientRpc]
-        private void ApplyAnimTriggerMsg(ulong clientId, Stream stream)
+        [ClientRpc]
+        private void UpdateTrackedParamsClientRpc(AnimParams animParams, ClientRpcParams clientRpcParams = default)
         {
-            using (PooledBitReader reader = PooledBitReader.Get(stream))
-            {
-                animator.SetTrigger(reader.ReadInt32Packed());
-            }
+            if (IsOwner) return;
+            SetAnimParams(animParams);
         }
 
-        private void WriteParameters(Stream stream, bool autoSend)
+        [ServerRpc]
+        private void UpdateAnimStateServerRpc(int animStateHash, float animStateTime, ServerRpcParams serverRpcParams = default)
         {
-            using (PooledBitWriter writer = PooledBitWriter.Get(stream))
-            {
-                if (animatorParameters == null)
-                    animatorParameters = animator.parameters;
+            if (IsOwner) return;
 
-                for (int i = 0; i < animatorParameters.Length; i++)
+            animator.Play(animStateHash, 0, animStateTime);
+
+            var clientRpcParams = new ClientRpcParams
+            {
+                Send = new ClientRpcSendParams
                 {
-                    if (autoSend && !GetParameterAutoSend(i))
-                        continue;
-
-                    AnimatorControllerParameter par = animatorParameters[i];
-                    if (par.type == AnimatorControllerParameterType.Int)
-                    {
-                        writer.WriteUInt32Packed((uint)animator.GetInteger(par.nameHash));
-
-                        SetSendTrackingParam(par.name + ":" + animator.GetInteger(par.nameHash), i);
-                    }
-
-                    if (par.type == AnimatorControllerParameterType.Float)
-                    {
-                        writer.WriteSinglePacked(animator.GetFloat(par.nameHash));
-
-                        SetSendTrackingParam(par.name + ":" + animator.GetFloat(par.nameHash), i);
-                    }
-
-                    if (par.type == AnimatorControllerParameterType.Bool)
-                    {
-                        writer.WriteBool(animator.GetBool(par.nameHash));
-
-                        SetSendTrackingParam(par.name + ":" + animator.GetBool(par.nameHash), i);
-                    }
+                    TargetClientIds = NetworkingManager.Singleton.ConnectedClientsList
+                        .Where(c => c.ClientId != serverRpcParams.Receive.SenderClientId)
+                        .Select(c => c.ClientId)
+                        .ToArray()
                 }
-            }
+            };
+            UpdateAnimStateClientRpc(animStateHash, animStateTime, clientRpcParams);
         }
 
-        private void ReadParameters(Stream stream, bool autoSend)
+        [ClientRpc]
+        private void UpdateAnimStateClientRpc(int animStateHash, float animStateTime, ClientRpcParams clientRpcParams = default)
         {
-            using (PooledBitReader reader = PooledBitReader.Get(stream))
-            {
-                if (animatorParameters == null)
-                    animatorParameters = animator.parameters;
+            if (IsOwner) return;
 
-                for (int i = 0; i < animatorParameters.Length; i++)
-                {
-                    if (autoSend && !GetParameterAutoSend(i))
-                        continue;
-
-                    AnimatorControllerParameter par = animatorParameters[i];
-                    if (par.type == AnimatorControllerParameterType.Int)
-                    {
-                        int newValue = (int)reader.ReadUInt32Packed();
-                        animator.SetInteger(par.nameHash, newValue);
-
-                        SetRecvTrackingParam(par.name + ":" + newValue, i);
-                    }
-
-                    if (par.type == AnimatorControllerParameterType.Float)
-                    {
-                        float newFloatValue = reader.ReadSinglePacked();
-                        animator.SetFloat(par.nameHash, newFloatValue);
-
-                        SetRecvTrackingParam(par.name + ":" + newFloatValue, i);
-                    }
-
-                    if (par.type == AnimatorControllerParameterType.Bool)
-                    {
-                        bool newBoolValue = reader.ReadBool();
-                        animator.SetBool(par.nameHash, newBoolValue);
-
-                        SetRecvTrackingParam(par.name + ":" + newBoolValue, i);
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// TODO
-        /// </summary>
-        /// <param name="triggerName"></param>
-        public void SetTrigger(string triggerName)
-        {
-            SetTrigger(Animator.StringToHash(triggerName));
-        }
-
-        /// <summary>
-        /// TODO
-        /// </summary>
-        /// <param name="hash"></param>
-        public void SetTrigger(int hash)
-        {
-            if (IsOwner)
-            {
-                using (PooledBitStream stream = PooledBitStream.Get())
-                {
-                    using (PooledBitWriter writer = PooledBitWriter.Get(stream))
-                    {
-                        writer.WriteInt32Packed(hash);
-
-                        if (IsServer)
-                        {
-                            if (EnableProximity)
-                            {
-                                List<ulong> clientsInProximity = new List<ulong>();
-                                foreach (KeyValuePair<ulong, NetworkedClient> client in NetworkingManager.Singleton.ConnectedClients)
-                                {
-                                    if (client.Value.PlayerObject == null || Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
-                                        clientsInProximity.Add(client.Key);
-                                }
-
-                                // TODO: InvokeClientRpcPerformance(ApplyAnimTriggerMsg, clientsInProximity, stream);
-                            }
-                            else
-                            {
-                                // TODO: InvokeClientRpcOnEveryoneExceptPerformance(ApplyAnimTriggerMsg, OwnerClientId, stream);
-                            }
-                        }
-                        else
-                        {
-                            // TODO: InvokeServerRpcPerformance(SubmitAnimTriggerMsg, stream);
-                        }
-                    }
-                }
-            }
+            animator.Play(animStateHash, 0, animStateTime);
         }
     }
 }

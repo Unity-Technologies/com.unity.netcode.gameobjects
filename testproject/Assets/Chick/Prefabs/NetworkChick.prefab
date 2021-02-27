@@ -571,7 +571,7 @@ GameObject:
   - component: {fileID: 1624855085236714617}
   - component: {fileID: 1624855085236714619}
   - component: {fileID: 1718370056002731768}
-  - component: {fileID: 1624855085236714616}
+  - component: {fileID: -5599317860940835689}
   - component: {fileID: -5941657025301234913}
   m_Layer: 0
   m_Name: NetworkChick
@@ -647,7 +647,7 @@ Animator:
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorControllerStateOnDisable: 0
---- !u!114 &1624855085236714616
+--- !u!114 &-5599317860940835689
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -659,16 +659,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e8d0727d5ae3244e3b569694d3912374, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  EnableProximity: 0
-  ProximityRange: 50
-  _animator: {fileID: 1718370056002731768}
-  parameterSendBits: 8
-  param0: 
-  param1: 
-  param2: 
-  param3: 
-  param4: 
-  param5: 
+  sendRate: 0.1
+  m_Animator: {fileID: 1718370056002731768}
+  m_TrackedParamFlags: 8
 --- !u!114 &-5941657025301234913
 MonoBehaviour:
   m_ObjectHideFlags: 0
