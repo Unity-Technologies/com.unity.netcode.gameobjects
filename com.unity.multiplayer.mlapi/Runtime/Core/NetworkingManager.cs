@@ -188,7 +188,7 @@ namespace MLAPI
         internal SpawnManager SpawnManager { get; private set; }
 
         internal BitReaderPool PooledBitReaders{ get; private set; }
-        
+
         internal void InvokeOnClientConnectedCallback(ulong clientId) => OnClientConnectedCallback?.Invoke(clientId);
 
         /// <summary>
@@ -386,6 +386,11 @@ namespace MLAPI
             NetworkSceneManager.sceneNameToIndex.Clear();
             NetworkSceneManager.sceneSwitchProgresses.Clear();
 
+            rpcQueueContainer = new RpcQueueContainer(this, false);
+            //Note: Since frame history is not being used, this is set to 0
+            //To test frame history, increase the number to (n) where n > 0
+            rpcQueueContainer.Initialize(0);
+
             if (NetworkConfig.NetworkTransport == null)
             {
                 if (LogLevel <= LogLevel.Error) NetworkLog.LogError("No transport has been selected!");
@@ -458,7 +463,7 @@ namespace MLAPI
 
             NetworkConfig.NetworkTransport.ResetChannelCache();
 
-            NetworkConfig.NetworkTransport.Init();
+            NetworkConfig.NetworkTransport.Init(this);
         }
 
         /// <summary>
@@ -651,13 +656,10 @@ namespace MLAPI
         /// </summary>
         private void Awake()
         {
-            rpcQueueContainer = new RpcQueueContainer(this, false);
-            //Note: Since frame history is not being used, this is set to 0
-            //To test frame history, increase the number to (n) where n > 0
-            rpcQueueContainer.Initialize(0);
+
 
             //LogLevel is shared by all instances of NetworkingManager. If multiple NetworkingManagers start up
-            //with different LogLevels, the last one to initialize wins. 
+            //with different LogLevels, the last one to initialize wins.
             LogLevel = LogLevelLocal;
         }
 

@@ -71,13 +71,13 @@ namespace MLAPI.Transports.Multiplex
             return Transports[transportId].GetCurrentRtt(connectionId);
         }
 
-        public override void Init()
+        public override void Init(NetworkingManager netManager)
         {
             for (int i = 0; i < Transports.Length; i++)
             {
                 if (Transports[i].IsSupported)
                 {
-                    Transports[i].Init();
+                    Transports[i].Init(netManager);
                 }
             }
         }

@@ -329,8 +329,9 @@ namespace MLAPI.Transports.UNET
             NetworkTransport.Shutdown();
         }
 
-        public override void Init()
+        public override void Init(NetworkingManager netManager)
         {
+            NetManager = netManager;
             UpdateRelay();
 
             messageBuffer = new byte[MessageBufferSize];

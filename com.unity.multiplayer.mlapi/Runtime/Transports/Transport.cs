@@ -186,6 +186,6 @@ namespace MLAPI.Transports
         /// <summary>
         /// Initializes the transport
         /// </summary>
-        public abstract void Init();
+        public abstract void Init(NetworkingManager nm);
     }
 }
