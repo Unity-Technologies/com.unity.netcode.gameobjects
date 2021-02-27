@@ -1,9 +1,5 @@
-using System.IO;
-using System.Collections.Generic;
 using MLAPI;
 using MLAPI.NetworkedVar;
-using MLAPI.SceneManagement;
-using MLAPI.Messaging;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -31,7 +27,7 @@ public class InGameManager : NetworkedBehaviour
     [Range(1,10)]
     int m_ExitGameCountDown = 5; //Set default to 5
 
-    enum InGameStates
+    public enum InGameStates
     {
         Waiting,
         Playing,
@@ -58,6 +54,19 @@ public class InGameManager : NetworkedBehaviour
     /// </summary>
     private NetworkedVarFloat m_ExitingTime = new NetworkedVarFloat(new NetworkedVarSettings(){ WritePermission = NetworkedVarPermission.ServerOnly, ReadPermission = NetworkedVarPermission.Everyone } , 1.0f);
 
+    /// <summary>
+    /// OnInGameStateChangedDelegateHandler
+    /// Used to create the OnInGameStateChanged event that other components can subscribe to
+    /// Useful to change the state of objects that persist between scenes duringa an in-game session
+    /// </summary>
+    /// <param name="previousState"></param>
+    /// <param name="newState"></param>
+    public delegate void OnInGameStateChangedDelegateHandler(InGameStates previousState, InGameStates newState);
+    public event OnInGameStateChangedDelegateHandler OnInGameStateChanged;
+
+    //The local player
+    private NetworkedObject m_LocalPlayerObject;
+
     private void Awake()
     {
 #if(UNITY_EDITOR)
@@ -80,9 +89,6 @@ public class InGameManager : NetworkedBehaviour
             m_InGameState.OnValueChanged += InGameStateValueChanged;
         }
     }
-
-
-    NetworkedObject LocalPlayerObject;
 
     /// <summary>
     /// Start
@@ -110,23 +116,47 @@ public class InGameManager : NetworkedBehaviour
             m_HostInfo.enabled = false;
         }
 
+        SetAndInitializeLocalPlayer();
         FreezeAndShowPlayers();
+
     }
 
+
+    /// <summary>
+    /// SetAndInitializeLocalPlayer
+    /// Sets our local player, assigns the local main camera instanve to the local player, and
+    /// registers all NetworkedObjects with a RandomPlayerMover component for In-Game state changes
+    /// </summary>
+    void SetAndInitializeLocalPlayer()
+    {
+        NetworkedObject[] NetoworkedObjects = GameObject.FindObjectsOfType<NetworkedObject>();
+        foreach(NetworkedObject networkedObject in NetoworkedObjects)
+        {
+            RandomPlayerMover PlayerMover = networkedObject.GetComponent<RandomPlayerMover>();
+
+            if (PlayerMover)
+            {
+                if (networkedObject.IsLocalPlayer)
+                {
+                    m_LocalPlayerObject = networkedObject;
+                    PlayerMover.SetPlayerCamera();
+                }
+                PlayerMover.OnRegisterInGameManager(this);
+            }
+        }
+    }
+
+    /// <summary>
+    /// FreezeAndShowPlayers
+    /// This is to handle pausing and unpausing primarily the players' networked object clones not owned by the local player
+    /// </summary>
+    /// <param name="shouldFreeze">should we freeze everyone or un-freeze them?</param>
     void FreezeAndShowPlayers(bool shouldFreeze = false)
     {
         NetworkedObject[] NetoworkedObjects = GameObject.FindObjectsOfType<NetworkedObject>();
         foreach(NetworkedObject networkedObject in NetoworkedObjects)
         {
             RandomPlayerMover PlayerMover = networkedObject.GetComponent<RandomPlayerMover>();
-            if (networkedObject.IsLocalPlayer)
-            {
-                LocalPlayerObject = networkedObject;
-                if (PlayerMover)
-                {
-                    PlayerMover.SetPlayerCamera();
-                }
-            }
 
             if (PlayerMover)
             {
@@ -144,11 +174,21 @@ public class InGameManager : NetworkedBehaviour
         }
     }
 
-
+    /// <summary>
+    /// InGameStateValueChanged
+    /// Invoked when the in-game state changes (not to be confused with the GlobalGameState
+    /// </summary>
+    /// <param name="previousState"></param>
+    /// <param name="newState"></param>
     void InGameStateValueChanged(InGameStates previousState, InGameStates newState)
     {
         InGameStateTransition(previousState, false);
         InGameStateTransition(newState, true);
+
+        if(OnInGameStateChanged != null)
+        {
+            OnInGameStateChanged.Invoke(previousState, newState);
+        }
     }
 
     /// <summary>
@@ -187,11 +227,11 @@ public class InGameManager : NetworkedBehaviour
                         m_GameIsPaused.gameObject.SetActive(isTransitioningTo);
                     }
 
-                    if (LocalPlayerObject)
+                    if (m_LocalPlayerObject)
                     {
                         //TODO: Create a different player object based on this sample's PlayerController
                         //For now, we just stop moving the cubes moving around
-                        RandomPlayerMover movementRandomizer = LocalPlayerObject.GetComponent<RandomPlayerMover>();
+                        RandomPlayerMover movementRandomizer = m_LocalPlayerObject.GetComponent<RandomPlayerMover>();
                         if (movementRandomizer)
                         {
                             movementRandomizer.OnPaused(isTransitioningTo);
@@ -215,6 +255,8 @@ public class InGameManager : NetworkedBehaviour
                             m_ExitingTime.Value = 0;
                         }
                     }
+
+                    FreezeAndShowPlayers(isTransitioningTo);
 
                     if (m_ExitingGame)
                     {
@@ -336,7 +378,7 @@ public class InGameManager : NetworkedBehaviour
         if(m_ExitingTime.Value == 0)
         {
             //Server waits for no more players, and then exits the game
-            if (IsServer && NetworkingManager.Singleton.ConnectedClientsList.Count == 1)
+            if (IsServer && NetworkingManager.Singleton.ConnectedClientsList.Count <= 1)
             {
                 //De-register from our events
                 GlobalGameState.Singleton.allPlayersLoadedScene -= AllPlayersLoadedScene;

@@ -289,6 +289,11 @@ public class LobbyControl : NetworkedBehaviour
         }
     }
 
+    public void OnExitLobby()
+    {
+        GlobalGameState.Singleton.SetGameState(GlobalGameState.GameStates.ExitGame);
+    }
+
     private void OnDestroy()
     {
         if(NetworkingManager.Singleton != null)

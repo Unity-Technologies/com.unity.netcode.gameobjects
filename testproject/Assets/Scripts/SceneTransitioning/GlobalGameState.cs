@@ -76,6 +76,7 @@ public class GlobalGameState : NetworkedBehaviour
 
     #region NETWORK VARIABLES
     /// <summary>
+    /// m_GameState
     /// Networked Var Use Case Scenario:  State Machine
     /// Update Frequency: 0ms (immediate)
     /// Used for a state machine that updates immediately upon the value changing.
@@ -84,6 +85,7 @@ public class GlobalGameState : NetworkedBehaviour
     private NetworkedVar<GameStates> m_GameState = new NetworkedVar<GameStates>(new NetworkedVarSettings(){ WritePermission = NetworkedVarPermission.ServerOnly } , GameStates.None);
 
     /// <summary>
+    /// m_InGameTime
     /// Networked Var Use Case Scenario: (n) frequency resolution timer
     /// Update Frequency: 10fps (100ms frequency resolution)
     /// Can be used for various global timing events
@@ -92,6 +94,7 @@ public class GlobalGameState : NetworkedBehaviour
     private NetworkedVarFloat m_InGameTime = new NetworkedVarFloat(new NetworkedVarSettings(){ SendTickrate = 0.100f, WritePermission = NetworkedVarPermission.ServerOnly } , 0.0f);
 
     /// <summary>
+    /// inGameTime
     /// Networked Var Use Case Scenario:  public read only accessor to NetworkedVarFloat m_InGameTime
     /// One way to expose a global value that can be updated regularly
     /// Clients only have read access
