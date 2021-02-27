@@ -21,14 +21,9 @@ namespace MLAPI.Messaging
 
             using (BitStream stream = MessagePacker.WrapMessage(messageType, clientId, messageStream, flags))
             {
-                NetworkProfiler.StartEvent(TickType.Send, (uint) stream.Length, channel,
-                    MLAPIConstants.MESSAGE_NAMES[messageType]);
-
                 NetworkingManager.Singleton.NetworkConfig.NetworkTransport.Send(clientId, new ArraySegment<byte>(stream.GetBuffer(), 0, (int)stream.Length), channel);
                 ProfilerStatManager.bytesSent.Record((int)stream.Length);
                 PerformanceDataManager.Increment(ProfilerConstants.NumberBytesSent, (int)stream.Length);
-
-                NetworkProfiler.EndEvent();
             }
         }
 
@@ -50,7 +45,6 @@ namespace MLAPI.Messaging
 
                 using (BitStream stream = MessagePacker.WrapMessage(messageType, 0, messageStream, flags))
                 {
-                    NetworkProfiler.StartEvent(TickType.Send, (uint)stream.Length, channel, MLAPIConstants.MESSAGE_NAMES[messageType]);
                     for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)
                     {
                         if (NetworkingManager.Singleton.IsServer && NetworkingManager.Singleton.ConnectedClientsList[i].ClientId == NetworkingManager.Singleton.ServerClientId)
@@ -60,7 +54,6 @@ namespace MLAPI.Messaging
                         ProfilerStatManager.bytesSent.Record((int)stream.Length);
                         PerformanceDataManager.Increment(ProfilerConstants.NumberBytesSent, (int)stream.Length);
                     }
-                    NetworkProfiler.EndEvent();
                 }
             }
         }
@@ -89,7 +82,6 @@ namespace MLAPI.Messaging
 
                 using (BitStream stream = MessagePacker.WrapMessage(messageType, 0, messageStream, flags))
                 {
-                    NetworkProfiler.StartEvent(TickType.Send, (uint)stream.Length, channel, MLAPIConstants.MESSAGE_NAMES[messageType]);
                     for (int i = 0; i < clientIds.Count; i++)
                     {
                         if (NetworkingManager.Singleton.IsServer && clientIds[i] == NetworkingManager.Singleton.ServerClientId)
@@ -99,7 +91,6 @@ namespace MLAPI.Messaging
                         ProfilerStatManager.bytesSent.Record((int)stream.Length);
                         PerformanceDataManager.Increment(ProfilerConstants.NumberBytesSent, (int)stream.Length);
                     }
-                    NetworkProfiler.EndEvent();
                 }
             }
         }
@@ -125,7 +116,6 @@ namespace MLAPI.Messaging
 
                 using (BitStream stream = MessagePacker.WrapMessage(messageType, 0, messageStream, flags))
                 {
-                    NetworkProfiler.StartEvent(TickType.Send, (uint)stream.Length, channel, MLAPIConstants.MESSAGE_NAMES[messageType]);
                     for (int i = 0; i < NetworkingManager.Singleton.ConnectedClientsList.Count; i++)
                     {
                         if (NetworkingManager.Singleton.ConnectedClientsList[i].ClientId == clientIdToIgnore ||
@@ -136,7 +126,6 @@ namespace MLAPI.Messaging
                         ProfilerStatManager.bytesSent.Record((int)stream.Length);
                         PerformanceDataManager.Increment(ProfilerConstants.NumberBytesSent, (int)stream.Length);
                     }
-                    NetworkProfiler.EndEvent();
                 }
             }
         }
