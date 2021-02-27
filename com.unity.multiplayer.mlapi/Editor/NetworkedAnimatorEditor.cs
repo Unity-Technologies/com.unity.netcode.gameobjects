@@ -9,8 +9,6 @@ namespace UnityEditor
     [CanEditMultipleObjects]
     public class NetworkAnimatorEditor : Editor
     {
-        // TODO @mfatihmar (Unity): Re-implement this after `NetworkedAnimator` re-implementation
-        /*
         private NetworkedAnimator networkedAnimatorTarget;
         [NonSerialized]
         private bool initialized;
@@ -95,6 +93,5 @@ namespace UnityEditor
                     EditorGUILayout.LabelField("Param 4", networkedAnimatorTarget.param4);
             }
         }
-        */
     }
 }

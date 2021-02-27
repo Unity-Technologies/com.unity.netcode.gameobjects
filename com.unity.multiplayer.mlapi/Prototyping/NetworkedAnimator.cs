@@ -14,12 +14,11 @@ namespace MLAPI.Prototyping
     [AddComponentMenu("MLAPI/NetworkedAnimator")]
     public class NetworkedAnimator : NetworkedBehaviour
     {
-        // TODO @mfatihmar (Unity): Re-implement without bugs and unexpected stream read/write behaviours
-        /*
         /// <summary>
         /// Is proximity enabled
         /// </summary>
         public bool EnableProximity = false;
+
         /// <summary>
         /// The proximity range
         /// </summary>
@@ -27,26 +26,28 @@ namespace MLAPI.Prototyping
 
         [SerializeField]
         private Animator _animator;
+
         [SerializeField]
         private uint parameterSendBits;
+
         [SerializeField]
         private readonly float sendRate = 0.1f;
+
         private AnimatorControllerParameter[] animatorParameters;
 
         private int animationHash;
         private int transitionHash;
         private float sendTimer;
 
-
         // tracking - these should probably move to a Preview component. -- Comment from HLAPI. Needs clarification
-        #pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
         public string param0;
         public string param1;
         public string param2;
         public string param3;
         public string param4;
         public string param5;
-        #pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
+#pragma warning restore CS1591 // Missing XML comment for publicly visible type or member
 
 
         /// <summary>
@@ -54,13 +55,14 @@ namespace MLAPI.Prototyping
         /// </summary>
         public Animator animator
         {
-            get { return _animator; }
+            get => _animator;
             set
             {
                 _animator = value;
                 ResetParameterOptions();
             }
         }
+
         /// <summary>
         /// TODO
         /// </summary>
@@ -77,6 +79,7 @@ namespace MLAPI.Prototyping
                 parameterSendBits &= (uint)(~(1 << index));
             }
         }
+
         /// <summary>
         /// TODO
         /// </summary>
@@ -92,7 +95,7 @@ namespace MLAPI.Prototyping
         /// </summary>
         public void ResetParameterOptions()
         {
-            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogInfo("ResetParameterOptions");
+            // TODO: if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogInfo("ResetParameterOptions");
             parameterSendBits = 0;
             animatorParameters = null;
         }
@@ -129,16 +132,17 @@ namespace MLAPI.Prototyping
                                 if (client.Value.PlayerObject == null || Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
                                     clientsInProximity.Add(client.Key);
                             }
-                            InvokeClientRpcPerformance(ApplyAnimParamMsg, clientsInProximity, stream);
+
+                            // TODO: InvokeClientRpcPerformance(ApplyAnimParamMsg, clientsInProximity, stream);
                         }
                         else
                         {
-                            InvokeClientRpcOnEveryoneExceptPerformance(ApplyAnimMsg, OwnerClientId, stream);
+                            // TODO: InvokeClientRpcOnEveryoneExceptPerformance(ApplyAnimMsg, OwnerClientId, stream);
                         }
                     }
                     else
                     {
-                        InvokeServerRpcPerformance(SubmitAnimMsg, stream);
+                        // TODO: InvokeServerRpcPerformance(SubmitAnimMsg, stream);
                     }
                 }
             }
@@ -159,6 +163,7 @@ namespace MLAPI.Prototyping
                     animationHash = 0;
                     return true;
                 }
+
                 return false;
             }
 
@@ -172,10 +177,12 @@ namespace MLAPI.Prototyping
                     stateHash = animationSateInfo.fullPathHash;
                     normalizedTime = animationSateInfo.normalizedTime;
                 }
+
                 transitionHash = 0;
                 animationHash = animationSateInfo.fullPathHash;
                 return true;
             }
+
             return false;
         }
 
@@ -201,16 +208,17 @@ namespace MLAPI.Prototyping
                                     if (client.Value.PlayerObject == null || Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
                                         clientsInProximity.Add(client.Key);
                                 }
-                                InvokeClientRpcPerformance(ApplyAnimParamMsg, clientsInProximity, stream);
+
+                                // TODO: InvokeClientRpcPerformance(ApplyAnimParamMsg, clientsInProximity, stream);
                             }
                             else
                             {
-                                InvokeClientRpcOnEveryoneExceptPerformance(ApplyAnimParamMsg, OwnerClientId, stream);
+                                // TODO: InvokeClientRpcOnEveryoneExceptPerformance(ApplyAnimParamMsg, OwnerClientId, stream);
                             }
                         }
                         else
                         {
-                            InvokeServerRpcPerformance(SubmitAnimParamMsg, stream);
+                            // TODO: InvokeServerRpcPerformance(SubmitAnimParamMsg, stream);
                         }
                     }
                 }
@@ -239,7 +247,7 @@ namespace MLAPI.Prototyping
             if (i == 5) param5 = p;
         }
 
-        [ServerRpc]
+        // TODO: [ServerRpc]
         private void SubmitAnimMsg(ulong clientId, Stream stream)
         {
             // usually transitions will be triggered by parameters, if not, play anims directly.
@@ -254,15 +262,16 @@ namespace MLAPI.Prototyping
                     if (client.Value.PlayerObject == null || Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
                         clientsInProximity.Add(client.Key);
                 }
-                InvokeClientRpcPerformance(ApplyAnimMsg, clientsInProximity, stream);
+
+                // TODO: InvokeClientRpcPerformance(ApplyAnimMsg, clientsInProximity, stream);
             }
             else
             {
-                InvokeClientRpcOnEveryoneExceptPerformance(ApplyAnimMsg, OwnerClientId, stream);
+                // TODO: InvokeClientRpcOnEveryoneExceptPerformance(ApplyAnimMsg, OwnerClientId, stream);
             }
         }
 
-        [ClientRpc]
+        // TODO: [ClientRpc]
         private void ApplyAnimMsg(ulong clientId, Stream stream)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
@@ -273,11 +282,12 @@ namespace MLAPI.Prototyping
                 {
                     animator.Play(stateHash, 0, normalizedTime);
                 }
+
                 ReadParameters(stream, false);
             }
         }
 
-        [ServerRpc]
+        // TODO: [ServerRpc]
         private void SubmitAnimParamMsg(ulong clientId, Stream stream)
         {
             if (EnableProximity)
@@ -288,21 +298,22 @@ namespace MLAPI.Prototyping
                     if (client.Value.PlayerObject == null || Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
                         clientsInProximity.Add(client.Key);
                 }
-                InvokeClientRpcPerformance(ApplyAnimParamMsg, clientsInProximity, stream);
+
+                // TODO: InvokeClientRpcPerformance(ApplyAnimParamMsg, clientsInProximity, stream);
             }
             else
             {
-                InvokeClientRpcOnEveryoneExceptPerformance(ApplyAnimParamMsg, OwnerClientId, stream);
+                // TODO: InvokeClientRpcOnEveryoneExceptPerformance(ApplyAnimParamMsg, OwnerClientId, stream);
             }
         }
 
-        [ClientRpc]
+        // TODO: [ClientRpc]
         private void ApplyAnimParamMsg(ulong clientId, Stream stream)
         {
             ReadParameters(stream, true);
         }
 
-        [ServerRpc]
+        // TODO: [ServerRpc]
         private void SubmitAnimTriggerMsg(ulong clientId, Stream stream)
         {
             if (EnableProximity)
@@ -313,15 +324,16 @@ namespace MLAPI.Prototyping
                     if (client.Value.PlayerObject == null || Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
                         clientsInProximity.Add(client.Key);
                 }
-                InvokeClientRpcPerformance(ApplyAnimTriggerMsg, clientsInProximity, stream);
+
+                // TODO: InvokeClientRpcPerformance(ApplyAnimTriggerMsg, clientsInProximity, stream);
             }
             else
             {
-                InvokeClientRpcOnEveryoneExceptPerformance(ApplyAnimTriggerMsg, OwnerClientId, stream);
+                // TODO: InvokeClientRpcOnEveryoneExceptPerformance(ApplyAnimTriggerMsg, OwnerClientId, stream);
             }
         }
 
-        [ClientRpc]
+        // TODO: [ClientRpc]
         private void ApplyAnimTriggerMsg(ulong clientId, Stream stream)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
@@ -440,21 +452,21 @@ namespace MLAPI.Prototyping
                                     if (client.Value.PlayerObject == null || Vector3.Distance(transform.position, client.Value.PlayerObject.transform.position) <= ProximityRange)
                                         clientsInProximity.Add(client.Key);
                                 }
-                                InvokeClientRpcPerformance(ApplyAnimTriggerMsg, clientsInProximity, stream);
+
+                                // TODO: InvokeClientRpcPerformance(ApplyAnimTriggerMsg, clientsInProximity, stream);
                             }
                             else
                             {
-                                InvokeClientRpcOnEveryoneExceptPerformance(ApplyAnimTriggerMsg, OwnerClientId, stream);
+                                // TODO: InvokeClientRpcOnEveryoneExceptPerformance(ApplyAnimTriggerMsg, OwnerClientId, stream);
                             }
                         }
                         else
                         {
-                            InvokeServerRpcPerformance(SubmitAnimTriggerMsg, stream);
+                            // TODO: InvokeServerRpcPerformance(SubmitAnimTriggerMsg, stream);
                         }
                     }
                 }
             }
         }
-        */
     }
 }
