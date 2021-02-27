@@ -21,16 +21,13 @@ namespace MLAPI.Serialization
     {
         private Stream source;
         private BitStream bitSource;
-        protected NetworkingManager networkingManager;
 
         /// <summary>
         /// Creates a new BitReader backed by a given stream
         /// </summary>
-        /// <param name="networkingManager">The NetworkingManager instance we are deserializing in the context of.</param>
         /// <param name="stream">The stream to read from</param>
-        public BitReader(NetworkingManager manager, Stream stream)
+        public BitReader(Stream stream)
         {
-            networkingManager = manager;
             source = stream;
             bitSource = stream as BitStream;
         }
@@ -171,9 +168,10 @@ namespace MLAPI.Serialization
             {
                 ulong networkId = ReadUInt64Packed();
 
-                if (networkingManager.SpawnManager.SpawnedObjects.ContainsKey(networkId))
+                var netManager = SpawnManager.SpawnedObjectsByNetworkingManager[networkId];
+                if (netManager.SpawnManager.SpawnedObjects.ContainsKey(networkId))
                 {
-                    return networkingManager.SpawnManager.SpawnedObjects[networkId].gameObject;
+                    return netManager.SpawnManager.SpawnedObjects[networkId].gameObject;
                 }
                 else
                 {
@@ -186,9 +184,10 @@ namespace MLAPI.Serialization
             {
                 ulong networkId = ReadUInt64Packed();
 
-                if (networkingManager.SpawnManager.SpawnedObjects.ContainsKey(networkId))
+                var netManager = SpawnManager.SpawnedObjectsByNetworkingManager[networkId];
+                if (netManager.SpawnManager.SpawnedObjects.ContainsKey(networkId))
                 {
-                    return networkingManager.SpawnManager.SpawnedObjects[networkId];
+                    return netManager.SpawnManager.SpawnedObjects[networkId];
                 }
                 else
                 {
@@ -201,9 +200,11 @@ namespace MLAPI.Serialization
             {
                 ulong networkId = ReadUInt64Packed();
                 ushort behaviourId = ReadUInt16Packed();
-                if (networkingManager.SpawnManager.SpawnedObjects.ContainsKey(networkId))
+
+                var netManager = SpawnManager.SpawnedObjectsByNetworkingManager[networkId];
+                if (netManager.SpawnManager.SpawnedObjects.ContainsKey(networkId))
                 {
-                    return networkingManager.SpawnManager.SpawnedObjects[networkId].GetBehaviourAtOrderIndex(behaviourId);
+                    return netManager.SpawnManager.SpawnedObjects[networkId].GetBehaviourAtOrderIndex(behaviourId);
                 }
                 else
                 {

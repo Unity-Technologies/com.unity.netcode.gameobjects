@@ -67,7 +67,7 @@ namespace MLAPI.Messaging
         {
             X509Certificate2 certificate = null;
             byte[] serverDiffieHellmanPublicPart = null;
-            using (PooledBitReader reader = networkingManager.PooledBitReaders.GetReader(stream))
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
                 if (networkingManager.NetworkConfig.EnableEncryption)
                 {
@@ -182,7 +182,7 @@ namespace MLAPI.Messaging
             if (!networkingManager.PendingClients.ContainsKey(clientId) || networkingManager.PendingClients[clientId].ConnectionState != PendingClient.State.PendingHail) return;
             if (!networkingManager.NetworkConfig.EnableEncryption) return;
 
-            using (PooledBitReader reader = networkingManager.PooledBitReaders.GetReader(stream))
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
                 if (networkingManager.PendingClients[clientId].KeyExchange != null)
                 {
@@ -218,7 +218,7 @@ namespace MLAPI.Messaging
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleConnectionRequest.Begin();
 #endif
-            using (PooledBitReader reader = networkingManager.PooledBitReaders.GetReader(stream))
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
                 ulong configHash = reader.ReadUInt64Packed();
                 if (!networkingManager.NetworkConfig.CompareConfig(configHash))
@@ -251,7 +251,7 @@ namespace MLAPI.Messaging
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleConnectionApproved.Begin();
 #endif
-            using (PooledBitReader reader = networkingManager.PooledBitReaders.GetReader(stream))
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
                 networkingManager.LocalClientId = reader.ReadUInt64Packed();
 
@@ -274,7 +274,7 @@ namespace MLAPI.Messaging
 
                 void DelayedSpawnAction(Stream continuationStream)
                 {
-                    using (PooledBitReader continuationReader = networkingManager.PooledBitReaders.GetReader(continuationStream))
+                    using (PooledBitReader continuationReader = PooledBitReader.Get(continuationStream))
                     {
                         if (!networkingManager.NetworkConfig.EnableSceneManagement || networkingManager.NetworkConfig.UsePrefabSync)
                         {
@@ -396,7 +396,7 @@ namespace MLAPI.Messaging
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleAddObject.Begin();
 #endif
-            using (PooledBitReader reader = networkingManager.PooledBitReaders.GetReader(stream))
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
                 bool isPlayerObject = reader.ReadBool();
                 ulong networkId = reader.ReadUInt64Packed();
@@ -474,7 +474,7 @@ namespace MLAPI.Messaging
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleDestroyObject.Begin();
 #endif
-            using (PooledBitReader reader = networkingManager.PooledBitReaders.GetReader(stream))
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
                 ulong networkId = reader.ReadUInt64Packed();
                 networkingManager.SpawnManager.OnDestroyObject(networkId, true);
@@ -489,7 +489,7 @@ namespace MLAPI.Messaging
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleSwitchScene.Begin();
 #endif
-            using (PooledBitReader reader = networkingManager.PooledBitReaders.GetReader(stream))
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
                 uint sceneIndex = reader.ReadUInt32Packed();
                 Guid switchSceneGuid = new Guid(reader.ReadByteArray());
@@ -510,7 +510,7 @@ namespace MLAPI.Messaging
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleClientSwitchSceneCompleted.Begin();
 #endif
-            using (PooledBitReader reader = networkingManager.PooledBitReaders.GetReader(stream))
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
                 networkingManager.NetworkSceneManager.OnClientSwitchSceneCompleted(clientId, new Guid(reader.ReadByteArray()));
             }
@@ -524,7 +524,7 @@ namespace MLAPI.Messaging
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleChangeOwner.Begin();
 #endif
-            using (PooledBitReader reader = networkingManager.PooledBitReaders.GetReader(stream))
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
                 ulong networkId = reader.ReadUInt64Packed();
                 ulong ownerClientId = reader.ReadUInt64Packed();
@@ -551,7 +551,7 @@ namespace MLAPI.Messaging
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleAddObjects.Begin();
 #endif
-            using (PooledBitReader reader = networkingManager.PooledBitReaders.GetReader(stream))
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
                 ushort objectCount = reader.ReadUInt16Packed();
 
@@ -570,7 +570,7 @@ namespace MLAPI.Messaging
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleDestroyObjects.Begin();
 #endif
-            using (PooledBitReader reader = networkingManager.PooledBitReaders.GetReader(stream))
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
                 ushort objectCount = reader.ReadUInt16Packed();
 
@@ -589,7 +589,7 @@ namespace MLAPI.Messaging
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleTimeSync.Begin();
 #endif
-            using (PooledBitReader reader = networkingManager.PooledBitReaders.GetReader(stream))
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
                 float netTime = reader.ReadSinglePacked();
                 networkingManager.UpdateNetworkTime(clientId, netTime, receiveTime);
@@ -610,7 +610,7 @@ namespace MLAPI.Messaging
                 return;
             }
 
-            using (PooledBitReader reader = networkingManager.PooledBitReaders.GetReader(stream))
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
                 ulong networkId = reader.ReadUInt64Packed();
                 ushort orderIndex = reader.ReadUInt16Packed();
@@ -654,7 +654,7 @@ namespace MLAPI.Messaging
                 return;
             }
 
-            using (PooledBitReader reader = networkingManager.PooledBitReaders.GetReader(stream))
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
                 ulong networkId = reader.ReadUInt64Packed();
                 ushort orderIndex = reader.ReadUInt16Packed();
@@ -724,7 +724,7 @@ namespace MLAPI.Messaging
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleNamedMessage.Begin();
 #endif
-            using (PooledBitReader reader = networkingManager.PooledBitReaders.GetReader(stream))
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
                 ulong hash = reader.ReadUInt64Packed();
 
@@ -740,7 +740,7 @@ namespace MLAPI.Messaging
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_HandleNetworkLog.Begin();
 #endif
-            using (PooledBitReader reader = networkingManager.PooledBitReaders.GetReader(stream))
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
                 NetworkLog.LogType logType = (NetworkLog.LogType)reader.ReadByte();
                 string message = reader.ReadStringPacked().ToString();

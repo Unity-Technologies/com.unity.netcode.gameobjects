@@ -251,7 +251,7 @@ namespace MLAPI
         [Obsolete("Use IsLocalPlayer instead", false)]
         public bool isLocalPlayer => IsLocalPlayer;
         /// <summary>
-        /// Gets the NetworkingManager that owns us. 
+        /// Gets the NetworkingManager that owns us.
         /// </summary>
         public NetworkingManager NetManager => NetworkedObject.NetManager;
 
@@ -722,7 +722,7 @@ namespace MLAPI
         internal static void HandleNetworkedVarDeltas(NetworkingManager networkingManager,
             List<INetworkedVar> networkedVarList, Stream stream, ulong clientId, NetworkedBehaviour logInstance)
         {
-            using (var reader = networkingManager.PooledBitReaders.GetReader(stream))
+            using (var reader = PooledBitReader.Get(stream))
             {
                 for (int i = 0; i < networkedVarList.Count; i++)
                 {
@@ -800,7 +800,7 @@ namespace MLAPI
 
         internal static void HandleNetworkedVarUpdate(NetworkingManager networkingManager, List<INetworkedVar> networkedVarList, Stream stream, ulong clientId, NetworkedBehaviour logInstance)
         {
-            using (PooledBitReader reader = networkingManager.PooledBitReaders.GetReader(stream))
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
                 for (int i = 0; i < networkedVarList.Count; i++)
                 {
@@ -919,7 +919,7 @@ namespace MLAPI
             if (networkedVarList.Count == 0)
                 return;
 
-            using (PooledBitReader reader = networkingManager.PooledBitReaders.GetReader(stream))
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
                 for (int j = 0; j < networkedVarList.Count; j++)
                 {

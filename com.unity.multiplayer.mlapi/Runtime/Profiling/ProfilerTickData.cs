@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using MLAPI.Serialization.Pooled;
 
@@ -52,19 +52,18 @@ namespace MLAPI.Profiling
         /// <summary>
         /// Creates a ProfilerTick from data in the provided stream
         /// </summary>
-        /// <param name="manager">The NetworkingManager this ProfilerTick is operating under.</param>
         /// <param name="stream">The stream containing the ProfilerTick data</param>
         /// <returns>The ProfilerTick with data read from the stream</returns>
-		public static ProfilerTick FromStream(NetworkingManager manager, Stream stream)
+		public static ProfilerTick FromStream(Stream stream)
 		{
 			ProfilerTick tick = new ProfilerTick();
 
-            using (PooledBitReader reader = manager.PooledBitReaders.GetReader (stream))
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
                 ushort count = reader.ReadUInt16Packed();
                 for (int i = 0; i < count; i++)
                 {
-                    tick.Events.Add(TickEvent.FromStream(manager, stream));
+                    tick.Events.Add(TickEvent.FromStream(stream));
                 }
 
                 return tick;
@@ -167,12 +166,11 @@ namespace MLAPI.Profiling
         /// <summary>
         /// Creates a TickEvent from data in the provided stream
         /// </summary>
-        /// <param name="manager">The NetworkingManager context this TickEvent is operating under. </param>
         /// <param name="stream">The stream containing the TickEvent data</param>
         /// <returns>The TickEvent with data read from the stream</returns>
-        public static TickEvent FromStream(NetworkingManager manager, Stream stream)
+        public static TickEvent FromStream(Stream stream)
 		{
-            using (PooledBitReader reader = manager.PooledBitReaders.GetReader(stream))
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
                 TickEvent @event = new TickEvent
                 {

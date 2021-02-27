@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
 using System;
@@ -169,7 +169,7 @@ namespace MLAPI.NetworkedVar
         /// <param name="keepDirtyDelta">Whether or not the container should keep the dirty delta, or mark the delta as consumed</param>
         public void ReadDelta(Stream stream, bool keepDirtyDelta)
         {
-            using (PooledBitReader reader = networkedBehaviour.NetManager.PooledBitReaders.GetReader(stream))
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
                 T previousValue = InternalValue;
                 InternalValue = (T)reader.ReadObjectPacked((typeof(T)));

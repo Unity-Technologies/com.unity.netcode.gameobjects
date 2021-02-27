@@ -41,7 +41,7 @@ namespace MLAPI.Serialization
         {
             FieldInfo[] fields = SerializationManager.GetFieldsForType(GetType());
 
-            using (PooledBitReader reader = networkingManager.PooledBitReaders.GetReader(stream))
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
                 for (int i = 0; i < fields.Length; i++)
                 {

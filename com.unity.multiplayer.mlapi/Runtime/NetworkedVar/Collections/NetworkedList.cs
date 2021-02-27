@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using MLAPI.Serialization;
@@ -205,7 +205,7 @@ namespace MLAPI.NetworkedVar.Collections
         /// <inheritdoc />
         public void ReadField(Stream stream)
         {
-            using (PooledBitReader reader = networkedBehaviour.NetManager.PooledBitReaders.GetReader(stream))
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
                 list.Clear();
                 ushort count = reader.ReadUInt16Packed();
@@ -219,7 +219,7 @@ namespace MLAPI.NetworkedVar.Collections
         /// <inheritdoc />
         public void ReadDelta(Stream stream, bool keepDirtyDelta)
         {
-            using (PooledBitReader reader = networkedBehaviour.NetManager.PooledBitReaders.GetReader(stream))
+            using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
                 ushort deltaCount = reader.ReadUInt16Packed();
                 for (int i = 0; i < deltaCount; i++)

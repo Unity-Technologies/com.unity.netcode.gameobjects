@@ -38,9 +38,11 @@ namespace MLAPI
         }
 
         /// <summary>
-        /// The NetworkingManager that owns this Object. 
+        /// The NetworkingManager that owns this Object.
         /// </summary>
-        public NetworkingManager NetManager { get; internal set; }
+        public NetworkingManager NetManager {
+            get; internal set;
+        }
 
         /// <summary>
         /// Gets the unique ID of this object that is synced across the network
@@ -405,8 +407,9 @@ namespace MLAPI
         /// </summary>
         /// <param name="spawnPayload">The writer containing the spawn payload</param>
         /// <param name="destroyWithScene">Should the object be destroyd when the scene is changed</param>
-        public void Spawn(Stream spawnPayload = null, bool destroyWithScene = false)
+        public void Spawn(NetworkingManager netManager, Stream spawnPayload = null, bool destroyWithScene = false)
         {
+            NetManager = netManager;
             if (!NetManager.IsListening)
             {
                 throw new NotListeningException("NetworkingManager isn't listening, start a server, client or host before spawning objects.");
@@ -464,8 +467,9 @@ namespace MLAPI
         /// <param name="clientId">The clientId whos player object this is</param>
         /// <param name="spawnPayload">The writer containing the spawn payload</param>
         /// <param name="destroyWithScene">Should the object be destroyd when the scene is changed</param>
-        public void SpawnAsPlayerObject(ulong clientId, Stream spawnPayload = null, bool destroyWithScene = false)
+        public void SpawnAsPlayerObject(NetworkingManager netManager, ulong clientId, Stream spawnPayload = null, bool destroyWithScene = false)
         {
+            NetManager = netManager;
             if (spawnPayload != null)
                 spawnPayload.Position = 0;
 

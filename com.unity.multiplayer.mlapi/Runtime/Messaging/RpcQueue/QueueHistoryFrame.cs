@@ -199,7 +199,7 @@ namespace MLAPI.Messaging
 
                     if(m_CurrentQueueItem.streamReader == null)
                     {
-                        m_CurrentQueueItem.streamReader = m_NetworkingManager.PooledBitReaders.GetReader(m_CurrentQueueItem.itemStream);
+                        m_CurrentQueueItem.streamReader = PooledBitReader.Get(m_CurrentQueueItem.itemStream);
                     }
 
                 }

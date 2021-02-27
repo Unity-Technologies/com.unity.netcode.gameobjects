@@ -19,8 +19,8 @@ namespace MLAPI.Internal
         // This method is responsible for unwrapping a message, that is extracting the messagebody.
         // Could include decrypting and/or authentication.
         internal static BitStream UnwrapMessage(NetworkingManager networkingManager, BitStream inputStream, ulong clientId, out byte messageType, out SecuritySendFlags security)
-        {      
-            using (PooledBitReader inputHeaderReader = networkingManager.PooledBitReaders.GetReader(inputStream))
+        {
+            using (PooledBitReader inputHeaderReader = PooledBitReader.Get(inputStream))
             {
                 try
                 {
@@ -39,7 +39,7 @@ namespace MLAPI.Internal
                     else if (isEncrypted) security = SecuritySendFlags.Encrypted;
                     else if (isAuthenticated) security = SecuritySendFlags.Authenticated;
                     else security = SecuritySendFlags.None;
-                    
+
 
 #if !DISABLE_CRYPTOGRAPHY
                     if (isEncrypted || isAuthenticated)
@@ -192,7 +192,7 @@ namespace MLAPI.Internal
                 {
                     outWriter.WriteBit(encrypted);
                     outWriter.WriteBit(authenticated);
-                    
+
 #if !DISABLE_CRYPTOGRAPHY
                     if (authenticated || encrypted)
                     {

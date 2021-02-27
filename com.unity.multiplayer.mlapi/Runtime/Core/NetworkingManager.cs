@@ -187,8 +187,6 @@ namespace MLAPI
 
         internal SpawnManager SpawnManager { get; private set; }
 
-        internal BitReaderPool PooledBitReaders{ get; private set; }
-
         internal void InvokeOnClientConnectedCallback(ulong clientId) => OnClientConnectedCallback?.Invoke(clientId);
 
         /// <summary>
@@ -357,7 +355,6 @@ namespace MLAPI
             MessageHandler = new InternalMessageHandler(this);
             NetworkSceneManager = new NetworkSceneManager(this);
             SpawnManager = new SpawnManager(this);
-            PooledBitReaders = new BitReaderPool(this);
             NetworkConfig.NetManager = this;
 
             rpcQueueContainer = new RpcQueueContainer(this, false);

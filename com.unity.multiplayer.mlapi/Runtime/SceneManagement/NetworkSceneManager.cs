@@ -341,7 +341,7 @@ namespace MLAPI.SceneManagement
             {
                 networkingManager.SpawnManager.DestroySceneObjects();
 
-                using (PooledBitReader reader = networkingManager.PooledBitReaders.GetReader(objectStream))
+                using (PooledBitReader reader = PooledBitReader.Get(objectStream))
                 {
                     uint newObjectsCount = reader.ReadUInt32Packed();
 
@@ -394,7 +394,7 @@ namespace MLAPI.SceneManagement
 
                 networkingManager.SpawnManager.ClientCollectSoftSyncSceneObjectSweep(networkedObjects);
 
-                using (PooledBitReader reader = networkingManager.PooledBitReaders.GetReader(objectStream))
+                using (PooledBitReader reader = PooledBitReader.Get(objectStream))
                 {
                     uint newObjectsCount = reader.ReadUInt32Packed();
 

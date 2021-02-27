@@ -59,12 +59,12 @@ namespace UnityEditor
 
                 ProfilerContainer container = new ProfilerContainer();
                 BitStream stream = new BitStream(bytes);
-                BitReader reader = new BitReader(manager, stream);
+                BitReader reader = new BitReader(stream);
                 ushort count = reader.ReadUInt16Packed();
                 container.ticks = new ProfilerTick[count];
                 for (int i = 0; i < count; i++)
                 {
-                    container.ticks[i] = ProfilerTick.FromStream(manager, stream);
+                    container.ticks[i] = ProfilerTick.FromStream(stream);
                 }
 
                 return container;

@@ -282,7 +282,7 @@ namespace MLAPI.Configuration
             byte[] binary = Convert.FromBase64String(base64);
             using (BitStream stream = new BitStream(binary))
             {
-                using (PooledBitReader reader = NetManager.PooledBitReaders.GetReader(stream))
+                using (PooledBitReader reader = PooledBitReader.Get(stream))
                 {
                     config.ProtocolVersion = reader.ReadUInt16Packed();
 

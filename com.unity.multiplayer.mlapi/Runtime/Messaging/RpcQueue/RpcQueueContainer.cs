@@ -267,7 +267,7 @@ namespace MLAPI.Messaging
         internal void AddQueueItemToInboundFrame(QueueItemType qItemType, float timeStamp, ulong sourceNetworkId, BitStream message)
         {
             long originalPosition = message.Position;
-            PooledBitReader BR = m_NetManager.PooledBitReaders.GetReader(message);
+            PooledBitReader BR = PooledBitReader.Get(message);
 
             var longValue = BR.ReadUInt64Packed(); // NetworkObjectId (temporary, we reset position just below)
 
@@ -649,7 +649,7 @@ namespace MLAPI.Messaging
                     queueHistoryFrame.queueStream = PooledBitStream.Get();
                     queueHistoryFrame.queueStream.Position = 0;
                     queueHistoryFrame.queueWriter = PooledBitWriter.Get(queueHistoryFrame.queueStream);
-                    queueHistoryFrame.queueReader = m_NetManager.PooledBitReaders.GetReader(queueHistoryFrame.queueStream);
+                    queueHistoryFrame.queueReader = PooledBitReader.Get(queueHistoryFrame.queueStream);
                     queueHistoryFrame.queueItemOffsets = new List<uint>();
 
                     //For now all outbound, we will always have a single update in which they are processed (LATEUPDATE)
@@ -667,7 +667,7 @@ namespace MLAPI.Messaging
                         queueHistoryFrame.queueStream = PooledBitStream.Get();
                         queueHistoryFrame.queueStream.Position = 0;
                         queueHistoryFrame.queueWriter = PooledBitWriter.Get(queueHistoryFrame.queueStream);
-                        queueHistoryFrame.queueReader = m_NetManager.PooledBitReaders.GetReader(queueHistoryFrame.queueStream);
+                        queueHistoryFrame.queueReader = PooledBitReader.Get(queueHistoryFrame.queueStream);
                         queueHistoryFrame.queueItemOffsets = new List<uint>();
                         QueueHistory[QueueHistoryFrame.QueueFrameType.Inbound][i].Add(netUpdateStage, queueHistoryFrame);
                     }

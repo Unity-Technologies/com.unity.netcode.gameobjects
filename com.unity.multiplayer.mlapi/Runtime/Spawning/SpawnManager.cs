@@ -20,6 +20,7 @@ namespace MLAPI.Spawning
     /// </summary>
     public class SpawnManager
     {
+        public static readonly Dictionary<ulong, NetworkingManager> SpawnedObjectsByNetworkingManager = new Dictionary<ulong, NetworkingManager>();
         /// <summary>
         /// The currently spawned objects
         /// </summary>
@@ -294,7 +295,7 @@ namespace MLAPI.Spawning
                         NetworkedObject networkedObject;
                         try
                         {
-                            SceneManager.SetActiveScene(networkingManager.gameObject.scene);
+//??                            SceneManager.SetActiveScene(networkingManager.gameObject.scene);
                             networkedObject = ((position == null && rotation == null) ?
                                 MonoBehaviour.Instantiate(prefab) :
                                 MonoBehaviour.Instantiate(prefab, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity))).GetComponent<NetworkedObject>();
@@ -343,6 +344,9 @@ namespace MLAPI.Spawning
         // Ran on both server and client
         internal void SpawnNetworkedObjectLocally(NetworkedObject netObject, ulong networkId, bool sceneObject, bool playerObject, ulong? ownerClientId, Stream dataStream, bool readPayload, int payloadLength, bool readNetworkedVar, bool destroyWithScene)
         {
+            SpawnedObjectsByNetworkingManager[networkId] = networkingManager;
+            netObject.NetManager = networkingManager;
+
             if (netObject == null)
             {
                 throw new ArgumentNullException(nameof(netObject), "Cannot spawn null object");
@@ -558,6 +562,7 @@ namespace MLAPI.Spawning
             {
                 if ((sobj.IsSceneObject != null && sobj.IsSceneObject == true) || sobj.DestroyWithScene)
                 {
+
                     if (customDestroyHandlers.ContainsKey(sobj.PrefabHash))
                     {
                         customDestroyHandlers[sobj.PrefabHash](sobj);
@@ -684,6 +689,7 @@ namespace MLAPI.Spawning
                 }
             }
 
+
             sobj.IsSpawned = false;
 
             if (networkingManager != null && networkingManager.IsServer)
@@ -741,6 +747,8 @@ namespace MLAPI.Spawning
                     MonoBehaviour.Destroy(go);
                 }
             }
+
+            SpawnedObjectsByNetworkingManager.Remove(sobj.NetworkId);
 
             // for some reason, we can get down here and SpawnedObjects for this
             //  networkId will no longer be here, even as we check this at the start
