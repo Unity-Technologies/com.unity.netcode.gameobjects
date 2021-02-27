@@ -13,7 +13,7 @@ public class RandomPlayerMover : NetworkedBehaviour
     private bool IsPaused;
 
     [SerializeField]
-    private Camera PlayerCamera;
+    private GameObject m_CameraRoot;
 
     private MeshRenderer m_MeshRenderer;
 
@@ -40,22 +40,6 @@ public class RandomPlayerMover : NetworkedBehaviour
 
         m_MeshRenderer = GetComponent<MeshRenderer>();
 
-        if (PlayerCamera )
-        {
-            if(PlayerCamera.enabled)
-            {
-                if(IsOwner)
-                {
-                    PlayerCamera.enabled = false;
-                    Camera.main.enabled = true;
-                }
-                else
-                {
-                    PlayerCamera.gameObject.SetActive(false);
-                }
-            }
-        }
-
         var temp = transform.position;
         temp.y = 0.5f;
         transform.position = temp;
@@ -64,12 +48,13 @@ public class RandomPlayerMover : NetworkedBehaviour
 
     public void SetPlayerCamera()
     {
-        if (PlayerCamera && IsOwner)
+        if (m_CameraRoot && IsLocalPlayer)
         {
-            if(!PlayerCamera.enabled)
+            if (Camera.main && Camera.main.transform.parent == null)
             {
-                PlayerCamera.enabled = true;
-                Camera.main.enabled = false;
+                Camera.main.transform.parent = m_CameraRoot.transform;
+                Camera.main.transform.localPosition = Vector3.zero;
+                Camera.main.transform.localRotation = Quaternion.identity;
             }
         }
     }
@@ -135,11 +120,6 @@ public class RandomPlayerMover : NetworkedBehaviour
             else
             {
                 targetLocation = GetRandomLocation();
-            }
-
-            if(PlayerCamera != null && !PlayerCamera.enabled)
-            {
-                PlayerCamera.enabled = true;
             }
         }
     }
