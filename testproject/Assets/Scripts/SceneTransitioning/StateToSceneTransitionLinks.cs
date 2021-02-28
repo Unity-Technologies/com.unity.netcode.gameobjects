@@ -70,7 +70,7 @@ namespace MLAPIGlobalGameState
         {
 
             var results = m_StateToSceneList.Where(entry => entry.stateToLoadScene == gameState);
-            if(results != null)
+            if (results != null)
             {
                 return results.First().sceneToLoad;
             }
@@ -86,7 +86,7 @@ namespace MLAPIGlobalGameState
         public GlobalGameState.GameStates GetGameStateLinkedToScene(String sceneName)
         {
             var results = m_StateToSceneList.Where(entry => entry.sceneToLoad == sceneName);
-            if(results != null)
+            if (results != null)
             {
                 return results.First().stateToLoadScene;
             }
@@ -102,7 +102,7 @@ namespace MLAPIGlobalGameState
         public StateToSceneTransitionLinks.MLAPIStates GetGameStateToMLAPIState(GlobalGameState.GameStates gameState)
         {
             var results = m_StateToSceneList.Where(entry =>  entry.stateToLoadScene == gameState);
-            if(results != null)
+            if (results != null)
             {
                 return results.First().MLAPIState;
             }

@@ -47,7 +47,7 @@ public class InGameManager : NetworkedBehaviour
     /// <summary>
     /// m_ExitingTime
     /// Networked Var Use Case Scenario:  Timer
-    /// Update Frequency: 100ms (10fps)
+    /// Update Frequency: 0ms (immediate)
     /// This is used as a general network timer for things like exiting notifications or game startup count downs
     /// Clients only have read access to the current GlobalGameState.
     /// !!NOTE!! Leave the initial value > 0 to assure all clients have received the first full exiting timer update from the server
@@ -69,8 +69,8 @@ public class InGameManager : NetworkedBehaviour
 
     private void Awake()
     {
-#if(UNITY_EDITOR)
-        if( NetworkingManager.Singleton == null)
+#if UNITY_EDITOR
+        if ( NetworkingManager.Singleton == null)
         {
             GlobalGameState.EditorLaunchingAsHost = m_LaunchAsHostInEditor;
             //This will automatically launch the MLAPIBootStrap and then transition directly to the scene this control is contained within (for easy development of scenes)
@@ -78,9 +78,9 @@ public class InGameManager : NetworkedBehaviour
             return;
         }
 #endif
-        if(NetworkingManager.Singleton.IsListening)
+        if (NetworkingManager.Singleton.IsListening)
         {
-            if(IsServer)
+            if (IsServer)
             {
                 GlobalGameState.Singleton.allPlayersLoadedScene += AllPlayersLoadedScene;
                 NetworkingManager.Singleton.OnClientDisconnectCallback += OnClientDisconnectCallback;
@@ -111,7 +111,7 @@ public class InGameManager : NetworkedBehaviour
             m_ExitingGame.enabled = false;
         }
 
-        if(!IsServer && m_HostInfo)
+        if (!IsServer && m_HostInfo)
         {
             m_HostInfo.enabled = false;
         }
@@ -185,7 +185,7 @@ public class InGameManager : NetworkedBehaviour
         InGameStateTransition(previousState, false);
         InGameStateTransition(newState, true);
 
-        if(OnInGameStateChanged != null)
+        if (OnInGameStateChanged != null)
         {
             OnInGameStateChanged.Invoke(previousState, newState);
         }
@@ -245,7 +245,7 @@ public class InGameManager : NetworkedBehaviour
                     if (IsServer)
                     {
                         //As long as there are players, let's let them know the game is exiting/ending
-                        if(NetworkingManager.Singleton.ConnectedClientsList.Count > 1)
+                        if (NetworkingManager.Singleton.ConnectedClientsList.Count > 1)
                         {
                              m_ExitingTime.Value = m_ExitGameCountDown;
                         }
@@ -275,7 +275,7 @@ public class InGameManager : NetworkedBehaviour
     /// </summary>
     void AllPlayersLoadedScene()
     {
-        if(IsServer)
+        if (IsServer)
         {
             m_InGameState.Value = InGameStates.Playing;
         }
@@ -326,7 +326,7 @@ public class InGameManager : NetworkedBehaviour
         }
 
         //Only the host calls the  ServerCommandInputUpdate method
-        if(IsServer)
+        if (IsServer)
         {
             ServerCommandInputUpdate();
         }
@@ -369,13 +369,13 @@ public class InGameManager : NetworkedBehaviour
     void OnExitingGame()
     {
         //Server is authoritative for the exiting timer
-        if(IsServer)
+        if (IsServer)
         {
             m_ExitingTime.Value = Mathf.Max(0, m_ExitingTime.Value - Time.deltaTime);
         }
 
         //If no time is left, then exit
-        if(m_ExitingTime.Value == 0)
+        if (m_ExitingTime.Value == 0)
         {
             //Server waits for no more players, and then exits the game
             if (IsServer && NetworkingManager.Singleton.ConnectedClientsList.Count <= 1)
@@ -420,10 +420,10 @@ public class InGameManager : NetworkedBehaviour
     /// </summary>
     void ServerCommandInputUpdate()
     {
-        if(Input.GetKeyDown(KeyCode.P))
+        if (Input.GetKeyDown(KeyCode.P))
         {
             //Only allow the paused to be toggled when paused or when playing
-            if(m_InGameState.Value == InGameStates.Paused)
+            if (m_InGameState.Value == InGameStates.Paused)
             {
                 m_InGameState.Value = InGameStates.Playing;
             }

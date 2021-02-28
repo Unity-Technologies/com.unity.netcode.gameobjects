@@ -1,7 +1,5 @@
-using System.IO;
 using System.Collections.Generic;
 using MLAPI;
-using MLAPI.SceneManagement;
 using MLAPI.Messaging;
 using UnityEngine;
 using UnityEngine.UI;
@@ -30,7 +28,7 @@ public class LobbyControl : NetworkedBehaviour
     private void Awake()
     {
         m_ClientsInLobby = new Dictionary<ulong, bool>();
-#if(UNITY_EDITOR)
+#if UNITY_EDITOR
         if ( NetworkingManager.Singleton == null)
         {
             GlobalGameState.EditorLaunchingAsHost = m_LaunchAsHostInEditor;
@@ -143,7 +141,7 @@ public class LobbyControl : NetworkedBehaviour
         foreach(KeyValuePair<ulong,bool> clientLobbyStatus in m_ClientsInLobby)
         {
             SendClientReadyStatusUpdatesClientRpc(clientLobbyStatus.Key, clientLobbyStatus.Value);
-            if(!NetworkingManager.Singleton.ConnectedClients.ContainsKey(clientLobbyStatus.Key))
+            if (!NetworkingManager.Singleton.ConnectedClients.ContainsKey(clientLobbyStatus.Key))
             {
                 //If some clients are still loading into the lobby scene then this is false
                 m_AllPlayersInLobby = false;

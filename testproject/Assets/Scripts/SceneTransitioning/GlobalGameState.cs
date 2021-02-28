@@ -135,7 +135,7 @@ public class GlobalGameState : NetworkedBehaviour
     /// </summary>
     private void Awake()
     {
-        if(Singleton != this && Singleton != null)
+        if (Singleton != this && Singleton != null)
         {
             GameObject.Destroy(Singleton.gameObject);
         }
@@ -243,16 +243,16 @@ public class GlobalGameState : NetworkedBehaviour
     private void UpdateMLAPIState(GameStates newState)
     {
         StateToSceneTransitionLinks.MLAPIStates NewMLAPIState = m_SceneToStateLinks.GetGameStateToMLAPIState(newState);
-        if(m_CurrentMLAPIState != NewMLAPIState )
+        if (m_CurrentMLAPIState != NewMLAPIState )
         {
             switch(NewMLAPIState)
             {
                 case StateToSceneTransitionLinks.MLAPIStates.InSession:
                 case StateToSceneTransitionLinks.MLAPIStates.Connecting:
                     {
-                        if(m_CurrentMLAPIState == StateToSceneTransitionLinks.MLAPIStates.None)
+                        if (m_CurrentMLAPIState == StateToSceneTransitionLinks.MLAPIStates.None)
                         {
-                            if(!NetworkingManager.Singleton.IsListening)
+                            if (!NetworkingManager.Singleton.IsListening)
                             {
                                 //If we are host, then start the host
                                 if (isHostingGame)
@@ -269,9 +269,9 @@ public class GlobalGameState : NetworkedBehaviour
                     }
                 case StateToSceneTransitionLinks.MLAPIStates.ExitSession:
                     {
-                        if(m_CurrentMLAPIState == StateToSceneTransitionLinks.MLAPIStates.InSession || m_CurrentMLAPIState == StateToSceneTransitionLinks.MLAPIStates.Connecting)
+                        if (m_CurrentMLAPIState == StateToSceneTransitionLinks.MLAPIStates.InSession || m_CurrentMLAPIState == StateToSceneTransitionLinks.MLAPIStates.Connecting)
                         {
-                            if(NetworkingManager.Singleton.IsListening)
+                            if (NetworkingManager.Singleton.IsListening)
                             {
                                 //If we are host, then stop the host
                                 if (isHostingGame)
@@ -285,11 +285,11 @@ public class GlobalGameState : NetworkedBehaviour
                                 }
 
                                 //Clean up scene loading and progeess handlers
-                                if(m_SceneProgress != null)
+                                if (m_SceneProgress != null)
                                 {
                                     m_SceneProgress = null;
                                 }
-                                if(clientLoadedScene != null)
+                                if (clientLoadedScene != null)
                                 {
                                     clientLoadedScene = null;
                                 }
@@ -408,7 +408,7 @@ public class GlobalGameState : NetworkedBehaviour
         //TODO: Handle message about timeOut
         if (m_SceneProgress != null && m_SceneProgress.IsAllClientsDoneLoading)
         {
-            if(allPlayersLoadedScene != null)
+            if (allPlayersLoadedScene != null)
             {
                 allPlayersLoadedScene.Invoke();
             }
@@ -460,11 +460,11 @@ public class GlobalGameState : NetworkedBehaviour
     public static bool CheckForBootStrappedScene()
     {
 #if UNITY_EDITOR
-        if(BootStrapToScene != null && BootStrapToScene != string.Empty)
+        if (BootStrapToScene != null && BootStrapToScene != string.Empty)
         {
             GameStates BootStrappedGameState = Singleton.m_SceneToStateLinks.GetGameStateLinkedToScene(BootStrapToScene);
             BootStrapToScene = string.Empty;
-            if(BootStrappedGameState != GameStates.None)
+            if (BootStrappedGameState != GameStates.None)
             {
                 Singleton.isHostingGame = EditorLaunchingAsHost;
                 Singleton.UpdateMLAPIState(BootStrappedGameState);
@@ -485,10 +485,10 @@ public class GlobalGameState : NetworkedBehaviour
             {
                 string SceneFilename = nextscene.path.Substring(nextscene.path.LastIndexOf('/')+1);
                 string[] SplitSceneFileName = SceneFilename.Split('.');
-                if(SplitSceneFileName[0] == "MLAPIBootStrap")
+                if (SplitSceneFileName[0] == "MLAPIBootStrap")
                 {
                     Scene currentScene = SceneManager.GetActiveScene();
-                    if(currentScene != null)
+                    if (currentScene != null)
                     {
                         BootStrapToScene = currentScene.name;
                     }

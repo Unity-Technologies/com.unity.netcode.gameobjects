@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
 using MLAPI;
-using MLAPI.NetworkedVar;
 
 public class RandomPlayerMover : NetworkedBehaviour
 {
@@ -305,7 +304,7 @@ public class RandomPlayerMover : NetworkedBehaviour
     {
         if (!m_IsPaused)
         {
-            if(IsOwner)
+            if (IsOwner)
             {
                 Move(m_MoveSpeed);
             }

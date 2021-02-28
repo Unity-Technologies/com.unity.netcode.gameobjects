@@ -1,9 +1,6 @@
-using System;
 using MLAPI;
-using MLAPI.Messaging;
 using MLAPI.NetworkedVar;
 using UnityEngine;
-using UnityEngine.Assertions;
 
 public class PlayerControl : NetworkedBehaviour
 {
@@ -68,7 +65,7 @@ public class PlayerControl : NetworkedBehaviour
 
     bool IsAlive()
     {
-        if(m_Health.Value <= 0.0f)
+        if (m_Health.Value <= 0.0f)
         {
             return false;
         }
@@ -85,7 +82,7 @@ public class PlayerControl : NetworkedBehaviour
     private void Start()
     {
         m_PlayerVisual =  GetComponent<SpriteRenderer>();
-        if(m_PlayerVisual != null)
+        if (m_PlayerVisual != null)
         {
             m_PlayerVisual.material.color = Color.black;
         }
@@ -95,16 +92,16 @@ public class PlayerControl : NetworkedBehaviour
     private void GameStateChanged(GlobalGameState.GameStates previousState, GlobalGameState.GameStates newState)
     {
         m_CurrentGameState = newState;
-        if(m_CurrentGameState == GlobalGameState.GameStates.InGame)
+        if (m_CurrentGameState == GlobalGameState.GameStates.InGame)
         {
-            if(m_PlayerVisual != null)
+            if (m_PlayerVisual != null)
             {
                 m_PlayerVisual.material.color = Color.green;
             }
         }
         else
         {
-            if(m_PlayerVisual != null)
+            if (m_PlayerVisual != null)
             {
                 m_PlayerVisual.material.color = Color.black;
             }
@@ -164,7 +161,7 @@ public class PlayerControl : NetworkedBehaviour
     {
         if (!IsAlive()) return;
 
-        if(IsLocalPlayer)
+        if (IsLocalPlayer)
         {
             m_MoveX.Value = GetLerpInputValue(KeyCode.LeftArrow, m_MoveX.Value, -1.0f);
             m_MoveX.Value = GetLerpInputValue(KeyCode.LeftArrow, m_MoveX.Value, 1.0f);
