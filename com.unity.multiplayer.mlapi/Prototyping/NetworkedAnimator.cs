@@ -39,7 +39,7 @@ namespace MLAPI.Prototyping
                             paramBoxed = paramFloat;
                             break;
                         case (byte)AnimatorControllerParameterType.Int:
-                            float paramInt = serializer.IsReading ? 0 : (int)paramArray[paramIndex].Value.Boxed;
+                            int paramInt = serializer.IsReading ? 0 : (int)paramArray[paramIndex].Value.Boxed;
                             serializer.Serialize(ref paramInt);
                             paramBoxed = paramInt;
                             break;
@@ -203,7 +203,7 @@ namespace MLAPI.Prototyping
 
         private void SendTrackedParams()
         {
-            var animParams = GetAnimParams( /* trackedOnly = */ true);
+            var animParams = GetAnimParams(/* trackedOnly = */ true);
 
             if (IsServer)
             {
