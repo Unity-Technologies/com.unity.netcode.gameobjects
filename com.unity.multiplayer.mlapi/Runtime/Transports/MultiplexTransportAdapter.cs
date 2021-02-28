@@ -48,6 +48,20 @@ namespace MLAPI.Transports.Multiplex
         public NetworkTransport[] Transports = new NetworkTransport[0];
         public override ulong ServerClientId => 0;
 
+        /// <inheritdoc />
+        public override string NetworkAddress
+        {
+            get => Transports.Any() ? Transports.First().NetworkAddress : default;
+            set => Array.ForEach(Transports, t => t.NetworkAddress = value);
+        }
+
+        /// <inheritdoc />
+        public override ushort NetworkPort
+        {
+            get => Transports.Any() ? Transports.First().NetworkPort : default;
+            set => Array.ForEach(Transports, t => t.NetworkPort = value);
+        }
+
         private byte _lastProcessedTransportIndex;
 
         public override bool IsSupported => true;
