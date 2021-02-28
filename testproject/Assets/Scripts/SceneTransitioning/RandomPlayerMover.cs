@@ -144,7 +144,7 @@ public class RandomPlayerMover : NetworkedBehaviour
     private void GlobalGameStateChanged(GlobalGameState.GameStates previousState, GlobalGameState.GameStates newState)
     {
         HandlGlobalGameStateChanged(previousState, false);
-        HandlGlobalGameStateChanged(previousState, false);
+        HandlGlobalGameStateChanged(newState, true);
     }
 
     /// <summary>
@@ -160,6 +160,7 @@ public class RandomPlayerMover : NetworkedBehaviour
         {
             case GlobalGameState.GameStates.Lobby:
                 {
+
                     OnIsHidden(isTransitioningTo);
                     break;
                 }
@@ -356,6 +357,6 @@ public class RandomPlayerMover : NetworkedBehaviour
     /// </summary>
     private void OnDestroy()
     {
-        m_InGameManager.OnInGameStateChanged -= OnInGameStateChanged;
+
     }
 }

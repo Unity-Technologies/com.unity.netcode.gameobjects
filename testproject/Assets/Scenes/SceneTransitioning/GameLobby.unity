@@ -430,8 +430,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 82d2e0a7e7368ce44a0997a7dfc92035, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_LaunchAsHostInEditor: 0
-  LobbyText: {fileID: 1003676552}
+  m_LaunchAsHostInEditor: 1
+  m_LobbyText: {fileID: 1003676552}
   m_MinPlayersToStart: 1
 --- !u!114 &411967664
 MonoBehaviour:
