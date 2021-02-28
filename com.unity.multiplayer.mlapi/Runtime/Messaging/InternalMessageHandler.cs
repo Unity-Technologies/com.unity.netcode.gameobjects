@@ -1,8 +1,6 @@
 using System;
 using System.IO;
-using MLAPI.Configuration;
 using MLAPI.Connection;
-using MLAPI.Security;
 using MLAPI.Logging;
 using MLAPI.SceneManagement;
 using MLAPI.Serialization.Pooled;
@@ -14,8 +12,6 @@ using System.Collections.Generic;
 using MLAPI.Messaging.Buffering;
 using MLAPI.Profiling;
 using Unity.Profiling;
-using MLAPI.Serialization;
-using MLAPI.Transports;
 using BitStream = MLAPI.Serialization.BitStream;
 
 namespace MLAPI.Messaging
@@ -29,24 +25,15 @@ namespace MLAPI.Messaging
         static ProfilerMarker s_HandleDestroyObject = new ProfilerMarker("InternalMessageHandler.HandleDestroyObject");
         static ProfilerMarker s_HandleSwitchScene = new ProfilerMarker("InternalMessageHandler.HandleSwitchScene");
         static ProfilerMarker s_HandleClientSwitchSceneCompleted = new ProfilerMarker("InternalMessageHandler.HandleClientSwitchSceneCompleted");
-        static ProfilerMarker s_HandleChangeOwner =
-            new ProfilerMarker("InternalMessageHandler.HandleChangeOwner");
-        static ProfilerMarker s_HandleAddObjects =
-            new ProfilerMarker("InternalMessageHandler.HandleAddObjects");
-        static ProfilerMarker s_HandleDestroyObjects =
-            new ProfilerMarker("InternalMessageHandler.HandleDestroyObjects");
-        static ProfilerMarker s_HandleTimeSync =
-            new ProfilerMarker("InternalMessageHandler.HandleTimeSync");
-        static ProfilerMarker s_HandleNetworkedVarDelta =
-            new ProfilerMarker("InternalMessageHandler.HandleNetworkedVarDelta");
-        static ProfilerMarker s_HandleNetworkedVarUpdate =
-            new ProfilerMarker("InternalMessageHandler.HandleNetworkedVarUpdate");
-        static ProfilerMarker s_HandleUnnamedMessage =
-            new ProfilerMarker("InternalMessageHandler.HandleUnnamedMessage");
-        static ProfilerMarker s_HandleNamedMessage =
-            new ProfilerMarker("InternalMessageHandler.HandleNamedMessage");
-        static ProfilerMarker s_HandleNetworkLog =
-            new ProfilerMarker("InternalMessageHandler.HandleNetworkLog");
+        static ProfilerMarker s_HandleChangeOwner = new ProfilerMarker("InternalMessageHandler.HandleChangeOwner");
+        static ProfilerMarker s_HandleAddObjects = new ProfilerMarker("InternalMessageHandler.HandleAddObjects");
+        static ProfilerMarker s_HandleDestroyObjects = new ProfilerMarker("InternalMessageHandler.HandleDestroyObjects");
+        static ProfilerMarker s_HandleTimeSync = new ProfilerMarker("InternalMessageHandler.HandleTimeSync");
+        static ProfilerMarker s_HandleNetworkedVarDelta = new ProfilerMarker("InternalMessageHandler.HandleNetworkedVarDelta");
+        static ProfilerMarker s_HandleNetworkedVarUpdate = new ProfilerMarker("InternalMessageHandler.HandleNetworkedVarUpdate");
+        static ProfilerMarker s_HandleUnnamedMessage = new ProfilerMarker("InternalMessageHandler.HandleUnnamedMessage");
+        static ProfilerMarker s_HandleNamedMessage = new ProfilerMarker("InternalMessageHandler.HandleNamedMessage");
+        static ProfilerMarker s_HandleNetworkLog = new ProfilerMarker("InternalMessageHandler.HandleNetworkLog");
 
 #endif
 
@@ -68,10 +55,7 @@ namespace MLAPI.Messaging
                 if (NetworkingManager.Singleton.NetworkConfig.ConnectionApproval)
                 {
                     byte[] connectionBuffer = reader.ReadByteArray();
-                    NetworkingManager.Singleton.InvokeConnectionApproval(connectionBuffer, clientId, (createPlayerObject, playerPrefabHash, approved, position, rotation) =>
-                    {
-                        NetworkingManager.Singleton.HandleApproval(clientId, createPlayerObject, playerPrefabHash, approved, position, rotation);
-                    });
+                    NetworkingManager.Singleton.InvokeConnectionApproval(connectionBuffer, clientId, (createPlayerObject, playerPrefabHash, approved, position, rotation) => { NetworkingManager.Singleton.HandleApproval(clientId, createPlayerObject, playerPrefabHash, approved, position, rotation); });
                 }
                 else
                 {
@@ -371,11 +355,13 @@ namespace MLAPI.Messaging
                     //We are current owner.
                     SpawnManager.SpawnedObjects[networkId].InvokeBehaviourOnLostOwnership();
                 }
+
                 if (ownerClientId == NetworkingManager.Singleton.LocalClientId)
                 {
                     //We are new owner.
                     SpawnManager.SpawnedObjects[networkId].InvokeBehaviourOnGainedOwnership();
                 }
+
                 SpawnManager.SpawnedObjects[networkId].OwnerClientId = ownerClientId;
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR

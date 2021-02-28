@@ -8,10 +8,7 @@ using System.Linq;
 using MLAPI.Logging;
 using UnityEngine.SceneManagement;
 using System.IO;
-using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
 using MLAPI.Configuration;
-using MLAPI.Security;
 using MLAPI.Internal;
 using MLAPI.Profiling;
 using MLAPI.Serialization;
@@ -258,7 +255,7 @@ namespace MLAPI
         /// <param name="channel">The channel to send the data on</param>
         /// <param name="security">The security settings to apply to the message</param>
         [Obsolete("Use CustomMessagingManager.SendUnnamedMessage instead")]
-        public void SendCustomMessage(List<ulong> clientIds, BitStream stream, Channel channel = Channel.Internal, SecuritySendFlags security = SecuritySendFlags.None)
+        public void SendCustomMessage(List<ulong> clientIds, BitStream stream, Channel channel = Channel.Internal)
         {
             if (!IsServer)
             {
@@ -266,7 +263,7 @@ namespace MLAPI
                 return;
             }
 
-            InternalMessageSender.Send(MLAPIConstants.MLAPI_UNNAMED_MESSAGE, channel, clientIds, stream, security);
+            InternalMessageSender.Send(MLAPIConstants.MLAPI_UNNAMED_MESSAGE, channel, clientIds, stream);
         }
 
         /// <summary>
@@ -277,9 +274,9 @@ namespace MLAPI
         /// <param name="channel">The channel tos end the data on</param>
         /// <param name="security">The security settings to apply to the message</param>
         [Obsolete("Use CustomMessagingManager.SendUnnamedMessage instead")]
-        public void SendCustomMessage(ulong clientId, BitStream stream, Channel channel = Channel.Internal, SecuritySendFlags security = SecuritySendFlags.None)
+        public void SendCustomMessage(ulong clientId, BitStream stream, Channel channel = Channel.Internal)
         {
-            InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_UNNAMED_MESSAGE, channel, stream, security);
+            InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_UNNAMED_MESSAGE, channel, stream);
         }
 
         private void OnValidate()
@@ -871,7 +868,7 @@ namespace MLAPI
                         writer.WriteByteArray(NetworkConfig.ConnectionData);
                 }
 
-                InternalMessageSender.Send(ServerClientId, MLAPIConstants.MLAPI_CONNECTION_REQUEST, Channel.Internal, stream, SecuritySendFlags.Authenticated | SecuritySendFlags.Encrypted);
+                InternalMessageSender.Send(ServerClientId, MLAPIConstants.MLAPI_CONNECTION_REQUEST, Channel.Internal, stream);
             }
         }
 
@@ -978,7 +975,7 @@ namespace MLAPI
             m_InputStreamWrapper.SetLength(data.Count + data.Offset);
             m_InputStreamWrapper.Position = data.Offset;
 
-            using (var messageStream = MessagePacker.UnwrapMessage(m_InputStreamWrapper, clientId, out byte messageType, out SecuritySendFlags security))
+            using (var messageStream = MessagePacker.UnwrapMessage(m_InputStreamWrapper, out byte messageType))
             {
                 if (messageStream == null)
                 {
@@ -1341,7 +1338,7 @@ namespace MLAPI
                 using (PooledBitWriter writer = PooledBitWriter.Get(stream))
                 {
                     writer.WriteSinglePacked(Time.realtimeSinceStartup);
-                    InternalMessageSender.Send(MLAPIConstants.MLAPI_TIME_SYNC, Channel.SyncChannel, stream, SecuritySendFlags.None);
+                    InternalMessageSender.Send(MLAPIConstants.MLAPI_TIME_SYNC, Channel.SyncChannel, stream);
                 }
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -1472,7 +1469,7 @@ namespace MLAPI
                             }
                         }
 
-                        InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_CONNECTION_APPROVED, Channel.Internal, stream, SecuritySendFlags.Encrypted | SecuritySendFlags.Authenticated);
+                        InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_CONNECTION_APPROVED, Channel.Internal, stream);
 
                         if (OnClientConnectedCallback != null)
                             OnClientConnectedCallback.Invoke(clientId);
@@ -1534,7 +1531,7 @@ namespace MLAPI
                                 ConnectedClients[clientId].PlayerObject.WriteNetworkedVarData(stream, clientPair.Key);
                             }
 
-                            InternalMessageSender.Send(clientPair.Key, MLAPIConstants.MLAPI_ADD_OBJECT, Channel.Internal, stream, SecuritySendFlags.None);
+                            InternalMessageSender.Send(clientPair.Key, MLAPIConstants.MLAPI_ADD_OBJECT, Channel.Internal, stream);
                         }
                     }
                 }

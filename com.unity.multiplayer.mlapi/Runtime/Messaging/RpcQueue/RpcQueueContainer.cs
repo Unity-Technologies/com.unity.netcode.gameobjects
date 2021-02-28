@@ -286,7 +286,6 @@ namespace MLAPI.Messaging
 
             //Write the packed version of the queueItem to our current queue history buffer
             queueHistoryItem.queueWriter.WriteUInt16((ushort)qItemType);
-            queueHistoryItem.queueWriter.WriteUInt16((ushort)0);
             queueHistoryItem.queueWriter.WriteSingle(timeStamp);
             queueHistoryItem.queueWriter.WriteUInt64(sourceNetworkId);
 
@@ -361,7 +360,6 @@ namespace MLAPI.Messaging
 
             //Write the packed version of the queueItem to our current queue history buffer
             queueHistoryItem.queueWriter.WriteUInt16((ushort)qItemType);
-            queueHistoryItem.queueWriter.WriteUInt16(sendflags);
             queueHistoryItem.queueWriter.WriteSingle(timeStamp);
             queueHistoryItem.queueWriter.WriteUInt64(sourceNetworkId);
 

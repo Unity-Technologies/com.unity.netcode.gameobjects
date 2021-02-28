@@ -1,6 +1,5 @@
 using System;
 using MLAPI.Transports;
-using MLAPI.Security;
 using MLAPI.Serialization.Pooled;
 
 namespace  MLAPI.Messaging
@@ -16,7 +15,6 @@ namespace  MLAPI.Messaging
     {
         public NetworkUpdateStage                        updateStage;
         public RpcQueueContainer.QueueItemType           queueItemType;
-        public SecuritySendFlags                         sendFlags;
         public ulong                                     networkId;          //Sender's network Identifier
         public Channel                                   channel;
         public ulong[]                                   clientIds;          //Server invoked Client RPCs only

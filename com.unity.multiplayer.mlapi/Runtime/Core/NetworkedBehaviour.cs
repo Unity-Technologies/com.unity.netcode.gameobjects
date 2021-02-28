@@ -12,7 +12,6 @@ using MLAPI.Messaging;
 using MLAPI.NetworkedVar;
 using MLAPI.Profiling;
 using MLAPI.Reflection;
-using MLAPI.Security;
 using MLAPI.Serialization;
 using MLAPI.Serialization.Pooled;
 using MLAPI.Spawning;
@@ -79,9 +78,7 @@ namespace MLAPI
 
                 if (!isUsingBatching)
                 {
-                    writer.WriteBit(false); // Encrypted
-                    writer.WriteBit(false); // Authenticated
-                    writer.WriteBits(MLAPIConstants.MLAPI_SERVER_RPC, 6); // MessageType
+                    writer.WriteByte(MLAPIConstants.MLAPI_SERVER_RPC); // MessageType
                 }
             }
             else
@@ -90,9 +87,7 @@ namespace MLAPI
                     NetworkingManager.Singleton.ServerClientId, null, QueueHistoryFrame.QueueFrameType.Outbound, NetworkUpdateStage.PostLateUpdate);
                 if (!isUsingBatching)
                 {
-                    writer.WriteBit(false); // Encrypted
-                    writer.WriteBit(false); // Authenticated
-                    writer.WriteBits(MLAPIConstants.MLAPI_SERVER_RPC, 6); // MessageType
+                    writer.WriteByte(MLAPIConstants.MLAPI_SERVER_RPC); // MessageType
                 }
             }
 
@@ -172,18 +167,14 @@ namespace MLAPI
 
                     if (!isUsingBatching)
                     {
-                        writer.WriteBit(false); // Encrypted
-                        writer.WriteBit(false); // Authenticated
-                        writer.WriteBits(MLAPIConstants.MLAPI_CLIENT_RPC, 6); // MessageType
+                        writer.WriteByte(MLAPIConstants.MLAPI_CLIENT_RPC); // MessageType
                     }
                 }
                 else
                 {
                     if (!isUsingBatching)
                     {
-                        writer.WriteBit(false); // Encrypted
-                        writer.WriteBit(false); // Authenticated
-                        writer.WriteBits(MLAPIConstants.MLAPI_CLIENT_RPC, 6); // MessageType
+                        writer.WriteByte(MLAPIConstants.MLAPI_CLIENT_RPC); // MessageType
                     }
                 }
             }
@@ -194,9 +185,7 @@ namespace MLAPI
 
                 if (!isUsingBatching)
                 {
-                    writer.WriteBit(false); // Encrypted
-                    writer.WriteBit(false); // Authenticated
-                    writer.WriteBits(MLAPIConstants.MLAPI_CLIENT_RPC, 6); // MessageType
+                    writer.WriteByte(MLAPIConstants.MLAPI_CLIENT_RPC); // MessageType
                 }
             }
 
@@ -708,9 +697,7 @@ namespace MLAPI
 
                         if (writtenAny)
                         {
-                            InternalMessageSender.Send(clientId,
-                                MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA,
-                                channelsForNetworkedVarGroups[j], stream, SecuritySendFlags.None);
+                            InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA, channelsForNetworkedVarGroups[j], stream);
                         }
                     }
                 }

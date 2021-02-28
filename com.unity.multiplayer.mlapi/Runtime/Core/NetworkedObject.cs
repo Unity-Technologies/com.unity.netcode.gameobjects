@@ -7,11 +7,9 @@ using MLAPI.Exceptions;
 using MLAPI.Hashing;
 using MLAPI.Logging;
 using MLAPI.Messaging;
-using MLAPI.Security;
 using MLAPI.Serialization.Pooled;
 using MLAPI.Spawning;
 using MLAPI.Transports;
-using Unity.Profiling;
 using UnityEngine;
 
 namespace MLAPI
@@ -283,7 +281,7 @@ namespace MLAPI
                     SpawnManager.WriteSpawnCallForObject(stream, clientId, networkedObjects[i], payload);
                 }
 
-                InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_ADD_OBJECTS, Channel.Internal, stream, SecuritySendFlags.None);
+                InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_ADD_OBJECTS, Channel.Internal, stream);
             }
         }
 
@@ -323,7 +321,7 @@ namespace MLAPI
                 {
                     writer.WriteUInt64Packed(NetworkId);
 
-                    InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_DESTROY_OBJECT, Channel.Internal, stream, SecuritySendFlags.None);
+                    InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_DESTROY_OBJECT, Channel.Internal, stream);
                 }
             }
         }
@@ -375,7 +373,7 @@ namespace MLAPI
                     }
                 }
 
-                InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_DESTROY_OBJECTS, Channel.Internal, stream, SecuritySendFlags.None);
+                InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_DESTROY_OBJECTS, Channel.Internal, stream);
             }
         }
 
