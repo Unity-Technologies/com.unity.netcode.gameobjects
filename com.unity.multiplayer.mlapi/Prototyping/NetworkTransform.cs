@@ -1,17 +1,15 @@
-using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using MLAPI.Messaging;
-using MLAPI.Serialization.Pooled;
+using System.Collections.Generic;
 using UnityEngine;
+using MLAPI.Messaging;
 
 namespace MLAPI.Prototyping
 {
     /// <summary>
     /// A prototype component for syncing transforms
     /// </summary>
-    [AddComponentMenu("MLAPI/NetworkedTransform")]
-    public class NetworkedTransform : NetworkBehaviour
+    [AddComponentMenu("MLAPI/NetworkTransform")]
+    public class NetworkTransform : NetworkBehaviour
     {
         internal class ClientSendInfo
         {
