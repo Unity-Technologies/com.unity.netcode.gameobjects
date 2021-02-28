@@ -53,8 +53,8 @@ namespace MLAPI.Internal
         {
             try
             {
-                bool encrypted = ((flags & SecuritySendFlags.Encrypted) == SecuritySendFlags.Encrypted) && NetworkingManager.Singleton.NetworkConfig.EnableEncryption;
-                bool authenticated = (flags & SecuritySendFlags.Authenticated) == SecuritySendFlags.Authenticated && NetworkingManager.Singleton.NetworkConfig.EnableEncryption;
+                bool encrypted = false; // TODO @mfatihmar: remove
+                bool authenticated = false; // TODO @mfatihmar: remove
 
                 PooledBitStream outStream = PooledBitStream.Get();
 

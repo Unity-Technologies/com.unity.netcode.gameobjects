@@ -44,9 +44,6 @@ public class NetworkingManagerEditor : Editor
     private SerializedProperty loadSceneTimeOutProperty;
     private SerializedProperty enableMessageBufferingProperty;
     private SerializedProperty messageBufferTimeoutProperty;
-    private SerializedProperty enableEncryptionProperty;
-    private SerializedProperty signKeyExchangeProperty;
-    private SerializedProperty serverBase64PfxCertificateProperty;
 
     private ReorderableList networkPrefabsList;
     private ReorderableList registeredScenesList;
@@ -55,7 +52,7 @@ public class NetworkingManagerEditor : Editor
     private bool initialized;
 
     private readonly List<Type> transportTypes = new List<Type>();
-    private string[] transportNames = new string[] { "Select transport..." };
+    private string[] transportNames = { "Select transport..." };
 
     private void ReloadTransports()
     {
@@ -124,9 +121,6 @@ public class NetworkingManagerEditor : Editor
         loadSceneTimeOutProperty = networkConfigProperty.FindPropertyRelative("LoadSceneTimeOut");
         enableMessageBufferingProperty = networkConfigProperty.FindPropertyRelative("EnableMessageBuffering");
         messageBufferTimeoutProperty = networkConfigProperty.FindPropertyRelative("MessageBufferTimeout");
-        enableEncryptionProperty = networkConfigProperty.FindPropertyRelative("EnableEncryption");
-        signKeyExchangeProperty = networkConfigProperty.FindPropertyRelative("SignKeyExchange");
-        serverBase64PfxCertificateProperty = networkConfigProperty.FindPropertyRelative("ServerBase64PfxCertificate");
 
 
         ReloadTransports();
@@ -164,9 +158,6 @@ public class NetworkingManagerEditor : Editor
         loadSceneTimeOutProperty = networkConfigProperty.FindPropertyRelative("LoadSceneTimeOut");
         enableMessageBufferingProperty = networkConfigProperty.FindPropertyRelative("EnableMessageBuffering");
         messageBufferTimeoutProperty = networkConfigProperty.FindPropertyRelative("MessageBufferTimeout");
-        enableEncryptionProperty = networkConfigProperty.FindPropertyRelative("EnableEncryption");
-        signKeyExchangeProperty = networkConfigProperty.FindPropertyRelative("SignKeyExchange");
-        serverBase64PfxCertificateProperty = networkConfigProperty.FindPropertyRelative("ServerBase64PfxCertificate");
     }
 
     private void OnEnable()
@@ -369,15 +360,6 @@ public class NetworkingManagerEditor : Editor
             {
                 EditorGUILayout.PropertyField(loadSceneTimeOutProperty);
                 EditorGUILayout.PropertyField(allowRuntimeSceneChangesProperty);
-            }
-
-            EditorGUILayout.LabelField("Cryptography", EditorStyles.boldLabel);
-            EditorGUILayout.PropertyField(enableEncryptionProperty);
-
-            using (new EditorGUI.DisabledScope(!networkingManager.NetworkConfig.EnableEncryption))
-            {
-                EditorGUILayout.PropertyField(signKeyExchangeProperty);
-                EditorGUILayout.PropertyField(serverBase64PfxCertificateProperty);
             }
 
             serializedObject.ApplyModifiedProperties();

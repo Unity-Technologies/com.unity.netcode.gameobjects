@@ -414,38 +414,6 @@ namespace MLAPI
             this.RegisterNetworkUpdate(NetworkUpdateStage.EarlyUpdate);
             this.RegisterNetworkUpdate(NetworkUpdateStage.PreUpdate);
 
-            try
-            {
-                string pfx = null;
-                if (NetworkConfig.ServerBase64PfxCertificate != null)
-                {
-                    pfx = NetworkConfig.ServerBase64PfxCertificate.Trim();
-                }
-
-                if (server && pfx != null && NetworkConfig.EnableEncryption && NetworkConfig.SignKeyExchange && !string.IsNullOrEmpty(pfx))
-                {
-                    try
-                    {
-                        byte[] decodedPfx = Convert.FromBase64String(pfx);
-
-                        NetworkConfig.ServerX509Certificate = new X509Certificate2(decodedPfx);
-
-                        if (!NetworkConfig.ServerX509Certificate.HasPrivateKey)
-                        {
-                            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("The imported PFX file did not have a private key");
-                        }
-                    }
-                    catch (FormatException ex)
-                    {
-                        if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError("Parsing PFX failed: " + ex.ToString());
-                    }
-                }
-            }
-            catch (CryptographicException ex)
-            {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError("Importing of certificate failed: " + ex.ToString());
-            }
-
             if (NetworkConfig.EnableSceneManagement)
             {
                 NetworkConfig.RegisteredScenes.Sort(StringComparer.Ordinal);
@@ -956,8 +924,7 @@ namespace MLAPI
                     {
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo("Connected");
 
-                        if (!NetworkConfig.EnableEncryption)
-                            SendConnectionRequest();
+                        SendConnectionRequest();
                         StartCoroutine(ApprovalTimeout(clientId));
                     }
                     NetworkProfiler.EndEvent();
