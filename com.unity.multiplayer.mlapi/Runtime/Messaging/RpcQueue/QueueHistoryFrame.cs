@@ -28,7 +28,6 @@ namespace MLAPI.Messaging
 
 
         public PooledBitReader queueReader;
-        private NetworkingManager                        m_NetworkingManager;
         private int                                      m_QueueItemOffsetIndex;
         private RpcFrameQueueItem                        m_CurrentQueueItem;
         private readonly QueueFrameType                  m_QueueFrameType;
@@ -251,7 +250,6 @@ namespace MLAPI.Messaging
             m_QueueFrameType = queueType;
             m_CurrentQueueItem = new RpcFrameQueueItem();
             m_StreamUpdateStage = netUpdateStage;
-            m_NetworkingManager = manager;
         }
     }
 }
