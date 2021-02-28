@@ -45,7 +45,7 @@ namespace MLAPI.Spawning
         internal static readonly Dictionary<ulong, DestroyHandlerDelegate> customDestroyHandlers = new Dictionary<ulong, DestroyHandlerDelegate>();
 
         /// <summary>
-        /// Registers a delegate for spawning networked prefabs, useful for object pooling
+        /// Registers a delegate for spawning NetworkPrefabs, useful for object pooling
         /// </summary>
         /// <param name="prefabHash">The prefab hash to spawn</param>
         /// <param name="handler">The delegate handler</param>
@@ -116,11 +116,11 @@ namespace MLAPI.Spawning
         /// </summary>
         /// <param name="hash">The hash of the prefab</param>
         /// <returns>The index of the prefab</returns>
-        public static int GetNetworkedPrefabIndexOfHash(ulong hash)
+        public static int GetNetworkPrefabIndexOfHash(ulong hash)
         {
-            for (int i = 0; i < NetworkManager.Singleton.NetworkConfig.NetworkedPrefabs.Count; i++)
+            for (int i = 0; i < NetworkManager.Singleton.NetworkConfig.NetworkPrefabs.Count; i++)
             {
-                if (NetworkManager.Singleton.NetworkConfig.NetworkedPrefabs[i].Hash == hash)
+                if (NetworkManager.Singleton.NetworkConfig.NetworkPrefabs[i].Hash == hash)
                     return i;
             }
 
@@ -128,13 +128,13 @@ namespace MLAPI.Spawning
         }
 
         /// <summary>
-        /// Returns the prefab hash for the networked prefab with a given index
+        /// Returns the prefab hash for the NetworkPrefab with a given index
         /// </summary>
-        /// <param name="index">The networked prefab index</param>
+        /// <param name="index">The NetworkPrefab index</param>
         /// <returns>The prefab hash for the given prefab index</returns>
         public static ulong GetPrefabHashFromIndex(int index)
         {
-            return NetworkManager.Singleton.NetworkConfig.NetworkedPrefabs[index].Hash;
+            return NetworkManager.Singleton.NetworkConfig.NetworkPrefabs[index].Hash;
         }
 
         /// <summary>
@@ -161,7 +161,7 @@ namespace MLAPI.Spawning
         /// Returns the player object with a given clientId or null if one does not exist
         /// </summary>
         /// <returns>The player object with a given clientId or null if one does not exist</returns>
-        public static NetworkObject GetPlayerObject(ulong clientId)
+        public static NetworkObject GetPlayerNetworkObject(ulong clientId)
         {
             if (!NetworkManager.Singleton.ConnectedClients.ContainsKey(clientId)) return null;
             return NetworkManager.Singleton.ConnectedClients[clientId].PlayerObject;
@@ -270,7 +270,7 @@ namespace MLAPI.Spawning
                 }
                 else
                 {
-                    int prefabIndex = GetNetworkedPrefabIndexOfHash(prefabHash);
+                    int prefabIndex = GetNetworkPrefabIndexOfHash(prefabHash);
 
                     if (prefabIndex < 0)
                     {
@@ -280,7 +280,7 @@ namespace MLAPI.Spawning
                     }
                     else
                     {
-                        GameObject prefab = NetworkManager.Singleton.NetworkConfig.NetworkedPrefabs[prefabIndex].Prefab;
+                        GameObject prefab = NetworkManager.Singleton.NetworkConfig.NetworkPrefabs[prefabIndex].Prefab;
 
                         NetworkObject networkObject = ((position == null && rotation == null) ? MonoBehaviour.Instantiate(prefab) : MonoBehaviour.Instantiate(prefab, position.GetValueOrDefault(Vector3.zero), rotation.GetValueOrDefault(Quaternion.identity))).GetComponent<NetworkObject>();
 

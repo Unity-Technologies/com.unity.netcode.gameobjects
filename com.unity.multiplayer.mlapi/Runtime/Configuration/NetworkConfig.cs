@@ -48,7 +48,7 @@ namespace MLAPI.Configuration
         /// A list of spawnable prefabs
         /// </summary>
         [Tooltip("The prefabs that can be spawned across the network")]
-        public List<NetworkedPrefab> NetworkedPrefabs = new List<NetworkedPrefab>();
+        public List<NetworkPrefab> NetworkPrefabs = new List<NetworkPrefab>();
         /// <summary>
         /// The default player prefab
         /// </summary>
@@ -295,7 +295,7 @@ namespace MLAPI.Configuration
 
                     if (ForceSamePrefabs)
                     {
-                        List<NetworkedPrefab> sortedPrefabList = NetworkedPrefabs.OrderBy(x => x.Hash).ToList();
+                        List<NetworkPrefab> sortedPrefabList = NetworkPrefabs.OrderBy(x => x.Hash).ToList();
                         for (int i = 0; i < sortedPrefabList.Count; i++)
                         {
                             writer.WriteUInt64Packed(sortedPrefabList[i].Hash);

@@ -284,17 +284,17 @@ namespace MLAPI
                 NetworkConfig.RegisteredScenes.Add(SceneManager.GetActiveScene().name);
             }
 
-            for (int i = 0; i < NetworkConfig.NetworkedPrefabs.Count; i++)
+            for (int i = 0; i < NetworkConfig.NetworkPrefabs.Count; i++)
             {
-                if (NetworkConfig.NetworkedPrefabs[i] != null && NetworkConfig.NetworkedPrefabs[i].Prefab != null)
+                if (NetworkConfig.NetworkPrefabs[i] != null && NetworkConfig.NetworkPrefabs[i].Prefab != null)
                 {
-                    if (NetworkConfig.NetworkedPrefabs[i].Prefab.GetComponent<NetworkObject>() == null)
+                    if (NetworkConfig.NetworkPrefabs[i].Prefab.GetComponent<NetworkObject>() == null)
                     {
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning($"Network prefab [{i}] does not have a {nameof(NetworkObject)} component");
                     }
                     else
                     {
-                        NetworkConfig.NetworkedPrefabs[i].Prefab.GetComponent<NetworkObject>().ValidateHash();
+                        NetworkConfig.NetworkPrefabs[i].Prefab.GetComponent<NetworkObject>().ValidateHash();
                     }
                 }
             }
@@ -302,35 +302,35 @@ namespace MLAPI
             // TODO: Show which two prefab generators that collide
             HashSet<ulong> hashes = new HashSet<ulong>();
 
-            for (int i = 0; i < NetworkConfig.NetworkedPrefabs.Count; i++)
+            for (int i = 0; i < NetworkConfig.NetworkPrefabs.Count; i++)
             {
-                if (hashes.Contains(NetworkConfig.NetworkedPrefabs[i].Hash))
+                if (hashes.Contains(NetworkConfig.NetworkPrefabs[i].Hash))
                 {
                     if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                     {
-                        var prefabHashGenerator = NetworkConfig.NetworkedPrefabs[i].Prefab.GetComponent<NetworkObject>().PrefabHashGenerator;
+                        var prefabHashGenerator = NetworkConfig.NetworkPrefabs[i].Prefab.GetComponent<NetworkObject>().PrefabHashGenerator;
                         NetworkLog.LogError($"PrefabHash collision! You have two prefabs with the same hash (PrefabHashGenerator = {prefabHashGenerator}). This is not supported");
                     }
 
                 }
 
-                hashes.Add(NetworkConfig.NetworkedPrefabs[i].Hash);
+                hashes.Add(NetworkConfig.NetworkPrefabs[i].Hash);
             }
 
-            int playerPrefabCount = NetworkConfig.NetworkedPrefabs.Count(x => x.PlayerPrefab == true);
+            int playerPrefabCount = NetworkConfig.NetworkPrefabs.Count(x => x.PlayerPrefab);
 
             if (playerPrefabCount == 0 && !NetworkConfig.ConnectionApproval && NetworkConfig.CreatePlayerPrefab)
             {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("There is no NetworkedPrefab marked as a PlayerPrefab");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning($"There is no {nameof(NetworkPrefab)} marked as a PlayerPrefab");
             }
             else if (playerPrefabCount > 1)
             {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Only one networked prefab can be marked as a player prefab");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning($"Only one {nameof(NetworkPrefab)} can be marked as a PlayerPrefab");
             }
 
-            NetworkedPrefab prefab = NetworkConfig.NetworkedPrefabs.FirstOrDefault(x => x.PlayerPrefab == true);
+            var networkPrefab = NetworkConfig.NetworkPrefabs.FirstOrDefault(x => x.PlayerPrefab);
 
-            if (prefab == null)
+            if (networkPrefab == null)
             {
                 NetworkConfig.PlayerPrefabHash = null;
             }
@@ -340,7 +340,7 @@ namespace MLAPI
                 {
                     NetworkConfig.PlayerPrefabHash = new NullableBoolSerializable();
                 }
-                NetworkConfig.PlayerPrefabHash.Value = prefab.Hash;
+                NetworkConfig.PlayerPrefabHash.Value = networkPrefab.Hash;
             }
         }
 
@@ -414,19 +414,19 @@ namespace MLAPI
                 NetworkSceneManager.SetCurrentSceneIndex();
             }
 
-            for (int i = 0; i < NetworkConfig.NetworkedPrefabs.Count; i++)
+            for (int i = 0; i < NetworkConfig.NetworkPrefabs.Count; i++)
             {
-                if (NetworkConfig.NetworkedPrefabs[i] == null || ReferenceEquals(NetworkConfig.NetworkedPrefabs[i].Prefab, null))
+                if (NetworkConfig.NetworkPrefabs[i] == null || ReferenceEquals(NetworkConfig.NetworkPrefabs[i].Prefab, null))
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError("Networked prefab cannot be null");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError($"{nameof(NetworkPrefab)} cannot be null");
                 }
-                else if (ReferenceEquals(NetworkConfig.NetworkedPrefabs[i].Prefab.GetComponent<NetworkObject>(), null))
+                else if (ReferenceEquals(NetworkConfig.NetworkPrefabs[i].Prefab.GetComponent<NetworkObject>(), null))
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError($"Networked prefab is missing a {nameof(NetworkObject)} component");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError($"{nameof(NetworkPrefab)} is missing a {nameof(NetworkObject)} component");
                 }
                 else
                 {
-                    NetworkConfig.NetworkedPrefabs[i].Prefab.GetComponent<NetworkObject>().ValidateHash();
+                    NetworkConfig.NetworkPrefabs[i].Prefab.GetComponent<NetworkObject>().ValidateHash();
                 }
             }
 

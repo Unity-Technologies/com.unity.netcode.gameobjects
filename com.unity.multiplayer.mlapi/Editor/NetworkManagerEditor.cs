@@ -162,7 +162,7 @@ public class NetworkManagerEditor : Editor
 
     private void OnEnable()
     {
-        networkPrefabsList = new ReorderableList(serializedObject, serializedObject.FindProperty("NetworkConfig").FindPropertyRelative("NetworkedPrefabs"), true, true, true, true);
+        networkPrefabsList = new ReorderableList(serializedObject, serializedObject.FindProperty("NetworkConfig").FindPropertyRelative("NetworkPrefabs"), true, true, true, true);
         networkPrefabsList.drawElementCallback = (Rect rect, int index, bool isActive, bool isFocused) =>
         {
             SerializedProperty element = networkPrefabsList.serializedProperty.GetArrayElementAtIndex(index);
@@ -179,9 +179,9 @@ public class NetworkManagerEditor : Editor
 
             int playerPrefabIndex = -1;
 
-            for (int i = 0; i < networkManager.NetworkConfig.NetworkedPrefabs.Count; i++)
+            for (int i = 0; i < networkManager.NetworkConfig.NetworkPrefabs.Count; i++)
             {
-                if (networkManager.NetworkConfig.NetworkedPrefabs[i].PlayerPrefab)
+                if (networkManager.NetworkConfig.NetworkPrefabs[i].PlayerPrefab)
                 {
                     playerPrefabIndex = i;
                     break;
@@ -196,7 +196,7 @@ public class NetworkManagerEditor : Editor
         };
 
         networkPrefabsList.drawHeaderCallback = (Rect rect) => {
-            EditorGUI.LabelField(rect, "NetworkedPrefabs");
+            EditorGUI.LabelField(rect, "NetworkPrefabs");
         };
 
 

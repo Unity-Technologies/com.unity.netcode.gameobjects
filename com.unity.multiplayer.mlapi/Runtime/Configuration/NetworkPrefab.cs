@@ -5,10 +5,10 @@ using UnityEngine;
 namespace MLAPI.Configuration
 {
     /// <summary>
-    /// A class that represents a NetworkedPrefab
+    /// A class that represents a NetworkPrefab
     /// </summary>
     [Serializable]
-    public class NetworkedPrefab
+    public class NetworkPrefab
     {
         internal ulong Hash
         {
@@ -16,14 +16,14 @@ namespace MLAPI.Configuration
             {
                 if (ReferenceEquals(Prefab, null))
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkedPrefab is not assigned");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning($"{nameof(NetworkPrefab)} is not assigned");
                     return 0;
                 }
 
                 var networkObject = Prefab.GetComponent<NetworkObject>();
                 if (ReferenceEquals(networkObject, null))
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning($"NetworkedPrefab {Prefab.name} does not have a {nameof(NetworkObject)}");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning($"{nameof(NetworkPrefab)} {Prefab.name} does not have a {nameof(NetworkObject)}");
                     return 0;
                 }
 
