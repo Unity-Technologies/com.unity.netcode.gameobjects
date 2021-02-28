@@ -49,7 +49,7 @@ public class RandomPlayerMover : NetworkedBehaviour
     /// </summary>
     void SetPlayerColor()
     {
-        if(m_MeshRenderer)
+        if (m_MeshRenderer)
         {
             m_MeshRenderer.material.color = PlayerColors[ NetworkedObject.OwnerClientId % System.Convert.ToUInt64(PlayerColors.Length)];
         }
@@ -79,7 +79,7 @@ public class RandomPlayerMover : NetworkedBehaviour
 
         m_MeshRenderer = GetComponent<MeshRenderer>();
 
-        if(IsOwner)
+        if (IsOwner)
         {
             SetPlayerSpawnPoint();
             m_Direction = new Vector3(Random.Range(-100.0f, 100.0f), 0, Random.Range(-100.0f, 100.0f));
@@ -100,11 +100,11 @@ public class RandomPlayerMover : NetworkedBehaviour
     /// </summary>
     void SetPlayerSpawnPoint()
     {
-        if(m_PlayerSpawnPoints != null)
+        if (m_PlayerSpawnPoints != null)
         {
             m_SpawnPoints = new List<Transform>(m_PlayerSpawnPoints.GetComponentsInChildren<Transform>());
         }
-        if(m_SpawnPoints != null && m_SpawnPoints.Count > 0)
+        if (m_SpawnPoints != null && m_SpawnPoints.Count > 0)
         {
             transform.position = m_SpawnPoints[Random.Range(0, m_SpawnPoints.Count - 1)].position;
         }
@@ -177,7 +177,7 @@ public class RandomPlayerMover : NetworkedBehaviour
     /// <param name="inGameManager"></param>
     public void OnRegisterInGameManager(InGameManager inGameManager)
     {
-        if(m_InGameManager != null && m_InGameManager != inGameManager)
+        if (m_InGameManager != null && m_InGameManager != inGameManager)
         {
             m_InGameManager.OnInGameStateChanged -= OnInGameStateChanged;
         }
@@ -211,7 +211,7 @@ public class RandomPlayerMover : NetworkedBehaviour
             case InGameManager.InGameStates.Paused:
                 {
                     OnPaused(isTransitioningTo);
-                    if(m_NetworkTransform != null)
+                    if (m_NetworkTransform != null)
                     {
                         m_NetworkTransform.enabled = !isTransitioningTo;
                     }
@@ -246,7 +246,7 @@ public class RandomPlayerMover : NetworkedBehaviour
     /// <param name="isPaused"></param>
     public void OnPaused(bool isPaused)
     {
-        if(m_IsPaused != isPaused)
+        if (m_IsPaused != isPaused)
         {
             m_IsPaused = isPaused;
 
@@ -297,11 +297,12 @@ public class RandomPlayerMover : NetworkedBehaviour
     }
 
     /// <summary>
-    /// Called at a fixed rate
+    /// FixedUpdate
+    /// Updates the movement for the player
     /// </summary>
     private void FixedUpdate()
     {
-        if(!m_IsPaused)
+        if (!m_IsPaused)
         {
             if(IsOwner)
             {
@@ -318,22 +319,22 @@ public class RandomPlayerMover : NetworkedBehaviour
     private void OnCollisionStay(Collision collision)
     {
         //Only owners should handle change in direction based on collision
-        if(IsOwner)
+        if (IsOwner)
         {
             if (collision.gameObject.CompareTag("Ground"))
             {
                 return;
             }
 
-            if(m_SpawnPoints != null && m_SpawnPoints.Count > 0)
+            if (m_SpawnPoints != null && m_SpawnPoints.Count > 0)
             {
                 m_Direction = m_SpawnPoints[Random.Range(0, m_SpawnPoints.Count - 1)].position - transform.position;
                 m_Direction.Normalize();
             }
-            else
+            else  //Handle the case where there are no spawn points
             {
                 List<ContactPoint> contactPoints = new List<ContactPoint>(collision.contactCount);
-                if(collision.GetContacts(contactPoints) > 0)
+                if (collision.GetContacts(contactPoints) > 0)
                 {
                     Vector3 CollisionPointAverage = Vector3.zero;
                     foreach(ContactPoint contactPoint in contactPoints)
@@ -349,6 +350,10 @@ public class RandomPlayerMover : NetworkedBehaviour
         }
     }
 
+    /// <summary>
+    /// OnDestroy
+    /// Remove ourself from the OnInGameStateChanged event
+    /// </summary>
     private void OnDestroy()
     {
         m_InGameManager.OnInGameStateChanged -= OnInGameStateChanged;

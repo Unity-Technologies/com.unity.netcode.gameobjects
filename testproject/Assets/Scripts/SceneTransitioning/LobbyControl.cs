@@ -12,7 +12,7 @@ public class LobbyControl : NetworkedBehaviour
     bool m_LaunchAsHostInEditor;
 
     [SerializeField]
-    private Text LobbyText;
+    private Text m_LobbyText;
 
     [Tooltip("This value only determines if the minimum numbers of players to start are present.  All players must hit the ready button to launch.")]
     [Range(1,16)]
@@ -31,7 +31,7 @@ public class LobbyControl : NetworkedBehaviour
     {
         m_ClientsInLobby = new Dictionary<ulong, bool>();
 #if(UNITY_EDITOR)
-        if( NetworkingManager.Singleton == null)
+        if ( NetworkingManager.Singleton == null)
         {
             GlobalGameState.EditorLaunchingAsHost = m_LaunchAsHostInEditor;
             //This will automatically launch the MLAPIBootStrap and then transition directly to the scene this control is contained within (for easy development of scenes)
@@ -48,7 +48,7 @@ public class LobbyControl : NetworkedBehaviour
             NetworkingManager.Singleton.OnClientConnectedCallback += OnClientConnectedCallback;
             //If we are hosting, then handle the server side for detecting when clients have connected
             //and when their lobby scenes are finished loading.
-            if(IsServer)
+            if (IsServer)
             {
                 m_AllPlayersInLobby = false;
                 //Server will be notified when a client connects
@@ -60,28 +60,26 @@ public class LobbyControl : NetworkedBehaviour
         }
     }
 
-    private void AllPlayersLoadedScene()
-    {
-        throw new System.NotImplementedException();
-    }
 
-    NetworkedObject LocalPlayerObject;
+    /// <summary>
+    /// Just freeze and hide players upon starting
+    /// </summary>
     private void Start()
     {
         FreezeAndHidePlayers();
     }
 
 
+    /// <summary>
+    /// FreezeAndHidePlayers
+    /// This parses through all local NetworkedObjects, freezes (pauses) them, and "hides" them.
+    /// </summary>
     void FreezeAndHidePlayers()
     {
         NetworkedObject[] NetoworkedObjects = GameObject.FindObjectsOfType<NetworkedObject>();
         foreach (NetworkedObject networkedObject in NetoworkedObjects)
         {
             RandomPlayerMover PlayerMover = networkedObject.GetComponent<RandomPlayerMover>();
-            if (networkedObject.IsLocalPlayer)
-            {
-                LocalPlayerObject = networkedObject;
-            }
             if (PlayerMover)
             {
                 if (!IsOwner)
@@ -109,7 +107,7 @@ public class LobbyControl : NetworkedBehaviour
         foreach(KeyValuePair<ulong,bool> clientLobbyStatus in m_ClientsInLobby)
         {
             m_UserLobbyStatusText += "Player_" + clientLobbyStatus.Key.ToString() + "          ";
-            if(clientLobbyStatus.Value)
+            if (clientLobbyStatus.Value)
             {
                 m_UserLobbyStatusText += "(Ready)\n";
             }
@@ -127,9 +125,9 @@ public class LobbyControl : NetworkedBehaviour
     /// </summary>
     private void OnGUI()
     {
-        if(LobbyText != null)
+        if (m_LobbyText != null)
         {
-            LobbyText.text = m_UserLobbyStatusText;
+            m_LobbyText.text = m_UserLobbyStatusText;
         }
     }
 
@@ -161,9 +159,9 @@ public class LobbyControl : NetworkedBehaviour
     /// <param name="clientId"></param>
     private void ClientLoadedScene(ulong clientId)
     {
-        if(IsServer)
+        if (IsServer)
         {
-            if(!m_ClientsInLobby.ContainsKey(clientId))
+            if (!m_ClientsInLobby.ContainsKey(clientId))
             {
                 m_ClientsInLobby.Add(clientId, false);
                 GenerateUserStatsForLobby();
@@ -181,12 +179,12 @@ public class LobbyControl : NetworkedBehaviour
     /// <param name="clientId">client that connected</param>
     private void OnClientConnectedCallback(ulong clientId)
     {
-        if(!m_ClientsInLobby.ContainsKey(clientId))
+        if (!m_ClientsInLobby.ContainsKey(clientId))
         {
             m_ClientsInLobby.Add(clientId, false);
 
         }
-        if(IsServer)
+        if (IsServer)
         {
             UpdateAndCheckPlayersInLobby();
         }
@@ -207,9 +205,9 @@ public class LobbyControl : NetworkedBehaviour
     [ClientRpc]
     void SendClientReadyStatusUpdatesClientRpc(ulong clientId, bool isReady)
     {
-        if(!IsServer)
+        if  (!IsServer)
         {
-            if(!m_ClientsInLobby.ContainsKey(clientId))
+            if (!m_ClientsInLobby.ContainsKey(clientId))
             {
                 m_ClientsInLobby.Add(clientId,isReady);
             }
@@ -227,12 +225,12 @@ public class LobbyControl : NetworkedBehaviour
     /// </summary>
     private void CheckForAllPlayersReady()
     {
-        if(m_AllPlayersInLobby)
+        if (m_AllPlayersInLobby)
         {
             bool AllPlayersAreReady = true;
             foreach(KeyValuePair<ulong,bool> clientLobbyStatus in m_ClientsInLobby)
             {
-                if(!clientLobbyStatus.Value)
+                if (!clientLobbyStatus.Value)
                 {
                     //If some clients are still loading into the lobby scene then this is false
                     AllPlayersAreReady = false;
@@ -240,7 +238,7 @@ public class LobbyControl : NetworkedBehaviour
             }
 
             //Only if all players are ready
-            if(AllPlayersAreReady)
+            if (AllPlayersAreReady)
             {
                 //Remove our client connected callback
                 NetworkingManager.Singleton.OnClientConnectedCallback -= OnClientConnectedCallback;
@@ -260,7 +258,7 @@ public class LobbyControl : NetworkedBehaviour
     /// </summary>
     public void PlayerIsReady()
     {
-        if(IsServer)
+        if (IsServer)
         {
             m_ClientsInLobby[NetworkingManager.Singleton.ServerClientId] = !m_ClientsInLobby[NetworkingManager.Singleton.ServerClientId];
             UpdateAndCheckPlayersInLobby();
@@ -281,7 +279,7 @@ public class LobbyControl : NetworkedBehaviour
     [ServerRpc(RequireOwnership = false)]
     void OnClientIsReadyServerRpc(ulong clientid, bool isReady)
     {
-        if(m_ClientsInLobby.ContainsKey(clientid))
+        if (m_ClientsInLobby.ContainsKey(clientid))
         {
             m_ClientsInLobby[clientid] = isReady;
             UpdateAndCheckPlayersInLobby();
@@ -289,17 +287,25 @@ public class LobbyControl : NetworkedBehaviour
         }
     }
 
+    /// <summary>
+    /// OnExitLobby
+    /// Transitions the local state (unless the server) to exiting, which will exit the game session and will load the scene linked to the GlobalGameState.GameStates.ExitGame state
+    /// </summary>
     public void OnExitLobby()
     {
         GlobalGameState.Singleton.SetGameState(GlobalGameState.GameStates.ExitGame);
     }
 
+    /// <summary>
+    /// OnDestroy
+    /// Make sure to remove ourself from the client connected and client loaded scene callbacks
+    /// </summary>
     private void OnDestroy()
     {
-        if(NetworkingManager.Singleton != null)
+        if (NetworkingManager.Singleton != null)
         {
             NetworkingManager.Singleton.OnClientConnectedCallback -= OnClientConnectedCallback;
-            if(IsServer)
+            if (IsServer)
             {
                 GlobalGameState.Singleton.clientLoadedScene -= ClientLoadedScene;
             }

@@ -22,11 +22,8 @@ namespace MLAPIGlobalGameState
         [SerializeField]
         private MLAPIStates m_MLAPIState;
 
-
-        private String  SceneToLoadName;
-
         [SerializeField]
-        String m_SceneToLoadName;
+        String m_SceneToLoadName;           //Note: This is set within the SceneToStateOptionsEditor.cs file
 #if (UNITY_EDITOR)
         [SerializeField]
         private SceneAsset m_SceneToLoad;
@@ -40,9 +37,9 @@ namespace MLAPIGlobalGameState
             get
             {
 #if (UNITY_EDITOR)
-                return m_SceneToLoad.name;
+                return m_SceneToLoad.name; //Note: when in the editor we can use the SceneAsset
 #else
-                return m_SceneToLoadName;
+                return m_SceneToLoadName;  //Note: when in a build, we have to use the name string
 #endif
             }
         }
