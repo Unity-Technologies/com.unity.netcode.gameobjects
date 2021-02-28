@@ -90,7 +90,7 @@ namespace MLAPI.Messaging
                 float netTime = reader.ReadSinglePacked();
                 NetworkManager.Singleton.UpdateNetworkTime(clientId, netTime, receiveTime, true);
 
-                NetworkManager.Singleton.ConnectedClients.Add(NetworkManager.Singleton.LocalClientId, new NetworkedClient() { ClientId = NetworkManager.Singleton.LocalClientId });
+                NetworkManager.Singleton.ConnectedClients.Add(NetworkManager.Singleton.LocalClientId, new NetworkClient() { ClientId = NetworkManager.Singleton.LocalClientId });
 
 
                 void DelayedSpawnAction(Stream continuationStream)

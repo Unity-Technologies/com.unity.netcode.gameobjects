@@ -64,7 +64,7 @@ namespace MLAPI.Prototyping
                 else
                 {
                     List<ulong> proximityClients = new List<ulong>();
-                    foreach (KeyValuePair<ulong, NetworkedClient> client in MLAPI.NetworkManager.Singleton.ConnectedClients)
+                    foreach (KeyValuePair<ulong, NetworkClient> client in MLAPI.NetworkManager.Singleton.ConnectedClients)
                     {
                         if (client.Value.PlayerObject == null || Vector3.Distance(client.Value.PlayerObject.transform.position, transform.position) <= ProximityRange)
                             proximityClients.Add(client.Key);
@@ -84,7 +84,7 @@ namespace MLAPI.Prototyping
                 else
                 {
                     List<ulong> proximityClients = new List<ulong>();
-                    foreach (KeyValuePair<ulong, NetworkedClient> client in MLAPI.NetworkManager.Singleton.ConnectedClients)
+                    foreach (KeyValuePair<ulong, NetworkClient> client in MLAPI.NetworkManager.Singleton.ConnectedClients)
                     {
                         if (client.Value.PlayerObject == null || Vector3.Distance(client.Value.PlayerObject.transform.position, transform.position) <= ProximityRange)
                             proximityClients.Add(client.Key);

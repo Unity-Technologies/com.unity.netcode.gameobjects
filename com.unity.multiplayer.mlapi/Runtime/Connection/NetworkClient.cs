@@ -3,12 +3,12 @@
 namespace MLAPI.Connection
 {
     /// <summary>
-    /// A NetworkedClient
+    /// A NetworkClient
     /// </summary>
-    public class NetworkedClient
+    public class NetworkClient
     {
         /// <summary>
-        /// The Id of the NetworkedClient
+        /// The ClientId of the NetworkClient
         /// </summary>
         public ulong ClientId;
 

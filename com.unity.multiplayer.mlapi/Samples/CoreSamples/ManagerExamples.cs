@@ -34,7 +34,7 @@ namespace MLAPI_Examples
 #endif
 
         // Contains player object, owned objects, cryptography keys and more
-        public NetworkedClient GetClient(ulong clientId)
+        public NetworkClient GetClient(ulong clientId)
         {
             return NetworkManager.Singleton.ConnectedClients[clientId];
         }

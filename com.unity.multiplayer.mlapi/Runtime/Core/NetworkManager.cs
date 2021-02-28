@@ -112,11 +112,11 @@ namespace MLAPI
         /// <summary>
         /// Gets a dictionary of connected clients and their clientId keys. This is only populated on the server.
         /// </summary>
-        public readonly Dictionary<ulong, NetworkedClient> ConnectedClients = new Dictionary<ulong, NetworkedClient>();
+        public readonly Dictionary<ulong, NetworkClient> ConnectedClients = new Dictionary<ulong, NetworkClient>();
         /// <summary>
         /// Gets a list of connected clients. This is only populated on the server.
         /// </summary>
-        public readonly List<NetworkedClient> ConnectedClientsList = new List<NetworkedClient>();
+        public readonly List<NetworkClient> ConnectedClientsList = new List<NetworkClient>();
         /// <summary>
         /// Gets a dictionary of the clients that have been accepted by the transport but are still pending by the MLAPI. This is only populated on the server.
         /// </summary>
@@ -506,7 +506,7 @@ namespace MLAPI
             HashSet<ulong> disconnectedIds = new HashSet<ulong>();
             //Don't know if I have to disconnect the clients. I'm assuming the NetworkTransport does all the cleaning on shtudown. But this way the clients get a disconnect message from server (so long it does't get lost)
 
-            foreach (KeyValuePair<ulong, NetworkedClient> pair in ConnectedClients)
+            foreach (KeyValuePair<ulong, NetworkClient> pair in ConnectedClients)
             {
                 if (!disconnectedIds.Contains(pair.Key))
                 {
@@ -590,7 +590,7 @@ namespace MLAPI
 
             ulong hostClientId = NetworkConfig.NetworkTransport.ServerClientId;
 
-            ConnectedClients.Add(hostClientId, new NetworkedClient()
+            ConnectedClients.Add(hostClientId, new NetworkClient()
             {
                 ClientId = hostClientId
             });
@@ -1344,7 +1344,7 @@ namespace MLAPI
                 // Inform new client it got approved
                 if (PendingClients.ContainsKey(clientId))
                     PendingClients.Remove(clientId);
-                NetworkedClient client = new NetworkedClient()
+                NetworkClient client = new NetworkClient()
                 {
                     ClientId = clientId,
                 };
@@ -1470,7 +1470,7 @@ namespace MLAPI
 
                 //Inform old clients of the new player
 
-                foreach (KeyValuePair<ulong, NetworkedClient> clientPair in ConnectedClients)
+                foreach (KeyValuePair<ulong, NetworkClient> clientPair in ConnectedClients)
                 {
                     if (clientPair.Key == clientId || ConnectedClients[clientId].PlayerObject == null || !ConnectedClients[clientId].PlayerObject.observers.Contains(clientPair.Key))
                         continue; //The new client.
