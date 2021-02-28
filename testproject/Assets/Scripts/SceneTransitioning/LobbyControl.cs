@@ -197,6 +197,7 @@ public class LobbyControl : NetworkedBehaviour
 
     /// <summary>
     /// SendClientReadyStatusUpdatesClientRpc
+    /// ClientRpc Use Case Scenario:  Sending clients updated information about other clients in the lobby
     /// Sent from the server to the client when a player's status is updated.
     /// This also populates the connected clients' (excluding host) player state in the lobby
     /// </summary>
@@ -273,6 +274,7 @@ public class LobbyControl : NetworkedBehaviour
 
     /// <summary>
     /// OnClientIsReadyServerRpc
+    /// ServerRpc Use Case Scenario: Clients notifying the server of their state, and do not require ownership of the object
     /// Sent to the server when the player clicks the ready button
     /// </summary>
     /// <param name="clientid">clientId that is ready</param>

@@ -350,13 +350,4 @@ public class RandomPlayerMover : NetworkedBehaviour
             }
         }
     }
-
-    /// <summary>
-    /// OnDestroy
-    /// Remove ourself from the OnInGameStateChanged event
-    /// </summary>
-    private void OnDestroy()
-    {
-
-    }
 }
