@@ -1,22 +1,22 @@
 using MLAPI;
-using MLAPI.NetworkedVar;
+using MLAPI.NetworkVariable;
 
 namespace MLAPI_Examples
 {
-    public class SerializedNetworkedVarExample : NetworkBehaviour
+    public class SerializedNetworkVariableExample : NetworkBehaviour
     {
         // Default settings, default value
-        public NetworkedVarInt SerializedNetworkedVarInt = new NetworkedVarInt();
+        public NetworkVariableInt SerializedNetworkVariableInt = new NetworkVariableInt();
         // Default settings, initialization value 5
-        public NetworkedVarInt SerializedNetworkedVarIntValue = new NetworkedVarInt(5);
+        public NetworkVariableInt SerializedNetworkVariableIntValue = new NetworkVariableInt(5);
         // Custom settings
-        public NetworkedVarInt SerializedNetworkedVarIntSettings = new NetworkedVarInt(new NetworkedVarSettings()
+        public NetworkVariableInt SerializedNetworkVariableIntSettings = new NetworkVariableInt(new NetworkVariableSettings()
         {
             SendChannel = "MySendChannel", // The var value will be synced over this channel
-            ReadPermission = NetworkedVarPermission.Everyone, // The var values will be synced to everyone
+            ReadPermission = NetworkVariablePermission.Everyone, // The var values will be synced to everyone
             ReadPermissionCallback = null, // Only used when using "Custom" read permission
             SendTickrate = 2, // The var will sync no more than 2 times per second
-            WritePermission = NetworkedVarPermission.OwnerOnly, // Only the owner of this object is allowed to change the value
+            WritePermission = NetworkVariablePermission.OwnerOnly, // Only the owner of this object is allowed to change the value
             WritePermissionCallback = null // Only used when write permission is "Custom"
         });
     }

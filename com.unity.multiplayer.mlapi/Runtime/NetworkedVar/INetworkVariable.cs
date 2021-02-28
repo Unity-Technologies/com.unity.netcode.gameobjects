@@ -1,12 +1,12 @@
 using System.IO;
 using MLAPI.Transports;
 
-namespace MLAPI.NetworkedVar
+namespace MLAPI.NetworkVariable
 {
     /// <summary>
     /// Interface for networked value containers
     /// </summary>
-    public interface INetworkedVar
+    public interface INetworkVariable
     {
         /// <summary>
         /// Returns the name of the channel to be used for syncing

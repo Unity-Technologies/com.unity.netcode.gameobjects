@@ -72,7 +72,7 @@ namespace MLAPI.Configuration
         /// <summary>
         /// The amount of times per second internal frame events will occur, e.g. send checking.
         /// </summary>
-        [Tooltip("The amount of times per second the internal event loop will run. This includes for example NetworkedVar checking and LagCompensation tracking")]
+        [Tooltip("The amount of times per second the internal event loop will run. This includes for example NetworkVariable checking and LagCompensation tracking")]
         public int EventTickrate = 64;
         /// <summary>
         /// The amount of seconds to wait for handshake to complete before timing out a client
@@ -105,16 +105,16 @@ namespace MLAPI.Configuration
         [Tooltip("The amount of seconds between resyncs of NetworkedTime, if enabled")]
         public int TimeResyncInterval = 30;
         /// <summary>
-        /// Whether or not to enable the NetworkedVar system. This system runs in the Update loop and will degrade performance, but it can be a huge convenience.
-        /// Only turn it off if you have no need for the NetworkedVar system.
+        /// Whether or not to enable the NetworkVariable system. This system runs in the Update loop and will degrade performance, but it can be a huge convenience.
+        /// Only turn it off if you have no need for the NetworkVariable system.
         /// </summary>
-        [Tooltip("Whether or not to enable the NetworkedVar system")]
-        public bool EnableNetworkedVar = true;
+        [Tooltip("Whether or not to enable the NetworkVariable system")]
+        public bool EnableNetworkVariable = true;
         /// <summary>
-        /// Whether or not to ensure that NetworkedVars can be read even if a client accidentally writes where its not allowed to. This costs some CPU and bandwdith.
+        /// Whether or not to ensure that NetworkVariables can be read even if a client accidentally writes where its not allowed to. This costs some CPU and bandwdith.
         /// </summary>
-        [Tooltip("Ensures that NetworkedVars can be read even if a client accidental writes where its not allowed to. This will cost some CPU time and bandwidth")]
-        public bool EnsureNetworkedVarLengthSafety = false;
+        [Tooltip("Ensures that NetworkVariables can be read even if a client accidental writes where its not allowed to. This will cost some CPU time and bandwidth")]
+        public bool EnsureNetworkVariableLengthSafety = false;
         /// <summary>
         /// Enables scene management. This will allow network scene switches and automatic scene diff corrections upon connect.
         /// SoftSynced scene objects wont work with this disabled. That means that disabling SceneManagement also enables PrefabSync.
@@ -203,14 +203,14 @@ namespace MLAPI.Configuration
                     writer.WriteInt32Packed(config.SecondsHistory);
                     writer.WriteInt32Packed(config.LoadSceneTimeOut);
                     writer.WriteBool(config.EnableTimeResync);
-                    writer.WriteBool(config.EnsureNetworkedVarLengthSafety);
+                    writer.WriteBool(config.EnsureNetworkVariableLengthSafety);
                     writer.WriteBits((byte)config.RpcHashSize, 2);
                     writer.WriteBool(ForceSamePrefabs);
                     writer.WriteBool(UsePrefabSync);
                     writer.WriteBool(EnableSceneManagement);
                     writer.WriteBool(RecycleNetworkIds);
                     writer.WriteSinglePacked(NetworkIdRecycleDelay);
-                    writer.WriteBool(EnableNetworkedVar);
+                    writer.WriteBool(EnableNetworkVariable);
                     writer.WriteBool(AllowRuntimeSceneChanges);
                     writer.WriteBool(EnableNetworkLogs);
                     stream.PadStream();
@@ -250,14 +250,14 @@ namespace MLAPI.Configuration
                     config.SecondsHistory = reader.ReadInt32Packed();
                     config.LoadSceneTimeOut = reader.ReadInt32Packed();
                     config.EnableTimeResync = reader.ReadBool();
-                    config.EnsureNetworkedVarLengthSafety = reader.ReadBool();
+                    config.EnsureNetworkVariableLengthSafety = reader.ReadBool();
                     config.RpcHashSize = (HashSize)reader.ReadBits(2);
                     config.ForceSamePrefabs = reader.ReadBool();
                     config.UsePrefabSync = reader.ReadBool();
                     config.EnableSceneManagement = reader.ReadBool();
                     config.RecycleNetworkIds = reader.ReadBool();
                     config.NetworkIdRecycleDelay = reader.ReadSinglePacked();
-                    config.EnableNetworkedVar = reader.ReadBool();
+                    config.EnableNetworkVariable = reader.ReadBool();
                     config.AllowRuntimeSceneChanges = reader.ReadBool();
                     config.EnableNetworkLogs = reader.ReadBool();
                 }
@@ -302,11 +302,11 @@ namespace MLAPI.Configuration
                         }
                     }
 
-                    writer.WriteBool(EnableNetworkedVar);
+                    writer.WriteBool(EnableNetworkVariable);
                     writer.WriteBool(ForceSamePrefabs);
                     writer.WriteBool(UsePrefabSync);
                     writer.WriteBool(EnableSceneManagement);
-                    writer.WriteBool(EnsureNetworkedVarLengthSafety);
+                    writer.WriteBool(EnsureNetworkVariableLengthSafety);
                     writer.WriteBits((byte)RpcHashSize, 2);
                     stream.PadStream();
 

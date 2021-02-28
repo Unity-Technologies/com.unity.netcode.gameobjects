@@ -2,17 +2,16 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using MLAPI.Serialization;
 using MLAPI.Serialization.Pooled;
 using MLAPI.Transports;
 
-namespace MLAPI.NetworkedVar.Collections
+namespace MLAPI.NetworkVariable.Collections
 {
     /// <summary>
-    /// Event based networkedVar container for syncing Sets
+    /// Event based NetworkVariable container for syncing Sets
     /// </summary>
     /// <typeparam name="T">The type for the set</typeparam>
-    public class NetworkedSet<T> : ISet<T>, INetworkedVar
+    public class NetworkedSet<T> : ISet<T>, INetworkVariable
     {
         private readonly ISet<T> set = new HashSet<T>();
         private readonly List<NetworkedSetEvent<T>> dirtyEvents = new List<NetworkedSetEvent<T>>();
@@ -26,7 +25,7 @@ namespace MLAPI.NetworkedVar.Collections
         /// <summary>
         /// The settings for this container
         /// </summary>
-        public readonly NetworkedVarSettings Settings = new NetworkedVarSettings();
+        public readonly NetworkVariableSettings Settings = new NetworkVariableSettings();
 
         /// <summary>
         /// Delegate type for set changed event
@@ -51,7 +50,7 @@ namespace MLAPI.NetworkedVar.Collections
         /// Creates a NetworkedSet with the default value and custom settings
         /// </summary>
         /// <param name="settings">The settings to use for the NetworkedList</param>
-        public NetworkedSet(NetworkedVarSettings settings)
+        public NetworkedSet(NetworkVariableSettings settings)
         {
             this.Settings = settings;
         }
@@ -61,7 +60,7 @@ namespace MLAPI.NetworkedVar.Collections
         /// </summary>
         /// <param name="settings">The settings to use for the NetworkedSet</param>
         /// <param name="value">The initial value to use for the NetworkedSet</param>
-        public NetworkedSet(NetworkedVarSettings settings, ISet<T> value)
+        public NetworkedSet(NetworkVariableSettings settings, ISet<T> value)
         {
             this.Settings = settings;
             this.set = value;
@@ -104,13 +103,13 @@ namespace MLAPI.NetworkedVar.Collections
         {
             switch (Settings.WritePermission)
             {
-                case NetworkedVarPermission.Everyone:
+                case NetworkVariablePermission.Everyone:
                     return true;
-                case NetworkedVarPermission.ServerOnly:
+                case NetworkVariablePermission.ServerOnly:
                     return false;
-                case NetworkedVarPermission.OwnerOnly:
+                case NetworkVariablePermission.OwnerOnly:
                     return networkBehaviour.OwnerClientId == clientId;
-                case NetworkedVarPermission.Custom:
+                case NetworkVariablePermission.Custom:
                 {
                     if (Settings.WritePermissionCallback == null) return false;
                     return Settings.WritePermissionCallback(clientId);
@@ -125,13 +124,13 @@ namespace MLAPI.NetworkedVar.Collections
         {
             switch (Settings.ReadPermission)
             {
-                case NetworkedVarPermission.Everyone:
+                case NetworkVariablePermission.Everyone:
                     return true;
-                case NetworkedVarPermission.ServerOnly:
+                case NetworkVariablePermission.ServerOnly:
                     return false;
-                case NetworkedVarPermission.OwnerOnly:
+                case NetworkVariablePermission.OwnerOnly:
                     return networkBehaviour.OwnerClientId == clientId;
-                case NetworkedVarPermission.Custom:
+                case NetworkVariablePermission.Custom:
                 {
                     if (Settings.ReadPermissionCallback == null) return false;
                     return Settings.ReadPermissionCallback(clientId);

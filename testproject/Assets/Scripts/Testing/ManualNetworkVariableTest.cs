@@ -1,16 +1,16 @@
 using System;
 using UnityEngine;
-using MLAPI.NetworkedVar;
+using MLAPI.NetworkVariable;
 
 namespace MLAPI
 {
     /// <summary>
     /// A prototype component for syncing transforms
     /// </summary>
-    [AddComponentMenu("MLAPI/ManualNetworkedVarTest")]
-    public class ManualNetworkedVarTest : NetworkBehaviour
+    [AddComponentMenu("MLAPI/ManualNetworkVariableTest")]
+    public class ManualNetworkVariableTest : NetworkBehaviour
     {
-        private NetworkedVar<int> m_TestVar;
+        private NetworkVariable<int> m_TestVar;
         private int m_MinDelta = 0;
         private int m_MaxDelta = 0;
         private int m_LastRemoteTick = 0;
@@ -27,7 +27,7 @@ namespace MLAPI
             Debug.Log("Start");
             m_TestVar.Value = 0;
             m_TestVar.OnValueChanged = ValueChanged;
-            m_TestVar.Settings.WritePermission = NetworkedVarPermission.Everyone;
+            m_TestVar.Settings.WritePermission = NetworkVariablePermission.Everyone;
         }
 
         void Awake()

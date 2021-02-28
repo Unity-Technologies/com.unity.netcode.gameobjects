@@ -857,8 +857,8 @@ MonoBehaviour:
     SecondsHistory: 5
     EnableTimeResync: 0
     TimeResyncInterval: 30
-    EnableNetworkedVar: 1
-    EnsureNetworkedVarLengthSafety: 0
+    EnableNetworkVariable: 1
+    EnsureNetworkVariableLengthSafety: 0
     EnableSceneManagement: 1
     ForceSamePrefabs: 1
     UsePrefabSync: 0

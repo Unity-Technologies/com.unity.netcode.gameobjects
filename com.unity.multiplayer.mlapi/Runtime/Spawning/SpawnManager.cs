@@ -321,7 +321,7 @@ namespace MLAPI.Spawning
         }
 
         // Ran on both server and client
-        internal static void SpawnNetworkObjectLocally(NetworkObject netObject, ulong networkId, bool sceneObject, bool playerObject, ulong? ownerClientId, Stream dataStream, bool readPayload, int payloadLength, bool readNetworkedVar, bool destroyWithScene)
+        internal static void SpawnNetworkObjectLocally(NetworkObject netObject, ulong networkId, bool sceneObject, bool playerObject, ulong? ownerClientId, Stream dataStream, bool readPayload, int payloadLength, bool readNetworkVariable, bool destroyWithScene)
         {
             if (netObject == null)
             {
@@ -333,9 +333,9 @@ namespace MLAPI.Spawning
                 throw new SpawnStateException("Object is already spawned");
             }
 
-            if (readNetworkedVar && NetworkManager.Singleton.NetworkConfig.EnableNetworkedVar)
+            if (readNetworkVariable && NetworkManager.Singleton.NetworkConfig.EnableNetworkVariable)
             {
-                netObject.SetNetworkedVarData(dataStream);
+                netObject.SetNetworkVariableData(dataStream);
             }
 
             if (SpawnedObjects.ContainsKey(netObject.NetworkId)) return;
@@ -493,9 +493,9 @@ namespace MLAPI.Spawning
                     writer.WriteInt32Packed((int) payload.Length);
                 }
 
-                if (NetworkManager.Singleton.NetworkConfig.EnableNetworkedVar)
+                if (NetworkManager.Singleton.NetworkConfig.EnableNetworkVariable)
                 {
-                    netObject.WriteNetworkedVarData(stream, clientId);
+                    netObject.WriteNetworkVariableData(stream, clientId);
                 }
 
                 if (payload != null) stream.CopyFrom(payload);

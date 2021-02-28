@@ -1,9 +1,9 @@
-namespace MLAPI.NetworkedVar
+namespace MLAPI.NetworkVariable
 {
     /// <summary>
     /// Permission type
     /// </summary>
-    public enum NetworkedVarPermission
+    public enum NetworkVariablePermission
     {
         /// <summary>
         /// Everyone

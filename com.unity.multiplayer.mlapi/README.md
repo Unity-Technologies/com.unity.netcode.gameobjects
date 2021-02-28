@@ -46,10 +46,10 @@ Here is a sample MonoBehaviour showing a chat script where everyone can write an
 ```csharp
 public class Chat : NetworkBehaviour
 {
-    private NetworkedList<string> ChatMessages = new NetworkedList<string>(new MLAPI.NetworkedVar.NetworkedVarSettings()
+    private NetworkedList<string> ChatMessages = new NetworkedList<string>(new MLAPI.NetworkVariable.NetworkVariableSettings()
     {
-        ReadPermission = MLAPI.NetworkedVar.NetworkedVarPermission.Everyone,
-        WritePermission = MLAPI.NetworkedVar.NetworkedVarPermission.Everyone,
+        ReadPermission = MLAPI.NetworkVariable.NetworkVariablePermission.Everyone,
+        WritePermission = MLAPI.NetworkVariable.NetworkVariablePermission.Everyone,
         SendTickrate = 5
     }, new List<string>());
 

@@ -543,21 +543,21 @@ namespace MLAPI
             }
         }
 
-        internal void WriteNetworkedVarData(Stream stream, ulong clientId)
+        internal void WriteNetworkVariableData(Stream stream, ulong clientId)
         {
             for (int i = 0; i < childNetworkBehaviours.Count; i++)
             {
-                childNetworkBehaviours[i].InitializeVars();
-                NetworkBehaviour.WriteNetworkedVarData(childNetworkBehaviours[i].networkedVarFields, stream, clientId);
+                childNetworkBehaviours[i].InitializeVariables();
+                NetworkBehaviour.WriteNetworkVariableData(childNetworkBehaviours[i].networkVariableFields, stream, clientId);
             }
         }
 
-        internal void SetNetworkedVarData(Stream stream)
+        internal void SetNetworkVariableData(Stream stream)
         {
             for (int i = 0; i < childNetworkBehaviours.Count; i++)
             {
-                childNetworkBehaviours[i].InitializeVars();
-                NetworkBehaviour.SetNetworkedVarData(childNetworkBehaviours[i].networkedVarFields, stream);
+                childNetworkBehaviours[i].InitializeVariables();
+                NetworkBehaviour.SetNetworkVariableData(childNetworkBehaviours[i].networkVariableFields, stream);
             }
         }
 

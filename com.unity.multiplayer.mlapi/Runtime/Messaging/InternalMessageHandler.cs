@@ -29,8 +29,8 @@ namespace MLAPI.Messaging
         static ProfilerMarker s_HandleAddObjects = new ProfilerMarker("InternalMessageHandler.HandleAddObjects");
         static ProfilerMarker s_HandleDestroyObjects = new ProfilerMarker("InternalMessageHandler.HandleDestroyObjects");
         static ProfilerMarker s_HandleTimeSync = new ProfilerMarker("InternalMessageHandler.HandleTimeSync");
-        static ProfilerMarker s_HandleNetworkedVarDelta = new ProfilerMarker("InternalMessageHandler.HandleNetworkedVarDelta");
-        static ProfilerMarker s_HandleNetworkedVarUpdate = new ProfilerMarker("InternalMessageHandler.HandleNetworkedVarUpdate");
+        static ProfilerMarker s_HandleNetworkVariableDelta = new ProfilerMarker("InternalMessageHandler.HandleNetworkVariableDelta");
+        static ProfilerMarker s_HandleNetworkVariableUpdate = new ProfilerMarker("InternalMessageHandler.HandleNetworkVariableUpdate");
         static ProfilerMarker s_HandleUnnamedMessage = new ProfilerMarker("InternalMessageHandler.HandleUnnamedMessage");
         static ProfilerMarker s_HandleNamedMessage = new ProfilerMarker("InternalMessageHandler.HandleNamedMessage");
         static ProfilerMarker s_HandleNetworkLog = new ProfilerMarker("InternalMessageHandler.HandleNetworkLog");
@@ -422,14 +422,14 @@ namespace MLAPI.Messaging
 #endif
         }
 
-        internal static void HandleNetworkedVarDelta(ulong clientId, Stream stream, Action<ulong, PreBufferPreset> bufferCallback, PreBufferPreset bufferPreset)
+        internal static void HandleNetworkVariableDelta(ulong clientId, Stream stream, Action<ulong, PreBufferPreset> bufferCallback, PreBufferPreset bufferPreset)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_HandleNetworkedVarDelta.Begin();
+            s_HandleNetworkVariableDelta.Begin();
 #endif
-            if (!NetworkManager.Singleton.NetworkConfig.EnableNetworkedVar)
+            if (!NetworkManager.Singleton.NetworkConfig.EnableNetworkVariable)
             {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkedVar delta received but EnableNetworkedVar is false");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkVariable delta received but EnableNetworkVariable is false");
                 return;
             }
 
@@ -444,36 +444,36 @@ namespace MLAPI.Messaging
 
                     if (instance == null)
                     {
-                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkedVarDelta message received for a non-existent behaviour. NetworkId: " + networkId + ", behaviourIndex: " + orderIndex);
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkVariableDelta message received for a non-existent behaviour. NetworkId: " + networkId + ", behaviourIndex: " + orderIndex);
                     }
                     else
                     {
-                        NetworkBehaviour.HandleNetworkedVarDeltas(instance.networkedVarFields, stream, clientId, instance);
+                        NetworkBehaviour.HandleNetworkVariableDeltas(instance.networkVariableFields, stream, clientId, instance);
                     }
                 }
                 else if (NetworkManager.Singleton.IsServer || !NetworkManager.Singleton.NetworkConfig.EnableMessageBuffering)
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkedVarDelta message received for a non-existent object with id: " + networkId + ". This delta was lost.");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkVariableDelta message received for a non-existent object with id: " + networkId + ". This delta was lost.");
                 }
                 else
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkedVarDelta message received for a non-existent object with id: " + networkId + ". This delta will be buffered and might be recovered.");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkVariableDelta message received for a non-existent object with id: " + networkId + ". This delta will be buffered and might be recovered.");
                     bufferCallback(networkId, bufferPreset);
                 }
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_HandleNetworkedVarDelta.End();
+            s_HandleNetworkVariableDelta.End();
 #endif
         }
 
-        internal static void HandleNetworkedVarUpdate(ulong clientId, Stream stream, Action<ulong, PreBufferPreset> bufferCallback, PreBufferPreset bufferPreset)
+        internal static void HandleNetworkVariableUpdate(ulong clientId, Stream stream, Action<ulong, PreBufferPreset> bufferCallback, PreBufferPreset bufferPreset)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_HandleNetworkedVarUpdate.Begin();
+            s_HandleNetworkVariableUpdate.Begin();
 #endif
-            if (!NetworkManager.Singleton.NetworkConfig.EnableNetworkedVar)
+            if (!NetworkManager.Singleton.NetworkConfig.EnableNetworkVariable)
             {
-                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkedVar update received but EnableNetworkedVar is false");
+                if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkVariable update received but EnableNetworkVariable is false");
                 return;
             }
 
@@ -488,25 +488,25 @@ namespace MLAPI.Messaging
 
                     if (instance == null)
                     {
-                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkedVarUpdate message received for a non-existent behaviour. NetworkId: " + networkId + ", behaviourIndex: " + orderIndex);
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkVariableUpdate message received for a non-existent behaviour. NetworkId: " + networkId + ", behaviourIndex: " + orderIndex);
                     }
                     else
                     {
-                        NetworkBehaviour.HandleNetworkedVarUpdate(instance.networkedVarFields, stream, clientId, instance);
+                        NetworkBehaviour.HandleNetworkVariableUpdate(instance.networkVariableFields, stream, clientId, instance);
                     }
                 }
                 else if (NetworkManager.Singleton.IsServer || !NetworkManager.Singleton.NetworkConfig.EnableMessageBuffering)
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkedVarUpdate message received for a non-existent object with id: " + networkId + ". This delta was lost.");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkVariableUpdate message received for a non-existent object with id: " + networkId + ". This delta was lost.");
                 }
                 else
                 {
-                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkedVarUpdate message received for a non-existent object with id: " + networkId + ". This delta will be buffered and might be recovered.");
+                    if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("NetworkVariableUpdate message received for a non-existent object with id: " + networkId + ". This delta will be buffered and might be recovered.");
                     bufferCallback(networkId, bufferPreset);
                 }
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_HandleNetworkedVarUpdate.End();
+            s_HandleNetworkVariableUpdate.End();
 #endif
         }
 

@@ -32,8 +32,8 @@ public class NetworkManagerEditor : Editor
     private SerializedProperty secondsHistoryProperty;
     private SerializedProperty enableTimeResyncProperty;
     private SerializedProperty timeResyncIntervalProperty;
-    private SerializedProperty enableNetworkedVarProperty;
-    private SerializedProperty ensureNetworkedVarLengthSafetyProperty;
+    private SerializedProperty enableNetworkVariableProperty;
+    private SerializedProperty ensureNetworkVariableLengthSafetyProperty;
     private SerializedProperty createPlayerPrefabProperty;
     private SerializedProperty forceSamePrefabsProperty;
     private SerializedProperty usePrefabSyncProperty;
@@ -109,8 +109,8 @@ public class NetworkManagerEditor : Editor
         secondsHistoryProperty = networkConfigProperty.FindPropertyRelative("SecondsHistory");
         enableTimeResyncProperty = networkConfigProperty.FindPropertyRelative("EnableTimeResync");
         timeResyncIntervalProperty = networkConfigProperty.FindPropertyRelative("TimeResyncInterval");
-        enableNetworkedVarProperty = networkConfigProperty.FindPropertyRelative("EnableNetworkedVar");
-        ensureNetworkedVarLengthSafetyProperty = networkConfigProperty.FindPropertyRelative("EnsureNetworkedVarLengthSafety");
+        enableNetworkVariableProperty = networkConfigProperty.FindPropertyRelative("EnableNetworkVariable");
+        ensureNetworkVariableLengthSafetyProperty = networkConfigProperty.FindPropertyRelative("EnsureNetworkVariableLengthSafety");
         createPlayerPrefabProperty = networkConfigProperty.FindPropertyRelative("CreatePlayerPrefab");
         forceSamePrefabsProperty = networkConfigProperty.FindPropertyRelative("ForceSamePrefabs");
         usePrefabSyncProperty = networkConfigProperty.FindPropertyRelative("UsePrefabSync");
@@ -146,8 +146,8 @@ public class NetworkManagerEditor : Editor
         secondsHistoryProperty = networkConfigProperty.FindPropertyRelative("SecondsHistory");
         enableTimeResyncProperty = networkConfigProperty.FindPropertyRelative("EnableTimeResync");
         timeResyncIntervalProperty = networkConfigProperty.FindPropertyRelative("TimeResyncInterval");
-        enableNetworkedVarProperty = networkConfigProperty.FindPropertyRelative("EnableNetworkedVar");
-        ensureNetworkedVarLengthSafetyProperty = networkConfigProperty.FindPropertyRelative("EnsureNetworkedVarLengthSafety");
+        enableNetworkVariableProperty = networkConfigProperty.FindPropertyRelative("EnableNetworkVariable");
+        ensureNetworkVariableLengthSafetyProperty = networkConfigProperty.FindPropertyRelative("EnsureNetworkVariableLengthSafety");
         createPlayerPrefabProperty = networkConfigProperty.FindPropertyRelative("CreatePlayerPrefab");
         forceSamePrefabsProperty = networkConfigProperty.FindPropertyRelative("ForceSamePrefabs");
         usePrefabSyncProperty = networkConfigProperty.FindPropertyRelative("UsePrefabSync");
@@ -292,16 +292,16 @@ public class NetworkManagerEditor : Editor
             EditorGUILayout.PropertyField(receiveTickrateProperty);
             EditorGUILayout.PropertyField(maxReceiveEventsPerTickRateProperty);
             EditorGUILayout.PropertyField(eventTickrateProperty);
-            EditorGUILayout.PropertyField(enableNetworkedVarProperty);
+            EditorGUILayout.PropertyField(enableNetworkVariableProperty);
 
-            using (new EditorGUI.DisabledScope(!networkManager.NetworkConfig.EnableNetworkedVar))
+            using (new EditorGUI.DisabledScope(!networkManager.NetworkConfig.EnableNetworkVariable))
             {
                 if(maxObjectUpdatesPerTickProperty != null)
                 {
                     EditorGUILayout.PropertyField(maxObjectUpdatesPerTickProperty);
                 }
 
-                EditorGUILayout.PropertyField(ensureNetworkedVarLengthSafetyProperty);
+                EditorGUILayout.PropertyField(ensureNetworkVariableLengthSafetyProperty);
             }
 
             EditorGUILayout.LabelField("Connection", EditorStyles.boldLabel);

@@ -1,18 +1,17 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using MLAPI.Serialization;
 using MLAPI.Serialization.Pooled;
 using MLAPI.Transports;
 
-namespace MLAPI.NetworkedVar.Collections
+namespace MLAPI.NetworkVariable.Collections
 {
     /// <summary>
-    /// Event based networkedVar container for syncing Dictionaries
+    /// Event based NetworkVariable container for syncing Dictionaries
     /// </summary>
     /// <typeparam name="TKey">The type for the dictionary keys</typeparam>
     /// <typeparam name="TValue">The type for the dictionary values</typeparam>
-    public class NetworkedDictionary<TKey, TValue> : IDictionary<TKey, TValue>, INetworkedVar
+    public class NetworkedDictionary<TKey, TValue> : IDictionary<TKey, TValue>, INetworkVariable
     {
         /// <summary>
         /// Gets the last time the variable was synced
@@ -22,7 +21,7 @@ namespace MLAPI.NetworkedVar.Collections
         /// <summary>
         /// The settings for this container
         /// </summary>
-        public readonly NetworkedVarSettings Settings = new NetworkedVarSettings();
+        public readonly NetworkVariableSettings Settings = new NetworkVariableSettings();
 
         private readonly IDictionary<TKey, TValue> dictionary = new Dictionary<TKey, TValue>();
         private NetworkBehaviour networkBehaviour;
@@ -52,7 +51,7 @@ namespace MLAPI.NetworkedVar.Collections
         /// Creates a NetworkedDictionary with the default value and custom settings
         /// </summary>
         /// <param name="settings">The settings to use for the NetworkedDictionary</param>
-        public NetworkedDictionary(NetworkedVarSettings settings)
+        public NetworkedDictionary(NetworkVariableSettings settings)
         {
             this.Settings = settings;
         }
@@ -62,7 +61,7 @@ namespace MLAPI.NetworkedVar.Collections
         /// </summary>
         /// <param name="settings">The settings to use for the NetworkedDictionary</param>
         /// <param name="value">The initial value to use for the NetworkedDictionary</param>
-        public NetworkedDictionary(NetworkedVarSettings settings, IDictionary<TKey, TValue> value)
+        public NetworkedDictionary(NetworkVariableSettings settings, IDictionary<TKey, TValue> value)
         {
             this.Settings = settings;
             this.dictionary = value;
@@ -331,13 +330,13 @@ namespace MLAPI.NetworkedVar.Collections
         {
             switch (Settings.WritePermission)
             {
-                case NetworkedVarPermission.Everyone:
+                case NetworkVariablePermission.Everyone:
                     return true;
-                case NetworkedVarPermission.ServerOnly:
+                case NetworkVariablePermission.ServerOnly:
                     return false;
-                case NetworkedVarPermission.OwnerOnly:
+                case NetworkVariablePermission.OwnerOnly:
                     return networkBehaviour.OwnerClientId == clientId;
-                case NetworkedVarPermission.Custom:
+                case NetworkVariablePermission.Custom:
                 {
                     if (Settings.WritePermissionCallback == null) return false;
                     return Settings.WritePermissionCallback(clientId);
@@ -352,13 +351,13 @@ namespace MLAPI.NetworkedVar.Collections
         {
             switch (Settings.ReadPermission)
             {
-                case NetworkedVarPermission.Everyone:
+                case NetworkVariablePermission.Everyone:
                     return true;
-                case NetworkedVarPermission.ServerOnly:
+                case NetworkVariablePermission.ServerOnly:
                     return false;
-                case NetworkedVarPermission.OwnerOnly:
+                case NetworkVariablePermission.OwnerOnly:
                     return networkBehaviour.OwnerClientId == clientId;
-                case NetworkedVarPermission.Custom:
+                case NetworkVariablePermission.Custom:
                 {
                     if (Settings.ReadPermissionCallback == null) return false;
                     return Settings.ReadPermissionCallback(clientId);

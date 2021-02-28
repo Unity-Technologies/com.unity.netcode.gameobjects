@@ -770,9 +770,9 @@ namespace MLAPI
                         LagCompensationManager.AddFrames();
                     }
 
-                    if (NetworkConfig.EnableNetworkedVar)
+                    if (NetworkConfig.EnableNetworkVariable)
                     {
-                        // Do NetworkedVar updates
+                        // Do NetworkVariable updates
                         NetworkBehaviour.NetworkBehaviourUpdate();
                     }
 
@@ -1022,7 +1022,7 @@ namespace MLAPI
                         if (IsClient) InternalMessageHandler.HandleTimeSync(clientId, messageStream, receiveTime);
                         break;
                     case MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA:
-                        InternalMessageHandler.HandleNetworkedVarDelta(clientId, messageStream, BufferCallback, new PreBufferPreset()
+                        InternalMessageHandler.HandleNetworkVariableDelta(clientId, messageStream, BufferCallback, new PreBufferPreset()
                         {
                             AllowBuffer = allowBuffer,
                             Channel = channel,
@@ -1033,7 +1033,7 @@ namespace MLAPI
                         });
                         break;
                     case MLAPIConstants.MLAPI_NETWORKED_VAR_UPDATE:
-                        InternalMessageHandler.HandleNetworkedVarUpdate(clientId, messageStream, BufferCallback, new PreBufferPreset()
+                        InternalMessageHandler.HandleNetworkVariableUpdate(clientId, messageStream, BufferCallback, new PreBufferPreset()
                         {
                             AllowBuffer = allowBuffer,
                             Channel = channel,
@@ -1452,9 +1452,9 @@ namespace MLAPI
                                 writer.WriteBool(false);
                             }
 
-                            if (NetworkConfig.EnableNetworkedVar)
+                            if (NetworkConfig.EnableNetworkVariable)
                             {
-                                observedObject.WriteNetworkedVarData(stream, clientId);
+                                observedObject.WriteNetworkVariableData(stream, clientId);
                             }
                         }
 
@@ -1515,9 +1515,9 @@ namespace MLAPI
 
                             writer.WriteBool(false); //No payload data
 
-                            if (NetworkConfig.EnableNetworkedVar)
+                            if (NetworkConfig.EnableNetworkVariable)
                             {
-                                ConnectedClients[clientId].PlayerObject.WriteNetworkedVarData(stream, clientPair.Key);
+                                ConnectedClients[clientId].PlayerObject.WriteNetworkVariableData(stream, clientPair.Key);
                             }
 
                             InternalMessageSender.Send(clientPair.Key, MLAPIConstants.MLAPI_ADD_OBJECT, Channel.Internal, stream);

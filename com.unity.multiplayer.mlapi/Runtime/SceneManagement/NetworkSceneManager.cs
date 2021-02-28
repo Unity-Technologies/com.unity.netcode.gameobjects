@@ -295,9 +295,9 @@ namespace MLAPI.SceneManagement
                                         writer.WriteUInt64Packed(newSceneObjects[i].NetworkedInstanceId);
                                     }
 
-                                    if (NetworkManager.Singleton.NetworkConfig.EnableNetworkedVar)
+                                    if (NetworkManager.Singleton.NetworkConfig.EnableNetworkVariable)
                                     {
-                                        newSceneObjects[i].WriteNetworkedVarData(stream, NetworkManager.Singleton.ConnectedClientsList[j].ClientId);
+                                        newSceneObjects[i].WriteNetworkVariableData(stream, NetworkManager.Singleton.ConnectedClientsList[j].ClientId);
                                     }
                                 }
                             }

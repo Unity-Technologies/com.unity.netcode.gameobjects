@@ -9,7 +9,7 @@ using System.IO;
 using MLAPI.Configuration;
 using MLAPI.Logging;
 using MLAPI.Messaging;
-using MLAPI.NetworkedVar;
+using MLAPI.NetworkVariable;
 using MLAPI.Profiling;
 using MLAPI.Reflection;
 using MLAPI.Serialization;
@@ -356,7 +356,7 @@ namespace MLAPI
         internal bool internalNetworkedStartInvoked = false;
         /// <summary>
         /// Stores the network tick at the NetworkBehaviourUpdate time
-        /// This allows sending NetworkedVars not more often than once per network tick, regardless of the update rate
+        /// This allows sending NetworkVariables not more often than once per network tick, regardless of the update rate
         /// </summary>
         public static ushort currentTick { get; private set; }
         /// <summary>
@@ -378,7 +378,7 @@ namespace MLAPI
 
         internal void InternalNetworkStart()
         {
-            InitializeVars();
+            InitializeVariables();
         }
 
         /// <summary>
@@ -415,21 +415,23 @@ namespace MLAPI
             return NetworkObject.GetNetworkBehaviourAtOrderIndex(id);
         }
 
-        #region NetworkedVar
+        #region NetworkVariable
 
         private bool varInit = false;
 
-        private readonly List<HashSet<int>> channelMappedNetworkedVarIndexes = new List<HashSet<int>>();
-        private readonly List<Channel> channelsForNetworkedVarGroups = new List<Channel>();
-        internal readonly List<INetworkedVar> networkedVarFields = new List<INetworkedVar>();
+        private readonly List<HashSet<int>> channelMappedNetworkVariableIndexes = new List<HashSet<int>>();
+        private readonly List<Channel> channelsForNetworkVariableGroups = new List<Channel>();
+        internal readonly List<INetworkVariable> networkVariableFields = new List<INetworkVariable>();
 
-        private static HashSet<MLAPI.NetworkObject> touched = new HashSet<MLAPI.NetworkObject>();
+        private static HashSet<NetworkObject> touched = new HashSet<NetworkObject>();
         private static readonly Dictionary<Type, FieldInfo[]> fieldTypes = new Dictionary<Type, FieldInfo[]>();
 
         private static FieldInfo[] GetFieldInfoForType(Type type)
         {
             if (!fieldTypes.ContainsKey(type))
+            {
                 fieldTypes.Add(type, GetFieldInfoForTypeRecursive(type));
+            }
 
             return fieldTypes[type];
         }
@@ -450,16 +452,14 @@ namespace MLAPI
             {
                 return GetFieldInfoForTypeRecursive(type.BaseType, list);
             }
-            else
-            {
-                return list.OrderBy(x => x.Name, StringComparer.Ordinal).ToArray();
-            }
+
+            return list.OrderBy(x => x.Name, StringComparer.Ordinal).ToArray();
+
         }
 
-        internal void InitializeVars()
+        internal void InitializeVariables()
         {
-            if (varInit)
-                return;
+            if (varInit) return;
             varInit = true;
 
             FieldInfo[] sortedFields = GetFieldInfoForType(GetType());
@@ -468,18 +468,18 @@ namespace MLAPI
             {
                 Type fieldType = sortedFields[i].FieldType;
 
-                if (fieldType.HasInterface(typeof(INetworkedVar)))
+                if (fieldType.HasInterface(typeof(INetworkVariable)))
                 {
-                    INetworkedVar instance = (INetworkedVar)sortedFields[i].GetValue(this);
+                    INetworkVariable instance = (INetworkVariable)sortedFields[i].GetValue(this);
 
                     if (instance == null)
                     {
-                        instance = (INetworkedVar)Activator.CreateInstance(fieldType, true);
+                        instance = (INetworkVariable)Activator.CreateInstance(fieldType, true);
                         sortedFields[i].SetValue(this, instance);
                     }
 
                     instance.SetNetworkBehaviour(this);
-                    networkedVarFields.Add(instance);
+                    networkVariableFields.Add(instance);
                 }
             }
 
@@ -488,23 +488,23 @@ namespace MLAPI
                 Dictionary<Channel, int> firstLevelIndex = new Dictionary<Channel, int>();
                 int secondLevelCounter = 0;
 
-                for (int i = 0; i < networkedVarFields.Count; i++)
+                for (int i = 0; i < networkVariableFields.Count; i++)
                 {
-                    Channel channel = networkedVarFields[i].GetChannel();
+                    Channel channel = networkVariableFields[i].GetChannel();
 
                     if (!firstLevelIndex.ContainsKey(channel))
                     {
                         firstLevelIndex.Add(channel, secondLevelCounter);
-                        channelsForNetworkedVarGroups.Add(channel);
+                        channelsForNetworkVariableGroups.Add(channel);
                         secondLevelCounter++;
                     }
 
-                    if (firstLevelIndex[channel] >= channelMappedNetworkedVarIndexes.Count)
+                    if (firstLevelIndex[channel] >= channelMappedNetworkVariableIndexes.Count)
                     {
-                        channelMappedNetworkedVarIndexes.Add(new HashSet<int>());
+                        channelMappedNetworkVariableIndexes.Add(new HashSet<int>());
                     }
 
-                    channelMappedNetworkedVarIndexes[firstLevelIndex[channel]].Add(i);
+                    channelMappedNetworkVariableIndexes[firstLevelIndex[channel]].Add(i);
                 }
             }
         }
@@ -541,7 +541,7 @@ namespace MLAPI
                             // Sync just the variables for just the objects this client sees
                             for (int k = 0; k < sobj.childNetworkBehaviours.Count; k++)
                             {
-                                sobj.childNetworkBehaviours[k].VarUpdate(client.ClientId);
+                                sobj.childNetworkBehaviours[k].VariableUpdate(client.ClientId);
                             }
                         }
                     }
@@ -563,7 +563,7 @@ namespace MLAPI
                     {
                         for (int k = 0; k < sobj.childNetworkBehaviours.Count; k++)
                         {
-                           sobj.childNetworkBehaviours[k].VarUpdate(NetworkManager.Singleton.ServerClientId);
+                           sobj.childNetworkBehaviours[k].VariableUpdate(NetworkManager.Singleton.ServerClientId);
                         }
                     }
 
@@ -589,37 +589,35 @@ namespace MLAPI
         internal void PreNetworkVariableWrite()
         {
             // reset our "which variables got written" data
-            networkedVarIndexesToReset.Clear();
-            networkedVarIndexesToResetSet.Clear();
+            networkVariableIndexesToReset.Clear();
+            networkVariableIndexesToResetSet.Clear();
         }
 
         internal void PostNetworkVariableWrite()
         {
             // mark any variables we wrote as no longer dirty
-            for (int i = 0; i < networkedVarIndexesToReset.Count; i++)
+            for (int i = 0; i < networkVariableIndexesToReset.Count; i++)
             {
-                networkedVarFields[networkedVarIndexesToReset[i]].ResetDirty();
+                networkVariableFields[networkVariableIndexesToReset[i]].ResetDirty();
             }
         }
 
-        internal void VarUpdate(ulong clientId)
+        internal void VariableUpdate(ulong clientId)
         {
-            if (!varInit)
-                InitializeVars();
+            if (!varInit) InitializeVariables();
 
             PreNetworkVariableWrite();
-            NetworkedVarUpdate(clientId);
+            NetworkVariableUpdate(clientId);
         }
 
-        private readonly List<int> networkedVarIndexesToReset = new List<int>();
-        private readonly HashSet<int> networkedVarIndexesToResetSet = new HashSet<int>();
+        private readonly List<int> networkVariableIndexesToReset = new List<int>();
+        private readonly HashSet<int> networkVariableIndexesToResetSet = new HashSet<int>();
 
-        private void NetworkedVarUpdate(ulong clientId)
+        private void NetworkVariableUpdate(ulong clientId)
         {
-            if (!CouldHaveDirtyNetworkedVars())
-                return;
+            if (!CouldHaveDirtyNetworkVariables()) return;
 
-            for (int j = 0; j < channelMappedNetworkedVarIndexes.Count; j++)
+            for (int j = 0; j < channelMappedNetworkVariableIndexes.Count; j++)
             {
                 using (PooledBitStream stream = PooledBitStream.Get())
                 {
@@ -633,12 +631,12 @@ namespace MLAPI
                         writer.WriteUInt16Packed(currentTick);
 
                         bool writtenAny = false;
-                        for (int k = 0; k < networkedVarFields.Count; k++)
+                        for (int k = 0; k < networkVariableFields.Count; k++)
                         {
-                            if (!channelMappedNetworkedVarIndexes[j].Contains(k))
+                            if (!channelMappedNetworkVariableIndexes[j].Contains(k))
                             {
                                 // This var does not belong to the currently iterating channel group.
-                                if (NetworkManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
+                                if (NetworkManager.Singleton.NetworkConfig.EnsureNetworkVariableLengthSafety)
                                 {
                                     writer.WriteUInt16Packed(0);
                                 }
@@ -649,13 +647,13 @@ namespace MLAPI
                                 continue;
                             }
 
-                            bool isDirty = networkedVarFields[k].IsDirty(); // cache this here. You never know what operations users will do in the dirty methods
+                            bool isDirty = networkVariableFields[k].IsDirty(); // cache this here. You never know what operations users will do in the dirty methods
 
                             //   if I'm dirty AND a client, write (server always has all permissions)
                             //   if I'm dirty AND the server AND the client can read me, send.
-                            bool shouldWrite = isDirty && (!IsServer || networkedVarFields[k].CanClientRead(clientId));
+                            bool shouldWrite = isDirty && (!IsServer || networkVariableFields[k].CanClientRead(clientId));
 
-                            if (NetworkManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
+                            if (NetworkManager.Singleton.NetworkConfig.EnsureNetworkVariableLengthSafety)
                             {
                                 if (!shouldWrite)
                                 {
@@ -671,11 +669,11 @@ namespace MLAPI
                             {
                                 writtenAny = true;
 
-                                if (NetworkManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
+                                if (NetworkManager.Singleton.NetworkConfig.EnsureNetworkVariableLengthSafety)
                                 {
                                     using (PooledBitStream varStream = PooledBitStream.Get())
                                     {
-                                        networkedVarFields[k].WriteDelta(varStream);
+                                        networkVariableFields[k].WriteDelta(varStream);
                                         varStream.PadStream();
 
                                         writer.WriteUInt16Packed((ushort)varStream.Length);
@@ -684,92 +682,88 @@ namespace MLAPI
                                 }
                                 else
                                 {
-                                    networkedVarFields[k].WriteDelta(stream);
+                                    networkVariableFields[k].WriteDelta(stream);
                                 }
 
-                                if (!networkedVarIndexesToResetSet.Contains(k))
+                                if (!networkVariableIndexesToResetSet.Contains(k))
                                 {
-                                    networkedVarIndexesToResetSet.Add(k);
-                                    networkedVarIndexesToReset.Add(k);
+                                    networkVariableIndexesToResetSet.Add(k);
+                                    networkVariableIndexesToReset.Add(k);
                                 }
                             }
                         }
 
                         if (writtenAny)
                         {
-                            InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA, channelsForNetworkedVarGroups[j], stream);
+                            InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_NETWORKED_VAR_DELTA, channelsForNetworkVariableGroups[j], stream);
                         }
                     }
                 }
             }
         }
-        private bool CouldHaveDirtyNetworkedVars()
+        private bool CouldHaveDirtyNetworkVariables()
         {
             // TODO: There should be a better way by reading one dirty variable vs. 'n'
-            for (int i = 0; i < networkedVarFields.Count; i++)
+            for (int i = 0; i < networkVariableFields.Count; i++)
             {
-                if (networkedVarFields[i].IsDirty())
+                if (networkVariableFields[i].IsDirty())
                     return true;
             }
 
             return false;
         }
 
-        internal static void HandleNetworkedVarDeltas(List<INetworkedVar> networkedVarList, Stream stream, ulong clientId, NetworkBehaviour logInstance)
+        internal static void HandleNetworkVariableDeltas(List<INetworkVariable> networkVariableList, Stream stream, ulong clientId, NetworkBehaviour logInstance)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
                 // read the remote network tick at which this variable was written.
                 ushort remoteTick = reader.ReadUInt16Packed();
 
-                for (int i = 0; i < networkedVarList.Count; i++)
+                for (int i = 0; i < networkVariableList.Count; i++)
                 {
                     ushort varSize = 0;
 
-                    if (NetworkManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
+                    if (NetworkManager.Singleton.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {
                         varSize = reader.ReadUInt16Packed();
 
-                        if (varSize == 0)
-                            continue;
+                        if (varSize == 0) continue;
                     }
                     else
                     {
-                        if (!reader.ReadBool())
-                            continue;
+                        if (!reader.ReadBool()) continue;
                     }
 
-                    if (IsServer && !networkedVarList[i].CanClientWrite(clientId))
+                    if (IsServer && !networkVariableList[i].CanClientWrite(clientId))
                     {
-                        if (NetworkManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
+                        if (NetworkManager.Singleton.NetworkConfig.EnsureNetworkVariableLengthSafety)
                         {
                             if (NetworkLog.CurrentLogLevel <= LogLevel.Normal)
                             {
-                                NetworkLog.LogWarning("Client wrote to NetworkedVar without permission. " + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
-                                NetworkLog.LogError("[" + networkedVarList[i].GetType().Name + "]");
+                                NetworkLog.LogWarning("Client wrote to NetworkVariable without permission. " + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
+                                NetworkLog.LogError("[" + networkVariableList[i].GetType().Name + "]");
                             }
-
 
                             stream.Position += varSize;
                             continue;
                         }
-                        else
-                        {
-                            //This client wrote somewhere they are not allowed. This is critical
-                            //We can't just skip this field. Because we don't actually know how to dummy read
-                            //That is, we don't know how many bytes to skip. Because the interface doesn't have a
-                            //Read that gives us the value. Only a Read that applies the value straight away
-                            //A dummy read COULD be added to the interface for this situation, but it's just being too nice.
-                            //This is after all a developer fault. A critical error should be fine.
-                            // - TwoTen
 
-                            if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
-                            {
-                                NetworkLog.LogError("Client wrote to NetworkedVar without permission. No more variables can be read. This is critical. " + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
-                                NetworkLog.LogError("[" + networkedVarList[i].GetType().Name + "]");
-                            }
-                            return;
+                        //This client wrote somewhere they are not allowed. This is critical
+                        //We can't just skip this field. Because we don't actually know how to dummy read
+                        //That is, we don't know how many bytes to skip. Because the interface doesn't have a
+                        //Read that gives us the value. Only a Read that applies the value straight away
+                        //A dummy read COULD be added to the interface for this situation, but it's just being too nice.
+                        //This is after all a developer fault. A critical error should be fine.
+                        // - TwoTen
+
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
+                        {
+                            NetworkLog.LogError("Client wrote to NetworkVariable without permission. No more variables can be read. This is critical. " + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
+                            NetworkLog.LogError("[" + networkVariableList[i].GetType().Name + "]");
                         }
+
+                        return;
                     }
 
                     // read the local network tick at which this variable was written.
@@ -778,12 +772,12 @@ namespace MLAPI
 
                     long readStartPos = stream.Position;
 
-                    networkedVarList[i].ReadDelta(stream, IsServer, localTick, remoteTick);
+                    networkVariableList[i].ReadDelta(stream, IsServer, localTick, remoteTick);
                     PerformanceDataManager.Increment(ProfilerConstants.NumberNetworkVarsReceived);
 
                     ProfilerStatManager.networkVarsRcvd.Record();
 
-                    if (NetworkManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
+                    if (NetworkManager.Singleton.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {
                         (stream as BitStream).SkipPadBits();
 
@@ -802,57 +796,57 @@ namespace MLAPI
             }
         }
 
-        internal static void HandleNetworkedVarUpdate(List<INetworkedVar> networkedVarList, Stream stream, ulong clientId, NetworkBehaviour logInstance)
+        internal static void HandleNetworkVariableUpdate(List<INetworkVariable> networkVariableList, Stream stream, ulong clientId, NetworkBehaviour logInstance)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
-                for (int i = 0; i < networkedVarList.Count; i++)
+                for (int i = 0; i < networkVariableList.Count; i++)
                 {
                     ushort varSize = 0;
 
-                    if (NetworkManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
+                    if (NetworkManager.Singleton.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {
                         varSize = reader.ReadUInt16Packed();
 
-                        if (varSize == 0)
-                            continue;
+                        if (varSize == 0) continue;
                     }
                     else
                     {
-                        if (!reader.ReadBool())
-                            continue;
+                        if (!reader.ReadBool()) continue;
                     }
 
-                    if (IsServer && !networkedVarList[i].CanClientWrite(clientId))
+                    if (IsServer && !networkVariableList[i].CanClientWrite(clientId))
                     {
-                        if (NetworkManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
+                        if (NetworkManager.Singleton.NetworkConfig.EnsureNetworkVariableLengthSafety)
                         {
-                            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Client wrote to NetworkedVar without permission. " + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
+                            if (NetworkLog.CurrentLogLevel <= LogLevel.Normal) NetworkLog.LogWarning("Client wrote to NetworkVariable without permission. " + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
                             stream.Position += varSize;
                             continue;
                         }
-                        else
+
+                        //This client wrote somewhere they are not allowed. This is critical
+                        //We can't just skip this field. Because we don't actually know how to dummy read
+                        //That is, we don't know how many bytes to skip. Because the interface doesn't have a
+                        //Read that gives us the value. Only a Read that applies the value straight away
+                        //A dummy read COULD be added to the interface for this situation, but it's just being too nice.
+                        //This is after all a developer fault. A critical error should be fine.
+                        // - TwoTen
+                        if (NetworkLog.CurrentLogLevel <= LogLevel.Error)
                         {
-                            //This client wrote somewhere they are not allowed. This is critical
-                            //We can't just skip this field. Because we don't actually know how to dummy read
-                            //That is, we don't know how many bytes to skip. Because the interface doesn't have a
-                            //Read that gives us the value. Only a Read that applies the value straight away
-                            //A dummy read COULD be added to the interface for this situation, but it's just being too nice.
-                            //This is after all a developer fault. A critical error should be fine.
-                            // - TwoTen
-                            if (NetworkLog.CurrentLogLevel <= LogLevel.Error) NetworkLog.LogError("Client wrote to NetworkedVar without permission. No more variables can be read. This is critical. " + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
-                            return;
+                            NetworkLog.LogError("Client wrote to NetworkVariable without permission. No more variables can be read. This is critical. " + (logInstance != null ? ("NetworkId: " + logInstance.NetworkId + " BehaviourIndex: " + logInstance.NetworkObject.GetOrderIndex(logInstance) + " VariableIndex: " + i) : string.Empty));
                         }
+
+                        return;
                     }
 
                     long readStartPos = stream.Position;
 
-                    networkedVarList[i].ReadField(stream, NetworkTickSystem.k_NoTick, NetworkTickSystem.k_NoTick);
+                    networkVariableList[i].ReadField(stream, NetworkTickSystem.k_NoTick, NetworkTickSystem.k_NoTick);
                     PerformanceDataManager.Increment(ProfilerConstants.NumberNetworkVarsReceived);
 
                     ProfilerStatManager.networkVarsRcvd.Record();
 
-                    if (NetworkManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
+                    if (NetworkManager.Singleton.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {
                         if (stream is BitStream bitStream)
                         {
@@ -875,18 +869,17 @@ namespace MLAPI
         }
 
 
-        internal static void WriteNetworkedVarData(List<INetworkedVar> networkedVarList, Stream stream, ulong clientId)
+        internal static void WriteNetworkVariableData(List<INetworkVariable> networkVariableList, Stream stream, ulong clientId)
         {
-            if (networkedVarList.Count == 0)
-                return;
+            if (networkVariableList.Count == 0) return;
 
             using (PooledBitWriter writer = PooledBitWriter.Get(stream))
             {
-                for (int j = 0; j < networkedVarList.Count; j++)
+                for (int j = 0; j < networkVariableList.Count; j++)
                 {
-                    bool canClientRead = networkedVarList[j].CanClientRead(clientId);
+                    bool canClientRead = networkVariableList[j].CanClientRead(clientId);
 
-                    if (NetworkManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
+                    if (NetworkManager.Singleton.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {
                         if (!canClientRead)
                         {
@@ -900,11 +893,11 @@ namespace MLAPI
 
                     if (canClientRead)
                     {
-                        if (NetworkManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
+                        if (NetworkManager.Singleton.NetworkConfig.EnsureNetworkVariableLengthSafety)
                         {
                             using (PooledBitStream varStream = PooledBitStream.Get())
                             {
-                                networkedVarList[j].WriteField(varStream);
+                                networkVariableList[j].WriteField(varStream);
                                 varStream.PadStream();
 
                                 writer.WriteUInt16Packed((ushort)varStream.Length);
@@ -913,42 +906,39 @@ namespace MLAPI
                         }
                         else
                         {
-                            networkedVarList[j].WriteField(stream);
+                            networkVariableList[j].WriteField(stream);
                         }
                     }
                 }
             }
         }
 
-        internal static void SetNetworkedVarData(List<INetworkedVar> networkedVarList, Stream stream)
+        internal static void SetNetworkVariableData(List<INetworkVariable> networkVariableList, Stream stream)
         {
-            if (networkedVarList.Count == 0)
-                return;
+            if (networkVariableList.Count == 0) return;
 
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
-                for (int j = 0; j < networkedVarList.Count; j++)
+                for (int j = 0; j < networkVariableList.Count; j++)
                 {
                     ushort varSize = 0;
 
-                    if (NetworkManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
+                    if (NetworkManager.Singleton.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {
                         varSize = reader.ReadUInt16Packed();
 
-                        if (varSize == 0)
-                            continue;
+                        if (varSize == 0) continue;
                     }
                     else
                     {
-                        if (!reader.ReadBool())
-                            continue;
+                        if (!reader.ReadBool()) continue;
                     }
 
                     long readStartPos = stream.Position;
 
-                    networkedVarList[j].ReadField(stream, NetworkTickSystem.k_NoTick, NetworkTickSystem.k_NoTick);
+                    networkVariableList[j].ReadField(stream, NetworkTickSystem.k_NoTick, NetworkTickSystem.k_NoTick);
 
-                    if (NetworkManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
+                    if (NetworkManager.Singleton.NetworkConfig.EnsureNetworkVariableLengthSafety)
                     {
                         if (stream is BitStream bitStream)
                         {
