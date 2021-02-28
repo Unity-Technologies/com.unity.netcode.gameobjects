@@ -41,7 +41,7 @@ public class RandomPlayerMover : NetworkedBehaviour
 
     private SyncTransform m_NetworkTransform;
 
-    private static Color[] PlayerColors = { Color.red, Color.yellow, Color.green, Color.blue, Color.cyan, Color.magenta, Color.white };
+    private static Color[] s_PlayerColors = { Color.red, Color.yellow, Color.green, Color.blue, Color.cyan, Color.magenta, Color.white };
 
     /// <summary>
     /// SetPlayerColor
@@ -51,7 +51,7 @@ public class RandomPlayerMover : NetworkedBehaviour
     {
         if (m_MeshRenderer)
         {
-            m_MeshRenderer.material.color = PlayerColors[ NetworkedObject.OwnerClientId % System.Convert.ToUInt64(PlayerColors.Length)];
+            m_MeshRenderer.material.color = s_PlayerColors[ NetworkedObject.OwnerClientId % System.Convert.ToUInt64(s_PlayerColors.Length)];
         }
     }
 
