@@ -240,7 +240,6 @@ namespace MLAPI
         /// The current hostname we are connected to, used to validate certificate
         /// </summary>
         public string ConnectedHostname { get; private set; }
-        internal byte[] clientAesKey;
         internal static event Action OnSingletonReady;
 
         internal void InvokeOnIncomingCustomMessage(ulong clientId, Stream stream)

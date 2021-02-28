@@ -11,11 +11,6 @@
         public ulong ClientId;
 
         /// <summary>
-        /// The current AesKey
-        /// </summary>
-        public byte[] AesKey;
-
-        /// <summary>
         /// The state of the connection process for the client
         /// </summary>
         public State ConnectionState;
