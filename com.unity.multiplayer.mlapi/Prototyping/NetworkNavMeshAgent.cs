@@ -1,16 +1,16 @@
 ﻿using System.Collections.Generic;
-using MLAPI.Connection;
-using MLAPI.Messaging;
 using UnityEngine;
 using UnityEngine.AI;
+using MLAPI.Connection;
+using MLAPI.Messaging;
 
 namespace MLAPI.Prototyping
 {
     /// <summary>
     /// A prototype component for syncing navmeshagents
     /// </summary>
-    [AddComponentMenu("MLAPI/NetworkedNavMeshAgent")]
-    public class NetworkedNavMeshAgent : NetworkBehaviour
+    [AddComponentMenu("MLAPI/NetworkNavMeshAgent")]
+    public class NetworkNavMeshAgent : NetworkBehaviour
     {
         private NavMeshAgent agent;
 
@@ -51,8 +51,7 @@ namespace MLAPI.Prototyping
 
         private void Update()
         {
-            if (!IsOwner)
-                return;
+            if (!IsOwner) return;
 
             if (agent.destination != lastDestination)
             {
@@ -63,19 +62,20 @@ namespace MLAPI.Prototyping
                 }
                 else
                 {
-                    List<ulong> proximityClients = new List<ulong>();
-                    foreach (KeyValuePair<ulong, NetworkClient> client in MLAPI.NetworkManager.Singleton.ConnectedClients)
+                    var proximityClients = new List<ulong>();
+                    foreach (KeyValuePair<ulong, NetworkClient> client in NetworkManager.Singleton.ConnectedClients)
                     {
-                        if (client.Value.PlayerObject == null || Vector3.Distance(client.Value.PlayerObject.transform.position, transform.position) <= ProximityRange)
+                        if (ReferenceEquals(client.Value.PlayerObject, null) || Vector3.Distance(client.Value.PlayerObject.transform.position, transform.position) <= ProximityRange)
+                        {
                             proximityClients.Add(client.Key);
+                        }
                     }
 
-                    OnNavMeshStateUpdateClientRpc(agent.destination, agent.velocity, transform.position,
-                        new ClientRpcParams {Send = new ClientRpcSendParams {TargetClientIds = proximityClients.ToArray()}});
+                    OnNavMeshStateUpdateClientRpc(agent.destination, agent.velocity, transform.position, new ClientRpcParams {Send = new ClientRpcSendParams {TargetClientIds = proximityClients.ToArray()}});
                 }
             }
 
-            if (MLAPI.NetworkManager.Singleton.NetworkTime - lastCorrectionTime >= CorrectionDelay)
+            if (NetworkManager.Singleton.NetworkTime - lastCorrectionTime >= CorrectionDelay)
             {
                 if (!EnableProximity)
                 {
@@ -83,29 +83,26 @@ namespace MLAPI.Prototyping
                 }
                 else
                 {
-                    List<ulong> proximityClients = new List<ulong>();
-                    foreach (KeyValuePair<ulong, NetworkClient> client in MLAPI.NetworkManager.Singleton.ConnectedClients)
+                    var proximityClients = new List<ulong>();
+                    foreach (KeyValuePair<ulong, NetworkClient> client in NetworkManager.Singleton.ConnectedClients)
                     {
-                        if (client.Value.PlayerObject == null || Vector3.Distance(client.Value.PlayerObject.transform.position, transform.position) <= ProximityRange)
+                        if (ReferenceEquals(client.Value.PlayerObject, null) || Vector3.Distance(client.Value.PlayerObject.transform.position, transform.position) <= ProximityRange)
+                        {
                             proximityClients.Add(client.Key);
+                        }
                     }
 
-                    OnNavMeshCorrectionUpdateClientRpc(agent.velocity, transform.position,
-                        new ClientRpcParams {Send = new ClientRpcSendParams {TargetClientIds = proximityClients.ToArray()}});
+                    OnNavMeshCorrectionUpdateClientRpc(agent.velocity, transform.position, new ClientRpcParams {Send = new ClientRpcSendParams {TargetClientIds = proximityClients.ToArray()}});
                 }
 
-                lastCorrectionTime = MLAPI.NetworkManager.Singleton.NetworkTime;
+                lastCorrectionTime = NetworkManager.Singleton.NetworkTime;
             }
         }
 
         [ClientRpc]
         private void OnNavMeshStateUpdateClientRpc(Vector3 destination, Vector3 velocity, Vector3 position, ClientRpcParams rpcParams = default)
         {
-            if (WarpOnDestinationChange)
-                agent.Warp(position);
-            else
-                agent.Warp(Vector3.Lerp(transform.position, position, DriftCorrectionPercentage));
-
+            agent.Warp(WarpOnDestinationChange ? position : Vector3.Lerp(transform.position, position, DriftCorrectionPercentage));
             agent.SetDestination(destination);
             agent.velocity = velocity;
         }
