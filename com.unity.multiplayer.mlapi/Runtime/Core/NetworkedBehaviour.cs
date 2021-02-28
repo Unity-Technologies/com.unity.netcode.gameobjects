@@ -366,6 +366,11 @@ namespace MLAPI
         internal bool networkedStartInvoked = false;
         internal bool internalNetworkedStartInvoked = false;
         /// <summary>
+        /// Stores the network tick at the NetworkedBehaviourUpdate time
+        /// This allows sending NetworkedVars not more often than once per network tick, regardless of the update rate
+        /// </summary>
+        public static ushort currentTick { get; private set; }
+        /// <summary>
         /// Gets called when message handlers are ready to be registered and the networking is setup
         /// </summary>
         public virtual void NetworkStart()
@@ -521,6 +526,14 @@ namespace MLAPI
 
         internal static void NetworkedBehaviourUpdate()
         {
+            // Don't NetworkedBehaviourUpdate more than once per network tick
+            ushort tick = NetworkingManager.Singleton.networkTickSystem.GetTick();
+            if (tick == currentTick)
+            {
+                return;
+            }
+            currentTick = tick;
+
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_NetworkedBehaviourUpdate.Begin();
 #endif
@@ -574,7 +587,6 @@ namespace MLAPI
                         }
                     }
                 }
-
             }
             finally
             {
@@ -615,8 +627,8 @@ namespace MLAPI
 
         private void NetworkedVarUpdate(ulong clientId)
         {
-           if (!CouldHaveDirtyNetworkedVars())
-               return;
+            if (!CouldHaveDirtyNetworkedVars())
+                return;
 
             for (int j = 0; j < channelMappedNetworkedVarIndexes.Count; j++)
             {
@@ -626,6 +638,10 @@ namespace MLAPI
                     {
                         writer.WriteUInt64Packed(NetworkId);
                         writer.WriteUInt16Packed(NetworkedObject.GetOrderIndex(this));
+
+                        // Write the current tick frame
+                        // todo: this is currently done per channel, per tick. The snapshot system might improve on this
+                        writer.WriteUInt16Packed(currentTick);
 
                         bool writtenAny = false;
                         for (int k = 0; k < networkedVarFields.Count; k++)
@@ -716,6 +732,9 @@ namespace MLAPI
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
+                // read the remote network tick at which this variable was written.
+                ushort remoteTick = reader.ReadUInt16Packed();
+
                 for (int i = 0; i < networkedVarList.Count; i++)
                 {
                     ushort varSize = 0;
@@ -766,9 +785,15 @@ namespace MLAPI
                         }
                     }
 
+                    // read the local network tick at which this variable was written.
+                    // if this var was updated from our machine, this local tick will be locally valid
+                    ushort localTick = reader.ReadUInt16Packed();
+
                     long readStartPos = stream.Position;
 
-                    networkedVarList[i].ReadDelta(stream, IsServer);
+                    networkedVarList[i].ReadDelta(stream, IsServer, localTick, remoteTick);
+                    PerformanceDataManager.Increment(ProfilerConstants.NumberNetworkVarsReceived);
+
                     ProfilerStatManager.networkVarsRcvd.Record();
 
                     if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
@@ -835,7 +860,9 @@ namespace MLAPI
 
                     long readStartPos = stream.Position;
 
-                    networkedVarList[i].ReadField(stream);
+                    networkedVarList[i].ReadField(stream, NetworkTickSystem.k_NoTick, NetworkTickSystem.k_NoTick);
+                    PerformanceDataManager.Increment(ProfilerConstants.NumberNetworkVarsReceived);
+
                     ProfilerStatManager.networkVarsRcvd.Record();
 
                     if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
@@ -932,7 +959,7 @@ namespace MLAPI
 
                     long readStartPos = stream.Position;
 
-                    networkedVarList[j].ReadField(stream);
+                    networkedVarList[j].ReadField(stream, NetworkTickSystem.k_NoTick, NetworkTickSystem.k_NoTick);
 
                     if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
                     {

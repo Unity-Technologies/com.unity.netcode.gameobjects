@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using UnityEngine;
@@ -55,7 +55,7 @@ namespace MLAPI.SceneManagement
         /// The callback invoked when a client is done loading the scene.
         /// </summary>
         public event OnClientLoadedSceneDelegate OnClientLoadedScene;
-        
+
         internal Guid guid { get; } = Guid.NewGuid();
 
         private Coroutine timeOutCoroutine;
@@ -110,6 +110,5 @@ namespace MLAPI.SceneManagement
                     OnComplete.Invoke(true);
             }
         }
-
     }
 }
