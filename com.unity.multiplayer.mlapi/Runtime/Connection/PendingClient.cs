@@ -1,8 +1,4 @@
-﻿#if !DISABLE_CRYPTOGRAPHY
-using MLAPI.Security;
-#endif
-
-namespace MLAPI.Connection
+﻿namespace MLAPI.Connection
 {
     /// <summary>
     /// A class representing a client that is currently in the process of connecting
@@ -13,10 +9,7 @@ namespace MLAPI.Connection
         /// The ClientId of the client
         /// </summary>
         public ulong ClientId;
-        
-#if !DISABLE_CRYPTOGRAPHY
-        internal EllipticDiffieHellman KeyExchange;
-#endif
+
         /// <summary>
         /// The current AesKey
         /// </summary>

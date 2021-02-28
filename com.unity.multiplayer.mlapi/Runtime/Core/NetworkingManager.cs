@@ -945,83 +945,12 @@ namespace MLAPI
                     if (IsServer)
                     {
                         if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo("Client Connected");
-#if !DISABLE_CRYPTOGRAPHY
-                        if (NetworkConfig.EnableEncryption)
-                        {
-                            // This client is required to complete the crypto-hail exchange.
-                            using (PooledBitStream hailStream = PooledBitStream.Get())
-                            {
-                                using (PooledBitWriter hailWriter = PooledBitWriter.Get(hailStream))
-                                {
-                                    if (NetworkConfig.SignKeyExchange)
-                                    {
-                                        // Write certificate
-                                        hailWriter.WriteByteArray(NetworkConfig.ServerX509CertificateBytes);
-                                    }
 
-                                    // Write key exchange public part
-                                    EllipticDiffieHellman diffieHellman = new EllipticDiffieHellman(EllipticDiffieHellman.DEFAULT_CURVE, EllipticDiffieHellman.DEFAULT_GENERATOR, EllipticDiffieHellman.DEFAULT_ORDER);
-                                    byte[] diffieHellmanPublicPart = diffieHellman.GetPublicKey();
-                                    hailWriter.WriteByteArray(diffieHellmanPublicPart);
-                                    PendingClients.Add(clientId, new PendingClient()
-                                    {
-                                        ClientId = clientId,
-                                        ConnectionState = PendingClient.State.PendingHail,
-                                        KeyExchange = diffieHellman
-                                    });
-
-                                    if (NetworkConfig.SignKeyExchange)
-                                    {
-                                        // Write public part signature (signed by certificate private)
-                                        X509Certificate2 certificate = NetworkConfig.ServerX509Certificate;
-
-                                        if (!certificate.HasPrivateKey)
-                                            throw new CryptographicException("[MLAPI] No private key was found in server certificate. Unable to sign key exchange");
-
-                                        RSACryptoServiceProvider rsa = certificate.PrivateKey as RSACryptoServiceProvider;
-                                        DSACryptoServiceProvider dsa = certificate.PrivateKey as DSACryptoServiceProvider;
-
-                                        if (rsa != null)
-                                        {
-                                            // RSA is 0
-                                            hailWriter.WriteByte(0);
-
-                                            using (SHA256Managed sha = new SHA256Managed())
-                                            {
-                                                hailWriter.WriteByteArray(rsa.SignData(diffieHellmanPublicPart, sha));
-                                            }
-                                        }
-                                        else if (dsa != null)
-                                        {
-                                            // DSA is 1
-                                            hailWriter.WriteByte(1);
-
-                                            using (SHA256Managed sha = new SHA256Managed())
-                                            {
-                                                hailWriter.WriteByteArray(dsa.SignData(sha.ComputeHash(diffieHellmanPublicPart)));
-                                            }
-                                        }
-                                        else
-                                        {
-                                            throw new CryptographicException("[MLAPI] Only RSA and DSA certificates are supported. No valid RSA or DSA key was found");
-                                        }
-                                    }
-                                }
-                                // Send the hail
-                                InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_CERTIFICATE_HAIL, Transport.MLAPI_INTERNAL_CHANNEL, hailStream, SecuritySendFlags.None);
-                            }
-                        }
-                        else
-                        {
-#endif
                         PendingClients.Add(clientId, new PendingClient()
                         {
                             ClientId = clientId,
                             ConnectionState = PendingClient.State.PendingConnection
                         });
-#if !DISABLE_CRYPTOGRAPHY
-                        }
-#endif
                         StartCoroutine(ApprovalTimeout(clientId));
                     }
                     else
@@ -1169,17 +1098,6 @@ namespace MLAPI
                     case MLAPIConstants.MLAPI_NAMED_MESSAGE:
                         InternalMessageHandler.HandleNamedMessage(clientId, messageStream);
                         break;
-#if !DISABLE_CRYPTOGRAPHY
-                    case MLAPIConstants.MLAPI_CERTIFICATE_HAIL:
-                        if (IsClient) InternalMessageHandler.HandleHailRequest(clientId, messageStream);
-                        break;
-                    case MLAPIConstants.MLAPI_CERTIFICATE_HAIL_RESPONSE:
-                        if (IsServer) InternalMessageHandler.HandleHailResponse(clientId, messageStream);
-                        break;
-                    case MLAPIConstants.MLAPI_GREETINGS:
-                        if (IsClient) InternalMessageHandler.HandleGreetings(clientId, messageStream);
-                        break;
-#endif
                     case MLAPIConstants.MLAPI_CLIENT_SWITCH_SCENE_COMPLETED:
                         if (IsServer && NetworkConfig.EnableSceneManagement) InternalMessageHandler.HandleClientSwitchSceneCompleted(clientId, messageStream);
                         break;
@@ -1276,6 +1194,7 @@ namespace MLAPI
         /// Called when an inbound queued RPC is invoked
         /// </summary>
         /// <param name="queueItem">frame queue item to invoke</param>
+#pragma warning disable 618
         internal static void InvokeRpc(RpcFrameQueueItem queueItem)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
@@ -1320,6 +1239,7 @@ namespace MLAPI
 
                 __ntable[networkMethodId](networkBehaviour, new BitSerializer(queueItem.streamReader), rpcParams);
             }
+#pragma warning restore 618
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             s_InvokeRPC.End();
@@ -1471,15 +1391,11 @@ namespace MLAPI
             if (approved)
             {
                 // Inform new client it got approved
-                byte[] aesKey = PendingClients.ContainsKey(clientId) ? PendingClients[clientId].AesKey : null;
                 if (PendingClients.ContainsKey(clientId))
                     PendingClients.Remove(clientId);
                 NetworkedClient client = new NetworkedClient()
                 {
                     ClientId = clientId,
-#if !DISABLE_CRYPTOGRAPHY
-                    AesKey = aesKey
-#endif
                 };
                 ConnectedClients.Add(clientId, client);
                 ConnectedClientsList.Add(client);
