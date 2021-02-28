@@ -183,6 +183,13 @@ namespace MLAPI
         /// Gets if we are connected as a client
         /// </summary>
         public bool IsConnectedClient { get; internal set; }
+
+        /// <summary>
+        /// Gets whether or not a server or client is running.
+        /// </summary>
+        public bool IsRunning => IsServer || IsClient;
+
+
         /// <summary>
         /// The callback to invoke once a client connects. This callback is only ran on the server and on the local client that connects.
         /// </summary>
@@ -604,6 +611,25 @@ namespace MLAPI
             NetworkConfig.NetworkTransport.DisconnectLocalClient();
             IsConnectedClient = false;
             Shutdown();
+        }
+
+        /// <summary>
+        /// Stops the running server, client or host.
+        /// </summary>
+        public void Stop()
+        {
+            if (IsHost)
+            {
+                StopHost();
+            }
+            else if(IsServer)
+            {
+                StopServer();
+            }
+            else if (IsClient)
+            {
+                StopClient();
+            }
         }
 
         /// <summary>
