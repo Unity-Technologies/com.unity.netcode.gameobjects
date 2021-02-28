@@ -246,37 +246,40 @@ public class RandomPlayerMover : NetworkedBehaviour
     /// <param name="isPaused"></param>
     public void OnPaused(bool isPaused)
     {
-        m_IsPaused = isPaused;
-
-        //This just assures we have the rigid body
-        if (!m_Rigidbody)
+        if(m_IsPaused != isPaused)
         {
-            m_Rigidbody = GetComponent<Rigidbody>();
+            m_IsPaused = isPaused;
+
+            //This just assures we have the rigid body
+            if (!m_Rigidbody)
+            {
+                m_Rigidbody = GetComponent<Rigidbody>();
+                if (m_Rigidbody)
+                {
+                    if (m_DefaultConstraints == RigidbodyConstraints.None)
+                    {
+                        m_DefaultConstraints = m_Rigidbody.constraints;
+                    }
+                    else
+                    {
+                        m_Rigidbody.constraints = m_DefaultConstraints;
+                    }
+                }
+            }
+
             if (m_Rigidbody)
             {
-                if (m_DefaultConstraints == RigidbodyConstraints.None)
+                if (m_IsPaused)
                 {
-                    m_DefaultConstraints = m_Rigidbody.constraints;
+                    m_Rigidbody.constraints = RigidbodyConstraints.FreezeAll;
+                    m_Rigidbody.velocity = Vector3.zero;
+                    m_Rigidbody.angularVelocity = Vector3.zero;
                 }
                 else
                 {
                     m_Rigidbody.constraints = m_DefaultConstraints;
+
                 }
-            }
-        }
-
-        if (m_Rigidbody)
-        {
-            if (m_IsPaused)
-            {
-                m_Rigidbody.constraints = RigidbodyConstraints.FreezeAll;
-                m_Rigidbody.velocity = Vector3.zero;
-                m_Rigidbody.angularVelocity = Vector3.zero;
-            }
-            else
-            {
-                m_Rigidbody.constraints = m_DefaultConstraints;
-
             }
         }
     }
@@ -344,5 +347,10 @@ public class RandomPlayerMover : NetworkedBehaviour
                 }
             }
         }
+    }
+
+    private void OnDestroy()
+    {
+        m_InGameManager.OnInGameStateChanged -= OnInGameStateChanged;
     }
 }

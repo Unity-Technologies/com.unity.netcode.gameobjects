@@ -156,7 +156,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 153}
-  m_SizeDelta: {x: 160, y: 30}
+  m_SizeDelta: {x: 300, y: 30}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &323241992
 MonoBehaviour:
@@ -171,7 +171,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 2100000, guid: 211ecef3dae464545b6161699ca543f9, type: 2}
-  m_Color: {r: 0.7924528, g: 0.07002405, b: 0.03364185, a: 1}
+  m_Color: {r: 1, g: 0.06132078, b: 0.109509535, a: 1}
   m_RaycastTarget: 1
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -179,10 +179,10 @@ MonoBehaviour:
       m_Calls: []
   m_FontData:
     m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
-    m_FontSize: 14
+    m_FontSize: 22
     m_FontStyle: 0
     m_BestFit: 0
-    m_MinSize: 10
+    m_MinSize: 2
     m_MaxSize: 40
     m_Alignment: 4
     m_AlignByGeometry: 0
@@ -243,7 +243,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d8c99cb1d836e464e99ea031efe86214, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_LaunchAsHostInEditor: 1
+  m_LaunchAsHostInEditor: 0
   m_ExitIfNoPlayers: 0
   m_WaitingForPlayers: {fileID: 380317542}
   m_GameIsPaused: {fileID: 948914281}
