@@ -63,7 +63,7 @@ class SceneToStateOptionsEditor : PropertyDrawer
         GUI.Label(localRect, header, gUIStyle);
 
         //For 2 of the 3 titles, we want to advance.  The last one we do not.
-        if(advanceEnding)
+        if (advanceEnding)
         {
             //Advance our position with an 8 pixel space
             localRect.x += localRect.width;//(originalWidth * 0.01f);
@@ -85,7 +85,7 @@ class SceneToStateOptionsEditor : PropertyDrawer
         gUIStyle.alignment = TextAnchor.MiddleCenter;
 
 
-        if(OriginalWidth > 0)
+        if (OriginalWidth > 0)
         {
             rect = DrawHeaderSection("MLAPI State", gUIStyle, rect, OriginalWidth, true);
             rect = DrawHeaderSection("Scene to link", gUIStyle, rect, OriginalWidth, true, false);
@@ -111,13 +111,13 @@ class SceneToStateOptionsEditor : PropertyDrawer
         SerializedProperty itemSceneName = itemData.FindPropertyRelative("m_SceneToLoadName");
 
         //[NSS]: This is how we get the scene name from the scene object for runtime usage (scene objects don't get exported to builds)
-        if(itemScene.objectReferenceValue != null)
+        if (itemScene.objectReferenceValue != null)
         {
             itemSceneName.stringValue = itemScene.objectReferenceValue.name;
         }
 
         float OriginalWidth = rect.width;
-        if(OriginalWidth > 0)
+        if (OriginalWidth > 0)
         {
             rect.height = 18;
             rect.width = (OriginalWidth * 0.275f);
