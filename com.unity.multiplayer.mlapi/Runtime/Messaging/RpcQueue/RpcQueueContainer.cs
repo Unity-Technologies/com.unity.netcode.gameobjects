@@ -59,11 +59,11 @@ namespace MLAPI.Messaging
         // INetworkUpdateSystem
         public void NetworkUpdate(NetworkUpdateStage updateStage)
         {
-            ProcessAndFlushRPCQueue(RpcQueueProcessingTypes.Receive, updateStage);
+            ProcessAndFlushRpcQueue(RpcQueueProcessingTypes.Receive, updateStage);
 
             if (updateStage == NetworkUpdateStage.PostLateUpdate)
             {
-                ProcessAndFlushRPCQueue(RpcQueueProcessingTypes.Send, updateStage);
+                ProcessAndFlushRpcQueue(RpcQueueProcessingTypes.Send, updateStage);
             }
         }
 
@@ -100,7 +100,7 @@ namespace MLAPI.Messaging
         /// Will process the RPC queue and then move to the next available frame
         /// </summary>
         /// <param name="queueType"></param>
-        public void ProcessAndFlushRPCQueue(RpcQueueProcessingTypes queueType, NetworkUpdateStage currentUpdateStage)
+        public void ProcessAndFlushRpcQueue(RpcQueueProcessingTypes queueType, NetworkUpdateStage currentUpdateStage)
         {
             if (m_RpcQueueProcessor == null)
             {

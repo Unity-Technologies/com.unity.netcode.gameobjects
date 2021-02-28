@@ -53,19 +53,10 @@ namespace MLAPI
         static ProfilerMarker s_HandleIncomingData = new ProfilerMarker("HandleIncomingData");
         static ProfilerMarker s_TransportDisconnect = new ProfilerMarker("TransportDisconnect");
 
+        static ProfilerMarker s_ServerRpcQueued = new ProfilerMarker("ServerRpcQueued");
+        static ProfilerMarker s_ClientRpcQueued = new ProfilerMarker("ClientRpcQueued");
 
-        static ProfilerMarker s_MLAPIServerRPC = new ProfilerMarker("MLAPIServerRPC");
-        static ProfilerMarker s_MLAPIServerRPCQueued = new ProfilerMarker("MLAPIServerRPCQueued");
-
-        static ProfilerMarker s_MLAPIClientRPC = new ProfilerMarker("MLAPIClientRPC");
-        static ProfilerMarker s_MLAPIClientRPCQueued = new ProfilerMarker("MLAPIClientRPCQueued");
-
-        static ProfilerMarker s_MLAPIServerSTDRPC = new ProfilerMarker("MLAPIServerSTDRPC");
-        static ProfilerMarker s_MLAPIServerSTDRPCQueued = new ProfilerMarker("MLAPIServerSTDRPCQueued");
-
-        static ProfilerMarker s_MLAPIClientSTDRPC = new ProfilerMarker("MLAPIClientSTDRPC");
-        static ProfilerMarker s_MLAPIClientSTDRPCQueued = new ProfilerMarker("MLAPIClientSTDRPCQueued");
-        static ProfilerMarker s_InvokeRPC = new ProfilerMarker("InvokeRPC");
+        static ProfilerMarker s_InvokeRpc = new ProfilerMarker("InvokeRpc");
 #endif
         internal RpcQueueContainer rpcQueueContainer { get; private set; }
         internal NetworkTickSystem networkTickSystem { get; private set; }
@@ -1077,11 +1068,11 @@ namespace MLAPI
                                 else
                                 {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-                                    s_MLAPIServerSTDRPCQueued.Begin();
+                                    s_ServerRpcQueued.Begin();
 #endif
-                                    InternalMessageHandler.RPCReceiveQueueItem(clientId, messageStream, receiveTime,RpcQueueContainer.QueueItemType.ServerRpc);
+                                    InternalMessageHandler.RpcReceiveQueueItem(clientId, messageStream, receiveTime,RpcQueueContainer.QueueItemType.ServerRpc);
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-                                    s_MLAPIServerSTDRPCQueued.End();
+                                    s_ServerRpcQueued.End();
 #endif
                                 }
                             }
@@ -1100,11 +1091,11 @@ namespace MLAPI
                                 else
                                 {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-                                    s_MLAPIClientSTDRPCQueued.Begin();
+                                    s_ClientRpcQueued.Begin();
 #endif
-                                    InternalMessageHandler.RPCReceiveQueueItem(clientId, messageStream,receiveTime,RpcQueueContainer.QueueItemType.ClientRpc);
+                                    InternalMessageHandler.RpcReceiveQueueItem(clientId, messageStream,receiveTime,RpcQueueContainer.QueueItemType.ClientRpc);
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-                                    s_MLAPIClientSTDRPCQueued.End();
+                                    s_ClientRpcQueued.End();
 #endif
                                 }
                             }
@@ -1129,22 +1120,22 @@ namespace MLAPI
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (messageType == RpcQueueContainer.QueueItemType.ServerRpc)
             {
-                s_MLAPIServerSTDRPCQueued.Begin();
+                s_ServerRpcQueued.Begin();
             }
             else
             {
-               s_MLAPIClientSTDRPCQueued.Begin();
+                s_ClientRpcQueued.Begin();
             }
 #endif
-            InternalMessageHandler.RPCReceiveQueueItem(clientId, messageStream, receiveTime, messageType);
+            InternalMessageHandler.RpcReceiveQueueItem(clientId, messageStream, receiveTime, messageType);
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
             if (messageType == RpcQueueContainer.QueueItemType.ServerRpc)
             {
-                s_MLAPIServerSTDRPCQueued.End();
+                s_ServerRpcQueued.End();
             }
             else
             {
-                s_MLAPIClientSTDRPCQueued.End();
+                s_ClientRpcQueued.End();
             }
 #endif
         }
@@ -1158,7 +1149,7 @@ namespace MLAPI
         internal static void InvokeRpc(RpcFrameQueueItem queueItem)
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_InvokeRPC.Begin();
+            s_InvokeRpc.Begin();
 #endif
             var networkObjectId = queueItem.streamReader.ReadUInt64Packed();
             var networkBehaviourId = queueItem.streamReader.ReadUInt16Packed();
@@ -1202,7 +1193,7 @@ namespace MLAPI
 #pragma warning restore 618
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_InvokeRPC.End();
+            s_InvokeRpc.End();
 #endif
         }
 

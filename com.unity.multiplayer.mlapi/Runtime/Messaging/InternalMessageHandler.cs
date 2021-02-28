@@ -516,7 +516,7 @@ namespace MLAPI.Messaging
         /// <param name="clientId"></param>
         /// <param name="stream"></param>
         /// <param name="receiveTime"></param>
-        internal static void RPCReceiveQueueItem(ulong clientId, Stream stream, float receiveTime, RpcQueueContainer.QueueItemType queueItemType)
+        internal static void RpcReceiveQueueItem(ulong clientId, Stream stream, float receiveTime, RpcQueueContainer.QueueItemType queueItemType)
         {
             if (NetworkingManager.Singleton.IsServer && clientId == NetworkingManager.Singleton.ServerClientId)
             {

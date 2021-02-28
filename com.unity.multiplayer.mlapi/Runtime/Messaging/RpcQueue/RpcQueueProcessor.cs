@@ -9,15 +9,15 @@ namespace MLAPI.Messaging
 {
     /// <summary>
     /// RpcQueueProcessing
-    /// Handles processing of RPCQueues
+    /// Handles processing of RpcQueues
     /// Inbound to invocation
     /// Outbound to send
     /// </summary>
     internal class RpcQueueProcessor
     {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-        static ProfilerMarker s_MLAPIRPCQueueProcess = new ProfilerMarker("MLAPIRPCQueueProcess");
-        static ProfilerMarker s_MLAPIRPCQueueSend = new ProfilerMarker("MLAPIRPCQueueSend");
+        static ProfilerMarker s_RpcQueueProcess = new ProfilerMarker("RpcQueueProcess");
+        static ProfilerMarker s_RpcQueueSend = new ProfilerMarker("RpcQueueSend");
 #endif
 
         // Batcher object used to manage the RPC batching on the send side
@@ -39,7 +39,7 @@ namespace MLAPI.Messaging
             if (rpcQueueContainer != null)
             {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-                s_MLAPIRPCQueueProcess.Begin();
+                s_RpcQueueProcess.Begin();
 #endif
                 var CurrentFrame = rpcQueueContainer.GetQueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Inbound, currentStage);
                 var NextFrame = rpcQueueContainer.GetQueueHistoryFrame(QueueHistoryFrame.QueueFrameType.Inbound, currentStage, true);
@@ -76,7 +76,7 @@ namespace MLAPI.Messaging
                 }
             }
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_MLAPIRPCQueueProcess.End();
+            s_RpcQueueProcess.End();
 #endif
         }
 
@@ -87,13 +87,13 @@ namespace MLAPI.Messaging
         public void ProcessSendQueue()
         {
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_MLAPIRPCQueueSend.Begin();
+            s_RpcQueueSend.Begin();
 #endif
 
-            RPCQueueSendAndFlush();
+            RpcQueueSendAndFlush();
 
 #if DEVELOPMENT_BUILD || UNITY_EDITOR
-            s_MLAPIRPCQueueSend.End();
+            s_RpcQueueSend.End();
 #endif
             InternalMessagesSendAndFlush();
         }
@@ -158,7 +158,7 @@ namespace MLAPI.Messaging
         /// RPCQueueSendAndFlush
         /// Sends all RPC queue items in the current outbound frame
         /// </summary>
-        private void RPCQueueSendAndFlush()
+        private void RpcQueueSendAndFlush()
         {
             var AdvanceFrameHistory = false;
             var rpcQueueContainer = NetworkingManager.Singleton.rpcQueueContainer;
