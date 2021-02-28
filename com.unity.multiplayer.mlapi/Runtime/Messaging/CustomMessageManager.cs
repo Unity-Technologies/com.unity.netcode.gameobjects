@@ -45,7 +45,6 @@ namespace MLAPI.Messaging
         /// <param name="clientIds">The clients to send to, sends to everyone if null</param>
         /// <param name="stream">The message stream containing the data</param>
         /// <param name="channel">The channel to send the data on</param>
-        /// <param name="security">The security settings to apply to the message</param>
         public static void SendUnnamedMessage(List<ulong> clientIds, BitStream stream, Channel channel = Channel.Internal)
         {
             if (!NetworkingManager.Singleton.IsServer)
@@ -63,7 +62,6 @@ namespace MLAPI.Messaging
         /// <param name="clientId">The client to send the message to</param>
         /// <param name="stream">The message stream containing the data</param>
         /// <param name="channel">The channel tos end the data on</param>
-        /// <param name="security">The security settings to apply to the message</param>
         public static void SendUnnamedMessage(ulong clientId, BitStream stream, Channel channel = Channel.Internal)
         {
             InternalMessageSender.Send(clientId, MLAPIConstants.MLAPI_UNNAMED_MESSAGE, channel, stream);
@@ -157,7 +155,6 @@ namespace MLAPI.Messaging
         /// <param name="clientId">The client to send the message to</param>
         /// <param name="stream">The message stream containing the data</param>
         /// <param name="channel">The channel to send the data on</param>
-        /// <param name="security">The security settings to apply to the message</param>
         public static void SendNamedMessage(string name, ulong clientId, Stream stream, Channel channel = Channel.Internal)
         {
             ulong hash = 0;
@@ -194,7 +191,6 @@ namespace MLAPI.Messaging
         /// <param name="clientIds">The clients to send to, sends to everyone if null</param>
         /// <param name="stream">The message stream containing the data</param>
         /// <param name="channel">The channel to send the data on</param>
-        /// <param name="security">The security settings to apply to the message</param>
         public static void SendNamedMessage(string name, List<ulong> clientIds, Stream stream, Channel channel = Channel.Internal)
         {
             ulong hash = 0;
