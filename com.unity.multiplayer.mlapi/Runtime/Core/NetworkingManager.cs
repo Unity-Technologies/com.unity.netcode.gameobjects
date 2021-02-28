@@ -697,9 +697,6 @@ namespace MLAPI
 
         public void Shutdown()
         {
-            // Unregister INetworkUpdateSystem
-            this.UnregisterAllNetworkUpdates();
-
             if (NetworkLog.CurrentLogLevel <= LogLevel.Developer) NetworkLog.LogInfo("Shutdown()");
 
             // Unregister INetworkUpdateSystem before shutting down the RpcQueueContainer
